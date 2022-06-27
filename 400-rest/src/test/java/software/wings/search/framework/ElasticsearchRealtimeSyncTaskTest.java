@@ -66,7 +66,7 @@ public class ElasticsearchRealtimeSyncTaskTest extends WingsBaseTest {
     changeEvents.add(changeEvent1);
 
     doAnswer(invocationOnMock -> {
-      ChangeSubscriber<?> changeSubscriber = invocationOnMock.getArgumentAt(0, ChangeSubscriber.class);
+      ChangeSubscriber<?> changeSubscriber = invocationOnMock.getArgument(0, ChangeSubscriber.class);
       changeSubscriber.onChange(changeEvent);
       latch.countDown();
       return null;

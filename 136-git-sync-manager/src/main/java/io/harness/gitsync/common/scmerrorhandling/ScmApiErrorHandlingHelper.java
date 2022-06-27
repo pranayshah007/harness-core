@@ -14,10 +14,16 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.gitsync.common.beans.ScmApis;
 import io.harness.gitsync.common.dtos.RepoProviders;
 import io.harness.gitsync.common.helper.RepoProviderHelper;
+import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.gitsync.common.scmerrorhandling.handlers.DefaultScmApiErrorHandler;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,10 +31,30 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PL)
 public class ScmApiErrorHandlingHelper {
+  private static final Map<ConnectorType, Set<Integer>> failureErrorCodeExceptions =
+      ImmutableMap.<ConnectorType, Set<Integer>>builder()
+          .put(ConnectorType.AZURE_REPO, new HashSet<>(Collections.singletonList(203)))
+          .build();
+
+  public void processAndThrowError(ScmApis scmAPI, ConnectorType connectorType, String repoUrl, int statusCode,
+      String errorMessage, ErrorMetadata errorMetadata) {
+    if (errorMetadata == null) {
+      errorMetadata = ErrorMetadata.builder().build();
+    }
+
+    ScmApiErrorHandler scmAPIErrorHandler = getScmAPIErrorHandler(scmAPI, connectorType, repoUrl);
+    scmAPIErrorHandler.handleError(statusCode, errorMessage, errorMetadata);
+  }
+
   public void processAndThrowError(
       ScmApis scmAPI, ConnectorType connectorType, String repoUrl, int statusCode, String errorMessage) {
     ScmApiErrorHandler scmAPIErrorHandler = getScmAPIErrorHandler(scmAPI, connectorType, repoUrl);
-    scmAPIErrorHandler.handleError(statusCode, errorMessage);
+    scmAPIErrorHandler.handleError(statusCode, errorMessage, ErrorMetadata.builder().build());
+  }
+
+  public boolean isFailureResponse(int statusCode, ConnectorType connectorType) {
+    return statusCode >= 300
+        || failureErrorCodeExceptions.getOrDefault(connectorType, new HashSet<>()).contains(statusCode);
   }
 
   @VisibleForTesting

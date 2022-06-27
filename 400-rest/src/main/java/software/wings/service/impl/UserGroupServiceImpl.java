@@ -9,6 +9,7 @@ package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
+import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -18,6 +19,7 @@ import static io.harness.validation.Validator.notNullCheck;
 import static io.harness.validation.Validator.unEqualCheck;
 
 import static software.wings.beans.security.UserGroup.DEFAULT_ACCOUNT_ADMIN_USER_GROUP_NAME;
+import static software.wings.beans.security.UserGroupSearchTermType.APPLICATION_NAME;
 import static software.wings.scheduler.LdapGroupSyncJob.add;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE;
 import static software.wings.security.PermissionAttribute.Action.EXECUTE_PIPELINE;
@@ -51,6 +53,7 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.PageResponse;
+import io.harness.beans.SearchFilter;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.ccm.config.CCMSettingService;
 import io.harness.data.structure.EmptyPredicate;
@@ -69,6 +72,9 @@ import io.harness.persistence.UuidAware;
 import io.harness.scheduler.PersistentScheduler;
 
 import software.wings.beans.Account;
+import software.wings.beans.Application;
+import software.wings.beans.Application.ApplicationKeys;
+import software.wings.beans.Base;
 import software.wings.beans.EntityType;
 import software.wings.beans.Event.Type;
 import software.wings.beans.User;
@@ -80,6 +86,7 @@ import software.wings.beans.security.AccountPermissions;
 import software.wings.beans.security.AppPermission;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.security.UserGroup.UserGroupKeys;
+import software.wings.beans.security.UserGroupSearchTermType;
 import software.wings.beans.sso.SSOSettings;
 import software.wings.beans.sso.SSOType;
 import software.wings.dl.WingsPersistence;
@@ -241,11 +248,20 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   @Override
-  public PageResponse<UserGroup> list(String accountId, PageRequest<UserGroup> req, boolean loadUsers) {
+  public PageResponse<UserGroup> list(String accountId, PageRequest<UserGroup> req, boolean loadUsers,
+      UserGroupSearchTermType searchTermType, String searchTerm) {
     notNullCheck(UserGroupKeys.accountId, accountId, USER);
     Account account = accountService.get(accountId);
     notNullCheck("account", account, USER);
-    req.addFilter(UserGroupKeys.accountId, Operator.EQ, accountId);
+    req.addFilter(UserGroupKeys.accountId, EQ, accountId);
+    if (isSearchByApplicationFeatureEnabled(accountId) && APPLICATION_NAME.equals(searchTermType)
+        && isNotEmpty(searchTerm)) {
+      Set<String> applicationIdsMatchingSearchTerm = getApplicationsMatchingTheSearchTerm(accountId, searchTerm);
+      if (isEmpty(applicationIdsMatchingSearchTerm)) {
+        return new PageResponse<>();
+      }
+      populateAppIdFilter(req, applicationIdsMatchingSearchTerm);
+    }
     PageResponse<UserGroup> res = wingsPersistence.query(UserGroup.class, req);
     // Using a custom comparator since our mongo apis don't support alphabetical sorting with case insensitivity.
     // Currently, it only supports ASC and DSC.
@@ -259,6 +275,49 @@ public class UserGroupServiceImpl implements UserGroupService {
     }
 
     return res;
+  }
+
+  private boolean isSearchByApplicationFeatureEnabled(String accountId) {
+    return featureFlagService.isEnabled(FeatureName.SEARCH_USERGROUP_BY_APPLICATION, accountId);
+  }
+
+  private Set<String> getApplicationsMatchingTheSearchTerm(String accountId, String searchTerm) {
+    PageResponse<Application> applicationList = getAllApplicationsStartingWithSearchTerm(accountId, searchTerm);
+    if (isEmpty(applicationList)) {
+      return Collections.emptySet();
+    }
+    return applicationList.stream().map(Base::getUuid).collect(Collectors.toSet());
+  }
+
+  private PageResponse<Application> getAllApplicationsStartingWithSearchTerm(String accountId, String searchTerm) {
+    SearchFilter applicationSearchFilter = SearchFilter.builder()
+                                               .fieldName(ApplicationKeys.name)
+                                               .op(Operator.STARTS_WITH)
+                                               .fieldValues(new Object[] {searchTerm})
+                                               .build();
+    PageRequest<Application> applicationPageRequest = aPageRequest()
+                                                          .withLimit("100")
+                                                          .addFilter(ApplicationKeys.accountId, EQ, accountId)
+                                                          .addFilter(applicationSearchFilter)
+                                                          .build();
+    return appService.list(applicationPageRequest);
+  }
+
+  private void populateAppIdFilter(PageRequest<UserGroup> req, Set<String> applicationIds) {
+    SearchFilter searchFilterForAllApplication = SearchFilter.builder()
+                                                     .fieldName(UserGroupKeys.appFilterType)
+                                                     .op(EQ)
+                                                     .fieldValues(new Object[] {AppFilter.FilterType.ALL})
+                                                     .build();
+    SearchFilter searchFilterForSpecifiedIdsApplication = SearchFilter.builder()
+                                                              .fieldName(UserGroupKeys.appFilterType)
+                                                              .op(EQ)
+                                                              .fieldValues(new Object[] {AppFilter.FilterType.SELECTED})
+                                                              .fieldName(UserGroupKeys.appIds)
+                                                              .op(Operator.IN)
+                                                              .fieldValues(applicationIds.toArray())
+                                                              .build();
+    req.addFilter("", Operator.OR, searchFilterForAllApplication, searchFilterForSpecifiedIdsApplication);
   }
 
   private void loadUsersForUserGroups(List<UserGroup> userGroups, Account account) {
@@ -663,8 +722,10 @@ public class UserGroupServiceImpl implements UserGroupService {
       String userGroupId, String accountId, String appId, String entityId, String entityType) {
     UserGroup userGroup = Optional.ofNullable(mongoPersistence.get(UserGroup.class, userGroupId)).orElse(null);
     if (userGroup == null) {
-      // log statement for userGroups which are deleted but are being referenced in a pipeline
-      log.error("UserGroup does not exist but pipeline with id {} and appId {} is referencing it", entityId, appId);
+      // log statement for userGroups which are deleted but are being referenced in a pipeline of deployment freeze
+      // window
+      log.error(
+          "UserGroup does not exist but {} with id {} and appId {} is referencing it", entityType, entityId, appId);
       return;
     }
     userGroup.addParent(UserGroupEntityReference.builder()
@@ -682,8 +743,10 @@ public class UserGroupServiceImpl implements UserGroupService {
       String userGroupId, String accountId, String appId, String entityId, String entityType) {
     UserGroup userGroup = Optional.ofNullable(mongoPersistence.get(UserGroup.class, userGroupId)).orElse(null);
     if (userGroup == null) {
-      // log statement for userGroups which are deleted but are being referenced in a pipeline
-      log.error("UserGroup does not exist but pipeline with id {} and appId {} is referencing it", entityId, appId);
+      // log statement for userGroups which are deleted but are being referenced in a pipeline or in a deployment freeze
+      // window
+      log.error(
+          "UserGroup does not exist but {} with id {} and appId {} is referencing it", entityType, entityId, appId);
       return;
     }
     userGroup.removeParent(UserGroupEntityReference.builder()
@@ -798,7 +861,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     notNullCheck("userGroup", userGroup);
     if (!(userGroup.getParents().isEmpty())) {
       throw new InvalidRequestException(
-          "This userGroup is being referenced in either approval step/stage or notification strategy. Please make sure to remove the references to delete this userGroup.");
+          "This userGroup is being referenced in either approval step/stage or notification strategy or as a runtimeInput in an execution step/stage or in a deployment freeze window. Please make sure to remove the references to delete this userGroup.");
     }
     if (!forceDelete && UserGroupUtils.isAdminUserGroup(userGroup)) {
       return false;
@@ -851,17 +914,17 @@ public class UserGroupServiceImpl implements UserGroupService {
   public List<UserGroup> listByAccountId(String accountId, User user, boolean loadUsers) {
     PageRequestBuilder pageRequest = aPageRequest()
                                          .withLimit(Long.toString(getCountOfUserGroups(accountId)))
-                                         .addFilter(UserGroupKeys.accountId, Operator.EQ, accountId)
+                                         .addFilter(UserGroupKeys.accountId, EQ, accountId)
                                          .addFilter(UserGroupKeys.memberIds, Operator.HAS, user.getUuid());
-    return list(accountId, pageRequest.build(), loadUsers).getResponse();
+    return list(accountId, pageRequest.build(), loadUsers, null, null).getResponse();
   }
 
   @Override
   public List<UserGroup> listByAccountId(String accountId) {
     PageRequestBuilder pageRequest = aPageRequest()
                                          .withLimit(Long.toString(getCountOfUserGroups(accountId)))
-                                         .addFilter(UserGroupKeys.accountId, Operator.EQ, accountId);
-    return list(accountId, pageRequest.build(), true).getResponse();
+                                         .addFilter(UserGroupKeys.accountId, EQ, accountId);
+    return list(accountId, pageRequest.build(), true, null, null).getResponse();
   }
 
   @Override
@@ -1152,11 +1215,11 @@ public class UserGroupServiceImpl implements UserGroupService {
   public List<UserGroup> getUserGroupsBySsoId(String accountId, String ssoId) {
     PageRequest<UserGroup> pageRequest = aPageRequest()
                                              .withLimit(Long.toString(getCountOfUserGroups(accountId)))
-                                             .addFilter(UserGroupKeys.accountId, Operator.EQ, accountId)
-                                             .addFilter(UserGroupKeys.isSsoLinked, Operator.EQ, true)
-                                             .addFilter(UserGroupKeys.linkedSsoId, Operator.EQ, ssoId)
+                                             .addFilter(UserGroupKeys.accountId, EQ, accountId)
+                                             .addFilter(UserGroupKeys.isSsoLinked, EQ, true)
+                                             .addFilter(UserGroupKeys.linkedSsoId, EQ, ssoId)
                                              .build();
-    PageResponse<UserGroup> pageResponse = list(accountId, pageRequest, true);
+    PageResponse<UserGroup> pageResponse = list(accountId, pageRequest, true, null, null);
     return pageResponse.getResponse();
   }
 
@@ -1172,11 +1235,11 @@ public class UserGroupServiceImpl implements UserGroupService {
   public UserGroup getAdminUserGroup(String accountId) {
     PageRequest<UserGroup> pageRequest =
         aPageRequest()
-            .addFilter(UserGroupKeys.name, Operator.EQ, UserGroup.DEFAULT_ACCOUNT_ADMIN_USER_GROUP_NAME)
-            .addFilter(UserGroupKeys.isDefault, Operator.EQ, true)
+            .addFilter(UserGroupKeys.name, EQ, UserGroup.DEFAULT_ACCOUNT_ADMIN_USER_GROUP_NAME)
+            .addFilter(UserGroupKeys.isDefault, EQ, true)
             .build();
 
-    return list(accountId, pageRequest, true).getResponse().get(0);
+    return list(accountId, pageRequest, true, null, null).getResponse().get(0);
   }
 
   @Override
@@ -1215,7 +1278,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     }
     PageRequestBuilder pageRequest =
         aPageRequest().withLimit(Integer.toString(userIds.length)).addFilter(UserGroup.ID_KEY2, Operator.IN, userIds);
-    return list(userInvite.getAccountId(), pageRequest.build(), true).getResponse();
+    return list(userInvite.getAccountId(), pageRequest.build(), true, null, null).getResponse();
   }
 
   /**

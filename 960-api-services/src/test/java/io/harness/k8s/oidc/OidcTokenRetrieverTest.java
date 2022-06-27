@@ -78,11 +78,11 @@ public class OidcTokenRetrieverTest extends CategoryTest {
     OAuth20Service service = Mockito.mock(OAuth20Service.class);
     OAuth2AccessToken token = Mockito.mock(OAuth2AccessToken.class);
 
-    Mockito.doReturn(token).when(service).getAccessTokenPasswordGrant(Matchers.anyString(), Matchers.anyString());
+    Mockito.when(service.getAccessTokenPasswordGrant(any(), any())).thenReturn(token);
 
     oidcTokenRetriever.fetchAccessTokenUsingGrantType(
         service, OidcTokenRequestData.builder().grantType(OidcGrantType.password.name()).build());
-    Mockito.verify(service, Mockito.times(1)).getAccessTokenPasswordGrant(Matchers.anyString(), Matchers.anyString());
+    Mockito.verify(service, Mockito.times(1)).getAccessTokenPasswordGrant(any(), any());
     Mockito.verify(service, Mockito.never()).getAccessTokenClientCredentialsGrant();
   }
 

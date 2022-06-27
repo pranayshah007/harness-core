@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SearchPageParams;
 import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
+import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.ng.core.dto.EmbeddedUserDetailsDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -21,6 +22,7 @@ import io.harness.ng.core.filestore.dto.FileFilterDTO;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
@@ -47,6 +49,38 @@ public interface FileStoreService {
    */
 
   FileDTO update(@NotNull FileDTO fileDto, InputStream content, String identifier);
+
+  /**
+   * Get the file metadata with its content transformed to String if includeContent is set.
+   * If the path is related to folder then returns recursively all files metadata
+   * with its content including files in folder sub-folders.
+   *
+   * @param accountIdentifier the account identifier
+   * @param orgIdentifier the organization identifier
+   * @param projectIdentifier the project identifier
+   * @param path the file or folder path
+   * @param includeContent include file content
+   * @return file store node with content
+   */
+  Optional<FileStoreNodeDTO> getByPath(@NotNull String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, @NotNull String path, boolean includeContent);
+
+  /**
+   * Get the file metadata with its content transformed to String if includeContent is set.
+   * If identifier is related to folder then returns recursively all files metadata
+   * with its content including files in folder sub-folders.
+   *
+   * Note: the identifier is not referring to scoped identifier.
+   *
+   * @param accountIdentifier the account identifier
+   * @param orgIdentifier the organization identifier
+   * @param projectIdentifier the project identifier
+   * @param identifier the file or folder identifier
+   * @param includeContent include file content
+   * @return file store node with content
+   */
+  Optional<FileStoreNodeDTO> get(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      @NotNull String identifier, boolean includeContent);
 
   /**
    * Download a file.
@@ -109,9 +143,6 @@ public interface FileStoreService {
   Page<FileDTO> listFilesAndFolders(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier,
       @NotNull FileFilterDTO fileFilterDTO, Pageable pageable);
 
-  Page<EntitySetupUsageDTO> listReferencedByInScope(SearchPageParams pageParams, @NotNull String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, EntityType entityType);
-
   /**
    * List NG files by pages based on filter criteria.
    *
@@ -138,5 +169,10 @@ public interface FileStoreService {
   Set<EmbeddedUserDetailsDTO> getCreatedByList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
+  /**
+   * Get the list of supported entity types.
+   *
+   * @return supported entity types
+   */
   List<EntityType> getSupportedEntityTypes();
 }

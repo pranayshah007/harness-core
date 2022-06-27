@@ -20,7 +20,9 @@ import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import com.mongodb.client.result.DeleteResult;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.common.NGExpressionUtils;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
@@ -69,6 +71,7 @@ import io.harness.ngtriggers.validations.TriggerValidationHandler;
 import io.harness.ngtriggers.validations.ValidationResult;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pipeline.remote.PipelineServiceClient;
+import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
@@ -138,6 +141,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   private final PollingResourceClient pollingResourceClient;
   private final NGTriggerElementMapper ngTriggerElementMapper;
   private final OutboxService outboxService;
+
+  private final PmsFeatureFlagService pmsFeatureFlagService;
   private final BuildTriggerHelper validationHelper;
   private static final String PIPELINE = "pipeline";
   private static final String TRIGGER = "trigger";
@@ -333,10 +338,20 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
     Optional<NGTriggerEntity> ngTriggerEntity =
         get(accountId, orgIdentifier, projectIdentifier, targetIdentifier, identifier, false);
-    UpdateResult deleteResult = ngTriggerRepository.delete(criteria);
-    if (!deleteResult.wasAcknowledged() || deleteResult.getModifiedCount() != 1) {
-      throw new InvalidRequestException(String.format("NGTrigger [%s] couldn't be deleted", identifier));
+
+    if(pmsFeatureFlagService.isEnabled(accountId, FeatureName.HARD_DELETE_ENTITIES)){
+      DeleteResult hardDeleteResult = ngTriggerRepository.hardDelete(criteria);
+      if (!hardDeleteResult.wasAcknowledged()) {
+        throw new InvalidRequestException(String.format("NGTrigger [%s] couldn't hard delete", identifier));
+      }
+      log.info("NGTrigger {} hard delete successful", identifier);
+    } else{
+      UpdateResult deleteResult = ngTriggerRepository.delete(criteria);
+      if (!deleteResult.wasAcknowledged() || deleteResult.getModifiedCount() != 1) {
+        throw new InvalidRequestException(String.format("NGTrigger [%s] couldn't be deleted", identifier));
+      }
     }
+
 
     if (ngTriggerEntity.isPresent()) {
       NGTriggerEntity foundTriggerEntity = ngTriggerEntity.get();

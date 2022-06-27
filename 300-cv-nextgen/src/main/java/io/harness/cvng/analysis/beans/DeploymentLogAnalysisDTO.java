@@ -52,6 +52,10 @@ public class DeploymentLogAnalysisDTO {
           .collect(Collectors.toList());
     }
 
+    public static List<ClusterType> getValues() {
+      return Arrays.stream(ClusterType.values()).collect(Collectors.toList());
+    }
+
     private int getSortOrder() {
       return sortOrder;
     }

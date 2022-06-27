@@ -10,6 +10,7 @@ package io.harness.ci.plan.creator;
 import static io.harness.beans.execution.WebhookEvent.Type.BRANCH;
 import static io.harness.beans.execution.WebhookEvent.Type.PR;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
+import static io.harness.common.CIExecutionConstants.AZURE_REPO_BASE_URL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.git.GitClientHelper.getGitRepo;
@@ -28,7 +29,11 @@ import io.harness.ci.pipeline.executions.beans.CIBuildAuthor;
 import io.harness.ci.pipeline.executions.beans.CIBuildBranchHook;
 import io.harness.ci.pipeline.executions.beans.CIBuildCommit;
 import io.harness.ci.pipeline.executions.beans.CIBuildPRHook;
+import io.harness.ci.pipeline.executions.beans.CIImageDetails;
+import io.harness.ci.pipeline.executions.beans.CIInfraDetails;
+import io.harness.ci.pipeline.executions.beans.CIScmDetails;
 import io.harness.ci.pipeline.executions.beans.CIWebhookInfoDTO;
+import io.harness.ci.pipeline.executions.beans.TIBuildDetails;
 import io.harness.ci.plan.creator.execution.CIPipelineModuleInfo;
 import io.harness.ci.plan.creator.execution.CIStageModuleInfo;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -94,6 +99,12 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
     String buildType = null;
     String triggerRepoName = null;
     String url = null;
+
+    List<CIScmDetails> scmDetailsList = new ArrayList<>();
+    List<CIInfraDetails> infraDetailsList = new ArrayList<>();
+    List<CIImageDetails> imageDetailsList = new ArrayList<>();
+    List<TIBuildDetails> tiBuildDetailsList = new ArrayList<>();
+
     CIBuildAuthor author = null;
     Boolean isPrivateRepo = false;
     List<CIBuildCommit> triggerCommits = null;
@@ -130,12 +141,18 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
               if (isEmpty(repoName) || repoName.equals(NULL_STR)) {
                 repoName = getGitRepo(url);
               }
-
+              CIScmDetails scmDetails = IntegrationStageUtils.getCiScmDetails(connectorUtils, connectorDetails);
+              scmDetails.setScmUrl(url);
+              scmDetailsList.add(scmDetails);
             } catch (Exception exception) {
               log.warn("Failed to retrieve repo");
             }
           }
         }
+        infraDetailsList.add(IntegrationStageUtils.getCiInfraDetails(initializeStepInfo.getInfrastructure()));
+        imageDetailsList = IntegrationStageUtils.getCiImageDetails(initializeStepInfo);
+        tiBuildDetailsList = IntegrationStageUtils.getTiBuildDetails(initializeStepInfo);
+
         isPrivateRepo = isPrivateRepo(url);
         Build build = RunTimeInputHandler.resolveBuild(buildParameterField);
         if (build != null) {
@@ -195,6 +212,10 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
             .repoName(repoName)
             .ciExecutionInfoDTO(ciWebhookInfoDTO)
             .isPrivateRepo(isPrivateRepo)
+            .scmDetailsList(scmDetailsList)
+            .infraDetailsList(infraDetailsList)
+            .imageDetailsList(imageDetailsList)
+            .tiBuildDetailsList(tiBuildDetailsList)
             .build();
       }
     }
@@ -235,6 +256,10 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
         .repoName(repoName)
         .ciExecutionInfoDTO(getCiExecutionInfoDTO(codebaseSweepingOutput, author, prNumber, triggerCommits))
         .isPrivateRepo(isPrivateRepo)
+        .scmDetailsList(scmDetailsList)
+        .infraDetailsList(infraDetailsList)
+        .imageDetailsList(imageDetailsList)
+        .tiBuildDetailsList(tiBuildDetailsList)
         .build();
   }
 
@@ -246,7 +271,9 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
 
     List<CIBuildCommit> ciBuildCommits = new ArrayList<>();
     if (isNotEmpty(codebaseSweepingOutput.getCommits())) {
-      Collections.reverse(codebaseSweepingOutput.getCommits());
+      if (shouldReverseCommitList(codebaseSweepingOutput.getRepoUrl())) {
+        Collections.reverse(codebaseSweepingOutput.getCommits());
+      }
       for (CodebaseSweepingOutput.CodeBaseCommit commit : codebaseSweepingOutput.getCommits()) {
         ciBuildCommits.add(CIBuildCommit.builder()
                                .id(commit.getId())
@@ -374,5 +401,10 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
       log.warn("Failed to get repo info, assuming private. url", e);
       return true;
     }
+  }
+
+  private boolean shouldReverseCommitList(String repoUrl) {
+    // Azure gives latest commit first
+    return !repoUrl.contains(AZURE_REPO_BASE_URL);
   }
 }

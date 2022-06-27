@@ -15,6 +15,7 @@ import io.harness.logging.UnitProgress;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.execution.run.NodeRunInfo;
 import io.harness.pms.contracts.execution.skip.SkipInfo;
 import io.harness.pms.contracts.steps.SkipType;
@@ -70,6 +71,7 @@ public class GraphVertexDTO {
 
   // UI
   RepresentationStrategy representationStrategy = RepresentationStrategy.CAMELCASE;
+  StrategyMetadata strategyMetadata;
 
   public Map<String, OrchestrationMap> getOrchestrationMapOutcomes() {
     return OrchestrationMapBackwardCompatibilityUtils.convertToOrchestrationMap(outcomes);

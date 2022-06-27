@@ -21,11 +21,13 @@ import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.mongo.MongoConfig;
+import io.harness.notification.NotificationClientConfiguration;
 import io.harness.remote.CEAzureSetupConfig;
 import io.harness.remote.CEGcpSetupConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
 import io.harness.secret.SecretsConfiguration;
+import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.timescaledb.TimeScaleDBConfig;
 
 import ch.qos.logback.access.spi.IAccessEvent;
@@ -100,12 +102,15 @@ public class CENextGenConfiguration extends Configuration {
   @JsonProperty(value = "ceGcpSetupConfig") @ConfigSecret private CEGcpSetupConfig ceGcpSetupConfig;
   @JsonProperty(value = "awsConfig") @ConfigSecret private AwsConfig awsConfig;
 
+  @JsonProperty("segmentConfiguration") @ConfigSecret private SegmentConfiguration segmentConfiguration;
+
   @JsonProperty(value = "hostname") private String hostname = "localhost";
   @JsonProperty(value = "basePathPrefix") private String basePathPrefix = "";
   @JsonProperty(value = "awsConnectorCreatedInstantForPolicyCheck")
   private String awsConnectorCreatedInstantForPolicyCheck;
 
   @JsonProperty("secretsConfiguration") private SecretsConfiguration secretsConfiguration;
+  @JsonProperty("notificationClient") private NotificationClientConfiguration notificationClientConfiguration;
 
   public SwaggerBundleConfiguration getSwaggerBundleConfiguration() {
     SwaggerBundleConfiguration defaultSwaggerConf = new SwaggerBundleConfiguration();

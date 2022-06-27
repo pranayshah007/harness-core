@@ -20,7 +20,7 @@ java_library(
         "@maven//:com_google_guava_guava",
         "@maven//:io_swagger_swagger_annotations",
         "@maven//:javax_validation_validation_api",
-        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_hibernate_validator_hibernate_validator",
         "@maven//:org_springframework_data_spring_data_commons",
     ],
 )

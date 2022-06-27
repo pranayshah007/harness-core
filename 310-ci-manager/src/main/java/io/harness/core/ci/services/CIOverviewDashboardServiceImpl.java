@@ -7,8 +7,8 @@
 
 package io.harness.core.ci.services;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import io.harness.app.beans.entities.BuildActiveInfo;
 import io.harness.app.beans.entities.BuildCount;
 import io.harness.app.beans.entities.BuildExecutionInfo;
@@ -33,9 +33,8 @@ import io.harness.ng.core.dashboard.ServiceDeploymentInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.TimeScaleDBService;
+import lombok.extern.slf4j.Slf4j;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -46,7 +45,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.beans.execution.ExecutionSource.Type.WEBHOOK;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 @Singleton
 @Slf4j
@@ -198,7 +199,7 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
   public UsageDataDTO getActiveCommitter(String accountId, long timestamp) {
     long totalTries = 0;
     String query = "select distinct moduleinfo_author_id, projectidentifier , orgidentifier from " + tableName
-        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and startts<=? and startts>=?;";
+        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and trigger_type='" + WEBHOOK + "' and startts<=? and startts>=?;";
 
     while (totalTries <= MAX_RETRY_COUNT) {
       ResultSet resultSet = null;

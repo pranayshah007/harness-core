@@ -12,7 +12,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum GithubApiAccessType {
   @JsonProperty(GithubConnectorConstants.GITHUB_APP) GITHUB_APP(GithubConnectorConstants.GITHUB_APP),
-  @JsonProperty(GithubConnectorConstants.TOKEN) TOKEN(GithubConnectorConstants.TOKEN);
+  @JsonProperty(GithubConnectorConstants.TOKEN) TOKEN(GithubConnectorConstants.TOKEN),
+  @JsonProperty(GithubConnectorConstants.OAUTH) OAUTH(GithubConnectorConstants.OAUTH);
 
   private final String displayName;
 

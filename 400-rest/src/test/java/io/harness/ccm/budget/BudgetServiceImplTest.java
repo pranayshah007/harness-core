@@ -15,9 +15,8 @@ import static io.harness.rule.OwnerRule.SHUBHANSHU;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
@@ -43,8 +42,6 @@ import software.wings.graphql.datafetcher.billing.BillingDataQueryBuilder;
 import software.wings.graphql.datafetcher.billing.BillingDataQueryMetadata;
 import software.wings.graphql.datafetcher.billing.BillingDataQueryMetadata.BillingDataMetaDataFields;
 import software.wings.graphql.datafetcher.billing.QLBillingStatsHelper;
-import software.wings.graphql.datafetcher.billing.QLCCMAggregationFunction;
-import software.wings.graphql.schema.type.aggregation.billing.QLCCMTimeSeriesAggregation;
 import software.wings.graphql.schema.type.aggregation.budget.QLBudgetDataList;
 import software.wings.graphql.schema.type.aggregation.budget.QLBudgetTableData;
 import software.wings.service.intfc.ce.CeAccountExpirationChecker;
@@ -146,19 +143,17 @@ public class BudgetServiceImplTest extends CategoryTest {
                   .actualCost(50.0)
                   .alertThresholds(new AlertThreshold[] {alertThreshold})
                   .build();
-    when(billingDataQueryBuilder.formBudgetInsightQuery(anyString(), anyList(), any(QLCCMAggregationFunction.class),
-             any(QLCCMTimeSeriesAggregation.class), anyList()))
-        .thenReturn(queryData);
+    when(billingDataQueryBuilder.formBudgetInsightQuery(any(), any(), any(), any(), any())).thenReturn(queryData);
     when(timeScaleDBService.getDBConnection()).thenReturn(connection);
     when(connection.createStatement()).thenReturn(statement);
-    when(statement.executeQuery(anyString())).thenReturn(resultSet);
+    when(statement.executeQuery(any())).thenReturn(resultSet);
     when(ceBudgetFeature.getMaxUsageAllowedForAccount(accountId)).thenReturn(100);
     when(budgetDao.list(accountId)).thenReturn(Stream.of(budget1, budget2).collect(Collectors.toList()));
     when(budgetDao.list(accountId, budget1.getName())).thenReturn(Collections.singletonList(budget1));
     when(budgetDao.list(accountId, budget2.getName())).thenReturn(Collections.singletonList(budget2));
     when(budgetDao.get(budget1.getUuid())).thenReturn(budget1);
     when(budgetDao.get(budget2.getUuid())).thenReturn(budget1);
-    doNothing().when(accountChecker).checkIsCeEnabled(anyString());
+    doNothing().when(accountChecker).checkIsCeEnabled(any());
     when(statsHelper.validateIds(any(), any(), any())).thenReturn(true);
     resetValues();
     mockResultSet();

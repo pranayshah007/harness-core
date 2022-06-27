@@ -9,6 +9,7 @@ package io.harness.ccm.remote.resources;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -22,6 +23,8 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.telemetry.Category;
+import io.harness.telemetry.TelemetryReporter;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -34,6 +37,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -67,6 +72,14 @@ import org.springframework.stereotype.Service;
 public class BudgetResource {
   @Inject private BudgetService budgetService;
   @Inject private CEViewService ceViewService;
+  @Inject private TelemetryReporter telemetryReporter;
+
+  private static final String BUDGET_CREATED = "Budget Created";
+  private static final String MODULE = "module";
+  private static final String MODULE_NAME = "CCM";
+  private static final String BUDGET_PERIOD = "budget_period";
+  private static final String BUDGET_TYPE = "budget_type";
+  private static final String ALERTS_COUNT = "alerts_count";
 
   @POST
   @Timed
@@ -90,7 +103,15 @@ public class BudgetResource {
       @RequestBody(required = true, description = "Budget definition") @NotNull @Valid Budget budget) {
     budget.setAccountId(accountId);
     budget.setNgBudget(true);
-    return ResponseDTO.newResponse(budgetService.create(budget));
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(BUDGET_PERIOD, budget.getPeriod());
+    properties.put(BUDGET_TYPE, budget.getType());
+    properties.put(ALERTS_COUNT, budget.getAlertThresholds().length);
+    String createCall = budgetService.create(budget);
+    telemetryReporter.sendTrackEvent(
+        BUDGET_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    return ResponseDTO.newResponse(createCall);
   }
 
   @POST

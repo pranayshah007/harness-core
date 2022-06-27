@@ -114,7 +114,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   @Mock SecretDecryptionService secretDecryptionService;
   @Mock GitClientV2 gitClient;
   @Mock private EncryptDecryptHelper encryptDecryptHelper;
-  @Mock private DelegateFileManagerBase delegateFileManager;
+  @Mock private DelegateFileManagerBase delegateFileManagerBase;
   @Mock ArtifactoryNgService artifactoryNgService;
   @Mock ArtifactoryRequestMapper artifactoryRequestMapper;
 
@@ -303,7 +303,8 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   public void testFetchConfigFileAndPrepareScriptDir() throws IOException {
     ClassLoader classLoader = TerraformBaseHelperImplTest.class.getClassLoader();
 
-    List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(mock(EncryptedDataDetail.class));
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().fieldName("fieldName").build();
+    List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(encryptedDataDetail);
     ArtifactoryUsernamePasswordAuthDTO credentials = ArtifactoryUsernamePasswordAuthDTO.builder().build();
     ArtifactoryConnectorDTO artifactoryConnectorDTO =
         ArtifactoryConnectorDTO.builder()
@@ -323,7 +324,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
         .when(artifactoryNgService)
         .downloadArtifacts(eq(artifactoryConfigRequest), any(), any(), eq("artifactPath"), eq("artifactName"));
     doReturn(new ByteArrayInputStream("test".getBytes()))
-        .when(delegateFileManager)
+        .when(delegateFileManagerBase)
         .downloadByFileId(any(), any(), any());
 
     terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
@@ -535,7 +536,8 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     FileIo.createDirectoryIfDoesNotExist(tfvarDir);
     ClassLoader classLoader = TerraformBaseHelperImplTest.class.getClassLoader();
 
-    List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(mock(EncryptedDataDetail.class));
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().fieldName("fieldName").build();
+    List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(encryptedDataDetail);
     ArtifactoryUsernamePasswordAuthDTO credentials = ArtifactoryUsernamePasswordAuthDTO.builder().build();
     ArtifactoryConnectorDTO artifactoryConnectorDTO =
         ArtifactoryConnectorDTO.builder()
@@ -555,7 +557,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
         .thenReturn(classLoader.getResourceAsStream("terraform/localresource.tfvar.zip"))
         .thenReturn(classLoader.getResourceAsStream("terraform/localresource.tfvar.zip"));
     doReturn(new ByteArrayInputStream("test".getBytes()))
-        .when(delegateFileManager)
+        .when(delegateFileManagerBase)
         .downloadByFileId(any(), any(), any());
 
     List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
@@ -579,7 +581,8 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     FileIo.createDirectoryIfDoesNotExist(tfvarDir);
     ClassLoader classLoader = TerraformBaseHelperImplTest.class.getClassLoader();
 
-    List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(mock(EncryptedDataDetail.class));
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().fieldName("fieldName").build();
+    List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(encryptedDataDetail);
     ArtifactoryUsernamePasswordAuthDTO credentials = ArtifactoryUsernamePasswordAuthDTO.builder().build();
     ArtifactoryConnectorDTO artifactoryConnectorDTO =
         ArtifactoryConnectorDTO.builder()
@@ -599,7 +602,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
         .when(artifactoryNgService)
         .downloadArtifacts(eq(artifactoryConfigRequest), any(), any(), eq("artifactPath"), eq("artifactName"));
     doReturn(new ByteArrayInputStream("test".getBytes()))
-        .when(delegateFileManager)
+        .when(delegateFileManagerBase)
         .downloadByFileId(any(), any(), any());
 
     List<TerraformVarFileInfo> terraformVarFileInfos = getGitTerraformFileInfoList();
@@ -628,7 +631,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
         "accountId", "delegateId", "taskId", "entityId", "planName", tfPlanJsonFile.getAbsolutePath());
 
     ArgumentCaptor<DelegateFile> delegateFileCaptor = ArgumentCaptor.forClass(DelegateFile.class);
-    verify(delegateFileManager, times(1)).upload(delegateFileCaptor.capture(), any(InputStream.class));
+    verify(delegateFileManagerBase, times(1)).upload(delegateFileCaptor.capture(), any(InputStream.class));
     DelegateFile delegateFile = delegateFileCaptor.getValue();
     assertThat(delegateFile.getDelegateId()).isEqualTo("delegateId");
     assertThat(delegateFile.getAccountId()).isEqualTo("accountId");

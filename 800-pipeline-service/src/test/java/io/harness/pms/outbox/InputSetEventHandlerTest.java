@@ -79,8 +79,8 @@ public class InputSetEventHandlerTest extends CategoryTest {
     String identifier = randomAlphabetic(10);
     InputSetEntity inputSet =
         InputSetEntity.builder().name(randomAlphabetic(10)).identifier(identifier).yaml(newYaml).build();
-    InputSetCreateEvent inputSetCreateEvent =
-        new InputSetCreateEvent(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSet);
+    InputSetCreateEvent inputSetCreateEvent = new InputSetCreateEvent(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSet, false);
     String eventData = objectMapper.writeValueAsString(inputSetCreateEvent);
     GlobalContext globalContext = new GlobalContext();
     Principal principal =
@@ -126,7 +126,7 @@ public class InputSetEventHandlerTest extends CategoryTest {
     InputSetEntity oldInputSet =
         InputSetEntity.builder().name(randomAlphabetic(10)).identifier(identifier).yaml(oldYaml).build();
     InputSetUpdateEvent inputSetUpdateEvent = new InputSetUpdateEvent(
-        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, newInputSet, oldInputSet);
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, newInputSet, oldInputSet, false);
     String eventData = objectMapper.writeValueAsString(inputSetUpdateEvent);
     GlobalContext globalContext = new GlobalContext();
     Principal principal =
@@ -168,8 +168,8 @@ public class InputSetEventHandlerTest extends CategoryTest {
     String identifier = randomAlphabetic(10);
     InputSetEntity inputSet =
         InputSetEntity.builder().name(randomAlphabetic(10)).identifier(identifier).yaml(oldYaml).build();
-    InputSetDeleteEvent inputSetDeleteEvent =
-        new InputSetDeleteEvent(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSet);
+    InputSetDeleteEvent inputSetDeleteEvent = new InputSetDeleteEvent(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSet, false);
     String eventData = objectMapper.writeValueAsString(inputSetDeleteEvent);
     GlobalContext globalContext = new GlobalContext();
     Principal principal =

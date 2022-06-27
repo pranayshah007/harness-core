@@ -143,7 +143,6 @@ import software.wings.beans.RancherKubernetesInfrastructureMapping;
 import software.wings.beans.Role;
 import software.wings.beans.RoleType;
 import software.wings.beans.ServiceInstance;
-import software.wings.beans.ServiceVariable;
 import software.wings.beans.Setup;
 import software.wings.beans.Setup.SetupStatus;
 import software.wings.beans.TechStack;
@@ -193,6 +192,7 @@ import software.wings.common.RancherK8sClusterProcessor;
 import software.wings.delegatetasks.buildsource.BuildSourceCallback;
 import software.wings.delegatetasks.buildsource.BuildSourceCleanupCallback;
 import software.wings.delegatetasks.event.EventsDeliveryCallback;
+import software.wings.expression.EncryptedDataDetails;
 import software.wings.expression.ShellScriptEnvironmentVariables;
 import software.wings.helpers.ext.cloudformation.CloudFormationCompletionFlag;
 import software.wings.helpers.ext.ecs.request.EcsListenerUpdateRequestConfigData;
@@ -351,8 +351,6 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(AppPermission.class, 5351);
     kryo.register(UserGroup.class, 5349);
     kryo.register(ServiceInstance.class, 5028);
-    kryo.register(ServiceVariable.OverrideType.class, 5361);
-    kryo.register(ServiceVariable.class, 5359);
     kryo.register(SSOType.class, 5503);
     kryo.register(User.class, 5355);
     kryo.register(UserInvite.class, 5182);
@@ -591,5 +589,6 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(RancherKubernetesInfrastructure.class, 50007);
     kryo.register(RancherStateExecutionData.class, 50009);
     kryo.register(UserGroupEntityReference.class, 50010);
+    kryo.register(EncryptedDataDetails.class, 50013);
   }
 }

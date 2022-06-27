@@ -54,7 +54,6 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
-import com.sun.istack.internal.NotNull;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -62,6 +61,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -265,7 +265,8 @@ public class MonitoredServiceResource {
                                                             .orgIdentifier(projectParams.getOrgIdentifier())
                                                             .projectIdentifier(projectParams.getProjectIdentifier())
                                                             .build();
-    return ResponseDTO.newResponse(monitoredServiceService.get(serviceEnvironmentParams));
+    return ResponseDTO.newResponse(
+        monitoredServiceService.getApplicationMonitoredServiceResponse(serviceEnvironmentParams));
   }
 
   @GET

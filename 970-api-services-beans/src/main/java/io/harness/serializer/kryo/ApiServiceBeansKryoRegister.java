@@ -124,6 +124,7 @@ import io.harness.shell.ScriptType;
 import io.harness.shell.ShellExecutionData;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
+import io.harness.ssh.FileSourceType;
 
 import software.wings.api.ContainerServiceData;
 import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
@@ -173,6 +174,7 @@ import com.amazonaws.services.ec2.model.IamInstanceProfile;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.InstanceBlockDeviceMapping;
 import com.amazonaws.services.ec2.model.InstanceIpv6Address;
+import com.amazonaws.services.ec2.model.InstanceMaintenanceOptions;
 import com.amazonaws.services.ec2.model.InstanceMetadataOptionsResponse;
 import com.amazonaws.services.ec2.model.InstanceNetworkInterface;
 import com.amazonaws.services.ec2.model.InstanceNetworkInterfaceAssociation;
@@ -182,6 +184,7 @@ import com.amazonaws.services.ec2.model.InstanceState;
 import com.amazonaws.services.ec2.model.LicenseConfiguration;
 import com.amazonaws.services.ec2.model.Monitoring;
 import com.amazonaws.services.ec2.model.Placement;
+import com.amazonaws.services.ec2.model.PrivateDnsNameOptionsResponse;
 import com.amazonaws.services.ec2.model.ProductCode;
 import com.amazonaws.services.ec2.model.StateReason;
 import com.amazonaws.services.ec2.model.Tag;
@@ -231,6 +234,8 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(CpuOptions.class, 1022);
     kryo.register(CapacityReservationSpecificationResponse.class, 1023);
     kryo.register(CapacityReservationTargetResponse.class, 1024);
+    kryo.register(InstanceMaintenanceOptions.class, 1027);
+    kryo.register(PrivateDnsNameOptionsResponse.class, 1028);
     kryo.register(KubernetesClientException.class, 2000);
     kryo.register(JSONException.class, 2001);
     kryo.register(SumoServerException.class, 2003);
@@ -425,5 +430,6 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureKubernetesCluster.class, 5538);
     kryo.register(SecretManagementDelegateException.class, 5585);
     kryo.register(ServiceNowTemplate.class, 97113);
+    kryo.register(FileSourceType.class, 97115);
   }
 }

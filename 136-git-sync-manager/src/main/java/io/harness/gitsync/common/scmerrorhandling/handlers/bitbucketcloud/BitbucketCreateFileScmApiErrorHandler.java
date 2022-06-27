@@ -18,25 +18,32 @@ import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
+import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.util.ErrorMessageFormatter;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(PL)
 public class BitbucketCreateFileScmApiErrorHandler implements ScmApiErrorHandler {
-  public static final String CREATE_FILE_REQUEST_FAILURE = "The requested file couldn't be created in Bitbucket. ";
+  public static final String CREATE_FILE_REQUEST_FAILURE =
+      "The requested file<FILEPATH> couldn't be created in Bitbucket. ";
 
   @Override
-  public void handleError(int statusCode, String errorMessage) throws WingsException {
+  public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
     switch (statusCode) {
       case 401:
       case 403:
-        throw NestedExceptionUtils.hintWithExplanationException(INVALID_CREDENTIALS,
-            CREATE_FILE_REQUEST_FAILURE + INVALID_CONNECTOR_CREDS, new ScmUnauthorizedException(errorMessage));
+        throw NestedExceptionUtils.hintWithExplanationException(
+            ErrorMessageFormatter.formatMessage(INVALID_CREDENTIALS, errorMetadata),
+            ErrorMessageFormatter.formatMessage(CREATE_FILE_REQUEST_FAILURE + INVALID_CONNECTOR_CREDS, errorMetadata),
+            new ScmUnauthorizedException(errorMessage));
       case 404:
-        throw NestedExceptionUtils.hintWithExplanationException(REPO_NOT_FOUND,
-            CREATE_FILE_REQUEST_FAILURE + ScmErrorExplanations.REPO_NOT_FOUND,
+        throw NestedExceptionUtils.hintWithExplanationException(
+            ErrorMessageFormatter.formatMessage(REPO_NOT_FOUND, errorMetadata),
+            ErrorMessageFormatter.formatMessage(
+                CREATE_FILE_REQUEST_FAILURE + ScmErrorExplanations.REPO_NOT_FOUND, errorMetadata),
             new ScmBadRequestException(errorMessage));
       default:
         log.error(String.format("Error while creating bitbucket file: [%s: %s]", statusCode, errorMessage));

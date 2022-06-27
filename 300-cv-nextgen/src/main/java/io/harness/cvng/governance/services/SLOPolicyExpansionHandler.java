@@ -68,7 +68,8 @@ public class SLOPolicyExpansionHandler implements JsonExpansionHandler {
                                                             .serviceIdentifier(serviceRef)
                                                             .environmentIdentifier(environmentRef)
                                                             .build();
-    MonitoredServiceResponse monitoredServiceResponse = monitoredServiceService.get(serviceEnvironmentParams);
+    MonitoredServiceResponse monitoredServiceResponse =
+        monitoredServiceService.getApplicationMonitoredServiceResponse(serviceEnvironmentParams);
 
     SLOPolicyDTO sloPolicyDTO =
         SLOPolicyDTO.builder().statusOfMonitoredService(SLOPolicyDTO.MonitoredServiceStatus.NOT_CONFIGURED).build();

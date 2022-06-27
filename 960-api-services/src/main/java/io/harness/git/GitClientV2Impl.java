@@ -137,9 +137,10 @@ import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 @Slf4j
 @OwnedBy(CDP)
 public class GitClientV2Impl implements GitClientV2 {
-  private static final int GIT_COMMAND_TIMEOUT = 60;
-  private static final int GIT_COMMAND_RETRY = 2;
-  private static final String UPLOAD_PACK_ERROR = "upload-pack not found";
+  private static final int GIT_COMMAND_RETRY = 3;
+  private static final String UPLOAD_PACK_ERROR = "git-upload-pack";
+  private static final String INVALID_ADVERTISEMENT_ERROR = "invalid advertisement of";
+  private static final String REDIRECTION_BLOCKED_ERROR = "Redirection blocked";
   private static final String TIMEOUT_ERROR = "Connection time out";
 
   @Inject private GitClientHelper gitClientHelper;
@@ -342,7 +343,7 @@ public class GitClientV2Impl implements GitClientV2 {
       lsRemoteCommand = (LsRemoteCommand) getAuthConfiguredCommand(lsRemoteCommand, request);
       RetryPolicy<Object> retryPolicy = getRetryPolicyForCommand(format("[Retrying failed git validation, attempt: {}"),
           format("Git validation failed after retrying {} times"));
-      lsRemoteCommand.setTimeout(GIT_COMMAND_TIMEOUT).setRemote(repoUrl).setHeads(true).setTags(true);
+      lsRemoteCommand.setRemote(repoUrl).setHeads(true).setTags(true);
       final LsRemoteCommand finalLsRemoteCommand = lsRemoteCommand;
       Failsafe.with(retryPolicy).get(() -> finalLsRemoteCommand.call());
       log.info(
@@ -352,12 +353,13 @@ public class GitClientV2Impl implements GitClientV2 {
       if (e instanceof GitAPIException) {
         throw new JGitRuntimeException(e.getMessage(), e);
       } else if (e instanceof FailsafeException) {
-        if (e.getMessage().contains(UPLOAD_PACK_ERROR)) {
+        String message = e.getMessage();
+        if (containsUrlError(message)) {
           throw SCMRuntimeException.builder()
               .message("Couldn't connect to given repo")
               .errorCode(ErrorCode.GIT_CONNECTION_ERROR)
               .build();
-        } else if (e.getMessage().contains(TIMEOUT_ERROR)) {
+        } else if (message.contains(TIMEOUT_ERROR)) {
           throw SCMRuntimeException.builder()
               .message("Git connection timed out")
               .errorCode(ErrorCode.CONNECTION_TIMEOUT)
@@ -366,6 +368,14 @@ public class GitClientV2Impl implements GitClientV2 {
       }
       throw new GeneralException(e.getMessage(), e);
     }
+  }
+
+  private boolean containsUrlError(String message) {
+    if (message.contains(UPLOAD_PACK_ERROR) || message.contains(INVALID_ADVERTISEMENT_ERROR)
+        || message.contains(REDIRECTION_BLOCKED_ERROR)) {
+      return true;
+    }
+    return false;
   }
 
   private RetryPolicy<Object> getRetryPolicyForCommand(String failedAttemptMessage, String failureMessage) {

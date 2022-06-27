@@ -9,6 +9,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//950-subscription-beans:module",
         "//980-commons:module",
         "@maven//:com_stripe_stripe_java",
     ],

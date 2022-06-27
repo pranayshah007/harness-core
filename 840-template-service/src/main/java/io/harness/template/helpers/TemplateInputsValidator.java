@@ -24,6 +24,7 @@ import io.harness.template.beans.refresh.TemplateInfo;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -51,6 +52,7 @@ public class TemplateInputsValidator {
                               .versionLabel(templateEntity.getVersionLabel())
                               .templateEntityType(templateEntity.getTemplateEntityType())
                               .build())
+            .templateResponse(NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity))
             .childrenErrorNodes(new ArrayList<>())
             .build();
 
@@ -136,7 +138,7 @@ public class TemplateInputsValidator {
       if (arrayElement.isArray()) {
         // Value -> Array
         validateNestedTemplateInputsInArray(
-            accountId, orgId, projectId, yamlNode, templateCacheMap, depth, validateTemplateInputsResponse);
+            accountId, orgId, projectId, arrayElement, templateCacheMap, depth, validateTemplateInputsResponse);
       } else if (arrayElement.isObject()) {
         // Value -> Object
         validateNestedTemplateInputsInObject(
@@ -201,6 +203,7 @@ public class TemplateInputsValidator {
                               .templateEntityType(templateEntity.getTemplateEntityType())
                               .versionLabel(templateEntity.getVersionLabel())
                               .build())
+            .templateResponse(NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity))
             .childrenErrorNodes(new ArrayList<>())
             .build();
     return ValidateTemplateInputsResponseDTO.builder().validYaml(true).errorNodeSummary(childErrorNodeSummary).build();

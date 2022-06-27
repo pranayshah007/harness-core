@@ -22,6 +22,7 @@ import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -64,6 +65,7 @@ import io.harness.repositories.user.spring.UserMembershipRepository;
 import io.harness.repositories.user.spring.UserMetadataRepository;
 import io.harness.rule.Owner;
 import io.harness.user.remote.UserClient;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageTestUtils;
 
 import com.google.common.collect.Lists;
@@ -102,6 +104,7 @@ public class NgUserServiceImplTest extends CategoryTest {
   @Mock private AccountOrgProjectHelper accountOrgProjectHelper;
   @Mock private LicenseService licenseService;
   @Mock private LastAdminCheckService lastAdminCheckService;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Spy @Inject @InjectMocks private NgUserServiceImpl ngUserService;
   private String accountIdentifier;
   private String orgIdentifier;
@@ -348,6 +351,10 @@ public class NgUserServiceImplTest extends CategoryTest {
     }
     when(userMetadataRepository.findDistinctByUserId(userId))
         .thenReturn(Optional.of(UserMetadata.builder().userId(userId).build()));
+    boolean isAccountBasicRoleFeatureFlag = false;
+    when(ngFeatureFlagHelperService.isEnabled(
+             scope.getAccountIdentifier(), io.harness.beans.FeatureName.ACCOUNT_BASIC_ROLE))
+        .thenReturn(isAccountBasicRoleFeatureFlag);
     doNothing()
         .when(ngUserService)
         .addUserToScopeInternal(userId, UserMembershipUpdateSource.USER, scope, getDefaultRoleIdentifier(scope));
@@ -359,7 +366,8 @@ public class NgUserServiceImplTest extends CategoryTest {
                    userId, UserMembershipUpdateSource.USER, parentScope, getDefaultRoleIdentifier(parentScope)));
     doNothing()
         .when(ngUserService)
-        .createRoleAssignments(userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope));
+        .createRoleAssignments(
+            userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope), isAccountBasicRoleFeatureFlag);
 
     UserGroupFilterDTO userGroupFilterDTO =
         UserGroupFilterDTO.builder()
@@ -407,7 +415,7 @@ public class NgUserServiceImplTest extends CategoryTest {
   private void assertAddUserToScope(Scope scope, List<String> userIds, List<String> userGroups) {
     verify(userMetadataRepository, times(userIds.size())).findDistinctByUserId(any());
     verify(ngUserService, times(userIds.size() * getRank(scope))).addUserToScopeInternal(any(), any(), any(), any());
-    verify(ngUserService, times(userIds.size())).createRoleAssignments(any(), any(), any());
+    verify(ngUserService, times(userIds.size())).createRoleAssignments(any(), any(), any(), anyBoolean());
     verify(userGroupService, times(isEmpty(userGroups) ? 0 : userIds.size())).list(any(UserGroupFilterDTO.class));
     verify(userGroupService, times(userIds.size())).addUserToUserGroups(any(Scope.class), any(), any());
   }

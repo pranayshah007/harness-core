@@ -60,9 +60,9 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
@@ -363,7 +363,7 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
 
     doReturn(singletonList("workflow1"))
         .when(workflowService)
-        .obtainWorkflowNamesReferencedByInfrastructureDefinition(anyString(), anyString());
+        .obtainWorkflowNamesReferencedByInfrastructureDefinition(any(), any());
     infrastructureDefinitionService.ensureSafeToDelete("appid", infrastructureDefinition);
   }
 
@@ -374,13 +374,11 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
     final InfrastructureDefinition infrastructureDefinition =
         InfrastructureDefinition.builder().uuid("infraid").name("infra_name").build();
 
-    doReturn(emptyList())
-        .when(workflowService)
-        .obtainWorkflowNamesReferencedByInfrastructureDefinition(anyString(), anyString());
+    doReturn(emptyList()).when(workflowService).obtainWorkflowNamesReferencedByInfrastructureDefinition(any(), any());
 
     doReturn(singletonList("pipeline1"))
         .when(pipelineService)
-        .obtainPipelineNamesReferencedByTemplatedEntity(anyString(), anyString());
+        .obtainPipelineNamesReferencedByTemplatedEntity(any(), any());
 
     infrastructureDefinitionService.ensureSafeToDelete("appid", infrastructureDefinition);
   }
@@ -392,17 +390,13 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
     final InfrastructureDefinition infrastructureDefinition =
         InfrastructureDefinition.builder().uuid("infraid").name("infra_name").build();
 
-    doReturn(emptyList())
-        .when(workflowService)
-        .obtainWorkflowNamesReferencedByInfrastructureDefinition(anyString(), anyString());
+    doReturn(emptyList()).when(workflowService).obtainWorkflowNamesReferencedByInfrastructureDefinition(any(), any());
 
-    doReturn(emptyList())
-        .when(pipelineService)
-        .obtainPipelineNamesReferencedByTemplatedEntity(anyString(), anyString());
+    doReturn(emptyList()).when(pipelineService).obtainPipelineNamesReferencedByTemplatedEntity(any(), any());
 
     doReturn(singletonList("triggerid"))
         .when(triggerService)
-        .obtainTriggerNamesReferencedByTemplatedEntityId(anyString(), anyString());
+        .obtainTriggerNamesReferencedByTemplatedEntityId(any(), any());
 
     infrastructureDefinitionService.ensureSafeToDelete("appid", infrastructureDefinition);
   }
@@ -416,7 +410,7 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
 
     doReturn(singletonList(WorkflowExecution.builder().status(ExecutionStatus.RUNNING).name("Test Workflow").build()))
         .when(workflowExecutionService)
-        .getRunningExecutionsForInfraDef(anyString(), anyString());
+        .getRunningExecutionsForInfraDef(any(), any());
 
     infrastructureDefinitionService.ensureSafeToDelete("appid", infrastructureDefinition);
   }
@@ -436,9 +430,7 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
     retrievedWorkflowExecutions.add(
         WorkflowExecution.builder().status(ExecutionStatus.RUNNING).name("Test Workflow 3").build());
 
-    doReturn(retrievedWorkflowExecutions)
-        .when(workflowExecutionService)
-        .getRunningExecutionsForInfraDef(anyString(), anyString());
+    doReturn(retrievedWorkflowExecutions).when(workflowExecutionService).getRunningExecutionsForInfraDef(any(), any());
 
     try {
       infrastructureDefinitionService.ensureSafeToDelete("appid", infrastructureDefinition);
@@ -466,7 +458,7 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDelete() {
     mockPhysicalInfra();
-    when(appService.getAccountIdByAppId(anyString())).thenReturn(ACCOUNT_ID);
+    when(appService.getAccountIdByAppId(any())).thenReturn(ACCOUNT_ID);
     when(workflowExecutionService.getRunningExecutionsForInfraDef(APP_ID, INFRA_DEFINITION_ID)).thenReturn(asList());
     when(workflowService.obtainWorkflowNamesReferencedByInfrastructureDefinition(APP_ID, INFRA_DEFINITION_ID))
         .thenReturn(asList());
@@ -477,10 +469,9 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
 
     infrastructureDefinitionService.delete(APP_ID, INFRA_DEFINITION_ID);
 
-    verify(wingsPersistence, times(1)).delete(InfrastructureDefinition.class, APP_ID, INFRA_DEFINITION_ID);
+    verify(wingsPersistence, times(1)).delete(any(), anyString(), anyString());
     verify(yamlPushService, times(1))
-        .pushYamlChangeSet(eq(ACCOUNT_ID), any(InfrastructureDefinitionService.class), eq(null), eq(Event.Type.DELETE),
-            eq(false), eq(false));
+        .pushYamlChangeSet(eq(ACCOUNT_ID), any(), eq(null), eq(Event.Type.DELETE), eq(false), eq(false));
     ArgumentCaptor<PruneEvent> captor = ArgumentCaptor.forClass(PruneEvent.class);
     verify(pruneQueue, times(1)).send(captor.capture());
     assertThat(captor.getValue().getEntityId()).isEqualTo(INFRA_DEFINITION_ID);
@@ -777,7 +768,7 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
 
     queryParams.put("appId", Collections.singletonList("app1"));
     Service service = Service.builder().deploymentType(DeploymentType.SSH).build();
-    when(serviceResourceService.get(anyString(), anyString())).thenReturn(service);
+    when(serviceResourceService.get(any(), any())).thenReturn(service);
     infrastructureDefinitionService.applyServiceFilter(pageRequest, Collections.singletonList("s1"));
     assertThat(pageRequest.getFilters().size() == 2).isTrue();
   }
@@ -851,7 +842,7 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
           .isThrownBy(() -> infrastructureDefinitionService.validateAndPrepareInfraDefinition(invalid_gcp_k8s_prov));
       ((GoogleKubernetesEngine) invalid_gcp_k8s_prov.getInfrastructure()).getExpressions().put(key, "default");
     }
-    when(mockSettingsService.getByAccountAndId(anyString(), anyString()))
+    when(mockSettingsService.getByAccountAndId(any(), any()))
         .thenReturn(SettingAttribute.Builder.aSettingAttribute()
                         .withValue(GcpConfig.builder()
                                        .useDelegateSelectors(true)
@@ -1015,28 +1006,28 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
     InfrastructureDefinitionServiceImpl definitionService = spy(InfrastructureDefinitionServiceImpl.class);
     SettingsService settingsService = mock(SettingsService.class);
     FieldUtils.writeField(definitionService, "settingsService", settingsService, true);
-    doReturn(null).when(definitionService).get(anyString(), anyString());
+    doReturn(null).when(definitionService).get(any(), any());
 
     assertThatThrownBy(() -> definitionService.listRoutesForPcf("app", "def"))
         .isNotInstanceOf(NullPointerException.class);
 
-    doReturn(InfrastructureDefinition.builder().build()).when(definitionService).get(anyString(), anyString());
+    doReturn(InfrastructureDefinition.builder().build()).when(definitionService).get(any(), any());
     assertThatThrownBy(() -> definitionService.listRoutesForPcf("app", "def"));
 
     doReturn(InfrastructureDefinition.builder().infrastructure(AwsAmiInfrastructure.builder().build()).build())
         .when(definitionService)
-        .get(anyString(), anyString());
+        .get(any(), any());
     assertThatThrownBy(() -> definitionService.listRoutesForPcf("app", "def"))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Not PcfInfraStructure, invalid type");
 
     doReturn(InfrastructureDefinition.builder().infrastructure(PcfInfraStructure.builder().build()).build())
         .when(definitionService)
-        .get(anyString(), anyString());
-    doReturn(null).when(settingsService).get(anyString());
+        .get(any(), any());
+    doReturn(null).when(settingsService).get(any());
     assertThatThrownBy(() -> definitionService.listRoutesForPcf("app", "def"));
 
-    doReturn(aSettingAttribute().withValue(AwsConfig.builder().build()).build()).when(settingsService).get(anyString());
+    doReturn(aSettingAttribute().withValue(AwsConfig.builder().build()).build()).when(settingsService).get(any());
     assertThatThrownBy(() -> definitionService.listRoutesForPcf("app", "def"))
         .isInstanceOf(InvalidRequestException.class);
   }
@@ -1122,7 +1113,7 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
         InfrastructureDefinition.builder().uuid("infra-uuid").envId("envid").appId("appid").name("infra-name").build();
 
     when(wingsPersistence.save(any(InfrastructureDefinition.class))).thenReturn(infraDef.getUuid());
-    when(appService.getAccountIdByAppId(anyString())).thenReturn(ACCOUNT_ID);
+    when(appService.getAccountIdByAppId(any())).thenReturn(ACCOUNT_ID);
 
     infrastructureDefinitionService.save(infraDef, false, true);
     verify(infrastructureDefinitionService, times(0))
@@ -1343,7 +1334,7 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
 
     queryParams.put("serviceId", Collections.singletonList("s1"));
     Service service = Service.builder().deploymentType(DeploymentType.SSH).build();
-    when(serviceResourceService.get(anyString(), anyString())).thenReturn(service);
+    when(serviceResourceService.get(any(), any())).thenReturn(service);
 
     assertThatThrownBy(() -> infrastructureDefinitionService.list(pageRequest))
         .isInstanceOf(InvalidRequestException.class)
@@ -1389,7 +1380,7 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
 
     queryParams.put("serviceId", Collections.singletonList("s1"));
     Service service = Service.builder().deploymentType(DeploymentType.SSH).build();
-    when(serviceResourceService.get(anyString(), anyString())).thenReturn(service);
+    when(serviceResourceService.get(any(), any())).thenReturn(service);
 
     queryParams.put("appId", Collections.singletonList(APP_ID));
     PageResponse<InfrastructureDefinition> pageResponse = new PageResponse<>();
@@ -1444,17 +1435,17 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
                  .infrastructure(AwsEcsInfrastructure.builder().region(Regions.US_EAST_1.name()).build())
                  .build())
         .when(wingsPersistence)
-        .getWithAppId(any(), anyString(), anyString());
+        .getWithAppId(any(), any(), any());
 
     doReturn(SettingAttribute.Builder.aSettingAttribute().withCategory(SettingCategory.SETTING).build())
         .when(mockSettingsService)
-        .get(anyString());
+        .get(any());
 
     AwsInfrastructureProvider awsInfrastructureProvider = mock(AwsInfrastructureProvider.class);
     doReturn(Arrays.asList("a", "b", "c", "a"))
         .when(awsInfrastructureProvider)
-        .listElasticBalancers(any(), anyString(), anyString());
-    doReturn(awsInfrastructureProvider).when(infrastructureProviderMap).get(anyString());
+        .listElasticBalancers(any(), any(), any());
+    doReturn(awsInfrastructureProvider).when(infrastructureProviderMap).get(any());
 
     Map<String, String> loadBalancers =
         infrastructureDefinitionService.listElasticLoadBalancers(APP_ID, INFRA_MAPPING_ID);
@@ -1470,17 +1461,17 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
                  .provisionerId("provisioner1")
                  .build())
         .when(wingsPersistence)
-        .getWithAppId(any(), anyString(), anyString());
+        .getWithAppId(any(), any(), any());
 
     doReturn(SettingAttribute.Builder.aSettingAttribute().withCategory(SettingCategory.SETTING).build())
         .when(mockSettingsService)
-        .get(anyString());
+        .get(any());
 
     AwsInfrastructureProvider awsInfrastructureProvider = mock(AwsInfrastructureProvider.class);
     doThrow(new RuntimeException("Failed to fetch ELB from AWS"))
         .when(awsInfrastructureProvider)
-        .listElasticBalancers(any(), anyString(), anyString());
-    doReturn(awsInfrastructureProvider).when(infrastructureProviderMap).get(anyString());
+        .listElasticBalancers(any(), any(), any());
+    doReturn(awsInfrastructureProvider).when(infrastructureProviderMap).get(any());
 
     Map<String, String> loadBalancers =
         infrastructureDefinitionService.listElasticLoadBalancers(APP_ID, INFRA_MAPPING_ID);
@@ -1495,17 +1486,17 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
                  .infrastructure(AwsEcsInfrastructure.builder().region(Regions.US_EAST_1.name()).build())
                  .build())
         .when(wingsPersistence)
-        .getWithAppId(any(), anyString(), anyString());
+        .getWithAppId(any(), any(), any());
 
     doReturn(SettingAttribute.Builder.aSettingAttribute().withCategory(SettingCategory.SETTING).build())
         .when(mockSettingsService)
-        .get(anyString());
+        .get(any());
 
     AwsInfrastructureProvider awsInfrastructureProvider = mock(AwsInfrastructureProvider.class);
     doThrow(new RuntimeException("Failed to fetch ELB from AWS"))
         .when(awsInfrastructureProvider)
-        .listElasticBalancers(any(), anyString(), anyString());
-    doReturn(awsInfrastructureProvider).when(infrastructureProviderMap).get(anyString());
+        .listElasticBalancers(any(), any(), any());
+    doReturn(awsInfrastructureProvider).when(infrastructureProviderMap).get(any());
 
     try {
       infrastructureDefinitionService.listElasticLoadBalancers(APP_ID, INFRA_MAPPING_ID);
@@ -1523,18 +1514,18 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
                  .infrastructure(AwsEcsInfrastructure.builder().region(Regions.US_EAST_1.name()).build())
                  .build())
         .when(wingsPersistence)
-        .getWithAppId(any(), anyString(), anyString());
+        .getWithAppId(any(), any(), any());
 
     doReturn(SettingAttribute.Builder.aSettingAttribute().withCategory(SettingCategory.SETTING).build())
         .when(mockSettingsService)
-        .get(anyString());
+        .get(any());
 
     AwsInfrastructureProvider awsInfrastructureProvider = mock(AwsInfrastructureProvider.class);
     Map<String, String> targetGroups = new HashMap<>();
     targetGroups.put("arn1", "tg1");
     targetGroups.put("arn2", "tg2");
-    doReturn(targetGroups).when(awsInfrastructureProvider).listTargetGroups(any(), anyString(), eq("lb1"), anyString());
-    doReturn(awsInfrastructureProvider).when(infrastructureProviderMap).get(anyString());
+    doReturn(targetGroups).when(awsInfrastructureProvider).listTargetGroups(any(), any(), eq("lb1"), any());
+    doReturn(awsInfrastructureProvider).when(infrastructureProviderMap).get(any());
 
     Map<String, String> loadBalancers =
         infrastructureDefinitionService.listTargetGroups(APP_ID, INFRA_DEFINITION_ID, "lb1");
@@ -1550,11 +1541,11 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
                  .provisionerId("provisioner1")
                  .build())
         .when(wingsPersistence)
-        .getWithAppId(any(), anyString(), anyString());
+        .getWithAppId(any(), any(), any());
 
     doReturn(SettingAttribute.Builder.aSettingAttribute().withCategory(SettingCategory.SETTING).build())
         .when(mockSettingsService)
-        .get(anyString());
+        .get(any());
 
     AwsInfrastructureProvider awsInfrastructureProvider = mock(AwsInfrastructureProvider.class);
     Map<String, String> targetGroups = new HashMap<>();
@@ -1562,8 +1553,8 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
     targetGroups.put("arn2", "tg2");
     doThrow(new RuntimeException("Failed to fetch Target Group from AWS"))
         .when(awsInfrastructureProvider)
-        .listTargetGroups(any(), anyString(), eq("lb1"), anyString());
-    doReturn(awsInfrastructureProvider).when(infrastructureProviderMap).get(anyString());
+        .listTargetGroups(any(), any(), eq("lb1"), any());
+    doReturn(awsInfrastructureProvider).when(infrastructureProviderMap).get(any());
 
     Map<String, String> loadBalancers =
         infrastructureDefinitionService.listTargetGroups(APP_ID, INFRA_DEFINITION_ID, "lb1");
@@ -1578,11 +1569,11 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
                  .infrastructure(AwsEcsInfrastructure.builder().region(Regions.US_EAST_1.name()).build())
                  .build())
         .when(wingsPersistence)
-        .getWithAppId(any(), anyString(), anyString());
+        .getWithAppId(any(), any(), any());
 
     doReturn(SettingAttribute.Builder.aSettingAttribute().withCategory(SettingCategory.SETTING).build())
         .when(mockSettingsService)
-        .get(anyString());
+        .get(any());
 
     AwsInfrastructureProvider awsInfrastructureProvider = mock(AwsInfrastructureProvider.class);
     Map<String, String> targetGroups = new HashMap<>();
@@ -1590,8 +1581,8 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
     targetGroups.put("arn2", "tg2");
     doThrow(new RuntimeException("Failed to fetch Target Group from AWS"))
         .when(awsInfrastructureProvider)
-        .listTargetGroups(any(), anyString(), eq("lb1"), anyString());
-    doReturn(awsInfrastructureProvider).when(infrastructureProviderMap).get(anyString());
+        .listTargetGroups(any(), any(), eq("lb1"), any());
+    doReturn(awsInfrastructureProvider).when(infrastructureProviderMap).get(any());
 
     try {
       infrastructureDefinitionService.listTargetGroups(APP_ID, INFRA_DEFINITION_ID, "lb1");
@@ -1609,17 +1600,15 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
                  .infrastructure(AwsEcsInfrastructure.builder().region(Regions.US_EAST_1.name()).build())
                  .build())
         .when(wingsPersistence)
-        .getWithAppId(any(), anyString(), anyString());
+        .getWithAppId(any(), any(), any());
 
     doReturn(SettingAttribute.Builder.aSettingAttribute().withCategory(SettingCategory.SETTING).build())
         .when(mockSettingsService)
-        .get(anyString());
+        .get(any());
 
     AwsInfrastructureProvider awsInfrastructureProvider = mock(AwsInfrastructureProvider.class);
-    doReturn(Arrays.asList("a", "b", "c", "a"))
-        .when(awsInfrastructureProvider)
-        .listLoadBalancers(any(), anyString(), anyString());
-    doReturn(awsInfrastructureProvider).when(infrastructureProviderMap).get(anyString());
+    doReturn(Arrays.asList("a", "b", "c", "a")).when(awsInfrastructureProvider).listLoadBalancers(any(), any(), any());
+    doReturn(awsInfrastructureProvider).when(infrastructureProviderMap).get(any());
 
     Map<String, String> loadBalancers = infrastructureDefinitionService.listLoadBalancers(APP_ID, INFRA_MAPPING_ID);
     assertThat(loadBalancers.keySet()).containsOnly("a", "b", "c");
@@ -1713,15 +1702,13 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
                                                    .cloudProviderType(CloudProviderType.CUSTOM)
                                                    .build();
     when(mockSettingsService.getByAccountAndId(any(), any())).thenReturn(new SettingAttribute());
-    doReturn(infraDefinition)
-        .when(wingsPersistence)
-        .getWithAppId(eq(InfrastructureDefinition.class), anyString(), anyString());
+    doReturn(infraDefinition).when(wingsPersistence).getWithAppId(eq(InfrastructureDefinition.class), any(), any());
     doReturn(CustomDeploymentTypeDTO.builder()
                  .name("weblogic")
                  .infraVariables(asList(aVariable().name("key").build()))
                  .build())
         .when(customDeploymentTypeService)
-        .get(anyString(), anyString(), anyString());
+        .get(any(), any(), any());
     infrastructureDefinitionService.update(infraDefinition);
 
     verify(customDeploymentTypeService, atLeastOnce()).putCustomDeploymentTypeNameIfApplicable(infraDefinition);
@@ -1852,6 +1839,6 @@ public class InfrastructureDefinitionServiceImplTest extends CategoryTest {
         .thenReturn(hostedZones2);
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(AwsConfig.builder().build());
-    when(mockSettingsService.get(anyString())).thenReturn(settingAttribute);
+    when(mockSettingsService.get(any())).thenReturn(settingAttribute);
   }
 }

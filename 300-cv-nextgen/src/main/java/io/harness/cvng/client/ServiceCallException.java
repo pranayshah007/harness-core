@@ -32,7 +32,8 @@ public class ServiceCallException extends WingsException {
     this.errorMessage = message;
     this.errorBody = errorBody;
   }
+
   public ServiceCallException(Throwable throwable) {
-    super(throwable);
+    super("ServiceCallException: " + throwable.getMessage(), throwable);
   }
 }

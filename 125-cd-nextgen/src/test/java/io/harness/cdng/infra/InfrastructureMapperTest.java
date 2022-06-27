@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
@@ -28,6 +30,7 @@ import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
@@ -72,7 +75,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .build();
 
     InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(k8SDirectInfrastructure, environment, serviceOutcome);
+        InfrastructureMapper.toOutcome(k8SDirectInfrastructure, environment, serviceOutcome, null, null);
     assertThat(infrastructureOutcome).isEqualTo(k8sDirectInfrastructureOutcome);
   }
 
@@ -86,7 +89,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                    .releaseName(ParameterField.createValueField(""))
                                                    .build();
 
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyReleaseName, environment, serviceOutcome))
+    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyReleaseName, environment, serviceOutcome, null, null))
         .isInstanceOf(InvalidArgumentsException.class);
 
     K8SDirectInfrastructure emptyNamespace = K8SDirectInfrastructure.builder()
@@ -95,7 +98,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                  .releaseName(ParameterField.createValueField("releaseName"))
                                                  .build();
 
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyNamespace, environment, serviceOutcome))
+    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyNamespace, environment, serviceOutcome, null, null))
         .isInstanceOf(InvalidArgumentsException.class);
   }
 
@@ -121,7 +124,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .build();
 
     InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(k8SGcpInfrastructure, environment, serviceOutcome);
+        InfrastructureMapper.toOutcome(k8SGcpInfrastructure, environment, serviceOutcome, null, null);
     assertThat(infrastructureOutcome).isEqualTo(k8sGcpInfrastructureOutcome);
   }
 
@@ -135,7 +138,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                               .releaseName(ParameterField.createValueField("release"))
                                               .cluster(ParameterField.createValueField("cluster"))
                                               .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyNamespace, environment, serviceOutcome))
+    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyNamespace, environment, serviceOutcome, null, null))
         .isInstanceOf(InvalidArgumentsException.class);
 
     K8sGcpInfrastructure emptyReleaseName = K8sGcpInfrastructure.builder()
@@ -144,7 +147,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                 .releaseName(ParameterField.createValueField(""))
                                                 .cluster(ParameterField.createValueField("cluster"))
                                                 .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyReleaseName, environment, serviceOutcome))
+    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyReleaseName, environment, serviceOutcome, null, null))
         .isInstanceOf(InvalidArgumentsException.class);
 
     K8sGcpInfrastructure emptyClusterName = K8sGcpInfrastructure.builder()
@@ -153,7 +156,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                 .releaseName(ParameterField.createValueField("release"))
                                                 .cluster(ParameterField.createValueField(""))
                                                 .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyClusterName, environment, serviceOutcome))
+    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyClusterName, environment, serviceOutcome, null, null))
         .isInstanceOf(InvalidArgumentsException.class);
   }
 
@@ -178,7 +181,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .build();
 
     InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(serverlessAwsLambdaInfrastructure, environment, serviceOutcome);
+        InfrastructureMapper.toOutcome(serverlessAwsLambdaInfrastructure, environment, serviceOutcome, null, null);
     assertThat(infrastructureOutcome).isEqualTo(serverlessAwsLambdaInfrastructureOutcome);
   }
 
@@ -191,7 +194,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                         .region(ParameterField.createValueField(""))
                                                         .stage(ParameterField.createValueField("stage"))
                                                         .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyRegion, environment, serviceOutcome))
+    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyRegion, environment, serviceOutcome, null, null))
         .isInstanceOf(InvalidArgumentsException.class);
 
     ServerlessAwsLambdaInfrastructure emptyStage = ServerlessAwsLambdaInfrastructure.builder()
@@ -199,7 +202,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                        .region(ParameterField.createValueField("region"))
                                                        .stage(ParameterField.createValueField(""))
                                                        .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyStage, environment, serviceOutcome));
+    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyStage, environment, serviceOutcome, null, null));
   }
 
   @Owner(developers = FILIP)
@@ -213,7 +216,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .build();
 
     InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(infrastructure, environment, serviceOutcome);
+        InfrastructureMapper.toOutcome(infrastructure, environment, serviceOutcome, null, null);
 
     assertThat(infrastructureOutcome)
         .isEqualToIgnoringGivenFields(PdcInfrastructureOutcome.builder()
@@ -236,7 +239,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .build();
 
     InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(infrastructure, environment, serviceOutcome);
+        InfrastructureMapper.toOutcome(infrastructure, environment, serviceOutcome, null, null);
 
     assertThat(infrastructureOutcome)
         .isEqualToIgnoringGivenFields(PdcInfrastructureOutcome.builder()
@@ -254,7 +257,7 @@ public class InfrastructureMapperTest extends CategoryTest {
     PdcInfrastructure emptySshKeyRef =
         PdcInfrastructure.builder().connectorRef(ParameterField.createValueField("connector-ref")).build();
 
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptySshKeyRef, environment, serviceOutcome))
+    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptySshKeyRef, environment, serviceOutcome, null, null))
         .isInstanceOf(InvalidArgumentsException.class);
   }
 
@@ -268,7 +271,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                            .connectorRef(ParameterField.ofNull())
                                            .build();
 
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptySshKeyRef, environment, serviceOutcome))
+    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptySshKeyRef, environment, serviceOutcome, null, null))
         .isInstanceOf(InvalidArgumentsException.class);
   }
 
@@ -287,7 +290,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .build();
 
     InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(infrastructure, environment, serviceOutcome);
+        InfrastructureMapper.toOutcome(infrastructure, environment, serviceOutcome, null, null);
 
     assertThat(infrastructureOutcome)
         .isEqualToIgnoringGivenFields(SshWinRmAzureInfrastructureOutcome.builder()
@@ -313,7 +316,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                    .subscriptionId(ParameterField.createValueField("sub-id"))
                                                    .build();
 
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(invalidInfra, environment, serviceOutcome))
+    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(invalidInfra, environment, serviceOutcome, null, null))
         .isInstanceOf(InvalidArgumentsException.class);
   }
 
@@ -328,7 +331,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                    .resourceGroup(ParameterField.createValueField("resource-id"))
                                                    .build();
 
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(invalidInfra, environment, serviceOutcome))
+    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(invalidInfra, environment, serviceOutcome, null, null))
         .isInstanceOf(InvalidArgumentsException.class);
   }
 
@@ -344,6 +347,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .subscriptionId(ParameterField.createValueField("subscriptionId"))
             .resourceGroup(ParameterField.createValueField("resourceGroup"))
             .cluster(ParameterField.createValueField("cluster"))
+            .useClusterAdminCredentials(ParameterField.createValueField(true))
             .build();
 
     K8sAzureInfrastructureOutcome k8sAzureInfrastructureOutcome =
@@ -356,11 +360,63 @@ public class InfrastructureMapperTest extends CategoryTest {
             .cluster("cluster")
             .environment(environment)
             .infrastructureKey("8f62fc4abbc11a8400589ccac4b76f32ba0f7df2")
+            .useClusterAdminCredentials(true)
+            .build();
+
+    assertThat(InfrastructureMapper.toOutcome(k8SAzureInfrastructure, environment, serviceOutcome, null, null))
+        .isEqualTo(k8sAzureInfrastructureOutcome);
+
+    k8SAzureInfrastructure = K8sAzureInfrastructure.builder()
+                                 .connectorRef(ParameterField.createValueField("connectorId"))
+                                 .namespace(ParameterField.createValueField("namespace"))
+                                 .releaseName(ParameterField.createValueField("release"))
+                                 .subscriptionId(ParameterField.createValueField("subscriptionId"))
+                                 .resourceGroup(ParameterField.createValueField("resourceGroup"))
+                                 .cluster(ParameterField.createValueField("cluster"))
+                                 .useClusterAdminCredentials(ParameterField.createValueField(false))
+                                 .build();
+
+    k8sAzureInfrastructureOutcome = K8sAzureInfrastructureOutcome.builder()
+                                        .connectorRef("connectorId")
+                                        .namespace("namespace")
+                                        .releaseName("release")
+                                        .subscription("subscriptionId")
+                                        .resourceGroup("resourceGroup")
+                                        .cluster("cluster")
+                                        .environment(environment)
+                                        .infrastructureKey("8f62fc4abbc11a8400589ccac4b76f32ba0f7df2")
+                                        .useClusterAdminCredentials(false)
+                                        .build();
+
+    assertThat(InfrastructureMapper.toOutcome(k8SAzureInfrastructure, environment, serviceOutcome, null, null))
+        .isEqualTo(k8sAzureInfrastructureOutcome);
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testAzureWebAppInfraMapper() {
+    AzureWebAppInfrastructure azureWebAppInfrastructure =
+        AzureWebAppInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField("connectorId"))
+            .subscriptionId(ParameterField.createValueField("subscriptionId"))
+            .resourceGroup(ParameterField.createValueField("resourceGroup"))
+            .webApp(ParameterField.createValueField("webApp"))
+            .deploymentSlot(ParameterField.createValueField("deploymentSlot"))
             .build();
 
     InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(k8SAzureInfrastructure, environment, serviceOutcome);
-    assertThat(infrastructureOutcome).isEqualTo(k8sAzureInfrastructureOutcome);
+        InfrastructureMapper.toOutcome(azureWebAppInfrastructure, environment, serviceOutcome, null, null);
+    assertThat(infrastructureOutcome)
+        .isEqualToIgnoringGivenFields(AzureWebAppInfrastructureOutcome.builder()
+                                          .connectorRef("connectorId")
+                                          .subscription("subscriptionId")
+                                          .resourceGroup("resourceGroup")
+                                          .webApp("webApp")
+                                          .deploymentSlot("deploymentSlot")
+                                          .environment(environment)
+                                          .build(),
+            "infrastructureKey");
   }
 
   @Test
@@ -375,7 +431,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                 .resourceGroup(ParameterField.createValueField("resourceGroup"))
                                                 .cluster(ParameterField.createValueField("cluster"))
                                                 .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyNamespace, environment, serviceOutcome))
+    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyNamespace, environment, serviceOutcome, null, null))
         .isInstanceOf(InvalidArgumentsException.class);
 
     K8sAzureInfrastructure emptyReleaseName = K8sAzureInfrastructure.builder()
@@ -386,7 +442,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                   .resourceGroup(ParameterField.createValueField("resourceGroup"))
                                                   .cluster(ParameterField.createValueField("cluster"))
                                                   .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyReleaseName, environment, serviceOutcome))
+    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyReleaseName, environment, serviceOutcome, null, null))
         .isInstanceOf(InvalidArgumentsException.class);
 
     K8sAzureInfrastructure emptySubscription = K8sAzureInfrastructure.builder()
@@ -397,7 +453,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                    .resourceGroup(ParameterField.createValueField("resourceGroup"))
                                                    .cluster(ParameterField.createValueField("cluster"))
                                                    .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptySubscription, environment, serviceOutcome))
+    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptySubscription, environment, serviceOutcome, null, null))
         .isInstanceOf(InvalidArgumentsException.class);
 
     K8sAzureInfrastructure emptyResourceGroupName =
@@ -409,7 +465,8 @@ public class InfrastructureMapperTest extends CategoryTest {
             .resourceGroup(ParameterField.createValueField(""))
             .cluster(ParameterField.createValueField("cluster"))
             .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyResourceGroupName, environment, serviceOutcome))
+    assertThatThrownBy(
+        () -> InfrastructureMapper.toOutcome(emptyResourceGroupName, environment, serviceOutcome, null, null))
         .isInstanceOf(InvalidArgumentsException.class);
 
     K8sAzureInfrastructure emptyClusterName = K8sAzureInfrastructure.builder()
@@ -420,7 +477,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                   .resourceGroup(ParameterField.createValueField("resourceGroup"))
                                                   .cluster(ParameterField.createValueField(""))
                                                   .build();
-    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyClusterName, environment, serviceOutcome))
+    assertThatThrownBy(() -> InfrastructureMapper.toOutcome(emptyClusterName, environment, serviceOutcome, null, null))
         .isInstanceOf(InvalidArgumentsException.class);
   }
 }

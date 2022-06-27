@@ -19,7 +19,7 @@ import lombok.experimental.SuperBuilder;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName("DEFAULT")
+@JsonTypeName("Default")
 @OwnedBy(HarnessTeam.CV)
 @SuperBuilder
 public class DefaultMonitoredServiceSpec extends MonitoredServiceSpec {

@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ngtriggers.Constants.DOT_GIT;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NO_MATCHING_TRIGGER_FOR_REPO;
 import static io.harness.ngtriggers.beans.source.webhook.WebhookSourceRepo.AWS_CODECOMMIT;
+import static io.harness.ngtriggers.beans.source.webhook.WebhookSourceRepo.AZURE_REPO;
 import static io.harness.utils.IdentifierRefHelper.getFullyQualifiedIdentifierRefString;
 
 import static java.lang.String.format;
@@ -27,9 +28,11 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitUrlType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.git.GitClientHelper;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse.WebhookEventMappingResponseBuilder;
@@ -37,6 +40,9 @@ import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
 import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
+import io.harness.ngtriggers.beans.source.WebhookTriggerType;
+import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
+import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.AzureRepoSpec;
 import io.harness.ngtriggers.eventmapper.TriggerGitConnectorWrapper;
 import io.harness.ngtriggers.eventmapper.filters.TriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
@@ -118,6 +124,14 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
       String[] arnTokens = repository.getId().split(":");
       String awsRepoUrl = format(AWS_CODECOMMIT_URL_PATTERN, arnTokens[3], arnTokens[5]);
       return new HashSet<>(Collections.singletonList(awsRepoUrl));
+    } else if (AZURE_REPO.name().equals(sourceRepoType)) {
+      HashSet<String> urls = new HashSet<>();
+      String httpUrl = repository.getHttpURL().toLowerCase();
+      String sshUrl = isEmpty(repository.getSshURL()) ? GitClientHelper.getCompleteSSHUrlFromHttpUrlForAzure(httpUrl)
+                                                      : repository.getSshURL();
+      urls.add(httpUrl);
+      urls.add(sshUrl);
+      return urls;
     }
 
     HashSet<String> urls = new HashSet<>();
@@ -142,15 +156,11 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
   private void evaluateWrapperForAccountLevelGitConnector(
       Set<String> urls, List<TriggerDetails> eligibleTriggers, TriggerGitConnectorWrapper wrapper) {
     String accUrl = wrapper.getUrl();
+    accUrl = sanitizeUrl(accUrl);
 
     for (TriggerDetails details : wrapper.getTriggers()) {
       try {
-        final String repoUrl =
-            new StringBuilder(128)
-                .append(accUrl)
-                .append(accUrl.endsWith("/") ? EMPTY : '/')
-                .append(details.getNgTriggerEntity().getMetadata().getWebhook().getGit().getRepoName())
-                .toString();
+        final String repoUrl = getRepoUrl(accUrl, details);
 
         String finalUrl = urls.stream().filter(u -> u.equalsIgnoreCase(repoUrl)).findAny().orElse(null);
 
@@ -167,14 +177,30 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
   void evaluateWrapperForRepoLevelGitConnector(
       Set<String> urls, List<TriggerDetails> eligibleTriggers, TriggerGitConnectorWrapper wrapper) {
     String url = wrapper.getUrl();
-    // accomadate the '/' at the end of the provided repo URL
-    final String modifiedUrl = url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
+    final String modifiedUrl = sanitizeUrl(url);
 
     String finalUrl = urls.stream().filter(u -> u.equalsIgnoreCase(modifiedUrl)).findAny().orElse(null);
 
     if (!isBlank(finalUrl)) {
       eligibleTriggers.addAll(wrapper.getTriggers());
     }
+  }
+
+  /*
+  Since the url coming from scm response are in the form of
+    1. https://github.com/<something>.git
+    2. https://github.com/<something>
+    3. git@github.com:<something>.git
+    4. git@github.com:<something>
+  And we allow connector url as http://<something>, http://www.<something>, https://www.<something>
+  This method will do the required fix
+   */
+  String sanitizeUrl(String url) {
+    String modifiedUrl = url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
+    modifiedUrl = modifiedUrl.replaceFirst("http://", "https://");
+    modifiedUrl = modifiedUrl.replaceFirst("https://www.", "https://");
+
+    return modifiedUrl;
   }
 
   @VisibleForTesting
@@ -196,6 +222,11 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
       wrapper.setConnectorType(ConnectorType.BITBUCKET);
       wrapper.setUrl(bitbucketConnectorDTO.getUrl());
       wrapper.setGitConnectionType(bitbucketConnectorDTO.getConnectionType());
+    } else if (connectorConfigDTO.getClass().isAssignableFrom(AzureRepoConnectorDTO.class)) {
+      AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) connectorConfigDTO;
+      wrapper.setConnectorType(ConnectorType.AZURE_REPO);
+      wrapper.setUrl(azureRepoConnectorDTO.getUrl());
+      wrapper.setGitConnectionType(azureRepoConnectorDTO.getConnectionType());
     } else if (connectorConfigDTO.getClass().isAssignableFrom(AwsCodeCommitConnectorDTO.class)) {
       AwsCodeCommitConnectorDTO awsCodeCommitConnectorDTO = (AwsCodeCommitConnectorDTO) connectorConfigDTO;
       wrapper.setConnectorType(ConnectorType.CODECOMMIT);
@@ -264,5 +295,24 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
         triggerToConnectorMap.computeIfAbsent(fullyQualifiedIdentifier, k -> new ArrayList<>());
 
     triggerDetailList.add(triggerDetail);
+  }
+
+  private String getRepoUrl(String accUrl, TriggerDetails triggerDetails) {
+    WebhookTriggerConfigV2 webhookTriggerConfigV2 =
+        (WebhookTriggerConfigV2) triggerDetails.getNgTriggerConfigV2().getSource().getSpec();
+    WebhookTriggerType webhookTriggerType = webhookTriggerConfigV2.getType();
+
+    if (webhookTriggerType == WebhookTriggerType.AZURE) {
+      AzureRepoSpec azureRepoSpec = (AzureRepoSpec) webhookTriggerConfigV2.getSpec();
+      String projectName = azureRepoSpec.getSpec().getProjectName();
+      return GitClientHelper.getCompleteUrlForAccountLevelAzureConnector(
+          accUrl, projectName, triggerDetails.getNgTriggerEntity().getMetadata().getWebhook().getGit().getRepoName());
+    } else {
+      return new StringBuilder(128)
+          .append(accUrl)
+          .append(accUrl.endsWith("/") ? EMPTY : '/')
+          .append(triggerDetails.getNgTriggerEntity().getMetadata().getWebhook().getGit().getRepoName())
+          .toString();
+    }
   }
 }

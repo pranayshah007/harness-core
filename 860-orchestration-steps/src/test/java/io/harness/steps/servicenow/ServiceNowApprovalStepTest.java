@@ -8,6 +8,7 @@
 package io.harness.steps.servicenow;
 
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -63,7 +64,7 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
     Ambiance ambiance = buildAmbiance();
     StepElementParameters parameters = getStepElementParameters();
     doAnswer(invocationOnMock -> {
-      ServiceNowApprovalInstance instance = invocationOnMock.getArgumentAt(0, ServiceNowApprovalInstance.class);
+      ServiceNowApprovalInstance instance = invocationOnMock.getArgument(0, ServiceNowApprovalInstance.class);
       instance.setId(INSTANCE_ID);
       return instance;
     })
@@ -154,6 +155,12 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
     verify(approvalInstanceService).expireByNodeExecutionId(null);
   }
 
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testgetStepParametersClass() {
+    assertThat(serviceNowApprovalStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+  }
   private StepElementParameters getStepElementParameters() {
     return StepElementParameters.builder()
         .type("SERVICENOW_APPROVAL")

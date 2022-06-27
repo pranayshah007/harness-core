@@ -31,26 +31,42 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class SlackChannel extends NotificationChannel {
   List<String> webhookUrls;
+  String orgIdentifier;
+  String projectIdentifier;
+  long expressionFunctorToken;
 
   @Builder
   public SlackChannel(String accountId, List<NotificationRequest.UserGroup> userGroups, String templateId,
-      Map<String, String> templateData, Team team, List<String> webhookUrls) {
+      Map<String, String> templateData, Team team, List<String> webhookUrls, String orgIdentifier,
+      String projectIdentifier, long expressionFunctorToken) {
     super(accountId, userGroups, templateId, templateData, team);
     this.webhookUrls = webhookUrls;
+    this.orgIdentifier = orgIdentifier;
+    this.projectIdentifier = projectIdentifier;
+    this.expressionFunctorToken = expressionFunctorToken;
   }
 
   @Override
   public NotificationRequest buildNotificationRequest() {
     NotificationRequest.Builder builder = NotificationRequest.newBuilder();
     String notificationId = generateUuid();
-    return builder.setId(notificationId)
-        .setAccountId(accountId)
-        .setTeam(team)
-        .setSlack(builder.getSlackBuilder()
-                      .addAllSlackWebHookUrls(webhookUrls)
-                      .setTemplateId(templateId)
-                      .putAllTemplateData(templateData)
-                      .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups)))
-        .build();
+    return builder.setId(notificationId).setAccountId(accountId).setTeam(team).setSlack(buildSlack(builder)).build();
+  }
+
+  private NotificationRequest.Slack buildSlack(NotificationRequest.Builder builder) {
+    NotificationRequest.Slack.Builder slackBuilder = builder.getSlackBuilder()
+                                                         .addAllSlackWebHookUrls(webhookUrls)
+                                                         .setTemplateId(templateId)
+                                                         .putAllTemplateData(templateData)
+                                                         .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
+
+    if (orgIdentifier != null) {
+      slackBuilder.setOrgIdentifier(orgIdentifier);
+    }
+    if (projectIdentifier != null) {
+      slackBuilder.setProjectIdentifier(projectIdentifier);
+    }
+    slackBuilder.setExpressionFunctorToken(expressionFunctorToken);
+    return slackBuilder.build();
   }
 }

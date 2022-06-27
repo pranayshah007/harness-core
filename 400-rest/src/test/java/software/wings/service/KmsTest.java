@@ -271,7 +271,7 @@ public class KmsTest extends WingsBaseTest {
           (String) args[0], (EncryptedRecord) args[1], localSecretManagerService.getEncryptionConfig((String) args[0]));
     });
 
-    when(kmsEncryptorsRegistry.getKmsEncryptor(any(KmsConfig.class))).thenReturn(kmsEncryptor);
+    when(kmsEncryptorsRegistry.getKmsEncryptor(any())).thenReturn(kmsEncryptor);
     when(delegateProxyFactory.get(eq(SecretManagementDelegateService.class), any(SyncTaskContext.class)))
         .thenReturn(secretManagementDelegateService);
     when(delegateProxyFactory.get(eq(EncryptionService.class), any(SyncTaskContext.class)))
@@ -1470,6 +1470,8 @@ public class KmsTest extends WingsBaseTest {
     ServiceVariable updatedAttribute = wingsPersistence.get(ServiceVariable.class, savedAttributeId);
     assertThat(updatedAttribute.getEnvId()).isEqualTo(updatedEnvId);
     savedAttribute.setEnvId(updatedEnvId);
+    updatedAttribute.setLastUpdatedAt(0);
+    savedAttribute.setLastUpdatedAt(0);
     assertThat(updatedAttribute).isEqualTo(savedAttribute);
     assertThat(wingsPersistence.createQuery(ServiceVariable.class).count()).isEqualTo(1);
     assertThat(wingsPersistence.createQuery(EncryptedData.class).count()).isEqualTo(numOfEncryptedValsForKms + 1);

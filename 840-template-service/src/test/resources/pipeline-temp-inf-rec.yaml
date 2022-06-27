@@ -1,0 +1,13 @@
+pipeline:
+  name: test
+  identifier: test
+  projectIdentifier: dummy
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: oik
+        identifier: oik
+        template:
+          templateRef: stt1
+          versionLabel: "1"

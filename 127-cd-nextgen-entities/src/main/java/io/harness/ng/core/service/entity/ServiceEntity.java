@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotation.StoreIn;
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
@@ -85,8 +86,9 @@ public class ServiceEntity implements PersistentEntity {
   @Wither @CreatedDate Long createdAt;
   @Wither @LastModifiedDate Long lastModifiedAt;
   @Wither @Version Long version;
-  @Builder.Default Boolean deleted = Boolean.FALSE;
-  @Builder.Default Boolean gitOpsEnabled = false;
+  @Wither @Builder.Default Boolean deleted = Boolean.FALSE;
+  @Builder.Default Boolean gitOpsEnabled;
+  ServiceDefinitionType type;
 
   Long deletedAt;
   String yaml;

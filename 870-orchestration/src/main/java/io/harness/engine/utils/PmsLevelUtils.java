@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plan.Node;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.StrategyMetadata;
+import io.harness.pms.execution.utils.AmbianceUtils;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsLevelUtils {
@@ -37,12 +38,14 @@ public class PmsLevelUtils {
                                      .setSkipExpressionChain(node.isSkipExpressionChain())
                                      .setStartTs(System.currentTimeMillis())
                                      .setStepType(node.getStepType())
-                                     .setNodeType(node.getNodeType().toString());
+                                     .setNodeType(node.getNodeType().toString())
+            .setOriginalIdentifier(node.getIdentifier());
     if (node.getGroup() != null) {
       levelBuilder.setGroup(node.getGroup());
     }
     if (strategyMetadata != null) {
       levelBuilder.setStrategyMetadata(strategyMetadata);
+      levelBuilder.setIdentifier(node.getIdentifier() + AmbianceUtils.getStrategyPostfix(levelBuilder.build()));
     }
     return levelBuilder.build();
   }

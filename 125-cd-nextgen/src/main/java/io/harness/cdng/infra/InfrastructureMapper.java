@@ -13,19 +13,25 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.infra.beans.AwsInstanceFilter;
+import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
+import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
+import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome.SshWinRmAwsInfrastructureOutcomeBuilder;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
+import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.common.ParameterFieldHelper;
@@ -42,8 +48,8 @@ import org.apache.commons.lang3.tuple.Pair;
 @UtilityClass
 @OwnedBy(HarnessTeam.CDP)
 public class InfrastructureMapper {
-  public InfrastructureOutcome toOutcome(
-      @Nonnull Infrastructure infrastructure, EnvironmentOutcome environmentOutcome, ServiceStepOutcome service) {
+  public InfrastructureOutcome toOutcome(@Nonnull Infrastructure infrastructure, EnvironmentOutcome environmentOutcome,
+      ServiceStepOutcome service, String infraIdentifier, String infraName) {
     switch (infrastructure.getKind()) {
       case InfrastructureKind.KUBERNETES_DIRECT:
         K8SDirectInfrastructure k8SDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
@@ -53,6 +59,8 @@ public class InfrastructureMapper {
             .namespace(k8SDirectInfrastructure.getNamespace().getValue())
             .releaseName(getValueOrExpression(k8SDirectInfrastructure.getReleaseName()))
             .environment(environmentOutcome)
+            .infraIdentifier(infraIdentifier)
+            .infraName(infraName)
             .infrastructureKey(InfrastructureKey.generate(
                 service, environmentOutcome, k8SDirectInfrastructure.getInfrastructureKeyValues()))
             .build();
@@ -66,6 +74,8 @@ public class InfrastructureMapper {
             .cluster(k8sGcpInfrastructure.getCluster().getValue())
             .releaseName(getValueOrExpression(k8sGcpInfrastructure.getReleaseName()))
             .environment(environmentOutcome)
+            .infraIdentifier(infraIdentifier)
+            .infraName(infraName)
             .infrastructureKey(InfrastructureKey.generate(
                 service, environmentOutcome, k8sGcpInfrastructure.getInfrastructureKeyValues()))
             .build();
@@ -78,6 +88,8 @@ public class InfrastructureMapper {
             .region(serverlessAwsLambdaInfrastructure.getRegion().getValue())
             .stage(serverlessAwsLambdaInfrastructure.getStage().getValue())
             .environment(environmentOutcome)
+            .infraIdentifier(infraIdentifier)
+            .infraName(infraName)
             .infrastructureKey(InfrastructureKey.generate(
                 service, environmentOutcome, serverlessAwsLambdaInfrastructure.getInfrastructureKeyValues()))
             .build();
@@ -86,15 +98,19 @@ public class InfrastructureMapper {
         K8sAzureInfrastructure k8sAzureInfrastructure = (K8sAzureInfrastructure) infrastructure;
         validateK8sAzureInfrastructure(k8sAzureInfrastructure);
         return K8sAzureInfrastructureOutcome.builder()
-            .connectorRef(k8sAzureInfrastructure.getConnectorRef().getValue())
-            .namespace(k8sAzureInfrastructure.getNamespace().getValue())
-            .cluster(k8sAzureInfrastructure.getCluster().getValue())
+            .connectorRef(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getConnectorRef()))
+            .namespace(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getNamespace()))
+            .cluster(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getCluster()))
             .releaseName(getValueOrExpression(k8sAzureInfrastructure.getReleaseName()))
             .environment(environmentOutcome)
+            .infraIdentifier(infraIdentifier)
+            .infraName(infraName)
             .infrastructureKey(InfrastructureKey.generate(
                 service, environmentOutcome, k8sAzureInfrastructure.getInfrastructureKeyValues()))
-            .subscription(k8sAzureInfrastructure.getSubscriptionId().getValue())
-            .resourceGroup(k8sAzureInfrastructure.getResourceGroup().getValue())
+            .subscription(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getSubscriptionId()))
+            .resourceGroup(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getResourceGroup()))
+            .useClusterAdminCredentials(ParameterFieldHelper.getBooleanParameterFieldValue(
+                k8sAzureInfrastructure.getUseClusterAdminCredentials()))
             .build();
 
       case InfrastructureKind.PDC:
@@ -106,10 +122,46 @@ public class InfrastructureMapper {
             .connectorRef(ParameterFieldHelper.getParameterFieldValue(pdcInfrastructure.getConnectorRef()))
             .hostFilters(ParameterFieldHelper.getParameterFieldValue(pdcInfrastructure.getHostFilters()))
             .attributeFilters(ParameterFieldHelper.getParameterFieldValue(pdcInfrastructure.getAttributeFilters()))
+            .infraIdentifier(infraIdentifier)
+            .infraName(infraName)
             .environment(environmentOutcome)
             .infrastructureKey(
                 InfrastructureKey.generate(service, environmentOutcome, pdcInfrastructure.getInfrastructureKeyValues()))
             .build();
+
+      case InfrastructureKind.SSH_WINRM_AWS:
+        SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
+        validateSshWinRmAwsInfrastructure(sshWinRmAwsInfrastructure);
+
+        boolean useAutoScalingGroup =
+            ParameterFieldHelper.getBooleanParameterFieldValue(sshWinRmAwsInfrastructure.getUseAutoScalingGroup());
+
+        SshWinRmAwsInfrastructureOutcomeBuilder sshWinRmAwsInfrastructureOutcomeBuilder =
+            SshWinRmAwsInfrastructureOutcome.builder();
+
+        sshWinRmAwsInfrastructureOutcomeBuilder
+            .connectorRef(ParameterFieldHelper.getParameterFieldValue(sshWinRmAwsInfrastructure.getConnectorRef()))
+            .credentialsRef(ParameterFieldHelper.getParameterFieldValue(sshWinRmAwsInfrastructure.getCredentialsRef()))
+            .region(ParameterFieldHelper.getParameterFieldValue(sshWinRmAwsInfrastructure.getRegion()))
+            .loadBalancer(ParameterFieldHelper.getParameterFieldValue(sshWinRmAwsInfrastructure.getLoadBalancer()))
+            .useAutoScalingGroup(useAutoScalingGroup)
+            .autoScalingGroupName(
+                ParameterFieldHelper.getParameterFieldValue(sshWinRmAwsInfrastructure.getAutoScalingGroupName()))
+            .environment(environmentOutcome)
+            .infrastructureKey(
+                InfrastructureKey.generate(service, environmentOutcome, infrastructure.getInfrastructureKeyValues()))
+            .infraIdentifier(infraIdentifier)
+            .infraName(infraName);
+
+        if (!useAutoScalingGroup) {
+          sshWinRmAwsInfrastructureOutcomeBuilder.awsInstanceFilter(
+              AwsInstanceFilter.builder()
+                  .vpcs(sshWinRmAwsInfrastructure.getAwsInstanceFilter().getVpcs())
+                  .tags(sshWinRmAwsInfrastructure.getAwsInstanceFilter().getTags())
+                  .build());
+        }
+
+        return sshWinRmAwsInfrastructureOutcomeBuilder.build();
 
       case InfrastructureKind.SSH_WINRM_AZURE:
         SshWinRmAzureInfrastructure sshWinRmAzureInfrastructure = (SshWinRmAzureInfrastructure) infrastructure;
@@ -124,8 +176,26 @@ public class InfrastructureMapper {
             .tags(ParameterFieldHelper.getParameterFieldValue(sshWinRmAzureInfrastructure.getTags()))
             .usePublicDns(ParameterFieldHelper.getParameterFieldValue(sshWinRmAzureInfrastructure.getUsePublicDns()))
             .environment(environmentOutcome)
+            .infraIdentifier(infraIdentifier)
+            .infraName(infraName)
             .infrastructureKey(InfrastructureKey.generate(
                 service, environmentOutcome, sshWinRmAzureInfrastructure.getInfrastructureKeyValues()))
+            .build();
+
+      case InfrastructureKind.AZURE_WEB_APP:
+        AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
+        validateAzureWebAppInfrastructure(azureWebAppInfrastructure);
+        return AzureWebAppInfrastructureOutcome.builder()
+            .connectorRef(azureWebAppInfrastructure.getConnectorRef().getValue())
+            .webApp(azureWebAppInfrastructure.getWebApp().getValue())
+            .deploymentSlot(azureWebAppInfrastructure.getDeploymentSlot().getValue())
+            .environment(environmentOutcome)
+            .infraIdentifier(infraIdentifier)
+            .infraName(infraName)
+            .infrastructureKey(InfrastructureKey.generate(
+                service, environmentOutcome, azureWebAppInfrastructure.getInfrastructureKeyValues()))
+            .subscription(azureWebAppInfrastructure.getSubscriptionId().getValue())
+            .resourceGroup(azureWebAppInfrastructure.getResourceGroup().getValue())
             .build();
 
       default:
@@ -186,6 +256,33 @@ public class InfrastructureMapper {
     }
   }
 
+  private void validateAzureWebAppInfrastructure(AzureWebAppInfrastructure infrastructure) {
+    if (ParameterField.isNull(infrastructure.getConnectorRef())
+        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getConnectorRef()))) {
+      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+    }
+
+    if (ParameterField.isNull(infrastructure.getDeploymentSlot())
+        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getDeploymentSlot()))) {
+      throw new InvalidArgumentsException(Pair.of("deploymentSlot", "cannot be empty"));
+    }
+
+    if (ParameterField.isNull(infrastructure.getWebApp())
+        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getWebApp()))) {
+      throw new InvalidArgumentsException(Pair.of("appService", "cannot be empty"));
+    }
+
+    if (ParameterField.isNull(infrastructure.getSubscriptionId())
+        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getSubscriptionId()))) {
+      throw new InvalidArgumentsException(Pair.of("subscription", "cannot be empty"));
+    }
+
+    if (ParameterField.isNull(infrastructure.getResourceGroup())
+        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getResourceGroup()))) {
+      throw new InvalidArgumentsException(Pair.of("resourceGroup", "cannot be empty"));
+    }
+  }
+
   private void validatePdcInfrastructure(PdcInfrastructure infrastructure) {
     if (!hasValueOrExpression(infrastructure.getCredentialsRef())) {
       throw new InvalidArgumentsException(Pair.of("credentialsRef", "cannot be empty"));
@@ -220,6 +317,31 @@ public class InfrastructureMapper {
     }
     if (!hasValueOrExpression(infrastructure.getCredentialsRef())) {
       throw new InvalidArgumentsException(Pair.of("credentialsRef", "cannot be empty"));
+    }
+  }
+
+  private void validateSshWinRmAwsInfrastructure(SshWinRmAwsInfrastructure infrastructure) {
+    if (!hasValueOrExpression(infrastructure.getCredentialsRef())) {
+      throw new InvalidArgumentsException(Pair.of("credentialsRef", "cannot be empty"));
+    }
+    if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
+      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+    }
+    if (!hasValueOrExpression(infrastructure.getRegion())) {
+      throw new InvalidArgumentsException(Pair.of("region", "cannot be empty"));
+    }
+
+    boolean useAutoScalingGroup =
+        ParameterFieldHelper.getBooleanParameterFieldValue(infrastructure.getUseAutoScalingGroup());
+
+    if (useAutoScalingGroup) {
+      if (!hasValueOrExpression(infrastructure.getAutoScalingGroupName())) {
+        throw new InvalidArgumentsException(Pair.of("autoScalingGroupName", "cannot be empty"));
+      }
+    } else {
+      if (infrastructure.getAwsInstanceFilter() == null) {
+        throw new InvalidArgumentsException(Pair.of("awsInstanceFilter", "cannot be null"));
+      }
     }
   }
 

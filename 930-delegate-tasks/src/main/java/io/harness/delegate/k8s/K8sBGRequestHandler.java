@@ -13,6 +13,7 @@ import static io.harness.k8s.K8sCommandUnitConstants.Apply;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
 import static io.harness.k8s.K8sCommandUnitConstants.Init;
 import static io.harness.k8s.K8sCommandUnitConstants.Prepare;
+import static io.harness.k8s.K8sCommandUnitConstants.Prune;
 import static io.harness.k8s.K8sCommandUnitConstants.WaitForSteadyState;
 import static io.harness.k8s.K8sCommandUnitConstants.WrapUp;
 import static io.harness.k8s.K8sConstants.MANIFEST_FILES_DIR;
@@ -33,6 +34,7 @@ import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileData;
@@ -103,6 +105,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
   private String stageColor;
   private String releaseName;
   private String manifestFilesDirectory;
+  private PrePruningInfo prePruningInfo;
 
   private boolean shouldSaveReleaseHistory;
 
@@ -133,7 +136,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
     prepareForBlueGreen(k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prepare, true, commandUnitsProgress),
-        k8sBGDeployRequest.isSkipResourceVersioning());
+        k8sBGDeployRequest.isSkipResourceVersioning(), k8sBGDeployRequest.isPruningEnabled());
 
     currentRelease.setManagedWorkload(managedWorkload.getResourceId().cloneInternal());
 
@@ -171,6 +174,13 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
                                                   .stageColor(stageColor)
                                                   .primaryColor(primaryColor)
                                                   .build();
+
+    if (k8sBGDeployRequest.isPruningEnabled()) {
+      LogCallback pruneExecutionLogCallback =
+          k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prune, true, commandUnitsProgress);
+      k8sBGBaseHandler.pruneForBg(k8sDelegateTaskParams, pruneExecutionLogCallback, primaryColor, stageColor,
+          prePruningInfo, currentRelease, client);
+    }
 
     wrapUpLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
     return K8sDeployResponse.builder()
@@ -236,7 +246,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
   @VisibleForTesting
   void prepareForBlueGreen(K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback,
-      boolean skipResourceVersioning) throws Exception {
+      boolean skipResourceVersioning, boolean isPruningEnabled) throws Exception {
     if (!skipResourceVersioning) {
       markVersionedResources(resources);
     }
@@ -328,10 +338,15 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
     stageColor = k8sBGBaseHandler.getInverseColor(primaryColor);
 
-    currentRelease = releaseHistory.createNewRelease(
-        resources.stream().map(KubernetesResource::getResourceId).collect(Collectors.toList()));
+    if (isPruningEnabled) {
+      currentRelease = releaseHistory.createNewReleaseWithResourceMap(
+          resources.stream().filter(resource -> !resource.isSkipPruning()).collect(toList()));
+    } else {
+      currentRelease = releaseHistory.createNewRelease(
+          resources.stream().map(KubernetesResource::getResourceId).collect(Collectors.toList()));
+    }
 
-    k8sBGBaseHandler.cleanupForBlueGreen(
+    prePruningInfo = k8sBGBaseHandler.cleanupForBlueGreen(
         k8sDelegateTaskParams, releaseHistory, executionLogCallback, primaryColor, stageColor, currentRelease, client);
 
     executionLogCallback.saveExecutionLog("\nCurrent release number is: " + currentRelease.getNumber());

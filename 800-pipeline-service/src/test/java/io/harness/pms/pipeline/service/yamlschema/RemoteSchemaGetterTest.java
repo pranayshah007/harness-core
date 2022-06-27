@@ -16,8 +16,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 import io.harness.EntityType;
 import io.harness.ModuleType;
@@ -47,7 +47,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import retrofit2.Call;
@@ -55,6 +57,7 @@ import retrofit2.Call;
 @OwnedBy(HarnessTeam.PIPELINE)
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({SafeHttpCall.class})
+@PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "javax.management.*"})
 public class RemoteSchemaGetterTest {
   private YamlSchemaClient schemaClient;
   private RemoteSchemaGetter remoteSchemaGetter;
@@ -89,14 +92,16 @@ public class RemoteSchemaGetterTest {
     partialSchemaDTOList.add(
         PartialSchemaDTO.builder().namespace("cd").moduleType(ModuleType.CD).nodeName("deployment").build());
     ResponseDTO<List<PartialSchemaDTO>> responseDTO = ResponseDTO.newResponse(partialSchemaDTOList);
-    when(SafeHttpCall.execute(any())).thenReturn(responseDTO);
+    try (MockedStatic<SafeHttpCall> mockStatic = mockStatic(SafeHttpCall.class)) {
+      mockStatic.when(() -> SafeHttpCall.execute(any())).thenReturn(responseDTO);
 
-    List<PartialSchemaDTO> response = remoteSchemaGetter.getSchema(yamlSchemaWithDetailsList);
-    assertNotNull(response);
-    assertEquals(response, partialSchemaDTOList);
+      List<PartialSchemaDTO> response = remoteSchemaGetter.getSchema(yamlSchemaWithDetailsList);
+      assertNotNull(response);
+      assertEquals(response, partialSchemaDTOList);
 
-    when(SafeHttpCall.execute(any())).thenThrow(new RuntimeException());
-    assertNull(remoteSchemaGetter.getSchema(yamlSchemaWithDetailsList));
+      mockStatic.when(() -> SafeHttpCall.execute(any())).thenThrow(new RuntimeException());
+      assertNull(remoteSchemaGetter.getSchema(yamlSchemaWithDetailsList));
+    }
   }
 
   @Test
@@ -117,14 +122,16 @@ public class RemoteSchemaGetterTest {
             .yamlSchemaWithDetailsList(Collections.singletonList(yamlSchemaWithDetails))
             .build();
     ResponseDTO<YamlSchemaDetailsWrapper> responseDTO = ResponseDTO.newResponse(yamlSchemaDetailsWrapper);
-    when(SafeHttpCall.execute(any())).thenReturn(responseDTO);
+    try (MockedStatic<SafeHttpCall> mockStatic = mockStatic(SafeHttpCall.class)) {
+      mockStatic.when(() -> SafeHttpCall.execute(any())).thenReturn(responseDTO);
 
-    YamlSchemaDetailsWrapper response = remoteSchemaGetter.getSchemaDetails();
-    assertNotNull(response);
-    assertEquals(response, yamlSchemaDetailsWrapper);
+      YamlSchemaDetailsWrapper response = remoteSchemaGetter.getSchemaDetails();
+      assertNotNull(response);
+      assertEquals(response, yamlSchemaDetailsWrapper);
 
-    when(SafeHttpCall.execute(any())).thenThrow(new RuntimeException());
-    assertThatThrownBy(() -> remoteSchemaGetter.getSchemaDetails()).isInstanceOf(YamlSchemaCacheException.class);
+      mockStatic.when(() -> SafeHttpCall.execute(any())).thenThrow(new RuntimeException());
+      assertThatThrownBy(() -> remoteSchemaGetter.getSchemaDetails()).isInstanceOf(YamlSchemaCacheException.class);
+    }
   }
 
   @Test
@@ -145,17 +152,19 @@ public class RemoteSchemaGetterTest {
     Call<ResponseDTO<JsonNode>> call = mock(Call.class);
     doReturn(call).when(schemaClient).getStepSchema(any(), any(), any(), any(), any(), any(), any());
     ResponseDTO<JsonNode> responseDTO = ResponseDTO.newResponse(cdStageSchema);
-    when(SafeHttpCall.execute(any())).thenReturn(responseDTO);
+    try (MockedStatic<SafeHttpCall> mockStatic = mockStatic(SafeHttpCall.class)) {
+      mockStatic.when(() -> SafeHttpCall.execute(any())).thenReturn(responseDTO);
 
-    JsonNode response = remoteSchemaGetter.fetchStepYamlSchema(
-        "orgId", "projectId", null, EntityType.DEPLOYMENT_STAGE, "STAGE", yamlSchemaWithDetailsList);
-    assertNotNull(response);
-    assertEquals(response, cdStageSchema);
-    when(SafeHttpCall.execute(any())).thenThrow(new RuntimeException());
-    assertThatThrownBy(()
-                           -> remoteSchemaGetter.fetchStepYamlSchema("orgId", "projectId", null,
-                               EntityType.DEPLOYMENT_STAGE, "STAGE", yamlSchemaWithDetailsList))
-        .isInstanceOf(YamlSchemaCacheException.class);
+      JsonNode response = remoteSchemaGetter.fetchStepYamlSchema(
+          "orgId", "projectId", null, EntityType.DEPLOYMENT_STAGE, "STAGE", yamlSchemaWithDetailsList);
+      assertNotNull(response);
+      assertEquals(response, cdStageSchema);
+      mockStatic.when(() -> SafeHttpCall.execute(any())).thenThrow(new RuntimeException());
+      assertThatThrownBy(()
+                             -> remoteSchemaGetter.fetchStepYamlSchema("orgId", "projectId", null,
+                                 EntityType.DEPLOYMENT_STAGE, "STAGE", yamlSchemaWithDetailsList))
+          .isInstanceOf(YamlSchemaCacheException.class);
+    }
   }
 
   private String getResource(String path) throws IOException {

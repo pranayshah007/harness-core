@@ -9,12 +9,16 @@ package io.harness.beans.quantity.unit;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 
 import lombok.Getter;
+import org.springframework.data.annotation.TypeAlias;
 
 @Getter
 @OwnedBy(CI)
+@TypeAlias("storageQuantityUnit")
+@RecasterAlias("io.harness.beans.quantity.unit.StorageQuantityUnit")
 public enum StorageQuantityUnit {
   Mi(2, 20, "Mi"),
   Gi(2, 30, "Gi"),

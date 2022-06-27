@@ -27,6 +27,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.resourcegroup.beans.ValidatorType;
 import io.harness.resourcegroup.framework.v1.service.Resource;
 import io.harness.resourcegroup.framework.v1.service.ResourceInfo;
+import io.harness.resourcegroup.v2.model.AttributeFilter;
 import io.harness.secrets.remote.SecretNGManagerClient;
 
 import com.google.common.collect.ImmutableMap;
@@ -113,5 +114,10 @@ public class SecretResourceImpl implements Resource {
         .resourceType(getType())
         .resourceIdentifier(entityChangeDTO.getIdentifier().getValue())
         .build();
+  }
+
+  @Override
+  public boolean isValidAttributeFilter(AttributeFilter attributeFilter) {
+    return false;
   }
 }

@@ -59,11 +59,11 @@ public class DelegateHealthCheckTasklet implements Tasklet {
     Map<String, String> clusterIdToDelegateIdMap = new HashMap<>();
     for (PerpetualTaskRecord perpetualTask : perpetualTasks) {
       String clusterId;
-      if (perpetualTask.getTaskDescription().equals("NG")) {
+      if (perpetualTask.getTaskDescription() == null || !perpetualTask.getTaskDescription().equals("NG")) {
+        clusterId = perpetualTask.getClientContext().getClientParams().get("clusterId");
+      } else {
         String clientId = perpetualTask.getClientContext().getClientId();
         clusterId = clientId.substring(clientId.lastIndexOf('/') + 1);
-      } else {
-        clusterId = perpetualTask.getClientContext().getClientParams().get("clusterId");
       }
       clusterIds.add(clusterId);
       clusterIdToDelegateIdMap.put(clusterId, perpetualTask.getDelegateId());

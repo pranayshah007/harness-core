@@ -10,6 +10,7 @@ package io.harness.steps.matrix;
 import static io.harness.steps.StepUtils.createStepResponseFromChildResponse;
 
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
+import io.harness.plancreator.strategy.MatrixConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -17,6 +18,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.executables.ChildrenExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
@@ -32,19 +34,38 @@ public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> 
 
   @Inject MatrixConfigService matrixConfigService;
   @Inject ForLoopStrategyConfigService forLoopStrategyConfigService;
+  @Inject ParallelismStrategyConfigService parallelismStrategyConfigService;
 
   @Override
   public ChildrenExecutableResponse obtainChildren(
       Ambiance ambiance, StrategyStepParameters stepParameters, StepInputPackage inputPackage) {
     if (stepParameters.getStrategyConfig().getMatrixConfig() != null) {
+      int maxConcurrency = 0;
+      if (!ParameterField.isBlank(
+              ((MatrixConfig) stepParameters.getStrategyConfig().getMatrixConfig()).getMaxConcurrency())) {
+        maxConcurrency =
+            ((MatrixConfig) stepParameters.getStrategyConfig().getMatrixConfig()).getMaxConcurrency().getValue();
+      }
       return ChildrenExecutableResponse.newBuilder()
           .addAllChildren(
               matrixConfigService.fetchChildren(stepParameters.getStrategyConfig(), stepParameters.getChildNodeId()))
+          .setMaxConcurrency(maxConcurrency)
           .build();
     }
     if (stepParameters.getStrategyConfig().getForConfig() != null) {
+      int maxConcurrency = 0;
+      if (!ParameterField.isBlank(stepParameters.getStrategyConfig().getForConfig().getMaxConcurrency())) {
+        maxConcurrency = stepParameters.getStrategyConfig().getForConfig().getMaxConcurrency().getValue();
+      }
       return ChildrenExecutableResponse.newBuilder()
           .addAllChildren(forLoopStrategyConfigService.fetchChildren(
+              stepParameters.getStrategyConfig(), stepParameters.getChildNodeId()))
+          .setMaxConcurrency(maxConcurrency)
+          .build();
+    }
+    if (stepParameters.getStrategyConfig().getParallelism() != null) {
+      return ChildrenExecutableResponse.newBuilder()
+          .addAllChildren(parallelismStrategyConfigService.fetchChildren(
               stepParameters.getStrategyConfig(), stepParameters.getChildNodeId()))
           .build();
     }

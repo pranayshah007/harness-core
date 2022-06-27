@@ -13,12 +13,12 @@ import static io.harness.cache.CacheBackend.NOOP;
 
 import io.harness.AccessControlClientConfiguration;
 import io.harness.ModuleType;
+import io.harness.SCMGrpcClientModule;
+import io.harness.ScmConnectionConfig;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.CIManagerConfiguration;
 import io.harness.app.CIManagerServiceModule;
 import io.harness.app.PrimaryVersionManagerModule;
-import io.harness.app.SCMGrpcClientModule;
-import io.harness.app.ScmConnectionConfig;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
@@ -152,7 +152,15 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
         CIManagerConfiguration.builder()
             .managerAuthority("localhost")
             .managerTarget("localhost:9880")
-            .accessControlClientConfiguration(AccessControlClientConfiguration.builder().build())
+            .accessControlClientConfiguration(AccessControlClientConfiguration.builder()
+                                                  .enableAccessControl(false)
+                                                  .accessControlServiceSecret("token")
+                                                  .accessControlServiceConfig(ServiceHttpClientConfig.builder()
+                                                                                  .baseUrl("http://localhost:9006/api/")
+                                                                                  .readTimeOutSeconds(15)
+                                                                                  .connectTimeOutSeconds(15)
+                                                                                  .build())
+                                                  .build())
             .ciExecutionServiceConfig(CIExecutionServiceConfig.builder()
                                           .addonImageTag("v1.4-alpha")
                                           .defaultCPULimit(200)

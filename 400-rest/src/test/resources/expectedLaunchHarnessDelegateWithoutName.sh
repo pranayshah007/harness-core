@@ -28,5 +28,5 @@ sudo docker run -d --restart unless-stopped --hostname="$(hostname -f | head -c 
 -e POLL_FOR_TASKS=false \
 -e HELM_DESIRED_VERSION= \
 -e CF_PLUGIN_HOME= \
--e JRE_VERSION=1.8.0_242 \
+-e JRE_VERSION=11.0.14 \
 harness/delegate:latest

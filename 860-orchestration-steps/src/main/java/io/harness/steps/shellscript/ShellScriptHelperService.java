@@ -14,6 +14,7 @@ import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.shell.ScriptType;
 
 import java.util.List;
@@ -34,7 +35,8 @@ public interface ShellScriptHelperService {
 
   String getShellScript(@Nonnull ShellScriptStepParameters stepParameters);
 
-  String getWorkingDirectory(@Nonnull ShellScriptStepParameters stepParameters, @Nonnull ScriptType scriptType);
+  String getWorkingDirectory(
+      ParameterField<String> workingDirectory, @Nonnull ScriptType scriptType, boolean onDelegate);
 
   ShellScriptTaskParametersNG buildShellScriptTaskParametersNG(
       @Nonnull Ambiance ambiance, @Nonnull ShellScriptStepParameters shellScriptStepParameters);

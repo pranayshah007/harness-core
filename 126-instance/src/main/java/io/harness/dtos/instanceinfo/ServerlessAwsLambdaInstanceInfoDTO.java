@@ -55,4 +55,11 @@ public class ServerlessAwsLambdaInstanceInfoDTO extends InstanceInfoDTO {
   public String getPodName() {
     return functionName;
   }
+
+
+  @Override
+  public String getType() {
+    return "ServerlessAwsLambda";
+  }
+
 }

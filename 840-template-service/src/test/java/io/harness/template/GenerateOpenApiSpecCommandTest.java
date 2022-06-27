@@ -77,11 +77,11 @@ public class GenerateOpenApiSpecCommandTest {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void generatesOpenApiSpec() throws Exception {
-    final boolean success = cli.run(GENERATE_OPENAPI_SPEC, TEST_OPENAPI_JSON);
+    final Optional<Throwable> success = cli.run(GENERATE_OPENAPI_SPEC, TEST_OPENAPI_JSON);
     String openApiContent = openApiOutputStream.toString(UTF_8.name());
 
     SoftAssertions softly = new SoftAssertions();
-    softly.assertThat(success).as(EXIT_SUCCESS_DESCRIPTION).isTrue();
+    softly.assertThat(success).as(EXIT_SUCCESS_DESCRIPTION).isEmpty();
     softly.assertThat(openApiContent).as(OPEN_API_CONTENT_DESCRIPTION).isNotEmpty();
     softly.assertThat(stdErr.toString()).as(STDERR_DESCRIPTION).isEmpty();
     softly.assertAll();
@@ -91,11 +91,11 @@ public class GenerateOpenApiSpecCommandTest {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void doNotGeneratesOpenApiSpecIfOutputFileParameterNotProvided() throws Exception {
-    final boolean success = cli.run(GENERATE_OPENAPI_SPEC);
+    final Optional<Throwable> success = cli.run(GENERATE_OPENAPI_SPEC);
     String openApiContent = openApiOutputStream.toString(UTF_8.name());
 
     SoftAssertions softly = new SoftAssertions();
-    softly.assertThat(success).as(EXIT_SUCCESS_DESCRIPTION).isFalse();
+    softly.assertThat(success).as(EXIT_SUCCESS_DESCRIPTION).isNotEmpty();
     softly.assertThat(openApiContent).as(OPEN_API_CONTENT_DESCRIPTION).isEmpty();
     softly.assertThat(stdErr.toString()).as(STDERR_DESCRIPTION).isNotEmpty();
     softly.assertAll();

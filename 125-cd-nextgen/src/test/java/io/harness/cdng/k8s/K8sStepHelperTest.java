@@ -10,9 +10,9 @@ package io.harness.cdng.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.EnvironmentType.NON_PROD;
 import static io.harness.beans.EnvironmentType.PROD;
-import static io.harness.cdng.k8s.K8sStepHelper.K8S_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.cdng.k8s.K8sStepHelper.MISSING_INFRASTRUCTURE_ERROR;
 import static io.harness.cdng.k8s.K8sStepHelper.RELEASE_NAME;
+import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.connector.ConnectorType.AWS;
 import static io.harness.delegate.beans.connector.ConnectorType.GCP;
@@ -33,6 +33,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
@@ -136,6 +137,7 @@ import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.helm.HelmSubCommandType;
 import io.harness.k8s.model.HelmVersion;
+import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
@@ -231,7 +233,7 @@ public class K8sStepHelperTest extends CategoryTest {
     doReturn(true)
         .when(cdFeatureFlagHelper)
         .isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.USE_LATEST_CHARTMUSEUM_VERSION);
-    doAnswer(invocation -> invocation.getArgumentAt(1, String.class))
+    doAnswer(invocation -> invocation.getArgument(1, String.class))
         .when(engineExpressionService)
         .renderExpression(eq(ambiance), anyString());
   }
@@ -269,6 +271,19 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThatThrownBy(() -> k8sStepHelper.getK8sSupportedManifestOutcome(serviceManifestOutcomes))
         .hasMessageContaining(
             "There can be only a single manifest. Select one from " + String.join(", ", K8S_SUPPORTED_MANIFEST_TYPES));
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testGetPrunedResourcesIds() {
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    List<KubernetesResourceId> prunedResourceIds = k8sStepHelper.getPrunedResourcesIds("accountId", null);
+    assertThat(prunedResourceIds).isEmpty();
+    List<KubernetesResourceId> kubernetesResourceIds =
+        Collections.singletonList(KubernetesResourceId.builder().kind("Deployment").build());
+    prunedResourceIds = k8sStepHelper.getPrunedResourcesIds("accountId", kubernetesResourceIds);
+    assertThat(prunedResourceIds.get(0).getKind()).isEqualTo("Deployment");
   }
 
   @Test
@@ -338,7 +353,7 @@ public class K8sStepHelperTest extends CategoryTest {
                         .connector(ConnectorInfoDTO.builder().connectorConfig(GitConfigDTO.builder().build()).build())
                         .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), anyString());
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
 
     ManifestDelegateConfig delegateConfig = k8sStepHelper.getManifestDelegateConfig(manifestOutcome, ambiance);
     assertThat(delegateConfig.getManifestType()).isEqualTo(ManifestType.K8S_MANIFEST);
@@ -372,7 +387,7 @@ public class K8sStepHelperTest extends CategoryTest {
                         .connector(ConnectorInfoDTO.builder().connectorConfig(GitConfigDTO.builder().build()).build())
                         .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), anyString());
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
 
     ManifestDelegateConfig delegateConfig = k8sStepHelper.getManifestDelegateConfig(manifestOutcome, ambiance);
     assertThat(delegateConfig.getManifestType()).isEqualTo(ManifestType.HELM_CHART);
@@ -438,7 +453,7 @@ public class K8sStepHelperTest extends CategoryTest {
                         .connector(ConnectorInfoDTO.builder().connectorConfig(GitConfigDTO.builder().build()).build())
                         .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), anyString());
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
 
     ManifestDelegateConfig delegateConfig = k8sStepHelper.getManifestDelegateConfig(manifestOutcome, ambiance);
     assertThat(delegateConfig.getManifestType()).isEqualTo(ManifestType.KUSTOMIZE);
@@ -478,7 +493,7 @@ public class K8sStepHelperTest extends CategoryTest {
                                             .build())
                              .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), anyString());
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
 
     ManifestDelegateConfig delegateConfig = k8sStepHelper.getManifestDelegateConfig(manifestOutcome, ambiance);
     assertThat(delegateConfig.getManifestType()).isEqualTo(ManifestType.HELM_CHART);
@@ -506,7 +521,7 @@ public class K8sStepHelperTest extends CategoryTest {
                         .connector(ConnectorInfoDTO.builder().connectorConfig(GitConfigDTO.builder().build()).build())
                         .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), anyString());
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
 
     ManifestDelegateConfig delegateConfig = k8sStepHelper.getManifestDelegateConfig(manifestOutcome, ambiance);
     assertThat(delegateConfig.getManifestType()).isEqualTo(ManifestType.OPENSHIFT_TEMPLATE);
@@ -603,7 +618,7 @@ public class K8sStepHelperTest extends CategoryTest {
                 .connector(ConnectorInfoDTO.builder().connectorType(AWS).connectorConfig(awsConnectorConfig).build())
                 .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), anyString());
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
 
     ManifestDelegateConfig delegateConfig = k8sStepHelper.getManifestDelegateConfig(manifestOutcome, ambiance);
     assertThat(delegateConfig.getManifestType()).isEqualTo(ManifestType.HELM_CHART);
@@ -650,7 +665,7 @@ public class K8sStepHelperTest extends CategoryTest {
                      .connector(ConnectorInfoDTO.builder().connectorType(GCP).connectorConfig(gcpConnectorDTO).build())
                      .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), anyString());
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
 
     ManifestDelegateConfig delegateConfig = k8sStepHelper.getManifestDelegateConfig(helmChartManifestOutcome, ambiance);
     assertThat(delegateConfig.getManifestType()).isEqualTo(ManifestType.HELM_CHART);
@@ -707,7 +722,7 @@ public class K8sStepHelperTest extends CategoryTest {
 
                         .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), anyString());
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
 
     TaskChainResponse taskChainResponse =
         k8sStepHelper.startChainLink(k8sStepExecutor, ambiance, rollingStepElementParams);
@@ -998,7 +1013,7 @@ public class K8sStepHelperTest extends CategoryTest {
                                        .build())
                         .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), anyString());
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
 
     TaskChainResponse taskChainResponse =
         k8sStepHelper.startChainLink(k8sStepExecutor, ambiance, rollingStepElementParams);
@@ -1110,7 +1125,7 @@ public class K8sStepHelperTest extends CategoryTest {
                                     .build())
                      .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), anyString());
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
 
     TaskChainResponse taskChainResponse =
         k8sStepHelper.startChainLink(k8sStepExecutor, ambiance, rollingStepElementParams);
@@ -1214,7 +1229,7 @@ public class K8sStepHelperTest extends CategoryTest {
                                     .build())
                      .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), anyString());
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
 
     TaskChainResponse taskChainResponse =
         k8sStepHelper.startChainLink(k8sStepExecutor, ambiance, rollingStepElementParams);
@@ -1314,7 +1329,7 @@ public class K8sStepHelperTest extends CategoryTest {
                         .build())
                 .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), anyString());
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
 
     TaskChainResponse taskChainResponse =
         k8sStepHelper.startChainLink(k8sStepExecutor, ambiance, rollingStepElementParams);
@@ -1967,7 +1982,7 @@ public class K8sStepHelperTest extends CategoryTest {
 
                         .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), anyString());
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
 
     TaskChainResponse taskChainResponse =
         k8sStepHelper.startChainLink(k8sStepExecutor, ambiance, rollingStepElementParams);
@@ -2318,7 +2333,7 @@ public class K8sStepHelperTest extends CategoryTest {
 
                         .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), anyString());
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
 
     TaskChainResponse taskChainResponse =
         k8sStepHelper.startChainLink(k8sStepExecutor, ambiance, rollingStepElementParams);
@@ -2457,7 +2472,7 @@ public class K8sStepHelperTest extends CategoryTest {
 
                         .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), anyString());
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
     when(k8sStepExecutor.executeK8sTask(any(), any(), any(), any(), any(), anyBoolean(), any()))
         .thenReturn(TaskChainResponse.builder().chainEnd(true).build());
 

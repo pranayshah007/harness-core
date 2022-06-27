@@ -63,20 +63,17 @@ serviceDefinition:
             store:
               type: Harness
               spec:
-                fileReference: harnessFSFileIdentifier
-                filePath: Root/folder_1/filename.txt
-                fileType: FileStore
-            type: LocalFile
+                files:
+                  - path: /folder/config.yml,
+                    scope: account
       - configFile:
-          identifier: harnessEncConfigFileIdentifier
+          identifier: harnessFSConfigFileIdentifier
           spec:
             store:
               type: Harness
               spec:
-                fileReference: harnessEncFileIdentifier
-                filePath: secretManagerIdentifier
-                fileType: Encrypted
-            type: Encrypted
+                secretFiles:
+                  - account.secretFileIdentifier
     manifestOverrideSets: []
     variables: []
 service:

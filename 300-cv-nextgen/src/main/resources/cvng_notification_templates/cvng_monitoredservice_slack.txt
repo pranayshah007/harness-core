@@ -1,3 +1,57 @@
 {
-    "text": "This is a Monitored Service notification from Harness. You have breached your Monitored Service Health with name ${monitoredServiceName} inside project ${projectIdentifier}, organisation ${orgIdentifier} and account ${accountIdentifier}."
+    "text" : "*Harness SRM*\n*Service Health: <${URL}|${MONITORED_SERVICE_NAME}> ${HEADER_MESSAGE} <${URL}|${SERVICE_NAME}> service*\n",
+    "attachments" : [
+        {
+          "color" : "${COLOR}",
+          "blocks" : [
+            {
+              "type" : "section",
+              "text" : {
+                "type" : "mrkdwn",
+                "text": "*Trigger*\n${TRIGGER_MESSAGE}"
+              }
+            },
+            {
+              "type" : "section",
+              "text" : {
+                "type" : "mrkdwn",
+                "text": "_Incident occurred<!date^${START_TS_SECS}^ {date_short_pretty} at {time}| ${START_DATE}>_"
+              }
+            },
+            {
+              "type": "divider"
+            },
+            {
+                "type": "section",
+                "fields": [
+                    {
+                        "type": "mrkdwn",
+                        "text": "*Account Name*\n${ACCOUNT_NAME}"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": "*Organization Name*\n${ORG_NAME}"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": "*Project Name*\n${PROJECT_NAME}"
+                    }
+                ]
+            },
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "View Service Health Details"
+                        },
+                        "url": "${URL}"
+                    }
+                ]
+            },
+          ]
+        }
+    ]
 }

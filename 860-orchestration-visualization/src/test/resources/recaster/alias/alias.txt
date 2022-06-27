@@ -49,3 +49,4 @@ io.harness.plancreator.strategy.ExcludeConfig
 io.harness.plancreator.strategy.MatrixConfig
 io.harness.plancreator.strategy.StrategyConfig
 io.harness.plancreator.strategy.HarnessForConfig
+io.harness.ng.core.envGroup.EnvironmentGroupOutcome

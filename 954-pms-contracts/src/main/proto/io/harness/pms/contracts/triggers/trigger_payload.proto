@@ -53,4 +53,5 @@ enum SourceType {
   GITLAB_REPO = 2;
   BITBUCKET_REPO = 3;
   AWS_CODECOMMIT_REPO = 4;
+  AZURE_REPO = 5;
 }

@@ -24,6 +24,7 @@ import software.wings.api.ApprovalStateExecutionData;
 import software.wings.sm.states.ApprovalState.ApprovalStateType;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -35,7 +36,7 @@ public class ApprovalMetadataTest extends CategoryTest {
     assertThat(ApprovalMetadata.fromStateExecutionData(null)).isNull();
     assertThat(ApprovalMetadata.fromStateExecutionData(anEnvStateExecutionData().build())).isNull();
 
-    Instant now = Instant.now();
+    Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     ApprovalStateExecutionData approvalStateExecutionData =
         ApprovalStateExecutionData.builder()
             .timeoutMillis(1000)

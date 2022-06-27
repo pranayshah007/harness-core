@@ -40,8 +40,8 @@ public class InitiateNodeHelper {
     return producer.send(Message.newBuilder().putAllMetadata(eventMetadata).setData(event.toByteString()).build());
   }
 
-  public String publishEvent(
-      Ambiance ambiance, String nodeId, String runtimeId, StrategyMetadata strategyMetadata, boolean shouldRun) {
+  public String publishEvent(Ambiance ambiance, String nodeId, String runtimeId, StrategyMetadata strategyMetadata,
+      InitiateMode initiateMode) {
     ImmutableMap<String, String> eventMetadata = ImmutableMap.<String, String>builder()
                                                      .put("eventType", "TRIGGER_NODE")
                                                      .put("newNodeId", nodeId)
@@ -53,7 +53,7 @@ public class InitiateNodeHelper {
                                   .setNodeId(nodeId)
                                   .setRuntimeId(runtimeId)
                                   .setStrategyMetadata(strategyMetadata)
-                                  .setInitiateMode(InitiateMode.CREATE_AND_START)
+                                  .setInitiateMode(initiateMode)
                                   .build();
     return producer.send(Message.newBuilder().putAllMetadata(eventMetadata).setData(event.toByteString()).build());
   }

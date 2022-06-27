@@ -57,12 +57,10 @@ fi
 BAZEL_MODULES="\
   //100-migrator:module \
   //270-verification:module \
-  //280-batch-processing:module \
   //290-dashboard-service:module \
   //295-cdng-contracts:module \
   //300-cv-nextgen:module \
   //310-ci-manager:module \
-  //315-sto-manager:module \
   //320-ci-execution:module \
   //323-sto-utilities:module \
   //325-sto-beans:module \
@@ -107,6 +105,7 @@ BAZEL_MODULES="\
   //870-orchestration:module \
   //874-orchestration-delay:module \
   //876-orchestration-beans:module \
+  //877-filestore:module \
   //878-ng-common-utilities:module \
   //879-pms-sdk:module \
   //882-pms-sdk-core:module \
@@ -125,6 +124,7 @@ BAZEL_MODULES="\
   //930-delegate-tasks:module \
   //930-ng-core-clients:module \
   //932-connector-task:module \
+  //933-scm-commons:module \
   //935-analyser-service:module \
   //937-persistence-tracer:module \
   //940-feature-flag:module \
@@ -198,11 +198,7 @@ BAZEL_MODULES="\
   //990-commons-test:module \
   //999-annotations:module \
   //access-control/service:module \
-  //access-control/libs/aggregator:module \
-  //access-control/libs/core:module \
   //access-control/contracts:module \
-  //clients/access-control/admin-client:module \
-  //clients/access-control/sdk:module \
   //product/ci/engine/proto:all \
   //product/ci/scm/proto:all \
 "
@@ -335,6 +331,7 @@ build_bazel_module 920-delegate-service-beans
 build_bazel_module 930-delegate-tasks
 build_bazel_module 930-ng-core-clients
 build_bazel_module 932-connector-task
+build_bazel_module 933-scm-commons
 build_bazel_module 940-feature-flag
 build_bazel_module 940-secret-manager-client
 build_bazel_module 947-scim-core
@@ -394,5 +391,4 @@ bazel ${bazelrc} run ${BAZEL_ARGUMENTS} //001-microservice-intfc-tool:module | g
 if [ "${PLATFORM}" == "jenkins" ]; then
  build_protocol_info 800-pipeline-service pipeline-service
  build_protocol_info 310-ci-manager ci-manager
- build_protocol_info 315-sto-manager sto-manager
 fi

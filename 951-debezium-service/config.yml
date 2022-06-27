@@ -29,13 +29,12 @@ server:
 
 debeziumConfigs:
   - isEnabled: true
-    offset.storage.topic: debezium-offsets-pipeline
-    name: pipeline
+    name: pipeline # unique for each debezium config
     key.converter.schemas.enable: false
     value.converter.schemas.enable: false
     offset.flush.interval.ms: ${OFFSET_FLUSH_INTERVAL_MS:-5000}
     mongodb.hosts: ${MONGO_DB_HOSTS:-localhost:27017}
-    mongodb.name: pmsMongo
+    mongodb.name: pmsMongo # unique for each debezium config
     mongodb.user: ${MONGO_DB_USER:-}
     mongodb.password: ${MONGO_DB_PASSWORD:-}
     mongodb.ssl.enabled: ${MONGO_DB_SSL_ENABLED:-false}

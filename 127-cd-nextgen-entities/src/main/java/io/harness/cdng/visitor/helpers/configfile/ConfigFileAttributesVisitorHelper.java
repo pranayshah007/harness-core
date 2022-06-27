@@ -20,9 +20,6 @@ public class ConfigFileAttributesVisitorHelper implements ConfigValidator {
   @Override
   public Object createDummyVisitableElement(Object originalElement) {
     ConfigFileAttributes configFileAttributes = (ConfigFileAttributes) originalElement;
-    return ConfigFileAttributes.builder()
-        .store(configFileAttributes.getStore())
-        .type(configFileAttributes.getType())
-        .build();
+    return ConfigFileAttributes.builder().store(configFileAttributes.getStore()).build();
   }
 }

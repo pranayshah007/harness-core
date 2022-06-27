@@ -9,6 +9,7 @@ package io.harness.gitsync.common.scmerrorhandling;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.BHAVYA;
+import static io.harness.rule.OwnerRule.MOHIT_GARG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -73,5 +74,17 @@ public class ScmApiErrorHandlingHelperTest extends CategoryTest {
                            -> ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_BRANCHES,
                                ConnectorType.GITHUB, "https://github.com/", 404, "Repo Not Found"))
         .isInstanceOf(HintException.class);
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testIsFailureResponse() {
+    assertThat(ScmApiErrorHandlingHelper.isFailureResponse(203, ConnectorType.AZURE_REPO)).isTrue();
+    assertThat(ScmApiErrorHandlingHelper.isFailureResponse(200, ConnectorType.AZURE_REPO)).isFalse();
+    assertThat(ScmApiErrorHandlingHelper.isFailureResponse(203, ConnectorType.CE_AZURE)).isFalse();
+    assertThat(ScmApiErrorHandlingHelper.isFailureResponse(300, ConnectorType.GITHUB)).isTrue();
+    assertThat(ScmApiErrorHandlingHelper.isFailureResponse(400, ConnectorType.GITHUB)).isTrue();
+    assertThat(ScmApiErrorHandlingHelper.isFailureResponse(500, ConnectorType.GITHUB)).isTrue();
   }
 }

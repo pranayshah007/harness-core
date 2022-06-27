@@ -555,13 +555,13 @@ public class PcfSetupStateTest extends WingsBaseTest {
 
     PcfManifestsPackage manifestsPackage = PcfManifestsPackage.builder().manifestYml(manifest).build();
     CfInternalConfig config = CfInternalConfig.builder().build();
-    doReturn(false).when(featureFlagService).isEnabled(eq(CF_ALLOW_SPECIAL_CHARACTERS), anyString());
+    doReturn(false).when(featureFlagService).isEnabled(eq(CF_ALLOW_SPECIAL_CHARACTERS), any());
     String appNamePrefix =
         pcfSetupState.generateAppNamePrefix(context, app, serviceElement, env, manifestsPackage, config);
     assertThat(appNamePrefix).isNotNull();
     assertThat(appNamePrefix).isEqualTo("test__gsup__1__0__45");
 
-    doReturn(true).when(featureFlagService).isEnabled(eq(CF_ALLOW_SPECIAL_CHARACTERS), anyString());
+    doReturn(true).when(featureFlagService).isEnabled(eq(CF_ALLOW_SPECIAL_CHARACTERS), any());
     appNamePrefix = pcfSetupState.generateAppNamePrefix(context, app, serviceElement, env, manifestsPackage, config);
     assertThat(appNamePrefix).isNotNull();
     assertThat(appNamePrefix).isEqualTo("test-gsup-1.0.45");
@@ -1078,7 +1078,7 @@ public class PcfSetupStateTest extends WingsBaseTest {
     PcfManifestsPackage pcfManifestsPackage = PcfManifestsPackage.builder().build();
     String r1 = "myRoute4";
     String r2 = "myRoute01";
-    doReturn(Arrays.asList(r1)).when(pcfStateHelper).getRouteMaps(anyString(), any());
+    doReturn(Arrays.asList(r1)).when(pcfStateHelper).getRouteMaps(any(), any());
     pcfSetupState.setBlueGreen(false);
     assertThat(pcfSetupState.fetchRouteMaps(
                    context, pcfManifestsPackage, PcfInfrastructureMapping.builder().tempRouteMap(null).build()))
@@ -1106,7 +1106,7 @@ public class PcfSetupStateTest extends WingsBaseTest {
 
     pcfSetupState.setBlueGreen(true);
     pcfSetupState.setFinalRouteMap(null);
-    doReturn(emptyList()).when(pcfStateHelper).getRouteMaps(anyString(), any());
+    doReturn(emptyList()).when(pcfStateHelper).getRouteMaps(any(), any());
     doReturn(emptyList()).when(pcfStateHelper).applyVarsYmlSubstitutionIfApplicable(anyList(), any());
     try {
       pcfSetupState.fetchRouteMaps(

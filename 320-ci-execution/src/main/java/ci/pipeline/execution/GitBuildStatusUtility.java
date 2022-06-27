@@ -8,16 +8,19 @@
 package ci.pipeline.execution;
 
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
+import static io.harness.common.CIExecutionConstants.PATH_SEPARATOR;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
 import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
-import static io.harness.delegate.beans.connector.scm.GitConnectionType.ACCOUNT;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.pms.execution.utils.StatusUtils.isFinalStatus;
 import static io.harness.steps.StepUtils.buildAbstractions;
 
 import io.harness.PipelineUtils;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
@@ -27,14 +30,14 @@ import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
 import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
-import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
-import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.task.ci.CIBuildStatusPushParameters;
 import io.harness.delegate.task.ci.GitSCMType;
 import io.harness.encryption.Scope;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.git.GitClientHelper;
+import io.harness.git.checks.GitStatusCheckHelper;
+import io.harness.git.checks.GitStatusCheckParams;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -46,15 +49,20 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.remote.client.RestClientUtils;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.states.codebase.CodeBaseTaskStep;
 import io.harness.states.codebase.CodeBaseTaskStepParameters;
+import io.harness.stateutils.buildstate.CodebaseUtils;
 import io.harness.stateutils.buildstate.ConnectorUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.net.URL;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -75,14 +83,20 @@ public class GitBuildStatusUtility {
   private static final String GITLAB_CANCELED = "canceled";
   private static final String GITLAB_PENDING = "pending";
   private static final String GITLAB_SUCCESS = "success";
+  private static final String AZURE_REPO_ERROR = "error";
+  private static final String AZURE_REPO_FAILED = "failed";
+  private static final String AZURE_REPO_PENDING = "pending";
+  private static final String AZURE_REPO_SUCCESS = "succeeded";
   private static final String DASH = "-";
   private static final int IDENTIFIER_LENGTH = 30;
+  private static final List<ConnectorType> validConnectors = Arrays.asList(GITHUB, GITLAB, BITBUCKET, AZURE_REPO);
 
-  @Inject GitClientHelper gitClientHelper;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject @Named("ngBaseUrl") private String ngBaseUrl;
   @Inject private PipelineUtils pipelineUtils;
+  @Inject private AccountClient accountClient;
+  @Inject private GitStatusCheckHelper gitStatusCheckHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
@@ -139,20 +153,14 @@ public class GitBuildStatusUtility {
       }
 
       if (ciBuildStatusPushParameters.getState() != UNSUPPORTED) {
-        Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
-        DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
-                                                      .accountId(accountId)
-                                                      .taskSetupAbstractions(abstractions)
-                                                      .executionTimeout(java.time.Duration.ofSeconds(60))
-                                                      .taskType("BUILD_STATUS")
-                                                      .taskParameters(ciBuildStatusPushParameters)
-                                                      .taskDescription("CI git build status task")
-                                                      .build();
-
-        String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
-        log.info("Submitted git status update request for stage {}, planId {}, commitId {}, status {} with taskId {}",
-            buildStatusUpdateParameter.getIdentifier(), ambiance.getPlanExecutionId(), commitSha,
-            ciBuildStatusPushParameters.getState(), taskId);
+        ConnectorDetails connectorDetails = ciBuildStatusPushParameters.getConnectorDetails();
+        boolean executeOnDelegate =
+                connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
+        if (executeOnDelegate) {
+          sendStatusViaDelegate(ambiance, ciBuildStatusPushParameters, accountId, buildStatusUpdateParameter.getIdentifier());
+        } else {
+          sendStatus(ambiance, ciBuildStatusPushParameters, accountId, buildStatusUpdateParameter.getIdentifier());
+        }
       } else {
         log.info("Skipping git status update request for stage {}, planId {}, commitId {}, status {}, scm type {}",
             buildStatusUpdateParameter.getIdentifier(), ambiance.getPlanExecutionId(), commitSha,
@@ -161,28 +169,64 @@ public class GitBuildStatusUtility {
     }
   }
 
+  private void sendStatus(
+      Ambiance ambiance, CIBuildStatusPushParameters ciBuildStatusPushParameters, String accountId, String stageId) {
+    GitStatusCheckParams gitStatusCheckParams = convertParams(ciBuildStatusPushParameters);
+    log.info("Sending git status update request for stage {}, planId {}, commitId {}, status {}",
+            stageId, ambiance.getPlanExecutionId(), ciBuildStatusPushParameters.getSha(),
+            ciBuildStatusPushParameters.getState());
+    gitStatusCheckHelper.sendStatus(gitStatusCheckParams, accountId);
+  }
+
+  private void sendStatusViaDelegate(Ambiance ambiance, CIBuildStatusPushParameters ciBuildStatusPushParameters, String accountId, String stageId) {
+    Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
+    DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
+            .accountId(accountId)
+            .taskSetupAbstractions(abstractions)
+            .executionTimeout(java.time.Duration.ofSeconds(60))
+            .taskType("BUILD_STATUS")
+            .taskParameters(ciBuildStatusPushParameters)
+            .taskDescription("CI git build status task")
+            .build();
+
+    String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
+    log.info("Submitted git status update request for stage {}, planId {}, commitId {}, status {} with taskId {}",
+            stageId, ambiance.getPlanExecutionId(), ciBuildStatusPushParameters.getSha(),
+            ciBuildStatusPushParameters.getState(), taskId);
+  }
+
+  private GitStatusCheckParams convertParams(CIBuildStatusPushParameters params) {
+    return GitStatusCheckParams.builder()
+            .title(params.getTitle())
+            .desc(params.getDesc())
+            .state(params.getState())
+            .buildNumber(params.getBuildNumber())
+            .detailsUrl(params.getDetailsUrl())
+            .repo(params.getRepo())
+            .owner(params.getOwner())
+            .sha(params.getSha())
+            .identifier(params.getIdentifier())
+            .target_url(params.getTarget_url())
+            .userName(params.getUserName())
+            .connectorDetails(params.getConnectorDetails())
+            .gitSCMType(params.getGitSCMType())
+            .build();
+  }
+
   public CIBuildStatusPushParameters getCIBuildStatusPushParams(
       Ambiance ambiance, BuildStatusUpdateParameter buildStatusUpdateParameter, Status status, String commitSha) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     ConnectorDetails gitConnector = getGitConnector(ngAccess, buildStatusUpdateParameter.getConnectorIdentifier());
+    validateSCMType(gitConnector.getConnectorType());
 
-    boolean isAccountLevelConnector = isAccountLevelConnector(gitConnector, buildStatusUpdateParameter.getRepoName());
-
+    String projectName = buildStatusUpdateParameter.getProjectName();
     String repoName = buildStatusUpdateParameter.getRepoName();
-    String url = retrieveURL(gitConnector);
-    if (!url.endsWith("/")) {
-      url = url + "/";
-    }
-    String ownerName;
-    String finalRepo;
-    if (!isAccountLevelConnector) {
-      finalRepo = gitClientHelper.getGitRepo(url);
-      ownerName = gitClientHelper.getGitOwner(url, false);
-    } else {
-      finalRepo = gitClientHelper.getGitRepo(url + repoName);
-      // Append the url and use the repo level connector owner parsing logic
-      ownerName = gitClientHelper.getGitOwner(url + repoName, false);
-    }
+    String url = CodebaseUtils.getCompleteURLFromConnector(gitConnector, projectName, repoName);
+
+    url = StringUtils.join(StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR);
+
+    String finalRepo = GitClientHelper.getGitRepo(url);
+    String ownerName = GitClientHelper.getGitOwner(url, false);
 
     GitSCMType gitSCMType = retrieveSCMType(gitConnector);
     return CIBuildStatusPushParameters.builder()
@@ -219,47 +263,17 @@ public class GitBuildStatusUtility {
       return GitSCMType.BITBUCKET;
     } else if (gitConnector.getConnectorType() == GITLAB) {
       return GitSCMType.GITLAB;
+    } else if (gitConnector.getConnectorType() == AZURE_REPO) {
+      return GitSCMType.AZURE_REPO;
     } else {
       throw new CIStageExecutionException("scmType " + gitConnector.getConnectorType() + "is not supported");
     }
   }
 
-  private String retrieveURL(ConnectorDetails gitConnector) {
-    if (gitConnector.getConnectorType() == GITHUB) {
-      GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
-      return gitConfigDTO.getUrl();
-    } else if (gitConnector.getConnectorType() == BITBUCKET) {
-      BitbucketConnectorDTO gitConfigDTO = (BitbucketConnectorDTO) gitConnector.getConnectorConfig();
-      return gitConfigDTO.getUrl();
-    } else if (gitConnector.getConnectorType() == GITLAB) {
-      GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
-      return gitConfigDTO.getUrl();
-    } else {
-      throw new CIStageExecutionException("scmType " + gitConnector.getConnectorType() + "is not supported");
+  private void validateSCMType(ConnectorType connectorType) {
+    if (!validConnectors.contains(connectorType)) {
+      throw new CIStageExecutionException("scmType " + connectorType + "is not supported");
     }
-  }
-
-  private boolean isAccountLevelConnector(ConnectorDetails gitConnector, String repoName) {
-    if (gitConnector.getConnectorType() == GITHUB) {
-      GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
-      if (gitConfigDTO.getConnectionType() == ACCOUNT) {
-        return true;
-      }
-    } else if (gitConnector.getConnectorType() == BITBUCKET) {
-      BitbucketConnectorDTO gitConfigDTO = (BitbucketConnectorDTO) gitConnector.getConnectorConfig();
-      if (gitConfigDTO.getConnectionType() == ACCOUNT) {
-        return true;
-      }
-    } else if (gitConnector.getConnectorType() == GITLAB) {
-      GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
-      if (gitConfigDTO.getConnectionType() == ACCOUNT) {
-        return true;
-      }
-    } else {
-      throw new CIStageExecutionException("scmType " + gitConnector.getConnectorType() + "is not supported");
-    }
-
-    return false;
   }
 
   private String retrieveBuildStatusState(GitSCMType gitSCMType, Status status) {
@@ -270,6 +284,8 @@ public class GitBuildStatusUtility {
         return getGitLabStatus(status);
       case BITBUCKET:
         return getBitBucketStatus(status);
+      case AZURE_REPO:
+        return getAzureRepoStatus(status);
       default:
         unhandled(gitSCMType);
         return UNSUPPORTED;
@@ -294,6 +310,25 @@ public class GitBuildStatusUtility {
     }
 
     return UNSUPPORTED;
+  }
+
+  private String getAzureRepoStatus(Status status) {
+    switch (status) {
+      case ERRORED:
+        return AZURE_REPO_ERROR;
+      case ABORTED:
+      case FAILED:
+      case EXPIRED:
+        return AZURE_REPO_FAILED;
+      case SUCCEEDED:
+      case IGNORE_FAILED:
+        return AZURE_REPO_SUCCESS;
+      case RUNNING:
+      case QUEUED:
+        return AZURE_REPO_PENDING;
+      default:
+        return UNSUPPORTED;
+    }
   }
 
   private String getGitLabStatus(Status status) {
@@ -359,6 +394,27 @@ public class GitBuildStatusUtility {
   }
 
   private String getBuildDetailsUrl(NGAccess ngAccess, String pipelineId, String executionId) {
-    return pipelineUtils.getBuildDetailsUrl(ngAccess, pipelineId, executionId, ngBaseUrl);
+    String baseUrl = getNgBaseUrl(getVanityUrl(ngAccess.getAccountIdentifier()), ngBaseUrl);
+    return pipelineUtils.getBuildDetailsUrl(ngAccess, pipelineId, executionId, baseUrl);
+  }
+
+  private String getVanityUrl(String accountID) {
+    return RestClientUtils.getResponse(accountClient.getVanityUrl(accountID));
+  }
+
+  private String getNgBaseUrl(String vanityUrl, String defaultBaseUrl) {
+    if (isEmpty(vanityUrl)) {
+      return defaultBaseUrl;
+    }
+
+    String newBaseUrl = StringUtils.stripEnd(vanityUrl, PATH_SEPARATOR);
+    try {
+      URL url = new URL(defaultBaseUrl);
+      String hostUrl = String.format("%s://%s", url.getProtocol(), url.getHost());
+      return StringUtils.join(newBaseUrl, defaultBaseUrl.substring(hostUrl.length()));
+    } catch (Exception e) {
+      log.warn("There was error while generating vanity URL", e);
+      return defaultBaseUrl;
+    }
   }
 }

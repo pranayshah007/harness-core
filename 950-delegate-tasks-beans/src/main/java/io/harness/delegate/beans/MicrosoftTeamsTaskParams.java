@@ -7,10 +7,13 @@
 
 package io.harness.delegate.beans;
 
+import static io.harness.expression.Expression.ALLOW_SECRETS;
+
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 
 import java.net.URI;
@@ -25,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @Builder
 @Slf4j
 public class MicrosoftTeamsTaskParams implements TaskParameters, ExecutionCapabilityDemander {
-  List<String> microsoftTeamsWebhookUrls;
+  @Expression(ALLOW_SECRETS) List<String> microsoftTeamsWebhookUrls;
   String message;
   String notificationId;
 
@@ -42,7 +45,7 @@ public class MicrosoftTeamsTaskParams implements TaskParameters, ExecutionCapabi
                               .port(uri.getPort())
                               .build());
       } catch (URISyntaxException e) {
-        log.error("Can't parse webhookurl as URI {}", notificationId, e);
+        log.error("Can't parse webhookurl as URI {}", notificationId);
       }
     }
     return compatibility;

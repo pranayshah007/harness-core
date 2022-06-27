@@ -12,6 +12,8 @@ import io.harness.cvng.core.services.api.VerificationServiceSecretManager;
 import io.harness.cvng.core.services.impl.VerificationServiceSecretManagerImpl;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagModule;
+import io.harness.metrics.impl.DelegateMetricsServiceImpl;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.persistence.HPersistence;
 import io.harness.service.ContinuousVerificationServiceImpl;
@@ -112,6 +114,7 @@ public class VerificationServiceModule extends AbstractModule {
     bind(YamlPushService.class).to(NoOpYamlPushService.class);
     bind(AlertService.class).to(NoOpAlertService.class);
     bind(VerificationServiceSecretManager.class).to(VerificationServiceSecretManagerImpl.class);
+    bind(DelegateMetricsService.class).to(DelegateMetricsServiceImpl.class);
 
     bind(ExecutorService.class)
         .toInstance(ThreadPool.create(1, 20, 5, TimeUnit.SECONDS,

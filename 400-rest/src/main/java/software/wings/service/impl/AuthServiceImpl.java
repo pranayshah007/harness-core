@@ -396,17 +396,17 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  public void validateDelegateToken(
-      String accountId, String tokenString, String delegateId, boolean shouldSetTokenNameInGlobalContext) {
-    java.util.Base64.Decoder decoder = getUrlDecoder();
-    final String authHeader = new String(decoder.decode(tokenString.split("\\.")[0]));
-    if (authHeader.contains("HS256")) {
-      delegateTokenAuthenticator.validateDelegateAuth2Token(accountId, tokenString);
-    } else {
-      delegateTokenAuthenticator.validateDelegateToken(
-          accountId, tokenString, delegateId, shouldSetTokenNameInGlobalContext);
+  public void validateDelegateToken(String accountId, String tokenString, String delegateId, String delegateTokenName,
+      boolean shouldSetTokenNameInGlobalContext) {
+      java.util.Base64.Decoder decoder = getUrlDecoder();
+      final String authHeader = new String(decoder.decode(tokenString.split("\\.")[0]));
+      if (authHeader.contains("HS256")) {
+        delegateTokenAuthenticator.validateDelegateAuth2Token(accountId, tokenString);
+      } else {
+        delegateTokenAuthenticator.validateDelegateToken(
+            accountId, tokenString, delegateId, delegateTokenName, shouldSetTokenNameInGlobalContext);
+      }
     }
-  }
 
   @Override
   public void validateExternalServiceToken(String accountId, String externalServiceToken) {

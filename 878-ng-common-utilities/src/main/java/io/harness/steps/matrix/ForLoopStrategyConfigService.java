@@ -20,13 +20,13 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
   public List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfig strategyConfig, String childNodeId) {
     HarnessForConfig harnessForConfig = strategyConfig.getForConfig();
     List<ChildrenExecutableResponse.Child> children = new ArrayList<>();
-    for (int i = 0; i < harnessForConfig.getIteration(); i++) {
+    for (int i = 0; i < harnessForConfig.getIteration().getValue(); i++) {
       children.add(ChildrenExecutableResponse.Child.newBuilder()
                        .setChildNodeId(childNodeId)
                        .setStrategyMetadata(StrategyMetadata.newBuilder()
                                                 .setCurrentIteration(i)
-                                                .setTotalIterations(harnessForConfig.getIteration())
-                                                .getDefaultInstanceForType())
+                                                .setTotalIterations(harnessForConfig.getIteration().getValue())
+                                                .build())
                        .build());
     }
     return children;

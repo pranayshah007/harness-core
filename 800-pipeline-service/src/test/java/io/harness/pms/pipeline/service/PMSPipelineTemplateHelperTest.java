@@ -78,10 +78,13 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testResolveTemplateRefsInPipelineWhenFFIsOff() {
     doReturn(false).when(pmsFeatureFlagHelper).isEnabled(ACCOUNT_ID, FeatureName.NG_TEMPLATES);
-    String resolveTemplateRefsInPipeline =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML)
-            .getMergedPipelineYaml();
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML);
+    String resolveTemplateRefsInPipeline = templateMergeResponseDTO.getMergedPipelineYaml();
+    String resolveTemplateRefsInPipelineWithOPAresponse =
+        templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
     assertThat(resolveTemplateRefsInPipeline).isEqualTo(GIVEN_YAML);
+    assertThat(resolveTemplateRefsInPipelineWithOPAresponse).isEqualTo(GIVEN_YAML);
   }
 
   @Test

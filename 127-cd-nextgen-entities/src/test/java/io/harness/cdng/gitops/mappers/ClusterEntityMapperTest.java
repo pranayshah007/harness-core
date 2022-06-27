@@ -17,6 +17,7 @@ import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import java.time.Instant;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -44,12 +45,14 @@ public class ClusterEntityMapperTest extends CategoryTest {
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void testWriteDTO() {
+    long epochSecond = Instant.now().getEpochSecond();
     Cluster request = Cluster.builder()
                           .accountId("accountId")
                           .clusterRef("id")
                           .envRef("env")
                           .orgIdentifier("orgId")
                           .projectIdentifier("orgId")
+                          .createdAt(epochSecond)
                           .build();
 
     ClusterResponse entity = ClusterEntityMapper.writeDTO(request);
@@ -57,5 +60,6 @@ public class ClusterEntityMapperTest extends CategoryTest {
     assertThat(entity.getOrgIdentifier()).isEqualTo("orgId");
     assertThat(entity.getProjectIdentifier()).isEqualTo("orgId");
     assertThat(entity.getClusterRef()).isEqualTo("id");
+    assertThat(entity.getLinkedAt()).isEqualTo(epochSecond);
   }
 }

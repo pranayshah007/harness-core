@@ -7,7 +7,6 @@
 
 package io.harness.cvng.verificationjob.services.impl;
 
-import static io.harness.cvng.beans.job.VerificationJobType.HEALTH;
 import static io.harness.exception.WingsException.USER_SRE;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -15,7 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.job.VerificationJobDTO;
 import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.CanaryVerificationJob;
-import io.harness.cvng.verificationjob.entities.HealthVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob.VerificationJobKeys;
@@ -63,11 +61,6 @@ public class VerificationJobServiceImpl implements VerificationJobService {
   }
 
   @Override
-  public void save(VerificationJob verificationJob) {
-    hPersistence.save(verificationJob);
-  }
-
-  @Override
   public VerificationJob getVerificationJob(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier) {
     Preconditions.checkNotNull(accountId);
@@ -83,46 +76,10 @@ public class VerificationJobServiceImpl implements VerificationJobService {
   }
 
   @Override
-  public VerificationJob getResolvedHealthVerificationJob(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String envIdentifier, String serviceIdentifier) {
-    Preconditions.checkNotNull(accountIdentifier);
-    Preconditions.checkNotNull(orgIdentifier);
-    Preconditions.checkNotNull(projectIdentifier);
-    Preconditions.checkNotNull(envIdentifier);
-    Preconditions.checkNotNull(serviceIdentifier);
-    VerificationJob defaultHealthVerificationJob =
-        getDefaultHealthVerificationJob(accountIdentifier, orgIdentifier, projectIdentifier);
-    defaultHealthVerificationJob.setServiceIdentifier(serviceIdentifier, false);
-    defaultHealthVerificationJob.setEnvIdentifier(envIdentifier, false);
-    defaultHealthVerificationJob.setDuration("15m", false);
-    return defaultHealthVerificationJob;
-  }
-
-  @Override
-  public VerificationJob getDefaultHealthVerificationJob(
-      String accountId, String orgIdentifier, String projectIdentifier) {
-    VerificationJob defaultJob = hPersistence.createQuery(VerificationJob.class)
-                                     .filter(VerificationJobKeys.accountId, accountId)
-                                     .filter(VerificationJobKeys.projectIdentifier, projectIdentifier)
-                                     .filter(VerificationJobKeys.orgIdentifier, orgIdentifier)
-                                     .filter(VerificationJobKeys.type, HEALTH)
-                                     .filter(VerificationJobKeys.isDefaultJob, true)
-                                     .get();
-    Preconditions.checkNotNull(defaultJob,
-        String.format(
-            "Default Health job cannot be null for accountIdentifier [%s], orgIdentifier [%s], projectIdentifier [%s]",
-            accountId, orgIdentifier, projectIdentifier));
-    return defaultJob;
-  }
-
-  @Override
   public VerificationJob fromDto(VerificationJobDTO verificationJobDTO) {
     Preconditions.checkNotNull(verificationJobDTO);
     VerificationJob job;
     switch (verificationJobDTO.getType()) {
-      case HEALTH:
-        job = new HealthVerificationJob();
-        break;
       case CANARY:
         job = new CanaryVerificationJob();
         break;
@@ -137,14 +94,6 @@ public class VerificationJobServiceImpl implements VerificationJobService {
     }
     job.fromDTO(verificationJobDTO);
     return job;
-  }
-
-  @Override
-  public void createDefaultVerificationJobs(String accountId, String orgIdentifier, String projectIdentifier) {
-    saveDefaultJob(HealthVerificationJob.createDefaultJob(accountId, orgIdentifier, projectIdentifier));
-    saveDefaultJob(TestVerificationJob.createDefaultJob(accountId, orgIdentifier, projectIdentifier));
-    saveDefaultJob(CanaryVerificationJob.createDefaultJob(accountId, orgIdentifier, projectIdentifier));
-    saveDefaultJob(BlueGreenVerificationJob.createDefaultJob(accountId, orgIdentifier, projectIdentifier));
   }
 
   private void saveDefaultJob(VerificationJob verificationJob) {

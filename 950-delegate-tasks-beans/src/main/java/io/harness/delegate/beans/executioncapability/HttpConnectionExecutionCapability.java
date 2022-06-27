@@ -101,6 +101,6 @@ public class HttpConnectionExecutionCapability implements ExecutionCapability {
 
   @Override
   public String getCapabilityToString() {
-    return String.format("reach URL: %s ", fetchConnectableUrl());
+    return isNotEmpty(fetchConnectableUrl()) ? String.format("Capability reach URL: %s ", fetchConnectableUrl()) : null;
   }
 }

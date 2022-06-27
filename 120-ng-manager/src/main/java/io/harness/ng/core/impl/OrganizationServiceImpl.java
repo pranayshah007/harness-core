@@ -10,12 +10,11 @@ package io.harness.ng.core.impl;
 import static io.harness.NGConstants.ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.beans.FeatureName.HARD_DELETE_ENTITIES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.enforcement.constants.FeatureRestrictionName.MULTIPLE_ORGANIZATIONS;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ng.accesscontrol.PlatformPermissions.INVITE_PERMISSION_IDENTIFIER;
-import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_ORGANIZATION_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformResourceTypes.ORGANIZATION;
 import static io.harness.ng.core.remote.OrganizationMapper.toOrganization;
 import static io.harness.ng.core.user.UserMembershipUpdateSource.SYSTEM;
 import static io.harness.ng.core.utils.NGUtils.validate;
@@ -29,9 +28,6 @@ import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.accesscontrol.AccountIdentifier;
-import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
-import io.harness.accesscontrol.acl.api.AccessControlDTO;
-import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -61,6 +57,7 @@ import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.PrincipalType;
 import io.harness.telemetry.helpers.OrganizationInstrumentationHelper;
 import io.harness.utils.ScopeUtils;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -99,12 +96,13 @@ public class OrganizationServiceImpl implements OrganizationService {
   private final AccessControlClient accessControlClient;
   private final ScopeAccessHelper scopeAccessHelper;
   private final OrganizationInstrumentationHelper instrumentationHelper;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Inject
   public OrganizationServiceImpl(OrganizationRepository organizationRepository, OutboxService outboxService,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, NgUserService ngUserService,
       AccessControlClient accessControlClient, ScopeAccessHelper scopeAccessHelper,
-      OrganizationInstrumentationHelper instrumentationHelper) {
+      OrganizationInstrumentationHelper instrumentationHelper, NGFeatureFlagHelperService ngFeatureFlagHelperService) {
     this.organizationRepository = organizationRepository;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
@@ -112,6 +110,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     this.accessControlClient = accessControlClient;
     this.scopeAccessHelper = scopeAccessHelper;
     this.instrumentationHelper = instrumentationHelper;
+    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
   }
 
   @Override
@@ -349,6 +348,9 @@ public class OrganizationServiceImpl implements OrganizationService {
     return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       Organization organization = organizationRepository.delete(accountIdentifier, organizationIdentifier, version);
       boolean delete = organization != null;
+      if (delete && ngFeatureFlagHelperService.isEnabled(accountIdentifier, HARD_DELETE_ENTITIES)) {
+        organizationRepository.hardDelete(accountIdentifier, organizationIdentifier, version);
+      }
       if (delete) {
         log.info(String.format("Organization with identifier %s was successfully deleted", organizationIdentifier));
         outboxService.save(new OrganizationDeleteEvent(accountIdentifier, OrganizationMapper.writeDto(organization)));
@@ -374,33 +376,20 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   @Override
   public Set<String> getPermittedOrganizations(@NotNull String accountIdentifier, String orgIdentifier) {
-    Set<String> orgIdentifiers;
+    List<Scope> organizations;
     if (isEmpty(orgIdentifier)) {
       Criteria orgCriteria = Criteria.where(OrganizationKeys.accountIdentifier)
                                  .is(accountIdentifier)
                                  .and(OrganizationKeys.deleted)
                                  .ne(Boolean.TRUE);
-      List<Organization> organizations = list(orgCriteria);
-      orgIdentifiers = organizations.stream().map(Organization::getIdentifier).collect(Collectors.toSet());
+      organizations = organizationRepository.findAllOrgs(orgCriteria);
     } else {
-      orgIdentifiers = Collections.singleton(orgIdentifier);
+      organizations = Collections.singletonList(
+          Scope.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build());
     }
-
-    ResourceScope resourceScope = ResourceScope.builder().accountIdentifier(accountIdentifier).build();
-    List<PermissionCheckDTO> permissionChecks = orgIdentifiers.stream()
-                                                    .map(oi
-                                                        -> PermissionCheckDTO.builder()
-                                                               .permission(VIEW_ORGANIZATION_PERMISSION)
-                                                               .resourceIdentifier(oi)
-                                                               .resourceScope(resourceScope)
-                                                               .resourceType(ORGANIZATION)
-                                                               .build())
-                                                    .collect(Collectors.toList());
-    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionChecks);
-    return accessCheckResponse.getAccessControlList()
+    return scopeAccessHelper.getPermittedScopes(organizations)
         .stream()
-        .filter(AccessControlDTO::isPermitted)
-        .map(AccessControlDTO::getResourceIdentifier)
+        .map(Scope::getOrgIdentifier)
         .collect(Collectors.toSet());
   }
 

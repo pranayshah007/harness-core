@@ -18,6 +18,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyMap;
@@ -104,7 +105,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
     List<Pod> existingPods = asList(new Pod());
     List<? extends HasMetadata> controllers = getMockedControllers();
 
-    when(kubernetesContainerService.getControllers(any(KubernetesConfig.class), anyMap())).thenReturn(controllers);
+    doReturn(controllers).when(kubernetesContainerService).getControllers(any(KubernetesConfig.class), anyMap());
 
     containerDeploymentDelegateBaseHelper.getContainerInfosWhenReadyByLabels(
         kubernetesConfig, logCallback, ImmutableMap.of("name", "value"), existingPods);
@@ -125,7 +126,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
     List<Pod> existingPods = asList(new Pod());
     List<? extends HasMetadata> controllers = emptyList();
 
-    when(kubernetesContainerService.getControllers(any(KubernetesConfig.class), anyMap())).thenReturn(controllers);
+    doReturn(controllers).when(kubernetesContainerService).getControllers(any(KubernetesConfig.class), anyMap());
 
     List<ContainerInfo> result = containerDeploymentDelegateBaseHelper.getContainerInfosWhenReadyByLabels(
         kubernetesConfig, logCallback, ImmutableMap.of("name", "value"), existingPods);
@@ -249,7 +250,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
     Map<String, String> labels = new HashMap<>();
 
     List<? extends HasMetadata> controllers = getMockedControllers();
-    when(kubernetesContainerService.getControllers(any(KubernetesConfig.class), anyMap())).thenReturn(controllers);
+    doReturn(controllers).when(kubernetesContainerService).getControllers(any(KubernetesConfig.class), anyMap());
     assertThat(containerDeploymentDelegateBaseHelper.getControllerCountByLabels(kubernetesConfig, labels)).isEqualTo(2);
   }
 
@@ -354,7 +355,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testGetKubeconfigFileContentAzureK8sInfraDelegateConfig() {
+  public void testGetAdminKubeconfigFileContentAzureK8sInfraDelegateConfig() {
     final List<EncryptedDataDetail> encryptionDataDetails = emptyList();
     final AzureConnectorDTO azureConnectorDTO = AzureConnectorDTO.builder().build();
     final AzureK8sInfraDelegateConfig azureK8sInfraDelegateConfig = AzureK8sInfraDelegateConfig.builder()
@@ -364,10 +365,36 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
                                                                         .cluster("aks")
                                                                         .namespace("default")
                                                                         .encryptionDataDetails(encryptionDataDetails)
+                                                                        .useClusterAdminCredentials(true)
                                                                         .build();
     final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
 
-    doReturn(kubernetesConfig).when(azureAsyncTaskHelper).getClusterConfig(any(), any(), any(), any(), any(), any());
+    when(azureAsyncTaskHelper.getClusterConfig(any(), any(), any(), any(), any(), any(), anyBoolean()))
+        .thenReturn(kubernetesConfig);
+
+    containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(azureK8sInfraDelegateConfig);
+    verify(kubernetesContainerService).getConfigFileContent(kubernetesConfig);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetUserKubeconfigFileContentAzureK8sInfraDelegateConfig() {
+    final List<EncryptedDataDetail> encryptionDataDetails = emptyList();
+    final AzureConnectorDTO azureConnectorDTO = AzureConnectorDTO.builder().build();
+    final AzureK8sInfraDelegateConfig azureK8sInfraDelegateConfig = AzureK8sInfraDelegateConfig.builder()
+                                                                        .azureConnectorDTO(azureConnectorDTO)
+                                                                        .subscription("sub")
+                                                                        .resourceGroup("rg")
+                                                                        .cluster("aks")
+                                                                        .namespace("default")
+                                                                        .encryptionDataDetails(encryptionDataDetails)
+                                                                        .useClusterAdminCredentials(false)
+                                                                        .build();
+    final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
+
+    when(azureAsyncTaskHelper.getClusterConfig(any(), any(), any(), any(), any(), any(), anyBoolean()))
+        .thenReturn(kubernetesConfig);
 
     containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(azureK8sInfraDelegateConfig);
     verify(kubernetesContainerService).getConfigFileContent(kubernetesConfig);

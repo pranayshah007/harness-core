@@ -9,6 +9,7 @@ package io.harness.stateutils.buildstate;
 
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
 import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.CODECOMMIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GIT;
@@ -55,6 +56,9 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessType;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpCredentialsDTO;
@@ -80,6 +84,7 @@ import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ff.CIFeatureFlagService;
+import io.harness.git.GitClientHelper;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -127,7 +132,9 @@ public class ConnectorUtils {
   @Inject private CIFeatureFlagService featureFlagService;
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 6;
-  private final String AXA_ACCOUNT_ID = "UVxMDMhNQxOCvroqqImWdQ";
+
+  private final String SAAS = "SaaS";
+  private final String SELF_MANAGED = "Self-Managed";
 
   @Inject
   public ConnectorUtils(ConnectorResourceClient connectorResourceClient, SecretUtils secretUtils,
@@ -178,8 +185,7 @@ public class ConnectorUtils {
   public List<TaskSelector> fetchDelegateSelector(
       Ambiance ambiance, ExecutionSweepingOutputService executionSweepingOutputResolver) {
     String accountID = AmbianceUtils.getAccountId(ambiance);
-    if (featureFlagService.isEnabled(FeatureName.DISABLE_CI_STAGE_DEL_SELECTOR, accountID)
-        || accountID.equals(AXA_ACCOUNT_ID)) {
+    if (featureFlagService.isEnabled(FeatureName.DISABLE_CI_STAGE_DEL_SELECTOR, accountID)) {
       log.info("DISABLE_CI_STAGE_DEL_SELECTOR Feature flag is enabled for account {}", accountID);
       return Collections.emptyList();
     }
@@ -267,6 +273,7 @@ public class ConnectorUtils {
       case GITLAB:
       case BITBUCKET:
       case CODECOMMIT:
+      case AZURE_REPO:
         connectorDetails = getGitConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
         break;
       case GCP:
@@ -296,6 +303,9 @@ public class ConnectorUtils {
     } else if (gitConnector.getConnectorType() == BITBUCKET) {
       BitbucketConnectorDTO gitConfigDTO = (BitbucketConnectorDTO) gitConnector.getConnectorConfig();
       return fetchUserNameFromBitbucketConnector(gitConfigDTO, gitConnector.getIdentifier());
+    } else if (gitConnector.getConnectorType() == AZURE_REPO) {
+      // Username not needed for Azure.
+      return null;
     } else {
       throw new CIStageExecutionException("Unsupported git connector " + gitConnector.getConnectorType());
     }
@@ -304,6 +314,9 @@ public class ConnectorUtils {
   public String retrieveURL(ConnectorDetails gitConnector) {
     if (gitConnector.getConnectorType() == GITHUB) {
       GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getUrl();
+    } else if (gitConnector.getConnectorType() == AZURE_REPO) {
+      AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getUrl();
     } else if (gitConnector.getConnectorType() == BITBUCKET) {
       BitbucketConnectorDTO gitConfigDTO = (BitbucketConnectorDTO) gitConnector.getConnectorConfig();
@@ -326,6 +339,9 @@ public class ConnectorUtils {
     if (gitConnector.getConnectorType() == GITHUB) {
       GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getApiAccess() != null;
+    } else if (gitConnector.getConnectorType() == AZURE_REPO) {
+      AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getApiAccess() != null;
     } else if (gitConnector.getConnectorType() == BITBUCKET) {
       BitbucketConnectorDTO gitConfigDTO = (BitbucketConnectorDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getApiAccess() != null;
@@ -336,6 +352,37 @@ public class ConnectorUtils {
       return false;
     } else {
       throw new CIStageExecutionException("scmType " + gitConnector.getConnectorType() + "is not supported");
+    }
+  }
+
+  public String getScmAuthType(ConnectorDetails gitConnector) {
+    if (gitConnector.getConnectorType() == GITHUB) {
+      GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getAuthentication().getAuthType().getDisplayName();
+    } else if (gitConnector.getConnectorType() == BITBUCKET) {
+      BitbucketConnectorDTO gitConfigDTO = (BitbucketConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getAuthentication().getAuthType().getDisplayName();
+    } else if (gitConnector.getConnectorType() == GITLAB) {
+      GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getAuthentication().getAuthType().getDisplayName();
+    } else if (gitConnector.getConnectorType() == CODECOMMIT) {
+      AwsCodeCommitConnectorDTO gitConfigDTO = (AwsCodeCommitConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getAuthentication().getAuthType().getDisplayName();
+    } else if (gitConnector.getConnectorType() == GIT) {
+      GitConfigDTO gitConfigDTO = (GitConfigDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getGitAuthType().getDisplayName();
+    } else {
+      throw new CIStageExecutionException("scmType " + gitConnector.getConnectorType() + "is not supported");
+    }
+  }
+
+  public String getScmHostType(ConnectorDetails gitConnector) {
+    String url = retrieveURL(gitConnector);
+    if (GitClientHelper.isGithubSAAS(url) || GitClientHelper.isGitlabSAAS(url) || GitClientHelper.isBitBucketSAAS(url)
+        || GitClientHelper.isAzureRepoSAAS(url)) {
+      return SAAS;
+    } else {
+      return SELF_MANAGED;
     }
   }
 
@@ -393,6 +440,8 @@ public class ConnectorUtils {
       NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
     if (connectorDTO.getConnectorInfo().getConnectorType() == GITHUB) {
       return buildGithubConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
+    } else if (connectorDTO.getConnectorInfo().getConnectorType() == AZURE_REPO) {
+      return buildAzureRepoConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
     } else if (connectorDTO.getConnectorInfo().getConnectorType() == GITLAB) {
       return buildGitlabConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
     } else if (connectorDTO.getConnectorInfo().getConnectorType() == BITBUCKET) {
@@ -404,6 +453,41 @@ public class ConnectorUtils {
     } else {
       throw new CIStageExecutionException(
           "Unsupported git connector " + connectorDTO.getConnectorInfo().getConnectorType());
+    }
+  }
+
+  private ConnectorDetails buildAzureRepoConnectorDetails(
+      NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
+    List<EncryptedDataDetail> encryptedDataDetails;
+    AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) connectorDTO.getConnectorInfo().getConnectorConfig();
+    if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
+      AzureRepoHttpCredentialsDTO azureRepoHttpCredentialsDTO =
+          (AzureRepoHttpCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
+      encryptedDataDetails = secretManagerClientService.getEncryptionDetails(
+          ngAccess, azureRepoHttpCredentialsDTO.getHttpCredentialsSpec());
+      if (gitConfigDTO.getApiAccess() != null && gitConfigDTO.getApiAccess().getSpec() != null) {
+        encryptedDataDetails.addAll(
+            secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec()));
+      }
+      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
+    } else if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.SSH) {
+      AzureRepoSshCredentialsDTO azureRepoSshCredentialsDTO =
+          (AzureRepoSshCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
+      SSHKeyDetails sshKey = secretUtils.getSshKey(ngAccess, azureRepoSshCredentialsDTO.getSshKeyRef());
+      if (sshKey.getSshKeyReference().getEncryptedPassphrase() != null) {
+        throw new CIStageExecutionException("Unsupported ssh key format, passphrase is unsupported in git connector: "
+            + gitConfigDTO.getAuthentication().getAuthType());
+      }
+      connectorDetailsBuilder.sshKeyDetails(sshKey);
+      if (gitConfigDTO.getApiAccess() != null && gitConfigDTO.getApiAccess().getSpec() != null) {
+        encryptedDataDetails =
+            secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec());
+        connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails);
+      }
+      return connectorDetailsBuilder.build();
+    } else {
+      throw new CIStageExecutionException(
+          "Unsupported git connector auth" + gitConfigDTO.getAuthentication().getAuthType());
     }
   }
 
@@ -456,7 +540,9 @@ public class ConnectorUtils {
         encryptedDataDetails.addAll(
             secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec()));
       }
-      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
+      return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate())
+          .encryptedDataDetails(encryptedDataDetails)
+          .build();
     } else if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.SSH) {
       GithubSshCredentialsDTO githubSshCredentialsDTO =
           (GithubSshCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();

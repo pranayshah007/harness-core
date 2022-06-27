@@ -7,6 +7,7 @@
 
 package io.harness.cvng.analysis.services.impl;
 
+import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterType.BASELINE;
 import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterType.KNOWN_EVENT;
 import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterType.UNEXPECTED_FREQUENCY;
 import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterType.UNKNOWN_EVENT;
@@ -14,6 +15,7 @@ import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
 import static io.harness.cvng.beans.DataSourceType.ERROR_TRACKING;
 import static io.harness.cvng.beans.DataSourceType.SPLUNK;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.BGROVES;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
@@ -1117,6 +1119,24 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetRadarChartLogAnalysisClusters_sortingOrder() {
+    List<LogAnalysisRadarChartClusterDTO> logAnalysisRadarChartClusterDTOS =
+        deploymentLogAnalysisService.getRadarChartLogAnalysisClusters(
+            accountId, radarChartVerificationJobInstanceId, DeploymentLogAnalysisFilter.builder().build());
+
+    assertThat(logAnalysisRadarChartClusterDTOS.get(0).getClusterType()).isEqualTo(UNKNOWN_EVENT);
+    assertThat(logAnalysisRadarChartClusterDTOS.get(0).getAngle()).isEqualTo(0.0);
+    assertThat(logAnalysisRadarChartClusterDTOS.get(1).getClusterType()).isEqualTo(UNKNOWN_EVENT);
+    assertThat(logAnalysisRadarChartClusterDTOS.get(1).getAngle()).isEqualTo(90.0);
+    assertThat(logAnalysisRadarChartClusterDTOS.get(2).getClusterType()).isEqualTo(UNEXPECTED_FREQUENCY);
+    assertThat(logAnalysisRadarChartClusterDTOS.get(2).getAngle()).isEqualTo(180.0);
+    assertThat(logAnalysisRadarChartClusterDTOS.get(3).getClusterType()).isEqualTo(KNOWN_EVENT);
+    assertThat(logAnalysisRadarChartClusterDTOS.get(3).getAngle()).isEqualTo(270.0);
+  }
+
+  @Test
   @Owner(developers = KANHAIYA)
   @Category(UnitTests.class)
   public void testGetRadarChartLogAnalysisClusters_filterWithEventType() {
@@ -1202,7 +1222,8 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
     expectedCount.put(UNEXPECTED_FREQUENCY, 1);
     expectedCount.put(KNOWN_EVENT, 1);
     expectedCount.put(UNKNOWN_EVENT, 2);
-    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts()).hasSize(3);
+    expectedCount.put(BASELINE, 2);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts()).hasSize(4);
     for (EventCount eventCount : logAnalysisRadarChartListWithCountDTO.getEventCounts()) {
       assertThat(eventCount.getCount()).isEqualTo(expectedCount.get(eventCount.getClusterType()));
     }
@@ -1211,6 +1232,48 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getTotalItems()).isEqualTo(4);
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().size()).isEqualTo(2);
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getPageItemCount()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetRadarChartAnalysisResult_sortingOrder() {
+    LogAnalysisRadarChartListWithCountDTO logAnalysisRadarChartListWithCountDTO =
+        deploymentLogAnalysisService.getRadarChartLogAnalysisResult(accountId, radarChartVerificationJobInstanceId,
+            DeploymentLogAnalysisFilter.builder().build(), PageParams.builder().page(0).size(10).build());
+
+    assertThat(logAnalysisRadarChartListWithCountDTO.getTotalClusters()).isEqualTo(4);
+    List<LogAnalysisRadarChartListDTO> logAnalysisRadarChartListDTOS =
+        logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent();
+
+    assertThat(logAnalysisRadarChartListDTOS.get(0).getClusterType()).isEqualTo(UNKNOWN_EVENT);
+    assertThat(logAnalysisRadarChartListDTOS.get(0).getAngle()).isEqualTo(0.0);
+    assertThat(logAnalysisRadarChartListDTOS.get(1).getClusterType()).isEqualTo(UNKNOWN_EVENT);
+    assertThat(logAnalysisRadarChartListDTOS.get(1).getAngle()).isEqualTo(90.0);
+    assertThat(logAnalysisRadarChartListDTOS.get(2).getClusterType()).isEqualTo(UNEXPECTED_FREQUENCY);
+    assertThat(logAnalysisRadarChartListDTOS.get(2).getAngle()).isEqualTo(180.0);
+    assertThat(logAnalysisRadarChartListDTOS.get(3).getClusterType()).isEqualTo(KNOWN_EVENT);
+    assertThat(logAnalysisRadarChartListDTOS.get(3).getAngle()).isEqualTo(270.0);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetRadarChartAnalysisResult_eventCountsWithBaseline() {
+    LogAnalysisRadarChartListWithCountDTO logAnalysisRadarChartListWithCountDTO =
+        deploymentLogAnalysisService.getRadarChartLogAnalysisResult(accountId, radarChartVerificationJobInstanceId,
+            DeploymentLogAnalysisFilter.builder().build(), PageParams.builder().page(0).size(10).build());
+
+    assertThat(logAnalysisRadarChartListWithCountDTO.getTotalClusters()).isEqualTo(4);
+    List<EventCount> eventCounts = logAnalysisRadarChartListWithCountDTO.getEventCounts();
+    assertThat(eventCounts.get(0).getClusterType()).isEqualTo(KNOWN_EVENT);
+    assertThat(eventCounts.get(0).getCount()).isEqualTo(1);
+    assertThat(eventCounts.get(1).getClusterType()).isEqualTo(UNEXPECTED_FREQUENCY);
+    assertThat(eventCounts.get(1).getCount()).isEqualTo(1);
+    assertThat(eventCounts.get(2).getClusterType()).isEqualTo(UNKNOWN_EVENT);
+    assertThat(eventCounts.get(2).getCount()).isEqualTo(2);
+    assertThat(eventCounts.get(3).getClusterType()).isEqualTo(BASELINE);
+    assertThat(eventCounts.get(3).getCount()).isEqualTo(2);
   }
 
   @Test
@@ -1224,7 +1287,7 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
 
     assertThat(logAnalysisRadarChartListWithCountDTO.getTotalClusters()).isEqualTo(1);
     for (EventCount eventCount : logAnalysisRadarChartListWithCountDTO.getEventCounts()) {
-      if (eventCount.getClusterType() == UNEXPECTED_FREQUENCY) {
+      if (eventCount.getClusterType() == UNEXPECTED_FREQUENCY || eventCount.getClusterType() == BASELINE) {
         assertThat(eventCount.getCount()).isEqualTo(1);
       } else {
         assertThat(eventCount.getCount()).isEqualTo(0);
@@ -1242,7 +1305,7 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
 
     assertThat(logAnalysisRadarChartListWithCountDTO.getTotalClusters()).isEqualTo(1);
     for (EventCount eventCount : logAnalysisRadarChartListWithCountDTO.getEventCounts()) {
-      if (eventCount.getClusterType() == KNOWN_EVENT) {
+      if (eventCount.getClusterType() == KNOWN_EVENT || eventCount.getClusterType() == BASELINE) {
         assertThat(eventCount.getCount()).isEqualTo(1);
       } else {
         assertThat(eventCount.getCount()).isEqualTo(0);
@@ -1285,7 +1348,8 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
     expectedCount.put(UNEXPECTED_FREQUENCY, 0);
     expectedCount.put(KNOWN_EVENT, 1);
     expectedCount.put(UNKNOWN_EVENT, 0);
-    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts()).hasSize(3);
+    expectedCount.put(BASELINE, 1);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts()).hasSize(4);
     for (EventCount eventCount : logAnalysisRadarChartListWithCountDTO.getEventCounts()) {
       assertThat(eventCount.getCount()).isEqualTo(expectedCount.get(eventCount.getClusterType()));
     }
@@ -1302,8 +1366,9 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
     expectedCount.put(UNEXPECTED_FREQUENCY, 1);
     expectedCount.put(KNOWN_EVENT, 0);
     expectedCount.put(UNKNOWN_EVENT, 1);
+    expectedCount.put(BASELINE, 1);
     assertThat(logAnalysisRadarChartListWithCountDTO.getTotalClusters()).isEqualTo(2);
-    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts()).hasSize(3);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts()).hasSize(4);
     for (EventCount eventCount : logAnalysisRadarChartListWithCountDTO.getEventCounts()) {
       assertThat(eventCount.getCount()).isEqualTo(expectedCount.get(eventCount.getClusterType()));
     }
@@ -1322,7 +1387,8 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
     expectedCount.put(UNEXPECTED_FREQUENCY, 0);
     expectedCount.put(KNOWN_EVENT, 0);
     expectedCount.put(UNKNOWN_EVENT, 1);
-    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts()).hasSize(3);
+    expectedCount.put(BASELINE, 0);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts()).hasSize(4);
     for (EventCount eventCount : logAnalysisRadarChartListWithCountDTO.getEventCounts()) {
       assertThat(eventCount.getCount()).isEqualTo(expectedCount.get(eventCount.getClusterType()));
     }

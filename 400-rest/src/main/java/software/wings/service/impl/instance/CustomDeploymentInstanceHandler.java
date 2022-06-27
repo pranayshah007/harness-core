@@ -14,6 +14,7 @@ import static software.wings.service.impl.instance.InstanceSyncFlow.MANUAL;
 
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.validation.Validator;
@@ -116,11 +117,26 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
 
     final DeploymentSummary deploymentSummary;
     if (isNotEmpty(latestHostInfos) && isNotEmpty(newDeploymentSummaries)) {
-      deploymentSummary = getDeploymentSummaryForInstanceCreation(newDeploymentSummaries.get(0), false);
-      latestHostInfos.stream()
-          .map(hostInstanceInfo -> buildInstanceFromHostInfo(infraMapping, hostInstanceInfo, deploymentSummary))
-          .forEach(instanceService::save);
+      deploymentSummary = updateDeploymentSummaryFromDeploymentInfo(newDeploymentSummaries.get(0));
+      if (EmptyPredicate.isNotEmpty(deploymentSummary.getArtifactId())) {
+        // Artifact can be null in the case of rollback in first deployment, in which we shouldn't add the instances
+        latestHostInfos.stream()
+            .map(hostInstanceInfo -> buildInstanceFromHostInfo(infraMapping, hostInstanceInfo, deploymentSummary))
+            .forEach(instanceService::save);
+      }
     }
+  }
+
+  private DeploymentSummary updateDeploymentSummaryFromDeploymentInfo(DeploymentSummary deploymentSummary) {
+    // We are setting the artifact from deployment info, as it has the rollbackArtifact if it's rollback otherwise it
+    // contains the artifact only
+    CustomDeploymentTypeInfo deploymentInfo = (CustomDeploymentTypeInfo) deploymentSummary.getDeploymentInfo();
+    deploymentSummary.setArtifactId(deploymentInfo.getArtifactId());
+    deploymentSummary.setArtifactBuildNum(deploymentInfo.getArtifactBuildNum());
+    deploymentSummary.setArtifactName(deploymentInfo.getArtifactName());
+    deploymentSummary.setArtifactSourceName(deploymentInfo.getArtifactSourceName());
+    deploymentSummary.setArtifactStreamId(deploymentInfo.getArtifactStreamId());
+    return deploymentSummary;
   }
 
   private void incrementalUpdate(List<Instance> instancesInDb, List<PhysicalHostInstanceInfo> latestHostInfos,

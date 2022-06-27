@@ -72,6 +72,12 @@
                               "duration": "10m",
                               "baseline": "LAST",
                               "deploymentTag": "<+serviceConfig.artifacts.primary.tag>"
+                            },
+                            "monitoredService": {
+                              "type":"Configured",
+                              "spec": {
+                                "monitoredServiceRef": "dummy_service"
+                              }
                             }
                           },
                           "failureStrategies": [

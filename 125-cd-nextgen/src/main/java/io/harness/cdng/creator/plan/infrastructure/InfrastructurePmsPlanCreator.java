@@ -11,9 +11,13 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.advisers.RollbackCustomAdviser;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
+import io.harness.cdng.creator.plan.gitops.ClusterPlanCreatorUtils;
+import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
+import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.infra.steps.InfraSectionStepParameters;
 import io.harness.cdng.infra.steps.InfrastructureSectionStep;
 import io.harness.cdng.infra.steps.InfrastructureStep;
+import io.harness.cdng.infra.yaml.InfraConfigStepParameter;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
@@ -64,18 +68,28 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
 public class InfrastructurePmsPlanCreator {
-  public PlanNode getInfraStepPlanNode(Infrastructure pipelineInfrastructure) {
+  public PlanNode getInfraStepPlanNode(
+      Infrastructure pipelineInfrastructure, String infraIdentifier, String infraName) {
+    InfraConfigStepParameter infraConfigStepParameter = InfraConfigStepParameter.builder()
+                                                            .infraIdentifier(infraIdentifier)
+                                                            .infraName(infraName)
+                                                            .spec(pipelineInfrastructure)
+                                                            .build();
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())
         .name(PlanCreatorConstants.INFRA_NODE_NAME)
         .identifier(PlanCreatorConstants.SPEC_IDENTIFIER)
         .stepType(InfrastructureStep.STEP_TYPE)
-        .stepParameters(pipelineInfrastructure)
+        .stepParameters(infraConfigStepParameter)
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
                 .build())
         .build();
+  }
+
+  public PlanNode getInfraStepPlanNode(Infrastructure pipelineInfrastructure) {
+    return getInfraStepPlanNode(pipelineInfrastructure, null, null);
   }
 
   public static LinkedHashMap<String, PlanCreationResponse> createPlanForInfraSectionV2(YamlNode infraSectionNode,
@@ -92,8 +106,7 @@ public class InfrastructurePmsPlanCreator {
         getAdviserObtainmentFromMetaDataToExecution(infraSectionNode.getParentNode(), kryoSerializer);
 
     // adding RC dependency
-    boolean allowSimultaneousDeployments = ResourceConstraintUtility.isSimultaneousDeploymentsAllowed(
-        infrastructureDefinitionConfig.getAllowSimultaneousDeployments());
+    boolean allowSimultaneousDeployments = infrastructureDefinitionConfig.isAllowSimultaneousDeployments();
 
     if (!allowSimultaneousDeployments) {
       // Passing infra section parent node since rbac will be created parallel to environment node
@@ -109,6 +122,26 @@ public class InfrastructurePmsPlanCreator {
         PlanCreationResponse.builder().node(infraSectionNode.getUuid(), infraSectionPlanNode).build());
 
     return planCreationResponseMap;
+  }
+
+  public static PlanNode createPlanForGitopsClusters(YamlField envField, String infraSectionUuid,
+      EnvironmentPlanCreatorConfig envConfig, KryoSerializer kryoSerializer) {
+    List<AdviserObtainment> adviserObtainmentFromMetaDataToExecution =
+        getAdviserObtainmentFromMetaDataToExecution(envField.getNode(), kryoSerializer);
+    PlanNodeBuilder planNodeBuilder =
+        ClusterPlanCreatorUtils.getGitopsClustersStepPlanNodeBuilder(infraSectionUuid, envConfig);
+    planNodeBuilder.adviserObtainments(adviserObtainmentFromMetaDataToExecution);
+    return planNodeBuilder.build();
+  }
+
+  public static PlanNode createPlanForGitopsClusters(YamlField envField, String postServiceSpecUuid,
+      EnvGroupPlanCreatorConfig envGroupPlanCreatorConfig, KryoSerializer kryoSerializer) {
+    List<AdviserObtainment> adviserObtainmentFromMetaDataToExecution =
+        getAdviserObtainmentFromMetaDataToExecution(envField.getNode(), kryoSerializer);
+    PlanNodeBuilder planNodeBuilder =
+        ClusterPlanCreatorUtils.getGitopsClustersStepPlanNodeBuilder(postServiceSpecUuid, envGroupPlanCreatorConfig);
+    planNodeBuilder.adviserObtainments(adviserObtainmentFromMetaDataToExecution);
+    return planNodeBuilder.build();
   }
 
   public LinkedHashMap<String, PlanCreationResponse> createPlanForInfraSectionV1(YamlNode infraSectionNode,

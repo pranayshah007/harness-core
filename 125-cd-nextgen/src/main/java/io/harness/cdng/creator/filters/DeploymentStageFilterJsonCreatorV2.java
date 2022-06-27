@@ -7,6 +7,7 @@
 
 package io.harness.cdng.creator.filters;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
@@ -100,9 +101,11 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     if (deploymentStageConfig.getInfrastructure() != null) {
       addFiltersFromPipelineInfra(filterCreationContext, filterBuilder, deploymentStageConfig.getInfrastructure());
     } else if (deploymentStageConfig.getEnvironment() != null) {
-      addFiltersFromEnvironment(filterCreationContext, filterBuilder, deploymentStageConfig.getEnvironment());
+      addFiltersFromEnvironment(filterCreationContext, filterBuilder, deploymentStageConfig.getEnvironment(),
+          deploymentStageConfig.getGitOpsEnabled());
     } else if (deploymentStageConfig.getEnvironmentGroup() != null) {
-      addFiltersFromEnvironmentGroup(filterCreationContext, filterBuilder, deploymentStageConfig.getEnvironmentGroup());
+      addFiltersFromEnvironmentGroup(filterCreationContext, filterBuilder, deploymentStageConfig.getEnvironmentGroup(),
+          deploymentStageConfig.getGitOpsEnabled());
     } else {
       throw new InvalidYamlRuntimeException(format(
           "Infrastructure or Environment or EnvironmentGroup should be present in stage [%s]. Please add it and try again",
@@ -110,13 +113,18 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     }
   }
 
-  private void addFiltersFromEnvironment(
-      FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder, EnvironmentYamlV2 env) {
+  private void addFiltersFromEnvironment(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
+      EnvironmentYamlV2 env, boolean gitOpsEnabled) {
     final ParameterField<String> environmentRef = env.getEnvironmentRef();
     if (environmentRef == null || environmentRef.fetchFinalValue() == null) {
       throw new InvalidYamlRuntimeException(
           format("environmentRef should be present in stage [%s]. Please add it and try again",
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+    }
+
+    if (!gitOpsEnabled && env.isDeployToAll()) {
+      throw new InvalidYamlRuntimeException(
+          "Deploy to all environments is not supported yet. Please select a specific infrastructure and try again");
     }
 
     if (!environmentRef.isExpression()) {
@@ -144,15 +152,32 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
         }
       }
     }
+
+    if (gitOpsEnabled) {
+      if (env.isDeployToAll() && isNotEmpty(env.getGitOpsClusters())) {
+        throw new InvalidYamlRuntimeException(format(
+            "When deploying to all, individual gitops clusters must not be provided in stage [%s]. Please remove the gitOpsClusters property and try again",
+            YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+      }
+      if (!env.isDeployToAll() && isEmpty(env.getGitOpsClusters())) {
+        throw new InvalidYamlRuntimeException(format(
+            "When deploy to all is false, list of gitops clusters must be provided  in stage [%s].  Please specify the gitOpsClusters property and try again",
+            YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+      }
+    }
   }
 
-  private void addFiltersFromEnvironmentGroup(
-      FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder, EnvironmentGroupYaml envGroupYaml) {
+  private void addFiltersFromEnvironmentGroup(FilterCreationContext filterCreationContext,
+      CdFilterBuilder filterBuilder, EnvironmentGroupYaml envGroupYaml, boolean gitOpsEnabled) {
     final ParameterField<String> envGroupRef = envGroupYaml.getEnvGroupRef();
     if (envGroupRef == null || envGroupRef.fetchFinalValue() == null) {
       throw new InvalidYamlRuntimeException(
           format("envGroupRef should be present in stage [%s]. Please add it and try again",
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+    }
+    if (gitOpsEnabled != Boolean.TRUE) {
+      throw new InvalidYamlRuntimeException(
+          "Deploy to all environment groups is not supported yet. Please try deploying to specific infrastructure and try again");
     }
   }
 

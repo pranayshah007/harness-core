@@ -7,6 +7,7 @@
 
 package io.harness.beans.yaml.extended.infrastrucutre;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -22,6 +23,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @JsonTypeName("UseFromStage")
 @TypeAlias("useFromStageInfraYaml")
+@RecasterAlias("io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml")
 public class UseFromStageInfraYaml implements Infrastructure {
   @NotNull private String useFromStage;
 

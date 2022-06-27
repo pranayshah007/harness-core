@@ -10,6 +10,7 @@ package io.harness.logserviceclient;
 import io.harness.common.CICommonEndpointConstants;
 
 import retrofit2.Call;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.Query;
@@ -17,4 +18,9 @@ import retrofit2.http.Query;
 public interface CILogServiceClient {
   @GET(CICommonEndpointConstants.LOG_SERVICE_TOKEN_ENDPOINT)
   Call<String> generateToken(@Query("accountID") String accountId, @Header("X-Harness-Token") String globalToken);
+
+  @DELETE(CICommonEndpointConstants.LOG_SERVICE_STREAM_ENDPOINT)
+  Call<Void> closeLogStream(@Query("accountID") String accountId, @Query("key") String logKey,
+      @Query("snapshot") boolean snapshot, @Query("prefix") boolean prefix,
+      @Header("X-Harness-Token") String authToken);
 }

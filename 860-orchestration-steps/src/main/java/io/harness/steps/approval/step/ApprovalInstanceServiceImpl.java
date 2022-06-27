@@ -18,8 +18,11 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.repositories.ApprovalInstanceRepository;
+import io.harness.servicenow.TicketNG;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
+import io.harness.steps.approval.step.custom.beans.CustomApprovalResponseData;
+import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance.CustomApprovalInstanceKeys;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.entities.ApprovalInstance.ApprovalInstanceKeys;
 import io.harness.steps.approval.step.harness.HarnessApprovalResponseData;
@@ -28,6 +31,7 @@ import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivityReque
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.steps.approval.step.jira.beans.JiraApprovalResponseData;
 import io.harness.steps.approval.step.servicenow.beans.ServiceNowApprovalResponseData;
+import io.harness.tasks.ResponseData;
 import io.harness.utils.RetryUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -35,6 +39,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -99,6 +104,12 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   }
 
   @Override
+  public void resetNextIterations(@NotNull String approvalInstanceId, List<Long> nextIterations) {
+    approvalInstanceRepository.updateFirst(new Query(Criteria.where(Mapper.ID_KEY).is(approvalInstanceId)),
+        new Update().set(CustomApprovalInstanceKeys.nextIterations, nextIterations));
+  }
+
+  @Override
   public void expireByNodeExecutionId(@NotNull String nodeExecutionId) {
     // Only allow waiting instances to be expired. This is to prevent race condition between instance expiry and
     // instance approval/rejection.
@@ -118,12 +129,23 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   }
 
   @Override
-  public void finalizeStatus(@NotNull String approvalInstanceId, ApprovalStatus status) {
-    finalizeStatus(approvalInstanceId, status, null);
+  public void finalizeStatus(@NotNull String approvalInstanceId, ApprovalStatus status, String errorMessage) {
+    finalizeStatus(approvalInstanceId, status, errorMessage, null);
   }
 
   @Override
-  public void finalizeStatus(@NotNull String approvalInstanceId, ApprovalStatus status, String errorMessage) {
+  public void finalizeStatus(@NotNull String approvalInstanceId, ApprovalStatus status) {
+    finalizeStatus(approvalInstanceId, status, null, null);
+  }
+
+  @Override
+  public void finalizeStatus(@NotNull String approvalInstanceId, ApprovalStatus status, TicketNG ticketNG) {
+    finalizeStatus(approvalInstanceId, status, null, ticketNG);
+  }
+
+  @Override
+  public void finalizeStatus(
+      @NotNull String approvalInstanceId, ApprovalStatus status, String errorMessage, TicketNG ticketNG) {
     // Only allow waiting instances to be approved or rejected. This is to prevent race condition between instance
     // expiry and instance approval/rejection.
     Update update = new Update().set(ApprovalInstanceKeys.status, status);
@@ -136,10 +158,21 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
         update);
 
     if (status.isFinalStatus()) {
-      waitNotifyEngine.doneWith(approvalInstanceId,
-          instance.getType() == ApprovalType.JIRA_APPROVAL
-              ? JiraApprovalResponseData.builder().instanceId(approvalInstanceId).build()
-              : ServiceNowApprovalResponseData.builder().instanceId(approvalInstanceId).build());
+      ResponseData responseData;
+      switch (instance.getType()) {
+        case JIRA_APPROVAL:
+          responseData = JiraApprovalResponseData.builder().instanceId(approvalInstanceId).build();
+          break;
+        case SERVICENOW_APPROVAL:
+          responseData = ServiceNowApprovalResponseData.builder().instanceId(approvalInstanceId).build();
+          break;
+        case CUSTOM_APPROVAL:
+          responseData = CustomApprovalResponseData.builder().instanceId(approvalInstanceId).ticket(ticketNG).build();
+          break;
+        default:
+          responseData = null;
+      }
+      waitNotifyEngine.doneWith(approvalInstanceId, responseData);
     }
     updatePlanStatus(instance);
   }

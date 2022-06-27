@@ -14,6 +14,7 @@ import static io.harness.constants.Constants.X_BIT_BUCKET_EVENT;
 import static io.harness.constants.Constants.X_GIT_HUB_EVENT;
 import static io.harness.constants.Constants.X_GIT_LAB_EVENT;
 import static io.harness.constants.Constants.X_HARNESS_TRIGGER_ID;
+import static io.harness.constants.Constants.X_VSS_HEADER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -22,6 +23,7 @@ import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.AWS_CODECOMMIT;
+import static io.harness.ngtriggers.beans.source.WebhookTriggerType.AZURE;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.BITBUCKET;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.CUSTOM;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
@@ -383,7 +385,13 @@ public class NGTriggerElementMapper {
       if (isNotEmpty(headerValues)) {
         isConfirmationMessage = headerValues.stream().anyMatch(AMZ_SUBSCRIPTION_CONFIRMATION_TYPE::equalsIgnoreCase);
       }
+    } else if (webhookEventPayloadParser.containsHeaderKey(headers, X_VSS_HEADER)) {
+      webhookTriggerType = AZURE;
     } else {
+      if (isEmpty(accountIdentifier) || isEmpty(orgIdentifier) || isEmpty(projectIdentifier)) {
+        throw new InvalidRequestException(
+            "AccountIdentifier, OrgIdentifier, ProjectIdentifier can not be null for custom webhook executions");
+      }
       webhookTriggerType = CUSTOM;
     }
 

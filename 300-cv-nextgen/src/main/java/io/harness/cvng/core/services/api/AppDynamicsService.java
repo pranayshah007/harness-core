@@ -40,9 +40,17 @@ public interface AppDynamicsService extends DataSourceConnectivityChecker {
   List<AppDynamicsFileDefinition> getMetricStructure(ProjectParams projectParams, String connectorIdentifier,
       String appName, String baseFolder, String tier, String metricPath, String tracingId);
 
+  @Deprecated(since = "moved to v2")
   AppdynamicsMetricDataResponse getMetricData(ProjectParams projectParams, String connectorIdentifier, String appName,
       String baseFolder, String tier, String metricPath, String tracingId);
 
+  @Deprecated(since = "moved to getCompleteServiceInstanceMetricPath")
   String getServiceInstanceMetricPath(ProjectParams projectParams, String connectorIdentifier, String appName,
       String baseFolder, String tier, String metricPath, String tracingId);
+
+  AppdynamicsMetricDataResponse getMetricDataV2(ProjectParams projectParams, String connectorIdentifier, String appName,
+      String completeMetricPath, String tracingId);
+
+  String getCompleteServiceInstanceMetricPath(ProjectParams projectParams, String connectorIdentifier, String appName,
+      String completeMetricPath, String tracingId);
 }

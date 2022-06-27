@@ -109,11 +109,11 @@ public interface DelegateAgentManagerClient {
   Call<DelegateTaskEventsResponse> pollTaskEvents(
       @Path("delegateId") String delegateId, @Query("accountId") String accountId);
 
-  @POST("agent/delegates/instance-sync/{perpetualTaskId}")
+  @POST("instancesync/instance-sync/{perpetualTaskId}")
   Call<RestResponse<Boolean>> publishInstanceSyncResult(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body DelegateResponseData responseData);
 
-  @POST("agent/delegates/instance-sync-ng/{perpetualTaskId}")
+  @POST("instancesync/instance-sync-ng/{perpetualTaskId}")
   Call<RestResponse<Boolean>> processInstanceSyncNGResult(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body InstanceSyncPerpetualTaskResponse responseData);
 

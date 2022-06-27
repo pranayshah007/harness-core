@@ -1509,7 +1509,7 @@ public class UserServiceImpl implements UserService {
                                              .addFilter(UserGroupKeys.accountId, EQ, accountId)
                                              .addFilter(UserGroupKeys.memberIds, EQ, userId)
                                              .build();
-    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, loadUsers);
+    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, loadUsers, null, null);
     return pageResponse.getResponse();
   }
 
@@ -1527,7 +1527,7 @@ public class UserServiceImpl implements UserService {
                                              .addFilter("_id", IN, userGroupIds.toArray())
                                              .addFilter(UserGroupKeys.accountId, EQ, accountId)
                                              .build();
-    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, true);
+    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, true, null, null);
     return pageResponse.getResponse();
   }
 
@@ -2753,7 +2753,7 @@ public class UserServiceImpl implements UserService {
                                      .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
                                      .addFilter(UserGroupKeys.accountId, EQ, accountId)
                                      .build();
-    PageResponse<UserGroup> res = userGroupService.list(accountId, req, false);
+    PageResponse<UserGroup> res = userGroupService.list(accountId, req, false, null, null);
     List<UserGroup> allUserGroupList = res.getResponse();
     if (isEmpty(allUserGroupList)) {
       return;
@@ -2854,7 +2854,7 @@ public class UserServiceImpl implements UserService {
                 .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
                 .addFilter(UserGroupKeys.memberIds, HAS, user.getUuid())
                 .build(),
-            true);
+            true, null, null);
         List<UserGroup> userGroupList = pageResponse.getResponse();
         removeUserFromUserGroups(user, userGroupList, false);
       }
@@ -3284,7 +3284,7 @@ public class UserServiceImpl implements UserService {
             .addFilter(UserGroup.ACCOUNT_ID_KEY, EQ, accountId)
             .addFilter(UserGroupKeys.name, EQ, UserGroup.DEFAULT_ACCOUNT_ADMIN_USER_GROUP_NAME)
             .build();
-    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, true);
+    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, true, null, null);
     return pageResponse.getResponse();
   }
 

@@ -25,6 +25,7 @@ import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.exception.ngexception.CIStageExecutionUserException;
 import io.harness.network.SafeHttpCall;
+import io.harness.ng.core.DecryptableEntityWithEncryptionConsumers;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.SSHConfigDTO;
 import io.harness.ng.core.dto.secrets.SSHCredentialType;
@@ -242,6 +243,21 @@ public class SecretUtils {
           identifierRef.getIdentifier(), identifierRef.getScope()));
     }
     return secretResponseWrapper.getSecret();
+  }
+
+  public DecryptableEntity decryptViaManager(DecryptableEntity decryptableEntity,
+      List<EncryptedDataDetail> encryptionDetails, String accountId, String connectorId) {
+    RetryPolicy<Object> retryPolicy =
+        getRetryPolicy(format("[Retrying failed call to decrypt connector credentials: [%s], attempt: {}", connectorId),
+            format("Failed to decrypt connector credentials: [%s] after retrying {} times", connectorId));
+
+    DecryptableEntityWithEncryptionConsumers entity = DecryptableEntityWithEncryptionConsumers.builder()
+                                                          .decryptableEntity(decryptableEntity)
+                                                          .encryptedDataDetailList(encryptionDetails)
+                                                          .build();
+
+    return Failsafe.with(retryPolicy)
+        .get(() -> SafeHttpCall.execute(secretNGManagerClient.decryptEncryptedDetails(entity, accountId)).getData());
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

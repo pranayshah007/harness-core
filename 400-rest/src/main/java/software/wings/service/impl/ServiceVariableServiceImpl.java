@@ -197,12 +197,16 @@ public class ServiceVariableServiceImpl implements ServiceVariableService {
       serviceVariable.setAccountId(accountId);
     }
 
-    ServiceVariable newServiceVariable = duplicateCheck(
-        () -> wingsPersistence.saveAndGet(ServiceVariable.class, serviceVariable), "name", serviceVariable.getName());
+    String serviceVariableId =
+        duplicateCheck(() -> wingsPersistence.save(serviceVariable), "name", serviceVariable.getName());
 
     entityVersionService.newEntityVersion(serviceVariable.getAppId(), EntityType.CONFIG, serviceVariable.getUuid(),
         serviceVariable.getEntityId(), serviceVariable.getName(), ChangeType.CREATED, null);
 
+    if (isEmpty(serviceVariableId)) {
+      return null;
+    }
+    ServiceVariable newServiceVariable = wingsPersistence.get(ServiceVariable.class, serviceVariableId);
     if (newServiceVariable == null) {
       return null;
     }

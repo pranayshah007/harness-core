@@ -7,12 +7,17 @@
 
 package io.harness.gitsync;
 
+import static io.harness.Microservice.CF;
+import static io.harness.Microservice.CORE;
+import static io.harness.Microservice.PMS;
+import static io.harness.Microservice.TEMPLATESERVICE;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 import static org.mockito.Mockito.mock;
 
+import io.harness.EntityType;
 import io.harness.Microservice;
 import io.harness.SCMGrpcClientModule;
 import io.harness.ScmConnectionConfig;
@@ -27,10 +32,45 @@ import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.factory.ClosingFactory;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ff.FeatureFlagServiceImpl;
+import io.harness.gitsync.common.impl.GitBranchServiceImpl;
+import io.harness.gitsync.common.impl.GitBranchSyncServiceImpl;
+import io.harness.gitsync.common.impl.GitEntityServiceImpl;
+import io.harness.gitsync.common.impl.GitSyncSettingsServiceImpl;
+import io.harness.gitsync.common.impl.GitToHarnessProgressServiceImpl;
+import io.harness.gitsync.common.impl.HarnessToGitHelperServiceImpl;
+import io.harness.gitsync.common.impl.ScmOrchestratorServiceImpl;
+import io.harness.gitsync.common.impl.YamlGitConfigServiceImpl;
+import io.harness.gitsync.common.impl.gittoharness.GitToHarnessProcessorServiceImpl;
+import io.harness.gitsync.common.service.GitBranchService;
+import io.harness.gitsync.common.service.GitBranchSyncService;
+import io.harness.gitsync.common.service.GitEntityService;
+import io.harness.gitsync.common.service.GitSyncSettingsService;
+import io.harness.gitsync.common.service.GitToHarnessProgressService;
+import io.harness.gitsync.common.service.HarnessToGitHelperService;
+import io.harness.gitsync.common.service.ScmOrchestratorService;
+import io.harness.gitsync.common.service.YamlGitConfigService;
+import io.harness.gitsync.common.service.gittoharness.GitToHarnessProcessorService;
+import io.harness.gitsync.core.fullsync.GitFullSyncConfigService;
+import io.harness.gitsync.core.fullsync.GitFullSyncConfigServiceImpl;
+import io.harness.gitsync.core.fullsync.GitFullSyncEntityService;
+import io.harness.gitsync.core.fullsync.GitFullSyncEntityServiceImpl;
+import io.harness.gitsync.core.fullsync.GitFullSyncProcessorService;
+import io.harness.gitsync.core.fullsync.GitFullSyncProcessorServiceImpl;
+import io.harness.gitsync.core.fullsync.impl.FullSyncJobServiceImpl;
+import io.harness.gitsync.core.fullsync.service.FullSyncJobService;
+import io.harness.gitsync.core.impl.GitCommitServiceImpl;
+import io.harness.gitsync.core.impl.YamlChangeSetLifeCycleManagerServiceImpl;
+import io.harness.gitsync.core.impl.YamlChangeSetServiceImpl;
+import io.harness.gitsync.core.service.GitCommitService;
+import io.harness.gitsync.core.service.YamlChangeSetLifeCycleManagerService;
+import io.harness.gitsync.core.service.YamlChangeSetService;
+import io.harness.gitsync.gitsyncerror.impl.GitSyncErrorServiceImpl;
+import io.harness.gitsync.gitsyncerror.service.GitSyncErrorService;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.client.GrpcClientConfig;
+import io.harness.impl.scm.SCMServiceGitClientImpl;
 import io.harness.lock.PersistentLocker;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
@@ -43,12 +83,14 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxDaoImpl;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.persistence.HPersistence;
+import io.harness.queue.QueueController;
 import io.harness.repositories.outbox.OutboxEventRepository;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
+import io.harness.service.ScmClient;
 import io.harness.springdata.HTransactionTemplate;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.testlib.module.MongoRuleMixin;
@@ -64,6 +106,7 @@ import software.wings.service.impl.security.NGEncryptorServiceImpl;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
@@ -76,12 +119,14 @@ import com.google.inject.name.Names;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
+import javax.net.ssl.SSLException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
@@ -136,6 +181,36 @@ public class GitSyncTestRule implements InjectorRuleMixin, MethodRule, MongoRule
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
         bind(NGEncryptorService.class).toInstance(mock(NGEncryptorServiceImpl.class));
         bind(FeatureFlagService.class).toInstance(mock(FeatureFlagServiceImpl.class));
+        bind(YamlChangeSetService.class).toInstance(mock(YamlChangeSetServiceImpl.class));
+        bind(YamlChangeSetLifeCycleManagerService.class)
+            .toInstance(mock(YamlChangeSetLifeCycleManagerServiceImpl.class));
+        bind(GitBranchService.class).toInstance(mock(GitBranchServiceImpl.class));
+        bind(GitBranchSyncService.class).toInstance(mock(GitBranchSyncServiceImpl.class));
+        bind(GitToHarnessProgressService.class).toInstance(mock(GitToHarnessProgressServiceImpl.class));
+        bind(ScmOrchestratorService.class).toInstance(mock(ScmOrchestratorServiceImpl.class));
+        bind(YamlGitConfigService.class).toInstance(mock(YamlGitConfigServiceImpl.class));
+        bind(GitToHarnessProcessorService.class).toInstance(mock(GitToHarnessProcessorServiceImpl.class));
+        bind(GitCommitService.class).toInstance(mock(GitCommitServiceImpl.class));
+        bind(GitSyncErrorService.class).toInstance(mock(GitSyncErrorServiceImpl.class));
+        bind(GitSyncSettingsService.class).toInstance(mock(GitSyncSettingsServiceImpl.class));
+        bind(GitEntityService.class).toInstance(mock(GitEntityServiceImpl.class));
+        bind(HarnessToGitHelperService.class).toInstance(mock(HarnessToGitHelperServiceImpl.class));
+        bind(GitFullSyncEntityService.class).toInstance(mock(GitFullSyncEntityServiceImpl.class));
+        bind(GitFullSyncProcessorService.class).toInstance(mock(GitFullSyncProcessorServiceImpl.class));
+        bind(GitFullSyncConfigService.class).toInstance(mock(GitFullSyncConfigServiceImpl.class));
+        bind(FullSyncJobService.class).toInstance(mock(FullSyncJobServiceImpl.class));
+        bind(ScmClient.class).toInstance(mock(SCMServiceGitClientImpl.class));
+        bind(QueueController.class).toInstance(new QueueController() {
+          @Override
+          public boolean isPrimary() {
+            return true;
+          }
+
+          @Override
+          public boolean isNotPrimary() {
+            return false;
+          }
+        });
         bind(Producer.class)
             .annotatedWith(Names.named(EventsFrameworkConstants.SETUP_USAGE))
             .toInstance(mock(NoOpProducer.class));
@@ -172,6 +247,32 @@ public class GitSyncTestRule implements InjectorRuleMixin, MethodRule, MongoRule
       }
 
       @Provides
+      @Singleton
+      Map<EntityType, Microservice> getEntityTypeMicroserviceMap() {
+        return ImmutableMap.<EntityType, Microservice>builder()
+            .put(EntityType.CONNECTORS, CORE)
+            .put(EntityType.PIPELINES, PMS)
+            .put(EntityType.FEATURE_FLAGS, CF)
+            .put(EntityType.INPUT_SETS, PMS)
+            .put(EntityType.TEMPLATE, TEMPLATESERVICE)
+            .build();
+      }
+
+      @Provides
+      @Singleton
+      List<Microservice> getMicroservicesProcessingOrder() {
+        return Arrays.asList(CORE, TEMPLATESERVICE, CF, PMS);
+      }
+
+      @Provides
+      @Singleton
+      public Map<Microservice, GitToHarnessServiceGrpc.GitToHarnessServiceBlockingStub> gitToHarnessServiceGrpcClient(
+          @Named("GitSyncGrpcClientConfigs") Map<Microservice, GrpcClientConfig> clientConfigs) throws SSLException {
+        Map<Microservice, GitToHarnessServiceGrpc.GitToHarnessServiceBlockingStub> map = new HashMap<>();
+        return map;
+      }
+
+      @Provides
       @Named(OUTBOX_TRANSACTION_TEMPLATE)
       @Singleton
       TransactionTemplate getTransactionTemplate(MongoTransactionManager mongoTransactionManager) {
@@ -189,7 +290,7 @@ public class GitSyncTestRule implements InjectorRuleMixin, MethodRule, MongoRule
       @Named("GitSyncGrpcClientConfigs")
       public Map<Microservice, GrpcClientConfig> grpcClientConfigs() {
         Map<Microservice, GrpcClientConfig> map = new HashMap<>();
-        map.put(Microservice.CORE, GrpcClientConfig.builder().target("localhost:12001").authority("localhost").build());
+        map.put(CORE, GrpcClientConfig.builder().target("localhost:12001").authority("localhost").build());
         return map;
       }
 
@@ -213,7 +314,7 @@ public class GitSyncTestRule implements InjectorRuleMixin, MethodRule, MongoRule
     });
     modules.add(new EntitySetupUsageModule());
     modules.add(new SCMGrpcClientModule(ScmConnectionConfig.builder().url("dummyurl").build()));
-    modules.add(GitSyncModule.getInstance());
+    // modules.add(GitSyncModule.getInstance());
     return modules;
   }
 

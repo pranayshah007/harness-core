@@ -11,16 +11,23 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
+import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.gitsync.beans.GitRepositoryDTO;
 
-import lombok.experimental.UtilityClass;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@UtilityClass
+@Singleton
+@AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(PL)
 public class GitFilePathHelper {
+  GitSyncConnectorHelper gitSyncConnectorHelper;
   public static final String FILE_PATH_SEPARATOR = "/";
   public static final String HARNESS_DIRECTORY_PATH = ".harness/";
   public static final String FILE_PATH_INVALID_HINT = "Please check if the requested filepath is valid.";
@@ -38,6 +45,13 @@ public class GitFilePathHelper {
     validateFilePathFormat(filePath);
     validateFilePathIsInHarnessDirectory(filePath);
     validateFilePathHasCorrectExtension(filePath);
+  }
+
+  public String getFileUrl(
+      Scope scope, String connectorRef, String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
+    ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(),
+        scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, gitRepositoryDTO);
+    return scmConnector.getFileUrl(branchName, filePath, gitRepositoryDTO);
   }
 
   private static void validateFilePathFormat(String filePath) {

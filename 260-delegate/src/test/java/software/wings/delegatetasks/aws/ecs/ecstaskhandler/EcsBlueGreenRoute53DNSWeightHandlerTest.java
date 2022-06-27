@@ -17,7 +17,6 @@ import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -102,11 +101,11 @@ public class EcsBlueGreenRoute53DNSWeightHandlerTest extends WingsBaseTest {
 
     doReturn(newValue)
         .when(mockAwsServiceDiscoveryHelperServiceDelegate)
-        .getRecordValueForService(any(), any(), anyString(), eq(newSvcArn));
+        .getRecordValueForService(any(), any(), any(), eq(newSvcArn));
 
     doReturn(oldValue)
         .when(mockAwsServiceDiscoveryHelperServiceDelegate)
-        .getRecordValueForService(any(), any(), anyString(), eq(oldSvcArn));
+        .getRecordValueForService(any(), any(), any(), eq(oldSvcArn));
 
     EcsBGRoute53DNSWeightUpdateRequest request = EcsBGRoute53DNSWeightUpdateRequest.builder()
                                                      .rollback(false)
@@ -118,14 +117,14 @@ public class EcsBlueGreenRoute53DNSWeightHandlerTest extends WingsBaseTest {
                                                      .build();
     EcsCommandExecutionResponse response = task.executeTaskInternal(request, null, mockCallback);
 
-    verify(mockCallback, times(2)).saveExecutionLog(anyString());
+    verify(mockCallback, times(2)).saveExecutionLog(any());
     verify(mockAwsRoute53HelperServiceDelegate)
         .upsertRoute53ParentRecord(
-            any(), any(), anyString(), anyString(), anyString(), eq(60), eq(newValue), eq(40), eq(oldValue), anyInt());
+            any(), any(), any(), any(), any(), eq(60), eq(newValue), eq(40), eq(oldValue), anyInt());
     verify(mockEcsSwapRoutesCommandTaskHelper)
-        .updateServiceTags(any(), any(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), any());
+        .updateServiceTags(any(), any(), any(), any(), any(), any(), anyBoolean(), any());
     verify(mockEcsSwapRoutesCommandTaskHelper, times(0))
-        .downsizeOlderService(any(), any(), anyString(), anyString(), anyString(), any(), anyInt());
+        .downsizeOlderService(any(), any(), any(), any(), any(), any(), anyInt());
 
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
@@ -141,11 +140,11 @@ public class EcsBlueGreenRoute53DNSWeightHandlerTest extends WingsBaseTest {
 
     doReturn(newValue)
         .when(mockAwsServiceDiscoveryHelperServiceDelegate)
-        .getRecordValueForService(any(), any(), anyString(), eq(newSvcArn));
+        .getRecordValueForService(any(), any(), any(), eq(newSvcArn));
 
     doReturn(oldValue)
         .when(mockAwsServiceDiscoveryHelperServiceDelegate)
-        .getRecordValueForService(any(), any(), anyString(), eq(oldSvcArn));
+        .getRecordValueForService(any(), any(), any(), eq(oldSvcArn));
 
     EcsBGRoute53DNSWeightUpdateRequest request = EcsBGRoute53DNSWeightUpdateRequest.builder()
                                                      .rollback(false)
@@ -157,14 +156,13 @@ public class EcsBlueGreenRoute53DNSWeightHandlerTest extends WingsBaseTest {
                                                      .build();
     EcsCommandExecutionResponse response = task.executeTaskInternal(request, null, mockCallback);
 
-    verify(mockCallback, times(3)).saveExecutionLog(anyString());
+    verify(mockCallback, times(3)).saveExecutionLog(any());
     verify(mockAwsRoute53HelperServiceDelegate)
         .upsertRoute53ParentRecord(
-            any(), any(), anyString(), anyString(), anyString(), eq(100), eq(newValue), eq(0), eq(oldValue), anyInt());
+            any(), any(), any(), any(), any(), eq(100), eq(newValue), eq(0), eq(oldValue), anyInt());
     verify(mockEcsSwapRoutesCommandTaskHelper)
-        .updateServiceTags(any(), any(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), any());
-    verify(mockEcsSwapRoutesCommandTaskHelper)
-        .downsizeOlderService(any(), any(), anyString(), anyString(), anyString(), any(), anyInt());
+        .updateServiceTags(any(), any(), any(), any(), any(), any(), anyBoolean(), any());
+    verify(mockEcsSwapRoutesCommandTaskHelper).downsizeOlderService(any(), any(), any(), any(), any(), any(), anyInt());
 
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
@@ -180,11 +178,11 @@ public class EcsBlueGreenRoute53DNSWeightHandlerTest extends WingsBaseTest {
 
     doReturn(newValue)
         .when(mockAwsServiceDiscoveryHelperServiceDelegate)
-        .getRecordValueForService(any(), any(), anyString(), eq(newSvcArn));
+        .getRecordValueForService(any(), any(), any(), eq(newSvcArn));
 
     doReturn(oldValue)
         .when(mockAwsServiceDiscoveryHelperServiceDelegate)
-        .getRecordValueForService(any(), any(), anyString(), eq(oldSvcArn));
+        .getRecordValueForService(any(), any(), any(), eq(oldSvcArn));
 
     AwsAutoScalarConfig previousAwsAutoScalarConfig = AwsAutoScalarConfig.builder().resourceId("abc").build();
     EcsBGRoute53DNSWeightUpdateRequest request =
@@ -196,19 +194,20 @@ public class EcsBlueGreenRoute53DNSWeightHandlerTest extends WingsBaseTest {
             .build();
     EcsCommandExecutionResponse response = task.executeTaskInternal(request, null, mockCallback);
 
-    verify(mockCallback, times(4)).saveExecutionLog(anyString());
+    int expectedNumberOfLogItems = 5;
+    verify(mockCallback, times(expectedNumberOfLogItems)).saveExecutionLog(any());
 
     verify(mockEcsSwapRoutesCommandTaskHelper)
-        .upsizeOlderService(
-            any(), any(), anyString(), anyString(), anyInt(), anyString(), any(), anyInt(), anyBoolean());
+        .upsizeOlderService(any(), any(), any(), any(), anyInt(), any(), any(), anyInt(), anyBoolean());
     verify(mockAwsRoute53HelperServiceDelegate)
         .upsertRoute53ParentRecord(
-            any(), any(), anyString(), anyString(), anyString(), eq(100), eq(oldValue), eq(0), eq(newValue), anyInt());
+            any(), any(), any(), any(), any(), eq(100), eq(oldValue), eq(0), eq(newValue), anyInt());
     verify(mockEcsSwapRoutesCommandTaskHelper)
-        .updateServiceTags(any(), any(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), any());
+        .updateServiceTags(any(), any(), any(), any(), any(), any(), anyBoolean(), any());
     verify(mockEcsSwapRoutesCommandTaskHelper)
         .restoreAwsAutoScalarConfig(
-            any(), any(), anyString(), eq(Arrays.asList(previousAwsAutoScalarConfig)), eq(true), any());
+            any(), any(), any(), eq(Arrays.asList(previousAwsAutoScalarConfig)), eq(true), any());
+    verify(mockEcsSwapRoutesCommandTaskHelper).downsizeOlderService(any(), any(), any(), any(), any(), any(), anyInt());
 
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
@@ -224,11 +223,11 @@ public class EcsBlueGreenRoute53DNSWeightHandlerTest extends WingsBaseTest {
 
     doReturn(newValue)
         .when(mockAwsServiceDiscoveryHelperServiceDelegate)
-        .getRecordValueForService(any(), any(), anyString(), eq(newSvcArn));
+        .getRecordValueForService(any(), any(), any(), eq(newSvcArn));
 
     doReturn(oldValue)
         .when(mockAwsServiceDiscoveryHelperServiceDelegate)
-        .getRecordValueForService(any(), any(), anyString(), eq(oldSvcArn));
+        .getRecordValueForService(any(), any(), any(), eq(oldSvcArn));
 
     EcsBGRoute53DNSWeightUpdateRequest request = EcsBGRoute53DNSWeightUpdateRequest.builder()
                                                      .rollback(false)
@@ -242,7 +241,7 @@ public class EcsBlueGreenRoute53DNSWeightHandlerTest extends WingsBaseTest {
 
     doThrow(new TimeoutException("", "", null))
         .when(mockEcsSwapRoutesCommandTaskHelper)
-        .downsizeOlderService(any(), any(), anyString(), anyString(), anyString(), any(), anyInt());
+        .downsizeOlderService(any(), any(), any(), any(), any(), any(), anyInt());
 
     EcsCommandExecutionResponse response = task.executeTaskInternal(request, null, mockCallback);
 

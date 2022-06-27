@@ -42,7 +42,7 @@ public class StepGroupPmsFilterJsonCreator extends ChildrenFilterJsonCreator<Ste
   }
 
   @Override
-  public PipelineFilter getFilterForGivenField() {
+  public PipelineFilter getFilterForGivenField(FilterCreationContext filterCreationContext) {
     return null;
   }
 

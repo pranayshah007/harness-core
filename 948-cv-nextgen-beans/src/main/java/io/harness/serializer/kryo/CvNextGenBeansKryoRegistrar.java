@@ -33,6 +33,7 @@ import io.harness.cvng.beans.MetricResponseMappingDTO;
 import io.harness.cvng.beans.NewRelicDataCollectionInfo;
 import io.harness.cvng.beans.PrometheusDataCollectionInfo;
 import io.harness.cvng.beans.SplunkDataCollectionInfo;
+import io.harness.cvng.beans.SplunkMetricDataCollectionInfo;
 import io.harness.cvng.beans.StackdriverDataCollectionInfo;
 import io.harness.cvng.beans.StackdriverLogDataCollectionInfo;
 import io.harness.cvng.beans.SyncDataCollectionRequest;
@@ -83,6 +84,7 @@ import io.harness.cvng.beans.prometheus.PrometheusLabelValuesFetchRequest;
 import io.harness.cvng.beans.prometheus.PrometheusMetricListFetchRequest;
 import io.harness.cvng.beans.splunk.SplunkDataCollectionRequest;
 import io.harness.cvng.beans.splunk.SplunkLatestHistogramDataCollectionRequest;
+import io.harness.cvng.beans.splunk.SplunkMetricSampleDataCollectionRequest;
 import io.harness.cvng.beans.splunk.SplunkSampleDataCollectionRequest;
 import io.harness.cvng.beans.splunk.SplunkSavedSearchRequest;
 import io.harness.cvng.beans.stackdriver.StackDriverMetricDefinition;
@@ -190,5 +192,9 @@ public class CvNextGenBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(DynatraceDataCollectionInfo.MetricCollectionInfo.class, 9104);
     kryo.register(CustomHealthLogInfo.class, 9105);
     kryo.register(CustomHealthLogDataCollectionInfo.class, 9106);
+    // 9107 to 09 is used.
+    kryo.register(SplunkMetricDataCollectionInfo.class, 9110);
+    kryo.register(SplunkMetricDataCollectionInfo.MetricInfo.class, 9111);
+    kryo.register(SplunkMetricSampleDataCollectionRequest.class, 9112);
   }
 }

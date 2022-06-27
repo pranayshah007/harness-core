@@ -8,6 +8,7 @@
 package io.harness.delegate.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.k8s.K8sRollingRollbackBaseHandler.ResourceRecreationStatus.RESOURCE_CREATION_SUCCESSFUL;
 import static io.harness.delegate.k8s.K8sTestHelper.buildProcessResult;
 import static io.harness.delegate.k8s.K8sTestHelper.buildRelease;
 import static io.harness.delegate.k8s.K8sTestHelper.buildReleaseMultipleManagedWorkloads;
@@ -22,12 +23,14 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.BOJANA;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -40,6 +43,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -67,6 +71,7 @@ import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import org.junit.Before;
@@ -551,6 +556,16 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testGetResourcesRecreated() {
+    List<KubernetesResourceId> prunedResourceIds =
+        singletonList(KubernetesResourceId.builder().name("dummy_name").build());
+    assertThat(k8sRollingRollbackBaseHandler.getResourcesRecreated(prunedResourceIds, RESOURCE_CREATION_SUCCESSFUL))
+        .isEqualTo(new HashSet<>(prunedResourceIds));
+  }
+
+  @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void TC3_testRecreatePrunedResources() throws Exception {
@@ -591,6 +606,7 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     // pruning resources
     K8sRollingRollbackHandlerConfig rollbackHandlerConfig = new K8sRollingRollbackHandlerConfig();
     rollbackHandlerConfig.setReleaseHistory(releaseHistory);
+    rollbackHandlerConfig.setClient(mock(Kubectl.class));
 
     List<KubernetesResourceId> resourceIds = new ArrayList<>();
     resourceIds.add(KubernetesResourceId.builder().name("resource0").build());
@@ -608,8 +624,7 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     doReturn(previousSuccessfulRelease).when(releaseHistory).getPreviousRollbackEligibleRelease(anyInt());
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .applyManifests(
-            any(Kubectl.class), anyList(), any(K8sDelegateTaskParams.class), any(LogCallback.class), anyBoolean());
+        .applyManifests(any(), anyList(), any(K8sDelegateTaskParams.class), any(LogCallback.class), anyBoolean());
 
     assertThat(k8sRollingRollbackBaseHandler.recreatePrunedResources(
                    rollbackHandlerConfig, 1, resourceIds, logCallback, k8sDelegateTaskParams))
@@ -638,6 +653,7 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     Release currentRelease = Release.builder().resources(resourceIds).resourcesWithSpec(resources).build();
     rollbackHandlerConfig.setReleaseHistory(releaseHistory);
     rollbackHandlerConfig.setRelease(currentRelease);
+    rollbackHandlerConfig.setClient(mock(Kubectl.class));
 
     List<KubernetesResourceId> resourcesInPreviousSuccessfulRelease = new ArrayList<>();
     resourcesInPreviousSuccessfulRelease.add(resourceIds.get(0));
@@ -679,6 +695,7 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
     Release currentRelease = Release.builder().resources(resourceIds).resourcesWithSpec(resources).build();
     rollbackHandlerConfig.setReleaseHistory(releaseHistory);
     rollbackHandlerConfig.setRelease(currentRelease);
+    rollbackHandlerConfig.setClient(mock(Kubectl.class));
 
     List<KubernetesResourceId> resourcesInPreviousSuccessfulRelease = new ArrayList<>();
     resourcesInPreviousSuccessfulRelease.add(resourceIds.get(0));

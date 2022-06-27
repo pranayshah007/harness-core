@@ -12,7 +12,8 @@ import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -21,6 +22,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.LogStreamingStepClientImpl;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -38,15 +41,17 @@ import io.harness.steps.StepUtils;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -59,6 +64,7 @@ public class ShellScriptStepTest extends CategoryTest {
   @Mock private KryoSerializer kryoSerializer;
   @Mock private StepHelper stepHelper;
   @Mock private ShellScriptHelperService shellScriptHelperService;
+  @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   @InjectMocks private ShellScriptStep shellScriptStep;
 
@@ -68,6 +74,12 @@ public class ShellScriptStepTest extends CategoryTest {
         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "orgId")
         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "projId")
         .build();
+  }
+
+  @Before
+  public void setup() {
+    LogStreamingStepClientImpl logClient = mock(LogStreamingStepClientImpl.class);
+    when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logClient);
   }
 
   @Test
@@ -81,8 +93,8 @@ public class ShellScriptStepTest extends CategoryTest {
     doReturn(taskParametersNG)
         .when(shellScriptHelperService)
         .buildShellScriptTaskParametersNG(ambiance, stepParameters);
-    mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    MockedStatic<StepUtils> aStatic = Mockito.mockStatic(StepUtils.class);
+    aStatic.when(() -> StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
     TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);

@@ -61,6 +61,7 @@ import software.wings.helpers.ext.gcb.models.GcbBuildDetails;
 import software.wings.helpers.ext.gcb.models.GcbBuildStatus;
 import software.wings.helpers.ext.gcb.models.OperationMeta;
 import software.wings.helpers.ext.gcb.models.RepoSource;
+import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.yaml.GitClient;
 import software.wings.sm.states.gcbconfigs.GcbOptions;
 import software.wings.sm.states.gcbconfigs.GcbRemoteBuildSpec;
@@ -86,6 +87,7 @@ public class GcbTaskTest extends CategoryTest {
   @Mock private GcbService gcbService;
   @Mock private DelegateLogService logService;
   @Mock private GitClient gitClient;
+  @Mock private EncryptionService encryptionService;
 
   private final GcpConfig gcpConfig = GcpConfig.builder().build();
 
@@ -227,7 +229,7 @@ public class GcbTaskTest extends CategoryTest {
     verify(gcbService, times(3)).getBuild(gcpConfig, encryptedDataDetails, BUILD_ID);
     verify(gcbService, times(3))
         .fetchBuildLogs(gcpConfig, encryptedDataDetails, success.getLogsBucket(), success.getId());
-    verify(task, times(3)).saveConsoleLogs(any(), anyString(), anyString(), any(), anyString(), anyString());
+    verify(task, times(3)).saveConsoleLogs(any(), anyString(), any(), any(), any(), anyString());
     assertThat(response).isNotNull();
     assertThat(response.getBuild()).isEqualTo(success);
   }

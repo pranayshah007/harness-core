@@ -57,7 +57,10 @@ public class CDNGPipelineConfigurationHelper {
 
   public String getExecutionStrategyYaml(ServiceDefinitionType serviceDefinitionType,
       ExecutionStrategyType executionStrategyType, boolean includeVerify) throws IOException {
-    if (ServiceDefinitionType.getExecutionStrategies(serviceDefinitionType).contains(executionStrategyType)) {
+    // Note: Additional condition for GitOps is added because we do not want to show the GitOps Strategy in
+    // the UI but also provide the support to UI for default yaml
+    if (ServiceDefinitionType.getExecutionStrategies(serviceDefinitionType).contains(executionStrategyType)
+        || executionStrategyType == ExecutionStrategyType.GITOPS) {
       ClassLoader classLoader = this.getClass().getClassLoader();
       return Resources.toString(
           Objects.requireNonNull(classLoader.getResource(

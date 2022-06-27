@@ -59,12 +59,6 @@ public class ConfigFileAttributes implements OverridesApplier<ConfigFileAttribut
   @SkipAutoEvaluation
   ParameterField<StoreConfigWrapper> store;
 
-  @NotNull
-  @Wither
-  @ApiModelProperty(dataType = "io.harness.cdng.configfile.ConfigFileType")
-  @JsonProperty("type")
-  ConfigFileType type;
-
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
@@ -75,10 +69,6 @@ public class ConfigFileAttributes implements OverridesApplier<ConfigFileAttribut
     if (overrideConfig.getStore() != null && overrideConfig.getStore().getValue() != null) {
       configFileAttributes = configFileAttributes.withStore(
           ParameterField.createValueField(this.store.getValue().applyOverrides(overrideConfig.getStore().getValue())));
-    }
-
-    if (overrideConfig.getType() != null) {
-      configFileAttributes = configFileAttributes.withType(overrideConfig.getType());
     }
 
     return configFileAttributes;
@@ -92,13 +82,11 @@ public class ConfigFileAttributes implements OverridesApplier<ConfigFileAttribut
   }
 
   public ConfigFileAttributeStepParameters getConfigFileAttributeStepParameters() {
-    return new ConfigFileAttributeStepParameters(
-        StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), type);
+    return new ConfigFileAttributeStepParameters(StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()));
   }
 
   @Value
   public static class ConfigFileAttributeStepParameters {
     StoreConfigWrapperParameters store;
-    ConfigFileType type;
   }
 }
