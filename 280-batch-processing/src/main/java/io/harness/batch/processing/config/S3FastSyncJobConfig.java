@@ -11,7 +11,9 @@ import io.harness.batch.processing.ccm.BatchJobType;
 import io.harness.batch.processing.reader.SettingAttributeReader;
 import io.harness.batch.processing.svcmetrics.BatchJobExecutionListener;
 import io.harness.batch.processing.writer.S3FastSyncEventWriter;
-import io.harness.batch.processing.writer.S3SyncEventWriter;
+
+import software.wings.beans.SettingAttribute;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -23,7 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import software.wings.beans.SettingAttribute;
 
 @Slf4j
 @Configuration
@@ -36,11 +37,11 @@ public class S3FastSyncJobConfig {
 
   @Bean
   @Qualifier(value = "s3FastSyncJob")
-  public Job s3FastSyncJob(JobBuilderFactory jobBuilderFactory, Step s3SyncStep) {
+  public Job s3FastSyncJob(JobBuilderFactory jobBuilderFactory, Step s3FastSyncStep) {
     return jobBuilderFactory.get(BatchJobType.SYNC_BILLING_REPORT_S3_FAST.name())
         .incrementer(new RunIdIncrementer())
         .listener(batchJobExecutionListener)
-        .start(s3SyncStep)
+        .start(s3FastSyncStep)
         .build();
   }
 
