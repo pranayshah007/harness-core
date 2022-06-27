@@ -67,6 +67,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -162,12 +163,13 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       logCallback.saveExecutionLog(format("PR Link: %s", gitOpsTaskParams.getPrLink(), INFO));
       logCallback.saveExecutionLog(
           format("%s", ((GitApiMergePRTaskResponse) responseData.getGitApiResult()).getMessage()), INFO);
-      logCallback.saveExecutionLog(
-          format("Commit Sha is %s", ((GitApiMergePRTaskResponse) responseData.getGitApiResult()).getSha()), INFO);
+      String sha = ((GitApiMergePRTaskResponse) responseData.getGitApiResult()).getSha();
+      logCallback.saveExecutionLog(format("Commit Sha is %s", sha), INFO);
       logCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
 
       return NGGitOpsResponse.builder()
           .taskStatus(TaskStatus.SUCCESS)
+          .commitId(sha)
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .build();
     } catch (Exception e) {
@@ -190,8 +192,10 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       FetchFilesResult fetchFilesResult =
           getFetchFilesResult(gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId());
 
-      if (fetchFilesResult == null) {
-        throw new InvalidRequestException("Fetch Files task encountered an error");
+      if (fetchFilesResult == null || fetchFilesResult.getFiles().isEmpty()) {
+        logCallback.saveExecutionLog(
+            color(format("%nGFetch Files task was not successful."), LogColor.White, LogWeight.Bold), ERROR);
+        throw new InvalidRequestException("Fetch Files task was not successful.");
       }
 
       logCallback = markDoneAndStartNew(logCallback, UpdateFiles, commandUnitsProgress);
@@ -202,12 +206,18 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       ScmConnector scmConnector =
           gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO();
 
-      createNewBranch(scmConnector, newBranch, baseBranch);
-
       updateFiles(gitOpsTaskParams.getFilesToVariablesMap(), fetchFilesResult);
+
+      List<GitFile> fetchFilesResultFiles = fetchFilesResult.getFiles();
+      StringBuilder sb = new StringBuilder(1024);
+      fetchFilesResultFiles.forEach(f -> sb.append("\n- ").append(f.getFilePath()));
+
+      logCallback.saveExecutionLog("Following files will be updated.");
+      logCallback.saveExecutionLog(sb.toString(), INFO);
 
       logCallback = markDoneAndStartNew(logCallback, CommitAndPush, commandUnitsProgress);
 
+      createNewBranch(scmConnector, newBranch, baseBranch);
       CommitAndPushResult gitCommitAndPushResult = commit(gitOpsTaskParams, fetchFilesResult, COMMIT_MSG, newBranch);
 
       List<GitFileChange> files = gitCommitAndPushResult.getFilesCommittedToGit();
@@ -216,8 +226,9 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
             "No files were committed. Hence not creating a pull request.", ERROR, CommandExecutionStatus.FAILURE);
         throw new InvalidRequestException("No files were committed. Hence not creating a pull request.");
       }
-      StringBuilder sb = new StringBuilder(1024);
-      files.forEach(f -> sb.append("\n- ").append(f.getFilePath()));
+
+      StringBuilder sb2 = new StringBuilder(1024);
+      files.forEach(f -> sb2.append("\n- ").append(f.getFilePath()));
 
       logCallback.saveExecutionLog(format("Following files have been committed to branch %s", newBranch), INFO);
       logCallback.saveExecutionLog(sb.toString(), INFO);
@@ -255,9 +266,6 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     FetchFilesResult fetchFilesResult = fetchFilesFromRepo(gitFetchFilesConfig, logCallback, accountId);
 
     if (fetchFilesResult.getFiles().isEmpty()) {
-      logCallback.saveExecutionLog(color(format("%nGit Fetch Files completed successfully but no files were fetched"),
-                                       LogColor.White, LogWeight.Bold),
-          INFO);
       return fetchFilesResult;
     }
 
@@ -326,7 +334,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     return logCallback;
   }
 
-  public CreateBranchResponse createNewBranch(ScmConnector scmConnector, String branch, String baseBranch) {
+  public CreateBranchResponse createNewBranch(ScmConnector scmConnector, String branch, String baseBranch)
+      throws Exception {
     return scmFetchFilesHelper.createNewBranch(scmConnector, branch, baseBranch);
   }
 
@@ -410,9 +419,11 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
     for (GitFile gitFile : fetchFilesResult.getFiles()) {
       if (gitFile.getFilePath().contains(".yaml") || gitFile.getFilePath().contains(".yml")) {
-        String convertJsonToYaml = convertYamlToJson(gitFile.getFileContent());
         Map<String, String> stringObjectMap = filesToVariablesMap.get(gitFile.getFilePath());
-        updatedFiles.add(replaceFields(convertJsonToYaml, stringObjectMap));
+        updatedFiles.add(replaceFields(convertYamlToJson(gitFile.getFileContent()), stringObjectMap));
+      } else if (gitFile.getFilePath().contains(".json")) {
+        Map<String, String> stringObjectMap = filesToVariablesMap.get(gitFile.getFilePath());
+        updatedFiles.add(replaceFields(gitFile.getFileContent(), stringObjectMap));
       }
     }
 
@@ -488,7 +499,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
   public String convertJsonToYaml(String jsonString) throws IOException {
     JsonNode jsonNodeTree = new ObjectMapper().readTree(jsonString);
-    return new YAMLMapper().writeValueAsString(jsonNodeTree);
+    return new YAMLMapper().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER).writeValueAsString(jsonNodeTree);
   }
 
   public FetchFilesResult fetchFilesFromRepo(

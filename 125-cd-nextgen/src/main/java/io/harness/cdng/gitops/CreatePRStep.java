@@ -169,7 +169,7 @@ public class CreatePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResp
 
     } catch (Exception e) {
       log.error("Failed to execute Create PR step", e);
-      throw new InvalidRequestException("Failed to execute Create PR step");
+      throw new InvalidRequestException(String.format("Failed to execute Create PR step. %s", e.getMessage()));
     }
   }
 

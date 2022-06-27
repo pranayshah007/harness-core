@@ -46,6 +46,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -90,9 +91,18 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
     NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseData;
 
     if (TaskStatus.SUCCESS.equals(ngGitOpsResponse.getTaskStatus())) {
+      MergePROutcome mergePROutcome = MergePROutcome.builder().commitId(ngGitOpsResponse.getCommitId()).build();
+
+      executionSweepingOutputService.consume(
+          ambiance, OutcomeExpressionConstants.MERGE_PR_OUTCOME, mergePROutcome, StepOutcomeGroup.STAGE.name());
+
       return StepResponse.builder()
           .unitProgressList(ngGitOpsResponse.getUnitProgressData().getUnitProgresses())
           .status(Status.SUCCEEDED)
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(OutcomeExpressionConstants.MERGE_PR_OUTCOME)
+                           .outcome(mergePROutcome)
+                           .build())
           .build();
     }
 
