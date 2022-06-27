@@ -1097,8 +1097,8 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
                       return prepareSuccessfulYAMLOperationResponse(processedChangeList, changeList);
                     } catch (YamlProcessingException ex) {
                       log.warn(format("Unable to process uploaded zip file for account %s, error: %s", accountId, ex));
-                      return prepareFailedYAMLOperationResponse(ex.getMessage(), ex.getFailedYamlFileChangeMap(),
-                          ex.getChangeContextList(), ex.getChangeList());
+                      return prepareFailedYAMLOperationResponse(ExceptionUtils.getMessage(ex),
+                          ex.getFailedYamlFileChangeMap(), ex.getChangeContextList(), ex.getChangeList());
                     }
                   });
           return future.get(30, TimeUnit.SECONDS);
@@ -1192,16 +1192,8 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
       }
     } catch (YamlProcessingException ex) {
       log.warn(format("Unable to process yaml file for account %s, error: %s", accountId, ex));
-      if (ex != null && !isEmpty(ex.getFailedYamlFileChangeMap())) {
-        final Map.Entry<String, ChangeWithErrorMsg> entry =
-            ex.getFailedYamlFileChangeMap().entrySet().iterator().next();
-        final ChangeWithErrorMsg changeWithErrorMsg = entry.getValue();
-        return FileOperationStatus.builder()
-            .status(FileOperationStatus.Status.FAILED)
-            .errorMssg(changeWithErrorMsg.getErrorMsg())
-            .yamlFilePath(changeWithErrorMsg.getChange().getFilePath())
-            .build();
-      }
+      throw new InvalidRequestException(String.format("Failed in processing file: [%s] with error: [%s]", yamlFilePath,
+          ex.getFailedYamlFileChangeMap().get(yamlFilePath).getErrorMsg()));
     }
     return null;
   }

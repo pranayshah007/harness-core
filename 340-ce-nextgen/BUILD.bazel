@@ -7,6 +7,8 @@ HarnessTeam = "CE"
 shared_dependencies = [
     "@maven//:io_netty_netty_all",
     "@ce-nextgen//:com_azure_azure_core",
+    "@ce-nextgen//:com_azure_azure_storage_blob",
+    "@ce-nextgen//:com_azure_azure_storage_common",
 ] + [
     "//374-ceng-graphql:module",
     "//440-connector-nextgen:module",

@@ -50,6 +50,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.execution.CIExecutionConfigService;
 import io.harness.ff.CIFeatureFlagService;
+import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
@@ -619,9 +620,11 @@ public class K8InitializeStepUtils {
   private Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> getStepConnectorConversionInfo(
       StepElementConfig stepElement, Ambiance ambiance) {
     Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> map = new HashMap<>();
-    if (stepElement.getStepSpecType() instanceof PluginCompatibleStep) {
+    if ((stepElement.getStepSpecType() instanceof PluginCompatibleStep)
+        && (stepElement.getStepSpecType() instanceof WithConnectorRef)) {
       map.put(stepElement.getIdentifier(), new ArrayList<>());
       PluginCompatibleStep step = (PluginCompatibleStep) stepElement.getStepSpecType();
+
       String connectorRef = PluginSettingUtils.getConnectorRef(step);
       Map<EnvVariableEnum, String> envToSecretMap =
           PluginSettingUtils.getConnectorSecretEnvMap(step.getNonYamlInfo().getStepInfoType());

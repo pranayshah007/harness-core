@@ -100,7 +100,7 @@ public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extend
     addStrategyFieldDependencyIfPresent(ctx, stepElement, dependenciesNodeMap, metadataMap);
     PlanNode stepPlanNode =
         PlanNode.builder()
-            .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stepElement))
+            .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stepElement.getUuid()))
             .name(getName(stepElement))
             .identifier(stepElement.getIdentifier())
             .stepType(stepElement.getStepSpecType().getStepType())

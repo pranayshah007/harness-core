@@ -22,12 +22,10 @@ import io.harness.beans.steps.TypeInfo;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.validator.EntityIdentifier;
-import io.harness.filters.WithConnectorRef;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
@@ -42,7 +40,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.annotations.ApiModelProperty;
 import java.beans.ConstructorProperties;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -62,7 +59,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("securityStepInfo")
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.SecurityStepInfo")
-public class SecurityStepInfo implements PluginCompatibleStep, WithConnectorRef {
+public class SecurityStepInfo implements PluginCompatibleStep {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -88,7 +85,9 @@ public class SecurityStepInfo implements PluginCompatibleStep, WithConnectorRef 
   @YamlSchemaTypes(value = {string})
   private ParameterField<Map<String, JsonNode>> settings;
 
-  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> connectorRef;
+  @VariableExpression(skipVariableExpression = true)
+  @ApiModelProperty(dataType = STRING_CLASSPATH, hidden = true)
+  private ParameterField<String> connectorRef;
   private ContainerResource resources;
 
   @YamlSchemaTypes(value = {runtime})
@@ -114,17 +113,16 @@ public class SecurityStepInfo implements PluginCompatibleStep, WithConnectorRef 
   }
 
   @Builder
-  @ConstructorProperties({"identifier", "name", "retry", "settings", "connectorRef", "resources", "outputVariables",
-      "runAsUser", "privileged", "imagePullPolicy"})
+  @ConstructorProperties({"identifier", "name", "retry", "settings", "resources", "outputVariables", "runAsUser",
+      "privileged", "imagePullPolicy"})
   public SecurityStepInfo(String identifier, String name, Integer retry, ParameterField<Map<String, JsonNode>> settings,
-      ParameterField<String> connectorRef, ContainerResource resources,
-      ParameterField<List<OutputNGVariable>> outputVariables, ParameterField<Integer> runAsUser,
-      ParameterField<Boolean> privileged, ParameterField<ImagePullPolicy> imagePullPolicy) {
+      ContainerResource resources, ParameterField<List<OutputNGVariable>> outputVariables,
+      ParameterField<Integer> runAsUser, ParameterField<Boolean> privileged,
+      ParameterField<ImagePullPolicy> imagePullPolicy) {
     this.identifier = identifier;
     this.name = name;
     this.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
     this.settings = settings;
-    this.connectorRef = connectorRef;
     this.resources = resources;
     this.outputVariables = outputVariables;
 
@@ -156,12 +154,5 @@ public class SecurityStepInfo implements PluginCompatibleStep, WithConnectorRef 
             .collect(Collectors.toSet())
             .stream()
             .collect(Collectors.toList()));
-  }
-
-  @Override
-  public Map<String, ParameterField<String>> extractConnectorRefs() {
-    Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
-    connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
-    return connectorRefMap;
   }
 }
