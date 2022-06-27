@@ -1037,6 +1037,20 @@ public class BuilderFactory {
         .sensitivity(VerificationJob.RuntimeParameter.builder().value("High").build())
         .duration(VerificationJob.RuntimeParameter.builder().value("10m").build());
   }
+  public VerificationJob.VerificationJobBuilder testVerificationJobBuilder() {
+    return TestVerificationJob.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .identifier("identifier")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .serviceIdentifier(VerificationJob.RuntimeParameter.builder().value(context.getServiceIdentifier()).build())
+        .envIdentifier(VerificationJob.RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
+        .monitoringSources(Collections.singletonList(context.getMonitoredServiceIdentifier() + "/" + generateUuid()))
+        .sensitivity(VerificationJob.RuntimeParameter.builder().value("Medium").build())
+        .baselineVerificationJobInstanceId(generateUuid())
+        .duration(VerificationJob.RuntimeParameter.builder().value("15m").build());
+  }
   public static class BuilderFactoryBuilder {
     public BuilderFactory build() {
       BuilderFactory builder = unsafeBuild();
