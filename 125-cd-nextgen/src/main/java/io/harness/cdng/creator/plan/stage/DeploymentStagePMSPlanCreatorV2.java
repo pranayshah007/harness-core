@@ -335,6 +335,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
 
   private boolean isGitopsEnabled(DeploymentStageConfig deploymentStageConfig) {
-    return deploymentStageConfig.getGitOpsEnabled() == Boolean.TRUE;
+    return deploymentStageConfig.getGitOpsEnabled();
   }
 }
