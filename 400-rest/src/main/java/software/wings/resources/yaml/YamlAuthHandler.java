@@ -58,6 +58,7 @@ public class YamlAuthHandler {
     if (!featureFlagService.isEnabled(FeatureName.YAML_APIS_GRANULAR_PERMISSION, accountId)) {
       authHandler.authorizeAccountPermission(
           Collections.singletonList(new PermissionAttribute(PermissionType.ACCOUNT_MANAGEMENT)));
+      return;
     }
 
     YamlType yamlType = yamlService.findYamlType(filePath);
