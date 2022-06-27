@@ -84,6 +84,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject private TemplateReferenceHelper templateReferenceHelper;
   @Inject private AccountClient accountClient;
 
+  @Inject private NGTemplateSchemaService ngTemplateSchemaService;
+
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
 
@@ -91,6 +93,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   public TemplateEntity create(TemplateEntity templateEntity, boolean setStableTemplate, String comments) {
     enforcementClientService.checkAvailability(
         FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
+
+    ngTemplateSchemaService.validateYamlSchemaInternal(templateEntity);
 
     NGTemplateServiceHelper.validatePresenceOfRequiredFields(
         templateEntity.getAccountId(), templateEntity.getIdentifier(), templateEntity.getVersionLabel());
@@ -171,6 +175,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       TemplateEntity templateEntity, ChangeType changeType, boolean setDefaultTemplate, String comments) {
     enforcementClientService.checkAvailability(
         FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
+    ngTemplateSchemaService.validateYamlSchemaInternal(templateEntity);
     // update template references
     //    templateReferenceHelper.populateTemplateReferences(templateEntity);
     return transactionHelper.performTransaction(() -> {
