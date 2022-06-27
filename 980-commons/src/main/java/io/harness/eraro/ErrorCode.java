@@ -114,6 +114,8 @@ public enum ErrorCode {
 
   SOCKET_CONNECTION_TIMEOUT("Socket Connection timeout"),
 
+  WINRM_COMMAND_EXECUTION_TIMEOUT("WinRM Command execution timed out"),
+
   CONNECTION_TIMEOUT("Connection timeout"),
 
   SSH_CONNECTION_ERROR("Ssh Connection error"),
