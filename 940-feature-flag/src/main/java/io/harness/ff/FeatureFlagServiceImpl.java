@@ -231,12 +231,18 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
     }
     String name;
     if (optionalAccountClient.isPresent()) {
-      log.debug("Fetching account name for account id " + accountId);
+      if (log.isDebugEnabled()) {
+        log.debug("Fetching account name for account id " + accountId);
+      }
       AccountDTO accountDTO = RestClientUtils.getResponse(optionalAccountClient.get().getAccountDTO(accountId));
       name = accountDTO.getName();
-      log.debug("Account name is " + name);
+      if (log.isDebugEnabled()) {
+        log.debug("Account name is " + name);
+      }
     } else {
-      log.debug("Since account client is not present, setting name as account id");
+      if (log.isDebugEnabled()) {
+        log.debug("Since account client is not present, setting name as account id");
+      }
       name = accountId;
     }
     Target target = Target.builder().identifier(accountId).name(name).build();
