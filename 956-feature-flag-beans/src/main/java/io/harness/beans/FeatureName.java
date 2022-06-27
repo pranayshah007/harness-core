@@ -387,6 +387,7 @@ public enum FeatureName {
   SERVICE_DASHBOARD_V2,
   CVNG_LICENSE_ENFORCEMENT;
 
+
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
   }
