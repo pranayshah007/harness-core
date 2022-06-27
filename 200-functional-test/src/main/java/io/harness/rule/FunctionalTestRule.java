@@ -409,6 +409,8 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
         SegmentConfig.builder().enabled(false).apiKey("dummy_api_key").url("dummy_url").build());
     configuration.setNgManagerServiceHttpClientConfig(
         ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build());
+    configuration.setManagerServiceHttpClientConfig(
+        ServiceHttpClientConfig.builder().baseUrl("http://localhost:3457/").build());
     configuration.getBackgroundSchedulerConfig().setAutoStart(System.getProperty("setupScheduler", "false"));
     configuration.setEventsFrameworkConfiguration(
         EventsFrameworkConfiguration.builder()
