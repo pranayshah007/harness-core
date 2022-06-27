@@ -929,8 +929,9 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
     install(new EventsFrameworkModule(configuration.getEventsFrameworkConfiguration(),
         configuration.isEventsFrameworkAvailableInOnPrem(), StartupMode.DELEGATE_SERVICE.equals(startupMode)));
-    install(FeatureFlagModule.getInstance(new AccountClientModule(configuration.getManagerServiceHttpClientConfig(),
-        configuration.getPortal().getJwtManagerServiceSecret(), MANAGER.getServiceId())));
+    install(FeatureFlagModule.getInstance());
+    install(new AccountClientModule(configuration.getManagerServiceHttpClientConfig(),
+        configuration.getPortal().getJwtManagerServiceSecret(), MANAGER.getServiceId()));
     install(AccessControlAdminClientModule.getInstance(
         AccessControlAdminClientConfiguration.builder()
             .accessControlServiceConfig(
