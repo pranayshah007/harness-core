@@ -4621,6 +4621,7 @@ plain_artifacts = [
     "io.dropwizard:dropwizard-metrics-graphite:2.0.21",
     "io.dropwizard:dropwizard-metrics:2.0.21",
     "io.dropwizard:dropwizard-request-logging:2.0.21",
+    "io.dropwizard.modules:dropwizard-protobuf:2.0.12-1",
     "io.dropwizard:dropwizard-servlets:2.0.21",
     "io.dropwizard:dropwizard-util:2.0.21",
     "io.dropwizard:dropwizard-validation:2.0.21",

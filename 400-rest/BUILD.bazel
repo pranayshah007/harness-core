@@ -1037,6 +1037,7 @@ java_library(
         "@maven//:io_dropwizard_dropwizard_logging",
         "@maven//:io_dropwizard_dropwizard_metrics",
         "@maven//:io_dropwizard_dropwizard_metrics_graphite",
+        "@maven//:io_dropwizard_modules_dropwizard_protobuf",
         "@maven//:io_dropwizard_dropwizard_request_logging",
         "@maven//:io_dropwizard_dropwizard_servlets",
         "@maven//:io_dropwizard_dropwizard_util",
