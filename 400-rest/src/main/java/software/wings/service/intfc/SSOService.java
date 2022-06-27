@@ -58,6 +58,7 @@ public interface SSOService {
   LdapSettings updateLdapSettings(@NotNull LdapSettings settings);
 
   LdapSettings getLdapSettings(@NotBlank String accountId);
+
   LdapSettingsWithEncryptedDataDetail getLdapSettingWithEncryptedDataDetail(@NotBlank String accountId);
 
   LdapSettings deleteLdapSettings(@NotBlank String accountId);

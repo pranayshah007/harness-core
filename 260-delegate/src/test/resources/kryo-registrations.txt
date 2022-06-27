@@ -437,6 +437,8 @@
 5276:software.wings.beans.container.KubernetesSteadyStateCheckParams
 5277:software.wings.sm.states.KubernetesSteadyStateCheckResponse
 5279:software.wings.helpers.ext.pcf.request.CfCommandSetupRequest
+5290:io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskParameters
+5291:io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskResponse
 5293:software.wings.api.PcfInstanceElement
 5296:software.wings.beans.PcfConfig
 5297:io.harness.delegate.beans.ldap.NGLdapDelegateTaskResponse
