@@ -13,6 +13,7 @@ import static io.harness.batch.processing.ccm.BatchJobBucket.IN_CLUSTER_NODE_REC
 import static io.harness.batch.processing.ccm.BatchJobBucket.IN_CLUSTER_RECOMMENDATION;
 import static io.harness.batch.processing.ccm.BatchJobBucket.OTHERS;
 import static io.harness.batch.processing.ccm.BatchJobBucket.OUT_OF_CLUSTER;
+import static io.harness.batch.processing.ccm.BatchJobBucket.OUT_OF_CLUSTER_FAST;
 import static io.harness.batch.processing.ccm.BatchJobBucket.OUT_OF_CLUSTER_ECS;
 
 import static java.util.Collections.emptyList;
@@ -33,6 +34,7 @@ import org.springframework.batch.core.Job;
 public enum BatchJobType {
   BILLING_DATA_PIPELINE(50, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
   SYNC_BILLING_REPORT_S3(100, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
+  SYNC_BILLING_REPORT_S3_FAST(100, 1, ChronoUnit.MINUTES, emptyList(), OUT_OF_CLUSTER_FAST),
   SYNC_BILLING_REPORT_AZURE(100, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
   SYNC_BILLING_REPORT_GCP(100, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
   AWS_ECS_CLUSTER_SYNC(110, 1, ChronoUnit.DAYS, emptyList(), OUT_OF_CLUSTER_ECS),

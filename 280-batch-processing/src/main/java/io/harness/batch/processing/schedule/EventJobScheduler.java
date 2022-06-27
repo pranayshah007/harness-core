@@ -140,6 +140,11 @@ public class EventJobScheduler {
     runCloudEfficiencyEventJobs(BatchJobBucket.OUT_OF_CLUSTER, true);
   }
 
+  @Scheduled(cron = "0 */1 * * * ?") // every minute
+  public void runCloudEfficiencyOutOfClusterFastJobs() {
+    runCloudEfficiencyEventJobs(BatchJobBucket.OUT_OF_CLUSTER_FAST, true);
+  }
+
   @Scheduled(cron = "0 30 * ? * *") // 0 */10 * * * ?   for testing
   public void runCloudEfficiencyOutOfClusterECSJobs() {
     runCloudEfficiencyEventJobs(BatchJobBucket.OUT_OF_CLUSTER_ECS, true);

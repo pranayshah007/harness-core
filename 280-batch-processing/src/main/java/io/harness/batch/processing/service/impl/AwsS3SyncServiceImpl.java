@@ -74,8 +74,9 @@ public class AwsS3SyncServiceImpl implements AwsS3SyncService {
           String.join("/", "s3://" + destinationBucket, assumedRoleUser.get("AssumedRoleId").getAsString(),
               s3SyncRecord.getSettingId(), s3SyncRecord.getCurReportName());
 
+      // TODO: Dynamically determine the month folder
       final ArrayList<String> cmd =
-          Lists.newArrayList("aws", "s3", "sync", s3SyncRecord.getBillingBucketPath(), destinationBucketPath,
+          Lists.newArrayList("aws", "s3", "sync", s3SyncRecord.getBillingBucketPath() + "/20220601-20220701", destinationBucketPath,
               "--source-region", s3SyncRecord.getBillingBucketRegion(), "--acl", "bucket-owner-full-control");
       trySyncBucket(cmd, roleEnvVariables);
     } catch (InvalidExitValueException e) {
