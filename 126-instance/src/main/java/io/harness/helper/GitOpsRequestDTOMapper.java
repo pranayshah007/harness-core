@@ -13,7 +13,6 @@ import io.harness.ng.core.environment.services.EnvironmentService;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -26,12 +25,8 @@ public class GitOpsRequestDTOMapper {
     String projId = gitOpsInstanceRequestDTO.getProjectIdentifier();
     String envId = gitOpsInstanceRequestDTO.getEnvIdentifier();
 
-    Optional<Environment> environment = environmentService.get(accountId, orgId, projId, envId, false);
-    // TODO: Achyuth -- is this the way to extract env info?
-    Environment env = Environment.builder().build();
-    if (environment.isPresent()) {
-      env = environment.get();
-    }
+    Environment env =
+        environmentService.get(accountId, orgId, projId, envId, false).orElseGet(() -> Environment.builder().build());
 
     return InstanceDTO.builder()
         .accountIdentifier(accountId)
