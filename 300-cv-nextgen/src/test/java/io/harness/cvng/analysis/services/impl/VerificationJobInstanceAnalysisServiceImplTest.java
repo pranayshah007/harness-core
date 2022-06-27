@@ -49,7 +49,6 @@ import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.BlueGreenVerificationJobDTO;
 import io.harness.cvng.beans.job.CanaryVerificationJobDTO;
 import io.harness.cvng.beans.job.Sensitivity;
-import io.harness.cvng.beans.job.TestVerificationJobDTO;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.LoadTestAdditionalInfo;
@@ -153,22 +152,6 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
     blueGreenVerificationJobDTO.setMonitoringSources(Arrays.asList(generateUuid()));
     blueGreenVerificationJobDTO.setSensitivity(Sensitivity.LOW.name());
     return blueGreenVerificationJobDTO;
-  }
-
-  private TestVerificationJobDTO createTestVerificationJobDTO(String baselineVerificationJobInstanceId) {
-    TestVerificationJobDTO testVerificationJobDTO = new TestVerificationJobDTO();
-    testVerificationJobDTO.setIdentifier(identifier);
-    testVerificationJobDTO.setJobName("jobName");
-    testVerificationJobDTO.setDuration("100");
-    testVerificationJobDTO.setServiceIdentifier(serviceIdentifier);
-    testVerificationJobDTO.setProjectIdentifier(projectIdentifier);
-    testVerificationJobDTO.setOrgIdentifier(orgIdentifier);
-    testVerificationJobDTO.setEnvIdentifier(envIdentifier);
-    testVerificationJobDTO.setDataSources(Arrays.asList(DataSourceType.APP_DYNAMICS));
-    testVerificationJobDTO.setMonitoringSources(Arrays.asList(generateUuid()));
-    testVerificationJobDTO.setSensitivity(Sensitivity.LOW.name());
-    testVerificationJobDTO.setBaselineVerificationJobInstanceId(baselineVerificationJobInstanceId);
-    return testVerificationJobDTO;
   }
 
   @Test
@@ -627,10 +610,9 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
   @Owner(developers = NEMANJA)
   @Category(UnitTests.class)
   public void testGetLoadTestAdditionalInfo_withBaselineVerificationJobInstanceId() {
-    verificationJobService.create(accountId, createTestVerificationJobDTO("LAST"));
-    String baselineVerificationJobInstanceId = verificationJobInstanceService.create(createVerificationJobInstance());
-    VerificationJob verificationJob =
-        verificationJobService.getVerificationJob(accountId, orgIdentifier, projectIdentifier, identifier);
+    VerificationJobInstance baselineVerificationJobInstance = createVerificationJobInstance();
+    String baselineVerificationJobInstanceId = verificationJobInstanceService.create(baselineVerificationJobInstance);
+    VerificationJob verificationJob = baselineVerificationJobInstance.getResolvedJob();
     VerificationJobInstance verificationJobInstance =
         verificationJobInstanceService.getVerificationJobInstance(baselineVerificationJobInstanceId);
     verificationJobInstance.setResolvedJob(verificationJob);
@@ -685,10 +667,9 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
   @Owner(developers = NEMANJA)
   @Category(UnitTests.class)
   public void testGetLoadTestAdditionalInfo_withoutBaselineVerificationJobInstanceId() {
-    verificationJobService.create(accountId, createTestVerificationJobDTO("LAST"));
-    String verificationJobInstanceId = verificationJobInstanceService.create(createVerificationJobInstance());
-    VerificationJob verificationJob =
-        verificationJobService.getVerificationJob(accountId, orgIdentifier, projectIdentifier, identifier);
+    VerificationJobInstance baselineVerificationJobInstance = createVerificationJobInstance();
+    String verificationJobInstanceId = verificationJobInstanceService.create(baselineVerificationJobInstance);
+    VerificationJob verificationJob = baselineVerificationJobInstance.getResolvedJob();
     VerificationJobInstance verificationJobInstance =
         verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
     verificationJobInstance.setResolvedJob(verificationJob);
@@ -718,10 +699,9 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
   @Owner(developers = NEMANJA)
   @Category(UnitTests.class)
   public void testGetLoadTestAdditionalInfo_withoutActivityForVerificationJobInstanceId() {
-    verificationJobService.create(accountId, createTestVerificationJobDTO("LAST"));
-    String verificationJobInstanceId = verificationJobInstanceService.create(createVerificationJobInstance());
-    VerificationJob verificationJob =
-        verificationJobService.getVerificationJob(accountId, orgIdentifier, projectIdentifier, identifier);
+    VerificationJobInstance baselineVerificationJobInstance = createVerificationJobInstance();
+    String verificationJobInstanceId = verificationJobInstanceService.create(baselineVerificationJobInstance);
+    VerificationJob verificationJob = baselineVerificationJobInstance.getResolvedJob();
     VerificationJobInstance verificationJobInstance =
         verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
     verificationJobInstance.setResolvedJob(verificationJob);

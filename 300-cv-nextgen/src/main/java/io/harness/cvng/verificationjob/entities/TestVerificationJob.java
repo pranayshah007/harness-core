@@ -13,11 +13,9 @@ import static io.harness.cvng.verificationjob.CVVerificationJobConstants.SENSITI
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.job.Sensitivity;
-import io.harness.cvng.beans.job.TestVerificationJobDTO;
 import io.harness.cvng.beans.job.VerificationJobDTO;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.beans.TimeRange;
-import io.harness.cvng.verificationjob.CVVerificationJobConstants;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 
 import com.google.common.base.Preconditions;
@@ -62,16 +60,7 @@ public class TestVerificationJob extends VerificationJob {
 
   @Override
   public VerificationJobDTO getVerificationJobDTO() {
-    TestVerificationJobDTO testVerificationJobDTO = new TestVerificationJobDTO();
-    populateCommonFields(testVerificationJobDTO);
-    testVerificationJobDTO.setSensitivity(
-        sensitivity.isRuntimeParam() ? CVVerificationJobConstants.RUNTIME_STRING : getSensitivity().name());
-    if (baselineVerificationJobInstanceId == null) {
-      testVerificationJobDTO.setBaselineVerificationJobInstanceId("LAST");
-    } else {
-      testVerificationJobDTO.setBaselineVerificationJobInstanceId(baselineVerificationJobInstanceId);
-    }
-    return testVerificationJobDTO;
+    return null;
   }
 
   @Override
@@ -95,15 +84,7 @@ public class TestVerificationJob extends VerificationJob {
   }
 
   @Override
-  public void fromDTO(VerificationJobDTO verificationJobDTO) {
-    addCommonFileds(verificationJobDTO);
-    TestVerificationJobDTO testVerificationJobDTO = (TestVerificationJobDTO) verificationJobDTO;
-    this.setSensitivity(testVerificationJobDTO.getSensitivity(),
-        VerificationJobDTO.isRuntimeParam(testVerificationJobDTO.getSensitivity()));
-    if (!testVerificationJobDTO.getBaselineVerificationJobInstanceId().equals("LAST")) {
-      this.setBaselineVerificationJobInstanceId(testVerificationJobDTO.getBaselineVerificationJobInstanceId());
-    }
-  }
+  public void fromDTO(VerificationJobDTO verificationJobDTO) {}
 
   @Override
   public void resolveJobParams(Map<String, String> runtimeParameters) {

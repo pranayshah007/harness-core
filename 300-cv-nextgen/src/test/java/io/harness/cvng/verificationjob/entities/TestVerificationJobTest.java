@@ -19,7 +19,6 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.beans.job.Sensitivity;
-import io.harness.cvng.beans.job.TestVerificationJobDTO;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.rule.Owner;
 
@@ -71,24 +70,11 @@ public class TestVerificationJobTest extends CategoryTest {
   @Test
   @Owner(developers = KAMAL)
   @Category({UnitTests.class})
-  public void testGetDTO_lastBaseline() {
-    TestVerificationJob testVerificationJob = createTestVerificationJob();
-    TestVerificationJobDTO testVerificationJobDTO =
-        (TestVerificationJobDTO) testVerificationJob.getVerificationJobDTO();
-    assertThat(testVerificationJobDTO.getBaselineVerificationJobInstanceId()).isEqualTo("LAST");
-  }
-
-  @Test
-  @Owner(developers = KAMAL)
-  @Category({UnitTests.class})
   public void testGetDTO_ignoreCasesInSensitivity() {
     TestVerificationJob testVerificationJob = createTestVerificationJob();
     testVerificationJob.setSensitivity("High", false);
     String baseline = generateUuid();
     testVerificationJob.setBaselineVerificationJobInstanceId(baseline);
-    TestVerificationJobDTO testVerificationJobDTO =
-        (TestVerificationJobDTO) testVerificationJob.getVerificationJobDTO();
-    assertThat(testVerificationJobDTO.getSensitivity()).isEqualTo("HIGH");
     assertThat(testVerificationJob.getSensitivity()).isEqualTo(Sensitivity.HIGH);
   }
 
@@ -104,17 +90,6 @@ public class TestVerificationJobTest extends CategoryTest {
     assertThatThrownBy(() -> testVerificationJob.getSensitivity())
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("No enum mapping found for HigH");
-  }
-  @Test
-  @Owner(developers = KAMAL)
-  @Category({UnitTests.class})
-  public void testGetDTO_validBaseline() {
-    TestVerificationJob testVerificationJob = createTestVerificationJob();
-    String baseline = generateUuid();
-    testVerificationJob.setBaselineVerificationJobInstanceId(baseline);
-    TestVerificationJobDTO testVerificationJobDTO =
-        (TestVerificationJobDTO) testVerificationJob.getVerificationJobDTO();
-    assertThat(testVerificationJobDTO.getBaselineVerificationJobInstanceId()).isEqualTo(baseline);
   }
 
   private TestVerificationJob createTestVerificationJob() {

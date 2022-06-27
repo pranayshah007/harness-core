@@ -49,9 +49,6 @@ import io.harness.cvng.analysis.entities.TestLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
 import io.harness.cvng.analysis.services.api.LogAnalysisService;
-import io.harness.cvng.beans.DataSourceType;
-import io.harness.cvng.beans.job.Sensitivity;
-import io.harness.cvng.beans.job.TestVerificationJobDTO;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.LogCVConfig;
@@ -68,7 +65,6 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
@@ -650,19 +646,7 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
   }
 
   private VerificationJob newTestVerificationJob() {
-    TestVerificationJobDTO testVerificationJob = new TestVerificationJobDTO();
-    testVerificationJob.setIdentifier(generateUuid());
-    testVerificationJob.setJobName(generateUuid());
-    testVerificationJob.setDataSources(Lists.newArrayList(DataSourceType.SPLUNK));
-    testVerificationJob.setSensitivity(Sensitivity.MEDIUM.name());
-    testVerificationJob.setServiceIdentifier(generateUuid());
-    testVerificationJob.setOrgIdentifier(generateUuid());
-    testVerificationJob.setProjectIdentifier(generateUuid());
-    testVerificationJob.setEnvIdentifier("prod" + generateUuid());
-    testVerificationJob.setSensitivity(Sensitivity.MEDIUM.name());
-    testVerificationJob.setBaselineVerificationJobInstanceId("LAST");
-    testVerificationJob.setDuration("15m");
-    return verificationJobService.fromDto(testVerificationJob);
+    return builderFactory.testVerificationJobBuilder().build();
   }
 
   private VerificationJobInstance newVerificationJobInstance() {
