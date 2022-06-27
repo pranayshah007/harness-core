@@ -19,7 +19,6 @@ import static io.harness.delegate.beans.VersionOverrideType.WATCHER_JAR;
 
 import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
 
 import io.harness.delegate.beans.VersionOverride;
@@ -37,8 +36,10 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 
+@Slf4j
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class DelegateVersionService {
   public static final String DEFAULT_DELEGATE_IMAGE_TAG = "harness/delegate:latest";
@@ -123,12 +124,13 @@ public class DelegateVersionService {
       return watcherVerionFromRing;
     }
     // Get watcher version from gcp.
+    final String watcherMetadataUrl = infraDownloadService.getCdnWatcherMetaDataFileUrl();
     try {
-      final String watcherMetadataUrl = infraDownloadService.getCdnWatcherMetaDataFileUrl();
       final String watcherMetadata = Http.getResponseStringFromUrl(watcherMetadataUrl, 10, 10);
       final String latestVersion = substringBefore(watcherMetadata, " ").trim();
       return latestVersion;
     } catch (Exception ex) {
+      log.error("Unable to fetch watcher version from {} ", watcherMetadataUrl, ex);
       throw new IllegalStateException("Unable to fetch watcher version");
     }
   }

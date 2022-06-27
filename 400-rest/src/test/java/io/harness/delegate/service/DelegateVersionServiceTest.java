@@ -18,6 +18,7 @@ import static io.harness.delegate.beans.VersionOverrideType.WATCHER_JAR;
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -29,6 +30,7 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 
 import software.wings.app.MainConfiguration;
+import software.wings.service.impl.infra.InfraDownloadService;
 
 import com.google.common.collect.ImmutableList;
 import java.util.Collections;
@@ -59,12 +61,14 @@ public class DelegateVersionServiceTest {
   private DelegateVersionService underTest;
   @Mock private DelegateRingService delegateRingService;
   @Mock private FeatureFlagService featureFlagService;
+  @Mock private InfraDownloadService infraDownloadService;
   @Mock(answer = Answers.RETURNS_DEEP_STUBS) private MainConfiguration managerConfig;
   @Mock(answer = Answers.RETURNS_DEEP_STUBS) private HPersistence persistence;
 
   @Before
   public void setUp() {
-    underTest = spy(new DelegateVersionService(delegateRingService, featureFlagService, managerConfig, persistence));
+    underTest = spy(new DelegateVersionService(
+        delegateRingService, infraDownloadService, featureFlagService, managerConfig, persistence));
   }
 
   @Test
@@ -263,6 +267,7 @@ public class DelegateVersionServiceTest {
   @Test
   @Category(UnitTests.class)
   public void whenNoWatcherJarOverrideThenUseEmpty() {
+    doReturn(null).when(underTest).getWatcherJarVersions(ACCOUNT_ID);
     mockWatcherJarOverrides(null, false);
     assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, KUBERNETES);
   }
@@ -279,6 +284,7 @@ public class DelegateVersionServiceTest {
     when(managerConfig.getPortal().getDelegateDockerImage())
         .thenReturn(isPortalDelegateOverride ? HARNESS_DELEGATE_PORTAL_IMAGE : null);
     when(managerConfig.getPortal().getUpgraderDockerImage()).thenReturn(null);
+    doReturn(null).when(underTest).getWatcherJarVersions(ACCOUNT_ID);
   }
 
   private void mockUpgraderOverrides(final VersionOverride override, final boolean isRingUpgraderOverride,
@@ -293,6 +299,7 @@ public class DelegateVersionServiceTest {
     when(managerConfig.getPortal().getDelegateDockerImage()).thenReturn(null);
     when(managerConfig.getPortal().getUpgraderDockerImage())
         .thenReturn(isPortalUpgraderOverride ? HARNESS_UPGRADER_PORTAL_IMAGE : null);
+    doReturn(null).when(underTest).getWatcherJarVersions(ACCOUNT_ID);
   }
 
   private void mockDelegateJarOverrides(final VersionOverride override, final boolean isRingOverride) {
@@ -305,6 +312,7 @@ public class DelegateVersionServiceTest {
     }
     when(managerConfig.getPortal().getDelegateDockerImage()).thenReturn(null);
     when(managerConfig.getPortal().getUpgraderDockerImage()).thenReturn(null);
+    doReturn(null).when(underTest).getWatcherJarVersions(ACCOUNT_ID);
   }
 
   private void mockWatcherJarOverrides(final VersionOverride override, final boolean isRingOverride) {

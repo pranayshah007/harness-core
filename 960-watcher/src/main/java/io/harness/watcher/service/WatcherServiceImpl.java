@@ -1378,7 +1378,7 @@ public class WatcherServiceImpl implements WatcherService {
         RestResponse<String> restResponse = callInterruptible21(timeLimiter, ofMinutes(1),
             () -> SafeHttpCall.execute(managerClient.getWatcherVersion(watcherConfiguration.getAccountId())));
         if (restResponse != null) {
-          return restResponse.getResource().toString();
+          return restResponse.getResource();
         }
       } catch (Exception e) {
         log.warn("Failed to fetch watcher version from Manager ", e);

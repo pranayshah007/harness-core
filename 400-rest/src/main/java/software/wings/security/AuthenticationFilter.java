@@ -397,8 +397,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     try (AccountLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       String header = containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
       if (header != null && header.contains("Delegate")) {
-        String delegateId = containerRequestContext.getHeaderString("delegateId");
-        String delegateTokeName = containerRequestContext.getHeaderString("delegateTokenName");
+        final String delegateId = containerRequestContext.getHeaderString("delegateId");
+        final String delegateTokeName = containerRequestContext.getHeaderString("delegateTokenName");
 
         authService.validateDelegateToken(accountId,
             substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate "), delegateId,
@@ -420,7 +420,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         final String jwtToken =
             substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate ");
         final String delegateId = containerRequestContext.getHeaderString("delegateId");
-        authService.validateDelegateToken(accountId, jwtToken, delegateId, true);
+        final String delegateTokeName = containerRequestContext.getHeaderString("delegateTokenName");
+
+        authService.validateDelegateToken(accountId, jwtToken, delegateId, delegateTokeName, true);
       } else {
         throw new IllegalStateException("Invalid authentication header:" + authHeader);
       }
