@@ -251,7 +251,7 @@ pmsGrpcClientConfig:
   target: localhost:12011
   authority: localhost
 
-shouldConfigureWithPMS: true
+shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
 
 ceAwsSetupConfig:
   accessKey: ce_aws_accessKey_placeholder
