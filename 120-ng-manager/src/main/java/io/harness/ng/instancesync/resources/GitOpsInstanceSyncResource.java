@@ -26,6 +26,7 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -59,7 +60,8 @@ public class GitOpsInstanceSyncResource {
         PageResponse.<InstanceDTO>builder().content(new ArrayList<>(instanceDTOList)).empty(false).build();
     return ResponseDTO.newResponse(pageResponse);
   }
-  @POST
+
+  @DELETE
   @ApiOperation(value = "Delete instances", nickname = "deleteGitOpsInstances")
   public ResponseDTO<DeleteInstancesDTO> deleteGitOpsInstances(
       @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
