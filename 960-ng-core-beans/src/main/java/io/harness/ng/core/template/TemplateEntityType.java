@@ -78,7 +78,7 @@ public enum TemplateEntityType {
     return this.yamlFieldKeys;
   }
 
-  public HarnessTeam getOwnerTeam(){
+  public HarnessTeam getOwnerTeam() {
     return ownerTeam;
   }
 }

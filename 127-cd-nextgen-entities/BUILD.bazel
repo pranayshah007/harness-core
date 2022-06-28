@@ -12,7 +12,6 @@ java_library(
     deps = [
         "//:lombok",
         "//400-rest:module",
-        "//860-orchestration-steps:module",  # This should be removed from here
         "//878-ng-common-utilities:module",
         "//879-pms-sdk:module",
         "//960-ng-core-beans:module",

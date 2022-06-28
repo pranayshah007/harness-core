@@ -12,23 +12,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.category.element.UnitTests;
+import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.executionplan.CIExecutionPlanTestHelper;
 import io.harness.ci.pipeline.executions.beans.CIImageDetails;
 import io.harness.ci.pipeline.executions.beans.CIInfraDetails;
 import io.harness.ci.pipeline.executions.beans.CIScmDetails;
 import io.harness.ci.pipeline.executions.beans.TIBuildDetails;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
-import io.harness.executionplan.CIExecutionPlanTestHelper;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.stateutils.buildstate.ConnectorUtils;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 public class IntegrationStageUtilsTest {
   private CIExecutionPlanTestHelper ciExecutionPlanTestHelper = new CIExecutionPlanTestHelper();
@@ -63,10 +62,8 @@ public class IntegrationStageUtilsTest {
   @Category(UnitTests.class)
   public void getTiBuildDetailsTest() throws Exception {
     ExecutionElementConfig executionElementConfig = ciExecutionPlanTestHelper.getExecutionElementConfig();
-    InitializeStepInfo initializeStepInfo = InitializeStepInfo
-            .builder()
-            .executionElementConfig(executionElementConfig)
-            .build();
+    InitializeStepInfo initializeStepInfo =
+        InitializeStepInfo.builder().executionElementConfig(executionElementConfig).build();
 
     List<TIBuildDetails> tiBuildDetailsList = IntegrationStageUtils.getTiBuildDetails(initializeStepInfo);
 
@@ -81,10 +78,8 @@ public class IntegrationStageUtilsTest {
   @Category(UnitTests.class)
   public void getCiImageDetailsTest() throws Exception {
     ExecutionElementConfig executionElementConfig = ciExecutionPlanTestHelper.getExecutionElementConfig();
-    InitializeStepInfo initializeStepInfo = InitializeStepInfo
-            .builder()
-            .executionElementConfig(executionElementConfig)
-            .build();
+    InitializeStepInfo initializeStepInfo =
+        InitializeStepInfo.builder().executionElementConfig(executionElementConfig).build();
 
     List<CIImageDetails> ciImageDetailsList = IntegrationStageUtils.getCiImageDetails(initializeStepInfo);
 
@@ -110,10 +105,10 @@ public class IntegrationStageUtilsTest {
     CIInfraDetails ciInfraDetails = IntegrationStageUtils.getCiInfraDetails(infrastructure);
 
     CIInfraDetails expectedCiInfraDetails = CIInfraDetails.builder()
-            .infraType("KubernetesDirect")
-            .infraOSType("Linux")
-            .infraHostType("Self Hosted")
-            .build();
+                                                .infraType("KubernetesDirect")
+                                                .infraOSType("Linux")
+                                                .infraHostType("Self Hosted")
+                                                .build();
 
     assertThat(ciInfraDetails).isEqualTo(expectedCiInfraDetails);
   }
@@ -128,11 +123,8 @@ public class IntegrationStageUtilsTest {
 
     CIScmDetails ciScmDetails = IntegrationStageUtils.getCiScmDetails(connectorUtils, connectorDetails);
 
-    CIScmDetails expectedCiScmDetails = CIScmDetails.builder()
-            .scmProvider("Git")
-            .scmAuthType("Http")
-            .scmHostType("SaaS")
-            .build();
+    CIScmDetails expectedCiScmDetails =
+        CIScmDetails.builder().scmProvider("Git").scmAuthType("Http").scmHostType("SaaS").build();
 
     assertThat(ciScmDetails).isEqualTo(expectedCiScmDetails);
   }

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.filestoreclient.remote;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
@@ -23,6 +30,6 @@ public interface FileStoreClient {
 
   @GET(FILE_STORE_NG_API + "/files/{identifier}")
   Call<ResponseDTO<FileStoreNodeDTO>> getFileNg(@Path(IDENTIFIER_KEY) @NotBlank String identifier,
-                                                @NotEmpty @Query(value = ACCOUNT_KEY) String accountIdentifier, @Query(value = ORG_KEY) String orgIdentifier,
-                                                @Query(value = PROJECT_KEY) String projectIdentifier, @Query(value = "includeContent") Boolean includeContent);
+      @NotEmpty @Query(value = ACCOUNT_KEY) String accountIdentifier, @Query(value = ORG_KEY) String orgIdentifier,
+      @Query(value = PROJECT_KEY) String projectIdentifier, @Query(value = "includeContent") Boolean includeContent);
 }

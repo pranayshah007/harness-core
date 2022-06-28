@@ -10,6 +10,7 @@ package io.harness.ci.creator.variables;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.IntegrationStageNode;
+import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.sdk.core.variables.AbstractStageVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
@@ -20,7 +21,6 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.steps.StepSpecTypeConstants;
 
 import java.util.Collections;
 import java.util.HashMap;

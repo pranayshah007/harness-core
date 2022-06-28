@@ -20,6 +20,7 @@ import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
@@ -64,7 +65,8 @@ public interface TemplateResourceClient {
       @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Query(value = GitSyncApiConstants.BRANCH_KEY) String branch,
       @Query(value = GitSyncApiConstants.REPO_IDENTIFIER_KEY) String repoIdentifier,
-      @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo, @Body String yaml);
+      @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
+      @Body TemplateReferenceRequestDTO templateReferenceRequestDTO);
 
   // Refresh Template APIs
   @POST(TEMPLATE_REFRESH_ENDPOINT + "refreshed-yaml")

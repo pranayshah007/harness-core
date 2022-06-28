@@ -7,18 +7,19 @@
 
 package io.harness.template.services;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import static io.harness.annotations.dev.HarnessTeam.CDC;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.Scope;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.template.entity.TemplateEntity;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
+import com.fasterxml.jackson.databind.JsonNode;
 
 @OwnedBy(CDC)
 public interface NGTemplateSchemaService {
+  JsonNode getTemplateSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope,
+      String templateChildType, TemplateEntityType templateEntityType);
 
-    JsonNode getTemplateSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope, String templateChildType, TemplateEntityType templateEntityType);
-
-    void validateYamlSchemaInternal(TemplateEntity templateEntity);
+  void validateYamlSchemaInternal(TemplateEntity templateEntity);
 }

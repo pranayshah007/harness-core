@@ -20,6 +20,9 @@ import io.harness.cdng.creator.plan.artifact.ArtifactsPlanCreator;
 import io.harness.cdng.creator.plan.artifact.PrimaryArtifactPlanCreator;
 import io.harness.cdng.creator.plan.artifact.SideCarArtifactPlanCreator;
 import io.harness.cdng.creator.plan.artifact.SideCarListPlanCreator;
+import io.harness.cdng.creator.plan.azure.webapps.ApplicationSettingsPlanCreator;
+import io.harness.cdng.creator.plan.azure.webapps.ConnectionStringsPlanCreator;
+import io.harness.cdng.creator.plan.azure.webapps.StartupScriptPlanCreator;
 import io.harness.cdng.creator.plan.configfile.ConfigFilesPlanCreator;
 import io.harness.cdng.creator.plan.configfile.IndividualConfigFilePlanCreator;
 import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreator;
@@ -95,11 +98,11 @@ import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
-import io.harness.pms.sdk.core.pipeline.variables.ExecutionVariableCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
+import io.harness.variables.ExecutionVariableCreator;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -171,6 +174,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new AzureWebAppSlotDeploymentStepPlanCreator());
     planCreators.add(new AzureWebAppSlotSwapSlotPlanCreator());
     planCreators.add(new AzureWebAppTrafficShiftStepPlanCreator());
+    planCreators.add(new StartupScriptPlanCreator());
+    planCreators.add(new ApplicationSettingsPlanCreator());
+    planCreators.add(new ConnectionStringsPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }

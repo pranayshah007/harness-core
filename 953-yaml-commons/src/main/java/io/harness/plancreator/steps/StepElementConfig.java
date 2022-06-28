@@ -66,7 +66,6 @@ public class StepElementConfig {
 
   @JsonProperty("strategy") StrategyConfig strategy;
 
-
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   ParameterField<String> skipCondition;

@@ -233,7 +233,7 @@ public class SecretManagementModuleTest extends CategoryTest {
     });
     modules.add(secretManagementModule);
     modules.add(secretManagementClientModule);
-    modules.add(new ProviderModule(){
+    modules.add(new ProviderModule() {
       @Provides
       @Singleton
       OpaService registerConnecterService() {
@@ -241,7 +241,7 @@ public class SecretManagementModuleTest extends CategoryTest {
       }
     });
 
-    modules.add(new ProviderModule(){
+    modules.add(new ProviderModule() {
       @Provides
       @Singleton
       OpaSecretService registerConnecterService() {
@@ -249,7 +249,7 @@ public class SecretManagementModuleTest extends CategoryTest {
       }
     });
 
-    modules.add(new ProviderModule(){
+    modules.add(new ProviderModule() {
       @Provides
       @Singleton
       OpaServiceClient registerOpaServiceClientService() {

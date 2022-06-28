@@ -29,6 +29,4 @@ public class QLSecretManager implements QLObject {
   String name;
   QLSecretManagerConfig config;
   QLUsageScope usageScope;
-
 }
-

@@ -4510,7 +4510,7 @@ plain_artifacts = [
     "com.microsoft.azure:azure-mgmt-storage:1.31.1",
     "com.microsoft.azure:azure-mgmt-trafficmanager:1.31.1",
     "com.microsoft.azure:azure-storage:6.1.0",
-    "com.microsoft.azure:msal4j:1.8.1",
+    "com.microsoft.azure:msal4j:1.11.0",
     "com.microsoft.rest:client-runtime:1.7.4",
     "com.networknt:json-schema-validator:1.0.54",
     "com.nimbusds:lang-tag:1.5",
@@ -5216,8 +5216,9 @@ maven_install(
     artifacts = [
         "com.fasterxml.jackson.core:jackson-databind:2.13.1",
         "com.azure:azure-core:1.25.0",
-        "com.azure:azure-storage-blob:12.9.0",
-        "com.azure:azure-storage-common:12.9.0",
+        "com.azure:azure-identity:1.4.4",
+        "com.azure:azure-storage-blob:12.14.4",
+        "com.azure:azure-storage-common:12.14.3",
     ],
     repositories = [
         "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
@@ -5230,8 +5231,9 @@ maven_install(
     name = "ce-nextgen",
     artifacts = [
         "com.azure:azure-core:1.25.0",
-        "com.azure:azure-storage-blob:12.9.0",
-        "com.azure:azure-storage-common:12.9.0",
+        "com.azure:azure-identity:1.4.4",
+        "com.azure:azure-storage-blob:12.14.4",
+        "com.azure:azure-storage-common:12.14.3",
     ],
     repositories = [
         "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",

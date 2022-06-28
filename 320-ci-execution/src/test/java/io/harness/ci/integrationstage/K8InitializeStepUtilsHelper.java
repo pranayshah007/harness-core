@@ -7,18 +7,18 @@
 
 package io.harness.ci.integrationstage;
 
-import static io.harness.common.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
-import static io.harness.common.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
-import static io.harness.common.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
-import static io.harness.common.CIExecutionConstants.GIT_CLONE_STEP_ID;
-import static io.harness.common.CIExecutionConstants.GIT_CLONE_STEP_NAME;
-import static io.harness.common.CIExecutionConstants.PORT_PREFIX;
-import static io.harness.common.CIExecutionConstants.PORT_STARTING_RANGE;
-import static io.harness.common.CIExecutionConstants.STEP_REQUEST_MEMORY_MIB;
-import static io.harness.common.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
-import static io.harness.common.CIExecutionConstants.STEP_WORK_DIR;
-import static io.harness.common.CIExecutionConstants.UNIX_STEP_COMMAND;
-import static io.harness.common.CIExecutionConstants.WIN_STEP_COMMAND;
+import static io.harness.ci.common.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
+import static io.harness.ci.common.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
+import static io.harness.ci.common.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
+import static io.harness.ci.common.CIExecutionConstants.GIT_CLONE_STEP_ID;
+import static io.harness.ci.common.CIExecutionConstants.GIT_CLONE_STEP_NAME;
+import static io.harness.ci.common.CIExecutionConstants.PORT_PREFIX;
+import static io.harness.ci.common.CIExecutionConstants.PORT_STARTING_RANGE;
+import static io.harness.ci.common.CIExecutionConstants.STEP_REQUEST_MEMORY_MIB;
+import static io.harness.ci.common.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
+import static io.harness.ci.common.CIExecutionConstants.STEP_WORK_DIR;
+import static io.harness.ci.common.CIExecutionConstants.UNIX_STEP_COMMAND;
+import static io.harness.ci.common.CIExecutionConstants.WIN_STEP_COMMAND;
 import static io.harness.delegate.beans.ci.pod.CIContainerType.PLUGIN;
 import static io.harness.delegate.beans.ci.pod.CIContainerType.RUN;
 

@@ -29,6 +29,7 @@ import io.harness.cdng.manifest.yaml.harness.HarnessStoreFile;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.common.ParameterRuntimeFiledHelper;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
@@ -54,8 +55,9 @@ import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.filestore.NGFileType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.steps.shellscript.ShellScriptHelperService;
+import io.harness.shell.ScriptType;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.utils.IdentifierRefHelper;
@@ -63,16 +65,20 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @OwnedBy(CDP)
+@Slf4j
 public class SshCommandStepHelper extends CDStepHelper {
-  @Inject private ShellScriptHelperService shellScriptHelperService;
   @Inject private SshEntityHelper sshEntityHelper;
   @Inject private FileStoreService fileStoreService;
   @Inject private NGEncryptedDataService ngEncryptedDataService;
@@ -87,9 +93,8 @@ public class SshCommandStepHelper extends CDStepHelper {
     return builder.accountId(AmbianceUtils.getAccountId(ambiance))
         .executeOnDelegate(onDelegate)
         .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
-        .environmentVariables(
-            shellScriptHelperService.getEnvironmentVariables(executeCommandStepParameters.getEnvironmentVariables()))
-        .outputVariables(shellScriptHelperService.getOutputVars(executeCommandStepParameters.getOutputVariables()))
+        .outputVariables(getOutputVars(executeCommandStepParameters.getOutputVariables()))
+        .environmentVariables(getEnvironmentVariables(executeCommandStepParameters.getEnvironmentVariables()))
         .sshInfraDelegateConfig(sshEntityHelper.getSshInfraDelegateConfig(infrastructure, ambiance))
         .artifactDelegateConfig(
             artifactOutcome.map(outcome -> sshEntityHelper.getArtifactDelegateConfigConfig(outcome, ambiance))
@@ -232,8 +237,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .script(getShellScript(spec.getSource()))
         .scriptType(spec.getShell().getScriptType())
         .tailFilePatterns(mapTailFilePatterns(spec.getTailFiles()))
-        .workingDirectory(shellScriptHelperService.getWorkingDirectory(
-            spec.getWorkingDirectory(), spec.getShell().getScriptType(), onDelegate))
+        .workingDirectory(getWorkingDirectory(spec.getWorkingDirectory(), spec.getShell().getScriptType(), onDelegate))
         .build();
   }
 
@@ -271,5 +275,67 @@ public class SshCommandStepHelper extends CDStepHelper {
   private String getShellScript(@Nonnull ShellScriptSourceWrapper shellScriptSourceWrapper) {
     ShellScriptInlineSource shellScriptInlineSource = (ShellScriptInlineSource) shellScriptSourceWrapper.getSpec();
     return (String) shellScriptInlineSource.getScript().fetchFinalValue();
+  }
+
+  Map<String, String> getEnvironmentVariables(Map<String, Object> inputVariables) {
+    if (EmptyPredicate.isEmpty(inputVariables)) {
+      return new HashMap<>();
+    }
+    Map<String, String> res = new LinkedHashMap<>();
+    inputVariables.forEach((key, value) -> {
+      if (value instanceof ParameterField) {
+        ParameterField<?> parameterFieldValue = (ParameterField<?>) value;
+        if (parameterFieldValue.getValue() == null) {
+          throw new InvalidRequestException(String.format("Env. variable [%s] value found to be null", key));
+        }
+        res.put(key, parameterFieldValue.getValue().toString());
+      } else if (value instanceof String) {
+        res.put(key, (String) value);
+      } else {
+        log.error(String.format(
+            "Value other than String or ParameterField found for env. variable [%s]. value: [%s]", key, value));
+      }
+    });
+    return res;
+  }
+
+  String getWorkingDirectory(
+      ParameterField<String> workingDirectory, @Nonnull ScriptType scriptType, boolean onDelegate) {
+    if (workingDirectory != null && EmptyPredicate.isNotEmpty(workingDirectory.getValue())) {
+      return workingDirectory.getValue();
+    }
+    String commandPath = null;
+    if (scriptType == ScriptType.BASH) {
+      commandPath = "/tmp";
+    } else if (scriptType == ScriptType.POWERSHELL) {
+      commandPath = "%TEMP%";
+      if (onDelegate) {
+        commandPath = "/tmp";
+      }
+    }
+    return commandPath;
+  }
+
+  List<String> getOutputVars(Map<String, Object> outputVariables) {
+    if (EmptyPredicate.isEmpty(outputVariables)) {
+      return emptyList();
+    }
+
+    List<String> outputVars = new ArrayList<>();
+    outputVariables.forEach((key, val) -> {
+      if (val instanceof ParameterField) {
+        ParameterField<?> parameterFieldValue = (ParameterField<?>) val;
+        if (parameterFieldValue.getValue() == null) {
+          throw new InvalidRequestException(String.format("Output variable [%s] value found to be null", key));
+        }
+        outputVars.add(((ParameterField<?>) val).getValue().toString());
+      } else if (val instanceof String) {
+        outputVars.add((String) val);
+      } else {
+        log.error(String.format(
+            "Value other than String or ParameterField found for output variable [%s]. value: [%s]", key, val));
+      }
+    });
+    return outputVars;
   }
 }

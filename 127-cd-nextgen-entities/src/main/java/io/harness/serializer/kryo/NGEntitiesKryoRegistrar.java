@@ -75,6 +75,7 @@ import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigWrapper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec;
 import io.harness.cdng.service.beans.ServerlessAwsLambdaServiceSpec;
@@ -192,5 +193,6 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(OciHelmChartConfig.class, 12596);
     kryo.register(OciHelmChartStoreConfigWrapper.class, 12597);
     kryo.register(ReleaseRepoManifest.class, 12598);
+    kryo.register(AzureWebAppServiceSpec.class, 12599);
   }
 }

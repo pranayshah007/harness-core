@@ -112,7 +112,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     when(encryptedDataService.createSecretText(any(), any())).thenReturn(encryptedDataDTO);
     when(ngSecretServiceV2.create(any(), any(), eq(false))).thenReturn(secret);
 
-    when(connectorService.getUsingIdentifier(any(),any(),any(),any(),eq(false))).thenReturn(new LocalConfigDTO());
+    when(connectorService.getUsingIdentifier(any(), any(), any(), any(), eq(false))).thenReturn(new LocalConfigDTO());
 
     SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
                                   .type(SecretType.SecretText)

@@ -7,11 +7,8 @@
 
 package io.harness.ng.core.artifacts.resources.util;
 
-import static io.harness.pms.yaml.YamlNode.PATH_SEP;
-
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
-import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -23,7 +20,6 @@ import io.harness.evaluators.YamlExpressionEvaluator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
-import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
@@ -40,8 +36,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.inject.Inject;
 import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -111,48 +105,9 @@ public class ArtifactResourceUtils {
    */
   @NotNull
   public ArtifactConfig locateArtifactInService(
-      String accountId, String orgId, String projectId, String imageTagFqn, String serviceRef) {
-    Optional<ServiceEntity> entity = serviceEntityService.get(accountId, orgId, projectId, serviceRef, false);
-    if (entity.isEmpty()) {
-      throw new InvalidRequestException(format("Service: %s does not exist", serviceRef));
-    }
-
-    int index = 0;
-    String[] split = imageTagFqn.split("\\.");
-    final String serviceInputsDelimiter = "serviceInputs";
-    for (int i = 0; i < split.length; i++) {
-      if (serviceInputsDelimiter.equals(split[i])) {
-        index = i;
-        break;
-      }
-    }
-
-    if (index == 0) {
-      throw new InvalidRequestException(format("FQN must contain %s", serviceInputsDelimiter));
-    }
-
-    List<String> splitPaths = List.of(split).subList(index + 1, split.length);
-    String fqnWithinServiceEntityYaml = String.join(PATH_SEP, splitPaths);
-
-    // convert sidecars[0]/sidecar to sidecars/[0]/
-    fqnWithinServiceEntityYaml = fqnWithinServiceEntityYaml.replace("[", "/[");
-
-    YamlNode service;
-    try {
-      service = YamlNode.fromYamlPath(entity.get().getYaml(), "service");
-    } catch (IOException e) {
-      throw new InvalidRequestException("Service entity yaml must be rooted at \"service\"");
-    }
-
-    if (service == null) {
-      throw new InvalidRequestException("Service entity yaml must be rooted at \"service\"");
-    }
-
-    YamlNode artifactTagLeafNode = service.gotoPath(fqnWithinServiceEntityYaml);
-    if (artifactTagLeafNode == null) {
-      throw new InvalidRequestException(
-          format("Unable to locate path %s within service yaml", fqnWithinServiceEntityYaml));
-    }
+          String accountId, String orgId, String projectId, String serviceRef, String imageTagFqn) {
+    YamlNode artifactTagLeafNode =
+        serviceEntityService.getYamlNodeForFqn(accountId, orgId, projectId, serviceRef, imageTagFqn);
 
     YamlNode artifactSpecNode = artifactTagLeafNode.getParentNode().getParentNode();
 

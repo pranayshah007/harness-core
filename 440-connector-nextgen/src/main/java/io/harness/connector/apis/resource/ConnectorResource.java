@@ -74,6 +74,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -562,5 +563,19 @@ public class ConnectorResource {
       @Parameter(description = "Connector type") @NotNull @QueryParam(
           NGCommonEntityConstants.CONNECTOR_TYPE) ConnectorType connectorType) {
     return ResponseDTO.newResponse(ConnectorAllowedFieldValues.TYPE_TO_FIELDS.get(connectorType));
+  }
+
+  @GET
+  @Hidden
+  @Path("/attributes")
+  @ApiOperation(hidden = true, value = "Get Connectors Attributes", nickname = "getConnectorsAttributes")
+  @InternalApi
+  public ResponseDTO<List<Map<String, String>>> getConnectorsAttributes(
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("connectorIdentifiers") List<String> connectorIdentifiers) {
+    return ResponseDTO.newResponse(connectorService.getAttributes(
+        accountId, orgIdentifier, projectIdentifier, connectorIdentifiers));
   }
 }

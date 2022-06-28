@@ -171,6 +171,14 @@ organizationClient:
     enableHttpLogging: ${ENABLE_HTTP_LOGGING:-false}
   organizationServiceSecret: ${ORGANIZATION_CLIENT_SERVICE_SECRET:-IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM}
 
+ngManagerServiceConfiguration:
+  ngManagerServiceConfig:
+    baseUrl: ${PROJECT_CLIENT_BASE_URL:-https://localhost:7090}
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+    enableHttpLogging: ${ENABLE_HTTP_LOGGING:-false}
+  ngManagerServiceSecret: ${PROJECT_CLIENT_SERVICE_SECRET:-IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM}
+
 notificationConfig:
   slackWebhookUrl: ${NOTIFICATION_SLACK_WEBHOOK_URL:-https://hooks.slack.com/services/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}
   environment: ${NOTIFICATION_ENVIRONMENT:-localhost}

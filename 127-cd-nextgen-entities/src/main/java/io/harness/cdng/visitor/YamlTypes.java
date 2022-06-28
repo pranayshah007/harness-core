@@ -122,4 +122,7 @@ public interface YamlTypes {
   String SERVICE_OVERRIDE_INPUTS = "serviceOverrideInputs";
   String INPUTS = "inputs";
   String REF = "ref";
+  String STARTUP_SCRIPT = "startupScript";
+  String APPLICATION_SETTINGS = "applicationSettings";
+  String CONNECTION_STRINGS = "connectionStrings";
 }

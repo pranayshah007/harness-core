@@ -65,6 +65,7 @@ public enum FeatureName {
   CUSTOM_DEPLOYMENT,
   NG_DEPLOYMENT_TEMPLATE,
   CUSTOM_MAX_PAGE_SIZE,
+  ENABLE_PAGINATED_CLOUD_PROVIDERS,
   CUSTOM_RESOURCEGROUP_SCOPE,
   CUSTOM_SECRETS_MANAGER,
   CVNG_ENABLED,
@@ -380,13 +381,14 @@ public enum FeatureName {
   SRM_LICENSE_ENABLED,
   AZURE_WEBAPP_NG,
   ACCOUNT_BASIC_ROLE_ONLY,
-  SEARCH_USERGROUP_BY_APPLICATION,
+  SEARCH_USERGROUP_BY_APPLICATION("Search in usergroup by application in CG", HarnessTeam.SPG),
   GITOPS_BYO_ARGO,
   CCM_MICRO_FRONTEND,
   NG_GIT_EXPERIENCE_IMPORT_FLOW,
   CVNG_LICENSE_ENFORCEMENT,
   SERVICE_DASHBOARD_V2,
-  TEMPLATE_SCHEMA_VALIDATION;
+  TEMPLATE_SCHEMA_VALIDATION,
+  YAML_APIS_GRANULAR_PERMISSION;
 
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
@@ -397,4 +399,16 @@ public enum FeatureName {
   }
 
   @Getter private FeatureFlag.Scope scope;
+
+  FeatureName(String description, HarnessTeam owner) {
+    this.description = description;
+    this.owner = owner;
+  }
+
+  @Getter private String description;
+  private HarnessTeam owner;
+
+  public String getOwner() {
+    return owner.name();
+  }
 }

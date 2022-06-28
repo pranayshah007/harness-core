@@ -435,10 +435,11 @@ public class FileStoreResource {
     Optional<FileStoreNodeDTO> file =
         fileStoreService.get(accountIdentifier, orgIdentifier, projectIdentifier, fileIdentifier, includeContent);
 
-    if(file.isPresent()) {
+    if (file.isPresent()) {
       return ResponseDTO.newResponse(file.get());
     } else {
-      throw new IllegalArgumentException("File or folder with specified identifier, account, org and project could not be found.");
+      throw new IllegalArgumentException(
+          "File or folder with specified identifier, account, org and project could not be found.");
     }
   }
 }

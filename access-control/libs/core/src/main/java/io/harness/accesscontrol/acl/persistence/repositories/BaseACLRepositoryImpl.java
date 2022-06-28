@@ -26,6 +26,7 @@ import com.mongodb.client.model.IndexModel;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.RenameCollectionOptions;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -160,7 +161,7 @@ public abstract class BaseACLRepositoryImpl implements ACLRepository {
   }
 
   @Override
-  public List<ACL> getByAclQueryStringInAndEnabled(Set<String> aclQueries, boolean enabled) {
+  public List<ACL> getByAclQueryStringInAndEnabled(Collection<String> aclQueries, boolean enabled) {
     Query query = new Query(Criteria.where(ACLKeys.aclQueryString).in(aclQueries).and(ACLKeys.enabled).is(enabled));
     query.fields().include(ACLKeys.aclQueryString).include(ACLKeys.condition).include(ACLKeys.conditional);
     return mongoTemplate.find(query, ACL.class);

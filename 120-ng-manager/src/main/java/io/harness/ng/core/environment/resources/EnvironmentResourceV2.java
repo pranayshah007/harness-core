@@ -69,6 +69,7 @@ import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.rbac.CDNGRbacUtility;
 import io.harness.repositories.UpsertOptions;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.PageUtils;
 
@@ -87,6 +88,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
@@ -629,6 +631,20 @@ public class EnvironmentResourceV2 {
         accountId, projectIdentifier, orgIdentifier, environmentIdentifier, serviceIdentifier);
     return ResponseDTO.newResponse(
         NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(serviceOverrideInputsYaml).build());
+  }
+
+  @GET
+  @Hidden
+  @Path("/attributes")
+  @ApiOperation(hidden = true, value = "Get Environments Attributes", nickname = "getEnvironmentsAttributes")
+  @InternalApi
+  public ResponseDTO<List<Map<String, String>>> getEnvironmentsAttributes(
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("envIdentifiers") List<String> envIdentifiers) {
+    return ResponseDTO.newResponse(environmentService.getAttributes(
+        accountId, orgIdentifier, projectIdentifier, envIdentifiers));
   }
 
   private void checkForServiceOverrideUpdateAccess(

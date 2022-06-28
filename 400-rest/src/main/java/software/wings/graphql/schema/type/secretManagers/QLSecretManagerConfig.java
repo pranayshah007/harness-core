@@ -7,5 +7,4 @@
 
 package software.wings.graphql.schema.type.secretManagers;
 
-public interface QLSecretManagerConfig {
-}
+public interface QLSecretManagerConfig {}

@@ -95,7 +95,7 @@ public class NexusArtifactResource {
       @NotNull String runtimeInputYaml, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
-          accountId, orgIdentifier, projectIdentifier, fqnPath, serviceRef);
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
       NexusRegistryArtifactConfig nexusRegistryArtifactConfig = (NexusRegistryArtifactConfig) artifactSpecFromService;
       if (isEmpty(repository)) {
         repository = nexusRegistryArtifactConfig.getRepository().getValue();

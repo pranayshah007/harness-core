@@ -8,8 +8,8 @@
 package io.harness.ci.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMapParameter;
-import static io.harness.common.CIExecutionConstants.GIT_CLONE_STEP_ID;
-import static io.harness.common.CIExecutionConstants.PLUGIN_ENV_PREFIX;
+import static io.harness.ci.common.CIExecutionConstants.GIT_CLONE_STEP_ID;
+import static io.harness.ci.common.CIExecutionConstants.PLUGIN_ENV_PREFIX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.beans.serializer.RunTimeInputHandler;
@@ -17,9 +17,11 @@ import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
+import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.serializer.SerializerUtils;
+import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmJunitTestReport;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
@@ -28,8 +30,6 @@ import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.stateutils.buildstate.ConnectorUtils;
-import io.harness.util.HarnessImageUtils;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.timeout.Timeout;
 

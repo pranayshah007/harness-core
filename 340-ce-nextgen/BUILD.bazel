@@ -5,10 +5,10 @@ load("//:tools/bazel/macros.bzl", "run_analysis")
 HarnessTeam = "CE"
 
 shared_dependencies = [
-    "@maven//:io_netty_netty_all",
     "@ce-nextgen//:com_azure_azure_core",
     "@ce-nextgen//:com_azure_azure_storage_blob",
     "@ce-nextgen//:com_azure_azure_storage_common",
+    "@ce-nextgen//:com_azure_azure_identity",
 ] + [
     "//374-ceng-graphql:module",
     "//440-connector-nextgen:module",
@@ -40,10 +40,6 @@ shared_dependencies = [
     "@maven//:com_amazonaws_aws_java_sdk_iam",
     "@maven//:com_amazonaws_aws_java_sdk_s3",
     "@maven//:com_amazonaws_aws_java_sdk_sts",
-    "@maven//:com_azure_azure_identity",
-    "@maven//:com_azure_azure_storage_blob",
-    "@maven//:com_azure_azure_storage_common",
-    "@maven//:com_microsoft_azure_msal4j",
     "@maven//:aopalliance_aopalliance",
     "@maven//:com_google_inject_guice",
     "@maven//:com_google_cloud_google_cloud_pubsub",

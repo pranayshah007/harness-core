@@ -42,6 +42,7 @@ import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 import io.harness.utils.NGFeatureFlagHelperService;
@@ -467,6 +468,41 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(upserted).isNotNull();
 
     verify(outboxService, times(1)).save(any());
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testGetYamlNodeForFqn() {
+    String yaml = readFile("ArtifactResourceUtils/serviceWithPrimaryAndSidecars.yaml");
+    ServiceEntity createRequest = ServiceEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(ORG_ID)
+                                      .projectIdentifier(PROJECT_ID)
+                                      .name("testGetYamlNodeForFqn")
+                                      .identifier("testGetYamlNodeForFqn")
+                                      .yaml(yaml)
+                                      .build();
+
+    serviceEntityService.create(createRequest);
+
+    YamlNode primaryNode =
+        serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testGetYamlNodeForFqn",
+            "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag");
+
+    YamlNode sidecarNode = serviceEntityService.getYamlNodeForFqn(ACCOUNT_ID, ORG_ID, PROJECT_ID,
+        "testGetYamlNodeForFqn",
+        "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars[0].sidecar.spec.tag");
+
+    assertThat(primaryNode.getCurrJsonNode().asText()).isEqualTo("<+input>");
+    assertThat(primaryNode.getParentNode().toString())
+        .isEqualTo(
+            "{\"connectorRef\":\"account.harnessImage\",\"imagePath\":\"harness/todolist\",\"tag\":\"<+input>\"}");
+
+    assertThat(sidecarNode.getCurrJsonNode().asText()).isEqualTo("<+input>");
+    assertThat(sidecarNode.getParentNode().toString())
+        .isEqualTo(
+            "{\"connectorRef\":\"account.harnessImage\",\"imagePath\":\"harness/todolist-sample\",\"region\":\"us-east-1\",\"tag\":\"<+input>\"}");
   }
 
   private String readFile(String filename) {

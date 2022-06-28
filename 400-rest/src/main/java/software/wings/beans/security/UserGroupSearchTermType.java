@@ -7,7 +7,4 @@
 
 package software.wings.beans.security;
 
-public enum UserGroupSearchTermType {
-    USERGROUP_NAME,
-    APPLICATION_NAME
-}
+public enum UserGroupSearchTermType { USERGROUP_NAME, APPLICATION_NAME }

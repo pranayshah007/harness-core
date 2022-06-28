@@ -128,7 +128,7 @@ public class EcsBGUpdateListnerState extends State {
     Activity activity = createActivity(context);
     SettingAttribute settingAttribute = settingsService.get(infrastructureMapping.getComputeProviderSettingId());
     AwsConfig awsConfig = (AwsConfig) settingAttribute.getValue();
-    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context,awsConfig);
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
 
     List<EncryptedDataDetail> encryptedDetails = secretManager.getEncryptionDetails(
         (EncryptableSetting) awsConfig, context.getAppId(), context.getWorkflowExecutionId());

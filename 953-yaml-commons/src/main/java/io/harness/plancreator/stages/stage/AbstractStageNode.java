@@ -75,8 +75,7 @@ public abstract class AbstractStageNode {
   @YamlSchemaTypes(value = {runtime})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  @VariableExpression(skipVariableExpression = true)
-  @JsonProperty("strategy") StrategyConfig strategy;
+  @VariableExpression(skipVariableExpression = true) @JsonProperty("strategy") StrategyConfig strategy;
 
   @JsonIgnore public abstract String getType();
   @JsonIgnore public abstract StageInfoConfig getStageInfoConfig();
