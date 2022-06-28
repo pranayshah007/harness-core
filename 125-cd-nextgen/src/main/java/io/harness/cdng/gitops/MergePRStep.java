@@ -56,6 +56,7 @@ import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.ConnectorUtils;
+import io.harness.utils.IdentifierRefHelper;
 
 import software.wings.beans.TaskType;
 
@@ -148,19 +149,13 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
 
     ConnectorInfoDTO connectorInfoDTO =
         cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
-    String scope = "";
-    if (!isEmpty(connectorInfoDTO.getProjectIdentifier()) & !isEmpty(accountId)) {
-      scope = "org.";
-    } else {
-      scope = "account.";
-    }
+
+    IdentifierRef identifierRef =
+        IdentifierRefHelper.getIdentifierRefFromEntityIdentifiers(connectorInfoDTO.getIdentifier(), accountId,
+            connectorInfoDTO.getOrgIdentifier(), connectorInfoDTO.getProjectIdentifier());
+
     ConnectorDetails connectorDetails =
-        connectorUtils.getConnectorDetails(IdentifierRef.builder()
-                                               .accountIdentifier(accountId)
-                                               .orgIdentifier(connectorInfoDTO.getOrgIdentifier())
-                                               .projectIdentifier(connectorInfoDTO.getProjectIdentifier())
-                                               .build(),
-            scope + connectorInfoDTO.getIdentifier());
+        connectorUtils.getConnectorDetails(identifierRef, identifierRef.buildScopedIdentifier());
 
     GitApiTaskParams gitApiTaskParams = GitApiTaskParams.builder()
                                             .gitRepoType(GitRepoType.GITHUB)

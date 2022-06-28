@@ -194,7 +194,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
       if (fetchFilesResult == null || fetchFilesResult.getFiles().isEmpty()) {
         logCallback.saveExecutionLog(
-            color(format("%nGFetch Files task was not successful."), LogColor.White, LogWeight.Bold), ERROR);
+            color(format("%nFetch Files task was not successful."), LogColor.White, LogWeight.Bold), ERROR);
         throw new InvalidRequestException("Fetch Files task was not successful.");
       }
 
