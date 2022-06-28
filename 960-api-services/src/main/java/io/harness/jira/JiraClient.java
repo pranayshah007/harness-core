@@ -271,7 +271,7 @@ public class JiraClient {
    * @return the created issue
    */
   public JiraIssueNG createIssue(
-      @NotBlank String projectKey, @NotBlank String issueTypeName, Map<String, String> fields) {
+      @NotBlank String projectKey, @NotBlank String issueTypeName, Map<String, String> fields, boolean checkRequiredFields) {
     JiraIssueCreateMetadataNG createMetadata = getIssueCreateMetadata(projectKey, issueTypeName, null, false, false);
     JiraProjectNG project = createMetadata.getProjects().get(projectKey);
     if (project == null) {
@@ -289,7 +289,7 @@ public class JiraClient {
     String comment = pair.getRight();
 
     // Create issue with all non-comment fields.
-    JiraCreateIssueRequestNG createIssueRequest = new JiraCreateIssueRequestNG(project, issueType, fields);
+    JiraCreateIssueRequestNG createIssueRequest = new JiraCreateIssueRequestNG(project, issueType, fields, checkRequiredFields);
     JiraIssueNG issue = executeCall(restClient.createIssue(createIssueRequest), "creating issue");
 
     // Add comment.
