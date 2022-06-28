@@ -144,9 +144,9 @@ public class InputSetErrorsHelper {
         subMap.keySet().forEach(inputSetFQNs::remove);
       }
     });
-    inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Field not a runtime input"));
 
-    if (inputSetFQNs.size() > 0) {
+    // Fqn which does not exist in pipeline, do not have to be added in error map.
+    if (inputSetFQNs.size() > 0)   {
       YamlConfig pipelineConfig = new YamlConfig(pipelineYaml);
       for (FQN fqn : inputSetFQNs) {
         if (pipelineConfig.getFqnToValueMap().get(fqn) == null) {

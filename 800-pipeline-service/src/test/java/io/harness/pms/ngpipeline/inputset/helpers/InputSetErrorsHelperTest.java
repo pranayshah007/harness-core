@@ -219,4 +219,27 @@ public class InputSetErrorsHelperTest extends CategoryTest {
     assertThat(invalidFQNStrings.contains(invalidFQN1)).isTrue();
     assertThat(invalidFQNStrings.contains(invalidFQN2)).isTrue();
   }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testExtraFqnOnRuntimeTemplate() {
+    String filename = "pipeline-extensive.yml";
+    String yaml = readFile(filename);
+    String templateYaml = createTemplateFromPipeline(yaml);
+
+    String inputSet = "invalidRuntimeInputWithExtraValues.yml";
+    String inputSetYaml = readFile(inputSet);
+
+    Set<FQN> invalidFQNs = InputSetErrorsHelper.getInvalidFQNsInInputSet(templateYaml, inputSetYaml, yaml).keySet();
+    assertThat(invalidFQNs.size()).isEqualTo(1);
+    assertThat(invalidFQNs.iterator().next().getExpressionFqn())
+        .isEqualTo("pipeline.stages.qaStage.spec.execution.steps.httpStep1.spec.method");
+
+    String inputSetWrong = "validRuntimeInputWithExtraValues.yml";
+    String inputSetYamlWrong = readFile(inputSetWrong);
+
+    invalidFQNs = InputSetErrorsHelper.getInvalidFQNsInInputSet(templateYaml, inputSetYamlWrong, yaml).keySet();
+    assertThat(invalidFQNs.size()).isEqualTo(0);
+  }
 }
