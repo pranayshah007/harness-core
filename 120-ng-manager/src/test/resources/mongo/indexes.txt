@@ -769,6 +769,11 @@ settingAttributes {"name": "nextIteration_1", "background": true} {"nextIteratio
 settingAttributes {"name": "secretsMigrationIdx", "background": true} {"value.type": 1, "nextSecretMigrationIteration": 1}
 settingAttributes {"name": "secretsMigrationPerAccountIdx", "background": true} {"value.type": 1, "secretsMigrated": 1, "accountId": 1}
 settingAttributes {"name": "typeNextIterationIdx", "background": true} {"value.type": 1, "nextIteration": 1}
+settingConfigurations {"name": "category_idx", "background": true} {"category": 1}
+settingConfigurations {"name": "identifier_unique_idx", "unique": true} {"identifier": 1}
+settings {"name": "accountIdentifier_orgIdentifier_projectIdentifier_category_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "category": 1}
+settings {"name": "accountIdentifier_orgIdentifier_projectIdentifier_identifier_unique_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
+settingsConfigurationState {"name": "identifier_1", "background": true} {"identifier": 1}
 signupVerificationTokens {"name": "token_signupVerificationToken_query_index", "background": true} {"token": 1}
 sourceCodeManagers {"name": "accountIdentifier_1", "background": true} {"accountIdentifier": 1}
 sourceCodeManagers {"name": "uniqueIndex", "unique": true} {"userIdentifier": 1, "name": 1, "accountIdentifier": 1}

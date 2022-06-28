@@ -392,7 +392,8 @@ public enum FeatureName {
   YAML_APIS_GRANULAR_PERMISSION,
   JENKINS_BUILD,
   ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM,
-  PRUNE_KUBERNETES_RESOURCES_NG;
+  PRUNE_KUBERNETES_RESOURCES_NG,
+  NG_SETTINGS("Enable Settings at various scopes in NG", HarnessTeam.PL);
 
   FeatureName() {
     scope = Scope.PER_ACCOUNT;

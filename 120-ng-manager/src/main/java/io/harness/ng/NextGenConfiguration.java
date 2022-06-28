@@ -266,8 +266,7 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.VARIABLE_RESOURCE_PACKAGE, NextGenConfiguration.FILE_STORE_RESOURCE_PACKAGE,
                 NextGenConfiguration.GITOPS_RESOURCE_PACKAGE, NextGenConfiguration.INFRA_RESOURCE_PACKAGE,
                 NextGenConfiguration.AWS_PACKAGE, NextGenConfiguration.OAUTH_RESOURCE_PACKAGE,
-                NextGenConfiguration.LDAP_PACKAGE)),
-                NextGenConfiguration.SETTINGS_RESOURCE_PACKAGE))
+                NextGenConfiguration.LDAP_PACKAGE, NextGenConfiguration.SETTINGS_RESOURCE_PACKAGE))
         .collect(Collectors.toSet());
   }
 

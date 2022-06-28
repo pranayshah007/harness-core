@@ -1,0 +1,38 @@
+package io.harness.ngsettings.entities;
+
+import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.mongo.index.FdIndex;
+
+import javax.validation.constraints.NotEmpty;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Data;
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.FieldNameConstants;
+import org.mongodb.morphia.annotations.Entity;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.annotation.TypeAlias;
+import org.springframework.data.annotation.Version;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+@Data
+@Builder
+@FieldNameConstants(innerTypeName = "SettingsConfigurationStateKeys")
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Entity(value = "settingsConfigurationState", noClassnameStored = true)
+@Document("settingsConfigurationState")
+@TypeAlias("NGSettingsConfigurationState")
+@HarnessEntity(exportable = true)
+@OwnedBy(HarnessTeam.PL)
+public class NGSettingsConfigurationState {
+  @Id @org.mongodb.morphia.annotations.Id String id;
+  @FdIndex @NotEmpty String identifier;
+  int configVersion;
+  @CreatedDate Long createdAt;
+  @LastModifiedDate Long lastModifiedAt;
+  @Version Long documentVersion;
+}

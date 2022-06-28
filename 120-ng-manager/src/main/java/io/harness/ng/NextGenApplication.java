@@ -24,7 +24,12 @@ import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCH
 
 import static com.google.common.collect.ImmutableMap.of;
 
-import io.harness.*;
+import io.harness.EntityType;
+import io.harness.Microservice;
+import io.harness.ModuleType;
+import io.harness.NgIteratorsConfig;
+import io.harness.PipelineServiceUtilityModule;
+import io.harness.SCMGrpcClientModule;
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.filter.NGScopeAccessCheckFilter;
@@ -366,8 +371,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     modules.add(PipelineServiceUtilityModule.getInstance());
     CacheModule cacheModule = new CacheModule(appConfig.getCacheConfig());
     modules.add(cacheModule);
-
-//    modules.add(NGSettingsModule.getInstance());
 
     Injector injector = Guice.createInjector(modules);
 
