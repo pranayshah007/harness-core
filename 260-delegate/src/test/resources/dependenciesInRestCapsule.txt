@@ -45,7 +45,7 @@ com.bertramlabs.plugins:hcl4j:jar:0.1.7
 com.bettercloud:vault-java-driver:jar:4.0.0:test
 com.bugsnag:bugsnag:jar:3.6.2
 com.carrotsearch:hppc:jar:0.8.1
-com.coveo:saml-client:jar:3.0.2
+com.coveo:saml-client:jar:4.0.1-SNAPSHOT
 com.cronutils:cron-utils:jar:9.0.1
 com.datadoghq:java-dogstatsd-client:jar:2.3
 com.deftlabs:mongo-java-distributed-lock:jar:0.1.7
