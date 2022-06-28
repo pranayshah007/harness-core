@@ -1412,15 +1412,16 @@ public class DelegateServiceImpl implements DelegateService {
         params.put("remoteWatcherUrlCdn", EMPTY);
       }
 
-      if (isNotBlank(templateParameters.getDelegateXmx())) {
-        params.put("delegateXmx", templateParameters.getDelegateXmx());
-      } else {
-        if (featureFlagService.isEnabled(REDUCE_DELEGATE_MEMORY_SIZE, templateParameters.getAccountId())) {
-          params.put("delegateXmx", "-Xmx1536m");
-        } else {
-          params.put("delegateXmx", "-Xmx4096m");
-        }
-      }
+      params.put("delegateXmx", "-XX:MaxRAMPercentage=60.0 -XX:MinRAMPercentage=30.0");
+//      if (isNotBlank(templateParameters.getDelegateXmx())) {
+//        params.put("delegateXmx", templateParameters.getDelegateXmx());
+//      } else {
+//        if (featureFlagService.isEnabled(REDUCE_DELEGATE_MEMORY_SIZE, templateParameters.getAccountId())) {
+//          params.put("delegateXmx", "-Xmx1536m");
+//        } else {
+//          params.put("delegateXmx", "-Xmx4096m");
+//        }
+//      }
 
       JreConfig jreConfig = getJreConfig(templateParameters.getAccountId(), templateParameters.isWatcher());
 
