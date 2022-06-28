@@ -81,6 +81,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 
 @OwnedBy(PIPELINE)
 @PrepareForTest({PlanExecutionUtils.class, UUIDGenerator.class})
