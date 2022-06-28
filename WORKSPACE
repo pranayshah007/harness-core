@@ -4345,7 +4345,7 @@ plain_artifacts = [
     "com.rabbitmq:amqp-client:jar:4.8.0",
     "com.bugsnag:bugsnag:3.6.2",
     "com.carrotsearch:hppc:0.8.1",
-    "com.coveo.saml-client:4.0.1-SNAPSHOT:4.0.1-20220627.185235-1",
+    "com.coveo:saml-client:4.0.1-SNAPSHOT",
     "com.cronutils:cron-utils:9.1.6",
     "com.datadoghq:java-dogstatsd-client:2.3",
     "com.deftlabs:mongo-java-distributed-lock:0.1.7",
