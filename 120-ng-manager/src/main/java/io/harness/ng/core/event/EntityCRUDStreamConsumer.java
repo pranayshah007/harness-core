@@ -143,6 +143,7 @@ public class EntityCRUDStreamConsumer implements Runnable {
 
   private boolean processMessage(Message message) {
     AtomicBoolean success = new AtomicBoolean(true);
+    log.info("processing entity crud for message {}", message.getId());
     messageListenersList.forEach(messageListener -> {
       if (!messageListener.handleMessage(message)) {
         success.set(false);
