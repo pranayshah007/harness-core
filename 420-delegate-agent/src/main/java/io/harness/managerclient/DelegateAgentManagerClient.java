@@ -162,7 +162,7 @@ public interface DelegateAgentManagerClient {
       @Query("hostId") String hostId);
 
   @KryoResponse
-  @POST("agent/delegates/{delegateId}/tasks/{taskId}/report")
+  @POST("agent/delegates/{delegateId}/tasks/{taskId}/report/v2")
   Call<DelegateTaskPackage> reportConnectionResults(@Path("delegateId") String delegateId, @Path("taskId") String uuid,
       @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId,
       @Body List<DelegateConnectionResultDetail> results);

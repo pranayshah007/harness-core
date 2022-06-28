@@ -26,6 +26,7 @@ import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.ReferenceFalseKryoSerialization;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorCatalogueResponseDTO;
@@ -513,6 +514,25 @@ public class ConnectorResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
     return ResponseDTO.newResponse(connectorHeartbeatService.getConnectorValidationParams(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier));
+  }
+
+  @GET
+  @Hidden
+  @Path("{identifier}/validation-params/v2")
+  @ApiOperation(hidden = true, value = "Gets connector validation params")
+  @InternalApi
+  @Produces("application/x-kryo")
+  @ReferenceFalseKryoSerialization
+  public ResponseDTO<ConnectorValidationParameterResponse> getConnectorValidationParamsV2(
+          @Parameter(description = "Connector ID") @PathParam(
+                  NGCommonEntityConstants.IDENTIFIER_KEY) String connectorIdentifier,
+          @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
+                  NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+          @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(
+                  NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+          @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+                  NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
+    return getConnectorValidationParams(connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
   }
 
   // TODO(UTSAV): will be moved to 340-ce-nextgen

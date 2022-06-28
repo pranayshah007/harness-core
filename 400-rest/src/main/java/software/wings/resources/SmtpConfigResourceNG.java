@@ -7,6 +7,7 @@
 
 package software.wings.resources;
 
+import io.harness.annotations.ReferenceFalseKryoSerialization;
 import io.harness.notification.remote.SmtpConfigResponse;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -50,5 +51,14 @@ public class SmtpConfigResourceNG {
             .build();
     List<EncryptedDataDetail> encryptionDetails = secretManager.getEncryptionDetails(smtpConfig);
     return new RestResponse<>(new SmtpConfigResponse(notificationSmtpConfig, encryptionDetails));
+  }
+
+  @GET
+  @Path("v2")
+  @Produces("application/x-kryo")
+  @Consumes("application/x-kryo")
+  @ReferenceFalseKryoSerialization
+  public RestResponse<SmtpConfigResponse> getSmtpConfigV2(@QueryParam("accountId") String accountId) {
+    return getSmtpConfig(accountId);
   }
 }

@@ -24,6 +24,7 @@ import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.annotations.ReferenceFalseKryoSerialization;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.ConnectorCategory;
@@ -544,6 +545,27 @@ public class NGSecretResourceV2 {
 
   @POST
   @Hidden
+  @Path("decrypt-encryption-details/v2")
+  @Consumes("application/x-kryo")
+  @Produces("application/x-kryo")
+  @ApiOperation(hidden = true, value = "Decrypt Encrypted Details", nickname = "postDecryptEncryptedDetails")
+  @ReferenceFalseKryoSerialization
+  @Operation(operationId = "postDecryptEncryptedDetailsV2", summary = "Decrypt the encrypted details",
+          responses =
+                  {
+                          @io.swagger.v3.oas.annotations.responses.
+                                  ApiResponse(responseCode = "default", description = "Returns decrypted details")
+                  })
+  @InternalApi
+  public ResponseDTO<DecryptableEntity>
+  decryptEncryptedDetailsV2(@Body DecryptableEntityWithEncryptionConsumers decryptableEntityWithEncryptionConsumers,
+                          @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
+                                  NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
+    return decryptEncryptedDetails(decryptableEntityWithEncryptionConsumers, accountIdentifier);
+  }
+
+  @POST
+  @Hidden
   @Path("encryption-details")
   @Consumes("application/x-kryo")
   @Produces("application/x-kryo")
@@ -590,6 +612,28 @@ public class NGSecretResourceV2 {
     }
     return ResponseDTO.newResponse(encryptedDataService.getEncryptionDetails(
         ngAccessWithEncryptionConsumer.getNgAccess(), ngAccessWithEncryptionConsumer.getDecryptableEntity()));
+  }
+
+  @POST
+  @Hidden
+  @Path("encryption-details/v2")
+  @Consumes("application/x-kryo")
+  @Produces("application/x-kryo")
+  @ApiOperation(hidden = true, value = "Get Encryption Details", nickname = "postEncryptionDetails")
+  @Operation(operationId = "postEncryptionDetailsV2",
+          summary = "Gets the encryption details of the Secret referenced fields that are passed in request",
+          responses =
+                  {
+                          @io.swagger.v3.oas.annotations.responses.
+                                  ApiResponse(responseCode = "default", description = "Returns encryption details")
+                  })
+  @InternalApi
+  @ReferenceFalseKryoSerialization
+  public ResponseDTO<List<EncryptedDataDetail>>
+  getEncryptionDetailsV2(@NotNull NGAccessWithEncryptionConsumer ngAccessWithEncryptionConsumer,
+                       @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @AccountIdentifier @QueryParam(
+                               NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
+    return getEncryptionDetails(ngAccessWithEncryptionConsumer,accountIdentifier);
   }
 
   private String getOrgIdentifier(String parentOrgIdentifier, @NotNull Scope scope) {

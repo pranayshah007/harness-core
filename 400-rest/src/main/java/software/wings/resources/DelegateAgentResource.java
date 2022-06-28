@@ -344,6 +344,19 @@ public class DelegateAgentResource {
     }
   }
 
+  @DelegateAuth
+  @POST
+  @Produces("application/x-kryo")
+  @Path("{delegateId}/tasks/{taskId}/report/v2")
+  @Timed
+  @ExceptionMetered
+  @ReferenceFalseKryoSerialization
+  public DelegateTaskPackage reportConnectionResultsV2(@PathParam("delegateId") String delegateId,
+                                                     @PathParam("taskId") String taskId, @QueryParam("accountId") @NotEmpty String accountId,
+                                                     @QueryParam("delegateInstanceId") String delegateInstanceId, List<DelegateConnectionResultDetail> results) {
+    return reportConnectionResults(delegateId, taskId, accountId, delegateInstanceId, results);
+  }
+
   @NotNull
   private List<DelegateConnectionResult> getDelegateConnectionResults(List<DelegateConnectionResultDetail> results) {
     List<DelegateConnectionResult> delegateConnectionResult = new ArrayList<>();

@@ -37,7 +37,7 @@ public interface ConnectorResourceClient {
   Call<ResponseDTO<List<ConnectorResponseDTO>>> listConnectorByFQN(
       @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body List<String> connectorsFQN);
 
-  @GET(CONNECTORS_API + "/{identifier}/validation-params")
+  @GET(CONNECTORS_API + "/{identifier}/validation-params/v2")
   @KryoResponse
   Call<ResponseDTO<ConnectorValidationParameterResponse>> getConnectorValidationParams(
       @Path(NGCommonEntityConstants.IDENTIFIER_KEY) String connectorIdentifier,

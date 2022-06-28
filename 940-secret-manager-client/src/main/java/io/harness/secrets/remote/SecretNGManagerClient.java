@@ -53,7 +53,7 @@ public interface SecretNGManagerClient {
       @Query(value = NGResourceFilterConstants.IDENTIFIERS) List<String> identifiers,
       @Query(value = NGResourceFilterConstants.PAGE_KEY) int page, @Query(NGResourceFilterConstants.SIZE_KEY) int size);
 
-  @POST(SECRETS_API + "/encryption-details")
+  @POST(SECRETS_API + "/encryption-details/v2")
   @KryoRequest
   @KryoResponse
   Call<ResponseDTO<List<EncryptedDataDetail>>> getEncryptionDetails(
@@ -69,7 +69,7 @@ public interface SecretNGManagerClient {
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Query(NGCommonEntityConstants.MASK_SECRETS) boolean maskSecrets);
 
-  @POST(SECRETS_API + "/decrypt-encryption-details")
+  @POST(SECRETS_API + "/decrypt-encryption-details/v2")
   @KryoRequest
   @KryoResponse
   Call<ResponseDTO<DecryptableEntity>> decryptEncryptedDetails(

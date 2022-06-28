@@ -19,7 +19,7 @@ import retrofit2.http.Query;
 
 @OwnedBy(HarnessTeam.PL)
 public interface SmtpConfigClient {
-  String SMTP_CONFIG_BASEURI = "ng/smtp-config";
+  String SMTP_CONFIG_BASEURI = "ng/smtp-config/v2";
 
   @GET(SMTP_CONFIG_BASEURI)
   @KryoRequest
