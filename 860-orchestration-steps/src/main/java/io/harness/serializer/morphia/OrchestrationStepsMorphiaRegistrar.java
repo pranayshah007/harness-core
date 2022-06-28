@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
+import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
@@ -37,6 +38,7 @@ public class OrchestrationStepsMorphiaRegistrar implements MorphiaRegistrar {
     set.add(HarnessApprovalInstance.class);
     set.add(JiraApprovalInstance.class);
     set.add(ServiceNowApprovalInstance.class);
+    set.add(CustomApprovalInstance.class);
   }
 
   @Override

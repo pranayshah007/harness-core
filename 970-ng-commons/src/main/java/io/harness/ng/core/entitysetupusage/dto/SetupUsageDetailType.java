@@ -22,7 +22,8 @@ public enum SetupUsageDetailType {
   ENVIRONMENT_REFERRED_BY_PIPELINE,
   ENVIRONMENT_GROUP_REFERRED_BY_PIPELINE,
   SERVICE_REFERRED_BY_PIPELINE,
-  SECRET_REFERRED_BY_PIPELINE;
+  SECRET_REFERRED_BY_PIPELINE,
+  TEMPLATE_REFERRED_BY_PIPELINE;
 
   public static boolean isReferredByPipeline(String setupUsageDetailType) {
     SetupUsageDetailType type = SetupUsageDetailType.valueOf(setupUsageDetailType);
@@ -32,6 +33,7 @@ public enum SetupUsageDetailType {
       case SERVICE_REFERRED_BY_PIPELINE:
       case ENVIRONMENT_REFERRED_BY_PIPELINE:
       case ENVIRONMENT_GROUP_REFERRED_BY_PIPELINE:
+      case TEMPLATE_REFERRED_BY_PIPELINE:
         return true;
       default:
         return false;
@@ -47,6 +49,8 @@ public enum SetupUsageDetailType {
       return CONNECTOR_REFERRED_BY_PIPELINE;
     } else if (EntityTypeProtoEnum.SECRETS.name().equals(entityTypeProtoEnumName)) {
       return SECRET_REFERRED_BY_PIPELINE;
+    } else if (EntityTypeProtoEnum.TEMPLATE.name().equals(entityTypeProtoEnumName)) {
+      return TEMPLATE_REFERRED_BY_PIPELINE;
     } else if (EntityTypeProtoEnum.ENVIRONMENT_GROUP.name().equals(entityTypeProtoEnumName)) {
       return ENVIRONMENT_GROUP_REFERRED_BY_PIPELINE;
     }

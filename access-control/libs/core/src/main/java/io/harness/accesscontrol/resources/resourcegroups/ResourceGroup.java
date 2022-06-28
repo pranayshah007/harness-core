@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.Set;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -20,7 +21,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(HarnessTeam.PL)
 @Getter
@@ -38,7 +38,7 @@ public class ResourceGroup {
   @NotEmpty final String name;
   final Set<String> allowedScopeLevels;
   @NotNull final Set<String> resourceSelectors;
-  final boolean fullScopeSelected;
+  @NotNull final Set<ResourceSelector> resourceSelectorsV2;
   final boolean managed;
   @EqualsAndHashCode.Exclude @Setter Long createdAt;
   @EqualsAndHashCode.Exclude @Setter Long lastModifiedAt;

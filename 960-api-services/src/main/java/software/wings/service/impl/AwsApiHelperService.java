@@ -73,6 +73,8 @@ import com.amazonaws.services.ecs.model.ServiceNotFoundException;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.ListObjectsV2Request;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient;
@@ -151,6 +153,23 @@ public class AwsApiHelperService {
       handleAmazonClientException(amazonClientException);
     }
     return new DescribeRepositoriesResult();
+  }
+
+  public ListObjectsV2Result listObjectsInS3(
+      AwsInternalConfig awsConfig, String region, ListObjectsV2Request listObjectsV2Request) {
+    try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
+             new CloseableAmazonWebServiceClient(getAmazonS3Client(awsConfig, region))) {
+      tracker.trackS3Call("List Objects In S3");
+      return closeableAmazonS3Client.getClient().listObjectsV2(listObjectsV2Request);
+    } catch (AmazonServiceException amazonServiceException) {
+      handleAmazonServiceException(amazonServiceException);
+    } catch (AmazonClientException amazonClientException) {
+      handleAmazonClientException(amazonClientException);
+    } catch (Exception e) {
+      log.error("Exception listObjectsInS3", e);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+    }
+    return new ListObjectsV2Result();
   }
 
   public List<String> listS3Buckets(AwsInternalConfig awsInternalConfig, String region) {

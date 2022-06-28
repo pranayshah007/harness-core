@@ -20,6 +20,7 @@ import io.harness.accesscontrol.principals.usergroups.UserGroup;
 import io.harness.accesscontrol.principals.usergroups.UserGroupService;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroup;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roles.Role;
 import io.harness.accesscontrol.roles.RoleService;
@@ -35,6 +36,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 
 @Singleton
@@ -68,17 +70,23 @@ public class ChangeConsumerServiceImpl implements ChangeConsumerService {
       principals.add(roleAssignment.getPrincipalIdentifier());
     }
 
-    Set<String> resourceSelectors = new HashSet<>();
-    if (resourceGroup.get().isFullScopeSelected()) {
-      resourceSelectors.add("/*/*");
-    } else if (resourceGroup.get().getResourceSelectors() != null) {
-      resourceSelectors = resourceGroup.get().getResourceSelectors();
+    Set<ResourceSelector> resourceSelectors = new HashSet<>();
+
+    if (resourceGroup.get().getResourceSelectors() != null) {
+      resourceSelectors.addAll(resourceGroup.get()
+                                   .getResourceSelectors()
+                                   .stream()
+                                   .map(selector -> ResourceSelector.builder().selector(selector).build())
+                                   .collect(Collectors.toList()));
+    }
+    if (resourceGroup.get().getResourceSelectorsV2() != null) {
+      resourceSelectors.addAll(resourceGroup.get().getResourceSelectorsV2());
     }
 
     List<ACL> acls = new ArrayList<>();
     for (String permission : role.get().getPermissions()) {
       for (String principalIdentifier : principals) {
-        for (String resourceSelector : resourceSelectors) {
+        for (ResourceSelector resourceSelector : resourceSelectors) {
           if (SERVICE_ACCOUNT.equals(roleAssignment.getPrincipalType())) {
             acls.add(buildACL(
                 permission, Principal.of(SERVICE_ACCOUNT, principalIdentifier), roleAssignment, resourceSelector));

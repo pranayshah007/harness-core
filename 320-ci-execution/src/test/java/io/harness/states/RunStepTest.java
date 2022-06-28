@@ -140,7 +140,7 @@ public class RunStepTest extends CIExecutionTestBase {
         Ambiance.newBuilder()
             .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").setRunSequence(1).build())
             .putAllSetupAbstractions(setupAbstractions)
-            .addLevels(Level.newBuilder().setRuntimeId("runtimeId").setIdentifier("runStepId").setRetryIndex(1).build())
+            .addLevels(Level.newBuilder().setRuntimeId("runtimeId").setIdentifier("runStepId").setOriginalIdentifier("runStepId").setRetryIndex(1).build())
             .build();
     stepInfo = RunStepInfo.builder()
                    .identifier(STEP_ID)

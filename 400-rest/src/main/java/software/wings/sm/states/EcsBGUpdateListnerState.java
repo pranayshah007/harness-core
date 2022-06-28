@@ -39,6 +39,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.command.CommandUnitDetails.CommandUnitType;
 import software.wings.helpers.ext.ecs.request.EcsListenerUpdateRequestConfigData;
 import software.wings.helpers.ext.ecs.response.EcsCommandExecutionResponse;
+import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.DelegateService;
@@ -127,6 +128,7 @@ public class EcsBGUpdateListnerState extends State {
     Activity activity = createActivity(context);
     SettingAttribute settingAttribute = settingsService.get(infrastructureMapping.getComputeProviderSettingId());
     AwsConfig awsConfig = (AwsConfig) settingAttribute.getValue();
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context,awsConfig);
 
     List<EncryptedDataDetail> encryptedDetails = secretManager.getEncryptionDetails(
         (EncryptableSetting) awsConfig, context.getAppId(), context.getWorkflowExecutionId());

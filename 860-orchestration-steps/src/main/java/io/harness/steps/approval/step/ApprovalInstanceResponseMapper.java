@@ -17,6 +17,8 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.servicenow.ServiceNowTicketKeyNG;
 import io.harness.steps.approval.step.beans.ApprovalInstanceDetailsDTO;
 import io.harness.steps.approval.step.beans.ApprovalInstanceResponseDTO;
+import io.harness.steps.approval.step.custom.beans.CustomApprovalInstanceDetailsDTO;
+import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.harness.beans.ApproverInput;
 import io.harness.steps.approval.step.harness.beans.ApproverInputInfoDTO;
@@ -72,6 +74,8 @@ public class ApprovalInstanceResponseMapper {
         return toJiraApprovalInstanceDetailsDTO((JiraApprovalInstance) instance);
       case SERVICENOW_APPROVAL:
         return toServiceNowApprovalInstanceDetailsDTO((ServiceNowApprovalInstance) instance);
+      case CUSTOM_APPROVAL:
+        return toCustomApprovalInstanceDetailsDTO((CustomApprovalInstance) instance);
       default:
         return null;
     }
@@ -117,6 +121,13 @@ public class ApprovalInstanceResponseMapper {
         .connectorRef(instance.getConnectorRef())
         .ticket(new ServiceNowTicketKeyNG(
             connectorDTO.getServiceNowUrl(), instance.getTicketNumber(), instance.getTicketType()))
+        .approvalCriteria(instance.getApprovalCriteria())
+        .rejectionCriteria(instance.getRejectionCriteria())
+        .build();
+  }
+
+  private ApprovalInstanceDetailsDTO toCustomApprovalInstanceDetailsDTO(CustomApprovalInstance instance) {
+    return CustomApprovalInstanceDetailsDTO.builder()
         .approvalCriteria(instance.getApprovalCriteria())
         .rejectionCriteria(instance.getRejectionCriteria())
         .build();

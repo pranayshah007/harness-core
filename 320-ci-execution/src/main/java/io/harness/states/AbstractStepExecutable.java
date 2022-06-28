@@ -171,7 +171,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     String runtimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String logKey = getLogKey(ambiance);
-    String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
+    String stepIdentifier = AmbianceUtils.obtainOriginalStepIdentifier(ambiance);
     String accountId = AmbianceUtils.getAccountId(ambiance);
     ParameterField<String> timeout = stepParameters.getTimeout();
     String stepParametersName = stepParameters.getName();
@@ -314,7 +314,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
   @Override
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
+    String stepIdentifier = AmbianceUtils.obtainOriginalStepIdentifier(ambiance);
     log.info("Received response for step {}", stepIdentifier);
 
     StageInfraDetails stageInfraDetails = getStageInfra(ambiance);
@@ -330,7 +330,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
 
   private StepResponse handleK8AsyncResponse(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
+    String stepIdentifier = AmbianceUtils.obtainOriginalStepIdentifier(ambiance);
     log.info("Received response for step {}", stepIdentifier);
 
     for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {

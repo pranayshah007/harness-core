@@ -54,6 +54,9 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
 
   public static final String DELEGATE_JWT_CACHE_HIT = "delegate_auth_cache_hit";
   public static final String DELEGATE_JWT_CACHE_MISS = "delegate_auth_cache_miss";
+  public static final String SECRETS_CACHE_HITS = "delegate_secret_cache_hit";
+  public static final String SECRETS_CACHE_LOOKUPS = "delegate_secret_cache_lookups";
+  public static final String SECRETS_CACHE_INSERTS = "delegate_secret_cache_inserts";
 
   @Inject private MetricService metricService;
   @Inject private DelegateTaskMetricContextBuilder metricContextBuilder;
@@ -102,7 +105,7 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   }
 
   @Override
-  public void recordDelegateJWTCacheMetrics(String accountId, String metricName) {
+  public void recordDelegateMetricsPerAccount(String accountId, String metricName) {
     try (DelegateAccountMetricContext ignore = new DelegateAccountMetricContext(accountId)) {
       metricService.incCounter(metricName);
     }

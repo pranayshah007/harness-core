@@ -155,6 +155,10 @@ if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   yq write -i $REDISSON_CACHE_FILE nettyThreads "$REDIS_NETTY_THREADS"
 fi
 
+if [[ "" != "$PIPELINE_SERVICE_SECRET" ]]; then
+  yq write -i $CONFIG_FILE pipelineServiceSecret "$PIPELINE_SERVICE_SECRET"
+fi
+
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
 
@@ -183,3 +187,4 @@ replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFOR
 
 replace_key_value pmsGrpcClientConfig.target $PMS_GRPC_TARGET
 replace_key_value pmsGrpcClientConfig.authority $PMS_GRPC_AUTHORITY
+replace_key_value pipelineServiceClientConfig.baseUrl "$PIPELINE_SERVICE_CLIENT_BASEURL"

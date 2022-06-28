@@ -7,6 +7,8 @@
 
 package software.wings.service.impl;
 
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+
 import software.wings.beans.ApiKeyEntry;
 import software.wings.beans.ApiKeyEntryYaml;
 import software.wings.beans.security.UserGroup;
@@ -24,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ApiKeyAuditHelper {
   @Inject UserGroupService userGroupService;
   public ApiKeyEntryYaml getApiKeyDtoFromApiKey(ApiKeyEntry apiKeyEntry) {
-    List<String> userGroupNames = apiKeyEntry.getUserGroupIds()
+    List<String> userGroupNames = emptyIfNull(apiKeyEntry.getUserGroupIds())
                                       .stream()
                                       .map(userGroupId -> {
                                         UserGroup userGroup = userGroupService.get(userGroupId);

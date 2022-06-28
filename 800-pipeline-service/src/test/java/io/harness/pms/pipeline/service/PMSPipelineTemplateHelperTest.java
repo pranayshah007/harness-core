@@ -32,6 +32,7 @@ import io.harness.ng.core.template.RefreshRequestDTO;
 import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.ng.core.template.exception.NGTemplateResolveException;
 import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.rule.Owner;
@@ -137,7 +138,8 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     Call<ResponseDTO<List<EntityDetailProtoDTO>>> callRequest = mock(Call.class);
     doReturn(callRequest)
         .when(templateResourceClient)
-        .getTemplateReferenceForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, GIVEN_YAML);
+        .getTemplateReferenceForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null,
+            TemplateReferenceRequestDTO.builder().yaml(GIVEN_YAML).build());
     List<EntityDetailProtoDTO> expected =
         Collections.singletonList(EntityDetailProtoDTO.newBuilder().setType(EntityTypeProtoEnum.TEMPLATE).build());
     when(callRequest.execute()).thenReturn(Response.success(ResponseDTO.newResponse(expected)));

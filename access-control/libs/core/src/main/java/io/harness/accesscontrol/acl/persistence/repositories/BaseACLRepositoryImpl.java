@@ -14,6 +14,7 @@ import static org.springframework.data.mongodb.util.MongoDbErrorCodes.isDuplicat
 
 import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.ACL.ACLKeys;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.MongoIndex;
 
@@ -84,23 +85,39 @@ public abstract class BaseACLRepositoryImpl implements ACLRepository {
   }
 
   @Override
-  public List<String> getDistinctResourceSelectorsInACLs(String roleAssignmentId) {
+  public Set<ResourceSelector> getDistinctResourceSelectorsInACLs(String roleAssignmentId) {
     Criteria criteria = Criteria.where(ACLKeys.roleAssignmentId).is(roleAssignmentId);
     Query query = new Query();
     query.addCriteria(criteria);
-    return mongoTemplate.findDistinct(query, ACLKeys.resourceSelector, getCollectionName(), ACL.class, String.class);
+    List<ACL> acls = mongoTemplate.find(query, ACL.class, getCollectionName());
+    return acls.stream()
+        .map(acl
+            -> ResourceSelector.builder()
+                   .selector(acl.getResourceSelector())
+                   .conditional(acl.isConditional())
+                   .condition(acl.getCondition())
+                   .build())
+        .collect(Collectors.toSet());
   }
 
   @Override
   public long deleteByRoleAssignmentIdAndResourceSelectors(
-      String roleAssignmentId, Set<String> resourceSelectorsToDelete) {
-    return mongoTemplate
-        .remove(new Query(Criteria.where(ACLKeys.roleAssignmentId)
-                              .is(roleAssignmentId)
-                              .and(ACLKeys.resourceSelector)
-                              .in(resourceSelectorsToDelete)),
-            ACL.class, getCollectionName())
-        .getDeletedCount();
+      String roleAssignmentId, Set<ResourceSelector> resourceSelectorsToDelete) {
+    if (isEmpty(resourceSelectorsToDelete)) {
+      return 0;
+    }
+    Criteria criteria = Criteria.where(ACLKeys.roleAssignmentId).is(roleAssignmentId);
+    Criteria[] resourceSelectorCriteria = resourceSelectorsToDelete.stream()
+                                              .map(resourceSelector
+                                                  -> Criteria.where(ACLKeys.resourceSelector)
+                                                         .is(resourceSelector.getSelector())
+                                                         .and(ACLKeys.conditional)
+                                                         .is(resourceSelector.isConditional())
+                                                         .and(ACLKeys.condition)
+                                                         .is(resourceSelector.getCondition()))
+                                              .toArray(Criteria[] ::new);
+    criteria.orOperator(resourceSelectorCriteria);
+    return mongoTemplate.remove(new Query(criteria), ACL.class, getCollectionName()).getDeletedCount();
   }
 
   @Override
@@ -145,7 +162,7 @@ public abstract class BaseACLRepositoryImpl implements ACLRepository {
   @Override
   public List<ACL> getByAclQueryStringInAndEnabled(Set<String> aclQueries, boolean enabled) {
     Query query = new Query(Criteria.where(ACLKeys.aclQueryString).in(aclQueries).and(ACLKeys.enabled).is(enabled));
-    query.fields().include(ACLKeys.aclQueryString).include(ACLKeys.jexlCondition).include(ACLKeys.conditional);
+    query.fields().include(ACLKeys.aclQueryString).include(ACLKeys.condition).include(ACLKeys.conditional);
     return mongoTemplate.find(query, ACL.class);
   }
 

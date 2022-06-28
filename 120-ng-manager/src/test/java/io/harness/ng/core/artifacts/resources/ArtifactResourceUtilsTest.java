@@ -8,9 +8,11 @@
 package io.harness.ng.core.artifacts.resources;
 
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -19,16 +21,26 @@ import io.harness.NgManagerTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.rule.Owner;
 import io.harness.template.remote.TemplateResourceClient;
 
+import com.google.common.io.Resources;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+import java.util.Optional;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -41,6 +53,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @InjectMocks ArtifactResourceUtils artifactResourceUtils;
   @Mock PipelineServiceClient pipelineServiceClient;
   @Mock TemplateResourceClient templateResourceClient;
+  @Mock ServiceEntityService serviceEntityService;
 
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_ID = "orgId";
@@ -194,5 +207,59 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     verify(pipelineServiceClient)
         .getMergeInputSetFromPipelineTemplate(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
     verify(templateResourceClient).applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testLocateArtifactInService() throws IOException {
+    String yaml = readFile("ArtifactResourceUtils/serviceWithPrimaryAndSidecars.yaml");
+    ServiceEntity service = ServiceEntity.builder()
+                                .accountId(ACCOUNT_ID)
+                                .orgIdentifier(ORG_ID)
+                                .projectIdentifier(PROJECT_ID)
+                                .name("svc1")
+                                .identifier("svc1")
+                                .yaml(yaml)
+                                .build();
+
+    doReturn(Optional.of(service)).when(serviceEntityService).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, "svc1", false);
+
+    DockerHubArtifactConfig primary =
+        (DockerHubArtifactConfig) artifactResourceUtils.locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID,
+            "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag", "svc1");
+
+    assertThat(primary.getConnectorRef().getValue()).isEqualTo("account.harnessImage");
+    assertThat(primary.getImagePath().getValue()).isEqualTo("harness/todolist");
+
+    EcrArtifactConfig sidecar1 = (EcrArtifactConfig) artifactResourceUtils.locateArtifactInService(ACCOUNT_ID, ORG_ID,
+        PROJECT_ID,
+        "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars[0].sidecar.spec.tag",
+        "svc1");
+
+    assertThat(sidecar1.getConnectorRef().getValue()).isEqualTo("account.harnessImage");
+    assertThat(sidecar1.getImagePath().getValue()).isEqualTo("harness/todolist-sample");
+    assertThat(sidecar1.getRegion().getValue()).isEqualTo("us-east-1");
+
+    NexusRegistryArtifactConfig sidecar2 = (NexusRegistryArtifactConfig) artifactResourceUtils.locateArtifactInService(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID,
+        "pipeline.stages.s2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars[1].sidecar.spec.tag",
+        "svc1");
+
+    assertThat(sidecar2.getConnectorRef().getValue()).isEqualTo("org.harnessImage");
+    assertThat(sidecar2.getArtifactPath().getValue()).isEqualTo("pathToArtifact");
+    assertThat(sidecar2.getRepositoryFormat().getValue()).isEqualTo("foobar");
+    assertThat(sidecar2.getRepositoryPort().getValue()).isEqualTo("8080");
+    assertThat(sidecar2.getRepositoryUrl().getValue()).isEqualTo("https://nexus.dev.harness.io");
+    assertThat(sidecar2.getTag().getValue()).isEqualTo("latest");
+  }
+
+  private String readFile(String filename) {
+    ClassLoader classLoader = getClass().getClassLoader();
+    try {
+      return Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Could not read resource file: " + filename);
+    }
   }
 }

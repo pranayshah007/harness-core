@@ -23,8 +23,11 @@ import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransforme
 import io.harness.cvng.core.utils.analysisinfo.LiveMonitoringTransformer;
 import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
 import io.harness.cvng.core.validators.UniqueIdentifierCheck;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.DataFormatException;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,6 +48,9 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CustomHealthSourceMetricSpec extends MetricHealthSourceSpec {
+  private static final String JSON_PATH_ARRAY_DELIMITER = ".[*].";
+  private static final String INVALID_DATA_PATH_ERROR_MESSAGE = "Invalid Json path for metric data.";
+
   @UniqueIdentifierCheck List<CustomHealthMetricDefinition> metricDefinitions = new ArrayList<>();
 
   @Data
@@ -118,6 +124,8 @@ public class CustomHealthSourceMetricSpec extends MetricHealthSourceSpec {
                                                                                     : new ArrayList<>();
 
       MetricResponseMapping metricResponseMapping = metricDefinition.getMetricResponseMapping();
+      validateJsonPaths(metricResponseMapping);
+      populateRelativeJsonPaths(metricResponseMapping);
       cvConfigMetricDefinitions.add(
           CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition.builder()
               .metricName(metricDefinition.getMetricName())
@@ -156,5 +164,81 @@ public class CustomHealthSourceMetricSpec extends MetricHealthSourceSpec {
     });
 
     return cvConfigMap;
+  }
+
+  private void validateJsonPaths(MetricResponseMapping metricResponseMapping) {
+    String metricValueJsonPath = metricResponseMapping.getMetricValueJsonPath();
+    String timestampJsonPath = metricResponseMapping.getTimestampJsonPath();
+    String serviceInstanceJsonPath = metricResponseMapping.getServiceInstanceJsonPath();
+    Preconditions.checkState(
+        EmptyPredicate.isNotEmpty(metricValueJsonPath), "Json path for metric value is empty or null");
+    Preconditions.checkState(EmptyPredicate.isNotEmpty(timestampJsonPath), "Json path for timestamp is empty or null");
+    Preconditions.checkState(
+        EmptyPredicate.isNotEmpty(serviceInstanceJsonPath), "Json path for service instance is empty or null");
+  }
+
+  private void populateRelativeJsonPaths(MetricResponseMapping metricResponseMapping) {
+    String serviceInstanceListJsonPath = getServiceInstanceListJsonPath(metricResponseMapping);
+    metricResponseMapping.setServiceInstanceListJsonPath(serviceInstanceListJsonPath);
+    String metricListJsonPath = getMetricListJsonPath(metricResponseMapping);
+    metricResponseMapping.setRelativeMetricListJsonPath(metricListJsonPath);
+    metricResponseMapping.setRelativeServiceInstanceValueJsonPath(
+        metricResponseMapping.getServiceInstanceJsonPath().substring(
+            serviceInstanceListJsonPath.length() + JSON_PATH_ARRAY_DELIMITER.length()));
+    metricResponseMapping.setRelativeMetricValueJsonPath(metricResponseMapping.getMetricValueJsonPath().substring(
+        serviceInstanceListJsonPath.length() + metricListJsonPath.length() + (2 * JSON_PATH_ARRAY_DELIMITER.length())));
+    metricResponseMapping.setRelativeTimestampJsonPath(metricResponseMapping.getTimestampJsonPath().substring(
+        serviceInstanceListJsonPath.length() + metricListJsonPath.length() + (2 * JSON_PATH_ARRAY_DELIMITER.length())));
+  }
+
+  private String getServiceInstanceListJsonPath(MetricResponseMapping metricResponseMapping) {
+    String metricValueJsonPath = metricResponseMapping.getMetricValueJsonPath();
+    String timestampJsonPath = metricResponseMapping.getTimestampJsonPath();
+    String serviceInstanceJsonPath = metricResponseMapping.getServiceInstanceJsonPath();
+    int index = 0;
+    for (int i = 0; i < metricValueJsonPath.length() && i < serviceInstanceJsonPath.length(); ++i) {
+      if (metricValueJsonPath.charAt(i) == serviceInstanceJsonPath.charAt(i)) {
+        index++;
+      } else {
+        break;
+      }
+    }
+    String commonJsonPath = metricValueJsonPath.substring(0, index);
+    if (commonJsonPath.length() <= JSON_PATH_ARRAY_DELIMITER.length() || !timestampJsonPath.contains(commonJsonPath)) {
+      throw new DataFormatException(INVALID_DATA_PATH_ERROR_MESSAGE, null);
+    }
+    String serviceInstanceListPath = removeJsonPathArrayDelimiterSuffix(commonJsonPath);
+    if (serviceInstanceListPath.contains("[")) {
+      throw new DataFormatException(INVALID_DATA_PATH_ERROR_MESSAGE, null);
+    }
+    return serviceInstanceListPath;
+  }
+
+  private String getMetricListJsonPath(MetricResponseMapping metricResponseMapping) {
+    String serviceInstanceListJsonPath = metricResponseMapping.getServiceInstanceListJsonPath();
+    String metricValueJsonPath = metricResponseMapping.getMetricValueJsonPath();
+    String timestampJsonPath = metricResponseMapping.getTimestampJsonPath();
+    int startingIndex = serviceInstanceListJsonPath.length() + JSON_PATH_ARRAY_DELIMITER.length();
+    int endingIndex = startingIndex;
+    for (int i = startingIndex; i < metricValueJsonPath.length() && i < timestampJsonPath.length(); ++i) {
+      if (metricValueJsonPath.charAt(i) == timestampJsonPath.charAt(i)) {
+        endingIndex++;
+      } else {
+        break;
+      }
+    }
+    String commonJsonPath = metricValueJsonPath.substring(startingIndex, endingIndex);
+    if (commonJsonPath.length() <= JSON_PATH_ARRAY_DELIMITER.length()) {
+      throw new DataFormatException(INVALID_DATA_PATH_ERROR_MESSAGE, null);
+    }
+    String metricListPath = removeJsonPathArrayDelimiterSuffix(commonJsonPath);
+    if (metricListPath.contains("[")) {
+      throw new DataFormatException(INVALID_DATA_PATH_ERROR_MESSAGE, null);
+    }
+    return metricListPath;
+  }
+
+  private String removeJsonPathArrayDelimiterSuffix(String path) {
+    return path.substring(0, path.length() - JSON_PATH_ARRAY_DELIMITER.length());
   }
 }

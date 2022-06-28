@@ -13,6 +13,7 @@ import static io.harness.ng.accesscontrol.PlatformPermissions.EDIT_AUTHSETTING_P
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_AUTHSETTING_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.AUTHSETTING;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -20,6 +21,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
 import io.harness.ng.authenticationsettings.dtos.AuthenticationSettingsResponse;
+import io.harness.ng.authenticationsettings.dtos.mechanisms.LDAPSettings;
 import io.harness.ng.authenticationsettings.dtos.mechanisms.OAuthSettings;
 import io.harness.ng.authenticationsettings.impl.AuthenticationSettingsService;
 import io.harness.ng.core.account.AuthenticationMechanism;
@@ -66,6 +68,7 @@ import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
 import retrofit2.http.Multipart;
 
@@ -367,6 +370,82 @@ public class AuthenticationSettingsResource {
         ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), VIEW_AUTHSETTING_PERMISSION);
     LoginTypeResponse response = authenticationSettingsService.getSAMLLoginTest(accountId);
     return new RestResponse<>(response);
+  }
+
+  @GET
+  @Path("/ldap/settings")
+  @ApiOperation(value = "Get Ldap settings", nickname = "getLdapSettings")
+  @Operation(operationId = "getLdapSettings", summary = "Return configured Ldap settings for the account",
+      description = "Returns configured Ldap settings and its details for the account.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns ldap setting")
+      })
+  public RestResponse<LDAPSettings>
+  getLdapSettings(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+      NGCommonEntityConstants.ACCOUNT_KEY) @NotBlank String accountId) {
+    LDAPSettings settings = authenticationSettingsService.getLdapSettings(accountId);
+    return new RestResponse<>(settings);
+  }
+
+  @POST
+  @Path("/ldap/settings")
+  @ApiOperation(value = "Create Ldap settings - with user queries, group queries", nickname = "createLdapSettings")
+  @Operation(operationId = "createLdapSettings", summary = "Create Ldap setting",
+      description = "Creates Ldap settings along with the user, group queries.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Creates Ldap settings along with the user, group queries")
+      })
+  public RestResponse<LDAPSettings>
+  createLdapSettings(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                         NGCommonEntityConstants.ACCOUNT_KEY) @NotBlank String accountId,
+      @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
+          description =
+              "Create LdapSettings request body. Values for connection settings are needed, user and group settings can also be provided")
+      LDAPSettings ldapSettings) {
+    LDAPSettings settings = authenticationSettingsService.createLdapSettings(accountId, ldapSettings);
+    return new RestResponse<>(settings);
+  }
+
+  @PUT
+  @Path("/ldap/settings")
+  @ApiOperation(value = "Update Ldap settings - user queries, group queries", nickname = "updateLdapSettings")
+  @Operation(operationId = "updateLdapSettings", summary = "Updates Ldap setting",
+      description = "Updates configured Ldap settings along with the user, group queries.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Updated Ldap settings along with the user, group settings")
+      })
+  public RestResponse<LDAPSettings>
+  updateLdapSettings(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                         NGCommonEntityConstants.ACCOUNT_KEY) @NotBlank String accountId,
+      @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
+          description =
+              "This is the updated LdapSettings. Values for all fields is needed, not just the fields you are updating")
+      LDAPSettings ldapSettings) {
+    LDAPSettings settings = authenticationSettingsService.updateLdapSettings(accountId, ldapSettings);
+    return new RestResponse<>(settings);
+  }
+
+  @DELETE
+  @Path("/ldap/settings")
+  @ApiOperation(value = "Delete Ldap settings", nickname = "deleteLdapSettings")
+  @Operation(operationId = "deleteLdapSettings", summary = "Delete Ldap settings",
+      description = "Delete configured Ldap settings on the account.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Successfully deleted Ldap settings configured on account")
+      })
+  public RestResponse<Boolean>
+  deleteLdapSettings(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+      NGCommonEntityConstants.ACCOUNT_KEY) @NotBlank String accountId) {
+    authenticationSettingsService.deleteLdapSettings(accountId);
+    return new RestResponse<>(true);
   }
 
   @PUT

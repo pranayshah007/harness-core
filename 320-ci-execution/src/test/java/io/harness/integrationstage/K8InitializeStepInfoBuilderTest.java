@@ -7,9 +7,13 @@
 
 package io.harness.integrationstage;
 
+import static io.harness.common.CIExecutionConstants.ADDON_VOL_MOUNT_PATH;
+import static io.harness.common.CIExecutionConstants.ETC_DIR;
+import static io.harness.common.CIExecutionConstants.STEP_MOUNT_PATH;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
@@ -27,6 +31,7 @@ import io.harness.common.CIExecutionConstants;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.exception.InvalidRequestException;
 import io.harness.execution.CIExecutionConfigService;
 import io.harness.executionplan.CIExecutionTestBase;
 import io.harness.ff.CIFeatureFlagService;
@@ -45,6 +50,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +69,8 @@ public class K8InitializeStepInfoBuilderTest extends CIExecutionTestBase {
                                             "projectIdentifier", "orgIdentifier", "orgIdentifier"))
                                         .build();
 
+  private final List<String> reservedSharedPathList = Arrays.asList(STEP_MOUNT_PATH, ADDON_VOL_MOUNT_PATH, ETC_DIR);
+
   @Mock private ConnectorUtils connectorUtils;
   @Mock private ConnectorDetails connectorDetails;
   @Inject private CIExecutionConfigService ciExecutionConfigService;
@@ -80,7 +88,7 @@ public class K8InitializeStepInfoBuilderTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testECRBuildPushWithBaseImageConnectorSecretEnv() throws IOException {
     prepareConnector(ConnectorType.DOCKER);
-    StageElementConfig stageElementConfig = prepareStageConfig("ecrBuildAndPushWithBaseImageConnector.json");
+    StageElementConfig stageElementConfig = prepareStageConfig("ecrBuildAndPushWithBaseImageConnector.json", null);
 
     Map<EnvVariableEnum, String> awsConnectorMap = new HashMap<>();
     awsConnectorMap.put(EnvVariableEnum.AWS_ACCESS_KEY, CIExecutionConstants.PLUGIN_ACCESS_KEY);
@@ -119,7 +127,7 @@ public class K8InitializeStepInfoBuilderTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testECRBuildPushWithoutBaseImageConnectorSecretEnv() throws IOException {
     prepareConnector(ConnectorType.DOCKER);
-    StageElementConfig stageElementConfig = prepareStageConfig("ecrBuildAndPushWithoutBaseImageConnector.json");
+    StageElementConfig stageElementConfig = prepareStageConfig("ecrBuildAndPushWithoutBaseImageConnector.json", null);
 
     Map<EnvVariableEnum, String> awsConnectorMap = new HashMap<>();
     awsConnectorMap.put(EnvVariableEnum.AWS_ACCESS_KEY, CIExecutionConstants.PLUGIN_ACCESS_KEY);
@@ -144,12 +152,49 @@ public class K8InitializeStepInfoBuilderTest extends CIExecutionTestBase {
     assertThat(actual).isEqualTo(expected);
   }
 
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetVolumeToMountPathWithReservedPath() throws IOException {
+    for (String path : reservedSharedPathList) {
+      testGetVolumeToMountPathWithReservedPathHelper(path);
+    }
+  }
+
+  private void testGetVolumeToMountPathWithReservedPathHelper(String path) throws IOException {
+    prepareConnector(ConnectorType.DOCKER);
+    StageElementConfig stageElementConfig =
+        prepareStageConfig("ecrBuildAndPushWithoutBaseImageConnector.json", Collections.singletonList(path));
+
+    Map<EnvVariableEnum, String> awsConnectorMap = new HashMap<>();
+    awsConnectorMap.put(EnvVariableEnum.AWS_ACCESS_KEY, CIExecutionConstants.PLUGIN_ACCESS_KEY);
+    awsConnectorMap.put(EnvVariableEnum.AWS_SECRET_KEY, CIExecutionConstants.PLUGIN_SECRET_KEY);
+    awsConnectorMap.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_ROLE_ARN, CIExecutionConstants.AWS_ROLE_ARN);
+
+    List<K8BuildJobEnvInfo.ConnectorConversionInfo> expectedConversionInfo =
+        Arrays.asList(K8BuildJobEnvInfo.ConnectorConversionInfo.builder()
+                          .connectorRef("AWSConnector")
+                          .envToSecretsMap(awsConnectorMap)
+                          .build());
+    Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> expected = new HashMap<>();
+    expected.put("Build_and_Push_to_ECR", expectedConversionInfo);
+
+    assertThatThrownBy(()
+                           -> k8InitializeStepInfoBuilder.getInitializeStepInfoBuilder(stageElementConfig,
+                               K8sDirectInfraYaml.builder()
+                                   .spec(K8sDirectInfraYamlSpec.builder().volumes(new ParameterField<>()).build())
+                                   .build(),
+            null, stageElementConfig.getStageType().getExecution().getSteps(), ambiance))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format("Shared path: %s is a reserved keyword", path));
+  }
+
   private void prepareConnector(ConnectorType connectorType) {
     when(connectorDetails.getConnectorType()).thenReturn(connectorType);
     when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(connectorDetails);
   }
 
-  private StageElementConfig prepareStageConfig(String filename) throws IOException {
+  private StageElementConfig prepareStageConfig(String filename, List<String> sharedPaths) throws IOException {
     ObjectMapper objectMapper = new ObjectMapper();
     List<ExecutionWrapperConfig> steps = new ArrayList<>();
     JsonNode stepDetails = objectMapper.readTree(
@@ -161,7 +206,7 @@ public class K8InitializeStepInfoBuilderTest extends CIExecutionTestBase {
         .stageType(IntegrationStageConfigImpl.builder()
                        .execution(ExecutionElementConfig.builder().steps(steps).build())
                        .serviceDependencies(new ParameterField<>())
-                       .sharedPaths(new ParameterField<>())
+                       .sharedPaths(ParameterField.createValueField(sharedPaths))
                        .build())
         .build();
   }

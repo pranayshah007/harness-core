@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 13
+version: 14
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -70,6 +70,14 @@ resourceTypes:
     permissionKey: gpgkey
   - identifier: GITOPS_CERT
     permissionKey: cert
+  - identifier: STO_TESTTARGET
+    permissionKey: testtarget
+  - identifier: STO_EXCEPTION
+    permissionKey: exception
+  - identifier: STO_ISSUE
+    permissionKey: issue
+  - identifier: STO_SCAN
+    permissionKey: scan
   - identifier: FILE
     permissionKey: file
   - identifier: VARIABLE

@@ -18,6 +18,7 @@ import static io.harness.common.CIExecutionConstants.ADDON_VOLUME;
 import static io.harness.common.CIExecutionConstants.ADDON_VOL_MOUNT_PATH;
 import static io.harness.common.CIExecutionConstants.DEFAULT_CONTAINER_CPU_POV;
 import static io.harness.common.CIExecutionConstants.DEFAULT_CONTAINER_MEM_POV;
+import static io.harness.common.CIExecutionConstants.ETC_DIR;
 import static io.harness.common.CIExecutionConstants.PORT_STARTING_RANGE;
 import static io.harness.common.CIExecutionConstants.PVC_DEFAULT_STORAGE_CLASS;
 import static io.harness.common.CIExecutionConstants.SHARED_VOLUME_PREFIX;
@@ -77,6 +78,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.execution.CIExecutionConfigService;
 import io.harness.ff.CIFeatureFlagService;
+import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
@@ -260,8 +262,8 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
         }
 
         String volumeName = format("%s%d", SHARED_VOLUME_PREFIX, index);
-        if (path.equals(STEP_MOUNT_PATH) || path.equals(ADDON_VOL_MOUNT_PATH)) {
-          throw new InvalidRequestException(format("Shared path: %s is a reserved keyword ", path));
+        if (path.equals(STEP_MOUNT_PATH) || path.equals(ADDON_VOL_MOUNT_PATH) || path.equals(ETC_DIR)) {
+          throw new InvalidRequestException(format("Shared path: %s is a reserved keyword", path));
         }
         volumeToMountPath.put(volumeName, path);
         index++;
@@ -628,7 +630,8 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
   private Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> getStepConnectorConversionInfo(
       StepElementConfig stepElement, Ambiance ambiance) {
     Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> map = new HashMap<>();
-    if (stepElement.getStepSpecType() instanceof PluginCompatibleStep) {
+    if ((stepElement.getStepSpecType() instanceof PluginCompatibleStep)
+        && (stepElement.getStepSpecType() instanceof WithConnectorRef)) {
       map.put(stepElement.getIdentifier(), new ArrayList<>());
       PluginCompatibleStep step = (PluginCompatibleStep) stepElement.getStepSpecType();
       String connectorRef = PluginSettingUtils.getConnectorRef(step);
