@@ -25,6 +25,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.Path;
@@ -49,24 +50,25 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GitOpsInstanceSyncResource {
   private final InstanceService instanceService;
+  private final GitOpsRequestDTOMapper gitOpsRequestDTOMapper;
   @POST
   @ApiOperation(value = "Create instances and save in DB", nickname = "createGitOpsInstances")
   public ResponseDTO<PageResponse<InstanceDTO>> createGitOpsInstances(
       @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @Valid List<GitOpsInstanceRequestDTO> gitOpsInstanceRequestDTOList) {
     List<InstanceDTO> instanceDTOList =
-        instanceService.saveAll(GitOpsRequestDTOMapper.instanceDTOList(gitOpsInstanceRequestDTOList, accountId));
+        instanceService.saveAll(gitOpsRequestDTOMapper.instanceDTOList(gitOpsInstanceRequestDTOList, accountId));
     PageResponse<InstanceDTO> pageResponse =
         PageResponse.<InstanceDTO>builder().content(new ArrayList<>(instanceDTOList)).empty(false).build();
     return ResponseDTO.newResponse(pageResponse);
   }
-
   @DELETE
+  @Path("/delete")
   @ApiOperation(value = "Delete instances", nickname = "deleteGitOpsInstances")
   public ResponseDTO<DeleteInstancesDTO> deleteGitOpsInstances(
       @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @Valid List<GitOpsInstanceRequestDTO> gitOpsInstanceRequestDTOList) {
-    instanceService.deleteAll(GitOpsRequestDTOMapper.instanceDTOList(gitOpsInstanceRequestDTOList, accountId));
+    instanceService.deleteAll(gitOpsRequestDTOMapper.instanceDTOList(gitOpsInstanceRequestDTOList, accountId));
     return ResponseDTO.newResponse(
         DeleteInstancesDTO.builder().deletedCount(gitOpsInstanceRequestDTOList.size()).status(true).build());
   }

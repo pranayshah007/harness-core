@@ -20,6 +20,14 @@ import io.harness.app.intfc.STOYamlSchemaService;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
+import io.harness.cistatus.service.GithubService;
+import io.harness.cistatus.service.GithubServiceImpl;
+import io.harness.cistatus.service.azurerepo.AzureRepoService;
+import io.harness.cistatus.service.azurerepo.AzureRepoServiceImpl;
+import io.harness.cistatus.service.bitbucket.BitbucketService;
+import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
+import io.harness.cistatus.service.gitlab.GitlabService;
+import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
@@ -40,9 +48,11 @@ import io.harness.packages.HarnessPackages;
 import io.harness.persistence.HPersistence;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ClientMode;
+import io.harness.secrets.SecretDecryptor;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.ScmServiceClient;
+import io.harness.stateutils.buildstate.SecretDecryptorViaNg;
 import io.harness.stoserviceclient.STOServiceClientModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
@@ -50,6 +60,7 @@ import io.harness.threading.ThreadPool;
 import io.harness.tiserviceclient.TIServiceClientModule;
 import io.harness.token.TokenClientModule;
 import io.harness.user.UserClientModule;
+import io.harness.version.VersionModule;
 import io.harness.yaml.core.StepSpecType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -159,12 +170,18 @@ public class STOManagerServiceModule extends AbstractModule {
 
   @Override
   protected void configure() {
+    install(VersionModule.getInstance());
     install(PrimaryVersionManagerModule.getInstance());
     bind(STOManagerConfiguration.class).toInstance(stoManagerConfiguration);
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
     bind(STOYamlSchemaService.class).to(STOYamlSchemaServiceImpl.class).in(Singleton.class);
     bind(CIFeatureFlagService.class).to(CIFeatureFlagServiceImpl.class).in(Singleton.class);
     bind(ScmServiceClient.class).to(ScmServiceClientImpl.class);
+    bind(GithubService.class).to(GithubServiceImpl.class);
+    bind(GitlabService.class).to(GitlabServiceImpl.class);
+    bind(BitbucketService.class).to(BitbucketServiceImpl.class);
+    bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
+    bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);
 
     // Keeping it to 1 thread to start with. Assuming executor service is used only to
     // serve health checks. If it's being used for other tasks also, max pool size should be increased.

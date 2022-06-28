@@ -56,7 +56,6 @@ import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsDTO;
-import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
 import io.harness.delegate.task.citasks.cik8handler.helper.ConnectorEnvVariablesHelper;
@@ -505,27 +504,6 @@ public class SecretSpecBuilder {
         secretData.put(DRONE_NETRC_PASSWORD,
             SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD).value(encodeBase64(token)).type(TEXT).build());
 
-      } else if (gitHTTPAuthenticationDTO.getType() == GitlabHttpAuthenticationType.OAUTH) {
-        GitlabOauthDTO gitlabOauthDTO = (GitlabOauthDTO) gitHTTPAuthenticationDTO.getHttpCredentialsSpec();
-
-        String username = GitlabOauthDTO.userName;
-
-        if (isEmpty(username)) {
-          throw new CIStageExecutionException("Gitlab connector should have not empty username");
-        }
-        secretData.put(DRONE_NETRC_USERNAME,
-            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME).value(encodeBase64(username)).type(TEXT).build());
-
-        if (gitlabOauthDTO.getTokenRef() == null) {
-          throw new CIStageExecutionException("Gitlab connector should have not empty tokenRef");
-        }
-        String password = String.valueOf(gitlabOauthDTO.getTokenRef().getDecryptedValue());
-        if (isEmpty(password)) {
-          throw new CIStageExecutionException(
-              "Unsupported gitlab connector auth:" + gitConfigDTO.getAuthentication().getAuthType());
-        }
-        secretData.put(DRONE_NETRC_PASSWORD,
-            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD).value(encodeBase64(password)).type(TEXT).build());
       } else {
         throw new CIStageExecutionException(
             "Unsupported gitlab connector auth type" + gitHTTPAuthenticationDTO.getType());

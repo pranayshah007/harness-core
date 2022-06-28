@@ -10,11 +10,13 @@ package io.harness.mappers.instanceinfo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
+import io.harness.dtos.instanceinfo.K8sInstanceBasicInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ReferenceInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ServerlessAwsLambdaInstanceInfoDTO;
 import io.harness.entities.instanceinfo.InstanceInfo;
+import io.harness.entities.instanceinfo.K8sBasicInfo;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
 import io.harness.entities.instanceinfo.NativeHelmInstanceInfo;
 import io.harness.entities.instanceinfo.ReferenceInstanceInfo;
@@ -35,6 +37,8 @@ public class InstanceInfoMapper {
       return NativeHelmInstanceInfoMapper.toDTO((NativeHelmInstanceInfo) instanceInfo);
     } else if (instanceInfo instanceof ServerlessAwsLambdaInstanceInfo) {
       return ServerlessAwsLambdaInstanceInfoMapper.toDTO((ServerlessAwsLambdaInstanceInfo) instanceInfo);
+    } else if (instanceInfo instanceof K8sBasicInfo) {
+      return K8sInstanceBasicInfoMapper.toDTO((K8sBasicInfo) instanceInfo);
     }
     throw new InvalidRequestException("No InstanceInfoMapper toDTO found for instanceInfo : {}" + instanceInfo);
   }
@@ -48,6 +52,8 @@ public class InstanceInfoMapper {
       return NativeHelmInstanceInfoMapper.toEntity((NativeHelmInstanceInfoDTO) instanceInfoDTO);
     } else if (instanceInfoDTO instanceof ServerlessAwsLambdaInstanceInfoDTO) {
       return ServerlessAwsLambdaInstanceInfoMapper.toEntity((ServerlessAwsLambdaInstanceInfoDTO) instanceInfoDTO);
+    } else if (instanceInfoDTO instanceof K8sInstanceBasicInfoDTO) {
+      return K8sInstanceBasicInfoMapper.toEntity((K8sInstanceBasicInfoDTO) instanceInfoDTO);
     }
     throw new InvalidRequestException(
         "No InstanceInfoMapper toEntity found for instanceInfoDTO : {}" + instanceInfoDTO);

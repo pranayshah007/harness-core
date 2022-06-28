@@ -215,9 +215,10 @@ public class AwsResourceServiceImpl implements AwsResourceService {
   }
 
   @Override
-  public List<AwsVPC> getVPCs(IdentifierRef awsConnectorRef, String region) {
-    BaseNGAccess access = serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(),
-        awsConnectorRef.getOrgIdentifier(), awsConnectorRef.getProjectIdentifier());
+  public List<AwsVPC> getVPCs(
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region) {
+    BaseNGAccess access =
+        serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
 
     AwsConnectorDTO awsConnector = serviceHelper.getAwsConnector(awsConnectorRef);
     List<EncryptedDataDetail> encryptedData = serviceHelper.getAwsEncryptionDetails(awsConnector, access);
@@ -236,9 +237,10 @@ public class AwsResourceServiceImpl implements AwsResourceService {
   }
 
   @Override
-  public Map<String, String> getTags(IdentifierRef awsConnectorRef, String region) {
-    BaseNGAccess access = serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(),
-        awsConnectorRef.getOrgIdentifier(), awsConnectorRef.getProjectIdentifier());
+  public Map<String, String> getTags(
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region) {
+    BaseNGAccess access =
+        serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
 
     AwsConnectorDTO awsConnector = serviceHelper.getAwsConnector(awsConnectorRef);
     List<EncryptedDataDetail> encryptedData = serviceHelper.getAwsEncryptionDetails(awsConnector, access);
@@ -258,9 +260,10 @@ public class AwsResourceServiceImpl implements AwsResourceService {
   }
 
   @Override
-  public List<String> getLoadBalancers(IdentifierRef awsConnectorRef, String region) {
-    BaseNGAccess access = serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(),
-        awsConnectorRef.getOrgIdentifier(), awsConnectorRef.getProjectIdentifier());
+  public List<String> getLoadBalancers(
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region) {
+    BaseNGAccess access =
+        serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
 
     AwsConnectorDTO awsConnector = serviceHelper.getAwsConnector(awsConnectorRef);
     List<EncryptedDataDetail> encryptedData = serviceHelper.getAwsEncryptionDetails(awsConnector, access);
@@ -279,9 +282,10 @@ public class AwsResourceServiceImpl implements AwsResourceService {
   }
 
   @Override
-  public List<String> getASGNames(IdentifierRef awsConnectorRef, String region) {
-    BaseNGAccess access = serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(),
-        awsConnectorRef.getOrgIdentifier(), awsConnectorRef.getProjectIdentifier());
+  public List<String> getASGNames(
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region) {
+    BaseNGAccess access =
+        serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
 
     AwsConnectorDTO awsConnector = serviceHelper.getAwsConnector(awsConnectorRef);
     List<EncryptedDataDetail> encryptedData = serviceHelper.getAwsEncryptionDetails(awsConnector, access);

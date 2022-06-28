@@ -95,7 +95,7 @@ public class ServerlessAwsLambdaDeployStep
     ServerlessArtifactConfig serverlessArtifactConfig = null;
     Optional<ArtifactOutcome> artifactOutcome = serverlessStepCommonHelper.resolveArtifactsOutcome(ambiance);
     if (artifactOutcome.isPresent()) {
-      serverlessArtifactConfig = serverlessStepCommonHelper.getArtifactoryConfig(artifactOutcome.get(), ambiance);
+      serverlessArtifactConfig = serverlessStepCommonHelper.getArtifactConfig(artifactOutcome.get(), ambiance);
     }
     ServerlessDeployConfig serverlessDeployConfig = serverlessStepCommonHelper.getServerlessDeployConfig(
         serverlessDeployStepParameters, serverlessAwsLambdaStepHelper);

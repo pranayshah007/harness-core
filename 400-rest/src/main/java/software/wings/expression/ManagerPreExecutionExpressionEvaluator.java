@@ -18,6 +18,7 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.expression.ExpressionFunctor;
 import io.harness.expression.ImageSecretFunctor;
 import io.harness.ff.FeatureFlagService;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.SimpleEncryption;
 
@@ -45,7 +46,7 @@ public class ManagerPreExecutionExpressionEvaluator extends ExpressionEvaluator 
       FeatureFlagService featureFlagService, ManagerDecryptionService managerDecryptionService,
       SecretManager secretManager, String accountId, String workflowExecutionId, int expressionFunctorToken,
       SecretManagerClientService ngSecretService, Map<String, String> taskSetupAbstractions,
-      Cache<String, EncryptedDataDetails> secretsCache) {
+      Cache<String, EncryptedDataDetails> secretsCache, DelegateMetricsService delegateMetricsService) {
     String appId = taskSetupAbstractions == null ? null : taskSetupAbstractions.get(Cd1SetupFields.APP_ID_FIELD);
     String envId = taskSetupAbstractions == null ? null : taskSetupAbstractions.get(Cd1SetupFields.ENV_ID_FIELD);
     String serviceTemplateId =
@@ -81,6 +82,7 @@ public class ManagerPreExecutionExpressionEvaluator extends ExpressionEvaluator 
                                .envId(envId)
                                .workflowExecutionId(workflowExecutionId)
                                .expressionFunctorToken(expressionFunctorToken)
+                               .delegateMetricsService(delegateMetricsService)
                                .build();
     addFunctor(SecretManagerFunctorInterface.FUNCTOR_NAME, secretManagerFunctor);
 
@@ -90,6 +92,7 @@ public class ManagerPreExecutionExpressionEvaluator extends ExpressionEvaluator 
                                                                       .expressionFunctorToken(expressionFunctorToken)
                                                                       .secretManager(secretManager)
                                                                       .secretsCache(secretsCache)
+                                                                      .delegateMetricsService(delegateMetricsService)
                                                                       .ngSecretService(ngSecretService);
 
     if (EmptyPredicate.isNotEmpty(taskSetupAbstractions)) {

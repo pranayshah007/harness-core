@@ -36,6 +36,7 @@ import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.encryption.Scope;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.service.FileStoreService;
@@ -49,6 +50,7 @@ import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
 import io.harness.ssh.FileSourceType;
 import io.harness.steps.shellscript.ShellScriptHelperService;
@@ -74,6 +76,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
   @Mock private OutcomeService outcomeService;
   @Mock private FileStoreService fileStoreService;
   @Mock private NGEncryptedDataService ngEncryptedDataService;
+  @Mock private EncryptedDataDetail encryptedDataDetail;
 
   @InjectMocks private SshCommandStepHelper helper;
 
@@ -146,6 +149,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
                                              .scope(ParameterField.createValueField(Scope.ACCOUNT))
                                              .path(ParameterField.createValueField("fs"))
                                              .build())))
+                       .secretFiles(ParameterField.createValueField(Arrays.asList("account.secret-ref")))
                        .build())
             .build());
     doReturn(pdcInfrastructureOutcome).when(outcomeService).resolveOptional(eq(ambiance), eq(infra));
@@ -159,6 +163,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
     doReturn(Optional.of(FileNodeDTO.builder().content("Hello World").name("test.txt").size(11L).build()))
         .when(fileStoreService)
         .getByPath(any(), any(), any(), any(), anyBoolean());
+    doReturn(Arrays.asList(encryptedDataDetail)).when(ngEncryptedDataService).getEncryptionDetails(any(), any());
     doReturn(workingDir)
         .when(shellScriptHelperService)
         .getWorkingDirectory(eq(workingDirParam), any(ScriptType.class), anyBoolean());
@@ -225,9 +230,16 @@ public class SshCommandStepHelperTest extends CategoryTest {
     assertThat(storeDelegateConfig).isInstanceOf(HarnessStoreDelegateConfig.class);
     HarnessStoreDelegateConfig harnessStoreDelegateConfig = (HarnessStoreDelegateConfig) storeDelegateConfig;
     assertThat(harnessStoreDelegateConfig.getConfigFiles()).isNotEmpty();
+    assertThat(harnessStoreDelegateConfig.getConfigFiles().size()).isEqualTo(2);
     assertThat(harnessStoreDelegateConfig.getConfigFiles().get(0).getFileContent()).isEqualTo("Hello World");
     assertThat(harnessStoreDelegateConfig.getConfigFiles().get(0).getFileName()).isEqualTo("test.txt");
     assertThat(harnessStoreDelegateConfig.getConfigFiles().get(0).getFileSize()).isEqualTo(11L);
+    assertThat(harnessStoreDelegateConfig.getConfigFiles().get(1).getFileContent()).isNull();
+    assertThat(harnessStoreDelegateConfig.getConfigFiles().get(1).getFileName()).isEqualTo("secret-ref");
+    assertThat(harnessStoreDelegateConfig.getConfigFiles().get(1).getFileSize()).isEqualTo(0L);
+    assertThat(harnessStoreDelegateConfig.getConfigFiles().get(1).isEncrypted()).isTrue();
+    SecretConfigFile secret = harnessStoreDelegateConfig.getConfigFiles().get(1).getSecretConfigFile();
+    assertThat(secret.getEncryptedConfigFile()).isNotNull();
 
     assertThat(taskParameters.getFileDelegateConfig().getStores()).isNotEmpty();
     assertThat(taskParameters.getAccountId()).isEqualTo(accountId);

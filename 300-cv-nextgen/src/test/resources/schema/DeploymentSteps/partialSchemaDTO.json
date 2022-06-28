@@ -25,6 +25,9 @@
         "type": "string",
         "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
       },
+      "strategy": {
+        "$ref": "#/definitions/cvng/StrategyConfig"
+      },
       "timeout": {
         "type": "string",
         "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*))$"
@@ -207,6 +210,9 @@
               "type": "string",
               "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
             },
+            "strategy": {
+              "$ref": "#/definitions/cvng/StrategyConfig"
+            },
             "timeout": {
               "type": "string",
               "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*))$"
@@ -284,11 +290,21 @@
             },
             {
               "type": "object",
-              "properties": {
-
-              }
+              "properties": {}
             }
           ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "ExcludeConfig": {
+          "type": "object",
+          "properties": {
+            "exclude": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          },
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
         "FailureStrategyActionConfig": {
@@ -321,6 +337,40 @@
           "properties": {
             "onFailure": {
               "$ref": "#/definitions/cvng/OnFailureConfig"
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "HarnessForConfig": {
+          "type": "object",
+          "properties": {
+            "iteration": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+                  "minLength": 1
+                }
+              ]
+            },
+            "maxConcurrency": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+                  "minLength": 1
+                }
+              ]
             }
           },
           "$schema": "http://json-schema.org/draft-07/schema#"
@@ -362,6 +412,22 @@
               }
             }
           ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "InputSetValidator": {
+          "type": "object",
+          "properties": {
+            "parameters": {
+              "type": "string"
+            },
+            "validatorType": {
+              "type": "string",
+              "enum": [
+                "ALLOWED_VALUES",
+                "REGEX"
+              ]
+            }
+          },
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
         "JsonNode": {
@@ -431,6 +497,53 @@
               }
             }
           ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "MatrixConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/MatrixConfigInterface"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "exclude": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/definitions/cvng/ParameterFieldListExcludeConfig"
+                    },
+                    {
+                      "type": "array"
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                      "minLength": 1
+                    }
+                  ]
+                },
+                "maxConcurrency": {
+                  "oneOf": [
+                    {
+                      "type": "integer",
+                      "format": "int32",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+                      "minLength": 1
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "MatrixConfigInterface": {
+          "type": "object",
+          "discriminator": "type",
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
         "MonitoredServiceNode": {
@@ -620,6 +733,78 @@
           },
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
+        "ParameterField": {
+          "type": "object",
+          "properties": {
+            "defaultValue": {
+              "type": "object"
+            },
+            "executionInput": {
+              "type": "boolean"
+            },
+            "expression": {
+              "type": "boolean"
+            },
+            "expressionValue": {
+              "type": "string"
+            },
+            "inputSetValidator": {
+              "$ref": "#/definitions/cvng/InputSetValidator"
+            },
+            "jsonResponseField": {
+              "type": "boolean"
+            },
+            "responseField": {
+              "type": "string"
+            },
+            "typeString": {
+              "type": "boolean"
+            },
+            "value": {
+              "type": "object"
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "ParameterFieldListExcludeConfig": {
+          "type": "object",
+          "properties": {
+            "defaultValue": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/cvng/ExcludeConfig"
+              }
+            },
+            "executionInput": {
+              "type": "boolean"
+            },
+            "expression": {
+              "type": "boolean"
+            },
+            "expressionValue": {
+              "type": "string"
+            },
+            "inputSetValidator": {
+              "$ref": "#/definitions/cvng/InputSetValidator"
+            },
+            "jsonResponseField": {
+              "type": "boolean"
+            },
+            "responseField": {
+              "type": "string"
+            },
+            "typeString": {
+              "type": "boolean"
+            },
+            "value": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/cvng/ExcludeConfig"
+              }
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
         "RetryFailureActionConfig": {
           "allOf": [
             {
@@ -737,6 +922,57 @@
           },
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
+        "StrategyConfig": {
+          "type": "object",
+          "properties": {
+            "for": {
+              "$ref": "#/definitions/cvng/HarnessForConfig"
+            },
+            "matrix": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/cvng/MatrixConfig"
+                }
+              ]
+            },
+            "parallelism": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+                  "minLength": 1
+                }
+              ]
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "parallelism"
+                  ]
+                },
+                {
+                  "required": [
+                    "for"
+                  ]
+                },
+                {
+                  "required": [
+                    "matrix"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
         "TemplateMonitoredServiceSpec": {
           "allOf": [
             {
@@ -771,9 +1007,7 @@
             },
             {
               "type": "object",
-              "properties": {
-
-              }
+              "properties": {}
             }
           ],
           "$schema": "http://json-schema.org/draft-07/schema#"

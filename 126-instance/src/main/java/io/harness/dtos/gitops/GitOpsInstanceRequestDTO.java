@@ -2,6 +2,7 @@ package io.harness.dtos.gitops;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.entities.instanceinfo.K8sBasicInfo;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -22,7 +23,7 @@ public class GitOpsInstanceRequestDTO {
   @NotEmpty private String lastDeployedById;
   @NotEmpty private String lastDeployedByName;
   @NotNull  private long lastDeployedAt;
-  @NotNull private K8sBasicInfo instanceInfo; // private K8sBasicInfo instanceInfo
+  @NotNull  private K8sBasicInfo instanceInfo; // private K8sBasicInfo instanceInfo
   /* can derive (set ourselves)
   private String envName;
   private EnvironmentType envType;

@@ -8,6 +8,7 @@
 package io.harness.ccm.views.graphql;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING;
 import static io.harness.ccm.views.graphql.QLCEViewAggregateOperation.SUM;
 import static io.harness.ccm.views.graphql.QLCEViewTimeGroupType.DAY;
@@ -553,8 +554,16 @@ public class ViewsQueryBuilder {
         case COMMON:
           query.addAliasedColumn(
               new CustomSql(String.format(distinct, viewFieldInput.getFieldId())), viewFieldInput.getFieldId());
-          query.addCondition(
-              new CustomCondition(String.format(searchFilter, viewFieldInput.getFieldId(), searchString)));
+          if (AWS_ACCOUNT_FIELD.equals(viewFieldInput.getFieldName()) && filter.getValues().length != 1) {
+            // Skipping the first string for InCondition that client is passing in the search filter
+            // Considering only the AWS account Ids
+            query.addCondition(ComboCondition.or(new InCondition(new CustomSql(viewFieldInput.getFieldId()),
+                                                     Arrays.stream(filter.getValues()).skip(1).toArray(Object[] ::new)),
+                new CustomCondition(String.format(searchFilter, viewFieldInput.getFieldId(), searchString))));
+          } else {
+            query.addCondition(
+                new CustomCondition(String.format(searchFilter, viewFieldInput.getFieldId(), searchString)));
+          }
           break;
         case LABEL:
           if (viewFieldInput.getFieldId().equals(LABEL_KEY.getFieldName())) {

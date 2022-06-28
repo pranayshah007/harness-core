@@ -61,11 +61,6 @@ public class VerificationJobServiceImpl implements VerificationJobService {
   }
 
   @Override
-  public void save(VerificationJob verificationJob) {
-    hPersistence.save(verificationJob);
-  }
-
-  @Override
   public VerificationJob getVerificationJob(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier) {
     Preconditions.checkNotNull(accountId);
@@ -99,13 +94,6 @@ public class VerificationJobServiceImpl implements VerificationJobService {
     }
     job.fromDTO(verificationJobDTO);
     return job;
-  }
-
-  @Override
-  public void createDefaultVerificationJobs(String accountId, String orgIdentifier, String projectIdentifier) {
-    saveDefaultJob(TestVerificationJob.createDefaultJob(accountId, orgIdentifier, projectIdentifier));
-    saveDefaultJob(CanaryVerificationJob.createDefaultJob(accountId, orgIdentifier, projectIdentifier));
-    saveDefaultJob(BlueGreenVerificationJob.createDefaultJob(accountId, orgIdentifier, projectIdentifier));
   }
 
   private void saveDefaultJob(VerificationJob verificationJob) {

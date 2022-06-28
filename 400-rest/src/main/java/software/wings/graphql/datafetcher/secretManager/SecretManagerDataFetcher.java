@@ -22,7 +22,6 @@ import io.harness.secretmanagers.SecretManagerConfigService;
 import software.wings.graphql.datafetcher.AbstractObjectDataFetcher;
 import software.wings.graphql.schema.query.QLSecretManagerQueryParameters;
 import software.wings.graphql.schema.type.secretManagers.QLSecretManager;
-import software.wings.graphql.schema.type.secretManagers.QLSecretManager.QLSecretManagerBuilder;
 import software.wings.security.annotations.AuthRule;
 
 import com.google.inject.Inject;
@@ -52,9 +51,7 @@ public class SecretManagerDataFetcher
       throw new InvalidRequestException(SECURITY_MANAGER_DOES_NOT_EXIST_MSG, WingsException.USER);
     }
 
-    final QLSecretManagerBuilder builder = QLSecretManager.builder();
-    secretManagerController.populateSecretManager(secretManager, builder);
-    return builder.build();
+    return secretManagerController.convertToQLSecretManager(secretManager);
   }
 
   private SecretManagerConfig getByName(String name, String accountId) {

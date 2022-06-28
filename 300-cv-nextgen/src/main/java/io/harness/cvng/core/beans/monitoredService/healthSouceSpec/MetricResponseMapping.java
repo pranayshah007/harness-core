@@ -23,6 +23,11 @@ public class MetricResponseMapping {
   String metricValueJsonPath;
   String timestampJsonPath;
   String serviceInstanceJsonPath;
+  String serviceInstanceListJsonPath;
+  String relativeMetricListJsonPath;
+  String relativeTimestampJsonPath;
+  String relativeMetricValueJsonPath;
+  String relativeServiceInstanceValueJsonPath;
   String timestampFormat;
 
   public MetricResponseMappingDTO toDto() {
@@ -31,6 +36,11 @@ public class MetricResponseMapping {
         .serviceInstanceJsonPath(serviceInstanceJsonPath)
         .timestampJsonPath(timestampJsonPath)
         .timestampFormat(timestampFormat)
+        .serviceInstanceListJsonPath(serviceInstanceListJsonPath)
+        .relativeMetricListJsonPath(relativeMetricListJsonPath)
+        .relativeMetricValueJsonPath(relativeMetricValueJsonPath)
+        .relativeTimestampJsonPath(relativeTimestampJsonPath)
+        .relativeServiceInstanceValueJsonPath(relativeServiceInstanceValueJsonPath)
         .build();
   }
 }

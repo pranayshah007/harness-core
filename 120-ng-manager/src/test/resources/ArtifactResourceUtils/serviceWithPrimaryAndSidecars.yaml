@@ -1,0 +1,35 @@
+service:
+  name: svc1
+  identifier: svc1
+  tags: {}
+  serviceDefinition:
+    spec:
+      artifacts:
+        primary:
+          spec:
+            connectorRef: account.harnessImage
+            imagePath: harness/todolist
+            tag: <+input>
+          type: DockerRegistry
+        sidecars:
+          - sidecar:
+              spec:
+                connectorRef: account.harnessImage
+                imagePath: harness/todolist-sample
+                region: us-east-1
+                tag: <+input>
+              identifier: sc1
+              type: Ecr
+          - sidecar:
+              spec:
+                connectorRef: org.harnessImage
+                repository: harness/nginx
+                artifactPath: pathToArtifact
+                repositoryFormat: foobar
+                repositoryPort: 8080
+                repositoryUrl: https://nexus.dev.harness.io
+                tag: latest
+              identifier: sc2
+              type: Nexus3Registry
+    type: Kubernetes
+  gitOpsEnabled: false

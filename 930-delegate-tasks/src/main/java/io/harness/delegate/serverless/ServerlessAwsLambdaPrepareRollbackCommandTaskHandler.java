@@ -173,8 +173,8 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
       executionLogCallback.saveExecutionLog(
           color(format("%nDeploy List command executed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
       List<String> timeStamps = serverlessAwsCommandTaskHelper.getDeployListTimeStamps(response.getOutput());
-      Optional<String> previousVersionTimeStamp = serverlessAwsCommandTaskHelper.getPreviousVersionTimeStamp(
-          timeStamps, executionLogCallback, serverlessPrepareRollbackDataRequest);
+      Optional<String> previousVersionTimeStamp = serverlessAwsCommandTaskHelper.getLastDeployedTimestamp(
+          executionLogCallback, timeStamps, serverlessPrepareRollbackDataRequest);
       previousDeployTimeStamp = previousVersionTimeStamp.orElse(null);
       if (previousVersionTimeStamp.isPresent()) {
         serverlessAwsLambdaPrepareRollbackDataResultBuilder.previousVersionTimeStamp(previousDeployTimeStamp);

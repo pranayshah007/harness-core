@@ -12,6 +12,7 @@ import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.SourceMetadata;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -22,14 +23,14 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class ACLUtils {
   public static ACL buildACL(
-      String permission, Principal principal, RoleAssignmentDBO roleAssignment, String resourceSelector) {
+      String permission, Principal principal, RoleAssignmentDBO roleAssignment, ResourceSelector resourceSelector) {
     String scopeIdentifier, selector;
-    if (resourceSelector.contains("$")) {
-      scopeIdentifier = resourceSelector.split("\\$")[0];
-      selector = resourceSelector.split("\\$")[1];
+    if (resourceSelector.getSelector().contains("$")) {
+      scopeIdentifier = resourceSelector.getSelector().split("\\$")[0];
+      selector = resourceSelector.getSelector().split("\\$")[1];
     } else {
       scopeIdentifier = roleAssignment.getScopeIdentifier();
-      selector = resourceSelector;
+      selector = resourceSelector.getSelector();
     }
 
     return ACL.builder()
@@ -47,7 +48,9 @@ public class ACLUtils {
                                     ? roleAssignment.getPrincipalScopeLevel()
                                     : roleAssignment.getScopeLevel())
                             .build())
-        .resourceSelector(selector)
+        .resourceSelector(resourceSelector.getSelector())
+        .conditional(resourceSelector.isConditional())
+        .condition(resourceSelector.getCondition())
         .principalType(principal.getPrincipalType().name())
         .principalIdentifier(principal.getPrincipalIdentifier())
         .aclQueryString(ACL.getAclQueryString(scopeIdentifier, selector, principal.getPrincipalType().name(),

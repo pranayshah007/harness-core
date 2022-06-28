@@ -27,5 +27,8 @@ import lombok.experimental.FieldNameConstants;
 public class QLSecretManager implements QLObject {
   String id;
   String name;
+  QLSecretManagerConfig config;
   QLUsageScope usageScope;
+
 }
+

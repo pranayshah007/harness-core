@@ -23,4 +23,5 @@ message Level {
   int64 startTs = 8;
   string nodeType = 9;
   io.harness.pms.contracts.execution.StrategyMetadata strategyMetadata = 10;
+  string originalIdentifier = 11;
 }

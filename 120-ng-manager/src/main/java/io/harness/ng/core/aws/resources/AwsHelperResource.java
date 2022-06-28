@@ -143,7 +143,7 @@ public class AwsHelperResource {
       @NotNull @QueryParam("region") String region) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
-    return ResponseDTO.newResponse(awsHelperService.getVPCs(connectorRef, region));
+    return ResponseDTO.newResponse(awsHelperService.getVPCs(connectorRef, orgIdentifier, projectIdentifier, region));
   }
 
   @GET
@@ -156,7 +156,7 @@ public class AwsHelperResource {
       @NotNull @QueryParam("region") String region) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
-    Map<String, String> tags = awsHelperService.getTags(connectorRef, region);
+    Map<String, String> tags = awsHelperService.getTags(connectorRef, orgIdentifier, projectIdentifier, region);
     return ResponseDTO.newResponse(tags.keySet());
   }
 
@@ -170,7 +170,8 @@ public class AwsHelperResource {
       @NotNull @QueryParam("region") String region) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
-    return ResponseDTO.newResponse(awsHelperService.getLoadBalancers(connectorRef, region));
+    return ResponseDTO.newResponse(
+        awsHelperService.getLoadBalancers(connectorRef, orgIdentifier, projectIdentifier, region));
   }
 
   @GET
@@ -183,6 +184,7 @@ public class AwsHelperResource {
       @NotNull @QueryParam("region") String region) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
-    return ResponseDTO.newResponse(awsHelperService.getASGNames(connectorRef, region));
+    return ResponseDTO.newResponse(
+        awsHelperService.getASGNames(connectorRef, orgIdentifier, projectIdentifier, region));
   }
 }

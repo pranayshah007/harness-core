@@ -333,7 +333,7 @@ public class UserGroupController {
                                      .addFilter("_id", IN, userGroupIds.toArray())
                                      .addFilter("accountId", SearchFilter.Operator.EQ, accountId)
                                      .build();
-    PageResponse<UserGroup> res = userGroupService.list(accountId, req, false);
+    PageResponse<UserGroup> res = userGroupService.list(accountId, req, false, null, null);
     List<String> idsPresent = res.stream().map(UserGroup::getUuid).collect(Collectors.toList());
     idsInput.removeAll(idsPresent);
     if (isNotEmpty(idsInput)) {

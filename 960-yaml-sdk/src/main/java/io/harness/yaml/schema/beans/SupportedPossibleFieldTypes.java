@@ -18,6 +18,7 @@ public enum SupportedPossibleFieldTypes {
   bool,
   list,
   map,
+  expression,
   runtime, // to support runtime field type, like <+input>
   /**
    * Only used for setting default.

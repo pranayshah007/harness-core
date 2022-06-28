@@ -55,6 +55,18 @@ public class CommonStepInfo {
                                .build())
           .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_HARNESS_UI.name())
           .build();
+  StepInfo customApprovalStepInfo =
+      StepInfo.newBuilder()
+          .setName("Custom Approval")
+          .setType("CustomApproval")
+          .setStepMetaData(StepMetaData.newBuilder()
+                               .addCategory(StepCategoryConstants.PROVISIONER)
+                               .addCategory(StepCategoryConstants.APPROVAL)
+                               .addFolderPaths(FolderPathConstants.APPROVAL)
+                               .build())
+          .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_CUSTOM_SCRIPT.name())
+          .setFeatureFlag(FeatureName.NG_CUSTOM_APPROVAL.name())
+          .build();
   StepInfo jiraApprovalStepInfo =
       StepInfo.newBuilder()
           .setName("Jira Approval")
@@ -146,6 +158,7 @@ public class CommonStepInfo {
     stepInfos.add(shellScriptStepInfo);
     stepInfos.add(httpStepInfo);
     stepInfos.add(harnessApprovalStepInfo);
+    stepInfos.add(customApprovalStepInfo);
     stepInfos.add(jiraApprovalStepInfo);
     stepInfos.add(jiraCreateStepInfo);
     stepInfos.add(jiraUpdateStepInfo);

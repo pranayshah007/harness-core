@@ -15,10 +15,8 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.CDP)
-@UtilityClass
 public class GitOpsRequestDTOMapper {
   @Inject private EnvironmentService environmentService;
   @Inject private ServiceEntityService serviceEntityService;
@@ -55,7 +53,7 @@ public class GitOpsRequestDTOMapper {
   public List<InstanceDTO> instanceDTOList(List<GitOpsInstanceRequestDTO> gitOpsInstanceRequestDTOS, String accountId) {
     List<InstanceDTO> instanceDTOList = new ArrayList<>();
     for (GitOpsInstanceRequestDTO gitOpsInstanceRequestDTO : gitOpsInstanceRequestDTOS) {
-      K8sBasicInfo k8sBasicInfo = (K8sBasicInfo) gitOpsInstanceRequestDTO.getInstanceInfo();
+      K8sBasicInfo k8sBasicInfo = gitOpsInstanceRequestDTO.getInstanceInfo();
 
       K8sInstanceBasicInfoDTO k8sInstanceInfoDTO = K8sInstanceBasicInfoDTO.builder()
                                                        .namespace(k8sBasicInfo.getNamespace())

@@ -7,9 +7,6 @@
 
 package io.harness.cvng.verificationjob.entities;
 
-import static io.harness.cvng.CVConstants.DEFAULT_CANARY_JOB_ID;
-import static io.harness.cvng.CVConstants.DEFAULT_CANARY_JOB_NAME;
-
 import io.harness.cvng.beans.job.CanaryVerificationJobDTO;
 import io.harness.cvng.beans.job.VerificationJobDTO;
 import io.harness.cvng.beans.job.VerificationJobType;
@@ -52,14 +49,5 @@ public class CanaryVerificationJob extends CanaryBlueGreenVerificationJob {
             : String.valueOf(getTrafficSplitPercentage()));
     populateCommonFields(canaryVerificationJobDTO);
     return canaryVerificationJobDTO;
-  }
-
-  public static CanaryVerificationJob createDefaultJob(
-      String accountId, String orgIdentifier, String projectIdentifier) {
-    CanaryVerificationJob verificationJob =
-        CanaryVerificationJob.builder().jobName(DEFAULT_CANARY_JOB_NAME).identifier(DEFAULT_CANARY_JOB_ID).build();
-    CanaryBlueGreenVerificationJob.setCanaryBLueGreenDefaultJobParameters(
-        verificationJob, accountId, orgIdentifier, projectIdentifier);
-    return verificationJob;
   }
 }

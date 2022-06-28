@@ -14,7 +14,6 @@ import io.harness.connector.entities.embedded.gitlabconnector.GitlabConnector;
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabHttpAuth;
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabHttpAuthentication;
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabKerberos;
-import io.harness.connector.entities.embedded.gitlabconnector.GitlabOauth;
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabSshAuthentication;
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabTokenApiAccess;
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabUsernamePassword;
@@ -30,7 +29,6 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpAuthenticationTy
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabKerberosDTO;
-import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernamePasswordDTO;
@@ -118,14 +116,6 @@ public class GitlabEntityToDTO implements ConnectorEntityToDTOMapper<GitlabConne
                 .kerberosKeyRef(SecretRefHelper.createSecretRef(gitlabKerberos.getKerberosKeyRef()))
                 .build();
         break;
-      case OAUTH:
-        final GitlabOauth gitlabOauth = (GitlabOauth) auth;
-        gitlabHttpCredentialsSpecDTO =
-            GitlabOauthDTO.builder()
-                .tokenRef(SecretRefHelper.createSecretRef(gitlabOauth.getTokenRef()))
-                .refreshTokenRef(SecretRefHelper.createSecretRef(gitlabOauth.getRefreshTokenRef()))
-                .build();
-        break;
       default:
         Switch.unhandled(type);
     }
@@ -133,25 +123,11 @@ public class GitlabEntityToDTO implements ConnectorEntityToDTOMapper<GitlabConne
   }
 
   private GitlabApiAccessDTO buildApiAccess(GitlabConnector connector) {
-    switch (connector.getApiAccessType()) {
-      case TOKEN:
-        final GitlabTokenApiAccess gitlabTokenApiAccess = (GitlabTokenApiAccess) connector.getGitlabApiAccess();
-        final GitlabTokenSpecDTO gitlabTokenSpecDTO =
-            GitlabTokenSpecDTO.builder()
-                .tokenRef(SecretRefHelper.createSecretRef(gitlabTokenApiAccess.getTokenRef()))
-                .build();
-        return GitlabApiAccessDTO.builder().type(GitlabApiAccessType.TOKEN).spec(gitlabTokenSpecDTO).build();
-      case OAUTH:
-        final GitlabOauth gitlabOauth = (GitlabOauth) connector.getGitlabApiAccess();
-        final GitlabOauthDTO gitlabOauthDTO =
-            GitlabOauthDTO.builder()
-                .tokenRef(SecretRefHelper.createSecretRef(gitlabOauth.getTokenRef()))
-                .refreshTokenRef(SecretRefHelper.createSecretRef(gitlabOauth.getRefreshTokenRef()))
-                .build();
-        return GitlabApiAccessDTO.builder().type(GitlabApiAccessType.OAUTH).spec(gitlabOauthDTO).build();
-      default:
-        Switch.unhandled(connector.getApiAccessType());
-        return null;
-    }
+    final GitlabTokenApiAccess gitlabTokenApiAccess = connector.getGitlabApiAccess();
+    final GitlabTokenSpecDTO gitlabTokenSpecDTO =
+        GitlabTokenSpecDTO.builder()
+            .tokenRef(SecretRefHelper.createSecretRef(gitlabTokenApiAccess.getTokenRef()))
+            .build();
+    return GitlabApiAccessDTO.builder().type(GitlabApiAccessType.TOKEN).spec(gitlabTokenSpecDTO).build();
   }
 }
