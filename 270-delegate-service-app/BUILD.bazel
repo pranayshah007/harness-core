@@ -85,7 +85,7 @@ shared_dependencies = [
     "@maven//:com_bettercloud_vault_java_driver",
     "@maven//:com_bugsnag_bugsnag",
     "@maven//:com_carrotsearch_hppc",
-    "@maven//:com_coveo_saml_client",
+    "@maven//:com_coveo_saml_client_4_0_1_SNAPSHOT",
     "@maven//:com_cronutils_cron_utils",
     "@maven//:com_datadoghq_java_dogstatsd_client",
     "@maven//:com_deftlabs_mongo_java_distributed_lock",
