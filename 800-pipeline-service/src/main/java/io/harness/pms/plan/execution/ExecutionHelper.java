@@ -240,7 +240,8 @@ public class ExecutionHelper {
       pipelineYaml = pipelineEntity.getYaml();
     } else {
       Map<FQN, String> invalidFQNsInInputSet = InputSetErrorsHelper.getInvalidFQNsInInputSet(
-          InputSetTemplateHelper.createTemplateFromPipeline(pipelineEntity.getYaml()), mergedRuntimeInputYaml,pipelineEntity.getYaml());
+          InputSetTemplateHelper.createTemplateFromPipeline(pipelineEntity.getYaml()), mergedRuntimeInputYaml,
+          pipelineEntity.getYaml());
       if (EmptyPredicate.isNotEmpty(invalidFQNsInInputSet)) {
         throw new InvalidRequestException("Some fields are not valid: "
             + invalidFQNsInInputSet.entrySet()

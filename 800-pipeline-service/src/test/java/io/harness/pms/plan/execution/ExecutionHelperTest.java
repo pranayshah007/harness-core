@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -80,7 +81,6 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 
 @OwnedBy(PIPELINE)
 @PrepareForTest({PlanExecutionUtils.class, UUIDGenerator.class})
@@ -510,7 +510,7 @@ public class ExecutionHelperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetPipelineYamlAndValidate() {
-    String wrongRuntimeInputYaml = "pipeline:\n"
+    String runtimeYamlWithExtraField = "pipeline:\n"
         + "  stages:\n"
         + "  - stage:\n"
         + "      identifier: s1\n"
@@ -519,9 +519,11 @@ public class ExecutionHelperTest extends CategoryTest {
         + "      identifier: s2\n"
         + "      name: s2\n"
         + "      description: desc\n";
-    assertThatThrownBy(
-        () -> executionHelper.getPipelineYamlAndValidate(wrongRuntimeInputYaml, pipelineEntity).getMergedPipelineYaml())
-        .isInstanceOf(InvalidRequestException.class);
+
+    assertThatCode(()
+                       -> executionHelper.getPipelineYamlAndValidate(runtimeYamlWithExtraField, pipelineEntity)
+                              .getMergedPipelineYaml())
+        .doesNotThrowAnyException();
   }
 
   @Test
