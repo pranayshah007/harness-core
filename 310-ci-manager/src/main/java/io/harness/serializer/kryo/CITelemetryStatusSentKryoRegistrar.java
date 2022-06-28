@@ -17,6 +17,6 @@ import io.harness.serializer.KryoRegistrar;
 public class CITelemetryStatusSentKryoRegistrar implements KryoRegistrar {
     @Override
     public void register(Kryo kryo) {
-        kryo.register(CITelemetrySentStatus.class, 390009);
+        kryo.register(CITelemetrySentStatus.class, 110108);
     }
 }
