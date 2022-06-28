@@ -92,10 +92,12 @@ public class FilterCreatorMergeService {
     if (GitContextHelper.isFullSyncFlow()) {
       deleteExistingSetupUsages(pipelineEntity);
     }
-    List<EntityDetailProtoDTO> templateReferences =
-        pmsPipelineTemplateHelper.getTemplateReferencesForGivenYaml(pipelineEntity.getAccountId(),
-            pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml());
-    response = response.toBuilder().addAllReferredEntities(templateReferences).build();
+    if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
+      List<EntityDetailProtoDTO> templateReferences =
+          pmsPipelineTemplateHelper.getTemplateReferencesForGivenYaml(pipelineEntity.getAccountId(),
+              pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml());
+      response = response.toBuilder().addAllReferredEntities(templateReferences).build();
+    }
     pipelineSetupUsageHelper.publishSetupUsageEvent(pipelineEntity, response.getReferredEntitiesList());
     return FilterCreatorMergeServiceResponse.builder()
         .filters(filters)
@@ -118,7 +120,14 @@ public class FilterCreatorMergeService {
   }
 
   public SetupMetadata.Builder getSetupMetadataBuilder(String accountId, String orgId, String projectId) {
-    return SetupMetadata.newBuilder().setAccountId(accountId).setProjectId(projectId).setOrgId(orgId);
+    SetupMetadata.Builder setupMetaData = SetupMetadata.newBuilder().setAccountId(accountId);
+    if (isNotEmpty(projectId)) {
+      setupMetaData.setProjectId(projectId);
+    }
+    if (isNotEmpty(orgId)) {
+      setupMetaData.setOrgId(orgId);
+    }
+    return setupMetaData;
   }
 
   public Map<String, PlanCreatorServiceInfo> getServices() {

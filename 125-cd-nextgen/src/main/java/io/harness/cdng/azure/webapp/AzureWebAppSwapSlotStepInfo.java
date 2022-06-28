@@ -50,9 +50,8 @@ public class AzureWebAppSwapSlotStepInfo extends AzureWebAppSwapSlotBaseStepInfo
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public AzureWebAppSwapSlotStepInfo(
-      ParameterField<String> targetSlot, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(targetSlot, delegateSelectors);
+  public AzureWebAppSwapSlotStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+    super(delegateSelectors);
   }
 
   @Override
@@ -67,10 +66,7 @@ public class AzureWebAppSwapSlotStepInfo extends AzureWebAppSwapSlotBaseStepInfo
 
   @Override
   public SpecParameters getSpecParameters() {
-    return AzureWebAppSwapSlotStepParameters.infoBuilder()
-        .targetSlot(targetSlot)
-        .delegateSelectors(this.getDelegateSelectors())
-        .build();
+    return AzureWebAppSwapSlotStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
   }
 
   @Override

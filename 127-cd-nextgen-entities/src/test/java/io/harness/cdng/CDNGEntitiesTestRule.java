@@ -45,7 +45,6 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxDaoImpl;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.persistence.HPersistence;
-import io.harness.pms.serializer.jackson.PmsBeansJacksonModule;
 import io.harness.repositories.outbox.OutboxEventRepository;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.serializer.CDNGEntityRegistrars;
@@ -158,7 +157,6 @@ public class CDNGEntitiesTestRule implements InjectorRuleMixin, MethodRule, Mong
       public ObjectMapper getYamlSchemaObjectMapper() {
         ObjectMapper objectMapper = Jackson.newObjectMapper();
         HObjectMapper.configureObjectMapperForNG(objectMapper);
-        objectMapper.registerModule(new PmsBeansJacksonModule());
         return objectMapper;
       }
 

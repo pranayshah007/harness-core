@@ -25,6 +25,7 @@ import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
+import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.ci.integrationstage.CIIntegrationStageModifier;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.plan.creator.codebase.CodebasePlanCreator;
@@ -54,7 +55,6 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.states.CISpecStep;
 import io.harness.states.IntegrationStageStepPMS;
 import io.harness.stateutils.buildstate.ConnectorUtils;
-import io.harness.steps.StepSpecTypeConstants;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.utils.JsonPipelineUtils;
 

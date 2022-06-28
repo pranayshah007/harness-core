@@ -40,9 +40,6 @@ import io.harness.AccessControlClientModule;
 import io.harness.GitopsModule;
 import io.harness.Microservice;
 import io.harness.NgIteratorsConfig;
-import io.harness.OrchestrationModule;
-import io.harness.OrchestrationModuleConfig;
-import io.harness.OrchestrationStepsModule;
 import io.harness.YamlBaseUrlServiceImpl;
 import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.accesscontrol.AccessControlAdminClientModule;
@@ -59,7 +56,6 @@ import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
 import io.harness.ccm.license.remote.CeLicenseClientModule;
 import io.harness.cdng.NGModule;
-import io.harness.cdng.expressions.CDExpressionEvaluatorProvider;
 import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.connector.ConnectorModule;
@@ -191,6 +187,8 @@ import io.harness.ng.opa.OpaService;
 import io.harness.ng.opa.OpaServiceImpl;
 import io.harness.ng.opa.entities.connector.OpaConnectorService;
 import io.harness.ng.opa.entities.connector.OpaConnectorServiceImpl;
+import io.harness.ng.opa.entities.secret.OpaSecretService;
+import io.harness.ng.opa.entities.secret.OpaSecretServiceImpl;
 import io.harness.ng.overview.service.CDLandingDashboardService;
 import io.harness.ng.overview.service.CDLandingDashboardServiceImpl;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
@@ -222,8 +220,7 @@ import io.harness.opaclient.OpaClientModule;
 import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.persistence.UserProvider;
-import io.harness.pipeline.PipelineRemoteClientModule;
-import io.harness.pms.listener.NgOrchestrationNotifyEventListener;
+import io.harness.pipeline.remote.PipelineRemoteClientModule;
 import io.harness.polling.service.impl.PollingPerpetualTaskServiceImpl;
 import io.harness.polling.service.impl.PollingServiceImpl;
 import io.harness.polling.service.intfc.PollingPerpetualTaskService;
@@ -243,6 +240,7 @@ import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
+import io.harness.serializer.NGLdapServiceRegistrars;
 import io.harness.serializer.NextGenRegistrars;
 import io.harness.serializer.kryo.KryoConverterFactory;
 import io.harness.service.DelegateServiceDriverModule;
@@ -263,6 +261,8 @@ import io.harness.token.TokenClientModule;
 import io.harness.tracing.AbstractPersistenceTracerModule;
 import io.harness.user.UserClientModule;
 import io.harness.version.VersionModule;
+import io.harness.waiter.AbstractWaiterModule;
+import io.harness.waiter.WaiterConfiguration;
 import io.harness.yaml.YamlSdkModule;
 import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
@@ -516,6 +516,12 @@ public class NextGenModule extends AbstractModule {
         this.appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId(),
         appConfig.getSignupNotificationConfiguration(), appConfig.getAccessControlClientConfiguration()));
     install(GitopsModule.getInstance());
+    install(new AbstractWaiterModule() {
+      @Override
+      public WaiterConfiguration waiterConfiguration() {
+        return WaiterConfiguration.builder().persistenceLayer(WaiterConfiguration.PersistenceLayer.SPRING).build();
+      }
+    });
     install(new GitSyncModule());
     install(new GitSyncConfigClientModule(appConfig.getNgManagerClientConfig(),
         appConfig.getNextGenConfig().getNgManagerServiceSecret(), NG_MANAGER.getServiceId()));
@@ -574,7 +580,10 @@ public class NextGenModule extends AbstractModule {
       @Provides
       @Singleton
       Set<Class<? extends KryoRegistrar>> kryoRegistrars() {
-        return ImmutableSet.<Class<? extends KryoRegistrar>>builder().addAll(NextGenRegistrars.kryoRegistrars).build();
+        return ImmutableSet.<Class<? extends KryoRegistrar>>builder()
+            .addAll(NextGenRegistrars.kryoRegistrars)
+            .addAll(NGLdapServiceRegistrars.kryoRegistrars)
+            .build();
       }
 
       @Provides
@@ -582,6 +591,7 @@ public class NextGenModule extends AbstractModule {
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
         return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
             .addAll(NextGenRegistrars.morphiaRegistrars)
+            .addAll(NGLdapServiceRegistrars.morphiaRegistrars)
             .build();
       }
 
@@ -612,8 +622,7 @@ public class NextGenModule extends AbstractModule {
         return appConfig.getBaseUrls();
       }
     });
-    install(OrchestrationModule.getInstance(getOrchestrationConfig()));
-    install(OrchestrationStepsModule.getInstance(null));
+    install(new NGLdapModule(appConfig));
     install(EntitySetupUsageModule.getInstance());
     install(PersistentLockModule.getInstance());
     install(new TransactionOutboxModule(
@@ -839,15 +848,7 @@ public class NextGenModule extends AbstractModule {
     bind(ServiceAccountService.class).to(ServiceAccountServiceImpl.class);
     bind(OpaService.class).to(OpaServiceImpl.class);
     bind(OpaConnectorService.class).to(OpaConnectorServiceImpl.class);
-  }
-
-  private OrchestrationModuleConfig getOrchestrationConfig() {
-    return OrchestrationModuleConfig.builder()
-        .serviceName("CD_NG")
-        .withPMS(appConfig.getShouldConfigureWithPMS())
-        .expressionEvaluatorProvider(new CDExpressionEvaluatorProvider())
-        .publisherName(NgOrchestrationNotifyEventListener.NG_ORCHESTRATION)
-        .build();
+    bind(OpaSecretService.class).to(OpaSecretServiceImpl.class);
   }
 
   private ValidatorFactory getValidatorFactory() {

@@ -41,6 +41,6 @@ public class ShellExecutorFactoryNG {
   private static LogCallback getExecutionLogCallback(ShellExecutorConfig shellExecutorConfig,
       ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
     return new NGDelegateLogCallback(
-        logStreamingTaskClient, shellExecutorConfig.getCommandUnitName(), true, commandUnitsProgress);
+        logStreamingTaskClient, shellExecutorConfig.getCommandUnitName(), false, commandUnitsProgress);
   }
 }

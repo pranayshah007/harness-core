@@ -8,6 +8,8 @@
 package io.harness.delegate.task.serverless;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
+import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
@@ -19,6 +21,8 @@ import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 
+import static io.harness.data.structure.UUIDGenerator.*;
+
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifactory.ArtifactoryConfigRequest;
@@ -29,6 +33,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.service.git.NGGitServiceImpl;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO;
@@ -48,15 +53,20 @@ import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HintException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.filesystem.FileIo;
 import io.harness.git.GitClientV2;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -99,6 +109,7 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
   @InjectMocks @Spy private ServerlessTaskHelperBase serverlessTaskHelperBase;
 
   private static final String ARTIFACT_DIRECTORY = "./repository/serverless/";
+  private static final String ARTIFACT_DIR_NAME = "harnessArtifact";
   private static final String ARTIFACTORY_PATH = "asdffasd.zip";
   String repositoryName = "dfsgvgasd";
 
@@ -216,65 +227,121 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
 //
 //  }
 
-  @Test
-  @Owner(developers = PIYUSH_BHUWALKA)
+
+//  @Test
+//  @Owner(developers = PIYUSH_BHUWALKA)
+//  @Category(UnitTests.class)
+//  public void fetchArtifactTest() throws Exception {
+//    doReturn(artifactoryConfigRequest).when(artifactoryRequestMapper).toArtifactoryRequest(connectorConfigDTO);
+//    Map<String, String> artifactMetadata = new HashMap<>();
+//    artifactMetadata.put(ARTIFACTORY_ARTIFACT_PATH, repositoryName + "/" + ARTIFACTORY_PATH);
+//    artifactMetadata.put(ARTIFACTORY_ARTIFACT_NAME, repositoryName + "/" + ARTIFACTORY_PATH);
+//
+//    String input = "asfd";
+//    InputStream inputStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
+//    String artifactPath = Paths
+//            .get(((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getRepositoryName(),
+//                    ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getArtifactPath())
+//            .toString();
+//
+//    doReturn(inputStream)
+//            .when(artifactoryNgService)
+//            .downloadArtifacts(artifactoryConfigRequest, repositoryName, artifactMetadata, ARTIFACTORY_ARTIFACT_PATH,
+//                    ARTIFACTORY_ARTIFACT_NAME);
+//    serverlessTaskHelperBase.fetchArtifact(serverlessArtifactConfig, logCallback, ARTIFACT_DIRECTORY);
+//    verify(logCallback)
+//            .saveExecutionLog(color(
+//                    format("Downloading %s artifact with identifier: %s", serverlessArtifactConfig.getServerlessArtifactType(),
+//                            ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getIdentifier()),
+//                    White, Bold));
+//    verify(logCallback).saveExecutionLog("Artifactory Artifact Path: " + artifactPath);
+//    verify(logCallback).saveExecutionLog(color("Successfully downloaded artifact..", White, Bold));
+//  }
+
+//  @Test
+//  @Owner(developers = ALLU_VAMSI)
+//  @Category(UnitTests.class)
+//  public void fetchArtifactFailCreateFileTest() throws Exception {
+//    doReturn(artifactoryConfigRequest).when(artifactoryRequestMapper).toArtifactoryRequest(connectorConfigDTO);
+//    Map<String, String> artifactMetadata = new HashMap<>();
+//    String artifactoryDirectory = Paths.get("dir",ARTIFACT_DIR_NAME).toAbsolutePath().toString();
+//    artifactMetadata.put(ARTIFACTORY_ARTIFACT_PATH, repositoryName + "/" + ARTIFACTORY_PATH);
+//    artifactMetadata.put(ARTIFACTORY_ARTIFACT_NAME, repositoryName + "/" + ARTIFACTORY_PATH);
+//    FileIo.createDirectoryIfDoesNotExist(artifactoryDirectory);
+//    waitForDirectoryToBeAccessibleOutOfProcess(artifactoryDirectory, 10);
+////    FileIo.writeUtf8StringToFile(Paths.get(artifactoryDirectory, ARTIFACT_FILE_NAME).toAbsolutePath().toString(),"content");
+//    String artifactFilePath = Paths.get(artifactoryDirectory, ARTIFACT_FILE_NAME).toAbsolutePath().toString();
+//    File artifactFile = new File(artifactFilePath);artifactFile.createNewFile();
+//    String input = "asfd";
+//    InputStream inputStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
+//    String artifactPath = Paths
+//            .get(((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getRepositoryName(),
+//                    ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getArtifactPath())
+//            .toString();
+//
+//    doReturn(inputStream)
+//            .when(artifactoryNgService)
+//            .downloadArtifacts(artifactoryConfigRequest, repositoryName, artifactMetadata, ARTIFACTORY_ARTIFACT_PATH,
+//                    ARTIFACTORY_ARTIFACT_NAME);
+//    ServerlessArtifactoryArtifactConfig serverlessArtifactoryArtifactConfig =
+//            (ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig;
+//    serverlessTaskHelperBase.fetchArtifactoryArtifact(serverlessArtifactoryArtifactConfig, logCallback, artifactoryDirectory);
+//  }
+
+  @Test(expected = HintException.class)
+  @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
-  public void fetchArtifactTest() throws Exception {
+  public void fetchArtifactInputStreamNullTest() throws Exception {
     doReturn(artifactoryConfigRequest).when(artifactoryRequestMapper).toArtifactoryRequest(connectorConfigDTO);
     Map<String, String> artifactMetadata = new HashMap<>();
     artifactMetadata.put(ARTIFACTORY_ARTIFACT_PATH, repositoryName + "/" + ARTIFACTORY_PATH);
     artifactMetadata.put(ARTIFACTORY_ARTIFACT_NAME, repositoryName + "/" + ARTIFACTORY_PATH);
 
-    String input = "asfd";
-    InputStream inputStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
-    String artifactPath = Paths
-            .get(((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getRepositoryName(),
-                    ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getArtifactPath())
-            .toString();
-
-    doReturn(inputStream)
+    doReturn(null)
             .when(artifactoryNgService)
             .downloadArtifacts(artifactoryConfigRequest, repositoryName, artifactMetadata, ARTIFACTORY_ARTIFACT_PATH,
                     ARTIFACTORY_ARTIFACT_NAME);
     serverlessTaskHelperBase.fetchArtifact(serverlessArtifactConfig, logCallback, ARTIFACT_DIRECTORY);
-    verify(logCallback)
-            .saveExecutionLog(color(
-                    format("Downloading %s artifact with identifier: %s", serverlessArtifactConfig.getServerlessArtifactType(),
-                            ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getIdentifier()),
-                    White, Bold));
-    verify(logCallback).saveExecutionLog("Artifactory Artifact Path: " + artifactPath);
-    verify(logCallback).saveExecutionLog(color("Successfully downloaded artifact..", White, Bold));
+    verify(logCallback).saveExecutionLog(
+            "Failed to download artifact from artifactory.ø", ERROR, CommandExecutionStatus.FAILURE);
+    Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(new Exception("HintException"));
+    verify(logCallback).saveExecutionLog(
+            "Failed to download artifact from artifactory. " + ExceptionUtils.getMessage(sanitizedException), ERROR,
+            CommandExecutionStatus.FAILURE);
+    FileIo.deleteDirectoryAndItsContentIfExists(Paths.get(ARTIFACT_DIRECTORY).toAbsolutePath().toString());
+  }
+
+  @Test(expected = HintException.class)
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void fetchArtifactEmptyArtifactPathTest() throws Exception {
+    ServerlessArtifactConfig serverlessArtifactConfig = ServerlessArtifactoryArtifactConfig.builder()
+            .repositoryName(repositoryName)
+            .build();
+    serverlessTaskHelperBase.fetchArtifact(serverlessArtifactConfig, logCallback, ARTIFACT_DIRECTORY);
   }
 
   @Test
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
-  public void fetchArtifactFailCreateFileTest() throws Exception {
-    doReturn(artifactoryConfigRequest).when(artifactoryRequestMapper).toArtifactoryRequest(connectorConfigDTO);
-    Map<String, String> artifactMetadata = new HashMap<>();
-    String ARTIFACT_DIRECTORY = "dir/";
-    artifactMetadata.put(ARTIFACTORY_ARTIFACT_PATH, repositoryName + "/" + ARTIFACTORY_PATH);
-    artifactMetadata.put(ARTIFACTORY_ARTIFACT_NAME, repositoryName + "/" + ARTIFACTORY_PATH);
+  public void getManifestFileNamesInLogFormatTest() throws IOException {
+    String workingDir = Paths.get("workingDir"+ UUIDGenerator.convertBase64UuidToCanonicalForm(UUIDGenerator.generateUuid()))
+            .toAbsolutePath().toString();
+    FileIo.createDirectoryIfDoesNotExist(workingDir);
+    String filePath1 = Paths.get(workingDir,"file1").toString();
+    String filePath2 = Paths.get(workingDir,"file2").toString();
+    FileIo.writeUtf8StringToFile(filePath1,"fileContent1");
+    FileIo.writeUtf8StringToFile(filePath2,"fileContent2");
+    serverlessTaskHelperBase.getManifestFileNamesInLogFormat(workingDir);
+  }
 
-    String input = "asfd";
-    InputStream inputStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
-    String artifactPath = Paths
-            .get(((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getRepositoryName(),
-                    ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getArtifactPath())
-            .toString();
-
-    doReturn(inputStream)
-            .when(artifactoryNgService)
-            .downloadArtifacts(artifactoryConfigRequest, repositoryName, artifactMetadata, ARTIFACTORY_ARTIFACT_PATH,
-                    ARTIFACTORY_ARTIFACT_NAME);
-    serverlessTaskHelperBase.fetchArtifact(serverlessArtifactConfig, logCallback, ARTIFACT_DIRECTORY);
-    verify(logCallback)
-            .saveExecutionLog(color(
-                    format("Downloading %s artifact with identifier: %s", serverlessArtifactConfig.getServerlessArtifactType(),
-                            ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getIdentifier()),
-                    White, Bold));
-    verify(logCallback).saveExecutionLog("Artifactory Artifact Path: " + artifactPath);
-    verify(logCallback).saveExecutionLog(color("Successfully downloaded artifact..", White, Bold));
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void generateTruncatedFileListForLoggingTest() {
+    Path path1 = Paths.get("path1");Path path2 = Paths.get("path2");
+    Stream<Path> paths = Stream.of(path1,path2);
+    serverlessTaskHelperBase.generateTruncatedFileListForLogging(path1,paths);
   }
 
   @Test
@@ -287,26 +354,27 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
   @Test
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
-  public void generateTruncatedFileListForLoggingTest() {
-     Path path1 = Paths.get("path1");Path path2 = Paths.get("path2");
-     Stream<Path> paths = Stream.of(path1,path2);
-     serverlessTaskHelperBase.generateTruncatedFileListForLogging(path1,paths);
-  }
+  public void replaceManifestWithRenderedContentTest() throws IOException {//// Blocker at Paths
+    String workingDir = Paths.get("workingDir",convertBase64UuidToCanonicalForm(generateUuid())).normalize().toAbsolutePath().toString();
+    FileIo.createDirectoryIfDoesNotExist(workingDir);
+    ServerlessDelegateTaskParams serverlessDelegateTaskParams =
+            ServerlessDelegateTaskParams.builder()
+            .workingDirectory(workingDir).serverlessClientPath("scPath")
+                    .build();
+    ServerlessAwsLambdaManifestSchema serverlessManifestSchema =
+              ServerlessAwsLambdaManifestSchema.builder()
+                      .plugins(new ArrayList<String>(Arrays.asList("plugin@manifest")))
+                  .build();
+    GitStoreDelegateConfig gitStoreDelegateConfig =
+            GitStoreDelegateConfig.builder()
+            .fetchType(FetchType.BRANCH).optimizedFilesFetch(true).build();
+    ServerlessAwsLambdaManifestConfig serverlessManifestConfig =
+            ServerlessAwsLambdaManifestConfig.builder()
+            .manifestPath("manifestFile").configOverridePath("path").gitStoreDelegateConfig(gitStoreDelegateConfig).build();
 
-  @Test
-  @Owner(developers = ALLU_VAMSI)
-  @Category(UnitTests.class)
-  public void removePluginVersionTest() throws IOException {//// Blocker at Paths
-    ServerlessAwsLambdaManifestSchema serverlessManifestSchema = ServerlessAwsLambdaManifestSchema.builder()
-                                                      .plugins(new ArrayList<String>(Arrays.asList("plugin@manifest"))).build();
-    GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
-            .branch("branch").commitId("commitId").connectorName("connector").manifestId("manifest").gitConfigDTO(gitConfigDTO)
-            .fetchType(FetchType.BRANCH).paths(new ArrayList<String>(Arrays.asList("path1", "path2"))).optimizedFilesFetch(true).build();
-    ServerlessAwsLambdaManifestConfig serverlessManifestConfig = ServerlessAwsLambdaManifestConfig.builder()
-            .manifestPath("manifestPath").configOverridePath("path").gitStoreDelegateConfig(gitStoreDelegateConfig).build();
-    //serverlessTaskHelperBase.removePluginVersion("manifestContent",serverlessManifestSchema);
     serverlessTaskHelperBase.replaceManifestWithRenderedContent(serverlessDelegateTaskParams,serverlessManifestConfig,
              "manifestContent",serverlessManifestSchema);
+    FileIo.deleteFileIfExists(workingDir+"manifestFile");
   }
 
   @Test
@@ -341,8 +409,7 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
     ServerlessAwsLambdaServerInstanceInfo serverInstanceInfo =
             (ServerlessAwsLambdaServerInstanceInfo) serverlessTaskHelperBase
                     .getServerlessAwsLambdaServerInstanceInfos(deploymentReleaseData).get(0);
-//    ServerlessAwsLambdaServerInstanceInfo serverInstanceInfoTest = ServerlessAwsLambdaServerInstanceInfo.builder()
-//            .serverlessServiceName("service").serverlessStage("stage").region("us-east-1").functionName("fun").infraStructureKey("infraKey").build();
+
     assertThat(serverInstanceInfo.getServerlessServiceName()).isEqualTo("service");
     assertThat(serverInstanceInfo.getServerlessStage()).isEqualTo("stage");
     assertThat(serverInstanceInfo.getFunctionName()).isEqualTo("fun");

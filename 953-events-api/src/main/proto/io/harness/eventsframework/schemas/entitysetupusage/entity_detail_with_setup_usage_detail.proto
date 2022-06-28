@@ -31,5 +31,6 @@ message EntityDetailWithSetupUsageDetailProtoDTO {
   enum PipelineDetailType {
     STAGE_IDENTIFIER = 0;
     VARIABLE_NAME = 1;
+    PIPELINE_IDENTIFIER = 2;
   }
 }

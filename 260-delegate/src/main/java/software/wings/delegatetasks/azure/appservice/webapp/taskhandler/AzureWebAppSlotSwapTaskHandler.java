@@ -7,12 +7,6 @@
 
 package software.wings.delegatetasks.azure.appservice.webapp.taskhandler;
 
-import static io.harness.azure.model.AzureConstants.SOURCE_SLOT_NAME_BLANK_ERROR_MSG;
-import static io.harness.azure.model.AzureConstants.TARGET_SLOT_NAME_BLANK_ERROR_MSG;
-import static io.harness.azure.model.AzureConstants.WEB_APP_NAME_BLANK_ERROR_MSG;
-
-import static org.apache.commons.lang3.StringUtils.isBlank;
-
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.azure.context.AzureWebClientContext;
@@ -24,7 +18,6 @@ import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServ
 import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppSwapSlotsParameters;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSwapSlotsResponse;
-import io.harness.exception.InvalidArgumentsException;
 
 import software.wings.delegatetasks.azure.appservice.webapp.AbstractAzureWebAppTaskHandler;
 
@@ -46,19 +39,9 @@ public class AzureWebAppSlotSwapTaskHandler extends AbstractAzureWebAppTaskHandl
 
   private void validateSlotSwapParameters(AzureWebAppSwapSlotsParameters slotSwapParameters) {
     String webAppName = slotSwapParameters.getAppName();
-    if (isBlank(webAppName)) {
-      throw new InvalidArgumentsException(WEB_APP_NAME_BLANK_ERROR_MSG);
-    }
-
-    String sourceSlotName = slotSwapParameters.getSourceSlotName();
-    if (isBlank(sourceSlotName)) {
-      throw new InvalidArgumentsException(SOURCE_SLOT_NAME_BLANK_ERROR_MSG);
-    }
-
-    String targetSlotName = slotSwapParameters.getTargetSlotName();
-    if (isBlank(targetSlotName)) {
-      throw new InvalidArgumentsException(TARGET_SLOT_NAME_BLANK_ERROR_MSG);
-    }
+    String sourceSlot = slotSwapParameters.getSourceSlotName();
+    String targetSlot = slotSwapParameters.getTargetSlotName();
+    azureAppServiceResourceUtilities.validateSlotSwapParameters(webAppName, sourceSlot, targetSlot);
   }
 
   private void swapSlots(AzureWebAppSwapSlotsParameters slotSwapParameters, AzureWebClientContext webClientContext,

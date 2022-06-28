@@ -36,5 +36,3 @@ initScript: ""
 
 # Specify JAVA_OPTS
 javaOpts: "-Xms64M"
-
-logStreamingServiceBaseUrl: "${logStreamingServiceBaseUrl}"

@@ -22,7 +22,6 @@ import io.harness.plancreator.steps.NGStageStepsPlanCreator;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
-import io.harness.pms.sdk.core.pipeline.variables.ExecutionVariableCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
 import io.harness.pms.sdk.core.variables.VariableCreator;
@@ -32,6 +31,7 @@ import io.harness.sto.plan.creator.stage.SecurityStagePMSPlanCreator;
 import io.harness.sto.plan.creator.step.STOPMSStepFilterJsonCreator;
 import io.harness.sto.plan.creator.step.STOPMSStepPlanCreator;
 import io.harness.sto.plan.creator.step.STOStepFilterJsonCreatorV2;
+import io.harness.variables.ExecutionVariableCreator;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

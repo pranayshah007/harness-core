@@ -20,6 +20,7 @@ java_library(
         "//877-filestore:module",
         "//878-ng-common-utilities:module",
         "//879-pms-sdk:module",
+        "//880-pipeline-cd-commons:module",
         "//882-pms-sdk-core:module",
         "//884-pms-commons:module",
         "//888-pms-client:module",

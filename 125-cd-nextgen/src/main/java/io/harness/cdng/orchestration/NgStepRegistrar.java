@@ -22,8 +22,8 @@ import io.harness.cdng.configfile.steps.ConfigFilesStep;
 import io.harness.cdng.configfile.steps.IndividualConfigFileStep;
 import io.harness.cdng.creator.plan.environment.steps.EnvironmentStepV2;
 import io.harness.cdng.gitops.CreatePRStep;
-import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.gitops.MergePRStep;
+import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
 import io.harness.cdng.infra.steps.EnvironmentStep;
@@ -54,7 +54,6 @@ import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStep
 import io.harness.cdng.rollback.steps.InfrastructureDefinitionStep;
 import io.harness.cdng.rollback.steps.InfrastructureProvisionerStep;
 import io.harness.cdng.rollback.steps.RollbackStepsStep;
-import io.harness.cdng.rollback.steps.StepGroupRollbackStep;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStep;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStep;
 import io.harness.cdng.service.steps.ServiceConfigStep;
@@ -115,7 +114,6 @@ public class NgStepRegistrar {
     engineSteps.put(InfrastructureDefinitionStep.STEP_TYPE, InfrastructureDefinitionStep.class);
     engineSteps.put(InfrastructureProvisionerStep.STEP_TYPE, InfrastructureProvisionerStep.class);
     engineSteps.put(RollbackStepsStep.STEP_TYPE, RollbackStepsStep.class);
-    engineSteps.put(StepGroupRollbackStep.STEP_TYPE, RollbackStepsStep.class);
     engineSteps.put(EnvironmentStep.STEP_TYPE, EnvironmentStep.class);
     engineSteps.put(EnvironmentStepV2.STEP_TYPE, EnvironmentStepV2.class);
     engineSteps.put(HelmDeployStep.STEP_TYPE, HelmDeployStep.class);

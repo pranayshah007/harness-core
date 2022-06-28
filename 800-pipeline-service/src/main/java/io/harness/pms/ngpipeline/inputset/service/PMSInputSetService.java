@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 
 import java.util.Optional;
@@ -48,4 +49,7 @@ public interface PMSInputSetService {
 
   boolean checkForInputSetsForPipeline(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
+
+  InputSetEntity importInputSetFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequestDTO);
 }

@@ -68,7 +68,7 @@ public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
     return PlanNode.builder()
-        .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stageNode))
+        .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
         .name(stageNode.getName())
         .identifier(stageNode.getIdentifier())
         .group(StepOutcomeGroup.STAGE.name())

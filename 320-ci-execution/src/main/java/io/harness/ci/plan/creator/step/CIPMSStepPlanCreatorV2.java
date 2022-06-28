@@ -106,7 +106,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
     // Swap the nodeUUid with the strategy node if present
     PlanNode stepPlanNode =
         PlanNode.builder()
-            .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stepElement))
+            .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stepElement.getUuid()))
             .name(getName(stepElement))
             .identifier(stepElement.getIdentifier())
             .stepType(stepElement.getStepSpecType().getStepType())

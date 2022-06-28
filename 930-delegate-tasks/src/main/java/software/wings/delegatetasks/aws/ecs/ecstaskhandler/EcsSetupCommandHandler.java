@@ -29,6 +29,7 @@ import software.wings.helpers.ext.ecs.request.EcsServiceSetupRequest;
 import software.wings.helpers.ext.ecs.response.EcsCommandExecutionResponse;
 import software.wings.helpers.ext.ecs.response.EcsServiceSetupResponse;
 import software.wings.service.impl.AwsHelperService;
+import software.wings.utils.EcsConvention;
 
 import com.amazonaws.services.ecs.model.CreateServiceRequest;
 import com.amazonaws.services.ecs.model.CreateServiceResult;
@@ -135,6 +136,9 @@ public class EcsSetupCommandHandler extends EcsCommandTaskHandler {
       ContainerSetupCommandUnitExecutionDataBuilder commandExecutionDataBuilder,
       ExecutionLogCallback executionLogCallback, boolean isMultipleLoadBalancersFeatureFlagActive,
       boolean timeoutErrorSupported) {
+    String servicenm = EcsConvention.getServiceName(setupParams.getTaskFamily(), taskDefinition.getRevision());
+    ecsSetupCommandTaskHelper.storeCurrentServiceNameAndCountInfo((AwsConfig) cloudProviderSetting.getValue(),
+        setupParams, encryptedDataDetails, commandExecutionDataBuilder, servicenm);
     ecsSetupCommandTaskHelper.downsizeOldOrUnhealthy(
         cloudProviderSetting, setupParams, encryptedDataDetails, executionLogCallback, timeoutErrorSupported);
 

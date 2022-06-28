@@ -80,6 +80,7 @@ public interface EntityTypeConstants {
   String SERVICENOW_APPROVAL = "ServiceNowApproval";
   String JIRA_APPROVAL = "JiraApproval";
   String HARNESS_APPROVAL = "HarnessApproval";
+  String CUSTOM_APPROVAL = "CustomApproval";
   String BARRIER = "Barrier";
   String Verify = "Verify";
   String FlagConfiguration = "FlagConfiguration";

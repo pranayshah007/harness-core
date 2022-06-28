@@ -41,6 +41,7 @@ public enum ResourceType {
   MONITORED_SERVICE(ResourceTypeConstants.MONITORED_SERVICE),
   CHAOS_AGENT(ResourceTypeConstants.CHAOS_AGENT),
   CHAOS_WORKFLOW(ResourceTypeConstants.CHAOS_WORKFLOW),
+  CHAOS_GITOPS(ResourceTypeConstants.CHAOS_GITOPS),
   SERVICE_LEVEL_OBJECTIVE(ResourceTypeConstants.SERVICE_LEVEL_OBJECTIVE),
   PERSPECTIVE(ResourceTypeConstants.PERSPECTIVE),
   PERSPECTIVE_BUDGET(ResourceTypeConstants.PERSPECTIVE_BUDGET),

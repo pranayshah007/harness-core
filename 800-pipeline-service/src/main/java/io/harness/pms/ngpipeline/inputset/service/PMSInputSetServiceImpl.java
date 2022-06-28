@@ -13,6 +13,8 @@ import static io.harness.exception.WingsException.USER_SRE;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.common.EntityYamlRootNames;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.InputSetReferenceProtoDTO;
 import io.harness.exception.DuplicateFieldException;
@@ -20,7 +22,12 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmException;
+import io.harness.exception.UnexpectedException;
+import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
+import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.gitsync.helpers.GitContextHelper;
@@ -31,11 +38,20 @@ import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.inputset.gitsync.InputSetYamlDTOMapper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
+import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.inputset.PMSInputSetRepository;
+import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.IOException;
+import java.util.Collections;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
@@ -51,6 +67,7 @@ import org.springframework.data.mongodb.core.query.Update;
 public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Inject private PMSInputSetRepository inputSetRepository;
   @Inject private GitSyncSdkService gitSyncSdkService;
+  @Inject private GitAwareEntityHelper gitAwareEntityHelper;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Input set [%s] under Project[%s], Organization [%s] for Pipeline [%s] already exists";
@@ -329,5 +346,152 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
     return inputSetRepository.existsByAccountIdAndOrgIdentifierAndProjectIdentifierAndPipelineIdentifierAndDeletedNot(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, true);
+  }
+
+  @Override
+  public InputSetEntity importInputSetFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequestDTO) {
+    String importedInputSetYAML = gitAwareEntityHelper.fetchYAMLFromRemote(accountId, orgIdentifier, projectIdentifier);
+    String updatedImportedInputSetYAML = updateFieldsInImportedInputSet(orgIdentifier, projectIdentifier,
+        pipelineIdentifier, inputSetIdentifier, inputSetImportRequestDTO, importedInputSetYAML);
+    InputSetEntity inputSetEntity = PMSInputSetElementMapper.toInputSetEntity(accountId, updatedImportedInputSetYAML);
+    try {
+      return inputSetRepository.saveForImportedYAML(
+          inputSetEntity, !updatedImportedInputSetYAML.equals(importedInputSetYAML));
+    } catch (DuplicateKeyException ex) {
+      throw new DuplicateFieldException(
+          format(DUP_KEY_EXP_FORMAT_STRING, inputSetEntity.getIdentifier(), inputSetEntity.getProjectIdentifier(),
+              inputSetEntity.getOrgIdentifier(), inputSetEntity.getPipelineIdentifier()),
+          USER_SRE, ex);
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error("Error while creating Input Set " + inputSetEntity.getIdentifier(), e);
+      throw e;
+    } catch (Exception e) {
+      log.error(String.format("Error while saving input set [%s]", inputSetEntity.getIdentifier()), e);
+      throw new InvalidRequestException(
+          String.format("Error while saving input set [%s]: %s", inputSetEntity.getIdentifier(), e.getMessage()));
+    }
+  }
+
+  // todo: move to helper class when created during refactoring
+  String updateFieldsInImportedInputSet(String orgIdentifier, String projectIdentifier, String pipelineIdentifier,
+      String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequest, String importedInputSet) {
+    if (EmptyPredicate.isEmpty(importedInputSet)) {
+      String errorMessage = format(
+          "Empty YAML found on Git in branch [%s] for Input Set [%s] of Pipeline [%s] under Project[%s], Organization [%s].",
+          GitAwareContextHelper.getBranchInRequest(), inputSetIdentifier, pipelineIdentifier, projectIdentifier,
+          orgIdentifier);
+      throw buildInvalidYamlException(errorMessage, importedInputSet);
+    }
+    YamlField inputSetYAMLField;
+    try {
+      inputSetYAMLField = YamlUtils.readTree(importedInputSet);
+    } catch (IOException e) {
+      String errorMessage = PipelineCRUDErrorResponse.errorMessageForNotAYAMLFile(
+          GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
+      throw buildInvalidYamlException(errorMessage, importedInputSet);
+    }
+    YamlField inputSetInnerField = inputSetYAMLField.getNode().getField(EntityYamlRootNames.INPUT_SET);
+    boolean isOverlay = false;
+    if (inputSetInnerField == null) {
+      inputSetInnerField = inputSetYAMLField.getNode().getField(EntityYamlRootNames.OVERLAY_INPUT_SET);
+      isOverlay = true;
+      if (inputSetInnerField == null) {
+        String errorMessage = format("File found on Git in branch [%s] for filepath [%s] is not an Input Set YAML.",
+            GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
+        throw buildInvalidYamlException(errorMessage, importedInputSet);
+      }
+    }
+    return updateCommonFieldsInImportedInputSet(orgIdentifier, projectIdentifier, pipelineIdentifier,
+        inputSetIdentifier, inputSetImportRequest, importedInputSet, inputSetYAMLField, isOverlay);
+  }
+
+  // todo: move to helper class when created during refactoring
+  String updateCommonFieldsInImportedInputSet(String orgIdentifier, String projectIdentifier, String pipelineIdentifier,
+      String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequest, String importedInputSet,
+      YamlField inputSetField, boolean isOverlay) {
+    YamlField inputSetInnerField;
+    if (isOverlay) {
+      inputSetInnerField = inputSetField.getNode().getField(EntityYamlRootNames.OVERLAY_INPUT_SET);
+    } else {
+      inputSetInnerField = inputSetField.getNode().getField(EntityYamlRootNames.INPUT_SET);
+    }
+    boolean hasMetadataChanged = false;
+
+    String identifierFromGit = inputSetInnerField.getNode().getIdentifier();
+    if (!inputSetIdentifier.equals(identifierFromGit)) {
+      YamlUtils.setStringValueForField(YAMLFieldNameConstants.IDENTIFIER, inputSetIdentifier, inputSetInnerField);
+      hasMetadataChanged = true;
+    }
+
+    String nameFromGit = inputSetInnerField.getNode().getName();
+    if (!inputSetImportRequest.getInputSetName().equals(nameFromGit)) {
+      YamlUtils.setStringValueForField(
+          YAMLFieldNameConstants.NAME, inputSetImportRequest.getInputSetName(), inputSetInnerField);
+      hasMetadataChanged = true;
+    }
+
+    String orgIdentifierFromGit = inputSetInnerField.getNode().getStringValue(YAMLFieldNameConstants.ORG_IDENTIFIER);
+    if (!orgIdentifier.equals(orgIdentifierFromGit)) {
+      YamlUtils.setStringValueForField(YAMLFieldNameConstants.ORG_IDENTIFIER, orgIdentifier, inputSetInnerField);
+      hasMetadataChanged = true;
+    }
+
+    String projectIdentifierFromGit =
+        inputSetInnerField.getNode().getStringValue(YAMLFieldNameConstants.PROJECT_IDENTIFIER);
+    if (!projectIdentifier.equals(projectIdentifierFromGit)) {
+      YamlUtils.setStringValueForField(
+          YAMLFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifier, inputSetInnerField);
+      hasMetadataChanged = true;
+    }
+
+    String descriptionFromGit = inputSetInnerField.getNode().getStringValue(YAMLFieldNameConstants.DESCRIPTION);
+    if (inputSetImportRequest.getInputSetDescription() != null
+        && !inputSetImportRequest.getInputSetDescription().equals(descriptionFromGit)) {
+      YamlUtils.setStringValueForField(
+          YAMLFieldNameConstants.DESCRIPTION, inputSetImportRequest.getInputSetDescription(), inputSetInnerField);
+      hasMetadataChanged = true;
+    }
+    if (isOverlay) {
+      String pipelineIdentifierFromGit =
+          inputSetInnerField.getNode().getStringValue(YAMLFieldNameConstants.PIPELINE_IDENTIFIER);
+      if (!pipelineIdentifier.equals(pipelineIdentifierFromGit)) {
+        YamlUtils.setStringValueForField(
+            YAMLFieldNameConstants.PIPELINE_IDENTIFIER, pipelineIdentifier, inputSetInnerField);
+        hasMetadataChanged = true;
+      }
+    } else {
+      String pipelineIdentifierFromGit = inputSetInnerField.getNode()
+                                             .getFieldOrThrow(YAMLFieldNameConstants.PIPELINE)
+                                             .getNode()
+                                             .getStringValue(YAMLFieldNameConstants.IDENTIFIER);
+      if (!pipelineIdentifier.equals(pipelineIdentifierFromGit)) {
+        YamlUtils.setStringValueForField(YAMLFieldNameConstants.IDENTIFIER, pipelineIdentifier,
+            inputSetInnerField.getNode().getField(YAMLFieldNameConstants.PIPELINE));
+        hasMetadataChanged = true;
+      }
+    }
+
+    if (hasMetadataChanged) {
+      try {
+        importedInputSet = YamlUtils.writeYamlString(inputSetField).replace("---\n", "");
+      } catch (IOException e) {
+        log.error("Unexpected error when trying to set description", e);
+        throw new UnexpectedException("Unexpected error when trying to set Pipeline Metadata. Please try again.", e);
+      }
+    }
+    return importedInputSet;
+  }
+
+  // todo: move to helper class when created during refactoring
+  InvalidYamlException buildInvalidYamlException(String errorMessage, String pipelineYaml) {
+    YamlSchemaErrorWrapperDTO errorWrapperDTO =
+        YamlSchemaErrorWrapperDTO.builder()
+            .schemaErrors(
+                Collections.singletonList(YamlSchemaErrorDTO.builder().message(errorMessage).fqn("$.inputSet").build()))
+            .build();
+    InvalidYamlException invalidYamlException = new InvalidYamlException(errorMessage, errorWrapperDTO);
+    invalidYamlException.setYaml(pipelineYaml);
+    return invalidYamlException;
   }
 }

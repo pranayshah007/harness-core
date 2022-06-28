@@ -82,7 +82,7 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
   private static final String INFO = "Info";
   private static final String REJECTED = "Rejected";
   private static final String SELECTED = "Selected";
-  private static final String NON_SELECTED = "Non Selected";
+  private static final String NON_SELECTED = "Not Selected";
   private static final String BROADCAST = "Broadcast";
 
   private static final String MISSING_SELECTOR_MESSAGE = "missing selector";

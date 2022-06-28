@@ -17,7 +17,6 @@ public class OrchestrationStepTypes {
 
   public static final String DUMMY = "DUMMY";
   public static final String PIPELINE_SECTION = "PIPELINE_SECTION";
-  public static final String STEP_GROUP_ROLLBACK_STEP = "STEP_GROUP_ROLLBACK_STEP";
   public static final String NG_STAGES_STEP = "STAGES_STEP";
   public static final String APPROVAL_STAGE = "APPROVAL_STAGE";
   public static final String CUSTOM_STAGE = "CUSTOM_STAGE";

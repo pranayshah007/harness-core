@@ -24,9 +24,11 @@ import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.ServerlessAwsLambdaServerInstanceInfo;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.serverless.ServerlessDeployResult;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaDeployResult;
+import io.harness.delegate.beans.serverless.ServerlessAwsLambdaFunction;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessDeployConfig;
@@ -64,8 +66,9 @@ public class ServerlessAwsLambdaStepHelperTest extends CategoryTest {
                                         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
                                         .build();
 
-  @Mock private ServerlessStepCommonHelper serverlessStepCommonHelper;
+  @Spy private ServerlessStepUtils serverlessStepUtils;
 
+  @Mock private ServerlessStepCommonHelper serverlessStepCommonHelper;
   @Mock private LogCallback mockLogCallback;
 
   private static final String SOME_URL = "https://url.com/owner/repo.git";
@@ -194,15 +197,66 @@ public class ServerlessAwsLambdaStepHelperTest extends CategoryTest {
               .isEqualTo(manifestFileContent);
   }
 
-//  @Test
-//  @Category(UnitTests.class)
-//  public void getServerlessDeployFunctionInstanceInfoTest() {
-//    //ManifestOutcome manifestOutcome = ServerlessAwsLambdaManifestOutcome.builder().build();
-//    ServerlessDeployResult serverlessDeployResult = ServerlessAwsLambdaDeployResult.builder().build();
-//    //List<ManifestOutcome> manifestOutcomeList = Arrays.asList(manifestOutcome);
-//    List<ServerlessDeployResult> serverlessDeployResultList = Arrays.asList(serverlessDeployResult);
-//    System.out.println(serverlessDeployResultList.get(0));
-//    //assertThat(serverlessAwsLambdaStepHelper.getServerlessManifestOutcome(manifestOutcomeList))
-//      //      .isEqualTo(manifestOutcome);
-//  }
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void getManifestFileContentIsEmptyFileJsonPathTest(){
+    GitStoreConfig gitStoreConfig = GitStore.builder().build();
+    ManifestOutcome manifestOutcome  = ServerlessAwsLambdaManifestOutcome.builder()
+            .configOverridePath(ParameterField.createValueField(""))
+            .store(gitStoreConfig).identifier("identifier")
+            .build();
+    GitFile gitFile = GitFile.builder().filePath("filePath/serverless.json").fileContent("fileContent").build();
+    List<GitFile> gitFileList = Arrays.asList(gitFile);
+    FetchFilesResult fetchFilesResult = FetchFilesResult.builder().files(gitFileList).build();
+    Map<String, FetchFilesResult> fetchFilesResultMap = new HashMap<String, FetchFilesResult>()
+    {{
+      put("identifier",fetchFilesResult);
+    }};
+    Optional<Pair<String, String>> manifestFileContent = serverlessAwsLambdaStepHelper.getManifestFileContent(fetchFilesResultMap,manifestOutcome);
+    Optional<Pair<String, String>> manifestFileContentExpected = Optional.of(new MutablePair<>("serverless.json", "fileContent"));
+    assertThat(manifestFileContent).isEqualTo(manifestFileContentExpected);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void getManifestFileContentIsEmptyFileYAMLPathTest() {
+    GitStoreConfig gitStoreConfig = GitStore.builder().build();
+    ManifestOutcome manifestOutcome  = ServerlessAwsLambdaManifestOutcome.builder()
+            .configOverridePath(ParameterField.createValueField(""))
+            .store(gitStoreConfig).identifier("identifier")
+            .build();
+    GitFile gitFile = GitFile.builder().filePath("filePath/serverless.yaml").fileContent("fileContent").build();
+    List<GitFile> gitFileList = Arrays.asList(gitFile);
+    FetchFilesResult fetchFilesResult = FetchFilesResult.builder().files(gitFileList).build();
+    Map<String, FetchFilesResult> fetchFilesResultMap = new HashMap<String, FetchFilesResult>()
+    {{
+      put("identifier",fetchFilesResult);
+    }};
+    Optional<Pair<String, String>> manifestFileContent = serverlessAwsLambdaStepHelper.getManifestFileContent(fetchFilesResultMap,manifestOutcome);
+    Optional<Pair<String, String>> manifestFileContentExpected = Optional.of(new MutablePair<>("serverless.yaml", "fileContent"));
+    assertThat(manifestFileContent).isEqualTo(manifestFileContentExpected);
+  }
+
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void getServerlessDeployFunctionInstanceInfoTest() {
+    ServerlessAwsLambdaFunction serverlessAwsLambdaFunction = ServerlessAwsLambdaFunction.builder()
+                                                              .timeout(10).memorySize("1024").handler("handler").build();
+    ServerlessDeployResult serverlessDeployResult = ServerlessAwsLambdaDeployResult.builder()
+            .functions(Arrays.asList(serverlessAwsLambdaFunction)).stage("stage").region("us-east-2").build();
+
+    ServerlessAwsLambdaServerInstanceInfo serverlessAwsLambdaInstanceInfo =
+            (ServerlessAwsLambdaServerInstanceInfo) serverlessAwsLambdaStepHelper
+            .getServerlessDeployFunctionInstanceInfo(serverlessDeployResult,"infraKey").get(0);
+
+    assertThat(serverlessAwsLambdaInstanceInfo.getInfraStructureKey()).isEqualTo("infraKey");
+    assertThat(serverlessAwsLambdaInstanceInfo.getRegion()).isEqualTo("us-east-2");
+    assertThat(serverlessAwsLambdaInstanceInfo.getTimeout()).isEqualTo(10);
+    assertThat(serverlessAwsLambdaInstanceInfo.getMemorySize()).isEqualTo("1024");
+    assertThat(serverlessAwsLambdaInstanceInfo.getHandler()).isEqualTo("handler");
+  }
 }

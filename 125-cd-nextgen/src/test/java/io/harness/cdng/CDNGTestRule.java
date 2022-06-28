@@ -18,8 +18,6 @@ import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 import static org.mockito.Mockito.mock;
 
 import io.harness.ModuleType;
-import io.harness.OrchestrationModule;
-import io.harness.OrchestrationModuleConfig;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -31,8 +29,6 @@ import io.harness.cdng.orchestration.NgStepRegistrar;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.enforcement.client.services.EnforcementClientService;
-import io.harness.engine.expressions.AmbianceExpressionEvaluatorProvider;
-import io.harness.engine.pms.tasks.NgDelegate2TaskExecutor;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Producer;
@@ -47,7 +43,6 @@ import io.harness.lock.PersistentLockModule;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
-import io.harness.opaclient.OpaServiceClient;
 import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxDaoImpl;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
@@ -55,7 +50,6 @@ import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkModule;
 import io.harness.pms.sdk.core.SdkDeployMode;
-import io.harness.pms.serializer.jackson.PmsBeansJacksonModule;
 import io.harness.queue.QueueController;
 import io.harness.redis.RedisConfig;
 import io.harness.registrars.CDServiceAdviserRegistrar;
@@ -184,7 +178,6 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
       public ObjectMapper getYamlSchemaObjectMapper() {
         ObjectMapper objectMapper = Jackson.newObjectMapper();
         HObjectMapper.configureObjectMapperForNG(objectMapper);
-        objectMapper.registerModule(new PmsBeansJacksonModule());
         return objectMapper;
       }
 
@@ -221,7 +214,6 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         bind(DelegateSyncService.class).toInstance(mock(DelegateSyncService.class));
         bind(DelegateAsyncService.class).toInstance(mock(DelegateAsyncService.class));
         bind(UserClient.class).toInstance(mock(UserClient.class));
-        bind(OpaServiceClient.class).toInstance(mock(OpaServiceClient.class));
         bind(EntitySetupUsageClient.class).toInstance(mock(EntitySetupUsageClient.class));
         bind(EnforcementClientService.class).toInstance(mock(EnforcementClientService.class));
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
@@ -243,7 +235,6 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
     modules.add(TimeModule.getInstance());
     modules.add(NGModule.getInstance());
     modules.add(TestMongoModule.getInstance());
-    modules.add(OrchestrationModule.getInstance(getOrchestrationConfig()));
     modules.add(mongoTypeModule(annotations));
     modules.add(new EntitySetupUsageModule());
     modules.add(new ProviderModule() {
@@ -289,13 +280,6 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
       }
     });
 
-    modules.add(new ProviderModule() {
-      @Provides
-      @Singleton
-      protected NgDelegate2TaskExecutor ngDelegate2TaskExecutor() {
-        return mock(NgDelegate2TaskExecutor.class);
-      }
-    });
     modules.add(PmsSdkModule.getInstance(getPmsSdkConfiguration()));
     modules.add(YamlSchemaClientModule.getInstance(getYamlSchemaClientConfig(), NG_MANAGER.getServiceId()));
     return modules;
@@ -310,13 +294,6 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         .moduleType(ModuleType.CD)
         .engineSteps(NgStepRegistrar.getEngineSteps())
         .engineAdvisers(CDServiceAdviserRegistrar.getEngineAdvisers())
-        .build();
-  }
-
-  private OrchestrationModuleConfig getOrchestrationConfig() {
-    return OrchestrationModuleConfig.builder()
-        .serviceName("CD_NG_TEST")
-        .expressionEvaluatorProvider(new AmbianceExpressionEvaluatorProvider())
         .build();
   }
 

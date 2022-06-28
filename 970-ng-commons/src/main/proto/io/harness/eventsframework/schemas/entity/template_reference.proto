@@ -18,4 +18,5 @@ message TemplateReferenceProtoDTO {
   google.protobuf.StringValue orgIdentifier = 4;
   google.protobuf.StringValue projectIdentifier = 5;
   google.protobuf.StringValue versionLabel = 6;
+  map<string, string> metadata = 7;
 }

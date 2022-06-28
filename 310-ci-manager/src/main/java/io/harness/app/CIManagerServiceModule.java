@@ -20,6 +20,14 @@ import io.harness.app.intfc.CIYamlSchemaService;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
+import io.harness.cistatus.service.GithubService;
+import io.harness.cistatus.service.GithubServiceImpl;
+import io.harness.cistatus.service.azurerepo.AzureRepoService;
+import io.harness.cistatus.service.azurerepo.AzureRepoServiceImpl;
+import io.harness.cistatus.service.bitbucket.BitbucketService;
+import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
+import io.harness.cistatus.service.gitlab.GitlabService;
+import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.core.ci.services.BuildNumberService;
@@ -45,9 +53,11 @@ import io.harness.persistence.HPersistence;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ClientMode;
+import io.harness.secrets.SecretDecryptor;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.ScmServiceClient;
+import io.harness.stateutils.buildstate.SecretDecryptorViaNg;
 import io.harness.stoserviceclient.STOServiceClientModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
@@ -173,6 +183,11 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(CIFeatureFlagService.class).to(CIFeatureFlagServiceImpl.class).in(Singleton.class);
     bind(CIOverviewDashboardService.class).to(CIOverviewDashboardServiceImpl.class);
     bind(ScmServiceClient.class).to(ScmServiceClientImpl.class);
+    bind(GithubService.class).to(GithubServiceImpl.class);
+    bind(GitlabService.class).to(GitlabServiceImpl.class);
+    bind(BitbucketService.class).to(BitbucketServiceImpl.class);
+    bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
+    bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);
 
     try {
       bind(TimeScaleDBService.class)

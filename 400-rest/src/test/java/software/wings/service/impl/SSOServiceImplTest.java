@@ -12,11 +12,14 @@ import static io.harness.ng.core.account.AuthenticationMechanism.LDAP;
 import static io.harness.ng.core.account.AuthenticationMechanism.OAUTH;
 import static io.harness.ng.core.account.AuthenticationMechanism.SAML;
 import static io.harness.ng.core.account.AuthenticationMechanism.USER_PASSWORD;
+import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
+import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyListOf;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
@@ -27,19 +30,29 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.account.OauthProviderType;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.WingsBaseTest;
+import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.Account;
 import software.wings.beans.Event;
+import software.wings.beans.sso.LdapConnectionSettings;
+import software.wings.beans.sso.LdapGroupSettings;
+import software.wings.beans.sso.LdapSettings;
+import software.wings.beans.sso.LdapUserSettings;
 import software.wings.beans.sso.OauthSettings;
 import software.wings.beans.sso.SAMLProviderType;
 import software.wings.security.authentication.SSOConfig;
@@ -48,6 +61,8 @@ import software.wings.service.impl.security.auth.AuthHandler;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.SSOService;
 import software.wings.service.intfc.SSOSettingService;
+import software.wings.service.intfc.security.EncryptionService;
+import software.wings.service.intfc.security.SecretManager;
 
 import com.coveo.saml.SamlClient;
 import com.coveo.saml.SamlException;
@@ -55,6 +70,11 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -72,9 +92,13 @@ public class SSOServiceImplTest extends WingsBaseTest {
   @Mock private AuthHandler authHandler;
   @Mock private AuditServiceHelper auditServiceHelper;
   @Mock private SamlClientService samlClientService;
+  @Mock private SecretManager secretManager;
+  @Mock private EncryptionService encryptionService;
+  @Mock private FeatureFlagService featureFlagService;
   @InjectMocks @Inject private SSOService ssoService;
   @InjectMocks @Inject private AccountService accountService;
   @InjectMocks @Inject private SSOSettingService ssoSettingService;
+  @InjectMocks @Inject private SSOServiceHelper ssoServiceHelper;
 
   @Test
   @Owner(developers = UJJAWAL)
@@ -319,5 +343,81 @@ public class SSOServiceImplTest extends WingsBaseTest {
     verify(auditServiceHelper, times(1))
         .reportForAuditingUsingAccountId(
             eq(account.getUuid()), eq(null), any(OauthSettings.class), eq(Event.Type.CREATE));
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void test_GetLdapSettingWithEncryptedDataDetail_Password() {
+    final String testAccountId = "testAccountId";
+    final String displayName = "testSettings";
+    final String bindPassword = "bindPassword";
+
+    LdapConnectionSettings connectionSettings = new LdapConnectionSettings();
+    connectionSettings.setBindDN("testBindDN");
+    connectionSettings.setBindPassword("testBindPassword");
+    connectionSettings.setPasswordType(LdapConnectionSettings.INLINE_SECRET);
+    LdapUserSettings userSettings = new LdapUserSettings();
+    userSettings.setBaseDN("testBaseDN");
+    List<LdapUserSettings> userSettingsList = new ArrayList<>();
+    userSettingsList.add(userSettings);
+    LdapGroupSettings groupSettings = new LdapGroupSettings();
+    groupSettings.setBaseDN("testBaseDN");
+
+    LdapSettings ldapSettings = new LdapSettings(
+        displayName, testAccountId, connectionSettings, userSettingsList, Arrays.asList(groupSettings));
+    when(featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())).thenReturn(false);
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().fieldName(bindPassword).build();
+    List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(encryptedDataDetail);
+    when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);
+    when(secretManager.encryptedDataDetails(any(), any(), any(), any())).thenReturn(Optional.of(encryptedDataDetail));
+    ldapSettings.getConnectionSettings().setEncryptedBindPassword("EncryptedBindPassword");
+    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
+        .thenReturn(null);
+    ssoSettingService.createLdapSettings(ldapSettings);
+
+    LdapSettingsWithEncryptedDataDetail resultDetails = ssoService.getLdapSettingWithEncryptedDataDetail(testAccountId);
+    assertThat(resultDetails.getLdapSettings().getAccountId()).isEqualTo(testAccountId);
+    assertThat(resultDetails.getLdapSettings().getDisplayName()).isEqualTo(displayName);
+    assertNotNull(resultDetails.getEncryptedDataDetail());
+    assertThat(resultDetails.getEncryptedDataDetail().getFieldName()).isEqualTo(bindPassword);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void test_GetLdapSettingWithEncryptedDataDetail_Secret() {
+    final String testAccountId = "testAccountId";
+    final String displayName = "testSettings";
+    final String bindSecret = "bindSecret";
+
+    LdapConnectionSettings connectionSettings = new LdapConnectionSettings();
+    connectionSettings.setBindDN("testBindDN");
+    connectionSettings.setBindSecret("testBindSecret".toCharArray());
+    connectionSettings.setPasswordType(LdapConnectionSettings.SECRET);
+    LdapUserSettings userSettings = new LdapUserSettings();
+    userSettings.setBaseDN("testBaseDN");
+    List<LdapUserSettings> userSettingsList = new ArrayList<>();
+    userSettingsList.add(userSettings);
+    LdapGroupSettings groupSettings = new LdapGroupSettings();
+    groupSettings.setBaseDN("testBaseDN");
+
+    LdapSettings ldapSettings = new LdapSettings(
+        displayName, testAccountId, connectionSettings, userSettingsList, Collections.singletonList(groupSettings));
+    when(featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())).thenReturn(true);
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().fieldName(bindSecret).build();
+    List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(encryptedDataDetail);
+    when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);
+    when(secretManager.encryptedDataDetails(any(), any(), any(), any())).thenReturn(Optional.of(encryptedDataDetail));
+    ldapSettings.getConnectionSettings().setEncryptedBindSecret("EncryptedBindSecret");
+    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
+        .thenReturn(null);
+    ssoSettingService.createLdapSettings(ldapSettings);
+
+    LdapSettingsWithEncryptedDataDetail resultDetails = ssoService.getLdapSettingWithEncryptedDataDetail(testAccountId);
+    assertThat(resultDetails.getLdapSettings().getAccountId()).isEqualTo(testAccountId);
+    assertThat(resultDetails.getLdapSettings().getDisplayName()).isEqualTo(displayName);
+    assertNotNull(resultDetails.getEncryptedDataDetail());
+    assertThat(resultDetails.getEncryptedDataDetail().getFieldName()).isEqualTo(bindSecret);
   }
 }

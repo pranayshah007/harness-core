@@ -13,6 +13,7 @@ java_library(
         "//:lombok",
         "//870-orchestration:module",
         "//878-ng-common-utilities:module",
+        "//880-pipeline-cd-commons:module",
         "//950-telemetry:module",
         "//953-yaml-commons:module",
         "//955-delegate-beans:module",

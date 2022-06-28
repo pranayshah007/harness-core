@@ -46,4 +46,6 @@ public interface StepSpecTypeConstants {
   String AZURE_TRAFFIC_SHIFT = "AzureTrafficShift";
   String AZURE_SWAP_SLOT = "AzureSwapSlot";
   String AZURE_WEBAPP_ROLLBACK = "AzureWebAppRollback";
+
+  String DEPLOYMENT_STAGE = "Deployment";
 }
