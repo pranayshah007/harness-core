@@ -64,7 +64,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @OwnedBy(HarnessTeam.PL)
 public class FeatureFlagServiceImpl implements FeatureFlagService {
   private final HPersistence persistence;
-  @Inject private Optional<AccountClient> optionalAccountClient;
+  private Optional<AccountClient> optionalAccountClient;
   @Inject(optional = true) @Nullable private long lastEpoch;
   private final Map<FeatureName, FeatureFlag> cache;
   private final CfMigrationService cfMigrationService;
@@ -74,13 +74,15 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
 
   @Inject
   public FeatureFlagServiceImpl(HPersistence hPersistence, CfMigrationService cfMigrationService,
-      CfMigrationConfig cfMigrationConfig, Provider<CfClient> cfClient, FeatureFlagConfig featureFlagConfig) {
+      CfMigrationConfig cfMigrationConfig, Provider<CfClient> cfClient, FeatureFlagConfig featureFlagConfig,
+      Optional<AccountClient> optionalAccountClient) {
     this.persistence = hPersistence;
     this.cfMigrationService = cfMigrationService;
     this.cfMigrationConfig = cfMigrationConfig;
     this.cfClient = cfClient;
     this.featureFlagConfig = featureFlagConfig;
     this.cache = new HashMap<>();
+    this.optionalAccountClient = optionalAccountClient;
   }
 
   @Override
