@@ -172,13 +172,13 @@ public class InputSetErrorsHelperTest extends CategoryTest {
     String inputSet = "runtimeInput1.yml";
     String inputSetYaml = readFile(inputSet);
 
-    Set<FQN> invalidFQNs = InputSetErrorsHelper.getInvalidFQNsInInputSet(templateYaml, inputSetYaml).keySet();
+    Set<FQN> invalidFQNs = InputSetErrorsHelper.getInvalidFQNsInInputSet(templateYaml, inputSetYaml, yaml).keySet();
     assertThat(invalidFQNs).isEmpty();
 
     String inputSetWrong = "runtimeInputWrong1.yml";
     String inputSetYamlWrong = readFile(inputSetWrong);
 
-    invalidFQNs = InputSetErrorsHelper.getInvalidFQNsInInputSet(templateYaml, inputSetYamlWrong).keySet();
+    invalidFQNs = InputSetErrorsHelper.getInvalidFQNsInInputSet(templateYaml, inputSetYamlWrong, yaml).keySet();
     assertThat(invalidFQNs.size()).isEqualTo(2);
     String invalidFQN1 =
         "pipeline.stages.stage[identifier:qaStage].spec.execution.steps.step[identifier:httpStep1].spec.method.";
@@ -203,12 +203,12 @@ public class InputSetErrorsHelperTest extends CategoryTest {
     String fullYaml = readFile(fullYamlFile);
     assertThat(mergedYaml).isEqualTo(fullYaml);
 
-    Map<FQN, String> noInvalidFQNsInInputSet = getInvalidFQNsInInputSet(template, runtimeInput);
+    Map<FQN, String> noInvalidFQNsInInputSet = getInvalidFQNsInInputSet(template, runtimeInput, yaml);
     assertThat(noInvalidFQNsInInputSet).isEmpty();
 
     String runtimeInputFileWrong = "paths-with-validators-runtime-input-wrong.yaml";
     String runtimeInputWrong = readFile(runtimeInputFileWrong);
-    Map<FQN, String> invalidFQNsInInputSet = getInvalidFQNsInInputSet(template, runtimeInputWrong);
+    Map<FQN, String> invalidFQNsInInputSet = getInvalidFQNsInInputSet(template, runtimeInputWrong, yaml);
     assertThat(invalidFQNsInInputSet.size()).isEqualTo(2);
     List<String> invalidFQNStrings =
         invalidFQNsInInputSet.keySet().stream().map(FQN::display).collect(Collectors.toList());

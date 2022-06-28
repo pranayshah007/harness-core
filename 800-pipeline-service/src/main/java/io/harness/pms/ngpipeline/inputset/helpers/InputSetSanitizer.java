@@ -54,7 +54,7 @@ public class InputSetSanitizer {
     YamlConfig inputSetConfig = new YamlConfig(filteredInputSetYaml);
 
     Set<FQN> invalidFQNsInInputSet =
-        InputSetErrorsHelper.getInvalidFQNsInInputSet(templateYaml, filteredInputSetYaml).keySet();
+        InputSetErrorsHelper.getInvalidFQNsInInputSet(templateYaml, filteredInputSetYaml, pipelineYaml).keySet();
 
     Map<FQN, Object> filtered = inputSetConfig.getFqnToValueMap()
                                     .entrySet()

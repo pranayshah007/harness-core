@@ -39,7 +39,7 @@ public class InputSetErrorsHelper {
   public InputSetErrorWrapperDTOPMS getErrorMap(String pipelineYaml, String inputSetYaml) {
     String pipelineComp = getPipelineComponent(inputSetYaml);
     String templateYaml = createTemplateFromPipeline(pipelineYaml);
-    Map<FQN, String> invalidFQNs = getInvalidFQNsInInputSet(templateYaml, pipelineComp);
+    Map<FQN, String> invalidFQNs = getInvalidFQNsInInputSet(templateYaml, pipelineComp, pipelineYaml);
     if (EmptyPredicate.isEmpty(invalidFQNs)) {
       return null;
     }
@@ -64,7 +64,7 @@ public class InputSetErrorsHelper {
   public Map<String, InputSetErrorResponseDTOPMS> getUuidToErrorResponseMap(
       String pipelineYaml, String inputSetPipelineComponent) {
     String templateYaml = createTemplateFromPipeline(pipelineYaml);
-    Map<FQN, String> invalidFQNs = getInvalidFQNsInInputSet(templateYaml, inputSetPipelineComponent);
+    Map<FQN, String> invalidFQNs = getInvalidFQNsInInputSet(templateYaml, inputSetPipelineComponent, pipelineYaml);
     if (EmptyPredicate.isEmpty(invalidFQNs)) {
       return null;
     }
@@ -110,7 +110,8 @@ public class InputSetErrorsHelper {
 
   // TODO(BRIJESH): This method is duplicated in ExecutionInputServiceImpl. Do the refactoring and keep this at only one
   // place.
-  public Map<FQN, String> getInvalidFQNsInInputSet(String templateYaml, String inputSetPipelineCompYaml) {
+  public Map<FQN, String> getInvalidFQNsInInputSet(
+      String templateYaml, String inputSetPipelineCompYaml, String pipelineYaml) {
     Map<FQN, String> errorMap = new LinkedHashMap<>();
     YamlConfig inputSetConfig = new YamlConfig(inputSetPipelineCompYaml);
     Set<FQN> inputSetFQNs = new LinkedHashSet<>(inputSetConfig.getFqnToValueMap().keySet());
@@ -144,6 +145,17 @@ public class InputSetErrorsHelper {
       }
     });
     inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Field not a runtime input"));
+
+    if (inputSetFQNs.size() > 0) {
+      YamlConfig pipelineConfig = new YamlConfig(pipelineYaml);
+      for (FQN fqn : inputSetFQNs) {
+        if (pipelineConfig.getFqnToValueMap().get(fqn) == null) {
+          continue;
+        }
+        errorMap.put(fqn, "Field not a runtime input");
+      }
+    }
+
     return errorMap;
   }
 }
