@@ -24,12 +24,12 @@ public class CiTelemetryRecordsJob {
     @Inject CiTelemetryPublisher publisher;
 
     public void scheduleTasks() {
-        long initialDelay = 300;
+        long initialDelay = 10;
 
         try {
             log.info("CiTelemetryRecordsJob scheduler starting");
             executorService.scheduleAtFixedRate(
-                    () -> publisher.recordTelemetry(), initialDelay, THIRTY_MINS, TimeUnit.SECONDS);
+                    () -> publisher.recordTelemetry(), initialDelay, 10, TimeUnit.SECONDS);
             log.info("CiTelemetryRecordsJob scheduler started");
         } catch (Exception e) {
             log.error("Exception while creating the scheduled job to track CI developers", e);

@@ -7,26 +7,15 @@
 
 package io.harness.mongo;
 
-import static io.harness.data.structure.CollectionUtils.emptyIfNull;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.data.structure.ListUtils.OneAndOnlyOne.MANY;
-import static io.harness.data.structure.ListUtils.OneAndOnlyOne.NONE;
-import static io.harness.data.structure.ListUtils.oneAndOnlyOne;
-import static io.harness.govern.IgnoreThrowable.ignoredOnPurpose;
-import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
-import static io.harness.mongo.IndexManagerCollectionSession.createCollectionSession;
-import static io.harness.mongo.IndexManagerSession.Type.NORMAL_INDEX;
-import static io.harness.mongo.IndexManagerSession.Type.SPARSE_INDEX;
-import static io.harness.mongo.IndexManagerSession.Type.UNIQUE_INDEX;
-
-import static com.google.common.base.MoreObjects.firstNonNull;
-import static java.lang.String.format;
-import static java.lang.String.join;
-import static java.lang.System.currentTimeMillis;
-import static java.time.Duration.ofDays;
-import static java.time.Duration.ofHours;
-import static java.util.stream.Collectors.toList;
-
+import com.google.common.collect.ImmutableSet;
+import com.mongodb.AggregationOptions;
+import com.mongodb.BasicDBObject;
+import com.mongodb.Cursor;
+import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
+import com.mongodb.DuplicateKeyException;
+import com.mongodb.MongoCommandException;
+import com.mongodb.ReadPreference;
 import io.harness.annotation.IgnoreUnusedIndex;
 import io.harness.annotation.StoreIn;
 import io.harness.annotation.StoreInMultiple;
@@ -45,16 +34,17 @@ import io.harness.mongo.index.migrator.Migrator;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.Store;
 import io.harness.threading.Morpheus;
+import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.AdvancedDatastore;
+import org.mongodb.morphia.Morphia;
+import org.mongodb.morphia.annotations.Entity;
+import org.mongodb.morphia.annotations.Id;
+import org.mongodb.morphia.mapping.MappedClass;
+import org.mongodb.morphia.mapping.MappedField;
 
-import com.google.common.collect.ImmutableSet;
-import com.mongodb.AggregationOptions;
-import com.mongodb.BasicDBObject;
-import com.mongodb.Cursor;
-import com.mongodb.DBCollection;
-import com.mongodb.DBObject;
-import com.mongodb.DuplicateKeyException;
-import com.mongodb.MongoCommandException;
-import com.mongodb.ReadPreference;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -73,16 +63,25 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
-import lombok.SneakyThrows;
-import lombok.Value;
-import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.mapping.MappedClass;
-import org.mongodb.morphia.mapping.MappedField;
+
+import static com.google.common.base.MoreObjects.firstNonNull;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.ListUtils.OneAndOnlyOne.MANY;
+import static io.harness.data.structure.ListUtils.OneAndOnlyOne.NONE;
+import static io.harness.data.structure.ListUtils.oneAndOnlyOne;
+import static io.harness.govern.IgnoreThrowable.ignoredOnPurpose;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.mongo.IndexManagerCollectionSession.createCollectionSession;
+import static io.harness.mongo.IndexManagerSession.Type.NORMAL_INDEX;
+import static io.harness.mongo.IndexManagerSession.Type.SPARSE_INDEX;
+import static io.harness.mongo.IndexManagerSession.Type.UNIQUE_INDEX;
+import static java.lang.String.format;
+import static java.lang.String.join;
+import static java.lang.System.currentTimeMillis;
+import static java.time.Duration.ofDays;
+import static java.time.Duration.ofHours;
+import static java.util.stream.Collectors.toList;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
@@ -595,7 +594,9 @@ public class IndexManagerSession {
         // Persistent locks
         "locks",
         // verification service
-        "timeSeriesAnomaliesRecords", "timeSeriesCumulativeSums");
+        "timeSeriesAnomaliesRecords", "timeSeriesCumulativeSums",
+        // telemetry
+        "ciTelemetrySentStatus", "ciAccountExecutionMetadata");
 
     List<String> obsoleteCollections = datastore.getDB()
                                            .getCollectionNames()
