@@ -26,13 +26,6 @@ import io.harness.delegate.beans.connector.ConnectorHeartbeatDelegateResponse;
 import io.harness.delegate.beans.instancesync.InstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
 import io.harness.logging.AccessTokenBean;
-import io.harness.perpetualtask.HeartbeatRequest;
-import io.harness.perpetualtask.HeartbeatResponse;
-import io.harness.perpetualtask.PerpetualTaskContextRequest;
-import io.harness.perpetualtask.PerpetualTaskContextResponse;
-import io.harness.perpetualtask.PerpetualTaskExecutionContext;
-import io.harness.perpetualtask.PerpetualTaskListRequest;
-import io.harness.perpetualtask.PerpetualTaskListResponse;
 import io.harness.rest.RestResponse;
 import io.harness.serializer.kryo.KryoRequest;
 import io.harness.serializer.kryo.KryoResponse;
@@ -173,5 +166,4 @@ public interface DelegateAgentManagerClient {
   Call<DelegateTaskPackage> reportConnectionResults(@Path("delegateId") String delegateId, @Path("taskId") String uuid,
       @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId,
       @Body List<DelegateConnectionResultDetail> results);
-
 }

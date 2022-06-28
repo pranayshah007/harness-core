@@ -923,7 +923,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.warn("Delegate used revoked token. It will be frozen and drained.");
       freeze();
     } else {
-      log.warn("Delegate received unhandled message, {}", message);
+      log.warn("Delegate received unhandled message");
     }
   }
 
