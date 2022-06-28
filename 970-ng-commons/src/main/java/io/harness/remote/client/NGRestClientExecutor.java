@@ -22,6 +22,7 @@ import io.harness.serializer.KryoSerializer;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +36,7 @@ import retrofit2.Response;
 @Slf4j
 public class NGRestClientExecutor {
   private static final MediaType APPLICATION_KRYO_MEDIA_TYPE = MediaType.parse("application/x-kryo");
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer kryoSerializer;
 
   public <T> T getResponse(Call<ResponseDTO<T>> request) {
     return getResponse(request, DEFAULT_ERROR_MESSAGE, DEFAULT_CONNECTION_ERROR_MESSAGE);
