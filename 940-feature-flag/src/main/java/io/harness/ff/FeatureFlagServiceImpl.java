@@ -64,25 +64,25 @@ import org.mongodb.morphia.query.UpdateOperations;
 @OwnedBy(HarnessTeam.PL)
 public class FeatureFlagServiceImpl implements FeatureFlagService {
   private final HPersistence persistence;
-  private Optional<AccountClient> optionalAccountClient;
   @Inject(optional = true) @Nullable private long lastEpoch;
   private final Map<FeatureName, FeatureFlag> cache;
   private final CfMigrationService cfMigrationService;
   private final CfMigrationConfig cfMigrationConfig;
   private final Provider<CfClient> cfClient;
   private final FeatureFlagConfig featureFlagConfig;
+  @Nullable private AccountClient accountClient;
 
   @Inject
   public FeatureFlagServiceImpl(HPersistence hPersistence, CfMigrationService cfMigrationService,
       CfMigrationConfig cfMigrationConfig, Provider<CfClient> cfClient, FeatureFlagConfig featureFlagConfig,
-      Optional<AccountClient> optionalAccountClient) {
+      @Nullable AccountClient accountClient) {
     this.persistence = hPersistence;
     this.cfMigrationService = cfMigrationService;
     this.cfMigrationConfig = cfMigrationConfig;
     this.cfClient = cfClient;
     this.featureFlagConfig = featureFlagConfig;
     this.cache = new HashMap<>();
-    this.optionalAccountClient = optionalAccountClient;
+    this.accountClient = accountClient;
   }
 
   @Override
@@ -230,20 +230,13 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
       accountId = FeatureFlagConstants.STATIC_ACCOUNT_ID;
     }
     String name;
-    if (optionalAccountClient.isPresent()) {
-      if (log.isDebugEnabled()) {
-        log.debug("Fetching account name for account id " + accountId);
-      }
-      AccountDTO accountDTO = RestClientUtils.getResponse(optionalAccountClient.get().getAccountDTO(accountId));
-      name = accountDTO.getName();
-      if (log.isDebugEnabled()) {
-        log.debug("Account name is " + name);
-      }
-    } else {
-      if (log.isDebugEnabled()) {
-        log.debug("Since account client is not present, setting name as account id");
-      }
-      name = accountId;
+    if (log.isDebugEnabled()) {
+      log.debug("Fetching account name for account id " + accountId);
+    }
+    AccountDTO accountDTO = RestClientUtils.getResponse(accountClient.getAccountDTO(accountId));
+    name = accountDTO.getName();
+    if (log.isDebugEnabled()) {
+      log.debug("Account name is " + name);
     }
     Target target = Target.builder().identifier(accountId).name(name).build();
     return cfClient.get().boolVariation(featureName.name(), target, false);
