@@ -1,5 +1,11 @@
-package io.harness.perpetualtask;
+package io.harness.managerclient;
 
+import io.harness.perpetualtask.HeartbeatRequest;
+import io.harness.perpetualtask.HeartbeatResponse;
+import io.harness.perpetualtask.PerpetualTaskContextRequest;
+import io.harness.perpetualtask.PerpetualTaskExecutionContext;
+import io.harness.perpetualtask.PerpetualTaskListRequest;
+import io.harness.perpetualtask.PerpetualTaskListResponse;
 import io.harness.rest.RestResponse;
 import retrofit2.Call;
 import retrofit2.http.GET;

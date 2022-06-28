@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.perpetualtask.grpc;
+package io.harness.perpetualtask;
 
 import io.harness.delegate.DelegateId;
 import io.harness.grpc.utils.HTimestamps;
@@ -16,7 +16,7 @@ import io.harness.perpetualtask.PerpetualTaskExecutionContext;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskListRequest;
 import io.harness.perpetualtask.PerpetualTaskListResponse;
-import io.harness.perpetualtask.PerpetualTaskManagerClient;
+import io.harness.managerclient.PerpetualTaskManagerClient;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 
 import com.google.inject.Inject;
@@ -31,15 +31,18 @@ import lombok.extern.slf4j.Slf4j;
 import retrofit2.Call;
 import retrofit2.Response;
 
-import javax.annotation.Nullable;
-
 
 @Singleton
 @Slf4j
-public class PerpetualTaskServiceClient {
+public class PerpetualTaskServiceAgentClient {
 
-  @Inject private PerpetualTaskManagerClient perpetualTaskManagerClient;
+  private PerpetualTaskManagerClient perpetualTaskManagerClient;
 
+
+  @Inject
+  public PerpetualTaskServiceAgentClient(PerpetualTaskManagerClient perpetualTaskManagerClient) {
+    this.perpetualTaskManagerClient = perpetualTaskManagerClient;
+  }
 
   public List<PerpetualTaskAssignDetails> perpetualTaskList(String delegateId) {
 
