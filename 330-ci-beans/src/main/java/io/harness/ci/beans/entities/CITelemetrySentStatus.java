@@ -7,6 +7,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
@@ -48,6 +49,7 @@ public class CITelemetrySentStatus implements UuidAware, PersistentEntity {
                         .build())
                 .build();
     }
+    @FdIndex
     @Indexed(options = @IndexOptions(unique = true))
     String accountId;
     long lastSent; // timestamp

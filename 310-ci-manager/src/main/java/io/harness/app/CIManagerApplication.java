@@ -100,6 +100,8 @@ import io.harness.serializer.OrchestrationRegistrars;
 import io.harness.serializer.PersistenceRegistrars;
 import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.serializer.YamlBeansModuleRegistrars;
+import io.harness.serializer.kryo.CITelemetryStatusSentKryoRegistrar;
+import io.harness.serializer.morphia.CITelemetryStatusSentMorphiaRegistrar;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
@@ -193,6 +195,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
             .addAll(CiBeansRegistrars.kryoRegistrars)
             .addAll(CiExecutionRegistrars.kryoRegistrars)
             .addAll(ConnectorNextGenRegistrars.kryoRegistrars)
+            .add(CITelemetryStatusSentKryoRegistrar.class)
             .build();
       }
 
@@ -202,6 +205,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
         return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
             .addAll(CiExecutionRegistrars.morphiaRegistrars)
             .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
+            .add(CITelemetryStatusSentMorphiaRegistrar.class)
             .build();
       }
 
