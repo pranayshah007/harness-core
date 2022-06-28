@@ -455,7 +455,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGetLastSuccessfulTestVerificationJobExecutionId_doesNotExist() {
     assertThat(verificationJobInstanceService.getLastSuccessfulTestVerificationJobExecutionId(
-                   accountId, orgIdentifier, projectIdentifier))
+                   builderFactory.getContext().getServiceEnvironmentParams()))
         .isEmpty();
   }
 
@@ -463,18 +463,21 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testGetLastSuccessfulTestVerificationJobExecutionId_lastSuccessfulTestVerificationJobInstance() {
-    String verificationJobIdentifier = generateUuid();
     List<ExecutionStatus> executionStatuses =
         Arrays.asList(ExecutionStatus.QUEUED, ExecutionStatus.SUCCESS, ExecutionStatus.FAILED);
     List<VerificationJobInstance> verificationJobInstances = new ArrayList<>();
     for (ExecutionStatus executionStatus : executionStatuses) {
-      verificationJobInstances.add(createVerificationJobInstance(generateUuid(), executionStatus, TEST));
+      verificationJobInstances.add(
+          createVerificationJobInstance(builderFactory.getContext().getEnvIdentifier(), executionStatus, TEST));
     }
-    verificationJobInstances.add(createVerificationJobInstance(generateUuid(), ExecutionStatus.SUCCESS, CANARY));
-    verificationJobInstances.add(createVerificationJobInstance(generateUuid(), ExecutionStatus.SUCCESS, TEST));
-    assertThat(verificationJobInstanceService
-                   .getLastSuccessfulTestVerificationJobExecutionId(accountId, orgIdentifier, projectIdentifier)
-                   .get())
+    verificationJobInstances.add(
+        createVerificationJobInstance(builderFactory.getContext().getEnvIdentifier(), ExecutionStatus.SUCCESS, CANARY));
+    verificationJobInstances.add(
+        createVerificationJobInstance(builderFactory.getContext().getEnvIdentifier(), ExecutionStatus.SUCCESS, TEST));
+    assertThat(
+        verificationJobInstanceService
+            .getLastSuccessfulTestVerificationJobExecutionId(builderFactory.getContext().getServiceEnvironmentParams())
+            .get())
         .isEqualTo(verificationJobInstances.get(1).getUuid());
   }
 
@@ -491,9 +494,10 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     verificationJobInstances.add(
         createVerificationJobInstance(ExecutionStatus.SUCCESS, TEST, ActivityVerificationStatus.VERIFICATION_FAILED));
     verificationJobInstances.add(createVerificationJobInstance(ExecutionStatus.SUCCESS, TEST, VERIFICATION_PASSED));
-    assertThat(verificationJobInstanceService
-                   .getLastSuccessfulTestVerificationJobExecutionId(accountId, orgIdentifier, projectIdentifier)
-                   .get())
+    assertThat(
+        verificationJobInstanceService
+            .getLastSuccessfulTestVerificationJobExecutionId(builderFactory.getContext().getServiceEnvironmentParams())
+            .get())
         .isEqualTo(verificationJobInstances.get(4).getUuid());
   }
 
@@ -509,7 +513,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
           createVerificationJobInstance(executionStatus, TEST, ActivityVerificationStatus.VERIFICATION_FAILED));
     }
     assertThat(verificationJobInstanceService.getLastSuccessfulTestVerificationJobExecutionId(
-                   accountId, orgIdentifier, projectIdentifier))
+                   builderFactory.getContext().getServiceEnvironmentParams()))
         .isEmpty();
   }
 

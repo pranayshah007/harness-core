@@ -12,8 +12,10 @@ import static io.harness.cvng.beans.DataCollectionExecutionStatus.SUCCESS;
 import static io.harness.cvng.core.utils.DateTimeUtils.roundDownTo1MinBoundary;
 import static io.harness.cvng.metrics.CVNGMetricsUtils.VERIFICATION_JOB_INSTANCE_EXTRA_TIME;
 import static io.harness.cvng.metrics.CVNGMetricsUtils.VERIFICATION_JOB_INSTANCE_HEALTH_SOURCE_EXTRA_TIME;
+import static io.harness.cvng.verificationjob.entities.VerificationJobInstance.ENV_IDENTIFIER_KEY;
 import static io.harness.cvng.verificationjob.entities.VerificationJobInstance.ORG_IDENTIFIER_KEY;
 import static io.harness.cvng.verificationjob.entities.VerificationJobInstance.PROJECT_IDENTIFIER_KEY;
+import static io.harness.cvng.verificationjob.entities.VerificationJobInstance.SERVICE_IDENTIFIER_KEY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -30,6 +32,7 @@ import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
+import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.entities.DataCollectionTask.Type;
@@ -319,37 +322,22 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
     return verificationJob.getPreActivityTimeRange(verificationJobInstance.getDeploymentStartTime());
   }
 
-  public List<TestVerificationBaselineExecutionDTO> getTestJobBaselineExecutions(
-      String accountId, String orgIdentifier, String projectIdentifier, int limit) {
-    List<VerificationJobInstance> verificationJobInstances =
+  @Override
+  public Optional<String> getLastSuccessfulTestVerificationJobExecutionId(
+      ServiceEnvironmentParams serviceEnvironmentParams) {
+    VerificationJobInstance verificationJobInstance =
         hPersistence.createQuery(VerificationJobInstance.class, excludeValidate)
             .filter(VerificationJobInstanceKeys.executionStatus, ExecutionStatus.SUCCESS)
-            .filter(VerificationJobInstanceKeys.accountId, accountId)
-            .filter(PROJECT_IDENTIFIER_KEY, projectIdentifier)
-            .filter(ORG_IDENTIFIER_KEY, orgIdentifier)
+            .filter(VerificationJobInstanceKeys.accountId, serviceEnvironmentParams.getAccountIdentifier())
+            .filter(PROJECT_IDENTIFIER_KEY, serviceEnvironmentParams.getProjectIdentifier())
+            .filter(ORG_IDENTIFIER_KEY, serviceEnvironmentParams.getOrgIdentifier())
+            .filter(SERVICE_IDENTIFIER_KEY, serviceEnvironmentParams.getServiceIdentifier())
+            .filter(ENV_IDENTIFIER_KEY, serviceEnvironmentParams.getEnvironmentIdentifier())
             .filter(VerificationJobInstance.VERIFICATION_JOB_TYPE_KEY, VerificationJobType.TEST)
             .filter(VerificationJobInstanceKeys.verificationStatus, ActivityVerificationStatus.VERIFICATION_PASSED)
             .order(Sort.descending(VerificationJobInstanceKeys.createdAt))
-            .asList(new FindOptions().limit(limit));
-    return verificationJobInstances.stream()
-        .map(verificationJobInstance
-            -> TestVerificationBaselineExecutionDTO.builder()
-                   .verificationJobInstanceId(verificationJobInstance.getUuid())
-                   .createdAt(verificationJobInstance.getCreatedAt())
-                   .build())
-        .collect(Collectors.toList());
-  }
-
-  @Override
-  public Optional<String> getLastSuccessfulTestVerificationJobExecutionId(
-      String accountId, String projectIdentifier, String orgIdentifier) {
-    List<TestVerificationBaselineExecutionDTO> testVerificationBaselineExecutionDTOs =
-        getTestJobBaselineExecutions(accountId, projectIdentifier, orgIdentifier, 1);
-    if (testVerificationBaselineExecutionDTOs.isEmpty()) {
-      return Optional.empty();
-    } else {
-      return Optional.of(testVerificationBaselineExecutionDTOs.get(0).getVerificationJobInstanceId());
-    }
+            .get();
+    return Optional.ofNullable(verificationJobInstance).map(v -> v.getUuid());
   }
 
   //  TODO find the right place for this switch case

@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.beans.TimeRange;
+import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 
 import com.google.common.base.Preconditions;
@@ -102,8 +103,13 @@ public class TestVerificationJob extends VerificationJob {
     if (baselineVerificationJobInstanceId == null) {
       baselineVerificationJobInstanceId =
           verificationJobInstanceService
-              .getLastSuccessfulTestVerificationJobExecutionId(
-                  getAccountId(), getOrgIdentifier(), getProjectIdentifier()) // TODO: add more filtering here.
+              .getLastSuccessfulTestVerificationJobExecutionId(ServiceEnvironmentParams.builder()
+                                                                   .accountIdentifier(getAccountId())
+                                                                   .orgIdentifier(getOrgIdentifier())
+                                                                   .projectIdentifier(getProjectIdentifier())
+                                                                   .serviceIdentifier(getServiceIdentifier())
+                                                                   .environmentIdentifier(getEnvIdentifier())
+                                                                   .build())
               .orElse(null);
     }
     return this;
