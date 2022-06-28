@@ -159,7 +159,7 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
   public void testSlackWebhookSecret() {
     List<String> notificationSettings = new ArrayList<>();
     notificationSettings.add(RESOLVED_SLACK_SECRET_1);
-    notificationSettings.add(RESOLVED_SLACK_SECRET_1);
+    notificationSettings.add(RESOLVED_SLACK_SECRET_2);
     notificationSettings.add(RESOLVED_SLACK_SECRET_WITH_FUNCTOR_ZERO);
     boolean isSecret = notificationSettingsService.checkIfWebhookIsSecret(notificationSettings);
     assertTrue(isSecret);
