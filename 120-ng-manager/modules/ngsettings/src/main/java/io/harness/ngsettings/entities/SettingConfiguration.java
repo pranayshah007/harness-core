@@ -23,7 +23,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.Set;
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -32,6 +31,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Persistent;
+import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @OwnedBy(HarnessTeam.PL)
@@ -43,6 +43,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("settingConfigurations")
 @StoreIn(DbAliases.NG_MANAGER)
 @Persistent
+@TypeAlias("NGSettingConfiguration")
 public class SettingConfiguration implements PersistentEntity {
   @Id @org.mongodb.morphia.annotations.Id String id;
   @NotEmpty @EntityIdentifier String identifier;
@@ -57,18 +58,11 @@ public class SettingConfiguration implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("category_identifier_allowedScopes_unique_idx")
-                 .field(SettingConfigurationKeys.category)
+                 .name("identifier_unique_idx")
                  .field(SettingConfigurationKeys.identifier)
-                 .field(SettingConfigurationKeys.allowedScopes)
                  .unique(true)
                  .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("category_allowedScopes_idx")
-                 .field(SettingConfigurationKeys.category)
-                 .field(SettingConfigurationKeys.allowedScopes)
-                 .unique(false)
-                 .build())
+        .add(CompoundMongoIndex.builder().name("category_idx").field(SettingConfigurationKeys.category).build())
         .build();
   }
 }

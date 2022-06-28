@@ -400,9 +400,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     initializeEnforcementService(injector, appConfig);
     initializeEnforcementSdk(injector);
 
-//    SettingsCreationJob settingsCreationJob = injector.getInstance(SettingsCreationJob.class);
-//    settingsCreationJob.run();
-
+    SettingsCreationJob settingsCreationJob = injector.getInstance(SettingsCreationJob.class);
+    settingsCreationJob.run();
     if (appConfig.getShouldDeployWithGitSync()) {
       intializeGitSync(injector);
       GitSyncSdkInitHelper.initGitSyncSdk(injector, environment, getGitSyncConfiguration(appConfig));

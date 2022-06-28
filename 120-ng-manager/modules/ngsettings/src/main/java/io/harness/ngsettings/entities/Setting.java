@@ -31,6 +31,7 @@ import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Persistent;
+import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @OwnedBy(HarnessTeam.PL)
@@ -42,6 +43,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("settings")
 @StoreIn(DbAliases.NG_MANAGER)
 @Persistent
+@TypeAlias("NGSetting")
 public class Setting implements PersistentEntity, NGAccountAccess {
   @Id @org.mongodb.morphia.annotations.Id String id;
   @NotEmpty
@@ -57,11 +59,10 @@ public class Setting implements PersistentEntity, NGAccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_category_identifier_unique_idx")
+                 .name("accountId_orgId_projectId_identifier_unique_idx")
                  .field(SettingKeys.accountIdentifier)
                  .field(SettingKeys.orgIdentifier)
                  .field(SettingKeys.projectIdentifier)
-                 .field(SettingKeys.category)
                  .field(SettingKeys.identifier)
                  .unique(true)
                  .build())
@@ -71,7 +72,6 @@ public class Setting implements PersistentEntity, NGAccountAccess {
                  .field(SettingKeys.orgIdentifier)
                  .field(SettingKeys.projectIdentifier)
                  .field(SettingKeys.category)
-                 .unique(false)
                  .build())
         .build();
   }

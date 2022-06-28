@@ -449,6 +449,7 @@ public class NextGenModule extends AbstractModule {
   protected void configure() {
     install(VersionModule.getInstance());
     install(PrimaryVersionManagerModule.getInstance());
+    install(new NGSettingModule(appConfig));
     install(new AbstractPersistenceTracerModule() {
       @Override
       protected RedisConfig redisConfigProvider() {

@@ -16,5 +16,6 @@ public enum SettingCategory {
   CD,
   CI,
   CCM,
-  CV;
+  CV,
+  CORE;
 }

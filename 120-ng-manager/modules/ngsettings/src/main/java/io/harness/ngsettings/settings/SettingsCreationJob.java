@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SettingsCreationJob {
   private final SettingsConfig settingsConfig;
   private final SettingsService settingsService;
-  private static final String SETTINGS_YAML_PATH = "io/harness/ngsettings/settings/settings.yml";
+  private static final String SETTINGS_YAML_PATH = "io/harness/ngsettings/settings.yml";
 
   @Inject
   public SettingsCreationJob(SettingsService settingsService) {

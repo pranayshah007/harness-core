@@ -1,0 +1,10 @@
+#Any edit in this file should accompany an increment in version.
+name : settingsDefinition version : 1 settings : -identifier
+    : core_disable_harness_secret_manager name
+    : Disable Harness Secret Manager category : CORE defaultValue
+    : false valueType : BOOLEAN
+#allowedValues : [ <optional list>]
+#allowOverride : true | false
+                            allowedScopes : -account
+#- organization
+#- project
