@@ -16,6 +16,7 @@ import org.springframework.data.mongodb.core.query.Update;
 public class CITelemetryStatusRepositoryCustomImpl implements CITelemetryStatusRepositoryCustom{
     private final MongoTemplate mongoTemplate;
 
+    // Method functioning as a lock acquiring. Using Mongo as the locking mechanism
     @Override
     public boolean updateTimestampIfOlderThan(String accountId, long olderThanTime, long updateToTime) {
         Query query = new Query().addCriteria(new Criteria()
@@ -25,11 +26,14 @@ public class CITelemetryStatusRepositoryCustomImpl implements CITelemetryStatusR
                 .lte(olderThanTime));
         Update update = new Update().set(CITelemetrySentStatusKeys.lastSent, updateToTime);
         FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true).upsert(true);
-        // Account ID is unique here so setting upsert to true will throw exception
         CITelemetrySentStatus result;
         try {
+            // Atomic lock acquiring attempt
+            // Everything after this line is critical section
             result = mongoTemplate.findAndModify(query, update, options, CITelemetrySentStatus.class);
         } catch (DuplicateKeyException e) {
+            // Account ID is unique here so setting upsert to true will throw duplicate key exception if trying to create
+            // So we should return failed to acquire the lock here
             return false;
         }
         return result != null;

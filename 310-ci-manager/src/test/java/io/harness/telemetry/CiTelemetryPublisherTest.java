@@ -29,6 +29,8 @@ import static io.harness.rule.OwnerRule.JAMIE;
 import static io.harness.telemetry.Destination.ALL;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -66,22 +68,24 @@ public class CiTelemetryPublisherTest extends CategoryTest {
         accountDTOList.add(accountDTO1);
         accountDTOList.add(accountDTO2);
         doReturn(accountDTOList).when(telemetryPublisher).getAllAccounts();
-        HashMap<String, Object> map1 = new HashMap<>();
-        map1.put("group_type", "Account");
-        map1.put("group_id", "acc1");
-        map1.put("ci_license_developers_used", activeCommitters);
+        HashMap<String, Object> firstAccountExpectedMap = new HashMap<>();
+        firstAccountExpectedMap.put("group_type", "Account");
+        firstAccountExpectedMap.put("group_id", "acc1");
+        firstAccountExpectedMap.put("ci_license_developers_used", activeCommitters);
+        firstAccountExpectedMap.put("account_deploy_type", null);
 
-        HashMap<String, Object> map2 = new HashMap<>();
-        map2.put("group_type", "Account");
-        map2.put("group_id", "acc2");
-        map2.put("ci_license_developers_used", activeCommitters);
+        HashMap<String, Object> secondAccountExpectedMap = new HashMap<>();
+        secondAccountExpectedMap.put("group_type", "Account");
+        secondAccountExpectedMap.put("group_id", "acc2");
+        secondAccountExpectedMap.put("ci_license_developers_used", activeCommitters);
+        secondAccountExpectedMap.put("account_deploy_type", null);
 
         telemetryPublisher.recordTelemetry();
         verify(telemetryReporter, times(1))
-                .sendGroupEvent("acc1", null, map1, Collections.singletonMap(ALL, true),
+                .sendGroupEvent("acc1", null, firstAccountExpectedMap, Collections.singletonMap(ALL, true),
                         TelemetryOption.builder().sendForCommunity(true).build());
         verify(telemetryReporter, times(1))
-                .sendGroupEvent("acc2", null, map2, Collections.singletonMap(ALL, true),
+                .sendGroupEvent("acc2", null, secondAccountExpectedMap, Collections.singletonMap(ALL, true),
                         TelemetryOption.builder().sendForCommunity(true).build());
     }
 
@@ -98,22 +102,9 @@ public class CiTelemetryPublisherTest extends CategoryTest {
         accountDTOList.add(accountDTO1);
         accountDTOList.add(accountDTO2);
         doReturn(accountDTOList).when(telemetryPublisher).getAllAccounts();
-        HashMap<String, Object> map1 = new HashMap<>();
-        map1.put("group_type", "Account");
-        map1.put("group_id", "acc1");
-        map1.put("ci_license_developers_used", activeCommitters);
-
-        HashMap<String, Object> map2 = new HashMap<>();
-        map2.put("group_type", "Account");
-        map2.put("group_id", "acc2");
-        map2.put("ci_license_developers_used", activeCommitters);
 
         telemetryPublisher.recordTelemetry();
         verify(telemetryReporter, times(0))
-                .sendGroupEvent("acc1", null, map1, Collections.singletonMap(ALL, true),
-                        TelemetryOption.builder().sendForCommunity(true).build());
-        verify(telemetryReporter, times(0))
-                .sendGroupEvent("acc2", null, map2, Collections.singletonMap(ALL, true),
-                        TelemetryOption.builder().sendForCommunity(true).build());
+                .sendGroupEvent(anyString(), anyString(), anyObject(), anyMap(), anyObject());
     }
 }
