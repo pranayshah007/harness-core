@@ -138,9 +138,11 @@ public class SecretCrudServiceImpl implements SecretCrudService {
 
   private SecretDTOV2 getMaskedDTOForOpa(SecretDTOV2 dto){
     SecretDTOV2 secretDTOV2ForOpa = dto;
-    SecretTextSpecDTO secretTextSpecDTOForOpa = (SecretTextSpecDTO) dto.getSpec();
-    secretTextSpecDTOForOpa.setValue(null);
-    secretDTOV2ForOpa.setSpec(secretTextSpecDTOForOpa);
+    if(dto.getSpec() instanceof SecretTextSpecDTO){
+      SecretTextSpecDTO secretTextSpecDTOForOpa = (SecretTextSpecDTO) dto.getSpec();
+      secretTextSpecDTOForOpa.setValue(null);
+      secretDTOV2ForOpa.setSpec(secretTextSpecDTOForOpa);
+    }
     return secretDTOV2ForOpa;
   }
 
