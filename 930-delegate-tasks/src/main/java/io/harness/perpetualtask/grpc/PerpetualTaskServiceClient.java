@@ -29,11 +29,11 @@ import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
-public class PerpetualTaskServiceGrpcClient {
+public class PerpetualTaskServiceClient {
   private final PerpetualTaskServiceBlockingStub serviceBlockingStub;
 
   @Inject
-  public PerpetualTaskServiceGrpcClient(PerpetualTaskServiceBlockingStub perpetualTaskServiceBlockingStub) {
+  public PerpetualTaskServiceClient(PerpetualTaskServiceBlockingStub perpetualTaskServiceBlockingStub) {
     serviceBlockingStub = perpetualTaskServiceBlockingStub;
   }
 

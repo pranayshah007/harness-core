@@ -15,7 +15,7 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.logging.AutoLogContext;
-import io.harness.perpetualtask.grpc.PerpetualTaskServiceGrpcClient;
+import io.harness.perpetualtask.grpc.PerpetualTaskServiceClient;
 
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -36,16 +36,16 @@ public class PerpetualTaskLifecycleManager {
   private final PerpetualTaskExecutionParams params;
   private final PerpetualTaskExecutionContext context;
   private final PerpetualTaskExecutor perpetualTaskExecutor;
-  private final PerpetualTaskServiceGrpcClient perpetualTaskServiceGrpcClient;
+  private final PerpetualTaskServiceClient perpetualTaskServiceClient;
   private final AtomicInteger currentlyExecutingPerpetualTasksCount;
 
   PerpetualTaskLifecycleManager(PerpetualTaskId taskId, PerpetualTaskExecutionContext context,
-      Map<String, PerpetualTaskExecutor> factoryMap, PerpetualTaskServiceGrpcClient perpetualTaskServiceGrpcClient,
+      Map<String, PerpetualTaskExecutor> factoryMap, PerpetualTaskServiceClient perpetualTaskServiceClient,
       TimeLimiter timeLimiter, AtomicInteger currentlyExecutingPerpetualTasksCount) {
     this.taskId = taskId;
     this.context = context;
     this.timeLimiter = timeLimiter;
-    this.perpetualTaskServiceGrpcClient = perpetualTaskServiceGrpcClient;
+    this.perpetualTaskServiceClient = perpetualTaskServiceClient;
     params = context.getTaskParams();
     perpetualTaskExecutor = factoryMap.get(getTaskType(params));
     timeoutMillis = Durations.toMillis(context.getTaskSchedule().getTimeout());
@@ -92,7 +92,7 @@ public class PerpetualTaskLifecycleManager {
       log.error("Exception is ", ex);
       decrementTaskCounter();
     }
-    perpetualTaskServiceGrpcClient.heartbeat(taskId, taskStartTime, perpetualTaskResponse);
+    perpetualTaskServiceClient.heartbeat(taskId, taskStartTime, perpetualTaskResponse);
     return null;
   }
 
