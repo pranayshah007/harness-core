@@ -16,21 +16,28 @@ import io.harness.perpetualtask.PerpetualTaskExecutionContext;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskListRequest;
 import io.harness.perpetualtask.PerpetualTaskListResponse;
+import io.harness.perpetualtask.PerpetualTaskManagerClient;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.PerpetualTaskServiceGrpc.PerpetualTaskServiceBlockingStub;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.grpc.StatusRuntimeException;
+
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+
+import io.harness.rest.RestResponse;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.Call;
+import retrofit2.Response;
+
 
 @Singleton
 @Slf4j
 public class PerpetualTaskServiceClient {
   private final PerpetualTaskServiceBlockingStub serviceBlockingStub;
+  @Inject private PerpetualTaskManagerClient perpetualTaskManagerClient;
 
   @Inject
   public PerpetualTaskServiceClient(PerpetualTaskServiceBlockingStub perpetualTaskServiceBlockingStub) {
@@ -38,31 +45,58 @@ public class PerpetualTaskServiceClient {
   }
 
   public List<PerpetualTaskAssignDetails> perpetualTaskList(String delegateId) {
-    PerpetualTaskListResponse response =
-        serviceBlockingStub.withDeadlineAfter(60, TimeUnit.SECONDS)
-            .perpetualTaskList(PerpetualTaskListRequest.newBuilder()
-                                   .setDelegateId(DelegateId.newBuilder().setId(delegateId).build())
-                                   .build());
-    return response.getPerpetualTaskAssignDetailsList();
+
+    PerpetualTaskListRequest request = PerpetualTaskListRequest.newBuilder()
+            .setDelegateId(DelegateId.newBuilder().setId(delegateId).build())
+            .build();
+    try {
+      RestResponse<PerpetualTaskListResponse> restResponse = executeRestCall(perpetualTaskManagerClient.perpetualTaskList(request, ""));
+      return restResponse.getResource().getPerpetualTaskAssignDetailsList();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return null;
   }
 
   public PerpetualTaskExecutionContext perpetualTaskContext(PerpetualTaskId taskId) {
-    return serviceBlockingStub.withDeadlineAfter(90, TimeUnit.SECONDS)
-        .perpetualTaskContext(PerpetualTaskContextRequest.newBuilder().setPerpetualTaskId(taskId).build())
-        .getPerpetualTaskContext();
+    PerpetualTaskContextRequest perpetualTaskContextRequest = PerpetualTaskContextRequest.newBuilder().setPerpetualTaskId(taskId).build();
+    try {
+      RestResponse<PerpetualTaskExecutionContext> restResponse = executeRestCall(perpetualTaskManagerClient.perpetualTaskContext(perpetualTaskContextRequest, ""));
+       return restResponse.getResource();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return null;
   }
 
   public void heartbeat(PerpetualTaskId taskId, Instant taskStartTime, PerpetualTaskResponse perpetualTaskResponse) {
     try {
-      serviceBlockingStub.withDeadlineAfter(60, TimeUnit.SECONDS)
-          .heartbeat(HeartbeatRequest.newBuilder()
-                         .setId(taskId.getId())
-                         .setHeartbeatTimestamp(HTimestamps.fromInstant(taskStartTime))
-                         .setResponseCode(perpetualTaskResponse.getResponseCode())
-                         .setResponseMessage(perpetualTaskResponse.getResponseMessage())
-                         .build());
-    } catch (StatusRuntimeException ex) {
-      log.error("StatusRunTimeException: {}", ex.getMessage());
+     HeartbeatRequest heartbeatRequest = HeartbeatRequest.newBuilder()
+              .setId(taskId.getId())
+              .setHeartbeatTimestamp(HTimestamps.fromInstant(taskStartTime))
+              .setResponseCode(perpetualTaskResponse.getResponseCode())
+              .setResponseMessage(perpetualTaskResponse.getResponseMessage())
+              .build();
+      executeRestCall(perpetualTaskManagerClient.heartbeat(heartbeatRequest, ""));
+    } catch (IOException ex) {
+      log.error(ex.getMessage());
+    }
+  }
+
+  private <T> T executeRestCall(Call<T> call) throws IOException {
+    Response<T> response = null;
+    try {
+      response = call.execute();
+      return response.body();
+    } catch (Exception e) {
+      log.error("error executing rest call", e);
+      throw e;
+    } finally {
+      if (response != null && !response.isSuccessful()) {
+        String errorResponse = response.errorBody().string();
+        log.info("Error responding");
+        response.errorBody().close();
+      }
     }
   }
 }
