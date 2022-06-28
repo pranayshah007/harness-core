@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
 import io.harness.DelegateTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.manage.ManagedScheduledExecutorService;
-import io.harness.perpetualtask.grpc.PerpetualTaskServiceClient;
+import io.harness.perpetualtask.grpc.PerpetualTaskServiceGrpcClient;
 import io.harness.perpetualtask.k8s.watch.K8sWatchTaskParams;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -72,7 +72,7 @@ public class PerpetualTaskWorkerTest extends DelegateTestBase {
   PerpetualTaskExecutionContext context;
 
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
-  @Mock private PerpetualTaskServiceClient perpetualTaskServiceClient;
+  @Mock private PerpetualTaskServiceGrpcClient perpetualTaskServiceGrpcClient;
   @Mock private Map<String, PerpetualTaskExecutor> factoryMap;
   @Mock @Named("taskExecutor") ThreadPoolExecutor perpetualTaskExecutor;
   @Spy
@@ -95,7 +95,7 @@ public class PerpetualTaskWorkerTest extends DelegateTestBase {
     PerpetualTaskSchedule schedule = PerpetualTaskSchedule.newBuilder().setInterval(Durations.fromSeconds(1)).build();
     context = PerpetualTaskExecutionContext.newBuilder().setTaskParams(params).setTaskSchedule(schedule).build();
 
-    when(perpetualTaskServiceClient.perpetualTaskContext(isA(PerpetualTaskId.class))).thenReturn(context);
+    when(perpetualTaskServiceGrpcClient.perpetualTaskContext(isA(PerpetualTaskId.class))).thenReturn(context);
   }
 
   @Test
@@ -127,7 +127,7 @@ public class PerpetualTaskWorkerTest extends DelegateTestBase {
   @Category(UnitTests.class)
   public void testFetchAssignedTask() {
     worker.fetchAssignedTask();
-    verify(perpetualTaskServiceClient).perpetualTaskList(anyString());
+    verify(perpetualTaskServiceGrpcClient).perpetualTaskList(anyString());
   }
 
   @Test

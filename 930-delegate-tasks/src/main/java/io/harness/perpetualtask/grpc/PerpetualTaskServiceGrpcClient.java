@@ -35,12 +35,12 @@ import retrofit2.Response;
 
 @Singleton
 @Slf4j
-public class PerpetualTaskServiceClient {
+public class PerpetualTaskServiceGrpcClient {
   private final PerpetualTaskServiceBlockingStub serviceBlockingStub;
   @Inject private PerpetualTaskManagerClient perpetualTaskManagerClient;
 
   @Inject
-  public PerpetualTaskServiceClient(PerpetualTaskServiceBlockingStub perpetualTaskServiceBlockingStub) {
+  public PerpetualTaskServiceGrpcClient(PerpetualTaskServiceBlockingStub perpetualTaskServiceBlockingStub) {
     serviceBlockingStub = perpetualTaskServiceBlockingStub;
   }
 
