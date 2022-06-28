@@ -208,6 +208,10 @@ public class AmbianceUtils {
     return stageLevel;
   }
 
+  public boolean hasStrategyInNode(Ambiance ambiance) {
+    return getStrategyLevelFromAmbiance(ambiance).isPresent();
+  }
+
   public static boolean isRetry(Ambiance ambiance) {
     Level level = Objects.requireNonNull(obtainCurrentLevel(ambiance));
     return level.getRetryIndex() != 0;
