@@ -38,12 +38,8 @@ import javax.annotation.Nullable;
 @Slf4j
 public class PerpetualTaskServiceClient {
 
-  @Inject(optional = true) @Nullable private PerpetualTaskManagerClient perpetualTaskManagerClient;
+  @Inject private PerpetualTaskManagerClient perpetualTaskManagerClient;
 
-  @Inject
-  public PerpetualTaskServiceClient(PerpetualTaskManagerClient perpetualTaskManagerClient) {
-    this.perpetualTaskManagerClient = perpetualTaskManagerClient;
-  }
 
   public List<PerpetualTaskAssignDetails> perpetualTaskList(String delegateId) {
 
