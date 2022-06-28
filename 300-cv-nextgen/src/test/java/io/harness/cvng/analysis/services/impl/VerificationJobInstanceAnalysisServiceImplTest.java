@@ -46,21 +46,16 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.HostRecordDTO;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
-import io.harness.cvng.beans.job.BlueGreenVerificationJobDTO;
-import io.harness.cvng.beans.job.CanaryVerificationJobDTO;
-import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.LoadTestAdditionalInfo;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.HostRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
-import io.harness.cvng.verificationjob.entities.TestVerificationJob.TestVerificationJobKeys;
+import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
-import io.harness.cvng.verificationjob.entities.VerificationJob.VerificationJobKeys;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
-import io.harness.cvng.verificationjob.services.api.VerificationJobService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
@@ -89,7 +84,6 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
   @Inject HPersistence hPersistence;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private HostRecordService hostRecordService;
-  @Inject private VerificationJobService verificationJobService;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
   @Inject private DeploymentLogAnalysisService deploymentLogAnalysisService;
@@ -124,43 +118,11 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
         .thenReturn(Optional.of(ConnectorInfoDTO.builder().name("AppDynamics Connector").build()));
   }
 
-  private CanaryVerificationJobDTO createCanaryVerificationJobDTO() {
-    CanaryVerificationJobDTO canaryVerificationJobDTO = new CanaryVerificationJobDTO();
-    canaryVerificationJobDTO.setIdentifier(identifier);
-    canaryVerificationJobDTO.setJobName("jobName");
-    canaryVerificationJobDTO.setDuration("100");
-    canaryVerificationJobDTO.setServiceIdentifier(serviceIdentifier);
-    canaryVerificationJobDTO.setProjectIdentifier(projectIdentifier);
-    canaryVerificationJobDTO.setOrgIdentifier(orgIdentifier);
-    canaryVerificationJobDTO.setEnvIdentifier(envIdentifier);
-    canaryVerificationJobDTO.setDataSources(Arrays.asList(DataSourceType.APP_DYNAMICS));
-    canaryVerificationJobDTO.setMonitoringSources(Arrays.asList(generateUuid()));
-    canaryVerificationJobDTO.setSensitivity(Sensitivity.LOW.name());
-    return canaryVerificationJobDTO;
-  }
-
-  private BlueGreenVerificationJobDTO createBlueGreenVerificationJobDTO() {
-    BlueGreenVerificationJobDTO blueGreenVerificationJobDTO = new BlueGreenVerificationJobDTO();
-    blueGreenVerificationJobDTO.setIdentifier(identifier);
-    blueGreenVerificationJobDTO.setJobName("jobName");
-    blueGreenVerificationJobDTO.setDuration("100");
-    blueGreenVerificationJobDTO.setServiceIdentifier(serviceIdentifier);
-    blueGreenVerificationJobDTO.setProjectIdentifier(projectIdentifier);
-    blueGreenVerificationJobDTO.setOrgIdentifier(orgIdentifier);
-    blueGreenVerificationJobDTO.setEnvIdentifier(envIdentifier);
-    blueGreenVerificationJobDTO.setDataSources(Arrays.asList(DataSourceType.APP_DYNAMICS));
-    blueGreenVerificationJobDTO.setMonitoringSources(Arrays.asList(generateUuid()));
-    blueGreenVerificationJobDTO.setSensitivity(Sensitivity.LOW.name());
-    return blueGreenVerificationJobDTO;
-  }
-
   @Test
   @Owner(developers = NEMANJA)
   @Category(UnitTests.class)
   public void testGetCanaryDeploymentAdditionalInfo_withBothTimeSeriesAndLogsAnalyses() {
-    verificationJobService.create(accountId, createCanaryVerificationJobDTO());
-    VerificationJob verificationJob =
-        verificationJobService.getVerificationJob(accountId, orgIdentifier, projectIdentifier, identifier);
+    VerificationJob verificationJob = builderFactory.canaryVerificationJobBuilder().build();
     VerificationJobInstance verificationJobInstance = createVerificationJobInstance(verificationJob);
     CVConfig cvConfig = verificationJobInstance.getCvConfigMap().values().iterator().next();
     String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
@@ -205,9 +167,7 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testGetCanaryDeploymentAdditionalInfo_withVerificationJobInstanceInQueuedState() {
-    verificationJobService.create(accountId, createCanaryVerificationJobDTO());
-    VerificationJob verificationJob =
-        verificationJobService.getVerificationJob(accountId, orgIdentifier, projectIdentifier, identifier);
+    VerificationJob verificationJob = builderFactory.canaryVerificationJobBuilder().build();
     VerificationJobInstance verificationJobInstance = createVerificationJobInstance(verificationJob);
     verificationJobInstanceService.create(verificationJobInstance);
     CanaryBlueGreenAdditionalInfo canaryBlueGreenAdditionalInfo =
@@ -225,9 +185,7 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
   @Owner(developers = NEMANJA)
   @Category(UnitTests.class)
   public void testGetCanaryDeploymentAdditionalInfo_withoutAnalysesAndHostRecords() {
-    verificationJobService.create(accountId, createCanaryVerificationJobDTO());
-    VerificationJob verificationJob =
-        verificationJobService.getVerificationJob(accountId, orgIdentifier, projectIdentifier, identifier);
+    VerificationJob verificationJob = builderFactory.canaryVerificationJobBuilder().build();
     VerificationJobInstance verificationJobInstance = createVerificationJobInstance(verificationJob);
     String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
     verificationTaskService.createDeploymentVerificationTask(
@@ -249,9 +207,7 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
   @Owner(developers = NEMANJA)
   @Category(UnitTests.class)
   public void testGetCanaryDeploymentAdditionalInfo_withTimeSeriesAnalysisOnly() {
-    verificationJobService.create(accountId, createCanaryVerificationJobDTO());
-    VerificationJob verificationJob =
-        verificationJobService.getVerificationJob(accountId, orgIdentifier, projectIdentifier, identifier);
+    VerificationJob verificationJob = builderFactory.canaryVerificationJobBuilder().build();
     VerificationJobInstance verificationJobInstance = createVerificationJobInstance(verificationJob);
     CVConfig cvConfig = verificationJobInstance.getCvConfigMap().values().iterator().next();
     String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
@@ -289,9 +245,7 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
   @Owner(developers = NEMANJA)
   @Category(UnitTests.class)
   public void testGetCanaryDeploymentAdditionalInfo_withLogAnalysisOnly() {
-    verificationJobService.create(accountId, createCanaryVerificationJobDTO());
-    VerificationJob verificationJob =
-        verificationJobService.getVerificationJob(accountId, orgIdentifier, projectIdentifier, identifier);
+    VerificationJob verificationJob = builderFactory.canaryVerificationJobBuilder().build();
     VerificationJobInstance verificationJobInstance = createVerificationJobInstance(verificationJob);
     String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
     String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
@@ -334,9 +288,7 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
   @Owner(developers = NEMANJA)
   @Category(UnitTests.class)
   public void testGetCanaryDeploymentAdditionalInfo_withImprovisedCanary() {
-    verificationJobService.create(accountId, createCanaryVerificationJobDTO());
-    VerificationJob verificationJob =
-        verificationJobService.getVerificationJob(accountId, orgIdentifier, projectIdentifier, identifier);
+    VerificationJob verificationJob = builderFactory.canaryVerificationJobBuilder().build();
     VerificationJobInstance verificationJobInstance = createVerificationJobInstance(verificationJob);
     CVConfig cvConfig = verificationJobInstance.getCvConfigMap().values().iterator().next();
     String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
@@ -380,9 +332,7 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testGetCanaryDeploymentAdditionalInfo_withImprovisedCanaryAndDuplicateNodes() {
-    verificationJobService.create(accountId, createCanaryVerificationJobDTO());
-    VerificationJob verificationJob =
-        verificationJobService.getVerificationJob(accountId, orgIdentifier, projectIdentifier, identifier);
+    VerificationJob verificationJob = builderFactory.canaryVerificationJobBuilder().build();
     VerificationJobInstance verificationJobInstance =
         createVerificationJobInstanceWithMultipleCVConfigs(verificationJob);
     List<CVConfig> cvConfigList = new ArrayList<>();
@@ -442,9 +392,8 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testGetBlueGreenDeploymentAdditionalInfo_withoutAnalysesAndHostRecords() {
-    verificationJobService.create(accountId, createBlueGreenVerificationJobDTO());
     VerificationJob verificationJob =
-        verificationJobService.getVerificationJob(accountId, orgIdentifier, projectIdentifier, identifier);
+        builderFactory.blueGreenVerificationJobBuilder().trafficSplitPercentage(null).build();
     VerificationJobInstance verificationJobInstance = createVerificationJobInstance(verificationJob);
     String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
     verificationTaskService.createDeploymentVerificationTask(
@@ -466,9 +415,8 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testGetBlueGreenDeploymentAdditionalInfo_withTimeSeriesAnalysisOnly() {
-    verificationJobService.create(accountId, createBlueGreenVerificationJobDTO());
     VerificationJob verificationJob =
-        verificationJobService.getVerificationJob(accountId, orgIdentifier, projectIdentifier, identifier);
+        builderFactory.blueGreenVerificationJobBuilder().trafficSplitPercentage(null).build();
     VerificationJobInstance verificationJobInstance = createVerificationJobInstance(verificationJob);
     CVConfig cvConfig = verificationJobInstance.getCvConfigMap().values().iterator().next();
     String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
@@ -505,9 +453,8 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testGetBlueGreenDeploymentAdditionalInfo_withDuplicateNodes() {
-    verificationJobService.create(accountId, createBlueGreenVerificationJobDTO());
     VerificationJob verificationJob =
-        verificationJobService.getVerificationJob(accountId, orgIdentifier, projectIdentifier, identifier);
+        builderFactory.blueGreenVerificationJobBuilder().trafficSplitPercentage(null).build();
     VerificationJobInstance verificationJobInstance =
         createVerificationJobInstanceWithMultipleCVConfigs(verificationJob);
     List<CVConfig> cvConfigList = new ArrayList<>();
@@ -556,11 +503,7 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
   @Owner(developers = NEMANJA)
   @Category(UnitTests.class)
   public void testGetCanaryDeploymentAdditionalInfo_withImprovisedCanaryAndAdditionalPreDeploymentHost() {
-    CanaryVerificationJobDTO canaryVerificationJobDTO = createCanaryVerificationJobDTO();
-    canaryVerificationJobDTO.setTrafficSplitPercentage("40");
-    verificationJobService.create(accountId, canaryVerificationJobDTO);
-    VerificationJob verificationJob =
-        verificationJobService.getVerificationJob(accountId, orgIdentifier, projectIdentifier, identifier);
+    VerificationJob verificationJob = builderFactory.canaryVerificationJobBuilder().trafficSplitPercentage(40).build();
     VerificationJobInstance verificationJobInstance = createVerificationJobInstance(verificationJob);
     CVConfig cvConfig = verificationJobInstance.getCvConfigMap().values().iterator().next();
     String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
@@ -610,16 +553,13 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
   @Owner(developers = NEMANJA)
   @Category(UnitTests.class)
   public void testGetLoadTestAdditionalInfo_withBaselineVerificationJobInstanceId() {
-    VerificationJobInstance baselineVerificationJobInstance = createVerificationJobInstance();
-    String baselineVerificationJobInstanceId = verificationJobInstanceService.create(baselineVerificationJobInstance);
-    VerificationJob verificationJob = baselineVerificationJobInstance.getResolvedJob();
-    VerificationJobInstance verificationJobInstance =
-        verificationJobInstanceService.getVerificationJobInstance(baselineVerificationJobInstanceId);
-    verificationJobInstance.setResolvedJob(verificationJob);
     Instant baselineStartTIme = Instant.now().minus(10, ChronoUnit.MINUTES);
-    verificationJobInstance.setStartTimeFromTest(baselineStartTIme);
-    hPersistence.save(verificationJobInstance);
-
+    VerificationJobInstance baselineVerificationJobInstance =
+        builderFactory.verificationJobInstanceBuilder()
+            .startTime(baselineStartTIme)
+            .resolvedJob(builderFactory.testVerificationJobBuilder().baselineVerificationJobInstanceId(null).build())
+            .build();
+    String baselineVerificationJobInstanceId = verificationJobInstanceService.create(baselineVerificationJobInstance);
     DeploymentActivity deploymentActivity = DeploymentActivity.builder()
                                                 .verificationStartTime(baselineStartTIme.toEpochMilli())
                                                 .deploymentTag("Build1")
@@ -631,16 +571,15 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
     activity.setVerificationJobInstanceIds(Arrays.asList(baselineVerificationJobInstanceId));
     activity.setType(ActivityType.DEPLOYMENT);
     activityService.createActivity(activity);
-    hPersistence.update(verificationJob,
-        hPersistence.createUpdateOperations(VerificationJob.class)
-            .set(VerificationJobKeys.activitySourceIdentifier, activity.getActivitySourceId())
-            .set(TestVerificationJobKeys.baselineVerificationJobInstanceId, baselineVerificationJobInstanceId));
-    String verificationJobInstanceId = verificationJobInstanceService.create(createVerificationJobInstance());
+    VerificationJobInstance verificationJobInstance =
+        builderFactory.verificationJobInstanceBuilder()
+            .resolvedJob(builderFactory.testVerificationJobBuilder()
+                             .baselineVerificationJobInstanceId(baselineVerificationJobInstanceId)
+                             .build())
+            .build();
+    String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
     VerificationJobInstance currentVerificationJobInstance =
         verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
-    VerificationJob modifiedVerificationJob =
-        verificationJobService.getVerificationJob(accountId, orgIdentifier, projectIdentifier, identifier);
-    currentVerificationJobInstance.setResolvedJob(modifiedVerificationJob);
     Instant currentTime = Instant.now();
     currentVerificationJobInstance.setStartTimeFromTest(currentTime);
     hPersistence.save(currentVerificationJobInstance);
@@ -658,28 +597,45 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
 
     assertThat(loadTestAdditionalInfo).isNotNull();
     assertThat(loadTestAdditionalInfo.getBaselineDeploymentTag()).isEqualTo("Build1");
-    assertThat(loadTestAdditionalInfo.getBaselineStartTime()).isEqualTo(baselineStartTIme.toEpochMilli());
+    assertThat(loadTestAdditionalInfo.getBaselineStartTime())
+        .isEqualTo(baselineVerificationJobInstance.getStartTime().toEpochMilli());
     assertThat(loadTestAdditionalInfo.getCurrentDeploymentTag()).isEqualTo("Build2");
-    assertThat(loadTestAdditionalInfo.getCurrentStartTime()).isEqualTo(currentTime.toEpochMilli());
+    assertThat(loadTestAdditionalInfo.getCurrentStartTime())
+        .isEqualTo(currentVerificationJobInstance.getStartTime().toEpochMilli());
   }
 
   @Test
   @Owner(developers = NEMANJA)
   @Category(UnitTests.class)
   public void testGetLoadTestAdditionalInfo_withoutBaselineVerificationJobInstanceId() {
-    VerificationJobInstance baselineVerificationJobInstance = createVerificationJobInstance();
-    String verificationJobInstanceId = verificationJobInstanceService.create(baselineVerificationJobInstance);
-    VerificationJob verificationJob = baselineVerificationJobInstance.getResolvedJob();
+    VerificationJobInstance baselineVerificationJobInstance =
+        builderFactory.verificationJobInstanceBuilder()
+            .resolvedJob(builderFactory.testVerificationJobBuilder().baselineVerificationJobInstanceId(null).build())
+            .build();
+    String baselineVerificationJobInstanceId = verificationJobInstanceService.create(baselineVerificationJobInstance);
+    TestVerificationJob verificationJob = (TestVerificationJob) baselineVerificationJobInstance.getResolvedJob();
+
     VerificationJobInstance verificationJobInstance =
-        verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
-    verificationJobInstance.setResolvedJob(verificationJob);
+        builderFactory.verificationJobInstanceBuilder()
+            .resolvedJob(builderFactory.testVerificationJobBuilder()
+                             .baselineVerificationJobInstanceId(baselineVerificationJobInstanceId)
+                             .build())
+            .build();
+
     Instant currentTime = Instant.now();
     verificationJobInstance.setStartTimeFromTest(currentTime);
-    hPersistence.save(verificationJobInstance);
-
+    String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
     DeploymentActivity deploymentActivity =
-        DeploymentActivity.builder().verificationStartTime(currentTime.toEpochMilli()).deploymentTag("Build1").build();
+        DeploymentActivity.builder().verificationStartTime(currentTime.toEpochMilli()).deploymentTag("Build0").build();
     Activity activity = deploymentActivity;
+    activity.setActivityName("activity");
+    activity.setAccountId(accountId);
+    activity.setVerificationJobInstanceIds(Arrays.asList(baselineVerificationJobInstanceId));
+    activity.setType(ActivityType.DEPLOYMENT);
+    activityService.createActivity(activity);
+    deploymentActivity =
+        DeploymentActivity.builder().verificationStartTime(currentTime.toEpochMilli()).deploymentTag("Build1").build();
+    activity = deploymentActivity;
     activity.setActivityName("activity");
     activity.setAccountId(accountId);
     activity.setVerificationJobInstanceIds(Arrays.asList(verificationJobInstanceId));
@@ -690,8 +646,7 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
         verificationJobInstanceAnalysisService.getLoadTestAdditionalInfo(accountId, verificationJobInstance);
 
     assertThat(loadTestAdditionalInfo).isNotNull();
-    assertThat(loadTestAdditionalInfo.getBaselineDeploymentTag()).isNull();
-    assertThat(loadTestAdditionalInfo.getBaselineStartTime()).isEqualTo(null);
+    assertThat(loadTestAdditionalInfo.getBaselineDeploymentTag()).isEqualTo("Build0");
     assertThat(loadTestAdditionalInfo.getCurrentDeploymentTag()).isEqualTo("Build1");
     assertThat(loadTestAdditionalInfo.getCurrentStartTime()).isEqualTo(currentTime.toEpochMilli());
   }

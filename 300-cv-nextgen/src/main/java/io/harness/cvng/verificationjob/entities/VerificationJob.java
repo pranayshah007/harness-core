@@ -20,7 +20,6 @@ import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.DataSourceType;
-import io.harness.cvng.beans.job.VerificationJobDTO;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.entities.CVConfig;
@@ -118,7 +117,6 @@ public abstract class VerificationJob
   private List<CVConfig> cvConfigs;
 
   public abstract VerificationJobType getType();
-  public abstract VerificationJobDTO getVerificationJobDTO();
 
   public void validate() {
     Preconditions.checkNotNull(accountId, generateErrorMessageFromParam(VerificationJobKeys.accountId));
@@ -152,45 +150,6 @@ public abstract class VerificationJob
   public abstract Optional<TimeRange> getPreActivityTimeRange(Instant deploymentStartTime);
   public abstract Optional<TimeRange> getPostActivityTimeRange(Instant deploymentStartTime);
   public abstract List<TimeRange> getDataCollectionTimeRanges(Instant startTime);
-
-  protected void populateCommonFields(VerificationJobDTO verificationJobDTO) {
-    verificationJobDTO.setIdentifier(this.identifier);
-    verificationJobDTO.setJobName(this.jobName);
-    verificationJobDTO.setDuration(this.duration.isRuntimeParam() ? RUNTIME_STRING : this.duration.getValue());
-
-    verificationJobDTO.setServiceIdentifier(
-        this.serviceIdentifier.isRuntimeParam() ? RUNTIME_STRING : serviceIdentifier.getValue());
-    verificationJobDTO.setEnvIdentifier(
-        this.envIdentifier.isRuntimeParam() ? RUNTIME_STRING : envIdentifier.getValue());
-    verificationJobDTO.setDataSources(this.dataSources);
-    verificationJobDTO.setProjectIdentifier(this.getProjectIdentifier());
-    verificationJobDTO.setOrgIdentifier(this.getOrgIdentifier());
-    verificationJobDTO.setDefaultJob(isDefaultJob);
-    verificationJobDTO.setActivitySourceIdentifier(activitySourceIdentifier);
-    verificationJobDTO.setMonitoringSources(monitoringSources);
-    verificationJobDTO.setVerificationJobUrl(getVerificationJobUrl());
-    verificationJobDTO.setAllMonitoringSourcesEnabled(this.allMonitoringSourcesEnabled);
-  }
-
-  public abstract void fromDTO(VerificationJobDTO verificationJobDTO);
-
-  public void addCommonFileds(VerificationJobDTO verificationJobDTO) {
-    this.setIdentifier(verificationJobDTO.getIdentifier());
-    this.setServiceIdentifier(verificationJobDTO.getServiceIdentifier(),
-        VerificationJobDTO.isRuntimeParam(verificationJobDTO.getServiceIdentifier()));
-    this.setEnvIdentifier(verificationJobDTO.getEnvIdentifier(),
-        VerificationJobDTO.isRuntimeParam(verificationJobDTO.getEnvIdentifier()));
-    this.setJobName(verificationJobDTO.getJobName());
-    this.setDuration(
-        verificationJobDTO.getDuration(), VerificationJobDTO.isRuntimeParam(verificationJobDTO.getDuration()));
-    this.setDataSources(verificationJobDTO.getDataSources());
-    this.setMonitoringSources(verificationJobDTO.getMonitoringSources());
-    this.setProjectIdentifier(verificationJobDTO.getProjectIdentifier());
-    this.setOrgIdentifier(verificationJobDTO.getOrgIdentifier());
-    this.setActivitySourceIdentifier(verificationJobDTO.getActivitySourceIdentifier());
-    this.setDefaultJob(verificationJobDTO.isDefaultJob());
-    this.setAllMonitoringSourcesEnabled(verificationJobDTO.isAllMonitoringSourcesEnabled());
-  }
 
   protected List<TimeRange> getTimeRangesForDuration(Instant startTime) {
     Preconditions.checkArgument(

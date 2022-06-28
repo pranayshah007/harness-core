@@ -7,10 +7,7 @@
 
 package io.harness.cvng.verificationjob.entities;
 
-import io.harness.cvng.beans.job.BlueGreenVerificationJobDTO;
-import io.harness.cvng.beans.job.VerificationJobDTO;
 import io.harness.cvng.beans.job.VerificationJobType;
-import io.harness.cvng.verificationjob.CVVerificationJobConstants;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -25,26 +22,4 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class BlueGreenVerificationJob extends CanaryBlueGreenVerificationJob {
   private final VerificationJobType type = VerificationJobType.BLUE_GREEN;
-
-  @Override
-  public void fromDTO(VerificationJobDTO verificationJobDTO) {
-    BlueGreenVerificationJobDTO blueGreenVerificationJobDTO = (BlueGreenVerificationJobDTO) verificationJobDTO;
-    this.setSensitivity(blueGreenVerificationJobDTO.getSensitivity(),
-        VerificationJobDTO.isRuntimeParam(blueGreenVerificationJobDTO.getSensitivity()));
-    this.setTrafficSplitPercentageV2(blueGreenVerificationJobDTO.getTrafficSplitPercentage(),
-        VerificationJobDTO.isRuntimeParam(blueGreenVerificationJobDTO.getTrafficSplitPercentage()));
-    addCommonFileds(verificationJobDTO);
-  }
-
-  @Override
-  public VerificationJobDTO getVerificationJobDTO() {
-    BlueGreenVerificationJobDTO blueGreenVerificationJobDTO = new BlueGreenVerificationJobDTO();
-    blueGreenVerificationJobDTO.setSensitivity(
-        getSensitivity() == null ? CVVerificationJobConstants.RUNTIME_STRING : getSensitivity().name());
-    blueGreenVerificationJobDTO.setTrafficSplitPercentage(getTrafficSplitPercentage() == null
-            ? CVVerificationJobConstants.RUNTIME_STRING
-            : String.valueOf(getTrafficSplitPercentage()));
-    populateCommonFields(blueGreenVerificationJobDTO);
-    return blueGreenVerificationJobDTO;
-  }
 }

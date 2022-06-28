@@ -13,7 +13,6 @@ import static io.harness.cvng.verificationjob.CVVerificationJobConstants.SENSITI
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.job.Sensitivity;
-import io.harness.cvng.beans.job.VerificationJobDTO;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
@@ -59,11 +58,6 @@ public class TestVerificationJob extends VerificationJob {
   }
 
   @Override
-  public VerificationJobDTO getVerificationJobDTO() {
-    return null;
-  }
-
-  @Override
   protected void validateParams() {
     Preconditions.checkNotNull(sensitivity, generateErrorMessageFromParam(TestVerificationJobKeys.sensitivity));
   }
@@ -82,9 +76,6 @@ public class TestVerificationJob extends VerificationJob {
   public List<TimeRange> getDataCollectionTimeRanges(Instant startTime) {
     return getTimeRangesForDuration(startTime);
   }
-
-  @Override
-  public void fromDTO(VerificationJobDTO verificationJobDTO) {}
 
   @Override
   public void resolveJobParams(Map<String, String> runtimeParameters) {

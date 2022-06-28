@@ -78,20 +78,6 @@ public class TestVerificationJobTest extends CategoryTest {
     assertThat(testVerificationJob.getSensitivity()).isEqualTo(Sensitivity.HIGH);
   }
 
-  @Test
-  @Owner(developers = KAMAL)
-  @Category({UnitTests.class})
-  public void testGetDTO_ignoreCasesInSensitivityInvalid() {
-    TestVerificationJob testVerificationJob = createTestVerificationJob();
-    testVerificationJob.setSensitivity("HigH", false);
-    assertThatThrownBy(() -> testVerificationJob.getVerificationJobDTO())
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("No enum mapping found for HigH");
-    assertThatThrownBy(() -> testVerificationJob.getSensitivity())
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("No enum mapping found for HigH");
-  }
-
   private TestVerificationJob createTestVerificationJob() {
     TestVerificationJob testVerificationJob = new TestVerificationJob();
     testVerificationJob.setDuration(Duration.ofMinutes(2));

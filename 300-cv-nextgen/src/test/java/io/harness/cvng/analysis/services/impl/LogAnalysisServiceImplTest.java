@@ -60,7 +60,6 @@ import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
-import io.harness.cvng.verificationjob.services.api.VerificationJobService;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
@@ -100,7 +99,6 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private DeploymentLogAnalysisService deploymentLogAnalysisService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
-  @Inject private VerificationJobService verificationJobService;
   @Mock private NextGenService nextGenService;
   private Instant instant;
   private String accountId;
