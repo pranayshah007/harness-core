@@ -111,7 +111,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.CI)
 public class IntegrationStageUtils {
   private static final String TAG_EXPRESSION = "<+trigger.tag>";
-  private static final String BRANCH_EXPRESSION = "<+trigger.branch>";
+  public static final String BRANCH_EXPRESSION = "<+trigger.branch>";
   public static final String PR_EXPRESSION = "<+trigger.prNumber>";
 
   private static final String HARNESS_HOSTED = "Harness Hosted";

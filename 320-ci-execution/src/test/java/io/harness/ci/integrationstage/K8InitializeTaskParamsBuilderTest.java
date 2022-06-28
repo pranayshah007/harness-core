@@ -85,7 +85,7 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     when(k8InitializeTaskUtils.getTIServiceEnvVariables(any())).thenReturn(new HashMap<>());
     when(k8InitializeTaskUtils.getSTOServiceEnvVariables(any())).thenReturn(new HashMap<>());
     when(codebaseUtils.getGitEnvVariables(any(), any())).thenReturn(new HashMap<>());
-    when(k8InitializeTaskUtils.getCommonStepEnvVariables(any(), any(), any(), any(), any()))
+    when(k8InitializeTaskUtils.getCommonStepEnvVariables(any(), any(), any(), any()))
         .thenReturn(new HashMap<>());
     when(k8InitializeTaskUtils.getWorkDir()).thenReturn("/harness");
     when(k8InitializeTaskUtils.getCtrSecurityContext(any())).thenReturn(ContainerSecurityContext.builder().build());

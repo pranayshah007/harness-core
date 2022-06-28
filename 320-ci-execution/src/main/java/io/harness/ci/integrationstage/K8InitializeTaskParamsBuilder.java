@@ -229,7 +229,7 @@ public class K8InitializeTaskParamsBuilder {
     Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase);
     Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance);
     Map<String, String> commonEnvVars = k8InitializeTaskUtils.getCommonStepEnvVariables(
-        k8PodDetails, runtimeCodebaseVars, k8InitializeTaskUtils.getWorkDir(), logPrefix, ambiance);
+        k8PodDetails, k8InitializeTaskUtils.getWorkDir(), logPrefix, ambiance);
 
     ConnectorDetails harnessInternalImageConnector =
         harnessImageUtils.getHarnessImageConnectorDetailsForK8(ngAccess, infrastructure);
@@ -266,8 +266,9 @@ public class K8InitializeTaskParamsBuilder {
         k8InitializeStepUtils.getStepConnectorRefs(initializeStepInfo.getStageElementConfig(), ambiance);
     for (ContainerDefinitionInfo containerDefinitionInfo : stageCtrDefinitions) {
       CIK8ContainerParams cik8ContainerParams = createCIK8ContainerParams(ngAccess, containerDefinitionInfo,
-          harnessInternalImageConnector, commonEnvVars, stoEnvVars, gitEnvVars, stepConnectors, volumeToMountPath,
-          k8InitializeTaskUtils.getWorkDir(), k8InitializeTaskUtils.getCtrSecurityContext(infrastructure), logPrefix,
+          harnessInternalImageConnector, commonEnvVars, stoEnvVars, gitEnvVars, runtimeCodebaseVars, stepConnectors,
+          volumeToMountPath, k8InitializeTaskUtils.getWorkDir(),
+          k8InitializeTaskUtils.getCtrSecurityContext(infrastructure), logPrefix,
           secretVariableDetails, githubApiTokenFunctorConnectors, os);
       containerParams.add(cik8ContainerParams);
     }
@@ -285,6 +286,7 @@ public class K8InitializeTaskParamsBuilder {
   private CIK8ContainerParams createCIK8ContainerParams(NGAccess ngAccess,
       ContainerDefinitionInfo containerDefinitionInfo, ConnectorDetails harnessInternalImageConnector,
       Map<String, String> commonEnvVars, Map<String, String> stoEnvVars, Map<String, String> gitEnvVars,
+      Map<String, String> runtimeCodebaseVars,
       Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> connectorRefs, Map<String, String> volumeToMountPath,
       String workDirPath, ContainerSecurityContext ctrSecurityContext, String logPrefix,
       List<SecretVariableDetails> secretVariableDetails, Map<String, ConnectorDetails> githubApiTokenFunctorConnectors,
@@ -331,6 +333,9 @@ public class K8InitializeTaskParamsBuilder {
     Map<String, String> envVarsWithSecretRef = k8InitializeTaskUtils.removeEnvVarsWithSecretRef(envVars);
     if(GIT_CLONE_STEP_ID.equals(containerDefinitionInfo.getStepIdentifier())) {
       envVars.putAll(gitEnvVars);
+
+      // Add runtime git vars, i.e. manual pull request execution data.
+      envVars.putAll(runtimeCodebaseVars);
     }
 
     envVars.putAll(commonEnvVars); //  commonEnvVars needs to be put in end because they overrides webhook parameters
