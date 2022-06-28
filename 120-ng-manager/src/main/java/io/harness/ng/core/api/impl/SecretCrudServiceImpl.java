@@ -89,9 +89,9 @@ public class SecretCrudServiceImpl implements SecretCrudService {
 
   @Inject
   public SecretCrudServiceImpl(SecretEntityReferenceHelper secretEntityReferenceHelper, FileUploadLimit fileUploadLimit,
-                               NGSecretServiceV2 ngSecretService, @Named(ENTITY_CRUD) Producer eventProducer,
-                               NGEncryptedDataService encryptedDataService, NGAccountSettingService accountSettingService,
-                               NGConnectorSecretManagerService ngConnectorSecretManagerService, OpaSecretService opaSecretService) {
+      NGSecretServiceV2 ngSecretService, @Named(ENTITY_CRUD) Producer eventProducer,
+      NGEncryptedDataService encryptedDataService, NGAccountSettingService accountSettingService,
+      NGConnectorSecretManagerService ngConnectorSecretManagerService, OpaSecretService opaSecretService) {
     this.fileUploadLimit = fileUploadLimit;
     this.secretEntityReferenceHelper = secretEntityReferenceHelper;
     this.ngSecretService = ngSecretService;
@@ -105,13 +105,13 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   private void checkEqualityOrThrow(Object str1, Object str2) {
     if (!Objects.equals(str1, str2)) {
       throw new InvalidRequestException(
-              "Cannot change organization, project, identifier, type or secret manager of a secret after creation.",
-              INVALID_REQUEST, USER);
+          "Cannot change organization, project, identifier, type or secret manager of a secret after creation.",
+          INVALID_REQUEST, USER);
     }
   }
 
   private void validateUpdateRequest(String orgIdentifier, String projectIdentifier, String identifier,
-                                     SecretType secretType, String secretManagerIdentifier, SecretDTOV2 updateDTO) {
+      SecretType secretType, String secretManagerIdentifier, SecretDTOV2 updateDTO) {
     checkEqualityOrThrow(orgIdentifier, updateDTO.getOrgIdentifier());
     checkEqualityOrThrow(projectIdentifier, updateDTO.getProjectIdentifier());
     checkEqualityOrThrow(identifier, updateDTO.getIdentifier());
@@ -124,21 +124,21 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       SecretTextSpec secretSpec = (SecretTextSpec) secret.getSecretSpec();
       if (ValueType.Reference.equals(secretSpec.getValueType())) {
         NGEncryptedData encryptedData = encryptedDataService.get(secret.getAccountIdentifier(),
-                secret.getOrgIdentifier(), secret.getProjectIdentifier(), secret.getIdentifier());
+            secret.getOrgIdentifier(), secret.getProjectIdentifier(), secret.getIdentifier());
         secretSpec.setValue(encryptedData.getPath());
       }
     }
     return SecretResponseWrapper.builder()
-            .secret(secret.toDTO())
-            .updatedAt(secret.getLastModifiedAt())
-            .createdAt(secret.getCreatedAt())
-            .draft(secret.isDraft())
-            .build();
+        .secret(secret.toDTO())
+        .updatedAt(secret.getLastModifiedAt())
+        .createdAt(secret.getCreatedAt())
+        .draft(secret.isDraft())
+        .build();
   }
 
-  private SecretDTOV2 getMaskedDTOForOpa(SecretDTOV2 dto){
+  private SecretDTOV2 getMaskedDTOForOpa(SecretDTOV2 dto) {
     SecretDTOV2 secretDTOV2ForOpa = dto;
-    if(dto.getSpec() instanceof SecretTextSpecDTO){
+    if (dto.getSpec() instanceof SecretTextSpecDTO) {
       SecretTextSpecDTO secretTextSpecDTOForOpa = (SecretTextSpecDTO) dto.getSpec();
       secretTextSpecDTOForOpa.setValue(null);
       secretDTOV2ForOpa.setSpec(secretTextSpecDTOForOpa);
@@ -148,9 +148,9 @@ public class SecretCrudServiceImpl implements SecretCrudService {
 
   @Override
   public Boolean validateTheIdentifierIsUnique(
-          String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     return ngSecretService.validateTheIdentifierIsUnique(
-            accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+        accountIdentifier, orgIdentifier, projectIdentifier, identifier);
   }
 
   @Override
@@ -159,14 +159,14 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       throw new InvalidRequestException("value cannot be empty for a secret text.");
     }
     SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
-    if(!isOpaPoliciesSatisfied(accountIdentifier, getMaskedDTOForOpa(dto), secretResponseWrapper)){
+    if (!isOpaPoliciesSatisfied(accountIdentifier, getMaskedDTOForOpa(dto), secretResponseWrapper)) {
       return secretResponseWrapper;
     }
     GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
 
     boolean isHarnessManaged = checkIfSecretManagerUsedIsHarnessManaged(accountIdentifier, dto);
     boolean isBuiltInSMDisabled =
-            accountSettingService.getIsBuiltInSMDisabled(accountIdentifier, null, null, AccountSettingType.CONNECTOR);
+        accountSettingService.getIsBuiltInSMDisabled(accountIdentifier, null, null, AccountSettingType.CONNECTOR);
 
     if (isBuiltInSMDisabled && isHarnessManaged) {
       throw new InvalidRequestException("Built-in Harness Secret Manager cannot be used to create Secret.");
@@ -201,24 +201,24 @@ public class SecretCrudServiceImpl implements SecretCrudService {
      * also change when across scope SM can be used for secret creation. *
      */
     final SecretManagerConfigDTO secretManagerConfig = ngConnectorSecretManagerService.getUsingIdentifier(
-            accountIdentifier, dto.getOrgIdentifier(), dto.getProjectIdentifier(), secretManagerIdentifier, false);
+        accountIdentifier, dto.getOrgIdentifier(), dto.getProjectIdentifier(), secretManagerIdentifier, false);
 
     final Boolean isHarnessManaged = secretManagerConfig.isHarnessManaged();
     return Boolean.TRUE.equals(isHarnessManaged);
   }
 
   private boolean isOpaPoliciesSatisfied(
-          String accountIdentifier, SecretDTOV2 dto, SecretResponseWrapper secretResponseWrapper) {
+      String accountIdentifier, SecretDTOV2 dto, SecretResponseWrapper secretResponseWrapper) {
     GovernanceMetadata governanceMetadata =
-            opaSecretService.evaluatePoliciesWithEntity(accountIdentifier, dto, dto.getOrgIdentifier(),
-                    dto.getProjectIdentifier(), OpaConstants.OPA_EVALUATION_ACTION_CONNECTOR_SAVE, dto.getIdentifier());
+        opaSecretService.evaluatePoliciesWithEntity(accountIdentifier, dto, dto.getOrgIdentifier(),
+            dto.getProjectIdentifier(), OpaConstants.OPA_EVALUATION_ACTION_CONNECTOR_SAVE, dto.getIdentifier());
     secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
     return governanceMetadata == null || !OpaConstants.OPA_STATUS_ERROR.equals(governanceMetadata.getStatus());
   }
 
   private SecretResponseWrapper createSecretInternal(String accountIdentifier, SecretDTOV2 dto, boolean draft) {
     secretEntityReferenceHelper.createSetupUsageForSecretManager(accountIdentifier, dto.getOrgIdentifier(),
-            dto.getProjectIdentifier(), dto.getIdentifier(), dto.getName(), getSecretManagerIdentifier(dto));
+        dto.getProjectIdentifier(), dto.getIdentifier(), dto.getName(), getSecretManagerIdentifier(dto));
     Secret secret = ngSecretService.create(accountIdentifier, dto, draft);
     return getResponseWrapper(secret);
   }
@@ -230,7 +230,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       throw new InvalidRequestException(message.get(), USER);
     }
     SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
-    if(!isOpaPoliciesSatisfied(accountIdentifier, getMaskedDTOForOpa(dto), secretResponseWrapper)){
+    if (!isOpaPoliciesSatisfied(accountIdentifier, getMaskedDTOForOpa(dto), secretResponseWrapper)) {
       return secretResponseWrapper;
     }
     GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
@@ -268,16 +268,16 @@ public class SecretCrudServiceImpl implements SecretCrudService {
 
   @Override
   public Optional<SecretResponseWrapper> get(
-          @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String identifier) {
+      @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String identifier) {
     Optional<Secret> secretV2Optional =
-            ngSecretService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+        ngSecretService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     return secretV2Optional.map(this::getResponseWrapper);
   }
 
   @Override
   public Page<SecretResponseWrapper> list(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-                                          List<String> identifiers, List<SecretType> secretTypes, boolean includeSecretsFromEverySubScope,
-                                          String searchTerm, int page, int size, ConnectorCategory sourceCategory) {
+      List<String> identifiers, List<SecretType> secretTypes, boolean includeSecretsFromEverySubScope,
+      String searchTerm, int page, int size, ConnectorCategory sourceCategory) {
     Criteria criteria = Criteria.where(SecretKeys.accountIdentifier).is(accountIdentifier);
     if (!includeSecretsFromEverySubScope) {
       criteria.and(SecretKeys.orgIdentifier).is(orgIdentifier).and(SecretKeys.projectIdentifier).is(projectIdentifier);
@@ -297,13 +297,13 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     criteria.and(SecretKeys.owner).is(null);
     if (!StringUtils.isEmpty(searchTerm)) {
       criteria = criteria.orOperator(
-              Criteria.where(SecretKeys.name).regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-              Criteria.where(SecretKeys.identifier)
-                      .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-              Criteria.where(SecretKeys.tags + "." + NGTagKeys.key)
-                      .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-              Criteria.where(SecretKeys.tags + "." + NGTagKeys.value)
-                      .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
+          Criteria.where(SecretKeys.name).regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+          Criteria.where(SecretKeys.identifier)
+              .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+          Criteria.where(SecretKeys.tags + "." + NGTagKeys.key)
+              .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+          Criteria.where(SecretKeys.tags + "." + NGTagKeys.value)
+              .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
     }
     if (Objects.nonNull(identifiers) && !identifiers.isEmpty()) {
       criteria.and(SecretKeys.identifier).in(identifiers);
@@ -316,22 +316,22 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   @Override
   public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     Optional<SecretResponseWrapper> optionalSecret =
-            get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+        get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     if (optionalSecret.isPresent()) {
       secretEntityReferenceHelper.validateSecretIsNotUsedByOthers(
-              accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+          accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     } else {
       return false;
     }
 
     NGEncryptedData encryptedData =
-            encryptedDataService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+        encryptedDataService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
 
     boolean remoteDeletionSuccess = true;
     boolean localDeletionSuccess = false;
     if (encryptedData != null) {
       remoteDeletionSuccess =
-              encryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+          encryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     }
 
     if (remoteDeletionSuccess) {
@@ -339,9 +339,9 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     }
     if (remoteDeletionSuccess && localDeletionSuccess) {
       secretEntityReferenceHelper.deleteSecretEntityReferenceWhenSecretGetsDeleted(accountIdentifier, orgIdentifier,
-              projectIdentifier, identifier, getSecretManagerIdentifier(optionalSecret.get().getSecret()));
+          projectIdentifier, identifier, getSecretManagerIdentifier(optionalSecret.get().getSecret()));
       publishEvent(accountIdentifier, orgIdentifier, projectIdentifier, identifier,
-              EventsFrameworkMetadataConstants.DELETE_ACTION);
+          EventsFrameworkMetadataConstants.DELETE_ACTION);
       return true;
     }
     if (!remoteDeletionSuccess) {
@@ -352,18 +352,18 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   }
 
   public void deleteBatch(
-          String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> secretIdentifiersList) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> secretIdentifiersList) {
     for (String identifier : secretIdentifiersList) {
       Optional<SecretResponseWrapper> optionalSecret =
-              get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+          get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
       if (optionalSecret.isPresent()) {
         boolean deletionSuccess =
-                ngSecretService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+            ngSecretService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
         if (deletionSuccess) {
           secretEntityReferenceHelper.deleteSecretEntityReferenceWhenSecretGetsDeleted(accountIdentifier, orgIdentifier,
-                  projectIdentifier, identifier, getSecretManagerIdentifier(optionalSecret.get().getSecret()));
+              projectIdentifier, identifier, getSecretManagerIdentifier(optionalSecret.get().getSecret()));
           publishEvent(accountIdentifier, orgIdentifier, projectIdentifier, identifier,
-                  EventsFrameworkMetadataConstants.DELETE_ACTION);
+              EventsFrameworkMetadataConstants.DELETE_ACTION);
         } else {
           log.error("Unable to delete secret {} locally, data might be inconsistent", identifier);
         }
@@ -372,12 +372,12 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   }
 
   private void publishEvent(
-          String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, String action) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, String action) {
     try {
       EntityChangeDTO.Builder secretEntityChangeDTOBuilder =
-              EntityChangeDTO.newBuilder()
-                      .setAccountIdentifier(StringValue.of(accountIdentifier))
-                      .setIdentifier(StringValue.of(identifier));
+          EntityChangeDTO.newBuilder()
+              .setAccountIdentifier(StringValue.of(accountIdentifier))
+              .setIdentifier(StringValue.of(identifier));
       if (isNotBlank(orgIdentifier)) {
         secretEntityChangeDTOBuilder.setOrgIdentifier(StringValue.of(orgIdentifier));
       }
@@ -385,12 +385,12 @@ public class SecretCrudServiceImpl implements SecretCrudService {
         secretEntityChangeDTOBuilder.setProjectIdentifier(StringValue.of(projectIdentifier));
       }
       eventProducer.send(
-              Message.newBuilder()
-                      .putAllMetadata(
-                              ImmutableMap.of("accountId", accountIdentifier, EventsFrameworkMetadataConstants.ENTITY_TYPE,
-                                      EventsFrameworkMetadataConstants.SECRET_ENTITY, EventsFrameworkMetadataConstants.ACTION, action))
-                      .setData(secretEntityChangeDTOBuilder.build().toByteString())
-                      .build());
+          Message.newBuilder()
+              .putAllMetadata(
+                  ImmutableMap.of("accountId", accountIdentifier, EventsFrameworkMetadataConstants.ENTITY_TYPE,
+                      EventsFrameworkMetadataConstants.SECRET_ENTITY, EventsFrameworkMetadataConstants.ACTION, action))
+              .setData(secretEntityChangeDTOBuilder.build().toByteString())
+              .build());
     } catch (EventsFrameworkDownException e) {
       log.error("Failed to send event to events framework secret Identifier: {}", identifier, e);
     }
@@ -416,13 +416,13 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unable to update secret remotely", USER);
     } else {
       throw new SecretManagementException(
-              SECRET_MANAGEMENT_ERROR, "Unable to update secret locally, data might be inconsistent", USER);
+          SECRET_MANAGEMENT_ERROR, "Unable to update secret locally, data might be inconsistent", USER);
     }
   }
 
   @Override
   public SecretResponseWrapper update(
-          String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, SecretDTOV2 dto) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, SecretDTOV2 dto) {
     validateUpdateRequestAndGetSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier, dto);
     boolean remoteUpdateSuccess = true;
 
@@ -449,7 +449,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
 
   @Override
   public SecretResponseWrapper updateViaYaml(
-          String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, SecretDTOV2 dto) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, SecretDTOV2 dto) {
     if (dto.getSpec().getErrorMessageForInvalidYaml().isPresent()) {
       throw new InvalidRequestException(dto.getSpec().getErrorMessageForInvalidYaml().get(), USER);
     }
@@ -486,9 +486,9 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   private void publishEvent(Secret secret, String action) {
     try {
       EntityChangeDTO.Builder secretEntityChangeDTOBuilder =
-              EntityChangeDTO.newBuilder()
-                      .setAccountIdentifier(StringValue.of(secret.getAccountIdentifier()))
-                      .setIdentifier(StringValue.of(secret.getIdentifier()));
+          EntityChangeDTO.newBuilder()
+              .setAccountIdentifier(StringValue.of(secret.getAccountIdentifier()))
+              .setIdentifier(StringValue.of(secret.getIdentifier()));
       if (isNotBlank(secret.getOrgIdentifier())) {
         secretEntityChangeDTOBuilder.setOrgIdentifier(StringValue.of(secret.getOrgIdentifier()));
       }
@@ -496,12 +496,12 @@ public class SecretCrudServiceImpl implements SecretCrudService {
         secretEntityChangeDTOBuilder.setProjectIdentifier(StringValue.of(secret.getProjectIdentifier()));
       }
       eventProducer.send(
-              Message.newBuilder()
-                      .putAllMetadata(ImmutableMap.of("accountId", secret.getAccountIdentifier(),
-                              EventsFrameworkMetadataConstants.ENTITY_TYPE, EventsFrameworkMetadataConstants.SECRET_ENTITY,
-                              EventsFrameworkMetadataConstants.ACTION, action))
-                      .setData(secretEntityChangeDTOBuilder.build().toByteString())
-                      .build());
+          Message.newBuilder()
+              .putAllMetadata(ImmutableMap.of("accountId", secret.getAccountIdentifier(),
+                  EventsFrameworkMetadataConstants.ENTITY_TYPE, EventsFrameworkMetadataConstants.SECRET_ENTITY,
+                  EventsFrameworkMetadataConstants.ACTION, action))
+              .setData(secretEntityChangeDTOBuilder.build().toByteString())
+              .build());
     } catch (EventsFrameworkDownException e) {
       log.error("Failed to send event to events framework secret Identifier: " + secret.getIdentifier(), e);
     }
@@ -510,7 +510,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   @SneakyThrows
   @Override
   public SecretResponseWrapper createFile(
-          @NotNull String accountIdentifier, @NotNull SecretDTOV2 dto, @NotNull InputStream inputStream) {
+      @NotNull String accountIdentifier, @NotNull SecretDTOV2 dto, @NotNull InputStream inputStream) {
     SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
     if (!isOpaPoliciesSatisfied(accountIdentifier, getMaskedDTOForOpa(dto), secretResponseWrapper)) {
       return secretResponseWrapper;
@@ -519,11 +519,11 @@ public class SecretCrudServiceImpl implements SecretCrudService {
 
     SecretFileSpecDTO specDTO = (SecretFileSpecDTO) dto.getSpec();
     NGEncryptedData encryptedData = encryptedDataService.createSecretFile(
-            accountIdentifier, dto, new BoundedInputStream(inputStream, fileUploadLimit.getEncryptedFileLimit()));
+        accountIdentifier, dto, new BoundedInputStream(inputStream, fileUploadLimit.getEncryptedFileLimit()));
 
     if (Optional.ofNullable(encryptedData).isPresent()) {
       secretEntityReferenceHelper.createSetupUsageForSecretManager(accountIdentifier, dto.getOrgIdentifier(),
-              dto.getProjectIdentifier(), dto.getIdentifier(), dto.getName(), specDTO.getSecretManagerIdentifier());
+          dto.getProjectIdentifier(), dto.getIdentifier(), dto.getName(), specDTO.getSecretManagerIdentifier());
       Secret secret = ngSecretService.create(accountIdentifier, dto, false);
       secretResponseWrapper = getResponseWrapper(secret);
       secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
@@ -533,24 +533,24 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   }
 
   private SecretDTOV2 validateUpdateRequestAndGetSecret(String accountIdentifier, String orgIdentifier,
-                                                        String projectIdentifier, String identifier, SecretDTOV2 updateDTO) {
+      String projectIdentifier, String identifier, SecretDTOV2 updateDTO) {
     Optional<SecretResponseWrapper> secretOptional =
-            get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+        get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     if (!secretOptional.isPresent()) {
       throw new InvalidRequestException("No such secret found, please check identifier/scope and try again.");
     }
 
     SecretDTOV2 existingSecret = secretOptional.get().getSecret();
     validateUpdateRequest(existingSecret.getOrgIdentifier(), existingSecret.getProjectIdentifier(),
-            existingSecret.getIdentifier(), existingSecret.getType(), getSecretManagerIdentifier(existingSecret),
-            updateDTO);
+        existingSecret.getIdentifier(), existingSecret.getType(), getSecretManagerIdentifier(existingSecret),
+        updateDTO);
     return existingSecret;
   }
 
   @SneakyThrows
   @Override
   public SecretResponseWrapper updateFile(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-                                          String identifier, @Valid SecretDTOV2 dto, @NotNull InputStream inputStream) {
+      String identifier, @Valid SecretDTOV2 dto, @NotNull InputStream inputStream) {
     SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
     if (!isOpaPoliciesSatisfied(accountIdentifier, getMaskedDTOForOpa(dto), secretResponseWrapper)) {
       return secretResponseWrapper;
@@ -559,11 +559,11 @@ public class SecretCrudServiceImpl implements SecretCrudService {
 
     validateUpdateRequestAndGetSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier, dto);
     boolean success =
-            Optional
-                    .ofNullable(encryptedDataService.updateSecretFile(accountIdentifier, dto,
-                            (inputStream == null) ? null
-                                    : new BoundedInputStream(inputStream, fileUploadLimit.getEncryptedFileLimit())))
-                    .isPresent();
+        Optional
+            .ofNullable(encryptedDataService.updateSecretFile(accountIdentifier, dto,
+                (inputStream == null) ? null
+                                      : new BoundedInputStream(inputStream, fileUploadLimit.getEncryptedFileLimit())))
+            .isPresent();
 
     if (success) {
       Secret updatedSecret = ngSecretService.update(accountIdentifier, dto, false);
@@ -577,7 +577,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
 
   @Override
   public SecretValidationResultDTO validateSecret(String accountIdentifier, String orgIdentifier,
-                                                  String projectIdentifier, String identifier, @Valid SecretValidationMetaData metadata) {
+      String projectIdentifier, String identifier, @Valid SecretValidationMetaData metadata) {
     return ngSecretService.validateSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier, metadata);
   }
 }
