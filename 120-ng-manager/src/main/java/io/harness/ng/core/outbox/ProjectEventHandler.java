@@ -164,6 +164,7 @@ public class ProjectEventHandler implements OutboxEventHandler {
 
   private boolean publishEvent(String accountIdentifier, String orgIdentifier, String identifier, String action) {
     try {
+      log.info("publishing message related to project event to redis");
       eventProducer.send(
           Message.newBuilder()
               .putAllMetadata(

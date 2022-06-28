@@ -131,6 +131,8 @@ public class ConnectorEntityCRUDStreamListener implements MessageListener {
   }
 
   private boolean processProjectCreateEvent(ProjectEntityChangeDTO projectEntityChangeDTO) {
+    log.info("Received project create event in connectorEntityCRUDStreamListener for accountId {}",
+        projectEntityChangeDTO.getAccountIdentifier());
     final boolean isBuiltInSMDisabled = accountSettingService.getIsBuiltInSMDisabled(
         projectEntityChangeDTO.getAccountIdentifier(), null, null, AccountSettingType.CONNECTOR);
     if (!isBuiltInSMDisabled) {
