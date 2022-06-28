@@ -14,6 +14,8 @@ import io.harness.encryption.Scope;
 import lombok.Builder;
 import lombok.Value;
 
+import java.util.Set;
+
 @OwnedBy(HarnessTeam.CDC)
 @Value
 @Builder
@@ -23,4 +25,5 @@ public class TemplateReferenceSummary {
   String versionLabel;
   Scope scope;
   boolean stableTemplate;
+  Set<String> moduleInfo;
 }

@@ -20,6 +20,7 @@ import io.harness.pms.yaml.YamlUtils;
 
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -45,7 +46,7 @@ public class EntityReferenceService {
       EntityReferenceResponse entityReferenceResponse =
               EntityReferenceResponse.newBuilder()
                       .addAllReferredEntities(response.getReferredEntitiesList())
-                      .addModuleInfo(response.getFilter())
+                      .addAllModuleInfo(new ArrayList(filters.keySet()))
                       .build();
       return entityReferenceResponse;
     } catch (IOException e) {
