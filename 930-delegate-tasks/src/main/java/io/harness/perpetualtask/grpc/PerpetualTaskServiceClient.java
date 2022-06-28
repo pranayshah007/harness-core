@@ -18,7 +18,6 @@ import io.harness.perpetualtask.PerpetualTaskListRequest;
 import io.harness.perpetualtask.PerpetualTaskListResponse;
 import io.harness.perpetualtask.PerpetualTaskManagerClient;
 import io.harness.perpetualtask.PerpetualTaskResponse;
-import io.harness.perpetualtask.PerpetualTaskServiceGrpc.PerpetualTaskServiceBlockingStub;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -32,16 +31,18 @@ import lombok.extern.slf4j.Slf4j;
 import retrofit2.Call;
 import retrofit2.Response;
 
+import javax.annotation.Nullable;
+
 
 @Singleton
 @Slf4j
-public class PerpetualTaskServiceGrpcClient {
-  private final PerpetualTaskServiceBlockingStub serviceBlockingStub;
-  @Inject private PerpetualTaskManagerClient perpetualTaskManagerClient;
+public class PerpetualTaskServiceClient {
+
+  @Inject(optional = true) @Nullable private PerpetualTaskManagerClient perpetualTaskManagerClient;
 
   @Inject
-  public PerpetualTaskServiceGrpcClient(PerpetualTaskServiceBlockingStub perpetualTaskServiceBlockingStub) {
-    serviceBlockingStub = perpetualTaskServiceBlockingStub;
+  public PerpetualTaskServiceClient(PerpetualTaskManagerClient perpetualTaskManagerClient) {
+    this.perpetualTaskManagerClient = perpetualTaskManagerClient;
   }
 
   public List<PerpetualTaskAssignDetails> perpetualTaskList(String delegateId) {
