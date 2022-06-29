@@ -207,8 +207,8 @@ triggerConfig:
   customBaseUrl: http://localhost:12001/api/
 
 logStreamingServiceConfig:
-  baseUrl: http://localhost:8079
-  serviceToken: token
+  baseUrl: https://uat.harness.io/log-service/
+  serviceToken: c76e567a-b341-404d-a8dd-d9738714eb82
 
 opaServerConfig:
   baseUrl: http://localhost:3000

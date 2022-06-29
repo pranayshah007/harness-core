@@ -219,7 +219,7 @@ public class DelegateServiceGrpcClient {
             .setType(TaskType.newBuilder().setType(taskRequest.getTaskType()).build())
             .setExecutionTimeout(Durations.fromSeconds(taskRequest.getExecutionTimeout().getSeconds()));
 
-    if (taskRequest.getSerializationFormat().equals(SerializationFormat.JSON)) {
+    if (taskRequest.getSerializationFormat().equals("JSON")) {
       try {
         taskDetailsBuilder.setJsonParameters(ByteString.copyFrom(objectMapper.writeValueAsBytes(taskParameters)));
       } catch (JsonProcessingException e) {

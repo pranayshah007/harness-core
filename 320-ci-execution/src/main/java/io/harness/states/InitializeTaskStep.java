@@ -8,6 +8,7 @@
 package io.harness.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.beans.outcomes.DockerDetailsOutcome.DOCKER_DETAILS_OUTCOME;
 import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME;
 import static io.harness.beans.outcomes.VmDetailsOutcome.VM_DETAILS_OUTCOME;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -20,7 +21,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.dependencies.ServiceDependency;
 import io.harness.beans.environment.ServiceDefinitionInfo;
+import io.harness.beans.environment.DockerBuildJobInfo;
 import io.harness.beans.outcomes.DependencyOutcome;
+import io.harness.beans.outcomes.DockerDetailsOutcome;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome.VmDetailsOutcomeBuilder;
@@ -31,15 +34,20 @@ import io.harness.ci.integrationstage.BuildJobEnvInfoBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.integrationstage.K8InitializeServiceUtils;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.SerializedResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.CITaskExecutionResponse;
+import io.harness.delegate.beans.ci.docker.CIDockerInitializeTaskParams;
+import io.harness.delegate.beans.ci.docker.DockerTaskExecutionResponse;
 import io.harness.delegate.beans.ci.k8s.CIContainerStatus;
 import io.harness.delegate.beans.ci.k8s.CiK8sTaskResponse;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.VmServiceStatus;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.helper.SerializedResponseDataHelper;
+import io.harness.helpers.docker.CIDockerInitializeStepConverter;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.ng.core.EntityDetail;
@@ -59,11 +67,15 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.stateutils.buildstate.BuildSetupUtils;
+import io.harness.stateutils.buildstate.VmInitializeTaskUtils;
 import io.harness.steps.StepUtils;
 import io.harness.steps.executable.TaskExecutableWithRbac;
 import io.harness.supplier.ThrowingSupplier;
+import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.timeout.Timeout;
+
+import software.wings.beans.SerializationFormat;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -76,19 +88,23 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * This state will setup the build infra e.g. pod or VM.
+ * This state will setup the build infra e.g. pod, VM or docker container.
  */
 
 @Slf4j
 @OwnedBy(CI)
 public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementParameters, CITaskExecutionResponse> {
   public static final String TASK_TYPE_INITIALIZATION_PHASE = "INITIALIZATION_PHASE";
+  public static final String TASK_TYPE_CI_INITIALIZATION_DOCKER = "CI_DOCKER_INITIALIZE_TASK";
   public static final String LE_STATUS_TASK_TYPE = "CI_LE_STATUS";
   public static final Long TASK_BUFFER_TIMEOUT_MILLIS = 30 * 1000L;
   public static final Long VM_INIT_TIMEOUT_MILLIS = 900 * 1000L;
 
+  @Inject private CIDockerInitializeStepConverter dockerInitializeStepConverter;
+  @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
   @Inject private BuildSetupUtils buildSetupUtils;
   @Inject private K8InitializeServiceUtils k8InitializeServiceUtils;
+  @Inject private VmInitializeTaskUtils vmInitializeTaskUtils;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private CIDelegateTaskExecutor ciDelegateTaskExecutor;
@@ -143,31 +159,49 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
       StepElementParameters stepElementParameters, ThrowingSupplier<CITaskExecutionResponse> responseSupplier)
       throws Exception {
-    CITaskExecutionResponse ciTaskExecutionResponse = responseSupplier.get();
+    ResponseData responseData = serializedResponseDataHelper.deserialize(responseSupplier.get());
+    CITaskExecutionResponse ciTaskExecutionResponse = (CITaskExecutionResponse) responseData;
     if (ciTaskExecutionResponse.getType() == CITaskExecutionResponse.Type.K8) {
       return handleK8TaskResponse(ambiance, stepElementParameters, ciTaskExecutionResponse);
     } else if (ciTaskExecutionResponse.getType() == CITaskExecutionResponse.Type.VM) {
       return handleVmTaskResponse(ambiance, stepElementParameters, ciTaskExecutionResponse);
+    } else if (ciTaskExecutionResponse.getType() == CITaskExecutionResponse.Type.DOCKER) {
+      return handleDockerTaskResponse(ambiance, stepElementParameters, ciTaskExecutionResponse);
     } else {
       throw new CIStageExecutionException(
           format("Invalid infra type for task response: %s", ciTaskExecutionResponse.getType()));
     }
   }
 
-  public TaskData getTaskData(StepElementParameters stepElementParameters, CIInitializeTaskParams buildSetupTaskParams,
-      Infrastructure.Type infraType) {
+  public TaskData getTaskData(
+      StepElementParameters stepElementParameters, CIInitializeTaskParams buildSetupTaskParams, Infrastructure.Type infraType) {
     long timeout =
-        Timeout.fromString((String) stepElementParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis();
+            Timeout.fromString((String) stepElementParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis();
     if (infraType == Infrastructure.Type.VM) {
       timeout = VM_INIT_TIMEOUT_MILLIS;
     }
 
-    return TaskData.builder()
-        .async(true)
-        .timeout(timeout + TASK_BUFFER_TIMEOUT_MILLIS)
-        .taskType(TASK_TYPE_INITIALIZATION_PHASE)
-        .parameters(new Object[] {buildSetupTaskParams})
-        .build();
+    if (buildSetupTaskParams.getType() == CIInitializeTaskParams.Type.DOCKER) {
+      return TaskData.builder()
+          .async(true)
+          .timeout(
+              Timeout.fromString((String) stepElementParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis()
+              + TASK_BUFFER_TIMEOUT_MILLIS)
+          .taskType(TASK_TYPE_CI_INITIALIZATION_DOCKER)
+          .serializationFormat(SerializationFormat.JSON)
+          .parameters(
+              new Object[] {dockerInitializeStepConverter.convert((CIDockerInitializeTaskParams) buildSetupTaskParams)})
+          .build();
+    } else {
+      return TaskData.builder()
+          .async(true)
+          .timeout(
+              Timeout.fromString((String) stepElementParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis()
+              + TASK_BUFFER_TIMEOUT_MILLIS)
+          .taskType(TASK_TYPE_INITIALIZATION_PHASE)
+          .parameters(new Object[] {buildSetupTaskParams})
+          .build();
+    }
   }
 
   private StepResponse handleK8TaskResponse(
@@ -206,6 +240,34 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       if (k8sTaskExecutionResponse.getErrorMessage() != null) {
         stepResponseBuilder.failureInfo(
             FailureInfo.newBuilder().setErrorMessage(k8sTaskExecutionResponse.getErrorMessage()).build());
+      }
+      return stepResponseBuilder.build();
+    }
+  }
+
+  private StepResponse handleDockerTaskResponse(
+      Ambiance ambiance, StepElementParameters stepElementParameters, CITaskExecutionResponse ciTaskExecutionResponse) {
+    DockerTaskExecutionResponse dockerTaskExecutionResponse = (DockerTaskExecutionResponse) ciTaskExecutionResponse;
+
+    // TODO: Handle service dependencies and dependency outcomes
+    // TODO: Use command execution status
+    if (dockerTaskExecutionResponse.getCommandExecutionStatus().equals("SUCCESS")) {
+      return StepResponse.builder()
+          .status(Status.SUCCEEDED)
+          .stepOutcome(
+              StepResponse.StepOutcome.builder()
+                  .name(DOCKER_DETAILS_OUTCOME)
+                  .group(StepOutcomeGroup.STAGE.name())
+                  .outcome(DockerDetailsOutcome.builder().ipAddress(dockerTaskExecutionResponse.getIpAddress()).build())
+                  .build())
+          .build();
+    } else {
+      log.error("Docker initialize step execution finished with status [{}] and response [{}]",
+          dockerTaskExecutionResponse.getCommandExecutionStatus(), dockerTaskExecutionResponse);
+      StepResponseBuilder stepResponseBuilder = StepResponse.builder().status(Status.FAILED);
+      if (dockerTaskExecutionResponse.getErrorMessage() != null) {
+        stepResponseBuilder.failureInfo(
+            FailureInfo.newBuilder().setErrorMessage(dockerTaskExecutionResponse.getErrorMessage()).build());
       }
       return stepResponseBuilder.build();
     }
@@ -364,6 +426,17 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     List<String> connectorRefs =
         IntegrationStageUtils.getStageConnectorRefs(initializeStepInfo.getStageElementConfig());
     if (infrastructure.getType() == Infrastructure.Type.VM) {
+      if (!isEmpty(connectorRefs)) {
+        entityDetails.addAll(
+            connectorRefs.stream()
+                .map(connectorIdentifier
+                    -> createEntityDetails(connectorIdentifier, accountIdentifier, projectIdentifier, orgIdentifier))
+                .collect(Collectors.toList()));
+      }
+      return entityDetails;
+    }
+
+    if (infrastructure.getType() == Infrastructure.Type.DOCKER) {
       if (!isEmpty(connectorRefs)) {
         entityDetails.addAll(
             connectorRefs.stream()

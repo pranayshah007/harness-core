@@ -257,7 +257,7 @@ pmsGrpcClientConfig:
   target: localhost:12011
   authority: localhost
 
-shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
+shouldConfigureWithPMS: true
 
 ceAwsSetupConfig:
   accessKey: ce_aws_accessKey_placeholder
@@ -300,8 +300,8 @@ notificationClient:
     notificationClientSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 
 logStreamingServiceConfig:
-  baseUrl: http://localhost:8079
-  serviceToken: token
+  baseUrl: https://uat.harness.io/log-service/
+  serviceToken: c76e567a-b341-404d-a8dd-d9738714eb82
 
 outboxPollConfig:
   initialDelayInSeconds: 5

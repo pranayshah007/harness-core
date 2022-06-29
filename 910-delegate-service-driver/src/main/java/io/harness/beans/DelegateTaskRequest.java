@@ -35,5 +35,5 @@ public class DelegateTaskRequest {
   boolean forceExecute;
   int expressionFunctorToken;
   List<String> eligibleToExecuteDelegateIds;
-  @Builder.Default SerializationFormat serializationFormat = SerializationFormat.KRYO;
+  @Builder.Default String serializationFormat = "KRYO";
 }

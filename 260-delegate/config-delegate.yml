@@ -13,6 +13,6 @@ managerAuthority: localhost
 queueFilePath: ../eventQueue
 grpcServiceEnabled: true
 grpcServiceConnectorPort: 8080
-logStreamingServiceBaseUrl: http://localhost:8079
+logStreamingServiceBaseUrl: https://uat.harness.io/log-service/
 clientToolsDownloadDisabled: false
 installClientToolsInBackground: true
