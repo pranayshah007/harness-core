@@ -161,8 +161,9 @@ public class DelegateAgentManagerClientFactory
           .addInterceptor(chain -> FibonacciBackOff.executeForEver(() -> chain.proceed(chain.request())))
           .hostnameVerifier(new NoopHostnameVerifier())
           // During this call we not just query the task but we also obtain the secret on the manager side
-          // we need to give enough time for the call to finish.
-          .readTimeout(4, TimeUnit.MINUTES)
+          // we need to
+          // give enough time for the call to finish.
+          .readTimeout(5, TimeUnit.MINUTES)
           .build();
     } catch (Exception e) {
       throw new RuntimeException(e);
