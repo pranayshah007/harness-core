@@ -285,7 +285,7 @@ public class InputSetResourcePMS {
     InputSetErrorWrapperDTOPMS errorWrapperDTO = validateAndMergeHelper.validateInputSet(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml, pipelineBranch, pipelineRepoID);
     if (errorWrapperDTO != null) {
-      throw new InvalidInputSetException("Exception in creating the Input Set", errorWrapperDTO);
+      throw new InvalidInputSetException("Some fields in the Input Set are invalid.", errorWrapperDTO);
     }
 
     InputSetEntity createdEntity = pmsInputSetService.create(entity);
@@ -333,7 +333,7 @@ public class InputSetResourcePMS {
           OverlayInputSetErrorWrapperDTOPMS.builder().invalidReferences(invalidReferences).build();
 
       throw new InvalidOverlayInputSetException(
-          "Exception in creating the Overlay Input Set", overlayInputSetErrorWrapperDTOPMS);
+          "Some fields in the Overlay Input Set are invalid.", overlayInputSetErrorWrapperDTOPMS);
     }
 
     InputSetEntity createdEntity = pmsInputSetService.create(entity);
@@ -388,7 +388,7 @@ public class InputSetResourcePMS {
     InputSetErrorWrapperDTOPMS errorWrapperDTO = validateAndMergeHelper.validateInputSet(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml, pipelineBranch, pipelineRepoID);
     if (errorWrapperDTO != null) {
-      throw new InvalidInputSetException("Exception in updating the Input Set", errorWrapperDTO);
+      throw new InvalidInputSetException("Some fields in the Input Set are invalid.", errorWrapperDTO);
     }
 
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
@@ -443,7 +443,7 @@ public class InputSetResourcePMS {
           OverlayInputSetErrorWrapperDTOPMS.builder().invalidReferences(invalidReferences).build();
 
       throw new InvalidOverlayInputSetException(
-          "Exception in updating the Overlay Input Set", overlayInputSetErrorWrapperDTOPMS);
+          "Some fields in the Overlay Input Set are invalid.", overlayInputSetErrorWrapperDTOPMS);
     }
 
     InputSetEntity updatedEntity = pmsInputSetService.update(entityWithVersion, ChangeType.MODIFY);
