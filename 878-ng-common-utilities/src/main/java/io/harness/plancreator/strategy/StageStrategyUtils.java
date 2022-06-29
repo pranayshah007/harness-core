@@ -7,11 +7,14 @@
 
 package io.harness.plancreator.strategy;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.IDENTIFIER;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.NAME;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.exception.InvalidYamlException;
+import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.plan.Dependency;
@@ -29,6 +32,8 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.matrix.StrategyConstants;
 import io.harness.steps.matrix.StrategyMetadata;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
@@ -220,5 +225,14 @@ public class StageStrategyUtils {
                                                                  .strategyNodeName(fieldName)
                                                                  .build())));
     }
+  }
+
+  public void modifyJsonNode(JsonNode jsonNode, List<String> combinations) {
+    String newIdentifier = jsonNode.get(IDENTIFIER).asText() + "_" + String.join("_", combinations);
+    String newName = jsonNode.get(NAME).asText() + "_" + String.join("_", combinations);
+    JsonNodeUtils.updatePropertyInObjectNode(jsonNode, IDENTIFIER, newIdentifier);
+    JsonNodeUtils.updatePropertyInObjectNode(jsonNode, NAME, newName);
+    // Remove strategy node so that we don't calculate strategy on it again in the future.
+    JsonNodeUtils.deletePropertiesInJsonNode((ObjectNode) jsonNode, "strategy");
   }
 }

@@ -17,6 +17,19 @@ pipeline:
               - a: 1
                 b: 2
         type: Approval
+        variables:
+          - name: matrixAExpression
+            value: <+matrix.a>
+            type: String
+          - name: matrixBExpression
+            value: <+matrix.b>
+            type: String
+          - name: currentItertionVariable
+            value: <+strategy.currentIteration>
+            type: String
+          - name: totalIterationVariable
+            value: <+strategy.totalIterations>
+            type: String
         spec:
           execution:
             steps:
@@ -25,9 +38,16 @@ pipeline:
                   identifier: searching
                   steps:
                     - step:
+                        strategy:
+                          matrix:
+                            a: [ "1","2","3" ]
+                            b: [ "2","3","4" ]
+                            exclude:
+                              - a: 1
+                                b: 2
                         type: Http
-                        name: google
-                        identifier: google
+                        name: <+matrix.b>
+                        identifier: <+matrix.a>
                         spec:
                           url: https://www.google.com
                           method: GET
@@ -137,18 +157,28 @@ pipeline:
         strategy:
           for:
             iteration: 10
+        variables:
+          - name: currentItertionVariable
+            value: <+strategy.currentIteration>
+            type: String
+          - name: totalIterationVariable
+            value: <+strategy.totalIterations>
+            type: String
         type: Approval
         spec:
           execution:
             steps:
               - stepGroup:
-                  name: searching
-                  identifier: searching
+                  name: sg2
+                  identifier: sg1
                   steps:
                     - step:
                         type: Http
-                        name: google
-                        identifier: google
+                        name: <+strategy.totalIterations>
+                        identifier: <+strategy.currentIteration>
+                        strategy:
+                          for:
+                            iteration: 10
                         spec:
                           url: https://www.google.com
                           method: GET
@@ -194,6 +224,13 @@ pipeline:
         description: ""
         strategy:
           parallelism: 4
+        variables:
+          - name: currentItertionVariable
+            value: <+strategy.currentIteration>
+            type: String
+          - name: totalIterationVariable
+            value: <+strategy.totalIterations>
+            type: String
         type: Approval
         spec:
           execution:
@@ -204,8 +241,10 @@ pipeline:
                   steps:
                     - step:
                         type: Http
-                        name: google
-                        identifier: google
+                        name: <+strategy.totalIterations>
+                        identifier: <+strategy.currentIteration>
+                        strategy:
+                          parallelism: 4
                         spec:
                           url: https://www.google.com
                           method: GET

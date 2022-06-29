@@ -15,6 +15,7 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -38,5 +39,10 @@ public class ParallelStepElementConfig {
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public ParallelStepElementConfig(List<ExecutionWrapperConfig> sections) {
     this.sections = sections;
+  }
+
+  @JsonValue
+  public List<ExecutionWrapperConfig> getSections() {
+    return sections;
   }
 }
