@@ -13,7 +13,7 @@ import io.harness.network.FibonacciBackOff;
 import io.harness.network.Http;
 import io.harness.network.NoopHostnameVerifier;
 import io.harness.security.TokenGenerator;
-import io.harness.serializer.kryo.KryoConverterFactory;
+import io.harness.serializer.kryo.DelegateKryoConverterFactory;
 import io.harness.version.VersionInfoManager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,7 +52,7 @@ public class DelegateAgentManagerClientFactory
       ImmutableList.of(new io.harness.managerclient.DelegateAgentManagerClientX509TrustManager());
 
   @Inject private VersionInfoManager versionInfoManager;
-  @Inject private KryoConverterFactory kryoConverterFactory;
+  @Inject private DelegateKryoConverterFactory kryoConverterFactory;
 
   private String baseUrl;
   private TokenGenerator tokenGenerator;
