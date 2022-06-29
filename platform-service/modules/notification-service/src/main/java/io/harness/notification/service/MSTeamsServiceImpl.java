@@ -167,7 +167,7 @@ public class MSTeamsServiceImpl implements ChannelService {
     }
     String message = messageOpt.get();
     NotificationProcessingResponse processingResponse = null;
-    if (notificationSettingsService.getSendNotificationViaDelegate(accountId)) {
+    if (notificationSettingsService.checkIfWebhookIsSecret(microsoftTeamsWebhookUrls)) {
       DelegateTaskRequest delegateTaskRequest =
           DelegateTaskRequest.builder()
               .accountId(accountId)

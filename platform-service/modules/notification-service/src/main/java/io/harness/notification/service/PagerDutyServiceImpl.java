@@ -164,7 +164,7 @@ public class PagerDutyServiceImpl implements ChannelService {
     }
 
     NotificationProcessingResponse processingResponse = null;
-    if (notificationSettingsService.getSendNotificationViaDelegate(accountId)) {
+    if (notificationSettingsService.checkIfWebhookIsSecret(pagerDutyKeys)) {
       DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
                                                     .accountId(accountId)
                                                     .taskType("NOTIFY_PAGERDUTY")
