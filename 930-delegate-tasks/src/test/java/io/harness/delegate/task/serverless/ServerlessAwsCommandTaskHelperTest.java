@@ -8,34 +8,33 @@
 package io.harness.delegate.task.serverless;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.logging.LogLevel.INFO;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 
+import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static software.wings.beans.LogHelper.color;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.category.element.UnitTests;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
-import io.harness.delegate.beans.serverless.ServerlessAwsLambdaCloudFormationSchema;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaFunction;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaManifestSchema;
-import io.harness.delegate.exception.TaskNGDataException;
+import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
-import io.harness.delegate.task.serverless.request.ServerlessDeployRequest;
 import io.harness.exception.HintException;
 import io.harness.filesystem.FileIo;
 import io.harness.delegate.task.serverless.request.ServerlessCommandRequest;
@@ -43,46 +42,34 @@ import io.harness.delegate.task.serverless.request.ServerlessPrepareRollbackData
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.rule.Owner;
 import io.harness.serverless.*;
 import io.harness.serverless.model.ServerlessAwsLambdaConfig;
 import io.harness.serverless.model.ServerlessDelegateTaskParams;
 
-import io.harness.version.VersionInfoManager;
 import org.apache.commons.io.IOUtils;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.mockito.Spy;
+import org.junit.runner.RunWith;
 import org.zeroturnaround.exec.ProcessExecutor;
-import org.zeroturnaround.exec.ProcessOutput;
-import org.zeroturnaround.exec.ProcessResult;
-import org.zeroturnaround.exec.stream.LogOutputStream;
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
 import software.wings.service.intfc.aws.delegate.AwsCFHelperServiceDelegate;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 import software.wings.service.impl.AwsApiHelperService;
-import software.wings.service.intfc.aws.delegate.AwsCFHelperServiceDelegate;
 
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
-import java.util.Optional;
 
-import org.apache.commons.io.IOUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -91,7 +78,13 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({ServerlessCommandTaskHelper.class})
 @OwnedBy(CDP)
 public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -108,6 +101,27 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   private ServerlessAwsLambdaManifestSchema serverlessAwsLambdaManifestSchema =
       ServerlessAwsLambdaManifestSchema.builder().plugins(Arrays.asList("asfd", "asfdasdf")).build();
   private ServerlessDelegateTaskParams serverlessDelegateTaskParams = ServerlessDelegateTaskParams.builder().build();
+  private ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig = ServerlessAwsLambdaInfraConfig.builder()
+          .stage("stage")
+          .region("us-east-2").build();
+  private GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
+          .branch("branch")
+          .commitId("commitId")
+          .connectorName("connector")
+          .manifestId("manifest").build();
+  private ServerlessAwsLambdaManifestConfig serverlessAwsLambdaManifestConfig = ServerlessAwsLambdaManifestConfig.builder()
+          .configOverridePath("configPath")
+          .gitStoreDelegateConfig(gitStoreDelegateConfig).build();
+  private ServerlessAwsLambdaDeployConfig serverlessAwsLambdaDeployConfig = ServerlessAwsLambdaDeployConfig.builder()
+          .commandOptions("options").build();
+  private ServerlessCliResponse response = ServerlessCliResponse.builder()
+          .commandExecutionStatus(CommandExecutionStatus.SUCCESS).output("output").build();
+  private     ServerlessAwsLambdaConfig serverlessAwsLambdaConfig =
+          ServerlessAwsLambdaConfig.builder()
+                  .provider("aws")
+                  .accessKey("accessKey")
+                  .secretKey("secretKey")
+                  .build();
   @Mock private ListObjectsV2Result listObjectsV2Result;
   @Mock private AwsConnectorDTO awsConnectorDTO;
   @Mock private LogCallback logCallback;
@@ -199,29 +213,141 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   @Test
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
-  public void configCredentialTest() throws IOException, InterruptedException, TimeoutException {
+  public void configCredentialFailTest() throws IOException, InterruptedException, TimeoutException {
     ServerlessClient serverlessClient = ServerlessClient.client("");
     ConfigCredentialCommand command = Mockito.spy(new ConfigCredentialCommand(serverlessClient));
     doReturn("serverless deploy hi").when(command).command();
-//    doReturn(command).when(serverlessClient).configCredential();
-    ServerlessAwsLambdaConfig serverlessAwsLambdaConfig =
-            ServerlessAwsLambdaConfig.builder()
-            .provider("aws").accessKey("accessKey").secretKey("secretKey")
-            .build();
-    ServerlessCliResponse serverlessCliResponse =
-            ServerlessCliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).output("output").build();
+
+    ServerlessCliResponse response =
+            ServerlessCliResponse.builder()
+                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                    .output("output").build();
+
     String workingDir =
             Paths.get("workingDir").normalize().toAbsolutePath().toString();
-
     FileIo.createDirectoryIfDoesNotExist(workingDir);
     ServerlessDelegateTaskParams serverlessDelegateTaskParams =
-                        ServerlessDelegateTaskParams.builder().workingDirectory(workingDir).build();
-    //ProcessResult processResult = new ProcessResult(3,new ProcessOutput(new byte[]{0x05}));
-    ServerlessCliResponse serverlessCliResponse1 = serverlessAwsCommandTaskHelper
+            ServerlessDelegateTaskParams.builder()
+                    .workingDirectory(workingDir).build();
+
+    ServerlessCliResponse serverlessCliResponse = serverlessAwsCommandTaskHelper
             .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams,
             logCallback, true, 30000);
-    System.out.println(serverlessCliResponse1);
+
+    assertThat(serverlessCliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
     FileIo.deleteDirectoryAndItsContentIfExists(workingDir);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void configCredentialSuccessTest() throws IOException, InterruptedException, TimeoutException {
+    ServerlessClient serverlessClient = ServerlessClient.client("");
+
+    ServerlessDelegateTaskParams serverlessDelegateTaskParams =
+            ServerlessDelegateTaskParams.builder().workingDirectory("workingDir").build();
+
+    mockStatic(ServerlessCommandTaskHelper.class);
+    PowerMockito.when(ServerlessCommandTaskHelper
+                     .executeCommand(any(), any(), any(), anyBoolean(), anyLong())
+                     ).thenReturn(response);
+
+    ServerlessCliResponse serverlessCliResponse = serverlessAwsCommandTaskHelper
+            .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams,
+                    logCallback, true, 30000);
+
+    PowerMockito.verifyStatic(ServerlessCommandTaskHelper.class, times(1));
+    ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong());
+
+    assertThat(serverlessCliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void deploySuccessTest() throws IOException, InterruptedException, TimeoutException {
+    ServerlessClient serverlessClient = ServerlessClient.client("");
+
+    mockStatic(ServerlessCommandTaskHelper.class);
+    PowerMockito.when(ServerlessCommandTaskHelper
+            .executeCommand(any(), any(), any(), anyBoolean(), anyLong())
+    ).thenReturn(response);
+
+    ServerlessCliResponse serverlessCliResponse = serverlessAwsCommandTaskHelper
+            .deploy(serverlessClient, serverlessDelegateTaskParams, logCallback,
+                    serverlessAwsLambdaDeployConfig
+                   , serverlessAwsLambdaInfraConfig, 30000,serverlessAwsLambdaManifestConfig);
+
+    PowerMockito.verifyStatic(ServerlessCommandTaskHelper.class, times(1));
+    ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong());
+
+    assertThat(serverlessCliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void deployListTest() throws IOException, InterruptedException, TimeoutException {
+    ServerlessClient serverlessClient = ServerlessClient.client("");
+
+    mockStatic(ServerlessCommandTaskHelper.class);
+    PowerMockito.when(ServerlessCommandTaskHelper
+            .executeCommand(any(), any(), any(), anyBoolean(), anyLong())
+    ).thenReturn(response);
+
+    ServerlessCliResponse serverlessCliResponse = serverlessAwsCommandTaskHelper
+            .deployList(serverlessClient, serverlessDelegateTaskParams, logCallback,
+                    serverlessAwsLambdaInfraConfig, 30000,serverlessAwsLambdaManifestConfig);
+
+    PowerMockito.verifyStatic(ServerlessCommandTaskHelper.class, times(1));
+    ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong());
+
+    assertThat(serverlessCliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void removeTest() throws IOException, InterruptedException, TimeoutException {
+    ServerlessClient serverlessClient = ServerlessClient.client("");
+
+    mockStatic(ServerlessCommandTaskHelper.class);
+    PowerMockito.when(ServerlessCommandTaskHelper
+            .executeCommand(any(), any(), any(), anyBoolean(), anyLong())
+    ).thenReturn(response);
+
+    ServerlessCliResponse serverlessCliResponse = serverlessAwsCommandTaskHelper
+            .remove(serverlessClient, serverlessDelegateTaskParams, logCallback,30000,
+                    serverlessAwsLambdaManifestConfig, serverlessAwsLambdaInfraConfig);
+
+    PowerMockito.verifyStatic(ServerlessCommandTaskHelper.class, times(1));
+    ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong());
+
+    assertThat(serverlessCliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void rollbackTest() throws IOException, InterruptedException, TimeoutException {
+    ServerlessClient serverlessClient = ServerlessClient.client("");
+    ServerlessAwsLambdaRollbackConfig serverlessAwsLambdaRollbackConfig = ServerlessAwsLambdaRollbackConfig.builder()
+            .previousVersionTimeStamp("123").build();
+
+    mockStatic(ServerlessCommandTaskHelper.class);
+    PowerMockito.when(ServerlessCommandTaskHelper
+            .executeCommand(any(), any(), any(), anyBoolean(), anyLong())
+    ).thenReturn(response);
+
+    ServerlessCliResponse serverlessCliResponse = serverlessAwsCommandTaskHelper
+            .rollback(serverlessClient, serverlessDelegateTaskParams, logCallback,
+                    serverlessAwsLambdaRollbackConfig, 30000,
+                    serverlessAwsLambdaManifestConfig, serverlessAwsLambdaInfraConfig);
+
+    PowerMockito.verifyStatic(ServerlessCommandTaskHelper.class, times(1));
+    ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong());
+
+    assertThat(serverlessCliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
   }
 
   @Test
@@ -303,13 +429,71 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   @Test
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
+  public void setUpConfigureCredentialSuccessTest() throws Exception {
+    ServerlessClient serverlessClient = ServerlessClient.client("");
+
+    mockStatic(ServerlessCommandTaskHelper.class);
+    PowerMockito.when(ServerlessCommandTaskHelper
+            .executeCommand(any(), any(), any(), anyBoolean(), anyLong())
+    ).thenReturn(response);
+
+    serverlessAwsCommandTaskHelper.setUpConfigureCredential(serverlessAwsLambdaConfig,
+            logCallback, serverlessDelegateTaskParams, "MANUAL_CREDENTIALS", serverlessClient, 10000);
+
+    PowerMockito.verifyStatic(ServerlessCommandTaskHelper.class, times(1));
+    ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong());
+
+    verify(logCallback).saveExecutionLog(
+            color(format("%nConfig Credential command executed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
+
+  }
+
+  @Test(expected = HintException.class)
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void setUpConfigureCredentialFailureTest() throws Exception {
+    ServerlessClient serverlessClient = ServerlessClient.client("");
+    ServerlessCliResponse response = ServerlessCliResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.FAILURE).output("output").build();
+
+    mockStatic(ServerlessCommandTaskHelper.class);
+    PowerMockito.when(ServerlessCommandTaskHelper
+            .executeCommand(any(), any(), any(), anyBoolean(), anyLong())
+    ).thenReturn(response);
+
+    serverlessAwsCommandTaskHelper.setUpConfigureCredential(serverlessAwsLambdaConfig,
+            logCallback, serverlessDelegateTaskParams, "MANUAL_CREDENTIALS", serverlessClient, 10000);
+
+    PowerMockito.verifyStatic(ServerlessCommandTaskHelper.class, times(1));
+    ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong());
+    verify(logCallback).saveExecutionLog(
+            color(format("%nConfig Credential command failed..%n"), LogColor.Red, LogWeight.Bold),
+            ERROR, CommandExecutionStatus.FAILURE);
+    verify(logCallback).saveExecutionLog(
+            color(format("%n configure credential failed."), LogColor.Red, LogWeight.Bold), LogLevel.ERROR,
+            CommandExecutionStatus.FAILURE);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void setUpConfigureCredentialNotManualCredTest() throws Exception {
+    serverlessAwsCommandTaskHelper.setUpConfigureCredential(serverlessAwsLambdaConfig,
+            logCallback, serverlessDelegateTaskParams, "ISRA", serverlessClient, 10000);
+
+    logCallback.saveExecutionLog(
+            format("skipping configure credentials command..%n%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
   public void fetchFunctionOutputFromCloudFormationTemplateEmptyTest() throws Exception {
     String cloudDir = Paths.get("cloudDir",UUIDGenerator.convertBase64UuidToCanonicalForm(UUIDGenerator.generateUuid()))
             .normalize().toAbsolutePath().toString();
     FileIo.createDirectoryIfDoesNotExist(cloudDir);
     FileIo.writeUtf8StringToFile(cloudDir+"/"+CLOUDFORMATION_UPDATE_FILE,"");
-//    System.out.println("hi vamsi");
-//    System.out.println(Paths.get(cloudDir, CLOUDFORMATION_UPDATE_FILE).toString());
     serverlessAwsCommandTaskHelper.fetchFunctionOutputFromCloudFormationTemplate(cloudDir);
     FileIo.deleteDirectoryAndItsContentIfExists(cloudDir);
   }
