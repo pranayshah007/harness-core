@@ -230,6 +230,42 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
   @Test
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
+  public void testExpandStageJsonNodesMatrixHavingExpression() throws IOException {
+    MockitoAnnotations.initMocks(this);
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("pipeline-with-strategy-having-one-expression.yaml");
+    assertThat(testFile).isNotNull();
+    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
+    String pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
+
+    YamlField pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid).getNode().getField("pipeline");
+    assertThat(pipelineYamlField).isNotNull();
+    YamlField stagesYamlField = pipelineYamlField.getNode().getField("stages");
+    assertThat(stagesYamlField).isNotNull();
+    List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
+
+    YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
+    List<JsonNode> jsonNodes = strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode());
+    assertThat(jsonNodes.size()).isEqualTo(8);
+    List<String> appendValues = Lists.newArrayList("0_1", "0_2", "1_0", "1_1", "1_2", "2_0", "2_1", "2_2");
+    List<String> variableAValues = Lists.newArrayList(
+        "1", "1", "2", "2", "2", "<+pipeline.variables.a>", "<+pipeline.variables.a>", "<+pipeline.variables.a>");
+    List<String> variableBValues = Lists.newArrayList("3", "4", "2", "3", "4", "2", "3", "4");
+
+    int current = 0;
+    for (JsonNode jsonNode : jsonNodes) {
+      assertThat(jsonNode.get("identifier").asText()).isEqualTo("a11_" + appendValues.get(current));
+      assertThat(jsonNode.get("variables").get(0).get("value").asText()).isEqualTo(variableAValues.get(current));
+      assertThat(jsonNode.get("variables").get(1).get("value").asText()).isEqualTo(variableBValues.get(current));
+      assertThat(jsonNode.get("variables").get(2).get("value").asText()).isEqualTo(String.valueOf(current));
+      assertThat(jsonNode.get("variables").get(3).get("value").asText()).isEqualTo(String.valueOf(8));
+      current++;
+    }
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
   public void testExpandStageJsonNodesFor() throws IOException {
     MockitoAnnotations.initMocks(this);
     ClassLoader classLoader = this.getClass().getClassLoader();

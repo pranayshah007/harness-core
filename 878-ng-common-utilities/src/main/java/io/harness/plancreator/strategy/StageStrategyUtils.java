@@ -7,6 +7,9 @@
 
 package io.harness.plancreator.strategy;
 
+import static io.harness.expression.EngineExpressionEvaluator.EXPR_END;
+import static io.harness.expression.EngineExpressionEvaluator.EXPR_END_ESC;
+import static io.harness.expression.EngineExpressionEvaluator.EXPR_START_ESC;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.IDENTIFIER;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.NAME;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
@@ -38,6 +41,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -234,5 +238,29 @@ public class StageStrategyUtils {
     JsonNodeUtils.updatePropertyInObjectNode(jsonNode, NAME, newName);
     // Remove strategy node so that we don't calculate strategy on it again in the future.
     JsonNodeUtils.deletePropertiesInJsonNode((ObjectNode) jsonNode, "strategy");
+  }
+
+  public String replaceExpressions(
+      String jsonString, Map<String, String> combinations, int currentIteration, int totalIteration) {
+    Map<String, String> expressions = createExpressions(combinations, currentIteration, totalIteration);
+    String result = jsonString;
+    for (Map.Entry<String, String> expression : expressions.entrySet()) {
+      result = result.replaceAll(expression.getKey(), expression.getValue());
+    }
+    return result;
+  }
+  public Map<String, String> createExpressions(
+      Map<String, String> combinations, int currentIteration, int totalIteration) {
+    Map<String, String> expressionsMap = new HashMap<>();
+    String matrixExpression = EXPR_START_ESC + "matrix.%s" + EXPR_END_ESC;
+    String strategyMatrixExpression = EXPR_START_ESC + "strategy.matrix.%s" + EXPR_END_ESC;
+
+    for (Map.Entry<String, String> entry : combinations.entrySet()) {
+      expressionsMap.put(String.format(matrixExpression, entry.getKey()), entry.getValue());
+      expressionsMap.put(String.format(strategyMatrixExpression, entry.getKey()), entry.getValue());
+    }
+    expressionsMap.put(EXPR_START_ESC + "strategy.currentIteration" + EXPR_END_ESC, String.valueOf(currentIteration));
+    expressionsMap.put(EXPR_START_ESC + "strategy.totalIterations" + EXPR_END, String.valueOf(totalIteration));
+    return expressionsMap;
   }
 }

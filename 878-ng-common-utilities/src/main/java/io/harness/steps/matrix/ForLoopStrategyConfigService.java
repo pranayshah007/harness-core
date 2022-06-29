@@ -43,12 +43,10 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
     HarnessForConfig harnessForConfig = strategyConfig.getForConfig();
     List<JsonNode> jsonNodes = new ArrayList<>();
     for (int i = 0; i < harnessForConfig.getIteration().getValue(); i++) {
-      JsonNode clonedNode = jsonNode.deepCopy();
+      JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StageStrategyUtils.replaceExpressions(
+          jsonNode.deepCopy().toString(), new HashMap<>(), i, harnessForConfig.getIteration().getValue())));
       StageStrategyUtils.modifyJsonNode(clonedNode, Lists.newArrayList(String.valueOf(i)));
-      StrategyExpressionEvaluator strategyExpressionEvaluator =
-          new StrategyExpressionEvaluator(new HashMap<>(), i, harnessForConfig.getIteration().getValue());
-      jsonNodes.add(
-          JsonPipelineUtils.asTree(strategyExpressionEvaluator.resolve(JsonUtils.asMap(clonedNode.toString()), true)));
+      jsonNodes.add(clonedNode);
     }
     return jsonNodes;
   }

@@ -1,0 +1,89 @@
+pipeline:
+  name: plan creator
+  identifier: plan_creator
+  projectIdentifier: LocalDev
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: a1-1
+        identifier: a11
+        description: ""
+        strategy:
+          matrix:
+            a: [ "1","2","<+pipeline.variables.a>"]
+            b: ["2","3","4"]
+            exclude:
+              - a: 1
+                b: 2
+        type: Approval
+        variables:
+          - name: matrixAExpression
+            value: <+matrix.a>
+            type: String
+          - name: matrixBExpression
+            value: <+matrix.b>
+            type: String
+          - name: currentItertionVariable
+            value: <+strategy.currentIteration>
+            type: String
+          - name: totalIterationVariable
+            value: <+strategy.totalIterations>
+            type: String
+        spec:
+          execution:
+            steps:
+              - stepGroup:
+                  name: searching
+                  identifier: searching
+                  steps:
+                    - step:
+                        strategy:
+                          matrix:
+                            a: [ "1","2","3" ]
+                            b: [ "2","3","4" ]
+                            exclude:
+                              - a: 1
+                                b: 2
+                        type: Http
+                        name: <+matrix.b>
+                        identifier: <+matrix.a>
+                        spec:
+                          url: https://www.google.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 1m
+                    - step:
+                        type: Http
+                        name: bing
+                        identifier: bing
+                        spec:
+                          url: https://www.bing.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 10s
+              - parallel:
+                  - step:
+                      type: Http
+                      name: google again
+                      identifier: google_again
+                      spec:
+                        url: https://www.google.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+                  - step:
+                      type: Http
+                      name: bing in parallel
+                      identifier: bing_in_parallel
+                      spec:
+                        url: https://www.bing.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+          serviceDependencies: []
+        tags: {}

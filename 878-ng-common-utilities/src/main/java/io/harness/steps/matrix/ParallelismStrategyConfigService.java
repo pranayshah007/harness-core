@@ -47,12 +47,10 @@ public class ParallelismStrategyConfigService implements StrategyConfigService {
     }
     List<JsonNode> jsonNodes = new ArrayList<>();
     for (int i = 0; i < parallelism; i++) {
-      JsonNode clonedJsonNode = jsonNode.deepCopy();
+      JsonNode clonedJsonNode = JsonPipelineUtils.asTree(JsonUtils.asMap(
+          StageStrategyUtils.replaceExpressions(jsonNode.deepCopy().toString(), new HashMap<>(), i, parallelism)));
       StageStrategyUtils.modifyJsonNode(clonedJsonNode, Lists.newArrayList(String.valueOf(i)));
-      StrategyExpressionEvaluator strategyExpressionEvaluator =
-          new StrategyExpressionEvaluator(new HashMap<>(), i, parallelism);
-      jsonNodes.add(JsonPipelineUtils.asTree(
-          strategyExpressionEvaluator.resolve(JsonUtils.asMap(clonedJsonNode.toString()), true)));
+      jsonNodes.add(clonedJsonNode);
     }
     return jsonNodes;
   }
