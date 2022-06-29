@@ -20,20 +20,15 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.VerificationApplication;
 import io.harness.cvng.beans.DataSourceType;
-import io.harness.cvng.beans.job.Sensitivity;
-import io.harness.cvng.beans.job.TestVerificationJobDTO;
-import io.harness.cvng.beans.job.VerificationJobDTO;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.TimeSeriesThreshold;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.MetricPackService;
-import io.harness.cvng.verificationjob.services.api.VerificationJobService;
 import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.persistence.PersistentEntity;
 import io.harness.rule.Owner;
 
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -48,7 +43,6 @@ import org.reflections.Reflections;
 public class ProjectChangeEventMessageProcessorTest extends CvNextGenTestBase {
   @Inject private ProjectChangeEventMessageProcessor projectChangeEventMessageProcessor;
   @Inject private CVConfigService cvConfigService;
-  @Inject private VerificationJobService verificationJobService;
   @Inject private MetricPackService metricPackService;
   private BuilderFactory builderFactory;
 
@@ -68,21 +62,11 @@ public class ProjectChangeEventMessageProcessorTest extends CvNextGenTestBase {
     CVConfig cvConfig2 = createCVConfig(accountId, orgIdentifier, "project2");
     cvConfigService.save(cvConfig1);
     cvConfigService.save(cvConfig2);
-    VerificationJobDTO verificationJobDTO1 = createVerificationJobDTO(orgIdentifier, "project1");
-    VerificationJobDTO verificationJobDTO2 = createVerificationJobDTO(orgIdentifier, "project2");
-    verificationJobService.create(accountId, verificationJobDTO1);
-    verificationJobService.create(accountId, verificationJobDTO2);
     projectChangeEventMessageProcessor.processDeleteAction(ProjectEntityChangeDTO.newBuilder()
                                                                .setAccountIdentifier(accountId)
                                                                .setOrgIdentifier(orgIdentifier)
                                                                .setIdentifier("project1")
                                                                .build());
-    assertThat(verificationJobService.getVerificationJobDTO(
-                   accountId, orgIdentifier, "project1", verificationJobDTO1.getIdentifier()))
-        .isNull();
-    assertThat(verificationJobService.getVerificationJobDTO(
-                   accountId, orgIdentifier, "project2", verificationJobDTO2.getIdentifier()))
-        .isNotNull();
     assertThat(cvConfigService.get(cvConfig1.getUuid())).isNull();
     assertThat(cvConfigService.get(cvConfig2.getUuid())).isNotNull();
 
@@ -96,12 +80,6 @@ public class ProjectChangeEventMessageProcessorTest extends CvNextGenTestBase {
                                                                .setOrgIdentifier(orgIdentifier)
                                                                .setIdentifier("project1")
                                                                .build());
-    assertThat(verificationJobService.getVerificationJobDTO(
-                   accountId, orgIdentifier, "project1", verificationJobDTO1.getIdentifier()))
-        .isNull();
-    assertThat(verificationJobService.getVerificationJobDTO(
-                   accountId, orgIdentifier, "project2", verificationJobDTO2.getIdentifier()))
-        .isNotNull();
     assertThat(retrievedCVConfig1).isNull();
     assertThat(retrievedCVConfig2).isNotNull();
   }
@@ -116,19 +94,8 @@ public class ProjectChangeEventMessageProcessorTest extends CvNextGenTestBase {
     CVConfig cvConfig2 = createCVConfig(accountId, orgIdentifier, "project2");
     cvConfigService.save(cvConfig1);
     cvConfigService.save(cvConfig2);
-    VerificationJobDTO verificationJobDTO1 = createVerificationJobDTO(orgIdentifier, "project1");
-    VerificationJobDTO verificationJobDTO2 = createVerificationJobDTO(orgIdentifier, "project2");
-    verificationJobService.create(accountId, verificationJobDTO1);
-    verificationJobService.create(accountId, verificationJobDTO2);
     projectChangeEventMessageProcessor.processDeleteAction(
         ProjectEntityChangeDTO.newBuilder().setAccountIdentifier(accountId).setOrgIdentifier(orgIdentifier).build());
-
-    assertThat(verificationJobService.getVerificationJobDTO(
-                   accountId, orgIdentifier, "project1", verificationJobDTO1.getIdentifier()))
-        .isNotNull();
-    assertThat(verificationJobService.getVerificationJobDTO(
-                   accountId, orgIdentifier, "project2", verificationJobDTO2.getIdentifier()))
-        .isNotNull();
     assertThat(cvConfigService.get(cvConfig1.getUuid())).isNotNull();
     assertThat(cvConfigService.get(cvConfig2.getUuid())).isNotNull();
   }
@@ -186,22 +153,5 @@ public class ProjectChangeEventMessageProcessorTest extends CvNextGenTestBase {
         .projectIdentifier(projectIdentifier)
         .orgIdentifier(orgIdentifier)
         .build();
-  }
-
-  private VerificationJobDTO createVerificationJobDTO(String orgIdentifier, String projectIdentifier) {
-    TestVerificationJobDTO testVerificationJobDTO = new TestVerificationJobDTO();
-    testVerificationJobDTO.setIdentifier(generateUuid());
-    testVerificationJobDTO.setJobName(generateUuid());
-    testVerificationJobDTO.setDataSources(Lists.newArrayList(DataSourceType.APP_DYNAMICS));
-    testVerificationJobDTO.setMonitoringSources(Arrays.asList(generateUuid()));
-    testVerificationJobDTO.setBaselineVerificationJobInstanceId(null);
-    testVerificationJobDTO.setSensitivity(Sensitivity.MEDIUM.name());
-    testVerificationJobDTO.setServiceIdentifier(generateUuid());
-    testVerificationJobDTO.setEnvIdentifier(generateUuid());
-    testVerificationJobDTO.setBaselineVerificationJobInstanceId(generateUuid());
-    testVerificationJobDTO.setDuration("15m");
-    testVerificationJobDTO.setProjectIdentifier(projectIdentifier);
-    testVerificationJobDTO.setOrgIdentifier(orgIdentifier);
-    return testVerificationJobDTO;
   }
 }

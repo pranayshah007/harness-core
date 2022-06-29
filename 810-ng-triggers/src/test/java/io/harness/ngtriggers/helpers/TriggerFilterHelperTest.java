@@ -128,20 +128,20 @@ public class TriggerFilterHelperTest extends CategoryTest {
             gitWebhookTriggerRepoFilter, headerTriggerFilter, githubIssueCommentTriggerFilter, filepathTriggerFilter);
 
     webhookTriggerFilters = triggerFilterStore.getWebhookTriggerFilters(
-            webhookPayloadDataBuilder
-                    .parseWebhookResponse(
-                            ParseWebhookResponse.newBuilder()
-                                    .setComment(
-                                            IssueCommentHook.newBuilder()
-                                                    .setIssue(Issue.newBuilder().setPr(PullRequest.newBuilder().setNumber(1).build()).build())
-                                                    .build())
-                                    .build())
-                    .originalEvent(originalEventBuilder.sourceRepoType("GITLAB").build())
-                    .build());
+        webhookPayloadDataBuilder
+            .parseWebhookResponse(
+                ParseWebhookResponse.newBuilder()
+                    .setComment(
+                        IssueCommentHook.newBuilder()
+                            .setIssue(Issue.newBuilder().setPr(PullRequest.newBuilder().setNumber(1).build()).build())
+                            .build())
+                    .build())
+            .originalEvent(originalEventBuilder.sourceRepoType("GITLAB").build())
+            .build());
     assertThat(webhookTriggerFilters).isNotNull();
     assertThat(webhookTriggerFilters)
-            .containsExactlyInAnyOrder(accountTriggerFilter, sourceRepoTypeTriggerFilter, eventActionTriggerFilter,
-                    gitWebhookTriggerRepoFilter, headerTriggerFilter, gitlabIssueCommentTriggerFilter, filepathTriggerFilter);
+        .containsExactlyInAnyOrder(accountTriggerFilter, sourceRepoTypeTriggerFilter, eventActionTriggerFilter,
+            gitWebhookTriggerRepoFilter, headerTriggerFilter, gitlabIssueCommentTriggerFilter, filepathTriggerFilter);
   }
 
   @Test

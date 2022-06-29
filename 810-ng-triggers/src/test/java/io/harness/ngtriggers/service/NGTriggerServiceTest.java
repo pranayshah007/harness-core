@@ -23,8 +23,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.UpdateResult;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -55,6 +53,8 @@ import io.harness.rule.Owner;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.google.common.io.Resources;
+import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
@@ -240,86 +240,96 @@ public class NGTriggerServiceTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers =  SRIDHAR)
+  @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
 
   public void testDelete() {
     NGTriggerEntity ngTrigger = NGTriggerEntity.builder()
-            .accountId(ACCOUNT_ID)
-            .enabled(Boolean.TRUE)
-            .deleted(Boolean.FALSE)
-            .identifier(IDENTIFIER)
-            .projectIdentifier(PROJ_IDENTIFIER)
-            .targetIdentifier(PIPELINE_IDENTIFIER)
-            .orgIdentifier(ORG_IDENTIFIER)
-            .type(NGTriggerType.WEBHOOK)
-            .build();
+                                    .accountId(ACCOUNT_ID)
+                                    .enabled(Boolean.TRUE)
+                                    .deleted(Boolean.FALSE)
+                                    .identifier(IDENTIFIER)
+                                    .projectIdentifier(PROJ_IDENTIFIER)
+                                    .targetIdentifier(PIPELINE_IDENTIFIER)
+                                    .orgIdentifier(ORG_IDENTIFIER)
+                                    .type(NGTriggerType.WEBHOOK)
+                                    .build();
 
     UpdateResult deleteResult = mock(UpdateResult.class);
 
     Optional<NGTriggerEntity> optionalNGTrigger = Optional.of(ngTrigger);
 
-    when(pmsFeatureFlagService.isEnabled(eq(ACCOUNT_ID), eq(FeatureName.HARD_DELETE_ENTITIES))).thenReturn(Boolean.FALSE);
-    when(ngTriggerRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndIdentifierAndDeletedNot
-            (eq(ACCOUNT_ID), eq(ORG_IDENTIFIER), eq(PROJ_IDENTIFIER), eq(PIPELINE_IDENTIFIER), eq(IDENTIFIER), eq(Boolean.TRUE)))
-            .thenReturn(optionalNGTrigger);
+    when(pmsFeatureFlagService.isEnabled(eq(ACCOUNT_ID), eq(FeatureName.HARD_DELETE_ENTITIES)))
+        .thenReturn(Boolean.FALSE);
+    when(ngTriggerRepository
+             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndIdentifierAndDeletedNot(
+                 eq(ACCOUNT_ID), eq(ORG_IDENTIFIER), eq(PROJ_IDENTIFIER), eq(PIPELINE_IDENTIFIER), eq(IDENTIFIER),
+                 eq(Boolean.TRUE)))
+        .thenReturn(optionalNGTrigger);
     when(ngTriggerRepository.delete(any(Criteria.class))).thenReturn(deleteResult);
     when(deleteResult.wasAcknowledged()).thenReturn(Boolean.TRUE);
     when(deleteResult.getModifiedCount()).thenReturn(1L);
 
-    Boolean res = ngTriggerServiceImpl.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, null);
+    Boolean res =
+        ngTriggerServiceImpl.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, null);
     assertTrue(res);
-
   }
 
   @Test
-  @Owner(developers =  SRIDHAR)
+  @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testHardDelete() {
     NGTriggerEntity ngTrigger = NGTriggerEntity.builder()
-            .accountId(ACCOUNT_ID)
-            .enabled(Boolean.TRUE)
-            .deleted(Boolean.FALSE)
-            .identifier(IDENTIFIER)
-            .projectIdentifier(PROJ_IDENTIFIER)
-            .targetIdentifier(PIPELINE_IDENTIFIER)
-            .orgIdentifier(ORG_IDENTIFIER)
-            .type(NGTriggerType.WEBHOOK)
-            .build();
+                                    .accountId(ACCOUNT_ID)
+                                    .enabled(Boolean.TRUE)
+                                    .deleted(Boolean.FALSE)
+                                    .identifier(IDENTIFIER)
+                                    .projectIdentifier(PROJ_IDENTIFIER)
+                                    .targetIdentifier(PIPELINE_IDENTIFIER)
+                                    .orgIdentifier(ORG_IDENTIFIER)
+                                    .type(NGTriggerType.WEBHOOK)
+                                    .build();
 
     Optional<NGTriggerEntity> optionalNGTrigger = Optional.of(ngTrigger);
 
-    when(pmsFeatureFlagService.isEnabled(eq(ACCOUNT_ID), eq(FeatureName.HARD_DELETE_ENTITIES))).thenReturn(Boolean.TRUE);
-    when(ngTriggerRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndIdentifierAndDeletedNot
-            (eq(ACCOUNT_ID), eq(ORG_IDENTIFIER), eq(PROJ_IDENTIFIER), eq(PIPELINE_IDENTIFIER), eq(IDENTIFIER), eq(Boolean.TRUE)))
-            .thenReturn(optionalNGTrigger);
+    when(pmsFeatureFlagService.isEnabled(eq(ACCOUNT_ID), eq(FeatureName.HARD_DELETE_ENTITIES)))
+        .thenReturn(Boolean.TRUE);
+    when(ngTriggerRepository
+             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndIdentifierAndDeletedNot(
+                 eq(ACCOUNT_ID), eq(ORG_IDENTIFIER), eq(PROJ_IDENTIFIER), eq(PIPELINE_IDENTIFIER), eq(IDENTIFIER),
+                 eq(Boolean.TRUE)))
+        .thenReturn(optionalNGTrigger);
     when(ngTriggerRepository.hardDelete(any(Criteria.class))).thenReturn(DeleteResult.acknowledged(1));
 
-    Boolean res = ngTriggerServiceImpl.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, null);
+    Boolean res =
+        ngTriggerServiceImpl.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, null);
     assertTrue(res);
   }
 
-  @Test (expected = InvalidRequestException.class)
-  @Owner(developers =  SRIDHAR)
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testDeleteException() {
     NGTriggerEntity ngTrigger = NGTriggerEntity.builder()
-            .accountId(ACCOUNT_ID)
-            .enabled(Boolean.TRUE)
-            .deleted(Boolean.FALSE)
-            .identifier(IDENTIFIER)
-            .projectIdentifier(PROJ_IDENTIFIER)
-            .targetIdentifier(PIPELINE_IDENTIFIER)
-            .orgIdentifier(ORG_IDENTIFIER)
-            .type(NGTriggerType.WEBHOOK)
-            .build();
+                                    .accountId(ACCOUNT_ID)
+                                    .enabled(Boolean.TRUE)
+                                    .deleted(Boolean.FALSE)
+                                    .identifier(IDENTIFIER)
+                                    .projectIdentifier(PROJ_IDENTIFIER)
+                                    .targetIdentifier(PIPELINE_IDENTIFIER)
+                                    .orgIdentifier(ORG_IDENTIFIER)
+                                    .type(NGTriggerType.WEBHOOK)
+                                    .build();
 
     Optional<NGTriggerEntity> optionalNGTrigger = Optional.of(ngTrigger);
 
-    when(pmsFeatureFlagService.isEnabled(eq(ACCOUNT_ID), eq(FeatureName.HARD_DELETE_ENTITIES))).thenReturn(Boolean.TRUE);
-    when(ngTriggerRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndIdentifierAndDeletedNot
-            (eq(ACCOUNT_ID), eq(ORG_IDENTIFIER), eq(PROJ_IDENTIFIER), eq(PIPELINE_IDENTIFIER), eq(IDENTIFIER), eq(Boolean.TRUE)))
-            .thenReturn(optionalNGTrigger);
+    when(pmsFeatureFlagService.isEnabled(eq(ACCOUNT_ID), eq(FeatureName.HARD_DELETE_ENTITIES)))
+        .thenReturn(Boolean.TRUE);
+    when(ngTriggerRepository
+             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndIdentifierAndDeletedNot(
+                 eq(ACCOUNT_ID), eq(ORG_IDENTIFIER), eq(PROJ_IDENTIFIER), eq(PIPELINE_IDENTIFIER), eq(IDENTIFIER),
+                 eq(Boolean.TRUE)))
+        .thenReturn(optionalNGTrigger);
     when(ngTriggerRepository.hardDelete(any(Criteria.class))).thenReturn(DeleteResult.unacknowledged());
 
     ngTriggerServiceImpl.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, null);

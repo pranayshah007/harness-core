@@ -34,7 +34,6 @@ import io.harness.cvng.verificationjob.entities.CanaryVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
-import io.harness.cvng.verificationjob.services.api.VerificationJobService;
 import io.harness.exception.PersistentLockException;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -60,7 +59,6 @@ import org.mockito.MockitoAnnotations;
 public class ActivityServiceImplTest extends CvNextGenTestBase {
   @Inject private HPersistence hPersistence;
   @Inject private ActivityService activityService;
-  @Mock private VerificationJobService verificationJobService;
   @Mock private VerificationJobInstanceService verificationJobInstanceService;
   @Mock private PersistentLocker mockedPersistentLocker;
 
@@ -164,9 +162,6 @@ public class ActivityServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testAbort_inNotStarted() {
     VerificationJob verificationJob = createVerificationJob();
-    when(verificationJobService.getVerificationJob(
-             accountId, orgIdentifier, projectIdentifier, verificationJob.getIdentifier()))
-        .thenReturn(verificationJob);
     instant = Instant.now();
     String activityId = activityService.createActivity(builderFactory.getDeploymentActivityBuilder()
                                                            .verificationJobs(Collections.singletonList(verificationJob))
@@ -187,9 +182,6 @@ public class ActivityServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testAbort_inError() {
     VerificationJob verificationJob = createVerificationJob();
-    when(verificationJobService.getVerificationJob(
-             accountId, orgIdentifier, projectIdentifier, verificationJob.getIdentifier()))
-        .thenReturn(verificationJob);
     instant = Instant.now();
     String activityId = activityService.createActivity(builderFactory.getDeploymentActivityBuilder()
                                                            .verificationJobs(Collections.singletonList(verificationJob))

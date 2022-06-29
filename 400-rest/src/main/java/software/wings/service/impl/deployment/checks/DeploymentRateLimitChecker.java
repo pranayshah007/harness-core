@@ -22,6 +22,7 @@ import io.harness.limits.checker.rate.MongoSlidingWindowRateLimitChecker;
 import io.harness.limits.checker.rate.RateLimitVicinityChecker;
 import io.harness.limits.configuration.NoLimitConfiguredException;
 import io.harness.limits.impl.model.RateLimit;
+import io.harness.limits.lib.DeploymentErrorType;
 import io.harness.limits.lib.RateLimitChecker;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -78,15 +79,23 @@ public class DeploymentRateLimitChecker implements PreDeploymentChecker {
         if (null != shortDurationChecker && !shortDurationChecker.checkAndConsume()) {
           log.info("Short Duration Deployment Limit Reached. accountId={}, Limit: {}", accountId,
               shortDurationChecker.getLimit());
+          DeploymentErrorType errorType = DeploymentErrorType.builder()
+                                              .errorType(DeploymentErrorType.ErrorType.SHORT_TERM_DEPLOYMENT_ERROR)
+                                              .limit(SHORT_LIMIT_PERCENT)
+                                              .build();
           throw new UsageLimitExceededException(ErrorCode.USAGE_LIMITS_EXCEEDED, Level.ERROR, WingsException.USER,
-              shortDurationChecker.getLimit(), accountId);
+              shortDurationChecker.getLimit(), accountId, errorType);
         }
 
         if (!checker.checkAndConsume()) {
           RateLimit limit = checker.getLimit();
           log.info("Deployment Limit Reached. accountId={}, Limit: {}", accountId, limit.getCount());
+          DeploymentErrorType errorType = DeploymentErrorType.builder()
+                                              .errorType(DeploymentErrorType.ErrorType.LONG_TERM_DEPLOYMENT_ERROR)
+                                              .limit(1.0)
+                                              .build();
           throw new UsageLimitExceededException(
-              ErrorCode.USAGE_LIMITS_EXCEEDED, Level.ERROR, WingsException.USER, limit, accountId);
+              ErrorCode.USAGE_LIMITS_EXCEEDED, Level.ERROR, WingsException.USER, limit, accountId, errorType);
         }
 
         RateLimitVicinityChecker vicinityChecker = (RateLimitVicinityChecker) checker;

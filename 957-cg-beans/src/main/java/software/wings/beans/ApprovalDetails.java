@@ -39,6 +39,13 @@ public class ApprovalDetails {
      */
     APPROVE,
     /** Reject Action */
-    REJECT
+    REJECT,
+    /** Rollback Workflow*/
+    ROLLBACK,
+    /** Rollback Phases*/
+    ROLLBACK_PROVISIONER_AFTER_PHASES;
+    public boolean isRollbackAction() {
+      return ROLLBACK.equals(this) || ROLLBACK_PROVISIONER_AFTER_PHASES.equals(this);
+    }
   }
 }

@@ -45,7 +45,6 @@ import io.harness.pms.inputset.InputSetSchemaConstants;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.inputset.MergeInputSetTemplateRequestDTO;
-import io.harness.pms.inputset.OverlayInputSetErrorWrapperDTOPMS;
 import io.harness.pms.merger.helpers.InputSetYamlHelper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
@@ -58,7 +57,6 @@ import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSummaryResponse
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateRequestDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.exceptions.InvalidInputSetException;
-import io.harness.pms.ngpipeline.inputset.exceptions.InvalidOverlayInputSetException;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
@@ -282,13 +280,7 @@ public class InputSetResourcePMS {
     log.info(String.format("Create input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         entity.getIdentifier(), pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
 
-    InputSetErrorWrapperDTOPMS errorWrapperDTO = validateAndMergeHelper.validateInputSet(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml, pipelineBranch, pipelineRepoID);
-    if (errorWrapperDTO != null) {
-      throw new InvalidInputSetException("Exception in creating the Input Set", errorWrapperDTO);
-    }
-
-    InputSetEntity createdEntity = pmsInputSetService.create(entity);
+    InputSetEntity createdEntity = pmsInputSetService.create(entity, pipelineBranch, pipelineRepoID);
     return ResponseDTO.newResponse(
         createdEntity.getVersion().toString(), PMSInputSetElementMapper.toInputSetResponseDTOPMS(createdEntity));
   }
@@ -326,17 +318,8 @@ public class InputSetResourcePMS {
         String.format("Create overlay input set with identifier %s for pipeline %s in project %s, org %s, account %s",
             entity.getIdentifier(), pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
 
-    Map<String, String> invalidReferences = validateAndMergeHelper.validateOverlayInputSet(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
-    if (!invalidReferences.isEmpty()) {
-      OverlayInputSetErrorWrapperDTOPMS overlayInputSetErrorWrapperDTOPMS =
-          OverlayInputSetErrorWrapperDTOPMS.builder().invalidReferences(invalidReferences).build();
-
-      throw new InvalidOverlayInputSetException(
-          "Exception in creating the Overlay Input Set", overlayInputSetErrorWrapperDTOPMS);
-    }
-
-    InputSetEntity createdEntity = pmsInputSetService.create(entity);
+    // overlay input set validation does not require pipeline branch and repo, hence sending null here
+    InputSetEntity createdEntity = pmsInputSetService.create(entity, null, null);
     return ResponseDTO.newResponse(
         createdEntity.getVersion().toString(), PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(createdEntity));
   }
@@ -385,16 +368,11 @@ public class InputSetResourcePMS {
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
     yaml = removeRuntimeInputFromYaml(yaml);
 
-    InputSetErrorWrapperDTOPMS errorWrapperDTO = validateAndMergeHelper.validateInputSet(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml, pipelineBranch, pipelineRepoID);
-    if (errorWrapperDTO != null) {
-      throw new InvalidInputSetException("Exception in updating the Input Set", errorWrapperDTO);
-    }
-
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
     InputSetEntity entityWithVersion = entity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
-    InputSetEntity updatedEntity = pmsInputSetService.update(entityWithVersion, ChangeType.MODIFY);
+    InputSetEntity updatedEntity =
+        pmsInputSetService.update(entityWithVersion, ChangeType.MODIFY, pipelineBranch, pipelineRepoID);
     return ResponseDTO.newResponse(
         updatedEntity.getVersion().toString(), PMSInputSetElementMapper.toInputSetResponseDTOPMS(updatedEntity));
   }
@@ -436,17 +414,8 @@ public class InputSetResourcePMS {
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
     InputSetEntity entityWithVersion = entity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
 
-    Map<String, String> invalidReferences = validateAndMergeHelper.validateOverlayInputSet(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
-    if (!invalidReferences.isEmpty()) {
-      OverlayInputSetErrorWrapperDTOPMS overlayInputSetErrorWrapperDTOPMS =
-          OverlayInputSetErrorWrapperDTOPMS.builder().invalidReferences(invalidReferences).build();
-
-      throw new InvalidOverlayInputSetException(
-          "Exception in updating the Overlay Input Set", overlayInputSetErrorWrapperDTOPMS);
-    }
-
-    InputSetEntity updatedEntity = pmsInputSetService.update(entityWithVersion, ChangeType.MODIFY);
+    // overlay input set validation does not require pipeline branch and repo, hence sending null here
+    InputSetEntity updatedEntity = pmsInputSetService.update(entityWithVersion, ChangeType.MODIFY, null, null);
     return ResponseDTO.newResponse(
         updatedEntity.getVersion().toString(), PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(updatedEntity));
   }
@@ -709,7 +678,7 @@ public class InputSetResourcePMS {
 
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, newInputSetYaml);
-    InputSetEntity updatedEntity = pmsInputSetService.update(entity, ChangeType.MODIFY);
+    InputSetEntity updatedEntity = pmsInputSetService.update(entity, ChangeType.MODIFY, pipelineBranch, pipelineRepoID);
     return ResponseDTO.newResponse(
         InputSetSanitiseResponseDTO.builder()
             .shouldDeleteInputSet(false)

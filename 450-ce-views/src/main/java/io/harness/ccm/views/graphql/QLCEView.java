@@ -30,6 +30,7 @@ public class QLCEView {
   String id;
   String name;
   String folderId;
+  String folderName;
   @Hidden double totalCost;
   @Hidden String createdBy;
   @Hidden Long createdAt;

@@ -9,10 +9,12 @@ package io.harness.cdng.buckets.resources.s3;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.common.resources.AwsResourceServiceHelper;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -43,6 +45,11 @@ public class S3ResourceServiceImpl implements S3ResourceService {
   @Override
   public Map<String, String> getBuckets(
       IdentifierRef awsConnectorRef, String region, String orgIdentifier, String projectIdentifier) {
+
+    if(EmptyPredicate.isEmpty(region)){
+      region = AWS_DEFAULT_REGION;
+    }
+
     AwsConnectorDTO connector = serviceHelper.getAwsConnector(awsConnectorRef);
     BaseNGAccess baseNGAccess =
         serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);

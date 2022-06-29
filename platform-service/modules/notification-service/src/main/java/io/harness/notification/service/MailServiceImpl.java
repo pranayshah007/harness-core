@@ -138,7 +138,7 @@ public class MailServiceImpl implements ChannelService {
       List<String> emailIds, String subject, String body, String notificationId, String accountId) {
     NotificationProcessingResponse notificationProcessingResponse;
     SmtpConfigResponse smtpConfigResponse = notificationSettingsService.getSmtpConfigResponse(accountId);
-    if (notificationSettingsService.getSendNotificationViaDelegate(accountId) && Objects.nonNull(smtpConfigResponse)) {
+    if (Objects.nonNull(smtpConfigResponse)) {
       DelegateTaskRequest delegateTaskRequest =
           DelegateTaskRequest.builder()
               .accountId(accountId)

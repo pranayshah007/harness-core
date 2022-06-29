@@ -70,6 +70,10 @@ public class ServiceLevelObjectiveTest extends CategoryTest {
                        .startDate(LocalDate.parse("2021-11-30"))
                        .endDate(LocalDate.parse("2021-12-07"))
                        .build());
+    assertThat(serviceLevelObjective.getSloTarget()
+                   .getCurrentTimeRange(LocalDateTime.parse("2021-01-01T10:15:15"))
+                   .getStartTime())
+        .isEqualTo(LocalDateTime.parse("2020-12-29T00:00:00"));
   }
 
   @Test
@@ -121,6 +125,10 @@ public class ServiceLevelObjectiveTest extends CategoryTest {
                    .getCurrentTimeRange(LocalDateTime.parse("2021-01-01T10:15:00"))
                    .getTotalDays())
         .isEqualTo(90);
+    assertThat(serviceLevelObjective.getSloTarget()
+                   .getCurrentTimeRange(LocalDateTime.parse("2021-02-01T10:15:15"))
+                   .getStartTime())
+        .isEqualTo(LocalDateTime.parse("2021-01-01T00:00:00"));
   }
   @Test
   @Owner(developers = KAMAL)
@@ -146,6 +154,10 @@ public class ServiceLevelObjectiveTest extends CategoryTest {
                    .getCurrentTimeRange(LocalDateTime.parse("2021-01-01T10:15:00"))
                    .getTotalDays())
         .isEqualTo(7);
+    assertThat(serviceLevelObjective.getSloTarget()
+                   .getCurrentTimeRange(LocalDateTime.parse("2021-01-01T10:15:15"))
+                   .getStartTime())
+        .isEqualTo(LocalDateTime.parse("2020-12-25T10:15:00"));
   }
 
   @Test

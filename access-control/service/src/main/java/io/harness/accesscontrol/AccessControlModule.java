@@ -24,8 +24,10 @@ import static io.harness.eventsframework.EventsFrameworkConstants.USERMEMBERSHIP
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 
 import io.harness.AccessControlClientModule;
+import io.harness.accesscontrol.acl.ResourceAttributeProvider;
 import io.harness.accesscontrol.acl.api.ACLResource;
 import io.harness.accesscontrol.acl.api.ACLResourceImpl;
+import io.harness.accesscontrol.acl.api.ResourceAttributeProviderImpl;
 import io.harness.accesscontrol.aggregator.AggregatorStackDriverMetricsPublisherImpl;
 import io.harness.accesscontrol.aggregator.api.AggregatorResource;
 import io.harness.accesscontrol.aggregator.api.AggregatorResourceImpl;
@@ -88,7 +90,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.client.remote.AuditClientModule;
 import io.harness.concurrent.HTimeLimiter;
+import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.enforcement.client.EnforcementClientModule;
+import io.harness.environment.EnvironmentResourceClientModule;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
@@ -105,6 +109,7 @@ import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.project.ProjectClientModule;
 import io.harness.redis.RedisConfig;
+import io.harness.remote.client.ClientMode;
 import io.harness.resourcegroupclient.ResourceGroupClientModule;
 import io.harness.serviceaccount.ServiceAccountClientModule;
 import io.harness.telemetry.AbstractTelemetryModule;
@@ -276,6 +281,14 @@ public class AccessControlModule extends AbstractModule {
             config.getOrganizationClientConfiguration().getOrganizationServiceSecret(),
             ACCESS_CONTROL_SERVICE.getServiceId(), config.getEnforcementClientConfiguration()));
 
+    install(new EnvironmentResourceClientModule(config.getNgManagerServiceConfiguration().getNgManagerServiceConfig(),
+        config.getNgManagerServiceConfiguration().getNgManagerServiceSecret(), ACCESS_CONTROL_SERVICE.getServiceId(),
+        ClientMode.PRIVILEGED));
+
+    install(new ConnectorResourceClientModule(config.getNgManagerServiceConfiguration().getNgManagerServiceConfig(),
+        config.getNgManagerServiceConfiguration().getNgManagerServiceSecret(), ACCESS_CONTROL_SERVICE.getServiceId(),
+        ClientMode.PRIVILEGED));
+
     install(new TransactionOutboxModule(config.getOutboxPollConfig(), ACCESS_CONTROL_SERVICE.getServiceId(),
         config.getAggregatorConfiguration().isExportMetricsToStackDriver()));
     install(NGMigrationSdkModule.getInstance());
@@ -340,6 +353,7 @@ public class AccessControlModule extends AbstractModule {
 
     bind(PrivilegedRoleAssignmentDao.class).to(PrivilegedRoleAssignmentDaoImpl.class);
     bind(PrivilegedRoleAssignmentService.class).to(PrivilegedRoleAssignmentServiceImpl.class);
+    bind(ResourceAttributeProvider.class).to(ResourceAttributeProviderImpl.class);
 
     bind(ACLResource.class).to(ACLResourceImpl.class);
     bind(AggregatorResource.class).to(AggregatorResourceImpl.class);

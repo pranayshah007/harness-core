@@ -56,11 +56,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
+@PrepareForTest({InputSetValidationHelper.class})
 @OwnedBy(PIPELINE)
 public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   @Inject PMSInputSetServiceImpl pmsInputSetService;
@@ -164,10 +168,11 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testServiceLayer() {
+    MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
     List<InputSetEntity> inputSets = ImmutableList.of(inputSetEntity, overlayInputSetEntity);
 
     for (InputSetEntity entity : inputSets) {
-      InputSetEntity createdInputSet = pmsInputSetService.create(entity);
+      InputSetEntity createdInputSet = pmsInputSetService.create(entity, null, null);
       assertThat(createdInputSet).isNotNull();
       assertThat(createdInputSet.getAccountId()).isEqualTo(entity.getAccountId());
       assertThat(createdInputSet.getOrgIdentifier()).isEqualTo(entity.getOrgIdentifier());
@@ -201,7 +206,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                                                 .pipelineIdentifier(PIPELINE_IDENTIFIER)
                                                 .inputSetReferences(entity.getInputSetReferences())
                                                 .build();
-      InputSetEntity updatedInputSet = pmsInputSetService.update(updateInputSetEntity, ChangeType.MODIFY);
+      InputSetEntity updatedInputSet = pmsInputSetService.update(updateInputSetEntity, ChangeType.MODIFY, null, null);
       assertThat(updatedInputSet.getAccountId()).isEqualTo(updateInputSetEntity.getAccountId());
       assertThat(updatedInputSet.getOrgIdentifier()).isEqualTo(updateInputSetEntity.getOrgIdentifier());
       assertThat(updatedInputSet.getProjectIdentifier()).isEqualTo(updateInputSetEntity.getProjectIdentifier());
@@ -223,7 +228,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                                                    .pipelineIdentifier(PIPELINE_IDENTIFIER)
                                                    .inputSetReferences(entity.getInputSetReferences())
                                                    .build();
-      assertThatThrownBy(() -> pmsInputSetService.update(incorrectInputSetEntity, ChangeType.MODIFY))
+      assertThatThrownBy(() -> pmsInputSetService.update(incorrectInputSetEntity, ChangeType.MODIFY, null, null))
           .isInstanceOf(InvalidRequestException.class);
 
       boolean delete = pmsInputSetService.delete(
@@ -234,14 +239,16 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
           ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, entity.getIdentifier(), false);
       assertThat(deletedInputSet.isPresent()).isFalse();
     }
+    mockSettings.close();
   }
 
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testList() {
-    pmsInputSetService.create(inputSetEntity);
-    pmsInputSetService.create(overlayInputSetEntity);
+    MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
+    pmsInputSetService.create(inputSetEntity, null, null);
+    pmsInputSetService.create(overlayInputSetEntity, null, null);
 
     Criteria criteriaFromFilter = PMSInputSetFilterHelper.createCriteriaForGetList(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, InputSetListTypePMS.ALL, "", false);
@@ -265,7 +272,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                                          .pipelineIdentifier(PIPELINE_IDENTIFIER)
                                          .build();
 
-    pmsInputSetService.create(inputSetEntity2);
+    pmsInputSetService.create(inputSetEntity2, null, null);
     Page<InputSetEntity> list2 =
         pmsInputSetService.list(criteriaFromFilter, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     assertThat(list2.getContent()).isNotNull();
@@ -273,6 +280,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     assertThat(list2.getContent().get(0).getIdentifier()).isEqualTo(inputSetEntity.getIdentifier());
     assertThat(list2.getContent().get(1).getIdentifier()).isEqualTo(overlayInputSetEntity.getIdentifier());
     assertThat(list2.getContent().get(2).getIdentifier()).isEqualTo(inputSetEntity2.getIdentifier());
+    mockSettings.close();
   }
 
   @Test
