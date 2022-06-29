@@ -70,19 +70,19 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
   private final CfMigrationConfig cfMigrationConfig;
   private final Provider<CfClient> cfClient;
   private final FeatureFlagConfig featureFlagConfig;
-  @Nullable private AccountClient accountClient;
+  private Optional<AccountClient> optionalAccountClient;
 
   @Inject
   public FeatureFlagServiceImpl(HPersistence hPersistence, CfMigrationService cfMigrationService,
       CfMigrationConfig cfMigrationConfig, Provider<CfClient> cfClient, FeatureFlagConfig featureFlagConfig,
-      @Nullable AccountClient accountClient) {
+      Optional<AccountClient> optionalAccountClient) {
     this.persistence = hPersistence;
     this.cfMigrationService = cfMigrationService;
     this.cfMigrationConfig = cfMigrationConfig;
     this.cfClient = cfClient;
     this.featureFlagConfig = featureFlagConfig;
     this.cache = new HashMap<>();
-    this.accountClient = accountClient;
+    this.optionalAccountClient = optionalAccountClient;
   }
 
   @Override
@@ -233,10 +233,17 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
     if (log.isDebugEnabled()) {
       log.debug("Fetching account name for account id " + accountId);
     }
-    AccountDTO accountDTO = RestClientUtils.getResponse(accountClient.getAccountDTO(accountId));
-    name = accountDTO.getName();
-    if (log.isDebugEnabled()) {
-      log.debug("Account name is " + name);
+    if (optionalAccountClient.isPresent()) {
+      AccountDTO accountDTO = RestClientUtils.getResponse(optionalAccountClient.get().getAccountDTO(accountId));
+      name = accountDTO.getName();
+      if (log.isDebugEnabled()) {
+        log.debug("Account name is " + name);
+      }
+    } else {
+      if (log.isDebugEnabled()) {
+        log.debug("Account client is absent, using account ID as name");
+      }
+      name = accountId;
     }
     Target target = Target.builder().identifier(accountId).name(name).build();
     return cfClient.get().boolVariation(featureName.name(), target, false);
