@@ -7,6 +7,7 @@
 
 package io.harness.managerclient;
 
+import io.dropwizard.jersey.protobuf.ProtocolBufferMediaType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateHeartbeatResponse;
@@ -52,6 +53,8 @@ import retrofit2.http.PUT;
 import retrofit2.http.Part;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
+
+import javax.ws.rs.Consumes;
 
 @OwnedBy(HarnessTeam.DEL)
 public interface DelegateAgentManagerClient {
@@ -173,6 +176,7 @@ public interface DelegateAgentManagerClient {
       @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId,
       @Body List<DelegateConnectionResultDetail> results);
 
+  @Consumes(ProtocolBufferMediaType.APPLICATION_PROTOBUF)
   @GET("agent/delegates/perpetual-task/list")
   Call<RestResponse<PerpetualTaskListResponse>> perpetualTaskList(
           @Query("perpetualTaskListRequest") PerpetualTaskListRequest perpetualTaskListRequest,
@@ -186,5 +190,7 @@ public interface DelegateAgentManagerClient {
   @GET("agent/delegates/perpetual-task/heartbeat")
   Call<RestResponse<HeartbeatResponse>> heartbeat(
           @Query("heartbeatRequest") HeartbeatRequest heartbeatRequest, @Query("accountId") String accountId);
+
+
 
 }

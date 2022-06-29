@@ -7,8 +7,10 @@
 
 package io.harness.perpetualtask;
 
+import io.grpc.StatusRuntimeException;
 import io.harness.delegate.DelegateId;
 import io.harness.grpc.utils.HTimestamps;
+import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.HeartbeatRequest;
 import io.harness.perpetualtask.PerpetualTaskAssignDetails;
 import io.harness.perpetualtask.PerpetualTaskContextRequest;
@@ -25,6 +27,7 @@ import com.google.inject.Singleton;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import io.harness.rest.RestResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +39,53 @@ import retrofit2.Response;
 @Slf4j
 public class PerpetualTaskServiceAgentClient {
 
-  private PerpetualTaskManagerClient perpetualTaskManagerClient;
+  @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
+
+ /* @Inject
+  public PerpetualTaskServiceAgentClient(PerpetualTaskServiceGrpc.PerpetualTaskServiceBlockingStub perpetualTaskServiceBlockingStub) {
+    serviceBlockingStub = perpetualTaskServiceBlockingStub;
+  }*/
+
+  public List<PerpetualTaskAssignDetails> perpetualTaskList(String delegateId) {
+    PerpetualTaskListRequest request = PerpetualTaskListRequest.newBuilder()
+            .setDelegateId(DelegateId.newBuilder().setId(delegateId).build())
+            .build();
+    try {
+      RestResponse<PerpetualTaskListResponse> restResponse = executeRestCall(delegateAgentManagerClient.perpetualTaskList(request, ""));
+      return restResponse.getResource().getPerpetualTaskAssignDetailsList();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
+
+  public PerpetualTaskExecutionContext perpetualTaskContext(PerpetualTaskId taskId) {
+    PerpetualTaskContextRequest perpetualTaskContextRequest = PerpetualTaskContextRequest.newBuilder().setPerpetualTaskId(taskId).build();
+    try {
+      RestResponse<PerpetualTaskExecutionContext> restResponse = executeRestCall(delegateAgentManagerClient.perpetualTaskContext(perpetualTaskContextRequest, ""));
+      return restResponse.getResource();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
+
+  public void heartbeat(PerpetualTaskId taskId, Instant taskStartTime, PerpetualTaskResponse perpetualTaskResponse) {
+    try {
+      HeartbeatRequest heartbeatRequest = HeartbeatRequest.newBuilder()
+              .setId(taskId.getId())
+              .setHeartbeatTimestamp(HTimestamps.fromInstant(taskStartTime))
+              .setResponseCode(perpetualTaskResponse.getResponseCode())
+              .setResponseMessage(perpetualTaskResponse.getResponseMessage())
+              .build();
+      executeRestCall(delegateAgentManagerClient.heartbeat(heartbeatRequest, ""));
+    } catch (IOException ex) {
+      log.error(ex.getMessage());
+    }
+  }
+
+
+  /*private PerpetualTaskManagerClient perpetualTaskManagerClient;
 
 
   @Inject
@@ -82,6 +131,23 @@ public class PerpetualTaskServiceAgentClient {
       log.error(ex.getMessage());
     }
   }
+
+  private <T> T executeRestCall(Call<T> call) throws IOException {
+    Response<T> response = null;
+    try {
+      response = call.execute();
+      return response.body();
+    } catch (Exception e) {
+      log.error("error executing rest call", e);
+      throw e;
+    } finally {
+      if (response != null && !response.isSuccessful()) {
+        String errorResponse = response.errorBody().string();
+        log.info("Error responding");
+        response.errorBody().close();
+      }
+    }
+  }*/
 
   private <T> T executeRestCall(Call<T> call) throws IOException {
     Response<T> response = null;
