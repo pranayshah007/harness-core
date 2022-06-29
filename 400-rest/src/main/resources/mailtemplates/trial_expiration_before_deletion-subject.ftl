@@ -1,1 +1,0 @@
-Your Harness Trial account [${(accountName)}] will be deleted in next few days

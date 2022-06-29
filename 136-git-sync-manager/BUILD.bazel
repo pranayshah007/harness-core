@@ -23,7 +23,7 @@ java_library(
         "@maven//:com_google_inject_guice",
         "@maven//:org_eclipse_jgit_org_eclipse_jgit",
         "@maven//:org_eclipse_jgit_org_eclipse_jgit_ssh_jsch",
-        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_hibernate_validator_hibernate_validator",
         "//953-git-sync-commons:module",
         "//970-ng-commons:module",
         "//980-commons:module",

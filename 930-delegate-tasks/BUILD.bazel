@@ -1,4 +1,4 @@
-load("@rules_java//java:defs.bzl", "java_library")
+load("@rules_java//java:defs.bzl", "java_binary")
 load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
 load("//:tools/bazel/aeriform.bzl", "breakDependencyOn")
@@ -19,6 +19,7 @@ java_library(
         "//:lombok",
         "//930-delegate-tasks/src/main/proto/io/harness:930_delegate_tasks_java_proto",
         "//932-connector-task:module",
+        "//933-scm-commons:module",
         "//940-secret-manager-client:module",
         "//948-cv-nextgen-beans:module",
         "//950-delegate-tasks-beans:module",
@@ -51,6 +52,7 @@ java_library(
         "@maven//:com_hierynomus_sshj",
         "@maven//:com_splunk_splunk",
         "@maven//:io_cloudsoft_windows_winrm4j",
+        "@maven//:io_dropwizard_dropwizard_views_freemarker",
         "@maven//:io_grpc_grpc_netty",
         "@maven//:io_harness_cv_data_collection_dsl",
         "@maven//:io_netty_netty_all",
@@ -71,6 +73,7 @@ java_library(
         "module",
         "//:lombok",
         "//932-connector-task:module",
+        "//933-scm-commons:module",
         "//950-delegate-tasks-beans:module",
         "//952-scm-java-client:module",
         "//953-events-api:module",

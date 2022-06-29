@@ -1,1 +1,0 @@
-${msg}Invitation request from ${name}

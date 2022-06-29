@@ -1,8 +1,0 @@
-load("@rules_java//java:defs.bzl", "java_library")
-
-java_library(
-    name = "serviceconfig",
-    srcs = ["ServiceEntityVisitorHelperV2.java"],
-    visibility = ["//:__subpackages__"],
-    deps = ["//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/validation"],
-)

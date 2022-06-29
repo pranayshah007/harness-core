@@ -1,4 +1,4 @@
-load("@rules_java//java:defs.bzl", "java_binary", "java_library")
+load("@rules_java//java:defs.bzl", "java_binary")
 load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
 
@@ -30,7 +30,6 @@ java_binary(
         "//900-git-sync-sdk:module",
         "//930-ng-core-clients:module",
         "//937-persistence-tracer:module",
-        "//940-feature-flag:module",
         "//940-primary-version-manager:module",
         "//942-enforcement-sdk:module",
         "//945-account-mgmt:module",
@@ -93,7 +92,6 @@ java_binary(
         "@maven//:io_swagger_swagger_annotations",
         "@maven//:javax_servlet_javax_servlet_api",
         "@maven//:javax_validation_validation_api",
-        "@maven//:javax_ws_rs_jsr311_api",
         "@maven//:net_jodah_failsafe",
         "@maven//:org_eclipse_jetty_jetty_servlets",
         "@maven//:org_glassfish_jersey_core_jersey_server",

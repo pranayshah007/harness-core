@@ -1,1 +1,0 @@
-Setup instructions for your Harness account

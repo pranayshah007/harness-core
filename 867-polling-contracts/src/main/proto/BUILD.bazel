@@ -1,0 +1,20 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//:tools/bazel/protos/harness_grpc_library.bzl", "harness_grpc_library")
+
+proto_library(
+    name = "867_polling_contracts_proto",
+    srcs = glob(["**/*.proto"]),
+    strip_import_prefix = "",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_google_protobuf//:any_proto",
+    ],
+)
+
+harness_grpc_library(
+    name = "867_polling_contracts_java_proto",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":867_polling_contracts_proto",
+    ],
+)

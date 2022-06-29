@@ -1,1 +1,0 @@
-Your cloud spend data is ready.
