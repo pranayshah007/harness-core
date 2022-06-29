@@ -15,7 +15,6 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
