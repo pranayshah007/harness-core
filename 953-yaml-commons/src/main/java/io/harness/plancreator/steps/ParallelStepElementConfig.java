@@ -40,9 +40,4 @@ public class ParallelStepElementConfig {
   public ParallelStepElementConfig(List<ExecutionWrapperConfig> sections) {
     this.sections = sections;
   }
-
-  @JsonValue
-  public List<ExecutionWrapperConfig> getSections() {
-    return sections;
-  }
 }

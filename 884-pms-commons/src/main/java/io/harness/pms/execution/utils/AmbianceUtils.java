@@ -110,11 +110,6 @@ public class AmbianceUtils {
     return ambiance.getLevelsList().get(ambiance.getLevelsList().size() - 1);
   }
 
-  public static String obtainOriginalStepIdentifier(Ambiance ambiance) {
-    Level level = obtainCurrentLevel(ambiance);
-    return level == null || isEmpty(level.getOriginalIdentifier()) ? null : level.getOriginalIdentifier();
-  }
-
   public static String obtainStepIdentifier(Ambiance ambiance) {
     Level level = obtainCurrentLevel(ambiance);
     return level == null || isEmpty(level.getIdentifier()) ? null : level.getIdentifier();
