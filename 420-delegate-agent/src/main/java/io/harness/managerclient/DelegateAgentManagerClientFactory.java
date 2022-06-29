@@ -162,7 +162,7 @@ public class DelegateAgentManagerClientFactory
           .hostnameVerifier(new NoopHostnameVerifier())
           // During this call we not just query the task but we also obtain the secret on the manager side
           // we need to give enough time for the call to finish.
-          .readTimeout(2, TimeUnit.MINUTES)
+          .readTimeout(4, TimeUnit.MINUTES)
           .build();
     } catch (Exception e) {
       throw new RuntimeException(e);
