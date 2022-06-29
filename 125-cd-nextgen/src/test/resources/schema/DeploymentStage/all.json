@@ -1700,6 +1700,44 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CustomRemoteStoreConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StoreConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "extractionScript",
+            "filePath"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "extractionScript": {
+              "type": "string"
+            },
+            "filePath": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "DeleteManifestPathSpec": {
       "allOf": [
         {
@@ -4124,7 +4162,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4593,7 +4631,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -5173,7 +5211,7 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        { }
+        {}
       ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "oneOf": [
@@ -6227,7 +6265,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7120,7 +7158,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7130,7 +7168,7 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        { }
+        {}
       ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "oneOf": [
@@ -8294,6 +8332,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/BitbucketStore"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Custom Remote"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CustomRemoteStoreConfig"
               }
             }
           }

@@ -122,7 +122,9 @@ public class CustomManifestFetchTaskTest extends CategoryTest {
                                                                   .commandExecutionStatus(SUCCESS)
                                                                   .valuesFilesContentMap(valuesFilesContentMap)
                                                                   .build();
-    doReturn(expectedFetchResponse).when(customManifestFetchTaskHelper).fetchValuesTask(taskParams, logCallback, null);
+    doReturn(expectedFetchResponse)
+        .when(customManifestFetchTaskHelper)
+        .fetchValuesTask(taskParams, logCallback, null, true);
 
     CustomManifestValuesFetchResponse response = doRun(taskParams);
     assertThat(response).isEqualTo(expectedFetchResponse);
@@ -135,7 +137,7 @@ public class CustomManifestFetchTaskTest extends CategoryTest {
     CustomManifestValuesFetchParams taskParams = createTaskParams(emptyList(), null);
     doThrow(new NullPointerException("generated exception"))
         .when(customManifestFetchTaskHelper)
-        .fetchValuesTask(taskParams, logCallback, null);
+        .fetchValuesTask(taskParams, logCallback, null, true);
     CustomManifestValuesFetchResponse response = doRun(taskParams);
 
     assertThat(response.getCommandExecutionStatus()).isEqualTo(FAILURE);
@@ -170,13 +172,13 @@ public class CustomManifestFetchTaskTest extends CategoryTest {
 
     doReturn(DEFAULT_DIR)
         .when(customManifestService)
-        .executeCustomSourceScript(taskParams.getActivityId(), logCallback, customManifestSource);
+        .executeCustomSourceScript(taskParams.getActivityId(), logCallback, customManifestSource, true);
 
     doReturn(TEMP_DIR).when(customManifestService).getWorkingDirectory();
 
     doReturn(fetchValueFileResponse)
         .when(customManifestFetchTaskHelper)
-        .fetchValuesTask(taskParams, logCallback, DEFAULT_DIR);
+        .fetchValuesTask(taskParams, logCallback, DEFAULT_DIR, true);
     doReturn(DelegateFile.Builder.aDelegateFile().withFileId("FILE_ID").build())
         .when(delegateFileManagerBase)
         .uploadAsFile(any(DelegateFile.class), any(File.class));
@@ -210,7 +212,7 @@ public class CustomManifestFetchTaskTest extends CategoryTest {
 
     doThrow(new ShellScriptException("shell script failed", GIT_ERROR, Level.ERROR, WingsException.USER))
         .when(customManifestService)
-        .executeCustomSourceScript(taskParams.getActivityId(), logCallback, customManifestSource);
+        .executeCustomSourceScript(taskParams.getActivityId(), logCallback, customManifestSource, true);
 
     CustomManifestValuesFetchResponse response = doRun(taskParams);
     ArgumentCaptor<String> logCaptor = ArgumentCaptor.forClass(String.class);
@@ -219,7 +221,7 @@ public class CustomManifestFetchTaskTest extends CategoryTest {
 
     doThrow(new InvalidRequestException("auth failed"))
         .when(customManifestService)
-        .executeCustomSourceScript(taskParams.getActivityId(), logCallback, customManifestSource);
+        .executeCustomSourceScript(taskParams.getActivityId(), logCallback, customManifestSource, true);
 
     response = doRun(taskParams);
     verify(logCallback, times(2))
@@ -230,7 +232,7 @@ public class CustomManifestFetchTaskTest extends CategoryTest {
     assertThat(response.getErrorMessage()).isEqualTo("INVALID_REQUEST");
 
     verify(delegateFileManagerBase, never()).uploadAsFile(any(DelegateFile.class), any(File.class));
-    verify(customManifestService, never()).fetchValues(any(), any(), any(), any());
+    verify(customManifestService, never()).fetchValues(any(), any(), any(), any(), true);
   }
 
   @Test
@@ -249,7 +251,7 @@ public class CustomManifestFetchTaskTest extends CategoryTest {
     doReturn(TEMP_DIR).when(customManifestService).getWorkingDirectory();
     doReturn(DEFAULT_DIR)
         .when(customManifestService)
-        .executeCustomSourceScript(taskParams.getActivityId(), logCallback, customManifestSource);
+        .executeCustomSourceScript(taskParams.getActivityId(), logCallback, customManifestSource, true);
     doThrow(new AccessDeniedException("access denied", WingsException.USER))
         .when(delegateFileManagerBase)
         .uploadAsFile(any(), any());

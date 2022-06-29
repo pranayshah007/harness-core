@@ -136,9 +136,9 @@ public class K8sDeleteStep extends TaskChainExecutableWithRollbackAndRbac implem
             .taskType(K8sTaskType.DELETE)
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .k8sInfraDelegateConfig(k8sStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
-            .manifestDelegateConfig(k8sManifestOutcome != null
-                    ? k8sStepHelper.getManifestDelegateConfig(k8sManifestOutcome, ambiance)
-                    : null)
+            .manifestDelegateConfig(k8sManifestOutcome != null ? k8sStepHelper.getManifestDelegateConfigWrapper(
+                                        executionPassThroughData.getZippedManifestId(), k8sManifestOutcome, ambiance)
+                                                               : null)
             .shouldOpenFetchFilesLogStream(shouldOpenFetchFilesLogStream)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .useLatestKustomizeVersion(k8sStepHelper.isUseLatestKustomizeVersion(accountId))

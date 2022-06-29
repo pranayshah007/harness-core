@@ -10,6 +10,7 @@ package io.harness.delegate.task.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.CUSTOM_REMOTE;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GIT;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HTTP_HELM;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
@@ -46,6 +47,7 @@ import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 import static software.wings.beans.LogWeight.Normal;
+import static software.wings.delegatetasks.helm.HelmTaskHelper.copyManifestFilesToWorkingDir;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.lang.Boolean.FALSE;
@@ -83,6 +85,7 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
@@ -91,6 +94,7 @@ import io.harness.delegate.k8s.kustomize.KustomizeTaskHelper;
 import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
 import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
+import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.exception.KubernetesExceptionExplanation;
@@ -153,6 +157,8 @@ import io.harness.k8s.model.response.CEK8sDelegatePrerequisite;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+import io.harness.manifest.CustomManifestService;
+import io.harness.manifest.CustomManifestSource;
 import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -268,6 +274,8 @@ public class K8sTaskHelperBase {
   @Inject private OpenShiftDelegateService openShiftDelegateService;
   @Inject private HelmTaskHelperBase helmTaskHelperBase;
   @Inject private ScmFetchFilesHelperNG scmFetchFilesHelper;
+  @Inject private CustomManifestService customManifestService;
+  @Inject private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
 
   private DelegateExpressionEvaluator delegateExpressionEvaluator = new DelegateExpressionEvaluator();
 
@@ -2403,6 +2411,9 @@ public class K8sTaskHelperBase {
       throws Exception {
     StoreDelegateConfig storeDelegateConfig = manifestDelegateConfig.getStoreDelegateConfig();
     switch (storeDelegateConfig.getType()) {
+      case CUSTOM_REMOTE:
+        return downloadZippedManifestFilesFormCustomSource(
+            storeDelegateConfig, manifestFilesDirectory, executionLogCallback);
       case GIT:
         return downloadManifestFilesFromGit(
             storeDelegateConfig, manifestFilesDirectory, executionLogCallback, accountId);
@@ -2417,6 +2428,45 @@ public class K8sTaskHelperBase {
       default:
         throw new UnsupportedOperationException(
             String.format("Manifest store config type: [%s]", storeDelegateConfig.getType().name()));
+    }
+  }
+
+  private boolean downloadZippedManifestFilesFormCustomSource(
+      StoreDelegateConfig delegateManifestConfig, String manifestFilesDirectory, LogCallback executionLogCallback) {
+    String tempWorkingDir = null;
+    try {
+      tempWorkingDir = customManifestService.getWorkingDirectory();
+
+      CustomRemoteStoreDelegateConfig customRemoteStoreDelegateConfig =
+          (CustomRemoteStoreDelegateConfig) delegateManifestConfig;
+
+      CustomManifestSource customManifestSource = customRemoteStoreDelegateConfig.getCustomManifestSource();
+      // handleIncorrectConfiguration(customRemoteStoreDelegateConfig);
+      customManifestFetchTaskHelper.downloadAndUnzipCustomSourceManifestFiles(
+          tempWorkingDir, customManifestSource.getZippedManifestFileId(), customManifestSource.getAccountId());
+      File file = new File(tempWorkingDir);
+      if (isEmpty(file.list())) {
+        throw new InvalidRequestException("No manifest files found under working directory", USER);
+      }
+      // preparing legacy directory structure for manifests and values yamls
+      File customManifestFolderPath = file.listFiles(pathname -> !file.isHidden())[0];
+      copyManifestFilesToWorkingDir(customManifestFolderPath, new File(manifestFilesDirectory));
+
+      executionLogCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
+      executionLogCallback.saveExecutionLog(getManifestFileNamesInLogFormat(manifestFilesDirectory));
+      executionLogCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
+      return true;
+    } catch (IOException e) {
+      log.error("Failed to get files from manifest directory", ExceptionMessageSanitizer.sanitizeException(e));
+      executionLogCallback.saveExecutionLog(
+          "Failed to get manifest files from custom source. " + ExceptionUtils.getMessage(e), ERROR,
+          CommandExecutionStatus.FAILURE);
+      return false;
+    } catch (Exception e) {
+      log.error("Failed to process custom manifest", ExceptionMessageSanitizer.sanitizeException(e));
+      executionLogCallback.saveExecutionLog(
+          "Failed to process custom manifest. " + ExceptionUtils.getMessage(e), ERROR, CommandExecutionStatus.FAILURE);
+      return false;
     }
   }
 

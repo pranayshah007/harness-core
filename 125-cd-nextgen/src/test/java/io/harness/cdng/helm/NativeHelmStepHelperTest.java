@@ -23,6 +23,7 @@ import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Matchers.any;
@@ -44,6 +45,7 @@ import io.harness.cdng.helm.beans.NativeHelmExecutionPassThroughData;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome.K8sDirectInfrastructureOutcomeBuilder;
 import io.harness.cdng.k8s.K8sEntityHelper;
+import io.harness.cdng.k8s.K8sStepPassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
@@ -447,9 +449,8 @@ public class NativeHelmStepHelperTest extends CategoryTest {
         nativeHelmStepHelper.startChainLink(nativeHelmStepExecutor, ambiance, stepElementParameters);
     assertThat(taskChainResponse).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
-    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(NativeHelmStepPassThroughData.class);
-    NativeHelmStepPassThroughData passThroughData =
-        (NativeHelmStepPassThroughData) taskChainResponse.getPassThroughData();
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
+    K8sStepPassThroughData passThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
     assertThat(passThroughData.getValuesManifestOutcomes()).isNotEmpty();
     assertThat(passThroughData.getValuesManifestOutcomes().size()).isEqualTo(3);
     List<ValuesManifestOutcome> valuesManifestOutcome = passThroughData.getValuesManifestOutcomes();
@@ -559,7 +560,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
         nativeHelmStepHelper.startChainLink(nativeHelmStepExecutor, ambiance, stepElementParameters);
     assertThat(taskChainResponse).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
-    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(NativeHelmStepPassThroughData.class);
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
     verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
     TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
@@ -663,7 +664,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
         nativeHelmStepHelper.startChainLink(nativeHelmStepExecutor, ambiance, stepElementParameters);
     assertThat(taskChainResponse).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
-    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(NativeHelmStepPassThroughData.class);
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
     verify(kryoSerializer, times(3)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
     TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
@@ -763,7 +764,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
         nativeHelmStepHelper.startChainLink(nativeHelmStepExecutor, ambiance, stepElementParameters);
     assertThat(taskChainResponse).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
-    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(NativeHelmStepPassThroughData.class);
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
     verify(kryoSerializer, times(2)).asDeflatedBytes(taskParametersArgumentCaptor.capture());
     TaskParameters taskParameters = taskParametersArgumentCaptor.getAllValues().get(0);
@@ -798,11 +799,10 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     StepElementParameters stepElementParams =
         StepElementParameters.builder().spec(HelmDeployStepParams.infoBuilder().build()).build();
 
-    NativeHelmStepPassThroughData passThroughData =
-        NativeHelmStepPassThroughData.builder()
-            .helmChartManifestOutcome(HelmChartManifestOutcome.builder().build())
-            .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
-            .build();
+    K8sStepPassThroughData passThroughData = K8sStepPassThroughData.builder()
+                                                 .k8sManifestOutcome(HelmChartManifestOutcome.builder().build())
+                                                 .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
+                                                 .build();
 
     UnitProgressData unitProgressData = UnitProgressData.builder().build();
     HelmValuesFetchResponse helmValuesFetchResponse = HelmValuesFetchResponse.builder()
@@ -818,7 +818,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
 
     ArgumentCaptor<List> valuesFilesContentCaptor = ArgumentCaptor.forClass(List.class);
     verify(nativeHelmStepExecutor, times(1))
-        .executeHelmTask(eq(passThroughData.getHelmChartManifestOutcome()), eq(ambiance), eq(stepElementParams),
+        .executeHelmTask(eq(passThroughData.getK8sManifestOutcome()), eq(ambiance), eq(stepElementParams),
             valuesFilesContentCaptor.capture(),
             eq(NativeHelmExecutionPassThroughData.builder()
                     .infrastructure(passThroughData.getInfrastructure())
@@ -843,9 +843,9 @@ public class NativeHelmStepHelperTest extends CategoryTest {
         HelmFetchFileResult.builder().valuesFileContents(new ArrayList<>(asList("values yaml payload"))).build();
     Map<String, HelmFetchFileResult> helmChartValuesFileMapContent = new HashMap<>();
     helmChartValuesFileMapContent.put(manifestIdentifier, valuesYamlList);
-    NativeHelmStepPassThroughData passThroughData =
-        NativeHelmStepPassThroughData.builder()
-            .helmChartManifestOutcome(HelmChartManifestOutcome.builder().identifier(manifestIdentifier).build())
+    K8sStepPassThroughData passThroughData =
+        K8sStepPassThroughData.builder()
+            .k8sManifestOutcome(HelmChartManifestOutcome.builder().identifier(manifestIdentifier).build())
             .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
             .build();
 
@@ -863,7 +863,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
 
     ArgumentCaptor<List> valuesFilesContentCaptor = ArgumentCaptor.forClass(List.class);
     verify(nativeHelmStepExecutor, times(1))
-        .executeHelmTask(eq(passThroughData.getHelmChartManifestOutcome()), eq(ambiance), eq(stepElementParams),
+        .executeHelmTask(eq(passThroughData.getK8sManifestOutcome()), eq(ambiance), eq(stepElementParams),
             valuesFilesContentCaptor.capture(),
             eq(NativeHelmExecutionPassThroughData.builder()
                     .infrastructure(passThroughData.getInfrastructure())
@@ -927,9 +927,9 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                                                 .collect(Collectors.toCollection(LinkedList::new));
     List<ValuesManifestOutcome> aggregatedValuesManifests = CDStepHelper.getAggregatedValuesManifests(manifestOutcome);
 
-    NativeHelmStepPassThroughData passThroughData =
-        NativeHelmStepPassThroughData.builder()
-            .helmChartManifestOutcome(HelmChartManifestOutcome.builder().identifier(manifestIdentifier).build())
+    K8sStepPassThroughData passThroughData =
+        K8sStepPassThroughData.builder()
+            .k8sManifestOutcome(HelmChartManifestOutcome.builder().identifier(manifestIdentifier).build())
             .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
             .manifestOutcomeList(new ArrayList<>(aggregatedValuesManifests))
             .helmValuesFileMapContents(helmChartValuesFileMapContent)
@@ -948,15 +948,15 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     TaskChainResponse taskChainResponse = TaskChainResponse.builder().chainEnd(false).taskRequest(taskRequest).build();
     doReturn(taskChainResponse)
         .when(nativeHelmStepHelper)
-        .executeValuesFetchTask(any(), any(), any(), any(), any(), any());
+        .executeValuesFetchTask(any(), any(), any(), any(), any(), any(), any(), any());
     nativeHelmStepHelper.executeNextLink(
         nativeHelmStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSuplier);
 
     ArgumentCaptor<Map> valuesFilesContentCaptor = ArgumentCaptor.forClass(Map.class);
     verify(nativeHelmStepHelper, times(1))
         .executeValuesFetchTask(eq(ambiance), eq(stepElementParams), eq(passThroughData.getInfrastructure()),
-            eq(passThroughData.getHelmChartManifestOutcome()), eq(passThroughData.getValuesManifestOutcomes()),
-            valuesFilesContentCaptor.capture());
+            eq(passThroughData.getK8sManifestOutcome()), eq(passThroughData.getValuesManifestOutcomes()),
+            valuesFilesContentCaptor.capture(), any(), any());
 
     Map<String, HelmFetchFileResult> duplicatehelmChartValuesFileMapContent = valuesFilesContentCaptor.getValue();
     assertThat(duplicatehelmChartValuesFileMapContent).isNotEmpty();
@@ -1021,9 +1021,9 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                                                 .collect(Collectors.toCollection(LinkedList::new));
     List<ValuesManifestOutcome> aggregatedValuesManifests = CDStepHelper.getAggregatedValuesManifests(manifestOutcome);
 
-    NativeHelmStepPassThroughData passThroughData =
-        NativeHelmStepPassThroughData.builder()
-            .helmChartManifestOutcome(HelmChartManifestOutcome.builder().identifier(manifestIdentifier).build())
+    K8sStepPassThroughData passThroughData =
+        K8sStepPassThroughData.builder()
+            .k8sManifestOutcome(HelmChartManifestOutcome.builder().identifier(manifestIdentifier).build())
             .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
             .manifestOutcomeList(new ArrayList<>(aggregatedValuesManifests))
             .helmValuesFileMapContents(helmChartValuesFileMapContent)
@@ -1043,7 +1043,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
 
     ArgumentCaptor<List> valuesFilesContentCaptor = ArgumentCaptor.forClass(List.class);
     verify(nativeHelmStepExecutor, times(1))
-        .executeHelmTask(eq(passThroughData.getHelmChartManifestOutcome()), eq(ambiance), eq(stepElementParams),
+        .executeHelmTask(eq(passThroughData.getK8sManifestOutcome()), eq(ambiance), eq(stepElementParams),
             valuesFilesContentCaptor.capture(),
             eq(NativeHelmExecutionPassThroughData.builder()
                     .infrastructure(passThroughData.getInfrastructure())
@@ -1112,9 +1112,9 @@ public class NativeHelmStepHelperTest extends CategoryTest {
         ValuesManifestOutcome.builder().identifier(helmChartManifestOutcome.getIdentifier()).store(gitStore).build();
     orderedValuesManifests.addFirst(valuesManifestOutcome);
 
-    NativeHelmStepPassThroughData passThroughData =
-        NativeHelmStepPassThroughData.builder()
-            .helmChartManifestOutcome(HelmChartManifestOutcome.builder().identifier(manifestIdentifier).build())
+    K8sStepPassThroughData passThroughData =
+        K8sStepPassThroughData.builder()
+            .k8sManifestOutcome(HelmChartManifestOutcome.builder().identifier(manifestIdentifier).build())
             .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
             .manifestOutcomeList(new ArrayList<>(orderedValuesManifests))
             .build();
@@ -1133,7 +1133,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
 
     ArgumentCaptor<List> valuesFilesContentCaptor = ArgumentCaptor.forClass(List.class);
     verify(nativeHelmStepExecutor, times(1))
-        .executeHelmTask(eq(passThroughData.getHelmChartManifestOutcome()), eq(ambiance), eq(stepElementParams),
+        .executeHelmTask(eq(passThroughData.getK8sManifestOutcome()), eq(ambiance), eq(stepElementParams),
             valuesFilesContentCaptor.capture(),
             eq(NativeHelmExecutionPassThroughData.builder()
                     .infrastructure(passThroughData.getInfrastructure())
@@ -1153,11 +1153,10 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     StepElementParameters rollingStepElementParams =
         StepElementParameters.builder().spec(HelmDeployStepParams.infoBuilder().build()).build();
 
-    NativeHelmStepPassThroughData passThroughData =
-        NativeHelmStepPassThroughData.builder()
-            .helmChartManifestOutcome(HelmChartManifestOutcome.builder().build())
-            .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
-            .build();
+    K8sStepPassThroughData passThroughData = K8sStepPassThroughData.builder()
+                                                 .k8sManifestOutcome(HelmChartManifestOutcome.builder().build())
+                                                 .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
+                                                 .build();
 
     HelmValuesFetchResponse helmValuesFetchResponse =
         HelmValuesFetchResponse.builder().commandExecutionStatus(FAILURE).errorMessage("Something went wrong").build();
@@ -1188,14 +1187,13 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                     UnitProgress.newBuilder().setUnitName("Some Unit").setStatus(UnitStatus.SUCCESS).build()))
             .build();
 
-    NativeHelmStepPassThroughData passThroughData =
-        NativeHelmStepPassThroughData.builder()
-            .helmChartManifestOutcome(HelmChartManifestOutcome.builder().build())
-            .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
-            .build();
+    K8sStepPassThroughData passThroughData = K8sStepPassThroughData.builder()
+                                                 .k8sManifestOutcome(HelmChartManifestOutcome.builder().build())
+                                                 .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
+                                                 .build();
 
     GitFetchResponse gitFetchResponse = GitFetchResponse.builder()
-                                            .filesFromMultipleRepo(Collections.emptyMap())
+                                            .filesFromMultipleRepo(emptyMap())
                                             .taskStatus(TaskStatus.SUCCESS)
                                             .unitProgressData(unitProgressData)
                                             .build();
@@ -1205,7 +1203,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
 
     doThrow(thrownException)
         .when(nativeHelmStepExecutor)
-        .executeHelmTask(passThroughData.getHelmChartManifestOutcome(), ambiance, stepElementParameters,
+        .executeHelmTask(passThroughData.getK8sManifestOutcome(), ambiance, stepElementParameters,
             Collections.emptyList(),
             NativeHelmExecutionPassThroughData.builder()
                 .infrastructure(passThroughData.getInfrastructure())
@@ -1397,6 +1395,6 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     assertThatCode(
         ()
             -> nativeHelmStepHelper.executeValuesFetchTask(ambiance, stepElementParameters, outcomeBuilder.build(),
-                manifestOutcome, aggregatedValuesManifests, helmChartFetchFilesResultMap));
+                manifestOutcome, aggregatedValuesManifests, helmChartFetchFilesResultMap, emptyMap(), ""));
   }
 }

@@ -15,11 +15,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.delegate.task.helm.HelmFetchFileResult;
+import io.harness.manifest.CustomSourceFile;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +42,12 @@ public class K8sStepPassThroughData implements PassThroughData {
   Map<String, HelmFetchFileResult> helmValuesFileMapContents;
   String helmValuesFileContent;
 
+  // for custom source manifest and values files
+  Map<String, Collection<CustomSourceFile>> customFetchContent;
+  String zippedManifestFileId;
+
+  boolean closeFetchFilesStream;
+
   public List<ValuesManifestOutcome> getValuesManifestOutcomes() {
     if (isEmpty(manifestOutcomeList)) {
       return Collections.emptyList();
@@ -50,5 +59,18 @@ public class K8sStepPassThroughData implements PassThroughData {
       }
     }
     return valuesOutcomeList;
+  }
+
+  public List<OpenshiftParamManifestOutcome> getOpenShiftParamsOutcomes() {
+    if (isEmpty(manifestOutcomeList)) {
+      return Collections.emptyList();
+    }
+    List<OpenshiftParamManifestOutcome> openshiftParamManifestOutcomes = new ArrayList<>();
+    for (ManifestOutcome manifestOutcome : manifestOutcomeList) {
+      if (ManifestType.OpenshiftParam.equals(manifestOutcome.getType())) {
+        openshiftParamManifestOutcomes.add((OpenshiftParamManifestOutcome) manifestOutcome);
+      }
+    }
+    return openshiftParamManifestOutcomes;
   }
 }

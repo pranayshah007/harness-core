@@ -308,7 +308,14 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
         }
       }
       executionDataBuilder.sweepingOutputEnvVariables(envVariablesMap);
-      saveExecutionLog(format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO);
+
+      if (config.isCloseLogStream()) {
+        saveExecutionLog(
+            format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO, commandExecutionStatus);
+      } else {
+        saveExecutionLog(format("Command completed with ExitCode (%d)", processResult.getExitValue()), INFO);
+      }
+
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       handleException(executionDataBuilder, envVariablesMap, e, "Script execution interrupted");

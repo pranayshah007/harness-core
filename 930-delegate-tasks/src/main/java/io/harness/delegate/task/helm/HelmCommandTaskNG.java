@@ -12,6 +12,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
+import static io.harness.logging.LogLevel.INFO;
 
 import static java.lang.String.format;
 
@@ -98,6 +99,11 @@ public class HelmCommandTaskNG extends AbstractDelegateRunnableTask {
       helmCommandRequestNG.setWorkingDir(workingDirectory);
 
       decryptRequestDTOs(helmCommandRequestNG);
+
+      // TODO: Achyuth -- why did this become necessary?
+      LogCallback previousCallback = getLogCallback(
+          getLogStreamingTaskClient(), FetchFiles, false, helmCommandRequestNG.getCommandUnitsProgress());
+      previousCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
 
       init(helmCommandRequestNG,
           getLogCallback(getLogStreamingTaskClient(), Init, true, helmCommandRequestNG.getCommandUnitsProgress()));

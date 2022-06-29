@@ -230,6 +230,7 @@ import io.harness.delegate.task.k8s.exception.KubernetesCliRuntimeExceptionHandl
 import io.harness.delegate.task.ldap.NGLdapGroupSearchTask;
 import io.harness.delegate.task.ldap.NGLdapValidateConnectionSettingTask;
 import io.harness.delegate.task.manifests.CustomManifestFetchTask;
+import io.harness.delegate.task.manifests.CustomManifestFetchTaskNG;
 import io.harness.delegate.task.manifests.CustomManifestValuesFetchTask;
 import io.harness.delegate.task.nexus.NexusDelegateTask;
 import io.harness.delegate.task.nexus.NexusValidationHandler;
@@ -1618,6 +1619,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.RANCHER_RESOLVE_CLUSTERS).toInstance(RancherResolveClustersTask.class);
 
     // Add all NG tasks below this.
+    mapBinder.addBinding(TaskType.CUSTOM_MANIFEST_VALUES_FETCH_TASK_NG).toInstance(CustomManifestFetchTaskNG.class);
     mapBinder.addBinding(TaskType.GITOPS_TASK_NG).toInstance(NGGitOpsCommandTask.class);
     mapBinder.addBinding(TaskType.GCP_TASK).toInstance(GcpTask.class);
     mapBinder.addBinding(TaskType.VALIDATE_KUBERNETES_CONFIG).toInstance(KubernetesTestConnectionDelegateTask.class);

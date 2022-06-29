@@ -139,8 +139,8 @@ public class CustomManifestFetchTaskHelper {
   }
 
   @NonNull
-  public CustomManifestValuesFetchResponse fetchValuesTask(
-      CustomManifestValuesFetchParams fetchParams, LogCallback logCallback, String defaultSourceWorkingDirectory) {
+  public CustomManifestValuesFetchResponse fetchValuesTask(CustomManifestValuesFetchParams fetchParams,
+      LogCallback logCallback, String defaultSourceWorkingDirectory, boolean closeLogStream) {
     Map<String, Collection<CustomSourceFile>> fetchedFilesContent = new HashMap<>();
 
     for (CustomManifestFetchConfig fetchFileConfig : fetchParams.getFetchFilesList()) {
@@ -158,7 +158,8 @@ public class CustomManifestFetchTaskHelper {
         logFilePathList(customManifestSource.getFilePaths(), logCallback);
 
         Collection<CustomSourceFile> valuesContent = isScriptExecutionRequired(fetchFileConfig, customManifestSource)
-            ? customManifestService.fetchValues(customManifestSource, workingDirectory, activityId, logCallback)
+            ? customManifestService.fetchValues(
+                customManifestSource, workingDirectory, activityId, logCallback, closeLogStream)
             : customManifestService.readFilesContent(
                 defaultSourceWorkingDirectory, customManifestSource.getFilePaths());
 

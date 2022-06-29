@@ -27,6 +27,7 @@ public interface ManifestStoreType {
   String INLINE = "Inline";
   String S3URL = "S3Url";
   String InheritFromManifest = "InheritFromManifest";
+  String CUSTOM_REMOTE = "Custom Remote";
   String OCI = "OciHelmChart";
 
   static boolean isInGitSubset(String manifestType) {

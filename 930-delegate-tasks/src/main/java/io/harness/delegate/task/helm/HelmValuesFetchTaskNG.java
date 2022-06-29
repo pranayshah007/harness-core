@@ -68,7 +68,7 @@ public class HelmValuesFetchTaskNG extends AbstractDelegateRunnableTask {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     log.info(format("Running HelmValuesFetchTaskNG for account %s", helmValuesFetchRequest.getAccountId()));
 
-    LogCallback logCallback = getLogCallback(commandUnitsProgress);
+    LogCallback logCallback = getLogCallback(commandUnitsProgress, helmValuesFetchRequest.isOpenNewLogStream());
 
     printHelmBinaryPathAndVersion(
         helmValuesFetchRequest.getHelmChartManifestDelegateConfig().getHelmVersion(), logCallback);
@@ -99,9 +99,9 @@ public class HelmValuesFetchTaskNG extends AbstractDelegateRunnableTask {
     }
   }
 
-  public LogCallback getLogCallback(CommandUnitsProgress commandUnitsProgress) {
+  public LogCallback getLogCallback(CommandUnitsProgress commandUnitsProgress, boolean openLogStream) {
     return new NGDelegateLogCallback(
-        getLogStreamingTaskClient(), K8sCommandUnitConstants.FetchFiles, true, commandUnitsProgress);
+        getLogStreamingTaskClient(), K8sCommandUnitConstants.FetchFiles, openLogStream, commandUnitsProgress);
   }
 
   public void printHelmBinaryPathAndVersion(HelmVersion helmVersion, LogCallback logCallback) {
