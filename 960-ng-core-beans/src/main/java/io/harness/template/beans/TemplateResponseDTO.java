@@ -25,6 +25,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(CDC)
@@ -34,6 +35,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @ApiModel("TemplateResponse")
 @Schema(name = "TemplateResponse", description = "This contains details of the Template Response")
+@EqualsAndHashCode
 public class TemplateResponseDTO {
   @NotNull @NotEmpty String accountId;
   String orgIdentifier;

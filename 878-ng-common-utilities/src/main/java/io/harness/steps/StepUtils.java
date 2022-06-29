@@ -84,6 +84,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -510,11 +511,15 @@ public class StepUtils {
 
   private static boolean hasDelegateSelectors(
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, WithDelegateSelector withDelegateSelector) {
-    if (ParameterField.isNull(withDelegateSelector.fetchDelegateSelectors()) || isEmpty(delegateSelectors.getValue())) {
+    if (delegateSelectors == null || ParameterField.isNull(withDelegateSelector.fetchDelegateSelectors())
+        || isEmpty(delegateSelectors.getValue())) {
       return false;
     }
-    List<TaskSelectorYaml> selectorYamls =
-        delegateSelectors.getValue().stream().filter(s -> isNotEmpty(s.getDelegateSelectors())).collect(toList());
+    List<TaskSelectorYaml> selectorYamls = delegateSelectors.getValue()
+                                               .stream()
+                                               .filter(Objects::nonNull)
+                                               .filter(s -> isNotEmpty(s.getDelegateSelectors()))
+                                               .collect(toList());
     if (selectorYamls.isEmpty()) {
       return false;
     }

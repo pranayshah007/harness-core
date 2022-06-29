@@ -155,12 +155,12 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
 
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(GitFileTaskResponseData.builder().fileContent(fileContent.toByteArray()).build());
-    FileContent gitFileContent = scmDelegateFacilitatorService.getFile(accountIdentifier, orgIdentifier,
-        projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(), repoName, branch, filePath, null);
+    FileContent gitFileContent = scmDelegateFacilitatorService.getFile(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName, branch, filePath, null);
     assertThat(gitFileContent).isEqualTo(fileContent);
 
-    gitFileContent = scmDelegateFacilitatorService.getFile(accountIdentifier, orgIdentifier, projectIdentifier,
-        (ScmConnector) connectorInfo.getConnectorConfig(), repoName, branch, filePath, commitId);
+    gitFileContent = scmDelegateFacilitatorService.getFile(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName, branch, filePath, commitId);
     assertThat(gitFileContent).isEqualTo(fileContent);
 
     verify(delegateGrpcClientWrapper, times(2)).executeSyncTask(delegateTaskRequestArgumentCaptor.capture());
@@ -320,8 +320,8 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
     CreatePRResponse mockedCreatePRResponse = CreatePRResponse.newBuilder().setStatus(200).setNumber(prNumber).build();
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(ScmPRTaskResponseData.builder().createPRResponse(mockedCreatePRResponse).build());
-    CreatePRResponse createPRResponse = scmDelegateFacilitatorService.createPullRequest(getDefaultScope(),
-        (ScmConnector) connectorInfo.getConnectorConfig(), repoName, sourceBranch, targetBranch, title);
+    CreatePRResponse createPRResponse = scmDelegateFacilitatorService.createPullRequest(
+        getDefaultScope(), connectorRef, repoName, sourceBranch, targetBranch, title);
     assertThat(createPRResponse.getStatus()).isEqualTo(200);
     assertThat(createPRResponse.getNumber()).isEqualTo(prNumber);
   }

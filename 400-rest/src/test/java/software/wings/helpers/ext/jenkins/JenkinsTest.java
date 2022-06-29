@@ -34,6 +34,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifacts.jenkins.beans.JenkinsInternalConfig;
+import io.harness.artifacts.jenkins.service.JenkinsRegistryUtils;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
 import io.harness.exception.ArtifactServerException;
@@ -96,6 +98,8 @@ public class JenkinsTest extends WingsBaseTest {
 
   private String rootUrl;
   private Jenkins jenkins;
+  private JenkinsInternalConfig jenkinsInternalConfig;
+  @Inject private JenkinsRegistryUtils jenkinsRegistryUtils;
 
   @Before
   public void setup() throws URISyntaxException {
@@ -104,6 +108,8 @@ public class JenkinsTest extends WingsBaseTest {
     jenkins = new JenkinsImpl(rootUrl, USERNAME, PASSWORD.toCharArray());
     LoggingInitializer.initializeLogging();
     on(jenkins).set("timeLimiter", new FakeTimeLimiter());
+    jenkinsInternalConfig =
+        JenkinsInternalConfig.builder().jenkinsUrl(rootUrl).username(USERNAME).password(PASSWORD.toCharArray()).build();
   }
 
   /**
@@ -117,6 +123,7 @@ public class JenkinsTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldGetJobFromJenkins() throws IOException {
     assertThat(jenkins.getJobWithDetails("scheduler")).isNotNull();
+    assertThat(jenkinsRegistryUtils.getJobWithDetails(jenkinsInternalConfig, "scheduler")).isNotNull();
   }
 
   /**

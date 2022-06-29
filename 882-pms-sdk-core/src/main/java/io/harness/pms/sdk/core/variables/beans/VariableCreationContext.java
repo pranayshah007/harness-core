@@ -10,6 +10,7 @@ package io.harness.pms.sdk.core.variables.beans;
 import io.harness.pms.yaml.YamlField;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.HashMap;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,6 +19,6 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class VariableCreationContext {
+public class VariableCreationContext extends HashMap<String, String> {
   YamlField currentField;
 }

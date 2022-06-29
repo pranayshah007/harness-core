@@ -47,6 +47,16 @@ public class PlanServiceImpl implements PlanService {
   }
 
   @Override
+  public List<Node> saveIdentityNodesForMatrix(List<Node> identityNodes, String planId) {
+    List<Node> nodes = new ArrayList<>();
+    nodeEntityRepository
+        .saveAll(identityNodes.stream().map(o -> NodeEntity.fromNode(o, planId)).collect(Collectors.toList()))
+        .iterator()
+        .forEachRemaining(nodeEntity -> nodes.add(nodeEntity.getNode()));
+    return nodes;
+  }
+
+  @Override
   public Plan save(Plan plan) {
     return transactionHelper.performTransaction(() -> {
       List<NodeEntity> nodeEntities =

@@ -10,6 +10,6 @@ package io.harness.cistatus.service.azurerepo;
 import java.util.Map;
 
 public interface AzureRepoService {
-    boolean sendStatus(AzureRepoConfig azureRepoConfig, String userName, String token, String sha, String org,
-        String project, String repo, Map<String, Object> bodyObjectMap);
+  boolean sendStatus(AzureRepoConfig azureRepoConfig, String userName, String token, String sha, String org,
+      String project, String repo, Map<String, Object> bodyObjectMap);
 }

@@ -890,6 +890,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       DelegateHeartbeatResponseStreaming delegateHeartbeatResponse =
           JsonUtils.asObject(message, DelegateHeartbeatResponseStreaming.class);
       healthMonitorExecutor.submit(() -> processHeartbeat(delegateHeartbeatResponse));
+      return;
     }
 
     // Handle other messages in task executor thread-pool.

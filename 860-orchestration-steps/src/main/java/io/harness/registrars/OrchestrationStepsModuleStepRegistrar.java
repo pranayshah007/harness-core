@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStep;
+import io.harness.engine.pms.execution.strategy.identity.IdentityStrategyInternalStep;
+import io.harness.engine.pms.execution.strategy.identity.IdentityStrategyStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
@@ -72,6 +74,8 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(PolicyStep.STEP_TYPE, PolicyStep.class);
     // IdentityStep
     engineSteps.put(IdentityStep.STEP_TYPE, IdentityStep.class);
+    engineSteps.put(IdentityStrategyStep.STEP_TYPE, IdentityStrategyStep.class);
+    engineSteps.put(IdentityStrategyInternalStep.STEP_TYPE, IdentityStrategyInternalStep.class);
 
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
 

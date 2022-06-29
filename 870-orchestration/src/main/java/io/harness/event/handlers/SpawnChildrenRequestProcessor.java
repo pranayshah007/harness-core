@@ -79,7 +79,7 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
       }
       for (Child child : request.getChildren().getChildrenList()) {
         String uuid = callbackIds.get(currentChild);
-        if (isMatrixFeatureEnabled) {
+        if (isMatrixFeatureEnabled && child.hasStrategyMetadata()) {
           InitiateMode initiateMode = InitiateMode.CREATE;
           if (shouldCreateAndStart(maxConcurrency, currentChild)) {
             initiateMode = InitiateMode.CREATE_AND_START;

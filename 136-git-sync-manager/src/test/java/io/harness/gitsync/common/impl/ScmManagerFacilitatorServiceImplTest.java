@@ -162,17 +162,20 @@ public class ScmManagerFacilitatorServiceImplTest extends GitSyncTestBase {
     final ArgumentCaptor<ScmConnector> scmConnectorArgumentCaptor = ArgumentCaptor.forClass(ScmConnector.class);
     final ArgumentCaptor<GitFilePathDetails> gitFilePathDetailsArgumentCaptor =
         ArgumentCaptor.forClass(GitFilePathDetails.class);
-    FileContent gitFileContent = scmManagerFacilitatorService.getFile(accountIdentifier, orgIdentifier,
-        projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(), repoName, branch, filePath, null);
+    FileContent gitFileContent = scmManagerFacilitatorService.getFile(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName, branch, filePath, null);
     assertThat(gitFileContent).isEqualTo(fileContent);
 
-    gitFileContent = scmManagerFacilitatorService.getFile(accountIdentifier, orgIdentifier, projectIdentifier,
-        (ScmConnector) connectorInfo.getConnectorConfig(), repoName, branch, filePath, commitId);
+    gitFileContent = scmManagerFacilitatorService.getFile(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName, branch, filePath, commitId);
     verify(scmClient, times(2))
         .getFileContent(scmConnectorArgumentCaptor.capture(), gitFilePathDetailsArgumentCaptor.capture());
 
+    List<ScmConnector> scmConnectors = scmConnectorArgumentCaptor.getAllValues();
     List<GitFilePathDetails> gitFilePathDetails = gitFilePathDetailsArgumentCaptor.getAllValues();
 
+    assertThat(scmConnectors.get(0)).isEqualTo(githubConnector);
+    assertThat(scmConnectors.get(1)).isEqualTo(githubConnector);
     assertThat(gitFilePathDetails.get(0))
         .isEqualTo(GitFilePathDetails.builder().filePath(filePath).branch(branch).ref(null).build());
     assertThat(gitFilePathDetails.get(1))

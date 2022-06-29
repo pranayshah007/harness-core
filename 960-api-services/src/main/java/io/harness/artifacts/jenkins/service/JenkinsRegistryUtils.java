@@ -7,6 +7,7 @@
 
 package io.harness.artifacts.jenkins.service;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.threading.Morpheus.quietSleep;
@@ -14,7 +15,11 @@ import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 import static software.wings.helpers.ext.jenkins.JenkinsJobPathBuilder.constructParentJobPath;
+import static software.wings.helpers.ext.jenkins.JenkinsJobPathBuilder.getJenkinsJobPath;
+import static software.wings.helpers.ext.jenkins.JenkinsJobPathBuilder.getJobPathFromJenkinsJobUrl;
+import static software.wings.helpers.ext.jenkins.model.ParamPropertyType.BooleanParameterDefinition;
 
+import static java.lang.String.format;
 import static java.time.Duration.ofMillis;
 import static java.time.Duration.ofSeconds;
 import static java.util.Collections.singletonList;
@@ -28,7 +33,12 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.GeneralException;
+import io.harness.exception.InvalidCredentialsException;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.common.BuildDetailsComparator;
 import software.wings.helpers.ext.jenkins.BuildDetails;
@@ -36,26 +46,36 @@ import software.wings.helpers.ext.jenkins.CustomJenkinsHttpClient;
 import software.wings.helpers.ext.jenkins.JobDetails;
 import software.wings.helpers.ext.jenkins.SvnBuildDetails;
 import software.wings.helpers.ext.jenkins.SvnRevision;
+import software.wings.helpers.ext.jenkins.model.JobProperty;
+import software.wings.helpers.ext.jenkins.model.JobWithExtendedDetails;
+import software.wings.helpers.ext.jenkins.model.ParametersDefinitionProperty;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
+import com.jayway.jsonpath.DocumentContext;
 import com.offbytwo.jenkins.model.Artifact;
 import com.offbytwo.jenkins.model.Build;
 import com.offbytwo.jenkins.model.BuildResult;
 import com.offbytwo.jenkins.model.BuildWithDetails;
+import com.offbytwo.jenkins.model.Executable;
+import com.offbytwo.jenkins.model.ExtractHeader;
 import com.offbytwo.jenkins.model.FolderJob;
 import com.offbytwo.jenkins.model.Job;
 import com.offbytwo.jenkins.model.JobWithDetails;
+import com.offbytwo.jenkins.model.QueueItem;
+import com.offbytwo.jenkins.model.QueueReference;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Queue;
@@ -64,6 +84,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.HttpResponseException;
@@ -79,6 +100,7 @@ public class JenkinsRegistryUtils {
       "com.cloudbees.opscenter.bluesteel.folder.BlueSteelTeamFolder";
   private final String ORGANIZATION_FOLDER_CLASS_NAME = "jenkins.branch.OrganizationFolder";
   private final String SERVER_ERROR = "Server Error";
+  private static final int MAX_RETRY = 5;
 
   @Inject private ExecutorService executorService;
   @Inject private TimeLimiter timeLimiter;
@@ -279,7 +301,7 @@ public class JenkinsRegistryUtils {
     }
   }
 
-  private List<JobDetails> getJobDetails(JenkinsInternalConfig jenkinsInternalConfig, String parentJob) {
+  public List<JobDetails> getJobDetails(JenkinsInternalConfig jenkinsInternalConfig, String parentJob) {
     List<JobDetails> result = new ArrayList<>(); // TODO:: extend jobDetails to keep track of prefix.
     try {
       JenkinsCustomServer jenkinsServer = JenkinsClient.getJenkinsServer(jenkinsInternalConfig);
@@ -315,6 +337,90 @@ public class JenkinsRegistryUtils {
     } catch (Exception ex) {
       log.error("Error in fetching job lists ", ex);
       return result;
+    }
+  }
+
+  public JobDetails getJobWithParamters(String jobName, JenkinsInternalConfig jenkinsInternalConfig) {
+    try {
+      log.info("Retrieving Job with details for Job: {}", jobName);
+      JobWithDetails jobWithDetails = getJobWithDetails(jenkinsInternalConfig, jobName);
+      List<JobDetails.JobParameter> parameters = new ArrayList<>();
+      if (jobWithDetails != null) {
+        JobWithExtendedDetails jobWithExtendedDetails = (JobWithExtendedDetails) jobWithDetails;
+        List<JobProperty> properties = jobWithExtendedDetails.getProperties();
+        if (properties != null) {
+          properties.stream()
+              .map(JobProperty::getParameterDefinitions)
+              .filter(Objects::nonNull)
+              .forEach((List<ParametersDefinitionProperty> pds) -> {
+                log.info("Job Properties definitions {}", pds.toArray());
+                pds.forEach((ParametersDefinitionProperty pdProperty) -> parameters.add(getJobParameter(pdProperty)));
+              });
+        }
+        log.info("Retrieving Job with details for Job: {} success", jobName);
+        return new JobDetails(jobWithDetails.getName(), jobWithDetails.getUrl(), parameters);
+      }
+      return null;
+    } catch (WingsException e) {
+      throw e;
+    } catch (Exception ex) {
+      throw new ArtifactServerException(
+          "Error in fetching builds from jenkins server. Reason:" + ExceptionUtils.getMessage(ex), ex, USER);
+    }
+  }
+
+  private JobDetails.JobParameter getJobParameter(ParametersDefinitionProperty pdProperty) {
+    JobDetails.JobParameter jobParameter = new JobDetails.JobParameter();
+    jobParameter.setName(pdProperty.getName());
+    jobParameter.setDescription(pdProperty.getDescription());
+    if (pdProperty.getDefaultParameterValue() != null) {
+      jobParameter.setDefaultValue(pdProperty.getDefaultParameterValue().getValue());
+    }
+    if (pdProperty.getChoices() != null) {
+      jobParameter.setOptions(pdProperty.getChoices());
+    }
+    if (BooleanParameterDefinition.name().equals(pdProperty.getType())) {
+      List<String> booleanValues = new ArrayList<>();
+      booleanValues.add("true");
+      booleanValues.add("false");
+      jobParameter.setOptions(booleanValues);
+    }
+    return jobParameter;
+  }
+
+  public Job getJob(String jobname, JenkinsInternalConfig jenkinsInternalConfig) {
+    log.info("Retrieving job {}", jobname);
+    try {
+      return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(120), () -> {
+        while (true) {
+          if (jobname == null) {
+            sleep(ofSeconds(1L));
+            continue;
+          }
+
+          JobPathDetails jobPathDetails = constructJobPathDetails(jobname);
+          Job job;
+
+          try {
+            JenkinsCustomServer jenkinsServer = JenkinsClient.getJenkinsServer(jenkinsInternalConfig);
+            FolderJob folderJob = getFolderJob(jobPathDetails.getParentJobName(), jobPathDetails.getParentJobUrl());
+            job = jenkinsServer.createJob(folderJob, jobPathDetails.getChildJobName(), jenkinsInternalConfig);
+
+          } catch (HttpResponseException e) {
+            if (e.getStatusCode() == 500 || ExceptionUtils.getMessage(e).contains(SERVER_ERROR)) {
+              log.warn("Error occurred while retrieving job {}. Retrying ", jobname, e);
+              sleep(ofSeconds(1L));
+              continue;
+            } else {
+              throw e;
+            }
+          }
+          log.info("Retrieving job {} success", jobname);
+          return singletonList(job).get(0);
+        }
+      });
+    } catch (Exception e) {
+      throw new ArtifactServerException("Failure in fetching job: " + ExceptionUtils.getMessage(e), e, USER);
     }
   }
 
@@ -412,6 +518,224 @@ public class JenkinsRegistryUtils {
       folderJob = new FolderJob(parentJobName, parentJobUrl);
     }
     return folderJob;
+  }
+
+  public QueueReference trigger(
+      String jobName, JenkinsInternalConfig jenkinsInternalConfig, Map<String, String> parameters) throws IOException {
+    Job job = getJob(jobName, jenkinsInternalConfig);
+    if (job == null) {
+      throw new ArtifactServerException("No job [" + jobName + "] found", USER);
+    }
+
+    QueueReference queueReference;
+    try {
+      log.info("Triggering job {} ", job.getUrl());
+      if (isEmpty(parameters)) {
+        ExtractHeader location = job.getClient().post(job.getUrl() + "build", null, ExtractHeader.class, true);
+        queueReference = new QueueReference(location.getLocation());
+      } else {
+        queueReference = job.build(parameters, true);
+      }
+      log.info("Triggering job {} success ", job.getUrl());
+      return queueReference;
+    } catch (HttpResponseException e) {
+      if (e.getStatusCode() == 400 && isEmpty(parameters)) {
+        throw new InvalidRequestException(
+            format(
+                "Failed to trigger job %s with url %s.%nThis might be because the Jenkins job requires parameters but none were provided in the Jenkins step.",
+                jobName, job.getUrl()),
+            USER);
+      }
+      throw e;
+    } catch (IOException e) {
+      throw new IOException(format("Failed to trigger job %s with url %s", jobName, job.getUrl()), e);
+    }
+  }
+
+  public Build waitForJobToStartExecution(QueueReference queueReference, JenkinsInternalConfig jenkinsInternalConfig)
+      throws URISyntaxException {
+    Build jenkinsBuild = null;
+    int retry = 0;
+    do {
+      log.info(
+          "Waiting for job {} to start execution with URL {}", queueReference, queueReference.getQueueItemUrlPart());
+      sleep(Duration.ofSeconds(1));
+      try {
+        jenkinsBuild = getBuild(queueReference, jenkinsInternalConfig);
+        if (jenkinsBuild != null) {
+          log.info("Job started and Build No {}", jenkinsBuild.getNumber());
+        }
+      } catch (IOException e) {
+        log.error("Error occurred while waiting for Job to start execution.", e);
+        if (e instanceof HttpResponseException) {
+          if (((HttpResponseException) e).getStatusCode() == 401) {
+            throw new InvalidCredentialsException("Invalid Jenkins credentials", WingsException.USER);
+          } else if (((HttpResponseException) e).getStatusCode() == 403) {
+            throw new UnauthorizedException("User not authorized to access jenkins", WingsException.USER);
+          } else if (((HttpResponseException) e).getStatusCode() == 500) {
+            log.info("Failed to retrieve job details at url {}, Retrying (retry count {})  ",
+                queueReference.getQueueItemUrlPart(), retry);
+            if (retry < MAX_RETRY) {
+              retry++;
+              continue;
+            } else {
+              throw new GeneralException(String.format(
+                  "Error retrieving job details at url %s: %s", queueReference.getQueueItemUrlPart(), e.getMessage()));
+            }
+          }
+          throw new GeneralException(e.getMessage());
+        }
+      }
+    } while (jenkinsBuild == null);
+    return jenkinsBuild;
+  }
+
+  public Build getBuild(QueueReference queueReference, JenkinsInternalConfig jenkinsInternalConfig)
+      throws IOException, URISyntaxException {
+    log.info("Retrieving queued item for job URL {}", queueReference.getQueueItemUrlPart());
+    JenkinsCustomServer jenkinsServer = JenkinsClient.getJenkinsServer(jenkinsInternalConfig);
+    CustomJenkinsHttpClient jenkinsHttpClient = JenkinsClient.getJenkinsHttpClient(jenkinsInternalConfig);
+    QueueItem queueItem = jenkinsServer.getQueueItem(queueReference);
+    String buildUrl = null;
+
+    if (queueItem == null) {
+      log.info("Queue item value is null");
+      return null;
+    } else if (queueItem.getExecutable() == null) {
+      log.info("Executable value is null");
+      return null;
+    } else if (queueItem.getTask() == null) {
+      log.info("Task value is null");
+      return null;
+    } else {
+      log.info("Queued item {} returned successfully", queueItem);
+      log.info("Executable value {}", queueItem.getExecutable());
+      log.info("Task value {}", queueItem.getTask());
+    }
+
+    log.info("Executable number is {}", queueItem.getExecutable().getNumber());
+    log.info("Executable URL is {}", queueItem.getExecutable().getUrl());
+
+    log.info("Task URL is {}", queueItem.getTask().getUrl());
+    log.info("Task name is {}", queueItem.getTask().getName());
+
+    log.info("Queue item URL is {}", queueItem.getUrl());
+    log.info("Queue item ID is {}", queueItem.getId());
+
+    if (jenkinsInternalConfig.isUseConnectorUrlForJobExecution()) {
+      buildUrl = getBuildUrl(jenkinsInternalConfig.getJenkinsUrl(),
+          getJobPathFromJenkinsJobUrl(queueItem.getTask().getUrl()), queueItem.getExecutable().getNumber().toString());
+
+      configureExecutable(queueItem, buildUrl);
+    }
+
+    Build build = jenkinsServer.getBuild(queueItem);
+
+    if (jenkinsInternalConfig.isUseConnectorUrlForJobExecution()) {
+      log.info("Retrieving build with URL {}", buildUrl);
+      return createBuild(build, buildUrl, jenkinsHttpClient);
+    }
+
+    log.info("Retrieving build with URL {}", build.getUrl());
+    return build;
+  }
+
+  public Map<String, String> getEnvVars(String buildUrl, JenkinsInternalConfig jenkinsInternalConfig) {
+    if (isBlank(buildUrl)) {
+      return new HashMap<>();
+    }
+
+    log.info("Retrieving environment variables for job {}", buildUrl);
+    try {
+      return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(30), () -> {
+        while (true) {
+          String path = buildUrl;
+          if (path.charAt(path.length() - 1) != '/') {
+            path += '/';
+          }
+          path += "injectedEnvVars/api/json";
+
+          String jsonString;
+          try {
+            CustomJenkinsHttpClient jenkinsHttpClient = JenkinsClient.getJenkinsHttpClient(jenkinsInternalConfig);
+            jsonString = jenkinsHttpClient.get(path);
+          } catch (HttpResponseException e) {
+            if (e.getStatusCode() == 500 || ExceptionUtils.getMessage(e).contains(SERVER_ERROR)) {
+              log.warn(
+                  format("Error occurred while retrieving environment variables for job %s. Retrying", buildUrl), e);
+              sleep(ofSeconds(1L));
+              continue;
+            } else {
+              throw new InvalidRequestException("Failed to collect environment variables from Jenkins: " + path
+                      + ".\nThis might be because 'Capture environment variables' is enabled in Jenkins step but EnvInject plugin is not installed in the Jenkins instance.",
+                  USER);
+            }
+          }
+
+          DocumentContext documentContext = JsonUtils.parseJson(jsonString);
+          Map<String, String> envVars = documentContext.read("$['envMap']");
+          if (isEmpty(envVars)) {
+            envVars = new HashMap<>();
+          } else {
+            // NOTE: Removing environment variables where keys contain '.'. Storing and retrieving these keys is
+            // throwing error with MongoDB and might also cause problems with expression evaluation as '.' is used as a
+            // separator there.
+            envVars = envVars.entrySet()
+                          .stream()
+                          .filter(entry -> !entry.getKey().contains("."))
+                          .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+          }
+
+          log.info("Retrieving environment variables for job {} success", buildUrl);
+          return envVars;
+        }
+      });
+    } catch (Exception e) {
+      throw new ArtifactServerException(
+          "Failure in fetching environment variables for job: " + ExceptionUtils.getMessage(e), e, USER);
+    }
+  }
+
+  /**
+   * Configures new executable property for Queue item
+   *
+   * @param queueItem      the queue item
+   * @param buildUrl       the build URL
+   */
+  private void configureExecutable(QueueItem queueItem, String buildUrl) {
+    Executable executable = new Executable();
+    executable.setUrl(buildUrl);
+    executable.setNumber(queueItem.getExecutable().getNumber());
+    queueItem.setExecutable(executable);
+  }
+
+  /**
+   * Form and returns new build url from URL, job path and job name
+   *
+   * @param url          the URL
+   * @param jobPath      the job path
+   * @param jobNumber    the job number
+   * @return build url.
+   */
+  private String getBuildUrl(String url, String jobPath, String jobNumber) {
+    if (url.endsWith("/")) {
+      url = url.substring(0, url.length() - 1);
+    }
+
+    return url.concat(getJenkinsJobPath(jobPath)).concat(jobNumber).concat("/");
+  }
+
+  /**
+   * Creates build with new url and number
+   *
+   * @param build          existing build with Jenkins master URL
+   * @param buildUrl       build url with Jenkins connector URL
+   * @return new build.
+   */
+  private Build createBuild(Build build, String buildUrl, CustomJenkinsHttpClient jenkinsHttpClient) {
+    Build newBuild = new Build(build.getNumber(), buildUrl);
+    newBuild.setClient(jenkinsHttpClient);
+    return newBuild;
   }
 
   @Data

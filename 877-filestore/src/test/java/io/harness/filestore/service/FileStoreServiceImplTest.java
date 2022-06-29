@@ -189,6 +189,65 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
+  public void testGetEmpty() {
+    String path = "/folder1/nonExistingFile.yml";
+    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndPath(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, path))
+        .thenReturn(Optional.empty());
+
+    Optional<FileDTO> fileDTO =
+        fileStoreService.getByPath(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, path);
+
+    assertThat(fileDTO.isPresent()).isFalse();
+    assertThat(fileDTO).isEqualTo(Optional.empty());
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetFile() {
+    String path = "/folder1/folder2/test.yml";
+    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndPath(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, path))
+        .thenReturn(Optional.of(createNgFileTypeFile()));
+
+    Optional<FileDTO> fileDTO =
+        fileStoreService.getByPath(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, path);
+
+    assertThat(fileDTO.isPresent()).isTrue();
+    FileDTO file = fileDTO.get();
+    assertThat(file.getType()).isEqualTo(NGFileType.FILE);
+    assertThat(file.getName()).isEqualTo("oldName");
+    assertThat(file.getIdentifier()).isEqualTo("identifier1");
+    assertThat(file.getLastModifiedBy()).isEqualTo(getEmbeddedUserDetailsDTO());
+    assertThat(file.getLastModifiedAt()).isEqualTo(1L);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetFolder() {
+    String path = "/some/dummy/path";
+    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndPath(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, path))
+        .thenReturn(Optional.of(createNgFileTypeFolder()));
+
+    Optional<FileDTO> fileDTO =
+        fileStoreService.getByPath(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, path);
+
+    assertThat(fileDTO.isPresent()).isTrue();
+    FileDTO folder = fileDTO.get();
+    assertThat(folder.getType()).isEqualTo(NGFileType.FOLDER);
+    assertThat(folder.getName()).isEqualTo(FOLDER_NAME);
+    assertThat(folder.getIdentifier()).isEqualTo(FOLDER_IDENTIFIER);
+    assertThat(folder.getLastModifiedBy()).isEqualTo(getEmbeddedUserDetailsDTO());
+    assertThat(folder.getLastModifiedAt()).isEqualTo(1L);
+    assertThat(folder.getPath()).isEqualTo("/some/dummy/path");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
   public void testDownloadFileWithNullIdentifier() {
     assertThatThrownBy(
         () -> fileStoreService.downloadFile(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
@@ -820,7 +879,8 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testGetWithNullAccount() {
-    assertThatThrownBy(() -> fileStoreService.get(null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER, true))
+    assertThatThrownBy(
+        () -> fileStoreService.getWithChildren(null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER, true))
         .isInstanceOf(InvalidArgumentsException.class)
         .hasMessage("Account identifier cannot be null or empty");
   }
@@ -829,9 +889,10 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testGetWithNullIdentifier() {
-    assertThatThrownBy(() -> fileStoreService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null, true))
+    assertThatThrownBy(
+        () -> fileStoreService.getWithChildren(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null, true))
         .isInstanceOf(InvalidArgumentsException.class)
-        .hasMessage("File or folder with identifier cannot be null or empty");
+        .hasMessage("File or folder identifier cannot be null or empty");
   }
 
   @Test
@@ -842,7 +903,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
              ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.empty());
     Optional<FileStoreNodeDTO> fileStoreNodeDTO =
-        fileStoreService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER, true);
+        fileStoreService.getWithChildren(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER, true);
 
     assertThat(fileStoreNodeDTO).isNotNull();
     assertThat(fileStoreNodeDTO.isPresent()).isFalse();
@@ -860,7 +921,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     when(fileStructureService.getFileContent(FILE_UUID)).thenReturn(fileContent);
 
     Optional<FileStoreNodeDTO> fileStoreNodeDTO =
-        fileStoreService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER, true);
+        fileStoreService.getWithChildren(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER, true);
 
     assertThat(fileStoreNodeDTO).isNotNull();
     assertThat(fileStoreNodeDTO.isPresent()).isTrue();
@@ -894,7 +955,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
             any(FolderNodeDTO.class), eq(Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER)), eq(true));
 
     Optional<FileStoreNodeDTO> fileStoreNodeDTO =
-        fileStoreService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER, true);
+        fileStoreService.getWithChildren(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER, true);
 
     assertThat(fileStoreNodeDTO).isNotNull();
     assertThat(fileStoreNodeDTO.isPresent()).isTrue();

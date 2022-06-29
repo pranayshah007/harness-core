@@ -140,12 +140,12 @@ public class AmazonS3ServiceImpl implements AmazonS3Service {
       } while (result.isTruncated());
 
       sortAscending(objectSummaryListFinal);
-      int size = objectSummaryListFinal.size();
-      if (size > FETCH_FILE_COUNT_IN_BUCKET) {
-        objectSummaryListFinal.subList(0, size - FETCH_FILE_COUNT_IN_BUCKET).clear();
-      }
       List<BuildDetails> pageBuildDetails =
           getObjectSummaries(pattern, objectSummaryListFinal, awsConfig, encryptionDetails, versioningEnabledForBucket);
+      int size = pageBuildDetails.size();
+      if (size > FETCH_FILE_COUNT_IN_BUCKET) {
+        pageBuildDetails.subList(0, size - FETCH_FILE_COUNT_IN_BUCKET).clear();
+      }
       buildDetailsList.addAll(pageBuildDetails);
     } else {
       long size = 0;
