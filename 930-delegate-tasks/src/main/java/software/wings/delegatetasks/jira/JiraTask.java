@@ -400,9 +400,13 @@ public class JiraTask extends AbstractDelegateRunnableTask {
     List<String> issueKeys = new ArrayList<>();
     List<String> issueUrls = new ArrayList<>();
     JiraIssueData firstIssueInListData = null;
-    Map<String, String> userTypeFields = null;
+    Map<String, String> userTypeFields = new HashMap<>();
+    Map<String, JiraCustomFieldValue> resolutionFields = new HashMap<>();
 
     if (EmptyPredicate.isNotEmpty(parameters.getCustomFields())) {
+      resolutionFields = parameters.getCustomFields().entrySet().stream().filter(map -> map.getValue().getFieldType().equals(RESOLUTION)).collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+      resolutionFields.forEach((field, val) -> parameters.getCustomFields().remove(field));
+
       userTypeFields = parameters.getCustomFields()
                            .entrySet()
                            .stream()
@@ -434,6 +438,10 @@ public class JiraTask extends AbstractDelegateRunnableTask {
                   "Provided issue identifier: \"%s\" does not correspond to Project: \"%s\". Please, provide valid key or id.",
                   issueId, parameters.getProject()))
               .build();
+        }
+
+        if (!resolutionFields.isEmpty()) {
+          checkAndUpdateResolutionsNG(parameters, resolutionFields);
         }
 
         jiraNGClient.updateIssue(issue.getKey(), parameters.getStatus(), null, fieldsMap);
@@ -469,6 +477,17 @@ public class JiraTask extends AbstractDelegateRunnableTask {
         .issueKey(issueKeys.get(0))
         .jiraIssueData(firstIssueInListData)
         .build();
+  }
+
+  private void checkAndUpdateResolutionsNG(JiraTaskParameters oldParameters, Map<String, JiraCustomFieldValue> resolutionFields) {
+    JiraTaskParameters newParameters = JiraTaskParameters.builder()
+            .jiraConfig(oldParameters.getJiraConfig()).jiraAction(JiraAction.UPDATE_TICKET)
+            .updateIssueIds(oldParameters.getUpdateIssueIds())
+            .project(oldParameters.getProject())
+            .customFields(resolutionFields)
+            .build();
+
+    updateTicket(newParameters);
   }
 
   private DelegateResponseData updateTicket(JiraTaskParameters parameters) {
@@ -677,7 +696,8 @@ public class JiraTask extends AbstractDelegateRunnableTask {
 
   private DelegateResponseData createTicketNG(JiraTaskParameters parameters) {
     io.harness.jira.JiraClient jira = getNGJiraClient(parameters);
-    Map<String, String> userTypeFields = null;
+    Map<String, String> userTypeFields = new HashMap<>();
+    Map<String, JiraCustomFieldValue> resolutionFields = new HashMap<>();
 
     if (EmptyPredicate.isNotEmpty(parameters.getCustomFields())) {
       userTypeFields = parameters.getCustomFields()
