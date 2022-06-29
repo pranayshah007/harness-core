@@ -27,6 +27,7 @@ import io.harness.cvng.core.beans.monitoredService.MetricDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.PrometheusHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.SplunkMetricHealthSourceSpec;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
@@ -100,8 +101,7 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
         + "  description: description\n"
         + "  name: <+monitoredService.identifier>\n"
         + "  serviceRef: service1\n"
-        + "  environmentRefList:\n"
-        + "   - env1\n"
+        + "  environmentRef: env1\n"
         + "  tags: {}\n"
         + "  sources:\n"
         + "    healthSources:\n"
@@ -118,7 +118,7 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     RestResponse<MonitoredServiceResponse> restResponse =
         createResponse.readEntity(new GenericType<RestResponse<MonitoredServiceResponse>>() {});
     MonitoredServiceDTO monitoredServiceDTO = restResponse.getResource().getMonitoredServiceDTO();
-    assertThat(monitoredServiceDTO.getIdentifier()).isEqualTo("service1");
+    assertThat(monitoredServiceDTO.getIdentifier()).isEqualTo("service1_env1");
     assertThat(monitoredServiceDTO.getProjectIdentifier())
         .isEqualTo(builderFactory.getContext().getProjectIdentifier());
     assertThat(monitoredServiceDTO.getOrgIdentifier()).isEqualTo(builderFactory.getContext().getOrgIdentifier());
@@ -134,8 +134,7 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
         + "  description: description\n"
         + "  name: <+monitoredService.identifier>\n"
         + "  serviceRef: service1\n"
-        + "  environmentRefList:\n"
-        + "   - env1\n"
+        + "  environmentRef: env1\n"
         + "  tags: {}\n"
         + "  sources:\n"
         + "    healthSources:\n"
@@ -155,14 +154,13 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
         + "  description: description345\n"
         + "  name: <+monitoredService.identifier>\n"
         + "  serviceRef: service1\n"
-        + "  environmentRefList:\n"
-        + "   - env1\n"
+        + "  environmentRef: env1\n"
         + "  tags: {}\n"
         + "  sources:\n"
         + "    healthSources:\n"
         + "    changeSources: \n";
     Response updateResponse = RESOURCES.client()
-                                  .target("http://localhost:9998/monitored-service/service1/yaml")
+                                  .target("http://localhost:9998/monitored-service/service1_env1/yaml")
                                   .queryParam("accountId", builderFactory.getContext().getAccountId())
                                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
                                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
@@ -273,6 +271,29 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     // assertThat(healthSourceMetricDefinition.getIdentifier()).isEqualTo("prometheus_metric123");
     assertThat(healthSourceMetricDefinition.getIdentifier())
         .isEqualTo("PrometheusMetric"); // TODO: remove this after enabling validation.
+  }
+
+  @Test
+  @Owner(developers = KAMAL)
+  @Category(UnitTests.class)
+  public void testSaveMonitoredService_withSplunkMetric() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-splunk-metrics.yaml");
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+    RestResponse<MonitoredServiceResponse> restResponse =
+        response.readEntity(new GenericType<RestResponse<MonitoredServiceResponse>>() {});
+    MonitoredServiceDTO monitoredServiceDTO = restResponse.getResource().getMonitoredServiceDTO();
+    assertThat(monitoredServiceDTO.getSources().getHealthSources()).hasSize(1);
+    HealthSource healthSource = monitoredServiceDTO.getSources().getHealthSources().iterator().next();
+    assertThat(((SplunkMetricHealthSourceSpec) healthSource.getSpec()).getFeature()).isEqualTo("Splunk Metric");
+    HealthSourceMetricDefinition healthSourceMetricDefinition =
+        ((SplunkMetricHealthSourceSpec) healthSource.getSpec()).getMetricDefinitions().get(0);
+    assertThat(healthSourceMetricDefinition.getIdentifier()).isEqualTo("splunk_response_time");
   }
 
   @Test
@@ -558,6 +579,66 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.readEntity(String.class))
         .contains("\"notificationRuleRefs\":[{\"notificationRuleRef\":\"rule\",\"enabled\":true}]");
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGetNotificationRules() throws IOException {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-with-notification-rule.yaml");
+    monitoredServiceYaml =
+        monitoredServiceYaml.replace("$orgIdentifier", builderFactory.getContext().getOrgIdentifier());
+    monitoredServiceYaml =
+        monitoredServiceYaml.replace("$projectIdentifier", builderFactory.getContext().getProjectIdentifier());
+    monitoredServiceYaml =
+        monitoredServiceYaml.replace("$identifier", notificationRuleResponse.getNotificationRule().getIdentifier());
+    monitoredServiceYaml = monitoredServiceYaml.replace("$enabled", "false");
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.readEntity(String.class))
+        .contains("\"notificationRuleRefs\":[{\"notificationRuleRef\":\"rule\",\"enabled\":false}]");
+
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/monitored-service/"
+                       + "MSIdentifier"
+                       + "/notification-rules")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                   .queryParam("pageNumber", 0)
+                   .queryParam("pageSize", 10)
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .get();
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.readEntity(String.class)).contains("\"totalItems\":1");
+
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/monitored-service/"
+                       + "MSIdentifier1"
+                       + "/notification-rules")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                   .queryParam("pageNumber", 0)
+                   .queryParam("pageSize", 10)
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .get();
+    assertThat(response.getStatus()).isEqualTo(500);
+    assertThat(response.readEntity(String.class))
+        .contains(String.format(
+            "\"message\":\"io.harness.exception.InvalidRequestException: Monitored Service  with identifier MSIdentifier1, "
+                + "accountId %s, orgIdentifier %s and projectIdentifier %s  is not present\"",
+            builderFactory.getContext().getAccountId(), builderFactory.getContext().getOrgIdentifier(),
+            builderFactory.getContext().getProjectIdentifier()));
   }
 
   private static String convertToJson(String yamlString) {

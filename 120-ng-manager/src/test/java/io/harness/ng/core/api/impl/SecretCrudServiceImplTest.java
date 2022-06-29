@@ -39,7 +39,6 @@ import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.accountsetting.dto.AccountSettingType;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
 import io.harness.ng.core.api.NGEncryptedDataService;
@@ -53,9 +52,11 @@ import io.harness.ng.core.models.Secret;
 import io.harness.ng.core.models.SecretTextSpec;
 import io.harness.ng.core.remote.SSHKeyValidationMetadata;
 import io.harness.ng.core.remote.SecretValidationResultDTO;
+import io.harness.ng.opa.entities.secret.OpaSecretService;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
+import io.harness.secretmanagerclient.dto.LocalConfigDTO;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
 
 import software.wings.settings.SettingVariableTypes;
@@ -64,7 +65,9 @@ import com.amazonaws.util.StringInputStream;
 import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -72,6 +75,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
@@ -87,13 +91,16 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   @Mock private NGEncryptedDataService encryptedDataService;
   @Mock private NGAccountSettingService accountSettingService;
   @Mock private NGConnectorSecretManagerService connectorService;
+  @Mock private OpaSecretService opaSecretService;
 
   @Before
   public void setup() {
     initMocks(this);
     secretCrudServiceSpy = new SecretCrudServiceImpl(secretEntityReferenceHelper, fileUploadLimit, ngSecretServiceV2,
-        eventProducer, encryptedDataService, accountSettingService, connectorService);
+        eventProducer, encryptedDataService, accountSettingService, connectorService, opaSecretService);
     secretCrudService = spy(secretCrudServiceSpy);
+    when(connectorService.getUsingIdentifier(any(), any(), any(), any(), eq(false))).thenReturn(new LocalConfigDTO());
+    when(opaSecretService.evaluatePoliciesWithEntity(any(), any(), any(), any(), any(), any())).thenReturn(null);
   }
 
   @Test
@@ -104,6 +111,8 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     Secret secret = Secret.builder().build();
     when(encryptedDataService.createSecretText(any(), any())).thenReturn(encryptedDataDTO);
     when(ngSecretServiceV2.create(any(), any(), eq(false))).thenReturn(secret);
+
+    when(connectorService.getUsingIdentifier(any(), any(), any(), any(), eq(false))).thenReturn(new LocalConfigDTO());
 
     SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
                                   .type(SecretType.SecretText)
@@ -264,6 +273,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     doNothing()
         .when(secretEntityReferenceHelper)
         .createSetupUsageForSecretManager(any(), any(), any(), any(), any(), any());
+    when(opaSecretService.evaluatePoliciesWithEntity(any(), any(), any(), any(), any(), any())).thenReturn(null);
 
     SecretResponseWrapper created =
         secretCrudService.createFile("account", secretDTOV2, new StringInputStream("string"));
@@ -448,8 +458,8 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   public void testList() {
     when(ngSecretServiceV2.list(any(), anyInt(), anyInt()))
         .thenReturn(new PageImpl<>(Lists.newArrayList(Secret.builder().build()), PageRequest.of(0, 10), 1));
-    PageResponse<SecretResponseWrapper> secretPage = secretCrudService.list("account", "org", "proj",
-        Collections.emptyList(), singletonList(SecretType.SSHKey), false, "abc", 0, 100, null);
+    Page<SecretResponseWrapper> secretPage = secretCrudService.list("account", "org", "proj", Collections.emptyList(),
+        singletonList(SecretType.SSHKey), false, "abc", 0, 100, null);
     assertThat(secretPage.getContent()).isNotEmpty();
     assertThat(secretPage.getContent().size()).isEqualTo(1);
     verify(ngSecretServiceV2).list(any(), anyInt(), anyInt());
@@ -477,6 +487,26 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     verify(encryptedDataService, atLeastOnce()).delete(any(), any(), any(), any());
     verify(ngSecretServiceV2, atLeastOnce()).delete(any(), any(), any(), any());
     verify(secretEntityReferenceHelper, atLeastOnce())
+        .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testDeleteBatch() {
+    List<String> secretIdentifiers = new ArrayList<>();
+    secretIdentifiers.add("identifier1");
+    secretIdentifiers.add("identifier2");
+    when(ngSecretServiceV2.delete(any(), any(), any(), any())).thenReturn(true);
+    doNothing()
+        .when(secretEntityReferenceHelper)
+        .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
+    when(ngSecretServiceV2.get(any(), any(), any(), any()))
+        .thenReturn(Optional.of(
+            Secret.builder().type(SecretType.SecretText).secretSpec(SecretTextSpec.builder().build()).build()));
+    secretCrudService.deleteBatch("accountId", "orgId", "projectId", secretIdentifiers);
+    verify(ngSecretServiceV2, times(2)).get(any(), any(), any(), any());
+    verify(secretEntityReferenceHelper, times(2))
         .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
   }
 }

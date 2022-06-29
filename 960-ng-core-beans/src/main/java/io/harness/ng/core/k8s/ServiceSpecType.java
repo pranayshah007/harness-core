@@ -8,6 +8,7 @@
 package io.harness.ng.core.k8s;
 
 public interface ServiceSpecType {
+  String GITOPS = "GitOps";
   String KUBERNETES = "Kubernetes";
   String SSH = "Ssh";
   String ECS = "Ecs";
@@ -15,4 +16,5 @@ public interface ServiceSpecType {
   String PCF = "Pcf";
   String SERVERLESS_AWS_LAMBDA = "ServerlessAwsLambda";
   String WINRM = "WinRm";
+  String AZURE_WEBAPPS = "AzureWebApps";
 }

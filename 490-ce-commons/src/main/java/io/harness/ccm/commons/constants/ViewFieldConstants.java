@@ -25,10 +25,14 @@ public interface ViewFieldConstants {
   String TASK_FIELD_ID = "taskId";
   String LAUNCH_TYPE_FIELD_ID = "launchType";
 
-  String AWS_SERVICE_FIELD_ID = "awsServicecode";
+  String AWS_SERVICE_FIELD_ID = "awsServiceCode";
   String AWS_ACCOUNT_FIELD_ID = "awsUsageAccountId";
   String AWS_INSTANCE_TYPE_FIELD_ID = "awsInstancetype";
-  String AWS_USAGE_TYPE_ID = "awsUsagetype";
+  String AWS_USAGE_TYPE_ID = "awsUsageType";
+
+  String AZURE_SUBSCRIPTION_GUID = "azureSubscriptionGuid";
+  String AZURE_RESOURCE_GROUP = "azureResourceGroup";
+  String AZURE_METER_CATEGORY = "azureMeterCategory";
 
   String GCP_PRODUCT_FIELD_ID = "gcpProduct";
   String GCP_PROJECT_FIELD_ID = "gcpProjectId";

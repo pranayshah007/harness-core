@@ -163,6 +163,7 @@ public class ServiceYamlHandler extends BaseYamlHandler<Yaml, Service> {
     String serviceName = yamlHelper.getServiceName(yamlFilePath);
 
     Yaml yaml = changeContext.getYaml();
+    validateConfigVariableType(yaml);
 
     filterNonUpdatablePropertiesChanges(appId, yaml, serviceName);
 
@@ -495,5 +496,24 @@ public class ServiceYamlHandler extends BaseYamlHandler<Yaml, Service> {
     Service service = serviceOptional.get();
     serviceResourceService.deleteByYamlGit(
         service.getAppId(), service.getUuid(), changeContext.getChange().isSyncFromGit());
+  }
+
+  private void validateConfigVariableType(Yaml yaml) {
+    if (yaml == null) {
+      return;
+    }
+
+    if (isEmpty(yaml.getConfigVariables())) {
+      return;
+    }
+
+    for (NameValuePair.Yaml configVariable : yaml.getConfigVariables()) {
+      if (!("TEXT".equals(configVariable.getValueType()) || "ENCRYPTED_TEXT".equals(configVariable.getValueType())
+              || "ARTIFACT".equals(configVariable.getValueType()))) {
+        log.error("Yaml does not support {} type service variables", configVariable.getValueType());
+        throw new InvalidRequestException(
+            String.format("Yaml does not support %s type service variables", configVariable.getValueType()));
+      }
+    }
   }
 }

@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,20 +28,24 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
+import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.repositories.inputset.PMSInputSetRepository;
 import io.harness.rule.Owner;
 import io.harness.utils.PageUtils;
+import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
-import com.mongodb.client.result.UpdateResult;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -51,19 +56,22 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 
+@PrepareForTest({InputSetValidationHelper.class})
 @OwnedBy(PIPELINE)
 public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   @Inject PMSInputSetServiceImpl pmsInputSetService;
   @InjectMocks PMSInputSetServiceImpl pmsInputSetServiceMock;
-  @Mock private UpdateResult updateResult;
   @Mock private PMSInputSetRepository inputSetRepository;
   @Mock private GitSyncSdkService gitSyncSdkService;
+  @Mock private GitAwareEntityHelper gitAwareEntityHelper;
 
   String ACCOUNT_ID = "account_id";
   String ORG_IDENTIFIER = "orgId";
@@ -72,7 +80,6 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
 
   String INPUT_SET_IDENTIFIER = "identifier";
   String NAME = "identifier";
-  String YAML_GIT_CONFIG_REF = "git_config_ref";
   String YAML;
 
   InputSetEntity inputSetEntity;
@@ -91,6 +98,8 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
         + "  identifier: input1\n"
         + "  name: this name\n"
         + "  description: this has a description too\n"
+        + "  orgIdentifier: orgId\n"
+        + "  projectIdentifier: projId\n"
         + "  tags:\n"
         + "    company: harness\n"
         + "    kind : normal\n"
@@ -115,7 +124,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                          .orgIdentifier(ORG_IDENTIFIER)
                          .projectIdentifier(PROJ_IDENTIFIER)
                          .pipelineIdentifier(PIPELINE_IDENTIFIER)
-                         .yamlGitConfigRef(YAML_GIT_CONFIG_REF)
+                         .storeType(StoreType.INLINE)
                          .build();
 
     OVERLAY_YAML = "overlayInputSet:\n"
@@ -137,6 +146,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                                 .projectIdentifier(PROJ_IDENTIFIER)
                                 .pipelineIdentifier(PIPELINE_IDENTIFIER)
                                 .inputSetReferences(inputSetReferences)
+                                .storeType(StoreType.INLINE)
                                 .build();
 
     String pipelineYamlFileName = "failure-strategy.yaml";
@@ -151,16 +161,18 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                          .name(PIPELINE_IDENTIFIER)
                          .yaml(pipelineYaml)
                          .build();
+    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
   }
 
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testServiceLayer() {
+    MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
     List<InputSetEntity> inputSets = ImmutableList.of(inputSetEntity, overlayInputSetEntity);
 
     for (InputSetEntity entity : inputSets) {
-      InputSetEntity createdInputSet = pmsInputSetService.create(entity);
+      InputSetEntity createdInputSet = pmsInputSetService.create(entity, null, null);
       assertThat(createdInputSet).isNotNull();
       assertThat(createdInputSet.getAccountId()).isEqualTo(entity.getAccountId());
       assertThat(createdInputSet.getOrgIdentifier()).isEqualTo(entity.getOrgIdentifier());
@@ -194,7 +206,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                                                 .pipelineIdentifier(PIPELINE_IDENTIFIER)
                                                 .inputSetReferences(entity.getInputSetReferences())
                                                 .build();
-      InputSetEntity updatedInputSet = pmsInputSetService.update(updateInputSetEntity, ChangeType.MODIFY);
+      InputSetEntity updatedInputSet = pmsInputSetService.update(updateInputSetEntity, ChangeType.MODIFY, null, null);
       assertThat(updatedInputSet.getAccountId()).isEqualTo(updateInputSetEntity.getAccountId());
       assertThat(updatedInputSet.getOrgIdentifier()).isEqualTo(updateInputSetEntity.getOrgIdentifier());
       assertThat(updatedInputSet.getProjectIdentifier()).isEqualTo(updateInputSetEntity.getProjectIdentifier());
@@ -216,7 +228,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                                                    .pipelineIdentifier(PIPELINE_IDENTIFIER)
                                                    .inputSetReferences(entity.getInputSetReferences())
                                                    .build();
-      assertThatThrownBy(() -> pmsInputSetService.update(incorrectInputSetEntity, ChangeType.MODIFY))
+      assertThatThrownBy(() -> pmsInputSetService.update(incorrectInputSetEntity, ChangeType.MODIFY, null, null))
           .isInstanceOf(InvalidRequestException.class);
 
       boolean delete = pmsInputSetService.delete(
@@ -227,14 +239,16 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
           ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, entity.getIdentifier(), false);
       assertThat(deletedInputSet.isPresent()).isFalse();
     }
+    mockSettings.close();
   }
 
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testList() {
-    pmsInputSetService.create(inputSetEntity);
-    pmsInputSetService.create(overlayInputSetEntity);
+    MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
+    pmsInputSetService.create(inputSetEntity, null, null);
+    pmsInputSetService.create(overlayInputSetEntity, null, null);
 
     Criteria criteriaFromFilter = PMSInputSetFilterHelper.createCriteriaForGetList(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, InputSetListTypePMS.ALL, "", false);
@@ -258,7 +272,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                                          .pipelineIdentifier(PIPELINE_IDENTIFIER)
                                          .build();
 
-    pmsInputSetService.create(inputSetEntity2);
+    pmsInputSetService.create(inputSetEntity2, null, null);
     Page<InputSetEntity> list2 =
         pmsInputSetService.list(criteriaFromFilter, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     assertThat(list2.getContent()).isNotNull();
@@ -266,6 +280,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     assertThat(list2.getContent().get(0).getIdentifier()).isEqualTo(inputSetEntity.getIdentifier());
     assertThat(list2.getContent().get(1).getIdentifier()).isEqualTo(overlayInputSetEntity.getIdentifier());
     assertThat(list2.getContent().get(2).getIdentifier()).isEqualTo(inputSetEntity2.getIdentifier());
+    mockSettings.close();
   }
 
   @Test
@@ -283,15 +298,9 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
         .is(PIPELINE_IDENTIFIER);
     Query query = new Query(criteria);
 
-    Update update = new Update();
-    update.set("deleted", Boolean.TRUE);
-
-    doReturn(true).when(updateResult).wasAcknowledged();
-    doReturn(updateResult).when(inputSetRepository).deleteAllInputSetsWhenPipelineDeleted(query, update);
-
     pmsInputSetServiceMock.deleteInputSetsOnPipelineDeletion(pipelineEntity);
 
-    verify(inputSetRepository, times(1)).deleteAllInputSetsWhenPipelineDeleted(query, update);
+    verify(inputSetRepository, times(1)).deleteAllInputSetsWhenPipelineDeleted(query);
   }
 
   @Test
@@ -309,11 +318,9 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
         .is(PIPELINE_IDENTIFIER);
     Query query = new Query(criteria);
 
-    Update update = new Update();
-    update.set("deleted", Boolean.TRUE);
-
-    doReturn(false).when(updateResult).wasAcknowledged();
-    doReturn(updateResult).when(inputSetRepository).deleteAllInputSetsWhenPipelineDeleted(query, update);
+    doThrow(new InvalidRequestException("random exception"))
+        .when(inputSetRepository)
+        .deleteAllInputSetsWhenPipelineDeleted(query);
 
     assertThatThrownBy(() -> pmsInputSetServiceMock.deleteInputSetsOnPipelineDeletion(pipelineEntity))
         .isInstanceOf(InvalidRequestException.class)
@@ -350,5 +357,49 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     assertThat(pmsInputSetServiceMock.checkForInputSetsForPipeline(
                    ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER))
         .isFalse();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testImportInputSetFromRemote() {
+    String identifier = "input1";
+    String name = "this name";
+    String description = "this has a description too";
+    String pipelineIdentifier = "Test_Pipline11";
+    doReturn(YAML).when(gitAwareEntityHelper).fetchYAMLFromRemote(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    InputSetEntity inBetweenEntity = PMSInputSetElementMapper.toInputSetEntity(ACCOUNT_ID, YAML);
+    InputSetImportRequestDTO inputSetImportRequest =
+        InputSetImportRequestDTO.builder().inputSetName(name).inputSetDescription(description).build();
+    doReturn(inputSetEntity).when(inputSetRepository).saveForImportedYAML(inBetweenEntity, false);
+    InputSetEntity savedEntity = pmsInputSetServiceMock.importInputSetFromRemote(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, pipelineIdentifier, identifier, inputSetImportRequest);
+    assertThat(savedEntity).isEqualTo(inputSetEntity);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testUpdateFieldsInImportedInputSet() {
+    assertThatThrownBy(() -> pmsInputSetServiceMock.updateFieldsInImportedInputSet(null, null, null, null, null, ""))
+        .isInstanceOf(InvalidYamlException.class);
+
+    assertThatThrownBy(
+        () -> pmsInputSetServiceMock.updateFieldsInImportedInputSet(null, null, null, null, null, "this : "))
+        .isInstanceOf(InvalidYamlException.class);
+
+    assertThatThrownBy(()
+                           -> pmsInputSetServiceMock.updateFieldsInImportedInputSet(
+                               null, null, null, null, null, "this: notAnInputSet"))
+        .isInstanceOf(InvalidYamlException.class);
+
+    String importedInputSet = pmsInputSetServiceMock.updateFieldsInImportedInputSet(ORG_IDENTIFIER, PROJ_IDENTIFIER,
+        PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, InputSetImportRequestDTO.builder().inputSetName(NAME).build(), YAML);
+    InputSetEntity inputSetEntity = PMSInputSetElementMapper.toInputSetEntity(ACCOUNT_ID, importedInputSet);
+    assertThat(inputSetEntity.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
+    assertThat(inputSetEntity.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
+    assertThat(inputSetEntity.getPipelineIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
+    assertThat(inputSetEntity.getIdentifier()).isEqualTo(INPUT_SET_IDENTIFIER);
+    assertThat(inputSetEntity.getName()).isEqualTo(NAME);
   }
 }

@@ -122,7 +122,7 @@ import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.CommandUnitDetails.CommandUnitType;
 import software.wings.beans.command.HelmDummyCommandUnit;
 import software.wings.beans.command.HelmDummyCommandUnitConstants;
-import software.wings.beans.container.ContainerTask;
+import software.wings.beans.container.ContainerTaskCommons;
 import software.wings.beans.container.HelmChartSpecification;
 import software.wings.beans.yaml.GitCommandExecutionResponse;
 import software.wings.beans.yaml.GitCommandExecutionResponse.GitCommandStatus;
@@ -516,7 +516,7 @@ public class HelmDeployState extends State {
 
   private String getImageName(String yamlFileContent, String imageNameTag, String domainName) {
     if (isNotEmpty(domainName)) {
-      Pattern pattern = ContainerTask.compileRegexPattern(domainName);
+      Pattern pattern = ContainerTaskCommons.compileRegexPattern(domainName);
       Matcher matcher = pattern.matcher(yamlFileContent);
       if (!matcher.find()) {
         imageNameTag = domainName + "/" + imageNameTag;

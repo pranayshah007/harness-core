@@ -33,11 +33,26 @@ import org.hibernate.validator.constraints.NotBlank;
 @EqualsAndHashCode
 @Schema(name = "SmtpConfig", description = "This has the SMTP configuration details defined in Harness.")
 public class SmtpConfigDTO {
-  @JsonProperty(value = "host", required = true) @NotNull @NotBlank private String host;
-  @JsonProperty(value = "port", required = true) @NotNull private int port;
-  @JsonProperty("fromAddress") private String fromAddress;
-  @JsonProperty("useSSL") private boolean useSSL;
-  @JsonProperty("startTLS") private boolean startTLS;
-  @JsonProperty("username") private String username;
-  @JsonProperty("password") private char[] password;
+  @Schema(description = "This is the host of the SMTP server.")
+  @JsonProperty(value = "host", required = true)
+  @NotNull
+  @NotBlank
+  private String host;
+  @Schema(description = "This is the port of the SMTP server.")
+  @JsonProperty(value = "port", required = true)
+  @NotNull
+  private int port;
+  @Schema(description = "From address of the email that needs to be send.")
+  @JsonProperty("fromAddress")
+  private String fromAddress;
+  @Schema(description = "Specify whether or not to use SSL certificate.")
+  @JsonProperty("useSSL")
+  private boolean useSSL;
+  @Schema(description = "Specify whether or not to use TLS.") @JsonProperty("startTLS") private boolean startTLS;
+  @Schema(description = "Username credential to authenticate with SMTP server.")
+  @JsonProperty("username")
+  private String username;
+  @Schema(description = "Password credential to authenticate with SMTP server.")
+  @JsonProperty("password")
+  private char[] password;
 }

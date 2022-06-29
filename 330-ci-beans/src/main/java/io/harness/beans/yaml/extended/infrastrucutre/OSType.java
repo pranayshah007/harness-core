@@ -7,13 +7,18 @@
 
 package io.harness.beans.yaml.extended.infrastrucutre;
 
+import io.harness.annotation.RecasterAlias;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import org.springframework.data.annotation.TypeAlias;
 
+@TypeAlias("osType")
+@RecasterAlias("io.harness.beans.yaml.extended.infrastrucutre.OSType")
 public enum OSType {
   @JsonProperty("Linux") Linux("Linux"),
-  @JsonProperty("Osx") Osx("Osx"),
+  @JsonProperty("MacOS") MacOS("MacOS"),
   @JsonProperty("Windows") Windows("Windows");
   private final String yamlName;
 

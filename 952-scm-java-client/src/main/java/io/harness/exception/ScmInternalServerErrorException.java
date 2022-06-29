@@ -13,7 +13,10 @@ import io.harness.eraro.ErrorCode;
 
 @OwnedBy(HarnessTeam.PL)
 public class ScmInternalServerErrorException extends ScmException {
+  private static final String MESSAGE_ARG = "message";
+
   public ScmInternalServerErrorException(String errorMessage) {
-    super(errorMessage, ErrorCode.SCM_INTERNAL_SERVER_ERROR);
+    super(errorMessage, ErrorCode.SCM_INTERNAL_SERVER_ERROR_V2);
+    super.param(MESSAGE_ARG, errorMessage);
   }
 }

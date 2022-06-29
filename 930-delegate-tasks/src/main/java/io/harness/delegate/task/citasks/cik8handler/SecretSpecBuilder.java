@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.ci.pod.SecretParams.Type.FILE;
 import static io.harness.delegate.beans.ci.pod.SecretParams.Type.TEXT;
+import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
 import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.CODECOMMIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GIT;
@@ -36,6 +37,10 @@ import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnec
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsAuthType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitSecretKeyAccessKeyDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpCredentialsDTO;
@@ -45,6 +50,7 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthen
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
@@ -172,6 +178,9 @@ public class SecretSpecBuilder {
     if (gitConnector.getConnectorType() == ConnectorType.GITHUB) {
       GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
       return retrieveGitHubSecretParams(gitConfigDTO, gitConnector);
+    } else if (gitConnector.getConnectorType() == AZURE_REPO) {
+      AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
+      return retrieveAzureRepoSecretParams(gitConfigDTO, gitConnector);
     } else if (gitConnector.getConnectorType() == GITLAB) {
       GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
       return retrieveGitlabSecretParams(gitConfigDTO, gitConnector);
@@ -331,6 +340,25 @@ public class SecretSpecBuilder {
         secretData.put(DRONE_NETRC_PASSWORD,
             SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD).value(encodeBase64(token)).type(TEXT).build());
 
+      } else if (gitHTTPAuthenticationDTO.getType() == GithubHttpAuthenticationType.OAUTH) {
+        GithubOauthDTO githubOauthDTO = (GithubOauthDTO) gitHTTPAuthenticationDTO.getHttpCredentialsSpec();
+
+        String username = GithubOauthDTO.userName;
+        if (isEmpty(username)) {
+          throw new CIStageExecutionException("Github connector should have not empty username");
+        }
+        secretData.put(DRONE_NETRC_USERNAME,
+            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME).value(encodeBase64(username)).type(TEXT).build());
+
+        if (githubOauthDTO.getTokenRef() == null) {
+          throw new CIStageExecutionException("Github connector should have not empty tokenRef");
+        }
+        String token = String.valueOf(githubOauthDTO.getTokenRef().getDecryptedValue());
+        if (isEmpty(token)) {
+          throw new CIStageExecutionException("Github connector should have not empty token");
+        }
+        secretData.put(DRONE_NETRC_PASSWORD,
+            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD).value(encodeBase64(token)).type(TEXT).build());
       } else {
         throw new CIStageExecutionException(
             "Unsupported github connector auth type" + gitHTTPAuthenticationDTO.getType());
@@ -356,6 +384,65 @@ public class SecretSpecBuilder {
           "Unsupported github connector auth" + gitConfigDTO.getAuthentication().getAuthType());
     }
 
+    return secretData;
+  }
+
+  private Map<String, SecretParams> retrieveAzureRepoSecretParams(
+      AzureRepoConnectorDTO gitConfigDTO, ConnectorDetails gitConnector) {
+    Map<String, SecretParams> secretData = new HashMap<>();
+
+    if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
+      AzureRepoHttpCredentialsDTO gitHTTPAuthenticationDTO =
+          (AzureRepoHttpCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
+
+      log.info("Decrypting azure repo connector id:[{}], type:[{}]", gitConnector.getIdentifier(),
+          gitConnector.getConnectorType());
+      secretDecryptionService.decrypt(
+          gitHTTPAuthenticationDTO.getHttpCredentialsSpec(), gitConnector.getEncryptedDataDetails());
+      log.info("Decrypted connector id:[{}], type:[{}]", gitConnector.getIdentifier(), gitConnector.getConnectorType());
+      if (gitHTTPAuthenticationDTO.getType() == AzureRepoHttpAuthenticationType.USERNAME_AND_TOKEN) {
+        AzureRepoUsernameTokenDTO azureRepoUsernameTokenDTO =
+            (AzureRepoUsernameTokenDTO) gitHTTPAuthenticationDTO.getHttpCredentialsSpec();
+
+        String username = getSecretAsStringFromPlainTextOrSecretRef(
+            azureRepoUsernameTokenDTO.getUsername(), azureRepoUsernameTokenDTO.getUsernameRef());
+        if (isEmpty(username)) {
+          throw new CIStageExecutionException("Azure repo connector should have not empty username");
+        }
+        secretData.put(DRONE_NETRC_USERNAME,
+            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME).value(encodeBase64(username)).type(TEXT).build());
+
+        if (azureRepoUsernameTokenDTO.getTokenRef() == null) {
+          throw new CIStageExecutionException("Azure repo connector should have not empty tokenRef");
+        }
+        String token = String.valueOf(azureRepoUsernameTokenDTO.getTokenRef().getDecryptedValue());
+        if (isEmpty(token)) {
+          throw new CIStageExecutionException("Azure repo connector should have not empty token");
+        }
+        secretData.put(DRONE_NETRC_PASSWORD,
+            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD).value(encodeBase64(token)).type(TEXT).build());
+
+      } else {
+        throw new CIStageExecutionException(
+            "Unsupported Azure repo connector auth type" + gitHTTPAuthenticationDTO.getType());
+      }
+    } else if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.SSH) {
+      SSHKeyDetails sshKeyDetails = gitConnector.getSshKeyDetails();
+      log.info("Decrypting azure repo connector id:[{}], type:[{}]", gitConnector.getIdentifier(),
+          gitConnector.getConnectorType());
+      secretDecryptionService.decrypt(sshKeyDetails.getSshKeyReference(), sshKeyDetails.getEncryptedDataDetails());
+      log.info("Decrypted connector id:[{}], type:[{}]", gitConnector.getIdentifier(), gitConnector.getConnectorType());
+      SecretRefData key = sshKeyDetails.getSshKeyReference().getKey();
+      if (key == null || isEmpty(key.getDecryptedValue())) {
+        throw new CIStageExecutionException("Azure repo connector should have not empty sshKey");
+      }
+      char[] sshKey = key.getDecryptedValue();
+      secretData.put(DRONE_SSH_KEY,
+          SecretParams.builder().secretKey(DRONE_SSH_KEY).value(encodeBase64(sshKey)).type(TEXT).build());
+    } else {
+      throw new CIStageExecutionException(
+          "Unsupported azure repo connector auth" + gitConfigDTO.getAuthentication().getAuthType());
+    }
     return secretData;
   }
 

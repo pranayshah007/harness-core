@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
-import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -52,7 +51,7 @@ public class Cluster implements PersistentEntity {
                  .field(ClusterKeys.orgIdentifier)
                  .field(ClusterKeys.projectIdentifier)
                  .field(ClusterKeys.envRef)
-                 .field(ClusterKeys.identifier)
+                 .field(ClusterKeys.clusterRef)
                  .build())
         .add(SortCompoundMongoIndex.builder()
                  .name("accountId_orgId_projId_envRef_createdAt")
@@ -66,11 +65,10 @@ public class Cluster implements PersistentEntity {
   }
   @Wither @Id @org.mongodb.morphia.annotations.Id String id;
   @Trimmed @NotEmpty String accountId;
-  @NotEmpty @EntityIdentifier String identifier;
+  @NotEmpty @EntityIdentifier String clusterRef;
   @Trimmed String orgIdentifier;
   @Trimmed String projectIdentifier;
 
-  @NotEmpty @EntityName String name;
   @NotEmpty String envRef;
 
   @Wither @CreatedDate Long createdAt;

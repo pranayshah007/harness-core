@@ -101,15 +101,17 @@ public class TokenResource {
 
   @POST
   @ApiOperation(value = "Create token", nickname = "createToken")
-  @Operation(operationId = "createToken", summary = "Creates a Token",
+  @Operation(operationId = "createToken", summary = "Create a Token",
+      description = "Creates a Token for the given API Key Type.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns created Token details")
       })
   public ResponseDTO<String>
-  createToken(@Valid TokenDTO tokenDTO,
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+  createToken(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Valid TokenDTO tokenDTO) {
     tokenDTO.setAccountIdentifier(accountIdentifier);
     apiKeyService.validateParentIdentifier(tokenDTO.getAccountIdentifier(), tokenDTO.getOrgIdentifier(),
         tokenDTO.getProjectIdentifier(), tokenDTO.getApiKeyType(), tokenDTO.getParentIdentifier());
@@ -119,7 +121,8 @@ public class TokenResource {
   @PUT
   @Path("{identifier}")
   @ApiOperation(value = "Update token", nickname = "updateToken")
-  @Operation(operationId = "updateToken", summary = "Updates a Token by ID",
+  @Operation(operationId = "updateToken", summary = "Update a Token",
+      description = "Updates a Token for the given API Key Type.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -128,7 +131,8 @@ public class TokenResource {
   public ResponseDTO<TokenDTO>
   updateToken(@Parameter(description = "Token ID") @NotNull @PathParam("identifier") String identifier,
       @Valid TokenDTO tokenDTO,
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @AccountIdentifier @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
     tokenDTO.setAccountIdentifier(accountIdentifier);
     apiKeyService.validateParentIdentifier(tokenDTO.getAccountIdentifier(), tokenDTO.getOrgIdentifier(),
         tokenDTO.getProjectIdentifier(), tokenDTO.getApiKeyType(), tokenDTO.getParentIdentifier());
@@ -138,7 +142,8 @@ public class TokenResource {
   @DELETE
   @Path("{identifier}")
   @ApiOperation(value = "Delete token", nickname = "deleteToken")
-  @Operation(operationId = "deleteToken", summary = "Deletes a Token by ID",
+  @Operation(operationId = "deleteToken", summary = "Delete a Token",
+      description = "Deletes a Token for the given API Key Type.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -173,7 +178,8 @@ public class TokenResource {
   @POST
   @Path("rotate/{identifier}")
   @ApiOperation(value = "Rotate token", nickname = "rotateToken")
-  @Operation(operationId = "rotateToken", summary = "Rotates a Token by ID",
+  @Operation(operationId = "rotateToken", summary = "Rotate a Token",
+      description = "Rotates a Token for the given API Key Type.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -202,8 +208,8 @@ public class TokenResource {
   @GET
   @Path("aggregate")
   @ApiOperation(value = "List tokens", nickname = "listAggregatedTokens")
-  @Operation(operationId = "listAggregatedTokens",
-      summary = "Fetches the list of Aggregated Tokens corresponding to the request's filter criteria.",
+  @Operation(operationId = "listAggregatedTokens", summary = "List all Tokens",
+      description = "Lists all the Tokens matching the given search criteria.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.

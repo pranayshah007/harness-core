@@ -110,8 +110,6 @@ public class NewRelicHealthSourceSpec extends MetricHealthSourceSpec {
                                               .monitoringSourceName(name)
                                               .applicationName(applicationName)
                                               .applicationId(Long.valueOf(applicationId))
-                                              .envIdentifier(environmentRef)
-                                              .serviceIdentifier(serviceRef)
                                               .metricPack(metricPackFromDb)
                                               .category(metricPackFromDb.getCategory())
                                               .productName(feature)
@@ -136,8 +134,6 @@ public class NewRelicHealthSourceSpec extends MetricHealthSourceSpec {
                                               .productName(feature)
                                               .applicationName(applicationName)
                                               .applicationId(Long.valueOf(applicationId))
-                                              .envIdentifier(environmentRef)
-                                              .serviceIdentifier(serviceRef)
                                               .groupName(definitionList.get(0).getGroupName())
                                               .category(definitionList.get(0).getRiskProfile().getCategory())
                                               .monitoredServiceIdentifier(monitoredServiceIdentifier)
@@ -155,9 +151,8 @@ public class NewRelicHealthSourceSpec extends MetricHealthSourceSpec {
     return Key.builder()
         .applicationId(cvConfig.getApplicationId())
         .applicationName(cvConfig.getApplicationName())
-        .envIdentifier(cvConfig.getEnvIdentifier())
-        .serviceIdentifier(cvConfig.getServiceIdentifier())
         .metricPack(cvConfig.getMetricPack())
+        .monitoredServiceIdentifier(cvConfig.getMonitoredServiceIdentifier())
         .build();
   }
 
@@ -181,8 +176,7 @@ public class NewRelicHealthSourceSpec extends MetricHealthSourceSpec {
   private static class Key {
     private String applicationName;
     private long applicationId;
-    private String envIdentifier;
-    private String serviceIdentifier;
+    private String monitoredServiceIdentifier;
     MetricPack metricPack;
   }
 

@@ -309,11 +309,7 @@ public class ResourceGroupSyncConciliationJobTest extends ResourceGroupTestBase 
     resourceGroups.forEach(resourceGroupResponse -> {
       ResourceGroupDTO resourceGroupDTO =
           (ResourceGroupDTO) HObjectMapper.clone(resourceGroupResponse.getResourceGroup());
-      resourceGroupDTO.setResourceFilter(
-          ResourceFilter.builder()
-              .resources(singletonList(
-                  ResourceSelector.builder().resourceType(secretResourceType).identifiers(emptyList()).build()))
-              .build());
+      resourceGroupDTO.setResourceFilter(ResourceFilter.builder().resources(new ArrayList<>()).build());
       resourceGroupDTO.setAllowedScopeLevels(emptySet());
       verify(resourceGroupServiceMock, times(1)).update(resourceGroupDTO, false);
     });

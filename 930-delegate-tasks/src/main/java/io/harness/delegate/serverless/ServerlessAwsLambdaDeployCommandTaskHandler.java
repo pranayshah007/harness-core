@@ -11,7 +11,6 @@ import static io.harness.delegate.task.serverless.exception.ServerlessExceptionC
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.SERVERLESS_FETCH_DEPLOY_OUTPUT_FAILED;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.SERVERLESS_FETCH_DEPLOY_OUTPUT_HINT;
 import static io.harness.logging.LogLevel.ERROR;
-import static io.harness.logging.LogLevel.INFO;
 
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
@@ -43,6 +42,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.serverless.ServerlessAwsLambdaRuntimeException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -54,12 +54,10 @@ import io.harness.serverless.model.ServerlessDelegateTaskParams;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
 
 import com.google.inject.Inject;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Optional;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -78,7 +76,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
   private ServerlessAwsLambdaManifestSchema serverlessManifestSchema;
   private ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig;
   private long timeoutInMillis;
-  private String previousDeployTimeStamp;
+  private String serverlessAwsLambdaCredentialType;
 
   @Override
   protected ServerlessCommandResponse executeTaskInternal(ServerlessCommandRequest serverlessCommandRequest,
@@ -105,12 +103,51 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
     timeoutInMillis = serverlessDeployRequest.getTimeoutIntervalInMin() * 60000;
     serverlessAwsLambdaInfraConfig =
         (ServerlessAwsLambdaInfraConfig) serverlessDeployRequest.getServerlessInfraConfig();
-    LogCallback initLogCallback = serverlessTaskHelperBase.getLogCallback(
-        iLogStreamingTaskClient, ServerlessCommandUnitConstants.init.toString(), true, commandUnitsProgress);
+    serverlessAwsLambdaCredentialType =
+        serverlessInfraConfigHelper.getServerlessAwsLambdaCredentialType(serverlessAwsLambdaInfraConfig);
+
+    serverlessAwsLambdaConfig = (ServerlessAwsLambdaConfig) serverlessInfraConfigHelper.createServerlessConfig(
+        serverlessDeployRequest.getServerlessInfraConfig());
+
+    LogCallback setupDirectoryLogCallback = serverlessTaskHelperBase.getLogCallback(
+        iLogStreamingTaskClient, ServerlessCommandUnitConstants.setupDirectory.toString(), true, commandUnitsProgress);
     try {
-      init(serverlessDeployRequest, initLogCallback, serverlessDelegateTaskParams);
+      setupDirectory(serverlessDeployRequest, setupDirectoryLogCallback, serverlessDelegateTaskParams);
     } catch (Exception ex) {
-      initLogCallback.saveExecutionLog(color(format("%n Initialization failed."), LogColor.Red, LogWeight.Bold),
+      setupDirectoryLogCallback.saveExecutionLog(
+          color(format("%n setup directory failed."), LogColor.Red, LogWeight.Bold), LogLevel.ERROR,
+          CommandExecutionStatus.FAILURE);
+      throw ex;
+    }
+
+    LogCallback artifactLogCallback = serverlessTaskHelperBase.getLogCallback(
+        iLogStreamingTaskClient, ServerlessCommandUnitConstants.artifact.toString(), true, commandUnitsProgress);
+    try {
+      serverlessTaskHelperBase.fetchArtifact(serverlessDeployRequest.getServerlessArtifactConfig(), artifactLogCallback,
+          serverlessDelegateTaskParams.getWorkingDirectory());
+      artifactLogCallback.saveExecutionLog(format("Done..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+    } catch (Exception ex) {
+      artifactLogCallback.saveExecutionLog(color(format("%n artifact download failed."), LogColor.Red, LogWeight.Bold),
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      throw ex;
+    }
+
+    serverlessClient = ServerlessClient.client(serverlessDelegateTaskParams.getServerlessClientPath());
+
+    LogCallback configureCredsLogCallback = serverlessTaskHelperBase.getLogCallback(
+        iLogStreamingTaskClient, ServerlessCommandUnitConstants.configureCred.toString(), true, commandUnitsProgress);
+
+    serverlessAwsCommandTaskHelper.setUpConfigureCredential(serverlessAwsLambdaConfig, configureCredsLogCallback,
+        serverlessDelegateTaskParams, serverlessAwsLambdaCredentialType, serverlessClient, timeoutInMillis);
+
+    LogCallback pluginLogCallback = serverlessTaskHelperBase.getLogCallback(
+        iLogStreamingTaskClient, ServerlessCommandUnitConstants.plugin.toString(), true, commandUnitsProgress);
+    try {
+      serverlessAwsCommandTaskHelper.installPlugins(serverlessManifestSchema, serverlessDelegateTaskParams,
+          pluginLogCallback, serverlessClient, timeoutInMillis, serverlessManifestConfig);
+      pluginLogCallback.saveExecutionLog(format("Done..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+    } catch (Exception ex) {
+      pluginLogCallback.saveExecutionLog(color(format("%n installing plugin failed."), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw ex;
     }
@@ -122,72 +159,29 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
     } catch (Exception ex) {
       deployLogCallback.saveExecutionLog(color(format("%n Deployment failed."), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-      throw new ServerlessNGException(ex, previousDeployTimeStamp);
+      throw new ServerlessNGException(ex);
     }
   }
 
-  private void init(ServerlessDeployRequest serverlessDeployRequest, LogCallback executionLogCallback,
+  private void setupDirectory(ServerlessDeployRequest serverlessDeployRequest, LogCallback executionLogCallback,
       ServerlessDelegateTaskParams serverlessDelegateTaskParams) throws Exception {
-    executionLogCallback.saveExecutionLog(format("Initializing..%n%n"));
-    ServerlessCliResponse response;
-
+    executionLogCallback.saveExecutionLog(format("setting up serverless directory..%n%n"));
     serverlessManifestConfig =
         (ServerlessAwsLambdaManifestConfig) serverlessDeployRequest.getServerlessManifestConfig();
     serverlessTaskHelperBase.fetchManifestFilesAndWriteToDirectory(serverlessManifestConfig,
         serverlessDeployRequest.getAccountId(), executionLogCallback, serverlessDelegateTaskParams);
-
-    serverlessTaskHelperBase.fetchArtifact(serverlessDeployRequest.getServerlessArtifactConfig(), executionLogCallback,
-        serverlessDelegateTaskParams.getWorkingDirectory());
-
-    executionLogCallback.saveExecutionLog(format("Resolving expressions in serverless config file..%n"));
     serverlessManifestSchema = serverlessAwsCommandTaskHelper.parseServerlessManifest(
         executionLogCallback, serverlessDeployRequest.getManifestContent());
     serverlessTaskHelperBase.replaceManifestWithRenderedContent(serverlessDelegateTaskParams, serverlessManifestConfig,
         serverlessDeployRequest.getManifestContent(), serverlessManifestSchema);
-
-    executionLogCallback.saveExecutionLog(color("Successfully resolved with config file content:", White, Bold));
-    executionLogCallback.saveExecutionLog(serverlessDeployRequest.getManifestContent());
-
-    serverlessAwsLambdaConfig = (ServerlessAwsLambdaConfig) serverlessInfraConfigHelper.createServerlessConfig(
-        serverlessDeployRequest.getServerlessInfraConfig());
-    serverlessClient = ServerlessClient.client(serverlessDelegateTaskParams.getServerlessClientPath());
-
-    response = serverlessAwsCommandTaskHelper.configCredential(serverlessClient, serverlessAwsLambdaConfig,
-        serverlessDelegateTaskParams, executionLogCallback, true, timeoutInMillis);
-
-    if (response.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
-      executionLogCallback.saveExecutionLog(
-          color(format("%nConfig Credential command executed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
-    } else {
-      executionLogCallback.saveExecutionLog(
-          color(format("%nConfig Credential command failed..%n"), LogColor.Red, LogWeight.Bold), ERROR,
-          CommandExecutionStatus.FAILURE);
-      serverlessAwsCommandTaskHelper.handleCommandExecutionFailure(response, serverlessClient.configCredential());
-    }
-
-    serverlessAwsCommandTaskHelper.installPlugins(serverlessManifestSchema, serverlessDelegateTaskParams,
-        executionLogCallback, serverlessClient, timeoutInMillis, serverlessManifestConfig);
-
-    response = serverlessAwsCommandTaskHelper.deployList(serverlessClient, serverlessDelegateTaskParams,
-        executionLogCallback, serverlessAwsLambdaInfraConfig, timeoutInMillis, serverlessManifestConfig);
-
-    if (response.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
-      executionLogCallback.saveExecutionLog(
-          color(format("%nDeploy List command executed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
-      List<String> timeStamps = serverlessAwsCommandTaskHelper.getDeployListTimeStamps(response.getOutput());
-      Optional<String> previousVersionTimeStamp = serverlessAwsCommandTaskHelper.getPreviousVersionTimeStamp(
-          timeStamps, executionLogCallback, serverlessDeployRequest);
-      previousDeployTimeStamp = previousVersionTimeStamp.orElse(null);
-    } else {
-      executionLogCallback.saveExecutionLog(
-          color(format("%nDeploy List command failed..%n"), LogColor.Red, LogWeight.Bold), ERROR);
-    }
     executionLogCallback.saveExecutionLog(format("Done..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
   }
 
   private ServerlessDeployResponse deploy(ServerlessDeployRequest serverlessDeployRequest,
       LogCallback executionLogCallback, ServerlessDelegateTaskParams serverlessDelegateTaskParams) throws Exception {
     executionLogCallback.saveExecutionLog(format("Deploying..%n%n"));
+    executionLogCallback.saveExecutionLog(color("serverless manifest content:", White, Bold));
+    executionLogCallback.saveExecutionLog(serverlessDeployRequest.getManifestContent());
     ServerlessCliResponse response;
 
     ServerlessAwsLambdaDeployConfig serverlessAwsLambdaDeployConfig =
@@ -202,7 +196,6 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
     serverlessAwsLambdaDeployResultBuilder.service(serverlessManifestSchema.getService());
     serverlessAwsLambdaDeployResultBuilder.region(serverlessAwsLambdaInfraConfig.getRegion());
     serverlessAwsLambdaDeployResultBuilder.stage(serverlessAwsLambdaInfraConfig.getStage());
-    serverlessAwsLambdaDeployResultBuilder.previousVersionTimeStamp(previousDeployTimeStamp);
     ServerlessDeployResponseBuilder serverlessDeployResponseBuilder = ServerlessDeployResponse.builder();
 
     if (response.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {

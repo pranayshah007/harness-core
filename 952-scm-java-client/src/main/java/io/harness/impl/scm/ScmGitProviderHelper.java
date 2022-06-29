@@ -26,7 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(DX)
 public class ScmGitProviderHelper {
   @Inject GitClientHelper gitClientHelper;
-  private static final String azure_repo_name_separator = "/_git/";
+  private static final String azure_repo_name_separator = "/";
 
   public String getSlug(ScmConnector scmConnector) {
     if (scmConnector instanceof GithubConnectorDTO) {
@@ -65,7 +65,7 @@ public class ScmGitProviderHelper {
 
   private String getSlugFromUrlForAzureRepo(String url) {
     // url if of type https://dev.azure.com/satyamgoel/scmapitest/_git/scmapitest-renamed
-    // slug the whole string after '_git'
+    // slug the whole string after last '/'
     String repoName = gitClientHelper.getGitRepo(url);
     return StringUtils.substringAfterLast(repoName, azure_repo_name_separator);
   }

@@ -10,11 +10,9 @@ package io.harness.serializer.morphia;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.activity.entities.Activity;
-import io.harness.cvng.activity.entities.ActivitySource;
 import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.activity.entities.HarnessCDCurrentGenActivity;
 import io.harness.cvng.activity.entities.KubernetesActivity;
-import io.harness.cvng.activity.entities.KubernetesActivitySource;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity;
 import io.harness.cvng.activity.entities.PagerDutyActivity;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask;
@@ -45,7 +43,6 @@ import io.harness.cvng.core.entities.CustomHealthMetricCVConfig;
 import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.entities.DatadogLogCVConfig;
 import io.harness.cvng.core.entities.DatadogMetricCVConfig;
-import io.harness.cvng.core.entities.DeletedCVConfig;
 import io.harness.cvng.core.entities.DeploymentDataCollectionTask;
 import io.harness.cvng.core.entities.DynatraceCVConfig;
 import io.harness.cvng.core.entities.ErrorTrackingCVConfig;
@@ -64,6 +61,7 @@ import io.harness.cvng.core.entities.ServiceDependency;
 import io.harness.cvng.core.entities.ServiceGuardDataCollectionTask;
 import io.harness.cvng.core.entities.SideKick;
 import io.harness.cvng.core.entities.SplunkCVConfig;
+import io.harness.cvng.core.entities.SplunkMetricCVConfig;
 import io.harness.cvng.core.entities.StackdriverCVConfig;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig;
 import io.harness.cvng.core.entities.TimeSeriesRecord;
@@ -98,7 +96,6 @@ import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.CanaryVerificationJob;
-import io.harness.cvng.verificationjob.entities.HealthVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -112,7 +109,6 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
     set.add(Activity.class);
-    set.add(ActivitySource.class);
     set.add(AnalysisOrchestrator.class);
     set.add(AnalysisStateMachine.class);
     set.add(HeatMap.class);
@@ -123,7 +119,6 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(CVConfig.class);
     set.add(CVNGSchema.class);
     set.add(DataCollectionTask.class);
-    set.add(DeletedCVConfig.class);
     set.add(SplunkCVConfig.class);
     set.add(AppDynamicsCVConfig.class);
     set.add(StackdriverCVConfig.class);
@@ -155,7 +150,6 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(TimeSeriesLoadTestLearningEngineTask.class);
     set.add(MetricCVConfig.class);
     set.add(HostRecord.class);
-    set.add(HealthVerificationJob.class);
     set.add(SplunkCVConfig.class);
     set.add(KubernetesActivity.class);
     set.add(TimeSeriesCanaryLearningEngineTask.class);
@@ -166,7 +160,6 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(LogClusterLearningEngineTask.class);
     set.add(LogAnalysisLearningEngineTask.class);
     set.add(LogAnalysisResult.class);
-    set.add(KubernetesActivitySource.class);
     set.add(LogAnalysisRecord.class);
     set.add(CanaryVerificationJob.class);
     set.add(CanaryBlueGreenVerificationJob.class);
@@ -214,6 +207,7 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(NotificationRule.class);
     set.add(SLONotificationRule.class);
     set.add(MonitoredServiceNotificationRule.class);
+    set.add(SplunkMetricCVConfig.class);
   }
 
   @Override

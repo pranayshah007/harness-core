@@ -9,11 +9,11 @@ package io.harness.notification.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.NotificationRequest;
-import io.harness.Team;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.ng.beans.PageRequest;
+import io.harness.notification.NotificationRequest;
+import io.harness.notification.Team;
 import io.harness.notification.entities.Notification;
 import io.harness.notification.entities.Notification.NotificationKeys;
 import io.harness.notification.exception.NotificationException;

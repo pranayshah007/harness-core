@@ -121,7 +121,7 @@ public class CVNGStepResource {
   @Path("/{verifyStepExecutionId}/deployment-log-analysis-radar-chart-clusters")
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "get radar chart logs for given verify step",
+  @ApiOperation(value = "get radar chart logs clusters for given verify step",
       nickname = "getVerifyStepDeploymentRadarChartLogAnalysisClusters")
   public RestResponse<List<LogAnalysisRadarChartClusterDTO>>
   getDeploymentLogAnalysisRadarChartClusters(@NotEmpty @NotNull @QueryParam("accountId") String accountId,

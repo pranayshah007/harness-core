@@ -81,7 +81,6 @@ public class SecurityStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.security.spec.execution.steps.sto.description",
             "pipeline.stages.security.spec.execution.steps.sto.timeout",
             "pipeline.stages.security.spec.execution.steps.sto.spec.privileged",
-            "pipeline.stages.security.spec.execution.steps.sto.spec.connectorRef",
             "pipeline.stages.security.spec.execution.steps.sto.spec.runAsUser",
             "pipeline.stages.security.spec.execution.steps.sto.spec.resources.limits.cpu");
 
@@ -107,6 +106,13 @@ public class SecurityStepVariableCreatorTest extends CategoryTest {
                                                .map(YamlProperties::getFqn)
                                                .collect(Collectors.toList());
     assertThat(fqnOutputPropertiesList)
-        .containsOnly("pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.hello");
+        .containsOnly("pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.hello",
+            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.JOB_ID",
+            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.JOB_STATUS",
+            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.CRITICAL",
+            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.HIGH",
+            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.MEDIUM",
+            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.LOW",
+            "pipeline.stages.security.spec.execution.steps.sto.output.outputVariables.TOTAL");
   }
 }

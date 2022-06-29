@@ -74,6 +74,7 @@ public class InterruptMonitor implements Handler<Interrupt> {
   @Inject private ExpiryHelper expiryHelper;
 
   public void registerIterators(IteratorConfig iteratorConfig) {
+    // todo - RDM -  should we follow this lead and use %d on the naming when not provided?
     PumpExecutorOptions executorOptions = PumpExecutorOptions.builder()
                                               .name("InterruptMonitor-%d")
                                               .poolSize(iteratorConfig.getThreadPoolCount())
@@ -131,6 +132,8 @@ public class InterruptMonitor implements Handler<Interrupt> {
       if (isEmpty(leaves)) {
         log.error("No Leaves found something really wrong happened here. Lets check this execution {}",
             interrupt.getPlanExecutionId());
+        forceTerminate(
+            interrupt, nodeExecutions, nodeExecutions.stream().map(NodeExecution::getUuid).collect(Collectors.toSet()));
         interruptService.markProcessedForceful(interrupt.getUuid(), PROCESSED_UNSUCCESSFULLY, true);
         return;
       }

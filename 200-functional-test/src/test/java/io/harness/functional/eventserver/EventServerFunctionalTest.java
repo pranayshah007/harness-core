@@ -16,6 +16,7 @@ import io.harness.category.element.FunctionalTests;
 import io.harness.rule.Owner;
 import io.harness.testframework.framework.EventServerExecutor;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -25,6 +26,7 @@ public class EventServerFunctionalTest extends CategoryTest {
   @Test
   @Owner(developers = AVMOHAN)
   @Category(FunctionalTests.class)
+  @Ignore(value = "TODO: Enable once bazel path issue is sorted out")
   public void shouldEnsureEventServer() throws Exception {
     assertThatCode(() -> {
       eventServerExecutor.ensureEventServer(EventServerFunctionalTest.class);

@@ -10,6 +10,7 @@ package io.harness.delegate.task.k8s;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.k8s.model.KubernetesResourceId;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +31,8 @@ public class K8sRollingRollbackDeployRequest implements K8sDeployRequest {
   CommandUnitsProgress commandUnitsProgress;
   boolean useLatestKustomizeVersion;
   boolean useNewKubectlVersion;
+  boolean pruningEnabled;
+  List<KubernetesResourceId> prunedResourceIds;
 
   @Override
   public List<String> getValuesYamlList() {

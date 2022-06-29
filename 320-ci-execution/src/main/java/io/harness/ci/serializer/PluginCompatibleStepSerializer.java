@@ -8,20 +8,21 @@
 package io.harness.ci.serializer;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.common.CIExecutionConstants.PLUGIN_ARTIFACT_FILE_VALUE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ARTIFACT_FILE_VALUE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.callback.DelegateCallbackToken;
+import io.harness.ci.buildstate.PluginSettingUtils;
+import io.harness.ci.execution.CIExecutionConfigService;
+import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
-import io.harness.execution.CIExecutionConfigService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.PluginStep;
 import io.harness.product.ci.engine.proto.StepContext;
 import io.harness.product.ci.engine.proto.UnitStep;
-import io.harness.stateutils.buildstate.PluginSettingUtils;
-import io.harness.steps.CIStepInfoUtils;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.timeout.Timeout;
 
@@ -37,7 +38,7 @@ public class PluginCompatibleStepSerializer implements ProtobufStepSerializer<Pl
 
   public UnitStep serializeStepWithStepParameters(PluginCompatibleStep pluginCompatibleStep, Integer port,
       String callbackId, String logKey, String identifier, ParameterField<Timeout> parameterFieldTimeout,
-      String accountId, String stepName) {
+      String accountId, String stepName, OSType os) {
     if (port == null) {
       throw new CIStageExecutionException("Port can not be null");
     }
@@ -57,7 +58,7 @@ public class PluginCompatibleStepSerializer implements ProtobufStepSerializer<Pl
                                 .setImage(CIStepInfoUtils.getPluginCustomStepImage(
                                     pluginCompatibleStep, ciExecutionConfigService, Type.K8, accountId))
                                 .addAllEntrypoint(CIStepInfoUtils.getK8PluginCustomStepEntrypoint(
-                                    pluginCompatibleStep, ciExecutionConfigService, accountId))
+                                    pluginCompatibleStep, ciExecutionConfigService, accountId, os))
                                 .setContext(stepContext)
                                 .addAllEnvVarOutputs(outputVarNames)
                                 .putAllEnvironment(envVarMap)

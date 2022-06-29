@@ -16,7 +16,6 @@ import io.harness.app.schema.type.delegate.QLDelegate;
 import io.harness.app.schema.type.delegate.QLDelegate.QLDelegateBuilder;
 import io.harness.app.schema.type.delegate.QLDelegateList;
 import io.harness.app.schema.type.delegate.QLDelegateList.QLDelegateListBuilder;
-import io.harness.app.schema.type.delegate.QLDelegateStatus;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 
@@ -72,9 +71,8 @@ public class DelegateListDataFetcher
         utils.setStringFilter(delegateQuery.field(DelegateKeys.delegateName), qlDelegateFilter.getDelegateName());
       }
       if (qlDelegateFilter.getDelegateStatus() != null) {
-        delegateField = delegateQuery.field(DelegateKeys.status);
-        QLDelegateStatus filterDelegateStatus = qlDelegateFilter.getDelegateStatus();
-        // utils.setEnumFilter(field,filterDelegateStatus);
+        utils.setStringFilter(
+            delegateQuery.field(DelegateKeys.status), qlDelegateFilter.getDelegateStatus().getStringValue());
       }
       if (qlDelegateFilter.getDelegateType() != null) {
         delegateField = delegateQuery.field(DelegateKeys.delegateType);

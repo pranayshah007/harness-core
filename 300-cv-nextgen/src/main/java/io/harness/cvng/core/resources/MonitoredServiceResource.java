@@ -42,6 +42,7 @@ import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilter;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.utils.NGAccessControlClientCheck;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -53,7 +54,6 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
-import com.sun.istack.internal.NotNull;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -61,6 +61,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -264,7 +265,8 @@ public class MonitoredServiceResource {
                                                             .orgIdentifier(projectParams.getOrgIdentifier())
                                                             .projectIdentifier(projectParams.getProjectIdentifier())
                                                             .build();
-    return ResponseDTO.newResponse(monitoredServiceService.get(serviceEnvironmentParams));
+    return ResponseDTO.newResponse(
+        monitoredServiceService.getApplicationMonitoredServiceResponse(serviceEnvironmentParams));
   }
 
   @GET
@@ -469,5 +471,20 @@ public class MonitoredServiceResource {
       @QueryParam("startTime") Long startTime, @QueryParam("endTime") Long endTime) {
     return new RestResponse<>(monitoredServiceService.getMonitoredServiceChangeDetails(
         projectParams, monitoredServiceIdentifier, startTime, endTime));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @Path("{identifier}/notification-rules")
+  @ApiOperation(
+      value = "get notification rules for MonitoredService", nickname = "getNotificationRulesForMonitoredService")
+  @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
+  public ResponseDTO<PageResponse<NotificationRuleResponse>>
+  getNotificationRulesForMonitoredService(@NotNull @BeanParam ProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier")
+      @ResourceIdentifier String monitoredServiceIdentifier, @BeanParam PageParams pageParams) {
+    return ResponseDTO.newResponse(
+        monitoredServiceService.getNotificationRules(projectParams, monitoredServiceIdentifier, pageParams));
   }
 }

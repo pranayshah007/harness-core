@@ -16,6 +16,7 @@ import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
@@ -28,6 +29,8 @@ import lombok.NonNull;
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface NodeExecutionStrategy<P extends Node, N extends PmsNodeExecution, M extends PmsNodeExecutionMetadata> {
   N runNode(@NonNull Ambiance ambiance, @NonNull P node, M metadata);
+
+  N runNode(@NonNull Ambiance ambiance, @NonNull P node, M metadata, InitiateMode initiateMode);
 
   default N runNextNode(@NonNull Ambiance ambiance, @NonNull P node, N prevExecution, M metadata) {
     throw new UnsupportedOperationException("Trigger Next Node Node not supported for plan");

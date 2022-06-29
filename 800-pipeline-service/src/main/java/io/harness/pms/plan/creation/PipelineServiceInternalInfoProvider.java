@@ -31,12 +31,14 @@ import io.harness.plancreator.steps.internal.FlagConfigurationStepPlanCreator;
 import io.harness.plancreator.steps.internal.PMSStepPlanCreator;
 import io.harness.plancreator.steps.internal.PmsStepFilterJsonCreator;
 import io.harness.plancreator.steps.internal.PmsStepFilterJsonCreatorV2;
+import io.harness.plancreator.steps.internal.ShellScriptStepFilterJsonCreatorV2;
+import io.harness.plancreator.steps.resourceconstraint.QueueStepPlanCreator;
 import io.harness.plancreator.steps.resourceconstraint.ResourceConstraintStepPlanCreator;
+import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
 import io.harness.pms.sdk.core.pipeline.variables.ApprovalStageVariableCreator;
-import io.harness.pms.sdk.core.pipeline.variables.ExecutionVariableCreator;
 import io.harness.pms.sdk.core.pipeline.variables.PipelineVariableCreator;
 import io.harness.pms.sdk.core.pipeline.variables.StepGroupVariableCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
@@ -45,6 +47,8 @@ import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.approval.ApprovalStepVariableCreator;
+import io.harness.steps.approval.step.custom.CustomApprovalStepPlanCreator;
+import io.harness.steps.approval.step.custom.CustomApprovalStepVariableCreator;
 import io.harness.steps.approval.step.harness.HarnessApprovalStepPlanCreator;
 import io.harness.steps.approval.step.jira.JiraApprovalStepPlanCreator;
 import io.harness.steps.approval.step.jira.JiraApprovalStepVariableCreator;
@@ -52,18 +56,22 @@ import io.harness.steps.approval.step.servicenow.ServiceNowApprovalStepPlanCreat
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalStepVariableCreator;
 import io.harness.steps.cf.FlagConfigurationStep;
 import io.harness.steps.customstage.CustomStageFilterCreator;
+import io.harness.steps.customstage.CustomStagePlanCreator;
+import io.harness.steps.customstage.CustomStageVariableCreator;
 import io.harness.steps.jira.JiraStepVariableCreator;
 import io.harness.steps.jira.JiraUpdateStepVariableCreator;
 import io.harness.steps.jira.create.JiraCreateStepPlanCreator;
 import io.harness.steps.jira.update.JiraUpdateStepPlanCreator;
 import io.harness.steps.policy.step.PolicyStepPlanCreator;
 import io.harness.steps.policy.variables.PolicyStepVariableCreator;
+import io.harness.steps.resourcerestraint.QueueStepVariableCreator;
 import io.harness.steps.servicenow.ServiceNowCreateStepVariableCreator;
 import io.harness.steps.servicenow.ServiceNowUpdateStepVariableCreator;
 import io.harness.steps.servicenow.create.ServiceNowCreateStepPlanCreator;
 import io.harness.steps.servicenow.update.ServiceNowUpdateStepPlanCreator;
 import io.harness.steps.shellscript.ShellScriptStepPlanCreator;
 import io.harness.steps.shellscript.ShellScriptStepVariableCreator;
+import io.harness.variables.ExecutionVariableCreator;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -91,6 +99,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new ExecutionPmsPlanCreator());
     planCreators.add(new StepGroupPMSPlanCreator());
     planCreators.add(new ResourceConstraintStepPlanCreator());
+    planCreators.add(new QueueStepPlanCreator());
     planCreators.add(new FeatureFlagStagePlanCreator());
     planCreators.add(new CfExecutionPMSPlanCreator());
     planCreators.add(new ServiceNowApprovalStepPlanCreator());
@@ -101,6 +110,9 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new PolicyStepPlanCreator());
     planCreators.add(new ServiceNowCreateStepPlanCreator());
     planCreators.add(new ServiceNowUpdateStepPlanCreator());
+    planCreators.add(new StrategyConfigPlanCreator());
+    planCreators.add(new CustomStagePlanCreator());
+    planCreators.add(new CustomApprovalStepPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -113,6 +125,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     filterJsonCreators.add(new ApprovalStageFilterJsonCreator());
     filterJsonCreators.add(new PmsStepFilterJsonCreator());
     filterJsonCreators.add(new PmsStepFilterJsonCreatorV2());
+    filterJsonCreators.add(new ShellScriptStepFilterJsonCreatorV2());
     filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
     filterJsonCreators.add(new StepGroupPmsFilterJsonCreator());
     filterJsonCreators.add(new FeatureFlagStageFilterJsonCreator());
@@ -138,6 +151,9 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new JiraApprovalStepVariableCreator());
     variableCreators.add(new ServiceNowCreateStepVariableCreator());
     variableCreators.add(new ServiceNowUpdateStepVariableCreator());
+    variableCreators.add(new CustomStageVariableCreator());
+    variableCreators.add(new QueueStepVariableCreator());
+    variableCreators.add(new CustomApprovalStepVariableCreator());
     injectorUtils.injectMembers(variableCreators);
     return variableCreators;
   }

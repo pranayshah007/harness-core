@@ -84,6 +84,7 @@ import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
 import software.wings.service.intfc.SettingsService;
+import software.wings.utils.DelegateArtifactCollectionUtils;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -541,10 +542,10 @@ public class ArtifactCollectionUtilsTest extends WingsBaseTest {
     List<ArtifactStreamType> supported = asList(DOCKER, AMI, ARTIFACTORY, GCR, ECR, ACR, NEXUS, CUSTOM);
     List<ArtifactStreamType> unsupported = asList(JENKINS, BAMBOO, AMAZON_S3, GCS, SMB, SFTP, AZURE_ARTIFACTS);
     for (ArtifactStreamType artifactStreamType : supported) {
-      assertThat(ArtifactCollectionUtils.supportsCleanup(artifactStreamType.name())).isTrue();
+      assertThat(DelegateArtifactCollectionUtils.supportsCleanup(artifactStreamType.name())).isTrue();
     }
     for (ArtifactStreamType artifactStreamType : unsupported) {
-      assertThat(ArtifactCollectionUtils.supportsCleanup(artifactStreamType.name())).isFalse();
+      assertThat(DelegateArtifactCollectionUtils.supportsCleanup(artifactStreamType.name())).isFalse();
     }
   }
 

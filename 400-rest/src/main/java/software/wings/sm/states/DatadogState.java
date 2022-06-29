@@ -202,7 +202,7 @@ public class DatadogState extends AbstractMetricAnalysisState {
     final DatadogConfig datadogConfig = (DatadogConfig) settingAttribute.getValue();
     final long dataCollectionStartTimeStamp = dataCollectionStartTimestampMillis();
     String accountId = appService.get(context.getAppId()).getAccountId();
-    int timeDurationInInteger = Integer.parseInt(getTimeDuration());
+    int timeDurationInInteger = Integer.parseInt(getTimeDuration(context));
     final APMDataCollectionInfo dataCollectionInfo =
         APMDataCollectionInfo.builder()
             .baseUrl(datadogConfig.getUrl())
@@ -250,7 +250,7 @@ public class DatadogState extends AbstractMetricAnalysisState {
             .stateExecutionId(context.getStateExecutionInstanceId())
             .dataCollectionStartTime(dataCollectionStartTimeStamp)
             .dataCollectionEndTime(
-                dataCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration())))
+                dataCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(context))))
             .executionData(executionData)
             .build(),
         waitId);

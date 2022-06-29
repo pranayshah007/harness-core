@@ -19,7 +19,6 @@ import io.harness.ccm.views.entities.CEReportSchedule;
 import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
 import io.harness.ccm.views.service.impl.CEReportTemplateBuilderServiceImpl;
 
-import software.wings.beans.Account;
 import software.wings.beans.User;
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
 import software.wings.helpers.ext.mail.EmailData;
@@ -34,7 +33,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -65,8 +63,7 @@ public class ScheduledReportServiceImpl {
       return;
     }
     // TODO: Change info to debug post integration with UI
-    List<Account> ceEnabledAccounts = accountShardService.getCeEnabledAccounts();
-    List<String> accountIds = ceEnabledAccounts.stream().map(Account::getUuid).collect(Collectors.toList());
+    List<String> accountIds = accountShardService.getCeEnabledAccountIds();
     log.info("ceEnabledAccounts ids list {}", accountIds);
     Date jobTime = new Date();
     log.info("jobTime {}", jobTime.toInstant());

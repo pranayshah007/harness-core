@@ -36,6 +36,7 @@ public class CodeBase {
   String uuid;
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> connectorRef;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> repoName;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> projectName;
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = "io.harness.yaml.extended.ci.codebase.Build")
   @NotNull

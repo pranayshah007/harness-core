@@ -19,6 +19,7 @@ import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.SLILogsFilter;
+import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
@@ -170,5 +171,19 @@ public class ServiceLevelObjectiveResource {
       @NotNull @BeanParam ProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String sloIdentifier) {
     return new RestResponse<>(serviceLevelObjectiveService.getErrorBudgetResetHistory(projectParams, sloIdentifier));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @Path("{identifier}/notification-rules")
+  @ApiOperation(value = "get notification rules for SLO", nickname = "getNotificationRulesForSLO")
+  @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
+  public ResponseDTO<PageResponse<NotificationRuleResponse>> getNotificationRulesForSLO(
+      @NotNull @BeanParam ProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String sloIdentifier,
+      @BeanParam PageParams pageParams) {
+    return ResponseDTO.newResponse(
+        serviceLevelObjectiveService.getNotificationRules(projectParams, sloIdentifier, pageParams));
   }
 }

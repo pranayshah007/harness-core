@@ -24,7 +24,6 @@ import static java.time.Duration.ofSeconds;
 import io.harness.AccessControlClientModule;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
-import io.harness.Team;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheModule;
@@ -50,8 +49,6 @@ import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.CVConfig.CVConfigKeys;
 import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.entities.DataCollectionTask.DataCollectionTaskKeys;
-import io.harness.cvng.core.entities.DeletedCVConfig;
-import io.harness.cvng.core.entities.DeletedCVConfig.DeletedCVConfigKeys;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.entities.MonitoredService.MonitoredServiceKeys;
 import io.harness.cvng.core.entities.MonitoringSourcePerpetualTask;
@@ -61,7 +58,6 @@ import io.harness.cvng.core.entities.changeSource.ChangeSource.ChangeSourceKeys;
 import io.harness.cvng.core.entities.changeSource.HarnessCDCurrentGenChangeSource;
 import io.harness.cvng.core.entities.demo.CVNGDemoPerpetualTask;
 import io.harness.cvng.core.entities.demo.CVNGDemoPerpetualTask.CVNGDemoPerpetualTaskKeys;
-import io.harness.cvng.core.jobs.CVConfigCleanupHandler;
 import io.harness.cvng.core.jobs.CVNGDemoPerpetualTaskHandler;
 import io.harness.cvng.core.jobs.ChangeSourceDemoHandler;
 import io.harness.cvng.core.jobs.DataCollectionTasksPerpetualTaskStatusUpdateHandler;
@@ -79,6 +75,7 @@ import io.harness.cvng.exception.ConstraintViolationExceptionMapper;
 import io.harness.cvng.exception.NotFoundExceptionMapper;
 import io.harness.cvng.governance.beans.ExpansionKeysConstants;
 import io.harness.cvng.governance.services.SLOPolicyExpansionHandler;
+import io.harness.cvng.licenserestriction.MaxServiceRestrictionUsageImpl;
 import io.harness.cvng.metrics.services.impl.CVNGMetricsPublisher;
 import io.harness.cvng.migration.CVNGSchemaHandler;
 import io.harness.cvng.migration.beans.CVNGSchema;
@@ -102,11 +99,22 @@ import io.harness.cvng.verificationjob.jobs.VerificationJobInstanceTimeoutHandle
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
+import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
+import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
+import io.harness.enforcement.client.custom.CustomRestrictionInterface;
+import io.harness.enforcement.client.example.ExampleCustomImpl;
+import io.harness.enforcement.client.example.ExampleRateLimitUsageImpl;
+import io.harness.enforcement.client.example.ExampleStaticLimitUsageImpl;
+import io.harness.enforcement.client.resources.EnforcementClientResource;
+import io.harness.enforcement.client.services.EnforcementSdkRegisterService;
+import io.harness.enforcement.client.usage.RestrictionUsageInterface;
+import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.UnexpectedException;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.govern.ProviderModule;
 import io.harness.health.HealthService;
 import io.harness.iterator.PersistenceIterator;
+import io.harness.licensing.usage.resources.LicenseUsageResource;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.maintenance.MaintenanceController;
@@ -125,9 +133,11 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.notification.Team;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.templates.PredefinedTemplate;
+import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
@@ -432,7 +442,6 @@ public class VerificationApplication extends Application<VerificationConfigurati
     injector.getInstance(CVNGStepTaskHandler.class).registerIterator();
     injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
     registerExceptionMappers(environment.jersey());
-    registerCVConfigCleanupIterator(injector);
     registerHealthChecks(environment, injector);
     createConsumerThreadsToListenToEvents(injector);
     registerCVNGSchemaMigrationIterator(injector);
@@ -442,11 +451,12 @@ public class VerificationApplication extends Application<VerificationConfigurati
     registerWaitEnginePublishers(injector);
     registerPmsSdkEvents(injector);
     registerDemoGenerationIterator(injector);
-    registerNotificationTemplates(injector);
+    registerNotificationTemplates(configuration, injector);
     registerSLONotificationIterator(injector);
     registerMonitoredServiceNotificationIterator(injector);
     scheduleSidekickProcessing(injector);
     scheduleMaintenanceActivities(injector, configuration);
+    initializeEnforcementSdk(injector);
 
     log.info("Leaving startup maintenance mode");
     MaintenanceController.forceMaintenance(false);
@@ -557,6 +567,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     PersistenceIterator activityIterator =
         MongoPersistenceIterator.<Activity, MorphiaFilterExpander<Activity>>builder()
             .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("ActivityIterator")
             .clazz(Activity.class)
             .fieldName(ActivityKeys.verificationIteration)
             .targetInterval(ofSeconds(30))
@@ -588,6 +599,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     PersistenceIterator analysisOrchestrationIterator =
         MongoPersistenceIterator.<AnalysisOrchestrator, MorphiaFilterExpander<AnalysisOrchestrator>>builder()
             .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("AnalysisOrchestrationIterator")
             .clazz(AnalysisOrchestrator.class)
             .fieldName(AnalysisOrchestratorKeys.analysisOrchestrationIteration)
             .targetInterval(ofSeconds(15))
@@ -614,6 +626,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     PersistenceIterator persistenceIterator =
         MongoPersistenceIterator.<VerificationJobInstance, MorphiaFilterExpander<VerificationJobInstance>>builder()
             .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("TimeoutTaskIterator")
             .clazz(VerificationJobInstance.class)
             .fieldName(VerificationJobInstanceKeys.timeoutTaskIteration)
             .targetInterval(ofMinutes(1))
@@ -638,6 +651,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     PersistenceIterator demoDataIterator =
         MongoPersistenceIterator.<ChangeSource, MorphiaFilterExpander<ChangeSource>>builder()
             .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("DemoGenerationIterator")
             .clazz(ChangeSource.class)
             .fieldName(ChangeSourceKeys.demoDataGenerationIteration)
             .targetInterval(ofMinutes(80))
@@ -664,6 +678,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
         MongoPersistenceIterator
             .<MonitoringSourcePerpetualTask, MorphiaFilterExpander<MonitoringSourcePerpetualTask>>builder()
             .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("MonitoringSourceIterator")
             .clazz(MonitoringSourcePerpetualTask.class)
             .fieldName(MonitoringSourcePerpetualTaskKeys.dataCollectionTaskIteration)
             .targetInterval(ofMinutes(5))
@@ -685,6 +700,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
         MongoPersistenceIterator
             .<HarnessCDCurrentGenChangeSource, MorphiaFilterExpander<HarnessCDCurrentGenChangeSource>>builder()
             .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("HarnessCDIterator")
             .clazz(HarnessCDCurrentGenChangeSource.class)
             .fieldName(ChangeSourceKeys.dataCollectionTaskIteration)
             .targetInterval(ofMinutes(1))
@@ -709,6 +725,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     PersistenceIterator liveMonitoringDataCollectionTaskRecoverHandlerIterator =
         MongoPersistenceIterator.<CVConfig, MorphiaFilterExpander<CVConfig>>builder()
             .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("CreateNextDataCollectionTaskIterator")
             .clazz(CVConfig.class)
             .fieldName(CVConfigKeys.createNextTaskIteration)
             .targetInterval(ofMinutes(5))
@@ -734,6 +751,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     PersistenceIterator sliDataCollectionTaskRecoverHandlerIterator =
         MongoPersistenceIterator.<ServiceLevelIndicator, MorphiaFilterExpander<ServiceLevelIndicator>>builder()
             .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("CreateNextSLIDataCollectionTaskIterator")
             .clazz(ServiceLevelIndicator.class)
             .fieldName(ServiceLevelIndicatorKeys.createNextTaskIteration)
             .targetInterval(ofMinutes(5))
@@ -760,6 +778,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     PersistenceIterator cvngDemoPerpetualTaskIterator =
         MongoPersistenceIterator.<CVNGDemoPerpetualTask, MorphiaFilterExpander<CVNGDemoPerpetualTask>>builder()
             .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("CVNGDemoPerpetualTaskIterator")
             .clazz(CVNGDemoPerpetualTask.class)
             .fieldName(CVNGDemoPerpetualTaskKeys.createNextTaskIteration)
             .targetInterval(ofMinutes(1))
@@ -790,6 +809,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     PersistenceIterator dataCollectionTasksPerpetualTaskStatusUpdateIterator =
         MongoPersistenceIterator.<DataCollectionTask, MorphiaFilterExpander<DataCollectionTask>>builder()
             .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("DataCollectionTasksPerpetualTaskStatusUpdateIterator")
             .clazz(DataCollectionTask.class)
             .fieldName(DataCollectionTaskKeys.workerStatusIteration)
             .targetInterval(ofMinutes(1))
@@ -828,6 +848,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     PersistenceIterator dataCollectionIterator =
         MongoPersistenceIterator.<VerificationJobInstance, MorphiaFilterExpander<VerificationJobInstance>>builder()
             .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("VerificationJobInstanceDataCollectionTaskIterator")
             .clazz(VerificationJobInstance.class)
             .fieldName(VerificationJobInstanceKeys.dataCollectionTaskIteration)
             .targetInterval(ofSeconds(30))
@@ -843,29 +864,6 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .build();
     injector.injectMembers(dataCollectionIterator);
     verificationTaskExecutor.scheduleWithFixedDelay(() -> dataCollectionIterator.process(), 0, 30, TimeUnit.SECONDS);
-  }
-
-  private void registerCVConfigCleanupIterator(Injector injector) {
-    ScheduledThreadPoolExecutor dataCollectionExecutor = new ScheduledThreadPoolExecutor(
-        5, new ThreadFactoryBuilder().setNameFormat("cv-config-cleanup-iterator").build());
-    CVConfigCleanupHandler cvConfigCleanupHandler = injector.getInstance(CVConfigCleanupHandler.class);
-    // TODO: setup alert if this goes above acceptable threshold.
-    PersistenceIterator dataCollectionIterator =
-        MongoPersistenceIterator.<DeletedCVConfig, MorphiaFilterExpander<DeletedCVConfig>>builder()
-            .mode(PersistenceIterator.ProcessMode.PUMP)
-            .clazz(DeletedCVConfig.class)
-            .fieldName(DeletedCVConfigKeys.dataCollectionTaskIteration)
-            .targetInterval(ofMinutes(1))
-            .acceptableNoAlertDelay(ofMinutes(1))
-            .executorService(dataCollectionExecutor)
-            .semaphore(new Semaphore(5))
-            .handler(cvConfigCleanupHandler)
-            .schedulingType(REGULAR)
-            .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
-            .redistribute(true)
-            .build();
-    injector.injectMembers(dataCollectionIterator);
-    dataCollectionExecutor.scheduleWithFixedDelay(() -> dataCollectionIterator.process(), 0, 30, TimeUnit.SECONDS);
   }
 
   private void registerHealthChecks(Environment environment, Injector injector) {
@@ -898,6 +896,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     PersistenceIterator dataCollectionIterator =
         MongoPersistenceIterator.<CVNGSchema, MorphiaFilterExpander<CVNGSchema>>builder()
             .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("CVNGSchemaMigrationIterator")
             .clazz(CVNGSchema.class)
             .fieldName(CVNGSchemaKeys.cvngNextIteration)
             .targetInterval(ofMinutes(30))
@@ -914,18 +913,21 @@ public class VerificationApplication extends Application<VerificationConfigurati
     migrationExecutor.scheduleWithFixedDelay(() -> dataCollectionIterator.process(), 0, 15, TimeUnit.MINUTES);
   }
 
-  private void registerNotificationTemplates(Injector injector) {
+  private void registerNotificationTemplates(VerificationConfiguration configuration, Injector injector) {
     NotificationClient notificationClient = injector.getInstance(NotificationClient.class);
     List<PredefinedTemplate> templates = new ArrayList<>(Arrays.asList(PredefinedTemplate.CVNG_SLO_SLACK,
         PredefinedTemplate.CVNG_SLO_EMAIL, PredefinedTemplate.CVNG_SLO_PAGERDUTY, PredefinedTemplate.CVNG_SLO_MSTEAMS,
         PredefinedTemplate.CVNG_MONITOREDSERVICE_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_EMAIL,
         PredefinedTemplate.CVNG_MONITOREDSERVICE_PAGERDUTY, PredefinedTemplate.CVNG_MONITOREDSERVICE_MSTEAMS));
-    for (PredefinedTemplate template : templates) {
-      try {
-        log.info("Registering {} with NotificationService", template);
-        notificationClient.saveNotificationTemplate(Team.CV, template, true);
-      } catch (UnexpectedException ex) {
-        log.error("Unable to save {} to NotificationService - skipping register notification templates.", template, ex);
+    if (configuration.getShouldConfigureWithNotification()) {
+      for (PredefinedTemplate template : templates) {
+        try {
+          log.info("Registering {} with NotificationService", template);
+          notificationClient.saveNotificationTemplate(Team.CV, template, true);
+        } catch (UnexpectedException ex) {
+          log.error(
+              "Unable to save {} to NotificationService - skipping register notification templates.", template, ex);
+        }
       }
     }
   }
@@ -938,6 +940,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     PersistenceIterator dataCollectionIterator =
         MongoPersistenceIterator.<ServiceLevelObjective, MorphiaFilterExpander<ServiceLevelObjective>>builder()
             .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("SLONotificationIterator")
             .clazz(ServiceLevelObjective.class)
             .fieldName(ServiceLevelObjectiveKeys.nextNotificationIteration)
             .targetInterval(ofMinutes(60))
@@ -963,10 +966,11 @@ public class VerificationApplication extends Application<VerificationConfigurati
     PersistenceIterator dataCollectionIterator =
         MongoPersistenceIterator.<MonitoredService, MorphiaFilterExpander<MonitoredService>>builder()
             .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("MonitoredServiceNotificationIterator")
             .clazz(MonitoredService.class)
             .fieldName(MonitoredServiceKeys.nextNotificationIteration)
-            .targetInterval(ofMinutes(10))
-            .acceptableNoAlertDelay(ofMinutes(5))
+            .targetInterval(ofMinutes(5))
+            .acceptableNoAlertDelay(ofMinutes(2))
             .executorService(notificationExecutor)
             .semaphore(new Semaphore(5))
             .handler(notificationHandler)
@@ -976,7 +980,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .redistribute(true)
             .build();
     injector.injectMembers(dataCollectionIterator);
-    notificationExecutor.scheduleWithFixedDelay(() -> dataCollectionIterator.process(), 0, 5, TimeUnit.MINUTES);
+    notificationExecutor.scheduleWithFixedDelay(() -> dataCollectionIterator.process(), 0, 2, TimeUnit.MINUTES);
   }
 
   private void initializeServiceSecretKeys() {
@@ -991,6 +995,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
     // Pipeline SDK Consumers
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
+    environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
   }
 
   private void registerPmsSdkEvents(Injector injector) {
@@ -1026,6 +1031,8 @@ public class VerificationApplication extends Application<VerificationConfigurati
       }
     });
     environment.jersey().register(injector.getInstance(VersionInfoResource.class));
+    environment.jersey().register(injector.getInstance(LicenseUsageResource.class));
+    environment.jersey().register(injector.getInstance(EnforcementClientResource.class));
     log.info("Registered all the resources. Time taken(ms): {}", System.currentTimeMillis() - startTimeMs);
   }
 
@@ -1043,5 +1050,29 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   private void runMigrations(Injector injector) {
     injector.getInstance(CVNGMigrationService.class).runMigrations();
+  }
+
+  private void initializeEnforcementSdk(Injector injector) {
+    RestrictionUsageRegisterConfiguration restrictionUsageRegisterConfiguration =
+        RestrictionUsageRegisterConfiguration.builder()
+            .restrictionNameClassMap(
+                ImmutableMap.<FeatureRestrictionName, Class<? extends RestrictionUsageInterface>>builder()
+                    .put(FeatureRestrictionName.TEST2, ExampleStaticLimitUsageImpl.class)
+                    .put(FeatureRestrictionName.TEST3, ExampleRateLimitUsageImpl.class)
+                    .put(FeatureRestrictionName.TEST6, ExampleRateLimitUsageImpl.class)
+                    .put(FeatureRestrictionName.TEST7, ExampleStaticLimitUsageImpl.class)
+                    .put(FeatureRestrictionName.SRM_SERVICES, MaxServiceRestrictionUsageImpl.class)
+                    .build())
+            .build();
+    CustomRestrictionRegisterConfiguration customConfig =
+        CustomRestrictionRegisterConfiguration.builder()
+            .customRestrictionMap(
+                ImmutableMap.<FeatureRestrictionName, Class<? extends CustomRestrictionInterface>>builder()
+                    .put(FeatureRestrictionName.TEST4, ExampleCustomImpl.class)
+                    .build())
+            .build();
+
+    injector.getInstance(EnforcementSdkRegisterService.class)
+        .initialize(restrictionUsageRegisterConfiguration, customConfig);
   }
 }

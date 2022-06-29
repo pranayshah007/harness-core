@@ -22,6 +22,7 @@ import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskResponse;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlotSetupResponse;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -46,11 +47,12 @@ public abstract class AbstractAzureAppServiceTaskHandler {
           : executeTaskInternal(azureAppServiceTaskParameters, azureConfig, logStreamingTaskClient);
       return handleAppServiceTaskResponse(azureAppServiceTaskResponse);
     } catch (Exception ex) {
-      String message = AzureResourceUtility.getAzureCloudExceptionMessage(ex);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+      String message = AzureResourceUtility.getAzureCloudExceptionMessage(sanitizedException);
       if (azureAppServiceTaskParameters.isSyncTask()) {
-        throw new InvalidRequestException(message, ex);
+        throw new InvalidRequestException(message, sanitizedException);
       }
-      logErrorMsg(azureAppServiceTaskParameters, logStreamingTaskClient, ex, message);
+      logErrorMsg(azureAppServiceTaskParameters, logStreamingTaskClient, sanitizedException, message);
       return failureAppServiceTaskResponse(message);
     }
   }

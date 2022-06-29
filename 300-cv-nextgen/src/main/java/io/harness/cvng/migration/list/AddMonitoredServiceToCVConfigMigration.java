@@ -35,8 +35,8 @@ public class AddMonitoredServiceToCVConfigMigration implements CVNGMigration {
                 .filter(CVConfigKeys.accountId, monitoredService.getAccountId())
                 .filter(CVConfigKeys.projectIdentifier, monitoredService.getProjectIdentifier())
                 .filter(CVConfigKeys.orgIdentifier, monitoredService.getOrgIdentifier())
-                .filter(CVConfigKeys.serviceIdentifier, monitoredService.getServiceIdentifier())
-                .filter(CVConfigKeys.envIdentifier, monitoredService.getEnvironmentIdentifier());
+                .filter("serviceIdentifier", monitoredService.getServiceIdentifier())
+                .filter("envIdentifier", monitoredService.getEnvironmentIdentifier());
 
         hPersistence.update(cvConfigQuery,
             hPersistence.createUpdateOperations(CVConfig.class)

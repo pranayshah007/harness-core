@@ -14,7 +14,6 @@ import io.harness.git.model.ChangeType;
 import io.harness.pms.inputset.gitsync.InputSetYamlDTO;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 
-import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -30,22 +29,33 @@ public interface PMSInputSetRepositoryCustom {
   Page<InputSetEntity> findAll(
       Criteria criteria, Pageable pageable, String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
-  InputSetEntity save(InputSetEntity entityToSave, InputSetYamlDTO yamlDTO);
+  InputSetEntity saveForOldGitSync(InputSetEntity entityToSave, InputSetYamlDTO yamlDTO);
 
-  Optional<InputSetEntity>
-  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPipelineIdentifierAndIdentifierAndDeletedNot(String accountId,
-      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String identifier, boolean notDeleted);
+  InputSetEntity save(InputSetEntity entityToSave);
 
-  InputSetEntity update(InputSetEntity entityToUpdate, InputSetYamlDTO yamlDTO, ChangeType changeType);
+  InputSetEntity saveForImportedYAML(InputSetEntity entityToSave, boolean pushToGit);
+
+  Optional<InputSetEntity> findForOldGitSync(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String identifier, boolean notDeleted);
+
+  Optional<InputSetEntity> find(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String identifier, boolean notDeleted, boolean getMetadataOnly);
+
+  InputSetEntity updateForOldGitSync(InputSetEntity entityToUpdate, InputSetYamlDTO yamlDTO, ChangeType changeType);
+
+  InputSetEntity update(InputSetEntity entityToUpdate);
 
   InputSetEntity update(Criteria criteria, Update update);
 
   InputSetEntity update(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Criteria criteria, Update update);
 
-  InputSetEntity delete(InputSetEntity entityToDelete, InputSetYamlDTO yamlDTO);
+  void deleteForOldGitSync(InputSetEntity entityToDelete, InputSetYamlDTO yamlDTO);
 
-  UpdateResult deleteAllInputSetsWhenPipelineDeleted(Query query, Update update);
+  void delete(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String identifier);
+
+  void deleteAllInputSetsWhenPipelineDeleted(Query query);
 
   boolean existsByAccountIdAndOrgIdentifierAndProjectIdentifierAndPipelineIdentifierAndDeletedNot(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, boolean notDeleted);

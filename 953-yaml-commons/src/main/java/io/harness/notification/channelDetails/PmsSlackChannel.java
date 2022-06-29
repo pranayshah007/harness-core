@@ -7,12 +7,13 @@
 
 package io.harness.notification.channelDetails;
 
-import io.harness.Team;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.notification.Team;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.channeldetails.SlackChannel;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -38,11 +39,14 @@ public class PmsSlackChannel extends PmsNotificationChannel {
 
   @Override
   public NotificationChannel toNotificationChannel(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateId, Map<String, String> templateData) {
+      String templateId, Map<String, String> templateData, Ambiance ambiance) {
     return SlackChannel.builder()
         .accountId(accountId)
         .team(Team.PIPELINE)
         .templateData(templateData)
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .expressionFunctorToken(ambiance.getExpressionFunctorToken())
         .templateId(templateId)
         .userGroups(
             userGroups.stream()

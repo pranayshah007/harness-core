@@ -15,7 +15,6 @@ import io.harness.EntityType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.intfc.CIYamlSchemaService;
-import io.harness.app.intfc.STOYamlSchemaService;
 import io.harness.ci.plan.creator.execution.CIPipelineModuleInfo;
 import io.harness.common.EntityTypeConstants;
 import io.harness.encryption.Scope;
@@ -62,7 +61,6 @@ import lombok.AllArgsConstructor;
     })
 public class CIYamlSchemaResource implements YamlSchemaResource {
   CIYamlSchemaService ciYamlSchemaService;
-  STOYamlSchemaService stoYamlSchemaService;
 
   @GET
   @ApiOperation(value = "Get Partial Yaml Schema", nickname = "getPartialYamlSchema")
@@ -73,8 +71,6 @@ public class CIYamlSchemaResource implements YamlSchemaResource {
     List<PartialSchemaDTO> partialSchemaDTOList = new ArrayList<>();
     partialSchemaDTOList.add(
         ciYamlSchemaService.getStageYamlSchema(accountIdentifier, orgIdentifier, projectIdentifier, scope));
-    partialSchemaDTOList.add(
-        stoYamlSchemaService.getStageYamlSchema(accountIdentifier, orgIdentifier, projectIdentifier, scope));
 
     return ResponseDTO.newResponse(partialSchemaDTOList);
   }
@@ -130,12 +126,8 @@ public class CIYamlSchemaResource implements YamlSchemaResource {
     PartialSchemaDTO ciSchema = ciYamlSchemaService.getMergedStageYamlSchema(accountIdentifier, projectIdentifier,
         orgIdentifier, scope, yamlSchemaDetailsWrapper.getYamlSchemaWithDetailsList());
 
-    PartialSchemaDTO securitySchema = stoYamlSchemaService.getMergedStageYamlSchema(accountIdentifier,
-        projectIdentifier, orgIdentifier, scope, yamlSchemaDetailsWrapper.getYamlSchemaWithDetailsList());
-
     List<PartialSchemaDTO> partialSchemaDTOList = new ArrayList<>();
     partialSchemaDTOList.add(ciSchema);
-    partialSchemaDTOList.add(securitySchema);
     return ResponseDTO.newResponse(partialSchemaDTOList);
   }
 
@@ -153,12 +145,6 @@ public class CIYamlSchemaResource implements YamlSchemaResource {
       if (entityType.getYamlName().equals(EntityTypeConstants.INTEGRATION_STAGE)) {
         return ResponseDTO.newResponse(
             ciYamlSchemaService
-                .getMergedStageYamlSchema(accountIdentifier, projectIdentifier, orgIdentifier, scope,
-                    yamlSchemaDetailsWrapper.getYamlSchemaWithDetailsList())
-                .getSchema());
-      } else if (entityType.getYamlName().equals(EntityTypeConstants.SECURITY_STAGE)) {
-        return ResponseDTO.newResponse(
-            stoYamlSchemaService
                 .getMergedStageYamlSchema(accountIdentifier, projectIdentifier, orgIdentifier, scope,
                     yamlSchemaDetailsWrapper.getYamlSchemaWithDetailsList())
                 .getSchema());

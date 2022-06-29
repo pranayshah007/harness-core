@@ -7,6 +7,7 @@
 
 package io.harness.beans.environment.pod;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.delegate.beans.ci.pod.EmptyDirVolume;
 import io.harness.delegate.beans.ci.pod.PVCParams;
@@ -20,6 +21,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.springframework.data.annotation.TypeAlias;
 
 /**
  * Stores all details require to spawn pod
@@ -28,6 +30,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
+@TypeAlias("podSetupInfo")
+@RecasterAlias("io.harness.beans.environment.pod.PodSetupInfo")
 public class PodSetupInfo {
   private PodSetupParams podSetupParams;
   private List<PVCParams> pvcParamsList;

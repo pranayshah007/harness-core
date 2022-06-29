@@ -581,7 +581,8 @@ public class UserServiceTest extends WingsBaseTest {
     when(accountService.save(any(Account.class), eq(false), eq(true))).thenReturn(account);
     when(wingsPersistence.saveAndGet(any(Class.class), any(User.class))).thenReturn(savedUser);
     when(wingsPersistence.get(MarketPlace.class, "TESTUUID")).thenReturn(marketPlace);
-    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean())).thenReturn(aPageResponse().build());
+    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), null, null))
+        .thenReturn(aPageResponse().build());
     when(authenticationManager.defaultLogin(USER_EMAIL, "TestPassword")).thenReturn(savedUser);
     User user = userService.completeMarketPlaceSignup(savedUser, testInvite, MarketPlaceType.AWS);
     assertThat(user).isEqualTo(savedUser);
@@ -625,7 +626,8 @@ public class UserServiceTest extends WingsBaseTest {
 
     when(accountService.save(any(Account.class), eq(false), eq(false))).thenReturn(account);
     when(wingsPersistence.query(eq(User.class), any(PageRequest.class))).thenReturn(aPageResponse().build());
-    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean())).thenReturn(aPageResponse().build());
+    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
+        .thenReturn(aPageResponse().build());
     when(subdomainUrlHelper.getPortalBaseUrl(ACCOUNT_ID)).thenReturn(PORTAL_URL + "/");
 
     userService.register(userBuilder.build());
@@ -769,7 +771,8 @@ public class UserServiceTest extends WingsBaseTest {
         .thenReturn(aPageResponse().withResponse(Lists.newArrayList(existingUser)).build());
     when(wingsPersistence.saveAndGet(eq(EmailVerificationToken.class), any(EmailVerificationToken.class)))
         .thenReturn(anEmailVerificationToken().withToken("token123").build());
-    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean())).thenReturn(aPageResponse().build());
+    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
+        .thenReturn(aPageResponse().build());
     when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn(PORTAL_URL);
 
     userService.register(userBuilder.build());
@@ -906,8 +909,8 @@ public class UserServiceTest extends WingsBaseTest {
     when(wingsPersistence.get(User.class, USER_ID)).thenReturn(userBuilder.uuid(USER_ID).build());
     when(wingsPersistence.delete(User.class, USER_ID)).thenReturn(true);
     when(wingsPersistence.findAndDelete(any(), any())).thenReturn(userBuilder.uuid(USER_ID).build());
-    when(userGroupService.list(
-             ACCOUNT_ID, aPageRequest().withLimit("0").addFilter(UserGroupKeys.memberIds, HAS, USER_ID).build(), true))
+    when(userGroupService.list(ACCOUNT_ID,
+             aPageRequest().withLimit("0").addFilter(UserGroupKeys.memberIds, HAS, USER_ID).build(), true, null, null))
         .thenReturn(aPageResponse().withResponse(Collections.emptyList()).withTotal(0).withLimit("0").build());
     userService.delete(ACCOUNT_ID, USER_ID);
     verify(wingsPersistence).findAndDelete(any(), any());
@@ -985,7 +988,7 @@ public class UserServiceTest extends WingsBaseTest {
 
     userService.addRole(USER_ID, ROLE_ID);
     verify(wingsPersistence, times(2)).get(User.class, USER_ID);
-    verify(wingsPersistence).update(any(Query.class), any(UpdateOperations.class));
+    verify(wingsPersistence).update(any(Query.class), any());
     verify(query).filter(Mapper.ID_KEY, USER_ID);
     verify(updateOperations).addToSet("roles", aRole().withUuid(ROLE_ID).withName(ROLE_NAME).build());
     verify(cache).remove(USER_ID);
@@ -1003,7 +1006,7 @@ public class UserServiceTest extends WingsBaseTest {
 
     userService.revokeRole(USER_ID, ROLE_ID);
     verify(wingsPersistence, times(2)).get(User.class, USER_ID);
-    verify(wingsPersistence).update(any(Query.class), any(UpdateOperations.class));
+    verify(wingsPersistence).update(any(Query.class), any());
     verify(query).filter(Mapper.ID_KEY, USER_ID);
     verify(updateOperations).removeAll("roles", aRole().withUuid(ROLE_ID).withName(ROLE_NAME).build());
     verify(cache).remove(USER_ID);
@@ -1041,7 +1044,7 @@ public class UserServiceTest extends WingsBaseTest {
     verify(wingsPersistence).save(any(UserInvite.class));
     verify(wingsPersistence).saveAndGet(eq(User.class), any(User.class));
     verify(auditServiceHelper, times(userInvite.getEmails().size()))
-        .reportForAuditingUsingAccountId(eq(ACCOUNT_ID), eq(null), any(UserInvite.class), eq(Type.CREATE));
+        .reportForAuditingUsingAccountId(eq(ACCOUNT_ID), eq(null), any(User.class), eq(Type.CREATE));
 
     verify(emailDataNotificationService).send(emailDataArgumentCaptor.capture());
     assertThat(emailDataArgumentCaptor.getValue().getTemplateName()).isEqualTo(INVITE_EMAIL_TEMPLATE_NAME);
@@ -1080,7 +1083,7 @@ public class UserServiceTest extends WingsBaseTest {
     verify(wingsPersistence).saveAndGet(eq(User.class), userArgumentCaptor.capture());
     assertThat(userArgumentCaptor.getValue()).hasFieldOrPropertyWithValue("email", mixedEmail.trim().toLowerCase());
     verify(auditServiceHelper, times(userInvite.getEmails().size()))
-        .reportForAuditingUsingAccountId(eq(ACCOUNT_ID), eq(null), any(UserInvite.class), eq(Type.CREATE));
+        .reportForAuditingUsingAccountId(eq(ACCOUNT_ID), eq(null), any(User.class), eq(Type.CREATE));
   }
 
   @Test
@@ -1594,7 +1597,7 @@ public class UserServiceTest extends WingsBaseTest {
 
     when(ssoSettingService.getSamlSettingsByAccountId(account.getUuid())).thenReturn(samlSettings);
     when(wingsPersistence.get(User.class, user.getUuid())).thenReturn(user);
-    when(userGroupService.list(anyString(), any(), anyBoolean())).thenReturn(val);
+    when(userGroupService.list(anyString(), any(), anyBoolean(), any(), any())).thenReturn(val);
 
     LogoutResponse logoutResponse = userService.logout(account.getUuid(), user.getUuid());
     assertThat(logoutResponse.getLogoutUrl()).isNotNull();

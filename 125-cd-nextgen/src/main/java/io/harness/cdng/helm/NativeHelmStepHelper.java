@@ -8,6 +8,7 @@
 package io.harness.cdng.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.manifest.ManifestType.HELM_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -55,6 +56,8 @@ import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.helm.HelmCmdExecResponseNG;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmCommandRequestNG;
+import io.harness.delegate.task.helm.HelmFetchFileConfig;
+import io.harness.delegate.task.helm.HelmFetchFileResult;
 import io.harness.delegate.task.helm.HelmValuesFetchRequest;
 import io.harness.delegate.task.helm.HelmValuesFetchResponse;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
@@ -64,7 +67,6 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.git.model.FetchFilesResult;
-import io.harness.git.model.GitFile;
 import io.harness.helm.HelmSubCommandType;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -80,7 +82,6 @@ import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
-import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -94,18 +95,16 @@ import software.wings.beans.TaskType;
 import software.wings.stencils.DefaultValue;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -113,15 +112,12 @@ import org.hibernate.validator.constraints.NotEmpty;
 @OwnedBy(CDP)
 @Singleton
 public class NativeHelmStepHelper extends CDStepHelper {
-  public static final Set<String> HELM_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.HelmChart);
-
   public static final String RELEASE_NAME = "Release Name";
   public static final String RELEASE_NAME_VALIDATION_REGEX =
       "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
   public static final Pattern releaseNamePattern = Pattern.compile(RELEASE_NAME_VALIDATION_REGEX);
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private KryoSerializer kryoSerializer;
-  @Inject private OutcomeService outcomeService;
   @Inject private StepHelper stepHelper;
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @DefaultValue("10") private int steadyStateTimeout; // Minutes
@@ -150,20 +146,6 @@ public class NativeHelmStepHelper extends CDStepHelper {
     }
 
     throw new UnsupportedOperationException(format("Unsupported Manifest type: [%s]", manifestOutcome.getType()));
-  }
-
-  private List<String> getValuesPathsBasedOnManifest(GitStoreConfig gitstoreConfig, String manifestType) {
-    List<String> paths = new ArrayList<>();
-    switch (manifestType) {
-      case ManifestType.HelmChart:
-        String folderPath = getParameterFieldValue(gitstoreConfig.getFolderPath());
-        paths.add(getValuesYamlGitFilePath(folderPath, VALUES_YAML_KEY));
-        break;
-      default:
-        throw new UnsupportedOperationException(format("Unsupported Manifest type: [%s]", manifestType));
-    }
-
-    return paths;
   }
 
   public TaskChainResponse queueNativeHelmTask(StepElementParameters stepElementParameters,
@@ -200,15 +182,16 @@ public class NativeHelmStepHelper extends CDStepHelper {
 
   public TaskChainResponse executeValuesFetchTask(Ambiance ambiance, StepElementParameters stepElementParameters,
       InfrastructureOutcome infrastructure, ManifestOutcome helmChartManifestOutcome,
-      List<ValuesManifestOutcome> aggregatedValuesManifests, String helmValuesYamlContent) {
+      List<ValuesManifestOutcome> aggregatedValuesManifests,
+      Map<String, HelmFetchFileResult> helmChartValuesFileMapContent) {
     List<GitFetchFilesConfig> gitFetchFilesConfigs =
         mapValuesManifestToGitFetchFileConfig(aggregatedValuesManifests, ambiance);
     NativeHelmStepPassThroughData nativeHelmStepPassThroughData =
         NativeHelmStepPassThroughData.builder()
             .helmChartManifestOutcome(helmChartManifestOutcome)
-            .valuesManifestOutcomes(aggregatedValuesManifests)
+            .manifestOutcomeList(new ArrayList<>(aggregatedValuesManifests))
             .infrastructure(infrastructure)
-            .helmValuesFileContent(helmValuesYamlContent)
+            .helmValuesFileMapContents(helmChartValuesFileMapContent)
             .build();
 
     return getGitFetchFileTaskChainResponse(
@@ -239,15 +222,33 @@ public class NativeHelmStepHelper extends CDStepHelper {
     LinkedList<ValuesManifestOutcome> orderedValuesManifests = new LinkedList<>(aggregatedValuesManifests);
     List<GitFetchFilesConfig> gitFetchFilesConfigs =
         mapValuesManifestToGitFetchFileConfig(aggregatedValuesManifests, ambiance);
+    List<ManifestOutcome> stepOverrides = getStepLevelManifestOutcomes(stepElementParameters);
 
-    gitFetchFilesConfigs.add(
+    if (!isEmpty(stepOverrides)) {
+      for (ManifestOutcome manifestOutcome : stepOverrides) {
+        if (ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind())) {
+          gitFetchFilesConfigs.add(getGitFetchFilesConfig(
+              ambiance, manifestOutcome.getStore(), manifestOutcome.getIdentifier(), manifestOutcome));
+          orderedValuesManifests.add((ValuesManifestOutcome) manifestOutcome);
+        } else if (ManifestStoreType.INLINE.equals(manifestOutcome.getStore().getKind())) {
+          orderedValuesManifests.add((ValuesManifestOutcome) manifestOutcome);
+        }
+      }
+    }
+
+    gitFetchFilesConfigs.addAll(
         mapHelmValuesManifestToGitFetchFileConfig(valuesManifestOutcome, ambiance, helmChartManifestOutcome));
+    List<GitFetchFilesConfig> gitFetchFileConfigFromInheritFromManifest =
+        mapValuesManifestsToGitFetchFileConfig(ambiance, aggregatedValuesManifests, helmChartManifestOutcome);
+    if (isNotEmpty(gitFetchFileConfigFromInheritFromManifest)) {
+      gitFetchFilesConfigs.addAll(gitFetchFileConfigFromInheritFromManifest);
+    }
     orderedValuesManifests.addFirst(valuesManifestOutcome);
 
     NativeHelmStepPassThroughData nativeHelmStepPassThroughData =
         NativeHelmStepPassThroughData.builder()
             .helmChartManifestOutcome(helmChartManifestOutcome)
-            .valuesManifestOutcomes(orderedValuesManifests)
+            .manifestOutcomeList(new ArrayList<>(orderedValuesManifests))
             .infrastructure(infrastructure)
             .build();
 
@@ -255,7 +256,7 @@ public class NativeHelmStepHelper extends CDStepHelper {
         ambiance, gitFetchFilesConfigs, stepElementParameters, nativeHelmStepPassThroughData, true);
   }
 
-  private GitFetchFilesConfig mapHelmValuesManifestToGitFetchFileConfig(
+  private List<GitFetchFilesConfig> mapHelmValuesManifestToGitFetchFileConfig(
       ValuesManifestOutcome valuesManifestOutcome, Ambiance ambiance, ManifestOutcome helmChartManifestOutcome) {
     String validationMessage = format("Values YAML with Id [%s]", valuesManifestOutcome.getIdentifier());
     return getValuesGitFetchFilesConfig(ambiance, valuesManifestOutcome.getIdentifier(),
@@ -272,17 +273,40 @@ public class NativeHelmStepHelper extends CDStepHelper {
         .collect(Collectors.toList());
   }
 
+  private List<GitFetchFilesConfig> mapValuesManifestsToGitFetchFileConfig(Ambiance ambiance,
+      List<ValuesManifestOutcome> aggregatedValuesManifests, ManifestOutcome helmChartManifestOutcome) {
+    if (isEmpty(aggregatedValuesManifests)) {
+      return emptyList();
+    }
+    return aggregatedValuesManifests.stream()
+        .filter(valuesManifestOutcome
+            -> ManifestStoreType.InheritFromManifest.equals(valuesManifestOutcome.getStore().getKind()))
+        .map(valuesManifestOutcome
+            -> getPathsFromInheritFromManifestStoreConfig(ambiance,
+                format("Values YAML with Id [%s]", valuesManifestOutcome.getIdentifier()), valuesManifestOutcome,
+                (GitStoreConfig) helmChartManifestOutcome.getStore()))
+        .collect(Collectors.toList());
+  }
+
   private TaskChainResponse prepareHelmFetchValuesTaskChainResponse(Ambiance ambiance,
       StepElementParameters stepElementParameters, InfrastructureOutcome infrastructure,
       ManifestOutcome helmChartManifestOutcome, List<ValuesManifestOutcome> aggregatedValuesManifests) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     HelmChartManifestDelegateConfig helmManifest =
         (HelmChartManifestDelegateConfig) getManifestDelegateConfig(helmChartManifestOutcome, ambiance);
+
+    List<HelmFetchFileConfig> helmFetchFileConfigList =
+        mapHelmChartManifestsToHelmFetchFileConfig(helmChartManifestOutcome.getIdentifier(),
+            getParameterFieldValue(((HelmChartManifestOutcome) helmChartManifestOutcome).getValuesPaths()),
+            helmChartManifestOutcome.getType());
+
+    helmFetchFileConfigList.addAll(mapValuesManifestsToHelmFetchFileConfig(aggregatedValuesManifests));
     HelmValuesFetchRequest helmValuesFetchRequest = HelmValuesFetchRequest.builder()
                                                         .accountId(accountId)
                                                         .helmChartManifestDelegateConfig(helmManifest)
                                                         .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
                                                         .closeLogStream(!isAnyRemoteStore(aggregatedValuesManifests))
+                                                        .helmFetchFileConfigList(helmFetchFileConfigList)
                                                         .build();
 
     final TaskData taskData = TaskData.builder()
@@ -303,7 +327,7 @@ public class NativeHelmStepHelper extends CDStepHelper {
     NativeHelmStepPassThroughData nativeHelmStepPassThroughData =
         NativeHelmStepPassThroughData.builder()
             .helmChartManifestOutcome(helmChartManifestOutcome)
-            .valuesManifestOutcomes(aggregatedValuesManifests)
+            .manifestOutcomeList(new ArrayList<>(aggregatedValuesManifests))
             .infrastructure(infrastructure)
             .build();
 
@@ -355,23 +379,21 @@ public class NativeHelmStepHelper extends CDStepHelper {
     throw new UnsupportedOperationException(format("Unsupported Manifest type: [%s]", manifestOutcome.getType()));
   }
 
-  private GitFetchFilesConfig getValuesGitFetchFilesConfig(Ambiance ambiance, String identifier, StoreConfig store,
-      String validationMessage, ManifestOutcome manifestOutcome) {
+  private List<GitFetchFilesConfig> getValuesGitFetchFilesConfig(Ambiance ambiance, String identifier,
+      StoreConfig store, String validationMessage, ManifestOutcome manifestOutcome) {
     GitStoreConfig gitStoreConfig = (GitStoreConfig) store;
     String connectorId = gitStoreConfig.getConnectorRef().getValue();
     ConnectorInfoDTO connectorDTO = getConnector(connectorId, ambiance);
     validateManifest(store.getKind(), connectorDTO, validationMessage);
 
-    List<String> gitFilePaths = getValuesPathsBasedOnManifest(gitStoreConfig, manifestOutcome.getType());
-    GitStoreDelegateConfig gitStoreDelegateConfig =
-        getGitStoreDelegateConfig(gitStoreConfig, connectorDTO, manifestOutcome, gitFilePaths, ambiance);
-
-    return GitFetchFilesConfig.builder()
-        .identifier(identifier)
-        .manifestType(ManifestType.VALUES)
-        .succeedIfFileNotFound(true)
-        .gitStoreDelegateConfig(gitStoreDelegateConfig)
-        .build();
+    HelmChartManifestOutcome helmChartManifestOutcome = (HelmChartManifestOutcome) manifestOutcome;
+    List<GitFetchFilesConfig> gitFetchFilesConfigList = new ArrayList<>();
+    String folderPath = getParameterFieldValue(gitStoreConfig.getFolderPath());
+    populateGitFetchFilesConfigListWithValuesPaths(gitFetchFilesConfigList, gitStoreConfig, manifestOutcome,
+        connectorDTO, ambiance, identifier, true, Arrays.asList(getValuesYamlGitFilePath(folderPath, VALUES_YAML_KEY)));
+    populateGitFetchFilesConfigListWithValuesPaths(gitFetchFilesConfigList, gitStoreConfig, manifestOutcome,
+        connectorDTO, ambiance, identifier, false, getParameterFieldValue(helmChartManifestOutcome.getValuesPaths()));
+    return gitFetchFilesConfigList;
   }
 
   public TaskChainResponse startChainLink(
@@ -427,7 +449,6 @@ public class NativeHelmStepHelper extends CDStepHelper {
           "Manifests are mandatory for Helm step. Select one from " + String.join(", ", HELM_SUPPORTED_MANIFEST_TYPES),
           USER);
     }
-
     if (helmManifests.size() > 1) {
       throw new InvalidRequestException(
           "There can be only a single manifest. Select one from " + String.join(", ", HELM_SUPPORTED_MANIFEST_TYPES),
@@ -448,8 +469,9 @@ public class NativeHelmStepHelper extends CDStepHelper {
   }
 
   private boolean isAnyRemoteStore(@NotEmpty List<ValuesManifestOutcome> aggregatedValuesManifests) {
-    return aggregatedValuesManifests.stream().anyMatch(
-        valuesManifest -> ManifestStoreType.isInGitSubset(valuesManifest.getStore().getKind()));
+    return aggregatedValuesManifests.stream().anyMatch(valuesManifest
+        -> ManifestStoreType.isInGitSubset(valuesManifest.getStore().getKind())
+            || ManifestStoreType.InheritFromManifest.equals(valuesManifest.getStore().getKind()));
   }
 
   public TaskChainResponse executeNextLink(NativeHelmStepExecutor nativeHelmStepExecutor, Ambiance ambiance,
@@ -503,17 +525,22 @@ public class NativeHelmStepHelper extends CDStepHelper {
               .build();
       return TaskChainResponse.builder().chainEnd(true).passThroughData(gitFetchResponsePassThroughData).build();
     }
-    Map<String, FetchFilesResult> gitFetchFilesResultMap = gitFetchResponse.getFilesFromMultipleRepo();
+
     List<String> valuesFileContents = new ArrayList<>();
     String helmValuesYamlContent = nativeHelmStepPassThroughData.getHelmValuesFileContent();
     if (isNotEmpty(helmValuesYamlContent)) {
       valuesFileContents.add(helmValuesYamlContent);
     }
+    Map<String, FetchFilesResult> gitFetchFilesResultMap = gitFetchResponse.getFilesFromMultipleRepo();
+    Map<String, HelmFetchFileResult> helmChartValuesFetchFilesResultMap =
+        nativeHelmStepPassThroughData.getHelmValuesFileMapContents();
+    addValuesFileFromHelmChartManifest(
+        helmChartValuesFetchFilesResultMap, valuesFileContents, helmChartManifest.getIdentifier());
 
-    if (!gitFetchFilesResultMap.isEmpty()) {
-      valuesFileContents.addAll(getFileContents(gitFetchFilesResultMap, nativeHelmStepPassThroughData));
+    if (isNotEmpty(gitFetchFilesResultMap) || isNotEmpty(helmChartValuesFetchFilesResultMap)) {
+      valuesFileContents.addAll(getManifestFilesContents(gitFetchFilesResultMap,
+          nativeHelmStepPassThroughData.getManifestOutcomeList(), helmChartValuesFetchFilesResultMap));
     }
-
     return nativeHelmStepExecutor.executeHelmTask(helmChartManifest, ambiance, stepElementParameters,
         valuesFileContents,
         NativeHelmExecutionPassThroughData.builder()
@@ -536,15 +563,31 @@ public class NativeHelmStepHelper extends CDStepHelper {
       return TaskChainResponse.builder().chainEnd(true).passThroughData(helmValuesFetchPassTroughData).build();
     }
 
+    String helmChartIdentifier = helmChartManifest.getIdentifier();
+    Map<String, HelmFetchFileResult> helmValuesFetchFilesResultMap =
+        helmValuesFetchResponse.getHelmChartValuesFileMapContent();
     String valuesFileContent = helmValuesFetchResponse.getValuesFileContent();
-    List<ValuesManifestOutcome> aggregatedValuesManifest = nativeHelmStepPassThroughData.getValuesManifestOutcomes();
+    if (isNotEmpty(valuesFileContent)) {
+      helmValuesFetchFilesResultMap = new HashMap<>();
+      helmValuesFetchFilesResultMap.put(helmChartIdentifier,
+          HelmFetchFileResult.builder().valuesFileContents(new ArrayList<>(Arrays.asList(valuesFileContent))).build());
+    }
+
+    List<ValuesManifestOutcome> aggregatedValuesManifest = new ArrayList<>();
+    aggregatedValuesManifest.addAll(nativeHelmStepPassThroughData.getValuesManifestOutcomes());
+    List<ManifestOutcome> stepOverrides = getStepLevelManifestOutcomes(stepElementParameters);
+    if (!isEmpty(stepOverrides)) {
+      for (ManifestOutcome manifestOutcome : stepOverrides) {
+        aggregatedValuesManifest.add((ValuesManifestOutcome) manifestOutcome);
+      }
+    }
     if (isNotEmpty(aggregatedValuesManifest)) {
       return executeValuesFetchTask(ambiance, stepElementParameters, nativeHelmStepPassThroughData.getInfrastructure(),
-          nativeHelmStepPassThroughData.getHelmChartManifestOutcome(), aggregatedValuesManifest, valuesFileContent);
+          nativeHelmStepPassThroughData.getHelmChartManifestOutcome(), aggregatedValuesManifest,
+          helmValuesFetchResponse.getHelmChartValuesFileMapContent());
     } else {
-      List<String> valuesFileContents =
-          (isNotEmpty(valuesFileContent)) ? ImmutableList.of(valuesFileContent) : emptyList();
-
+      List<String> valuesFileContents = new ArrayList<>();
+      addValuesFileFromHelmChartManifest(helmValuesFetchFilesResultMap, valuesFileContents, helmChartIdentifier);
       return nativeHelmStepExecutor.executeHelmTask(helmChartManifest, ambiance, stepElementParameters,
           valuesFileContents,
           NativeHelmExecutionPassThroughData.builder()
@@ -552,41 +595,6 @@ public class NativeHelmStepHelper extends CDStepHelper {
               .lastActiveUnitProgressData(helmValuesFetchResponse.getUnitProgressData())
               .build(),
           false, helmValuesFetchResponse.getUnitProgressData());
-    }
-  }
-
-  private List<String> getFileContents(Map<String, FetchFilesResult> gitFetchFilesResultMap,
-      NativeHelmStepPassThroughData nativeHelmStepPassThroughData) {
-    List<? extends ManifestOutcome> valuesManifests = nativeHelmStepPassThroughData.getValuesManifestOutcomes();
-    return getManifestFilesContents(gitFetchFilesResultMap, valuesManifests);
-  }
-
-  private List<String> getManifestFilesContents(
-      Map<String, FetchFilesResult> gitFetchFilesResultMap, List<? extends ManifestOutcome> valuesManifests) {
-    List<String> valuesFileContents = new ArrayList<>();
-
-    for (ManifestOutcome valuesManifest : valuesManifests) {
-      StoreConfig store = extractStoreConfigFromManifestOutcome(valuesManifest);
-      if (ManifestStoreType.isInGitSubset(store.getKind())) {
-        FetchFilesResult gitFetchFilesResult = gitFetchFilesResultMap.get(valuesManifest.getIdentifier());
-        if (gitFetchFilesResult != null) {
-          valuesFileContents.addAll(
-              gitFetchFilesResult.getFiles().stream().map(GitFile::getFileContent).collect(Collectors.toList()));
-        }
-      }
-      // TODO: for local store, add files directly
-    }
-    return valuesFileContents;
-  }
-
-  private StoreConfig extractStoreConfigFromManifestOutcome(ManifestOutcome manifestOutcome) {
-    switch (manifestOutcome.getType()) {
-      case ManifestType.VALUES:
-        ValuesManifestOutcome valuesManifestOutcome = (ValuesManifestOutcome) manifestOutcome;
-        return valuesManifestOutcome.getStore();
-
-      default:
-        throw new UnsupportedOperationException(format("Unsupported Manifest type: [%s]", manifestOutcome.getType()));
     }
   }
 
@@ -648,6 +656,28 @@ public class NativeHelmStepHelper extends CDStepHelper {
     if (isNotEmpty(releaseName)) {
       sdkGraphVisualizationDataService.publishStepDetailInformation(
           ambiance, NativeHelmReleaseDetailsInfo.builder().releaseName(releaseName).build(), RELEASE_NAME);
+    }
+  }
+
+  public void addValuesFileFromHelmChartManifest(Map<String, HelmFetchFileResult> helmChartValuesFilesResultMap,
+      List<String> valuesFileContents, String helmChartIdentifier) {
+    if (isNotEmpty(helmChartValuesFilesResultMap) && helmChartValuesFilesResultMap.containsKey(helmChartIdentifier)) {
+      List<String> baseValuesFileContent =
+          helmChartValuesFilesResultMap.get(helmChartIdentifier).getValuesFileContents();
+      if (isNotEmpty(baseValuesFileContent)) {
+        valuesFileContents.addAll(baseValuesFileContent);
+      }
+    }
+  }
+
+  private void populateGitFetchFilesConfigListWithValuesPaths(List<GitFetchFilesConfig> gitFetchFilesConfigList,
+      GitStoreConfig gitStoreConfig, ManifestOutcome manifestOutcome, ConnectorInfoDTO connectorDTO, Ambiance ambiance,
+      String identifier, boolean succeedIfFileNotFound, List<String> gitFileValuesPaths) {
+    if (isNotEmpty(gitFileValuesPaths)) {
+      GitStoreDelegateConfig gitStoreDelegateConfig =
+          getGitStoreDelegateConfig(gitStoreConfig, connectorDTO, manifestOutcome, gitFileValuesPaths, ambiance);
+      gitFetchFilesConfigList.add(getGitFetchFilesConfigFromBuilder(
+          identifier, manifestOutcome.getType(), succeedIfFileNotFound, gitStoreDelegateConfig));
     }
   }
 }

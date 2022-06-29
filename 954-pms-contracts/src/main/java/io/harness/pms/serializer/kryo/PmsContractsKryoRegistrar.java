@@ -35,6 +35,7 @@ import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.serializer.kryo.serializers.AdviserObtainmentKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.AdviserResponseKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.AmbianceKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.ErrorResponseKryoSerializer;
@@ -85,5 +86,6 @@ public class PmsContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(PlanCreationBlobResponse.class, PlanCreationBlobResponseKryoSerializer.getInstance(), 2624);
     kryo.register(PartialPlanResponse.class, PartialPlanResponseKryoSerializer.getInstance(), 2626);
     kryo.register(ErrorResponse.class, ErrorResponseKryoSerializer.getInstance(), 2625);
+    kryo.register(AdviserObtainment.class, AdviserObtainmentKryoSerializer.getInstance(), 954001);
   }
 }

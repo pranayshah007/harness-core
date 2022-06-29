@@ -12,6 +12,7 @@ import io.harness.azure.model.AzureMachineImageArtifact;
 import io.harness.azure.model.AzureUserAuthVMInstanceData;
 import io.harness.azure.model.AzureVMSSTagsData;
 
+import com.microsoft.azure.management.appservice.DeploymentSlot;
 import com.microsoft.azure.management.compute.GalleryImage;
 import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
 import com.microsoft.azure.management.compute.VirtualMachineScaleSetVM;
@@ -117,6 +118,29 @@ public interface AzureComputeClient {
    * @return
    */
   List<Subscription> listSubscriptions(AzureConfig azureConfig);
+
+  /**
+   * List Web App Names by Subscription Id and ResourceGroup.
+   *
+   * @param azureConfig
+   * @param subscriptionId
+   * @param resourceGroup
+   * @return
+   */
+  List<String> listWebAppNamesBySubscriptionIdAndResourceGroup(
+      AzureConfig azureConfig, String subscriptionId, String resourceGroup);
+
+  /**
+   * List Web App Deployment slots by Subscription Id, ResourceGroup and Web App name.
+   *
+   * @param azureConfig
+   * @param subscriptionId
+   * @param resourceGroup
+   * @param webAppName
+   * @return
+   */
+  List<DeploymentSlot> listWebAppDeploymentSlots(
+      AzureConfig azureConfig, String subscriptionId, String resourceGroup, String webAppName);
 
   /**
    * List Resource Groups names by Subscription Id

@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GIT;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HTTP_HELM;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.getFilesUnderPath;
 import static io.harness.filesystem.FileIo.getFilesUnderPathMatchesFirstLine;
@@ -109,6 +110,7 @@ import io.harness.exception.KubernetesYamlException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.helm.HelmCliCommandType;
 import io.harness.helm.HelmCommandFlagsUtils;
@@ -159,7 +161,6 @@ import io.harness.shell.SshSessionConfig;
 import io.harness.yaml.BooleanPatchedRepresenter;
 
 import software.wings.beans.command.ExecutionLogCallback;
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -2409,6 +2410,7 @@ public class K8sTaskHelperBase {
       case HTTP_HELM:
       case S3_HELM:
       case GCS_HELM:
+      case OCI_HELM:
         return downloadFilesFromChartRepo(
             manifestDelegateConfig, manifestFilesDirectory, executionLogCallback, timeoutInMillis);
 
@@ -2526,6 +2528,9 @@ public class K8sTaskHelperBase {
 
       if (HTTP_HELM == manifestDelegateConfig.getStoreDelegateConfig().getType()) {
         helmTaskHelperBase.downloadChartFilesFromHttpRepo(
+            helmChartManifestConfig, destinationDirectory, timeoutInMillis);
+      } else if (OCI_HELM == manifestDelegateConfig.getStoreDelegateConfig().getType()) {
+        helmTaskHelperBase.downloadChartFilesFromOciRepo(
             helmChartManifestConfig, destinationDirectory, timeoutInMillis);
       } else {
         helmTaskHelperBase.downloadChartFilesUsingChartMuseum(

@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.buildtriggers.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -25,11 +26,15 @@ import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.artifact.BuildAware;
 import io.harness.ngtriggers.buildtriggers.helpers.dtos.BuildTriggerOpsData;
 import io.harness.pipeline.remote.PipelineServiceClient;
+import io.harness.pms.inputset.InputSetErrorResponseDTOPMS;
+import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.TemplatesResolvedPipelineResponseDTO;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.polling.contracts.AcrPayload;
+import io.harness.polling.contracts.ArtifactoryRegistryPayload;
 import io.harness.polling.contracts.BuildInfo;
 import io.harness.polling.contracts.DockerHubPayload;
 import io.harness.polling.contracts.EcrPayload;
@@ -234,6 +239,10 @@ public class BuildTriggerHelper {
       validatePollingItemForDockerRegistry(pollingItem);
     } else if (pollingPayloadData.hasEcrPayload()) {
       validatePollingItemForEcr(pollingItem);
+    } else if (pollingPayloadData.hasArtifactoryRegistryPayload()) {
+      validatePollingItemForArtifactory(pollingItem);
+    } else if (pollingPayloadData.hasAcrPayload()) {
+      validatePollingItemForAcr(pollingItem);
     } else {
       throw new InvalidRequestException("Invalid Polling Type");
     }
@@ -260,6 +269,33 @@ public class BuildTriggerHelper {
     }
   }
 
+  private void validatePollingItemForArtifactory(PollingItem pollingItem) {
+    ArtifactoryRegistryPayload artifactoryRegistryPayload =
+        pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload();
+    String error = checkFiledValueError("repository", artifactoryRegistryPayload.getRepository());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+
+    error = checkFiledValueError("repositoryFormat", artifactoryRegistryPayload.getRepositoryFormat());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+
+    String repositoryFormat = artifactoryRegistryPayload.getRepositoryFormat();
+    if (repositoryFormat.equals("generic")) {
+      error = checkFiledValueError("artifactDirectory", artifactoryRegistryPayload.getArtifactDirectory());
+      if (isNotBlank(error)) {
+        throw new InvalidRequestException(error);
+      }
+    } else {
+      error = checkFiledValueError("artifactPath", artifactoryRegistryPayload.getArtifactPath());
+      if (isNotBlank(error)) {
+        throw new InvalidRequestException(error);
+      }
+    }
+  }
+
   private void validatePollingItemForEcr(PollingItem pollingItem) {
     EcrPayload ecrPayload = pollingItem.getPollingPayloadData().getEcrPayload();
     String error = checkFiledValueError("region", ecrPayload.getRegion());
@@ -268,6 +304,25 @@ public class BuildTriggerHelper {
     }
 
     error = checkFiledValueError("imagePath", ecrPayload.getImagePath());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+  }
+
+  private void validatePollingItemForAcr(PollingItem pollingItem) {
+    AcrPayload acrPayload = pollingItem.getPollingPayloadData().getAcrPayload();
+
+    String error = checkFiledValueError("subscriptionId", acrPayload.getSubscriptionId());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+
+    error = checkFiledValueError("registry", acrPayload.getRegistry());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
+    }
+
+    error = checkFiledValueError("repository", acrPayload.getRepository());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }
@@ -386,5 +441,27 @@ public class BuildTriggerHelper {
     if (validationFailed) {
       throw new InvalidArgumentsException(msg.toString());
     }
+  }
+
+  public Map<String, Map<String, String>> generateErrorMap(InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS) {
+    Map<String, Map<String, String>> errorMap = new HashMap<>();
+
+    if (inputSetErrorWrapperDTOPMS == null) {
+      return errorMap;
+    }
+    for (Map.Entry<String, InputSetErrorResponseDTOPMS> entry :
+        inputSetErrorWrapperDTOPMS.getUuidToErrorResponseMap().entrySet()) {
+      Map<String, String> innerMap = new HashMap<>();
+      InputSetErrorResponseDTOPMS inputSetErrorResponseDTOPMS = entry.getValue();
+      if (isNotEmpty(inputSetErrorResponseDTOPMS.getErrors())) {
+        inputSetErrorResponseDTOPMS.getErrors().forEach(inputSetErrorDTOPMS -> {
+          innerMap.put("fieldName", inputSetErrorDTOPMS.getFieldName());
+          innerMap.put("message", inputSetErrorDTOPMS.getMessage());
+        });
+      }
+
+      errorMap.put(entry.getKey(), innerMap);
+    }
+    return errorMap;
   }
 }

@@ -172,14 +172,22 @@ public class ShellScriptParameters implements TaskParameters, ActivityAccess, Ex
         .workingDirectory(workingDirectory)
         .environment(disableWinRMEnvVariables ? Collections.emptyMap() : getResolvedEnvironmentVariables())
         .useNoProfile(winrmConnectionAttributes.isUseNoProfile())
+        .commandParameters(winrmConnectionAttributes.getParameters())
         .build();
   }
 
   public ShellExecutorConfig processExecutorConfig(
-      ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper) {
+      ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper, EncryptionService encryptionService) {
     String kubeConfigContent = (containerServiceParams != null) && containerServiceParams.isKubernetesClusterConfig()
         ? containerDeploymentDelegateHelper.getKubeConfigFileContent(containerServiceParams)
         : "";
+    char[] serviceAccountKeyFileContent = null;
+    if (isGcpDeployment(containerServiceParams)) {
+      GcpConfig gcpConfig = (GcpConfig) containerServiceParams.getSettingAttribute().getValue();
+      List<EncryptedDataDetail> encryptionDetails = containerServiceParams.getEncryptionDetails();
+      encryptionService.decrypt(gcpConfig, encryptionDetails, false);
+      serviceAccountKeyFileContent = gcpConfig.getServiceAccountKeyFileContent();
+    }
     return ShellExecutorConfig.builder()
         .accountId(accountId)
         .appId(appId)
@@ -189,7 +197,13 @@ public class ShellScriptParameters implements TaskParameters, ActivityAccess, Ex
         .environment(getResolvedEnvironmentVariables())
         .kubeConfigContent(kubeConfigContent)
         .scriptType(scriptType)
+        .gcpKeyFileContent(serviceAccountKeyFileContent)
         .build();
+  }
+
+  private boolean isGcpDeployment(ContainerServiceParams containerServiceParams) {
+    return containerServiceParams != null && containerServiceParams.getSettingAttribute() != null
+        && (containerServiceParams.getSettingAttribute().getValue() instanceof GcpConfig);
   }
 
   @Override
@@ -201,10 +215,10 @@ public class ShellScriptParameters implements TaskParameters, ActivityAccess, Ex
         SettingAttribute settingAttribute = containerServiceParams.getSettingAttribute();
         if (settingAttribute != null) {
           SettingValue value = settingAttribute.getValue();
-          boolean useKubernetesDelegate =
-              value instanceof KubernetesClusterConfig && ((KubernetesClusterConfig) value).isUseKubernetesDelegate();
           boolean isKubernetes =
               value instanceof GcpConfig || value instanceof AzureConfig || value instanceof KubernetesClusterConfig;
+          boolean useKubernetesDelegate =
+              value instanceof KubernetesClusterConfig && ((KubernetesClusterConfig) value).isUseKubernetesDelegate();
           if (useKubernetesDelegate || (isKubernetes && script.contains(HARNESS_KUBE_CONFIG_PATH))) {
             return containerServiceParams.fetchRequiredExecutionCapabilities(maskingEvaluator);
           }

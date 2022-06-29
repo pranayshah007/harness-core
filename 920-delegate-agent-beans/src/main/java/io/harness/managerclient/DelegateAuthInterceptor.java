@@ -38,6 +38,7 @@ public class DelegateAuthInterceptor implements Interceptor {
     return chain.proceed(request.newBuilder()
                              .header("Authorization", "Delegate " + token)
                              .addHeader("delegateId", DelegateAgentCommonVariables.getDelegateId())
+                             .addHeader("delegateTokenName", DelegateAgentCommonVariables.getDelegateTokenName())
                              .build());
   }
 }

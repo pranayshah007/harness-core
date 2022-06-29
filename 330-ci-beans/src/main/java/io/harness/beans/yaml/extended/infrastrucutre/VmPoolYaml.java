@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -34,6 +35,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("Pool")
 @TypeAlias("VmPoolYaml")
 @OwnedBy(CI)
+@RecasterAlias("io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml")
 public class VmPoolYaml implements VmInfraSpec {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -56,5 +58,6 @@ public class VmPoolYaml implements VmInfraSpec {
     @YamlSchemaTypes({runtime})
     @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.infrastrucutre.OSType")
     private ParameterField<OSType> os;
+    @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> harnessImageConnectorRef;
   }
 }

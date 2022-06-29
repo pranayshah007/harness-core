@@ -8,17 +8,20 @@
 package io.harness.ci.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMapParameter;
-import static io.harness.common.CIExecutionConstants.GIT_CLONE_STEP_ID;
-import static io.harness.common.CIExecutionConstants.PLUGIN_ENV_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ENV_PREFIX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
+import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
+import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.serializer.SerializerUtils;
+import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmJunitTestReport;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
@@ -27,7 +30,6 @@ import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.stateutils.buildstate.ConnectorUtils;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.timeout.Timeout;
 
@@ -43,9 +45,10 @@ import org.apache.commons.lang3.StringUtils;
 public class VmPluginStepSerializer {
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject ConnectorUtils connectorUtils;
+  @Inject HarnessImageUtils harnessImageUtils;
 
-  public VmPluginStep serialize(PluginStepInfo pluginStepInfo, String identifier,
-      ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance) {
+  public VmPluginStep serialize(PluginStepInfo pluginStepInfo, VmStageInfraDetails vmStageInfraDetails,
+      String identifier, ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance) {
     Map<String, JsonNode> settings =
         resolveJsonNodeMapParameter("settings", "Plugin", identifier, pluginStepInfo.getSettings(), false);
     Map<String, String> envVars = new HashMap<>();
@@ -75,10 +78,11 @@ public class VmPluginStepSerializer {
     if (identifier.equals(GIT_CLONE_STEP_ID) && pluginStepInfo.isHarnessManagedImage()) {
       String gitImage = ciExecutionServiceConfig.getStepConfig().getVmImageConfig().getGitClone();
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-      ConnectorDetails connectorDetails = connectorUtils.getDefaultInternalConnector(ngAccess);
-      image = IntegrationStageUtils.getFullyQualifiedImageName(gitImage, connectorDetails);
+      ConnectorDetails harnessInternalImageConnector =
+          harnessImageUtils.getHarnessImageConnectorDetailsForVM(ngAccess, vmStageInfraDetails);
+      image = IntegrationStageUtils.getFullyQualifiedImageName(gitImage, harnessInternalImageConnector);
       pluginStepBuilder.image(image);
-      pluginStepBuilder.imageConnector(connectorDetails);
+      pluginStepBuilder.imageConnector(harnessInternalImageConnector);
     } else if (!StringUtils.isEmpty(image) && !StringUtils.isEmpty(connectorIdentifier)) {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
       ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorIdentifier);

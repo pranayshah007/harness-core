@@ -12,11 +12,18 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskGroup;
+import io.harness.delegate.beans.ci.docker.CIDockerCleanupStepRequest;
+import io.harness.delegate.beans.ci.docker.CIDockerExecuteStepRequest;
+import io.harness.delegate.beans.ci.docker.CIDockerInitializeTaskRequest;
+import io.harness.delegate.beans.ci.docker.DockerTaskExecutionResponse;
+import io.harness.delegate.task.TaskParameters;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
 public enum TaskType {
+  GITOPS_TASK_NG(TaskGroup.GIT),
   BATCH_CAPABILITY_CHECK(TaskGroup.BATCH_CAPABILITY_CHECK),
   CAPABILITY_VALIDATION(TaskGroup.CAPABILITY_VALIDATION),
   COMMAND(TaskGroup.COMMAND),
@@ -32,6 +39,7 @@ public enum TaskType {
   JENKINS_LAST_SUCCESSFUL_BUILD(TaskGroup.JENKINS),
   JENKINS_GET_PLANS(TaskGroup.JENKINS),
   JENKINS_VALIDATE_ARTIFACT_SERVER(TaskGroup.JENKINS),
+  JENKINS_CONNECTIVITY_TEST_TASK(TaskGroup.JENKINS),
   BAMBOO(TaskGroup.BAMBOO),
   BAMBOO_COLLECTION(TaskGroup.BAMBOO),
   BAMBOO_GET_BUILDS(TaskGroup.BAMBOO),
@@ -111,6 +119,8 @@ public enum TaskType {
   LDAP_AUTHENTICATION(TaskGroup.LDAP),
   LDAP_SEARCH_GROUPS(TaskGroup.LDAP),
   LDAP_FETCH_GROUP(TaskGroup.LDAP),
+  NG_LDAP_SEARCH_GROUPS(TaskGroup.LDAP),
+  NG_LDAP_TEST_CONN_SETTINGS(TaskGroup.LDAP),
   APM_VALIDATE_CONNECTOR_TASK(TaskGroup.APM),
   CUSTOM_LOG_VALIDATE_CONNECTOR_TASK(TaskGroup.LOG),
   APM_GET_TASK(TaskGroup.APM),
@@ -279,6 +289,7 @@ public enum TaskType {
   GIT_FETCH_NEXT_GEN_TASK(TaskGroup.GIT, "Git Fetch Files Task"),
   BUILD_SOURCE_TASK(TaskGroup.BUILD_SOURCE),
   DOCKER_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "DockerHub Task"),
+  JENKINS_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Jenkins Task"),
   GCR_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "GCR Task"),
   NEXUS_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
   ARTIFACTORY_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
@@ -347,20 +358,48 @@ public enum TaskType {
   NG_AZURE_TASK(TaskGroup.AZURE_RESOURCE),
   CLOUDFORMATION_TASK_NG(TaskGroup.CLOUDFORMATION_NG, "Cloudformation Task"),
   ACR_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "ACR Task"),
-  SERVERLESS_GIT_FETCH_TASK_NG(TaskGroup.SERVERLESS_NG, "Git Fetch Files Task"),
-  SERVERLESS_COMMAND_TASK(TaskGroup.SERVERLESS_NG, "Serverless Deploy Task"),
-  FETCH_S3_FILE_TASK_NG(TaskGroup.AWS, "Fetch S3 files Task");
+  SERVERLESS_GIT_FETCH_TASK_NG(TaskGroup.SERVERLESS_NG, "Serverless Git Fetch Files Task"),
+  SERVERLESS_COMMAND_TASK(TaskGroup.SERVERLESS_NG, "Serverless Task"),
+  FETCH_S3_FILE_TASK_NG(TaskGroup.AWS, "Fetch S3 files Task"),
+
+  OCI_HELM_CONNECTIVITY_TASK(TaskGroup.HELM_REPO_CONFIG_VALIDATION),
+  AZURE_WEB_APP_TASK_NG(TaskGroup.AZURE, "Azure Web App Task"),
+  COMMAND_TASK_NG(TaskGroup.COMMAND_TASK_NG, "Command Task"),
+  CI_DOCKER_INITIALIZE_TASK(TaskGroup.CI, CIDockerInitializeTaskRequest.class, DockerTaskExecutionResponse.class, true),
+  CI_DOCKER_EXECUTE_TASK(TaskGroup.CI, CIDockerExecuteStepRequest.class, DockerTaskExecutionResponse.class, true),
+  CI_DOCKER_CLEANUP_TASK(TaskGroup.CI, CIDockerCleanupStepRequest.class, DockerTaskExecutionResponse.class, true);
 
   private final TaskGroup taskGroup;
   private final String displayName;
+  private final Class<? extends TaskParameters> request;
+  private final Class<? extends DelegateResponseData> response;
+  // Flag to denote whether the java based delegate supports this task or not
+  // All unsupported tasks will be removed from the supported task types on initialization
+  // of the java delegate.
+  private boolean unsupported;
 
   TaskType(TaskGroup taskGroup) {
     this.taskGroup = taskGroup;
     this.displayName = null;
+    this.request = null;
+    this.response = null;
+    this.unsupported = false;
   }
   TaskType(TaskGroup taskGroup, String displayName) {
     this.taskGroup = taskGroup;
     this.displayName = displayName;
+    this.request = null;
+    this.response = null;
+    this.unsupported = false;
+  }
+
+  TaskType(TaskGroup taskGroup, Class<? extends TaskParameters> request, Class<? extends DelegateResponseData> response,
+      boolean unsupported) {
+    this.taskGroup = taskGroup;
+    this.request = request;
+    this.response = response;
+    this.displayName = null;
+    this.unsupported = unsupported;
   }
 
   public TaskGroup getTaskGroup() {
@@ -368,5 +407,14 @@ public enum TaskType {
   }
   public String getDisplayName() {
     return displayName != null ? displayName : name();
+  }
+  public Class<? extends TaskParameters> getRequest() {
+    return this.request;
+  }
+  public Class<? extends DelegateResponseData> getResponse() {
+    return this.response;
+  }
+  public boolean isUnsupported() {
+    return this.unsupported;
   }
 }

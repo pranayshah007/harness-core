@@ -7,11 +7,12 @@
 
 package io.harness.notification.channelDetails;
 
-import io.harness.Team;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.notification.Team;
 import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
+import io.harness.pms.contracts.ambiance.Ambiance;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -33,7 +34,7 @@ public class PmsEmailChannel extends PmsNotificationChannel {
 
   @Override
   public NotificationChannel toNotificationChannel(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateId, Map<String, String> templateData) {
+      String templateId, Map<String, String> templateData, Ambiance ambiance) {
     return EmailChannel.builder()
         .accountId(accountId)
         .recipients(recipients)

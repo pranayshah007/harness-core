@@ -26,12 +26,12 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
 
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
 import software.wings.service.impl.aws.model.AwsCFTemplateParamsData;
 
 import com.amazonaws.services.cloudformation.model.ParameterDeclaration;

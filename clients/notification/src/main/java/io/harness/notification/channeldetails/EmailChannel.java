@@ -10,10 +10,10 @@ package io.harness.notification.channeldetails;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
-import io.harness.NotificationRequest;
-import io.harness.Team;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.notification.NotificationRequest;
+import io.harness.notification.Team;
 
 import com.google.inject.Inject;
 import java.util.List;

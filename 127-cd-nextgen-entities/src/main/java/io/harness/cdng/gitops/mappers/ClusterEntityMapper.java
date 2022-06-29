@@ -13,7 +13,9 @@ import io.harness.cdng.gitops.beans.ClusterBatchRequest;
 import io.harness.cdng.gitops.beans.ClusterRequest;
 import io.harness.cdng.gitops.beans.ClusterResponse;
 import io.harness.cdng.gitops.entity.Cluster;
+import io.harness.data.structure.EmptyPredicate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
@@ -26,8 +28,7 @@ public class ClusterEntityMapper {
         .accountId(accountId)
         .orgIdentifier(request.getOrgIdentifier())
         .projectIdentifier(request.getProjectIdentifier())
-        .identifier(request.getIdentifier())
-        .name(request.getName())
+        .clusterRef(request.getIdentifier())
         .envRef(request.getEnvRef())
         .build();
   }
@@ -41,19 +42,34 @@ public class ClusterEntityMapper {
                    .orgIdentifier(request.getOrgIdentifier())
                    .projectIdentifier(request.getProjectIdentifier())
                    .envRef(request.getEnvRef())
-                   .identifier(r.getIdentifier())
-                   .name(r.getName())
+                   .clusterRef(r.getIdentifier())
                    .build())
         .collect(Collectors.toList());
   }
 
+  public List<Cluster> toEntities(String accountId, String orgId, String projectId, String envRef,
+      List<io.harness.gitops.models.Cluster> clusters) {
+    if (EmptyPredicate.isEmpty(clusters)) {
+      return new ArrayList<>();
+    }
+    return clusters.stream()
+        .map(r
+            -> Cluster.builder()
+                   .accountId(accountId)
+                   .orgIdentifier(orgId)
+                   .projectIdentifier(projectId)
+                   .envRef(envRef)
+                   .clusterRef(r.getIdentifier())
+                   .build())
+        .collect(Collectors.toList());
+  }
   public ClusterResponse writeDTO(Cluster cluster) {
     return ClusterResponse.builder()
         .orgIdentifier(cluster.getOrgIdentifier())
         .projectIdentifier(cluster.getProjectIdentifier())
-        .identifier(cluster.getIdentifier())
-        .name(cluster.getName())
+        .clusterRef(cluster.getClusterRef())
         .envRef(cluster.getEnvRef())
+        .linkedAt(cluster.getCreatedAt())
         .build();
   }
 }

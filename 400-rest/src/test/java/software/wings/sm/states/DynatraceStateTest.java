@@ -145,8 +145,7 @@ public class DynatraceStateTest extends APMStateVerificationTestBase {
     FieldUtils.writeField(dynatraceState, "dynaTraceService", dynaTraceService, true);
     FieldUtils.writeField(
         dynatraceState, "workflowStandardParamsExtensionService", workflowStandardParamsExtensionService, true);
-    when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString()))
-        .thenReturn(mock(CVActivityLogger.class));
+    when(cvActivityLogService.getLoggerByStateExecutionId(any(), any())).thenReturn(mock(CVActivityLogger.class));
     when(mockFeatureFlagService.isEnabled(any(), any())).thenReturn(true);
   }
 
@@ -223,7 +222,7 @@ public class DynatraceStateTest extends APMStateVerificationTestBase {
             .workflowExecutionId(workflowExecutionId)
             .serviceId(serviceId)
             .startTime(0)
-            .collectionTime(Integer.parseInt(dynatraceState.getTimeDuration()))
+            .collectionTime(Integer.parseInt(dynatraceState.getTimeDuration(executionContext)))
             .dynatraceServiceIds(new HashSet<>())
             .timeSeriesDefinitions(Lists.newArrayList(DynaTraceTimeSeries.values()))
             .dataCollectionMinute(0)

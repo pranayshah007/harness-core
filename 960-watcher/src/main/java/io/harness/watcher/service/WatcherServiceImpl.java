@@ -14,6 +14,7 @@ import static io.harness.delegate.beans.DelegateConfiguration.Action.SELF_DESTRU
 import static io.harness.delegate.message.MessageConstants.DELEGATE_DASH;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_GO_AHEAD;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_HEARTBEAT;
+import static io.harness.delegate.message.MessageConstants.DELEGATE_ID;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_IS_NEW;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_JRE_VERSION;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_MIGRATE;
@@ -27,6 +28,7 @@ import static io.harness.delegate.message.MessageConstants.DELEGATE_START_GRPC;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_STOP_ACQUIRING;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_STOP_GRPC;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_SWITCH_STORAGE;
+import static io.harness.delegate.message.MessageConstants.DELEGATE_TOKEN_NAME;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_NEEDED;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_PENDING;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_STARTED;
@@ -37,6 +39,7 @@ import static io.harness.delegate.message.MessageConstants.NEW_DELEGATE;
 import static io.harness.delegate.message.MessageConstants.NEW_WATCHER;
 import static io.harness.delegate.message.MessageConstants.NEXT_WATCHER;
 import static io.harness.delegate.message.MessageConstants.RUNNING_DELEGATES;
+import static io.harness.delegate.message.MessageConstants.UNREGISTERED;
 import static io.harness.delegate.message.MessageConstants.UPGRADING_DELEGATE;
 import static io.harness.delegate.message.MessageConstants.WATCHER_DATA;
 import static io.harness.delegate.message.MessageConstants.WATCHER_GO_AHEAD;
@@ -79,6 +82,7 @@ import static org.apache.commons.lang3.StringUtils.substringBefore;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.DelegateAgentCommonVariables;
 import io.harness.delegate.beans.DelegateConfiguration;
 import io.harness.delegate.beans.DelegateScripts;
 import io.harness.delegate.message.Message;
@@ -128,7 +132,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
-import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -175,7 +178,7 @@ public class WatcherServiceImpl implements WatcherService {
   private static final long DELEGATE_SHUTDOWN_TIMEOUT = TimeUnit.HOURS.toMillis(2);
   private static final long DELEGATE_VERSION_MATCH_TIMEOUT = TimeUnit.HOURS.toMillis(2);
   private static final long DELEGATE_RESTART_TO_UPGRADE_JRE_TIMEOUT = TimeUnit.MINUTES.toMillis(5);
-  private static final Pattern VERSION_PATTERN = Pattern.compile("^[1-9]\\.[0-9]\\.[0-9]*\\-\\d{3}$");
+  private static final Pattern VERSION_PATTERN = Pattern.compile("^[1-9]\\.[0-9]\\.[0-9]*-\\d{3}$");
   private static final String DELEGATE_SEQUENCE_CONFIG_FILE = "./delegate_sequence_config";
   private static final String USER_DIR = "user.dir";
   private static final String DELEGATE_RESTART_SCRIPT = "DelegateRestartScript";
@@ -183,14 +186,12 @@ public class WatcherServiceImpl implements WatcherService {
   private static final String FILE_HANDLES_LOGS_FOLDER = "file_handle_logs";
   private final String watcherJreVersion = System.getProperty("java.version");
   private long delegateRestartedToUpgradeJreAt;
-  private boolean watcherRestartedToUpgradeJre;
 
   private static final String DELEGATE_NAME =
       isNotBlank(System.getenv().get("DELEGATE_NAME")) ? System.getenv().get("DELEGATE_NAME") : "";
 
   private final boolean delegateNg = isNotBlank(System.getenv().get("DELEGATE_SESSION_IDENTIFIER"))
       || (isNotBlank(System.getenv().get("NEXT_GEN")) && Boolean.parseBoolean(System.getenv().get("NEXT_GEN")));
-  private final SecureRandom random = new SecureRandom();
 
   private static final boolean multiVersion;
 
@@ -207,7 +208,6 @@ public class WatcherServiceImpl implements WatcherService {
   @Inject @Named("heartbeatExecutor") private ScheduledExecutorService heartbeatExecutor;
   @Inject @Named("watchExecutor") private ScheduledExecutorService watchExecutor;
   @Inject @Named("upgradeExecutor") private ScheduledExecutorService upgradeExecutor;
-  @Inject @Named("commandCheckExecutor") private ScheduledExecutorService commandCheckExecutor;
   @Inject private ExecutorService executorService;
   @Inject private Clock clock;
   @Inject private TimeLimiter timeLimiter;
@@ -464,7 +464,7 @@ public class WatcherServiceImpl implements WatcherService {
     heartbeatExecutor.scheduleWithFixedDelay(
         new Schedulable("Error while heart-beating", this::heartbeat), 0, 10, TimeUnit.SECONDS);
     heartbeatExecutor.scheduleWithFixedDelay(
-        new Schedulable("Error while logging-performance", this::logPerformance), 0, 30, TimeUnit.SECONDS);
+        new Schedulable("Error while logging-performance", this::logPerformance), 0, 60, TimeUnit.SECONDS);
     watchExecutor.scheduleWithFixedDelay(
         new Schedulable("Error while watching delegate", this::syncWatchDelegate), 0, 10, TimeUnit.SECONDS);
   }
@@ -497,7 +497,6 @@ public class WatcherServiceImpl implements WatcherService {
       messageService.putAllData(WATCHER_DATA, heartbeatData);
     } catch (VersionInfoException e) {
       log.error("Exception while sending local heartbeat ", e);
-      return;
     } catch (Exception e) {
       if (e.getMessage().contains(NO_SPACE_LEFT_ON_DEVICE_ERROR)) {
         lastAvailableDiskSpace.set(getDiskFreeSpace());
@@ -621,6 +620,17 @@ public class WatcherServiceImpl implements WatcherService {
                 String migrateToJreVersion = (String) delegateData.get(MIGRATE_TO_JRE_VERSION);
                 upgradeJre(delegateJreVersion, migrateToJreVersion);
               }
+
+              if (UNREGISTERED.equals(DelegateAgentCommonVariables.getDelegateId())) {
+                String delegateIdFromAgent = (String) delegateData.get(DELEGATE_ID);
+                DelegateAgentCommonVariables.setDelegateId(delegateIdFromAgent);
+              }
+
+              if (UNREGISTERED.equals(DelegateAgentCommonVariables.getDelegateTokenName())) {
+                String delegateTokenName = (String) delegateData.get(DELEGATE_TOKEN_NAME);
+                DelegateAgentCommonVariables.setDelegateTokenName(delegateTokenName);
+              }
+
               String delegateVersion = (String) delegateData.get(DELEGATE_VERSION);
               runningVersions.put(delegateVersion, delegateProcess);
               int delegateMinorVersion = getMinorVersion(delegateVersion);
@@ -917,46 +927,25 @@ public class WatcherServiceImpl implements WatcherService {
 
   private void upgradeJre(String delegateJreVersion, String migrateToJreVersion) {
     restartDelegateToUpgradeJre(delegateJreVersion, migrateToJreVersion);
-    restartWatcherToUpgradeJre(migrateToJreVersion);
   }
 
   /**
    * Restart delegate only when there is a mismatch between delegate's JRE and migrate to JRE version. A timeout of
    * 10mins is kept as a buffer to avoid repetitive restarting of delegates.
-   * @param delegateJreVersion
-   * @param migrateToJreVersion
-   * @throws Exception
+   * @param delegateJreVersion JRE version of the delegate
+   * @param migrateToJreVersion JRE version to migrate to
    */
   @VisibleForTesting
   public void restartDelegateToUpgradeJre(String delegateJreVersion, String migrateToJreVersion) {
     if (!delegateJreVersion.equals(migrateToJreVersion)
         && clock.millis() - delegateRestartedToUpgradeJreAt > DELEGATE_RESTART_TO_UPGRADE_JRE_TIMEOUT) {
-      log.debug("Delegate JRE: {} MigrateTo JRE: {} ", delegateJreVersion, migrateToJreVersion);
+      log.info("Delegate JRE: {} MigrateTo JRE: {} ", delegateJreVersion, migrateToJreVersion);
       boolean downloadSuccessful = downloadRunScriptsBeforeRestartingDelegateAndWatcher();
       if (downloadSuccessful) {
         delegateRestartedToUpgradeJreAt = clock.millis();
         restartDelegate();
       } else {
         log.warn("Download of run scripts was not successful. Skipping restart for delegate JRE upgrade.");
-      }
-    }
-  }
-
-  /**
-   * Restart watcher only when there is a mismatch between watcher's JRE and migrate to JRE version.
-   * @param migrateToJreVersion
-   * @throws Exception
-   */
-  @VisibleForTesting
-  public void restartWatcherToUpgradeJre(String migrateToJreVersion) {
-    if (!migrateToJreVersion.equals(watcherJreVersion) && !watcherRestartedToUpgradeJre) {
-      log.debug("Watcher JRE: {} MigrateTo JRE: {} ", watcherJreVersion, migrateToJreVersion);
-      boolean downloadSuccessful = downloadRunScriptsBeforeRestartingDelegateAndWatcher();
-      if (downloadSuccessful) {
-        watcherRestartedToUpgradeJre = true;
-        restartWatcher();
-      } else {
-        log.warn("Download of run scripts was not successful. Skipping restart for watcher JRE upgrade.");
       }
     }
   }
@@ -1058,7 +1047,7 @@ public class WatcherServiceImpl implements WatcherService {
     // Get patched version
     final String patchVersion = substringAfter(version, "-");
     final String updatedVersion = version.contains("-") ? substringBefore(version, "-") : version;
-    RestResponse<DelegateScripts> restResponse = null;
+    RestResponse<DelegateScripts> restResponse;
     if (!delegateNg) {
       log.info(format("Calling getDelegateScripts with version %s and patch %s", updatedVersion, patchVersion));
       restResponse = callInterruptible21(timeLimiter, ofMinutes(1),
@@ -1258,7 +1247,7 @@ public class WatcherServiceImpl implements WatcherService {
             newDelegate.getProcess().destroy();
             newDelegate.getProcess().waitFor(30, TimeUnit.SECONDS);
           } catch (Exception ex) {
-            log.warn("Caught exception while waiting on new delegate process to shutdown {}", ex);
+            log.warn("Caught exception while waiting on new delegate process to shutdown", ex);
           }
           try {
             if (newDelegate.getProcess().isAlive()) {
@@ -1358,14 +1347,19 @@ public class WatcherServiceImpl implements WatcherService {
       if (!watcherConfiguration.getDelegateCheckLocation().startsWith("file://")) {
         String watcherMetadata = getResponseStringFromUrl();
         latestVersion = substringBefore(watcherMetadata, " ").trim();
-        if (Pattern.matches("\\d{1}\\.\\d{1}\\.\\d{5,7}(\\-\\d{3})?", latestVersion)) {
+        if (Pattern.matches("\\d\\.\\d\\.\\d{5,7}(-\\d{3})?", latestVersion)) {
           upgrade = !StringUtils.equals(getVersion(), latestVersion);
         }
       }
       if (upgrade) {
         log.info("[Old] Upgrading watcher");
         working.set(true);
-        upgradeWatcher(getVersion(), latestVersion);
+        final boolean isDownloaded = downloadRunScriptsBeforeRestartingDelegateAndWatcher();
+        if (isDownloaded) {
+          upgradeWatcher(getVersion(), latestVersion);
+        } else {
+          log.error("Failed to download run scripts before upgrading watcher to {}", latestVersion);
+        }
       } else {
         log.info("Watcher up to date");
       }
@@ -1435,11 +1429,9 @@ public class WatcherServiceImpl implements WatcherService {
         log.error("[Old] Failed to upgrade watcher");
         process.getProcess().destroy();
         process.getProcess().waitFor();
-        watcherRestartedToUpgradeJre = false;
       }
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      watcherRestartedToUpgradeJre = false;
     } catch (IOException | RuntimeException e) {
       log.error("[Old] Exception while upgrading", e);
       if (process != null) {
@@ -1460,7 +1452,6 @@ public class WatcherServiceImpl implements WatcherService {
           log.error("[Old] ALERT: Couldn't kill forcibly", ex);
         }
       }
-      watcherRestartedToUpgradeJre = false;
     } finally {
       working.set(false);
     }

@@ -32,9 +32,11 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
+@SuperBuilder
 @NoArgsConstructor
 @EqualsAndHashCode
 @JsonTypeName("Verify")
@@ -53,7 +55,12 @@ public class CVNGStepInfo implements CVStepInfoBase {
   private String uuid;
 
   @NotNull String type;
-  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true) VerificationJobSpec spec;
+  @NotNull
+  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
+  VerificationJobSpec spec;
+
+  MonitoredServiceNode monitoredService;
+
   @Builder
   @ConstructorProperties({"type", "spec"})
   public CVNGStepInfo(String type, VerificationJobSpec spec) {
@@ -88,6 +95,7 @@ public class CVNGStepInfo implements CVStepInfoBase {
         .sensitivity(spec.getSensitivity())
         .verificationJobBuilder(spec.getVerificationJobBuilder())
         .spec(spec)
+        .monitoredService(monitoredService)
         .build();
   }
 }

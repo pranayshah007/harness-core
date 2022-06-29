@@ -20,6 +20,7 @@ import io.harness.ccm.commons.entities.batch.CEMetadataRecord;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord.CEMetadataRecordBuilder;
 import io.harness.ccm.views.dto.DefaultViewIdDto;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
+import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
@@ -29,7 +30,6 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
 
-import software.wings.beans.Account;
 import software.wings.beans.SettingAttribute;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 import software.wings.settings.SettingVariableTypes;
@@ -39,7 +39,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -53,14 +52,14 @@ public class CEMetaDataRecordUpdateService {
   @Autowired private ConnectorResourceClient connectorResourceClient;
   @Autowired private BigQueryHelperService bigQueryHelperService;
   @Autowired private FeatureFlagService featureFlagService;
+  @Autowired private CEViewFolderService ceViewFolderService;
   @Autowired private CEViewService ceViewService;
   @Autowired private CEMetadataRecordDao metadataRecordDao;
   @Autowired TelemetryReporter telemetryReporter;
   @Autowired private NGConnectorHelper ngConnectorHelper;
 
   public void updateCloudProviderMetadata() {
-    List<Account> ceEnabledAccounts = accountShardService.getCeEnabledAccounts();
-    List<String> accountIds = ceEnabledAccounts.stream().map(Account::getUuid).collect(Collectors.toList());
+    List<String> accountIds = accountShardService.getCeEnabledAccountIds();
     accountIds.forEach(this::updateCloudProviderMetadata);
   }
 
@@ -117,6 +116,7 @@ public class CEMetaDataRecordUpdateService {
 
       cloudToHarnessMappingService.upsertCEMetaDataRecord(ceMetadataRecord);
 
+      ceViewFolderService.createDefaultFolders(accountId);
       createDefaultPerspective(
           accountId, isAwsConnectorPresent, isAzureConnectorPresent, isGCPConnectorPresent, ceMetadataRecord);
 

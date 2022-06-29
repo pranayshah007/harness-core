@@ -116,8 +116,6 @@ public class DynatraceHealthSourceSpec extends MetricHealthSourceSpec {
                                        .dynatraceServiceName(serviceName)
                                        .dynatraceServiceId(serviceId)
                                        .serviceMethodIds(serviceMethodIds)
-                                       .envIdentifier(environmentRef)
-                                       .serviceIdentifier(serviceRef)
                                        .metricPack(metricPackFromDb)
                                        .category(metricPackFromDb.getCategory())
                                        .build();
@@ -143,9 +141,7 @@ public class DynatraceHealthSourceSpec extends MetricHealthSourceSpec {
                                    .productName(feature)
                                    .dynatraceServiceName(serviceName)
                                    .dynatraceServiceId(serviceId)
-                                   .envIdentifier(environmentRef)
                                    .serviceMethodIds(serviceMethodIds)
-                                   .serviceIdentifier(serviceRef)
                                    .groupName(metricDefinitionList.get(0).getGroupName())
                                    .category(metricDefinitionList.get(0).getRiskProfile().getCategory())
                                    .build();

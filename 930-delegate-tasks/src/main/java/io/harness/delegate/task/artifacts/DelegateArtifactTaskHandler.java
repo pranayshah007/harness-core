@@ -12,6 +12,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.exception.InvalidRequestException;
 
+import java.net.URISyntaxException;
+
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class DelegateArtifactTaskHandler<T extends ArtifactSourceDelegateRequest> {
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(T attributesRequest) {
@@ -26,7 +28,7 @@ public abstract class DelegateArtifactTaskHandler<T extends ArtifactSourceDelega
     throw new InvalidRequestException("Operation not supported");
   }
 
-  public ArtifactTaskExecutionResponse validateArtifactServer(T attributesRequest) {
+  public ArtifactTaskExecutionResponse validateArtifactServer(T attributesRequest) throws URISyntaxException {
     throw new InvalidRequestException("Operation not supported");
   }
 
@@ -35,6 +37,18 @@ public abstract class DelegateArtifactTaskHandler<T extends ArtifactSourceDelega
   }
 
   public ArtifactTaskExecutionResponse getImages(T attributesRequest) {
+    throw new InvalidRequestException("Operation not supported");
+  }
+
+  public ArtifactTaskExecutionResponse getJob(T attributesRequest) {
+    throw new InvalidRequestException("Operation not supported");
+  }
+
+  public ArtifactTaskExecutionResponse getJobWithParamters(T attributesRequest) {
+    throw new InvalidRequestException("Operation not supported");
+  }
+
+  public ArtifactTaskExecutionResponse getArtifactPaths(T attributesRequest) {
     throw new InvalidRequestException("Operation not supported");
   }
 

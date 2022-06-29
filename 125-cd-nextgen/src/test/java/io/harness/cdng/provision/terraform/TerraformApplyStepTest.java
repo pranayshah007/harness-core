@@ -16,7 +16,6 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -70,12 +69,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 @PrepareForTest({StepUtils.class})
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformApplyStepTest extends CategoryTest {
@@ -223,8 +222,9 @@ public class TerraformApplyStepTest extends CategoryTest {
     StepInputPackage stepInputPackage = StepInputPackage.builder().build();
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled("test-account", FeatureName.EXPORT_TF_PLAN_JSON_NG);
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
-    mockStatic(StepUtils.class);
+    Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
@@ -237,6 +237,9 @@ public class TerraformApplyStepTest extends CategoryTest {
     TerraformTaskNGParameters taskParameters =
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.APPLY);
+    verify(terraformStepHelper)
+        .cleanupTfPlanJsonForProvisioner(
+            ambiance, applyStepParameters.getPlanStepsFqn(), applyStepParameters.getProvisionerIdentifier().getValue());
   }
   @Test
   @Owner(developers = NAMAN_TALAYCHA)
@@ -266,7 +269,7 @@ public class TerraformApplyStepTest extends CategoryTest {
         .when(terraformStepHelper)
         .getFileStoreFetchFilesConfig(any(), any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
-    mockStatic(StepUtils.class);
+    Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
@@ -302,7 +305,7 @@ public class TerraformApplyStepTest extends CategoryTest {
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
-    mockStatic(StepUtils.class);
+    Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     terraformApplyStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
@@ -340,7 +343,7 @@ public class TerraformApplyStepTest extends CategoryTest {
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
 
-    mockStatic(StepUtils.class);
+    Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
@@ -394,7 +397,7 @@ public class TerraformApplyStepTest extends CategoryTest {
         .when(cdFeatureFlagHelper)
         .isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.TF_MODULE_SOURCE_INHERIT_SSH);
 
-    mockStatic(StepUtils.class);
+    Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
@@ -447,7 +450,7 @@ public class TerraformApplyStepTest extends CategoryTest {
         .getFileStoreFetchFilesConfig(any(), any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
 
-    mockStatic(StepUtils.class);
+    Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
@@ -486,7 +489,7 @@ public class TerraformApplyStepTest extends CategoryTest {
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
 
-    mockStatic(StepUtils.class);
+    Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 

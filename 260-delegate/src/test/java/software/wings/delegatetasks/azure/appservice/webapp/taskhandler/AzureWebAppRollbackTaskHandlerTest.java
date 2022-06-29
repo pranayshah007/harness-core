@@ -28,16 +28,18 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskResponse;
+import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
+import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppRollbackParameters;
+import io.harness.delegate.task.azure.common.AzureAppServiceService;
+import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
+import io.harness.delegate.task.azure.common.AzureLogCallbackProviderFactory;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
-import software.wings.delegatetasks.azure.appservice.deployment.AzureAppServiceDeploymentService;
-import software.wings.delegatetasks.azure.appservice.webapp.AppServiceDeploymentProgress;
 import software.wings.delegatetasks.azure.common.ArtifactDownloaderServiceLogWrapper;
-import software.wings.delegatetasks.azure.common.AzureAppServiceService;
 import software.wings.delegatetasks.azure.common.context.ArtifactDownloaderContext;
 
 import java.io.File;
@@ -59,6 +61,8 @@ public class AzureWebAppRollbackTaskHandlerTest extends WingsBaseTest {
 
   @Mock private ILogStreamingTaskClient mockLogStreamingTaskClient;
   @Mock private LogCallback mockLogCallback;
+  @Mock private AzureLogCallbackProvider mockLogCallbackProvider;
+  @Mock private AzureLogCallbackProviderFactory mockLogCallbackProviderFactory;
   @Mock private AzureAppServiceDeploymentService azureAppServiceDeploymentService;
   @Mock private AzureAppServiceService azureAppServiceService;
   @Mock private ArtifactDownloaderServiceLogWrapper artifactDownloaderServiceLogWrapper;
@@ -66,6 +70,7 @@ public class AzureWebAppRollbackTaskHandlerTest extends WingsBaseTest {
 
   @Before
   public void setup() {
+    doReturn(mockLogCallbackProvider).when(mockLogCallbackProviderFactory).createCg(mockLogStreamingTaskClient);
     doReturn(mockLogCallback).when(mockLogStreamingTaskClient).obtainLogCallback(anyString());
     doNothing().when(mockLogCallback).saveExecutionLog(anyString(), any(), any());
     doNothing().when(mockLogCallback).saveExecutionLog(anyString(), any());

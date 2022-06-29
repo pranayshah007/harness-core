@@ -90,6 +90,7 @@ public interface NodeExecutionService {
 
   boolean updateRelationShipsForRetryNode(String nodeExecutionId, String newNodeExecutionId);
 
+  // Todo: Change this to use category instead of identifier. Only used for fetching pipeline node.
   Optional<NodeExecution> getByNodeIdentifier(@NonNull String nodeIdentifier, @NonNull String planExecutionId);
 
   List<NodeExecution> findByParentIdAndStatusIn(String parentId, EnumSet<Status> flowingStatuses);
@@ -108,6 +109,9 @@ public interface NodeExecutionService {
 
   List<NodeExecution> fetchNodeExecutionsByParentId(String nodeExecutionId, boolean oldRetry);
 
+  List<NodeExecution> fetchNodeExecutionsByParentIdWithAmbianceAndNode(
+      String nodeExecutionId, boolean oldRetry, boolean includeParent);
+
   boolean errorOutActiveNodes(String planExecutionId);
 
   boolean removeTimeoutInstances(String nodeExecutionId);
@@ -115,6 +119,8 @@ public interface NodeExecutionService {
   List<RetryStageInfo> getStageDetailFromPlanExecutionId(String planExecutionId);
 
   List<NodeExecution> fetchStageExecutions(String planExecutionId);
+
+  List<NodeExecution> fetchStrategyNodeExecutions(String planExecutionId, List<String> stageFQNs);
 
   List<String> fetchStageFqnFromStageIdentifiers(String planExecutionId, List<String> stageIdentifiers);
 

@@ -15,11 +15,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
-import io.harness.Team;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.notification.Team;
 import io.harness.notification.remote.dto.NotificationDTO;
 import io.harness.notification.service.api.NotificationService;
 import io.harness.rule.Owner;

@@ -33,8 +33,10 @@ import io.harness.ccm.commons.entities.anomaly.AnomalySummary;
 import io.harness.ccm.commons.entities.anomaly.AnomalyWidget;
 import io.harness.ccm.commons.entities.anomaly.AnomalyWidgetData;
 import io.harness.ccm.commons.entities.anomaly.PerspectiveAnomalyData;
+import io.harness.ccm.commons.service.intf.EntityMetadataService;
 import io.harness.ccm.commons.utils.AnomalyQueryBuilder;
 import io.harness.ccm.commons.utils.AnomalyUtils;
+import io.harness.ccm.graphql.dto.recommendation.FilterStatsDTO;
 import io.harness.ccm.service.intf.AnomalyService;
 import io.harness.ccm.views.dto.PerspectiveQueryDTO;
 import io.harness.ccm.views.entities.CEView;
@@ -57,18 +59,25 @@ import org.jooq.impl.DSL;
 
 @Slf4j
 public class AnomalyServiceImpl implements AnomalyService {
-  @Inject AnomalyDao anomalyDao;
-  @Inject AnomalyQueryBuilder anomalyQueryBuilder;
-  @Inject CEViewService viewService;
-  @Inject PerspectiveToAnomalyQueryHelper perspectiveToAnomalyQueryHelper;
+  @Inject private AnomalyDao anomalyDao;
+  @Inject private AnomalyQueryBuilder anomalyQueryBuilder;
+  @Inject private CEViewService viewService;
+  @Inject private PerspectiveToAnomalyQueryHelper perspectiveToAnomalyQueryHelper;
+  @Inject private EntityMetadataService entityMetadataService;
 
   @Override
   public List<AnomalyData> listAnomalies(@NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery) {
+    return listAnomalies(accountIdentifier, anomalyQuery, Collections.emptyList());
+  }
+
+  @Override
+  public List<AnomalyData> listAnomalies(
+      @NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery, @NonNull List<CCMFilter> ruleFilters) {
     if (anomalyQuery == null) {
       anomalyQuery = getDefaultAnomalyQuery();
     }
     Condition condition = anomalyQuery.getFilter() != null
-        ? anomalyQueryBuilder.applyAllFilters(anomalyQuery.getFilter())
+        ? anomalyQueryBuilder.applyAllFilters(anomalyQuery.getFilter(), ruleFilters)
         : DSL.noCondition();
 
     List<CCMSort> sortBy = anomalyQuery.getOrderBy() != null ? anomalyQuery.getOrderBy() : Collections.emptyList();
@@ -78,15 +87,35 @@ public class AnomalyServiceImpl implements AnomalyService {
             anomalyQuery.getLimit() != null ? anomalyQuery.getLimit() : AnomalyUtils.DEFAULT_LIMIT);
 
     List<AnomalyData> anomalyData = new ArrayList<>();
-    anomalies.forEach(anomaly -> anomalyData.add(AnomalyUtils.buildAnomalyData(anomaly)));
+    List<String> awsAccountIds = AnomalyUtils.collectAwsAccountIds(anomalies);
+    Map<String, String> entityIdToNameMapping =
+        entityMetadataService.getAccountNamePerAwsAccountId(awsAccountIds, accountIdentifier);
+    anomalies.forEach(anomaly -> anomalyData.add(AnomalyUtils.buildAnomalyData(anomaly, entityIdToNameMapping)));
 
     return AnomalyUtils.sortDataByNonTableFields(anomalyData, sortBy);
+  }
+
+  @Override
+  public List<FilterStatsDTO> getAnomalyFilterStats(
+      @NonNull String accountIdentifier, List<String> anomalyColumnsList) {
+    if (anomalyColumnsList == null) {
+      anomalyColumnsList = new ArrayList<>();
+    }
+    List<FilterStatsDTO> result = new ArrayList<>();
+
+    for (String column : anomalyColumnsList) {
+      List<String> columnValues = anomalyDao.getDistinctStringValues(accountIdentifier, column);
+      result.add(FilterStatsDTO.builder().key(column).values(columnValues).build());
+    }
+
+    return result;
   }
 
   @Override
   public List<PerspectiveAnomalyData> listPerspectiveAnomalies(
       @NonNull String accountIdentifier, @NonNull String perspectiveId, PerspectiveQueryDTO perspectiveQuery) {
     CEView perspective = viewService.get(perspectiveId);
+    List<CCMFilter> ruleFilters = perspectiveToAnomalyQueryHelper.getConvertedRulesForPerspective(perspective);
     CCMFilter filters =
         perspectiveToAnomalyQueryHelper.getConvertedFiltersForPerspective(perspective, perspectiveQuery);
     List<AnomalyData> anomalyData = listAnomalies(accountIdentifier,
@@ -95,7 +124,8 @@ public class AnomalyServiceImpl implements AnomalyService {
             .orderBy(Collections.emptyList())
             .limit(AnomalyUtils.DEFAULT_LIMIT)
             .offset(AnomalyUtils.DEFAULT_OFFSET)
-            .build());
+            .build(),
+        ruleFilters);
     return buildPerspectiveAnomalyData(anomalyData);
   }
 

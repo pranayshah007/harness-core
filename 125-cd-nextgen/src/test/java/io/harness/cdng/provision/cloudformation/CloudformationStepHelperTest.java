@@ -19,7 +19,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -75,15 +74,12 @@ import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
-import io.harness.yaml.core.variables.NGVariable;
-import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.beans.TaskType;
 import software.wings.sm.states.provision.S3UriParser;
 
 import com.amazonaws.services.s3.AmazonS3URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -96,14 +92,15 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @PrepareForTest({StepUtils.class})
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class CloudformationStepHelperTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private EngineExpressionService engineExpressionService;
@@ -174,7 +171,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
     List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
 
-    mockStatic(StepUtils.class);
+    Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
@@ -214,7 +211,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
     List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
 
-    mockStatic(StepUtils.class);
+    Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
@@ -252,7 +249,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
     doReturn(new ArrayList<>()).when(secretManagerClientService).getEncryptionDetails(any(), any());
     AmazonS3URI s3URI = new AmazonS3URI("s3://bucket/key");
     doReturn(s3URI).when(s3UriParser).parseUrl(anyString());
-    mockStatic(StepUtils.class);
+    Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
@@ -291,7 +288,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
     doReturn(new ArrayList<>()).when(secretManagerClientService).getEncryptionDetails(any(), any());
     AmazonS3URI s3URI = new AmazonS3URI("s3://bucket/key");
     doReturn(s3URI).when(s3UriParser).parseUrl(anyString());
-    mockStatic(StepUtils.class);
+    Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
@@ -802,6 +799,9 @@ public class CloudformationStepHelperTest extends CategoryTest {
     RemoteCloudformationTemplateFileSpec templateFileSpec = new RemoteCloudformationTemplateFileSpec();
     CloudformationParametersFileSpec parametersFileSpec = new CloudformationParametersFileSpec();
     CloudformationParametersFileSpec parametersFileSpec2 = new CloudformationParametersFileSpec();
+    LinkedHashMap<String, CloudformationParametersFileSpec> parametersFileSpecs = new LinkedHashMap<>();
+    parametersFileSpecs.put("var1", parametersFileSpec);
+    parametersFileSpecs.put("var2", parametersFileSpec2);
 
     StoreConfigWrapper storeConfigWrapper =
         StoreConfigWrapper.builder()
@@ -816,12 +816,12 @@ public class CloudformationStepHelperTest extends CategoryTest {
     parametersFileSpec.setStore(storeConfigWrapper);
     parametersFileSpec2.setStore(storeConfigWrapper);
     templateFileSpec.setStore(storeConfigWrapper);
-    CloudformationCreateStackStepConfiguration config =
-        CloudformationCreateStackStepConfiguration.builder()
+    CloudformationCreateStackStepConfigurationParameters config =
+        CloudformationCreateStackStepConfigurationParameters.builder()
             .connectorRef(ParameterField.createValueField("aws-connector"))
             .region(ParameterField.createValueField("region"))
             .stackName(ParameterField.createValueField("stack-name"))
-            .parametersFilesSpecs(Arrays.asList(parametersFileSpec, parametersFileSpec2))
+            .parameters(parametersFileSpecs)
             .templateFile(CloudformationTemplateFile.builder()
                               .spec(templateFileSpec)
                               .type(CloudformationTemplateFileTypes.Remote)
@@ -865,8 +865,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void getCloudformationConfig() {
     Ambiance ambiance = getAmbiance();
-    List<NGVariable> parameterOverrides = Collections.singletonList(
-        StringNGVariable.builder().name("name").value(ParameterField.createValueField("value")).build());
+    Map<String, Object> parameterOverrides = Collections.singletonMap("name", ParameterField.createValueField("value"));
     List<String> capabilities = Collections.singletonList("capability");
     List<String> stackStatusesToMarkAsSuccess = Collections.singletonList("CREATE_COMPLETE");
     LinkedHashMap<String, List<String>> parameters = new LinkedHashMap<>();
@@ -877,8 +876,8 @@ public class CloudformationStepHelperTest extends CategoryTest {
                                                                    .parametersFilesContent(parameters)
                                                                    .tags(TAGS)
                                                                    .build();
-    CloudformationCreateStackStepConfiguration configuration =
-        CloudformationCreateStackStepConfiguration.builder()
+    CloudformationCreateStackStepConfigurationParameters configuration =
+        CloudformationCreateStackStepConfigurationParameters.builder()
             .region(ParameterField.createValueField("region"))
             .connectorRef(ParameterField.createValueField("connectorRef"))
             .parameterOverrides(parameterOverrides)
@@ -902,7 +901,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
     assertThat(cloudformationConfig.getAccountId()).isEqualTo("account");
     assertThat(cloudformationConfig.getOrgId()).isEqualTo("org");
     assertThat(cloudformationConfig.getProjectId()).isEqualTo("project");
-    assertThat(cloudformationConfig.getPipelineExecutionId()).isEqualTo("executionId");
+    assertThat(cloudformationConfig.getStageExecutionId()).isEqualTo("stageExecutionId");
     assertThat(cloudformationConfig.getProvisionerIdentifier()).isEqualTo("provisionerIdentifier");
     assertThat(cloudformationConfig.getTemplateBody()).isEqualTo("templateBody");
     assertThat(cloudformationConfig.getTemplateUrl()).isEqualTo("templateUrl");
@@ -922,6 +921,9 @@ public class CloudformationStepHelperTest extends CategoryTest {
     RemoteCloudformationTemplateFileSpec templateFileSpec = new RemoteCloudformationTemplateFileSpec();
     CloudformationParametersFileSpec parametersFileSpec = new CloudformationParametersFileSpec();
     CloudformationParametersFileSpec parametersFileSpec2 = new CloudformationParametersFileSpec();
+    LinkedHashMap<String, CloudformationParametersFileSpec> parametersFileSpecs = new LinkedHashMap<>();
+    parametersFileSpecs.put("var1", parametersFileSpec);
+    parametersFileSpecs.put("var2", parametersFileSpec2);
     RemoteCloudformationTagsFileSpec tagsFileSpec = new RemoteCloudformationTagsFileSpec();
 
     StoreConfigWrapper storeConfigWrapper =
@@ -941,13 +943,13 @@ public class CloudformationStepHelperTest extends CategoryTest {
     tagsFileSpec.setStore(storeConfigWrapper);
 
     parameters.setConfiguration(
-        CloudformationCreateStackStepConfiguration.builder()
+        CloudformationCreateStackStepConfigurationParameters.builder()
             .tags(tags
                     ? CloudformationTags.builder().type(CloudformationTagsFileTypes.Remote).spec(tagsFileSpec).build()
                     : null)
             .region(ParameterField.createValueField("region"))
             .stackName(ParameterField.createValueField("stack-name"))
-            .parametersFilesSpecs(Arrays.asList(parametersFileSpec, parametersFileSpec2))
+            .parameters(parametersFileSpecs)
             .templateFile(CloudformationTemplateFile.builder()
                               .spec(templateFileSpec)
                               .type(CloudformationTemplateFileTypes.Remote)
@@ -964,7 +966,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
     templateFileSpec.setTemplateBody(ParameterField.createValueField("test-template"));
     tagsFileSpec.setContent(ParameterField.createValueField(TAGS));
     parameters.setConfiguration(
-        CloudformationCreateStackStepConfiguration.builder()
+        CloudformationCreateStackStepConfigurationParameters.builder()
             .tags(tags
                     ? CloudformationTags.builder().type(CloudformationTagsFileTypes.Inline).spec(tagsFileSpec).build()
                     : null)
@@ -982,7 +984,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
     CloudformationCreateStackStepParameters parameters = new CloudformationCreateStackStepParameters();
     S3UrlCloudformationTemplateFileSpec templateFileSpec = new S3UrlCloudformationTemplateFileSpec();
     templateFileSpec.setTemplateUrl(ParameterField.createValueField("test-url"));
-    parameters.setConfiguration(CloudformationCreateStackStepConfiguration.builder()
+    parameters.setConfiguration(CloudformationCreateStackStepConfigurationParameters.builder()
                                     .region(ParameterField.createValueField("region"))
                                     .stackName(ParameterField.createValueField("stack-name"))
                                     .templateFile(CloudformationTemplateFile.builder()
@@ -998,6 +1000,9 @@ public class CloudformationStepHelperTest extends CategoryTest {
     RemoteCloudformationTemplateFileSpec templateFileSpec = new RemoteCloudformationTemplateFileSpec();
     CloudformationParametersFileSpec parametersFileSpec = new CloudformationParametersFileSpec();
     CloudformationParametersFileSpec parametersFileSpec2 = new CloudformationParametersFileSpec();
+    LinkedHashMap<String, CloudformationParametersFileSpec> parametersFileSpecs = new LinkedHashMap<>();
+    parametersFileSpecs.put("var1", parametersFileSpec);
+    parametersFileSpecs.put("var2", parametersFileSpec2);
     RemoteCloudformationTagsFileSpec tagsFileSpec = new RemoteCloudformationTagsFileSpec();
 
     StoreConfigWrapper storeConfigWrapper =
@@ -1018,11 +1023,11 @@ public class CloudformationStepHelperTest extends CategoryTest {
     templateFileSpec.setStore(storeConfigWrapper);
     tagsFileSpec.setStore(storeConfigWrapper);
     parameters.setConfiguration(
-        CloudformationCreateStackStepConfiguration.builder()
+        CloudformationCreateStackStepConfigurationParameters.builder()
             .tags(tags
                     ? CloudformationTags.builder().type(CloudformationTagsFileTypes.Remote).spec(tagsFileSpec).build()
                     : null)
-            .parametersFilesSpecs(Arrays.asList(parametersFileSpec, parametersFileSpec2))
+            .parameters(parametersFileSpecs)
             .region(ParameterField.createValueField("region"))
             .stackName(ParameterField.createValueField("stack-name"))
             .templateFile(CloudformationTemplateFile.builder()
@@ -1080,6 +1085,9 @@ public class CloudformationStepHelperTest extends CategoryTest {
     setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "org");
     setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "project");
 
-    return Ambiance.newBuilder().putAllSetupAbstractions(setupAbstractions).setPlanExecutionId("executionId").build();
+    return Ambiance.newBuilder()
+        .putAllSetupAbstractions(setupAbstractions)
+        .setStageExecutionId("stageExecutionId")
+        .build();
   }
 }

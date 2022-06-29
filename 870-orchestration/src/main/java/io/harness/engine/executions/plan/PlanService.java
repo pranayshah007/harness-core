@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plan.Node;
 import io.harness.plan.Plan;
 
+import java.util.List;
 import java.util.Optional;
 
 @OwnedBy(PIPELINE)
@@ -24,4 +25,8 @@ public interface PlanService {
   Plan fetchPlan(String planId);
 
   Optional<Plan> fetchPlanOptional(String planId);
+
+  // When retying a failed pipeline from a strategy node, we are saving one IdentityNode for each successful
+  // combination.
+  List<Node> saveIdentityNodesForMatrix(List<Node> identityNodes, String planId);
 }

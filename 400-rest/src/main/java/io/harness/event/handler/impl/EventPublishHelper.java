@@ -283,7 +283,7 @@ public class EventPublishHelper {
               .addFilter("createdBy.email", Operator.EQ, userEmail)
               .addOrder(UserGroup.CREATED_AT_KEY, OrderType.ASC)
               .build();
-      PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, false);
+      PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, false, null, null);
       List<UserGroup> userGroups = pageResponse.getResponse();
       if (isEmpty(userGroups)) {
         return false;

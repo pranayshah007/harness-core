@@ -50,7 +50,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 
 @Singleton
 @Slf4j
@@ -118,8 +117,9 @@ public class CfMigrationService {
          */
         if (!cfFeatures.contains(featureName.name())) {
           try {
-            cfAdminApi.createFeatureFlag(
-                cfAccount, cfOrg, createCFFeatureFlag(featureName.name(), featureName.getScope(), cfProject));
+            cfAdminApi.createFeatureFlag(cfAccount, cfOrg,
+                createCFFeatureFlag(featureName.name(), featureName.getScope(), cfProject, featureName.getDescription(),
+                    featureName.getOwner()));
             Feature feature = cfAdminApi.getFeatureFlag(featureName.name(), cfAccount, cfOrg, cfProject, cfEnvironment);
             featureMap.put(featureName.name(), feature);
             log.info("CF-SYNC Created featureFlag [{}] in CF", featureName);
@@ -280,7 +280,7 @@ public class CfMigrationService {
         log.info(
             "CF-SYNC Creating Rules for AccountIDs for FF[{}], environment [{}]", featureFlag.getName(), cfEnvironment);
         List<PatchInstruction> accountToBeAddedPatchInstruction =
-            cfAdminApi.getFeatureFlagRulesForTargetingAccounts(tobeAddedAccountIds, maxPriority + 100);
+            cfAdminApi.getFeatureFlagRulesForTargetingAccounts(tobeAddedAccountIds);
         instructions.addAll(accountToBeAddedPatchInstruction);
       }
 
@@ -303,8 +303,8 @@ public class CfMigrationService {
     }
   }
 
-  @NotNull
-  private InlineObject createCFFeatureFlag(String featureName, Scope scope, String project) {
+  private InlineObject createCFFeatureFlag(
+      String featureName, Scope scope, String project, String description, String owner) {
     InlineObject inlineObject = new InlineObject();
     inlineObject.setProject(project);
     inlineObject.setIdentifier(featureName);
@@ -330,6 +330,8 @@ public class CfMigrationService {
     inlineObject.setPermanent(false);
     inlineObject.setArchived(false);
 
+    inlineObject.setDescription(description);
+    inlineObject.setOwner(owner);
     return inlineObject;
   }
 }

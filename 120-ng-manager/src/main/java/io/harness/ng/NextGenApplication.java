@@ -44,6 +44,7 @@ import io.harness.cdng.gitSync.EnvironmentGroupEntityGitSyncHelper;
 import io.harness.cdng.licenserestriction.ServiceRestrictionsUsageImpl;
 import io.harness.cdng.orchestration.NgStepRegistrar;
 import io.harness.cdng.pipeline.executions.CdngOrchestrationExecutionEventHandlerRegistrar;
+import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
@@ -146,7 +147,6 @@ import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsume
 import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
-import io.harness.pms.serializer.jackson.PmsBeansJacksonModule;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.polling.service.impl.PollingPerpetualTaskManager;
 import io.harness.polling.service.impl.PollingServiceImpl;
@@ -283,7 +283,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
   public static void configureObjectMapper(final ObjectMapper mapper) {
     HObjectMapper.configureObjectMapperForNG(mapper);
-    mapper.registerModule(new PmsBeansJacksonModule());
   }
 
   @Override
@@ -627,6 +626,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     Map<String, Class<? extends SdkFunctor>> sdkFunctorMap = new HashMap<>();
     sdkFunctorMap.put(ImagePullSecretFunctor.IMAGE_PULL_SECRET, ImagePullSecretFunctor.class);
     sdkFunctorMap.put(VariableFunctor.VARIABLE, VariableFunctor.class);
+    sdkFunctorMap.put(TerraformPlanJsonFunctor.TERRAFORM_PLAN_JSON, TerraformPlanJsonFunctor.class);
     return sdkFunctorMap;
   }
 
@@ -719,7 +719,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.jersey().register(NGAccessDeniedExceptionMapper.class);
     environment.jersey().register(WingsExceptionMapperV2.class);
     environment.jersey().register(GenericExceptionMapperV2.class);
-    environment.jersey().register(new JsonProcessingExceptionMapper(true));
   }
 
   private void registerJerseyFeatures(Environment environment) {

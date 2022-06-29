@@ -52,10 +52,12 @@ public class PhysicalInfraWinrmYamlHandler extends CloudProviderInfrastructureYa
   private void toBean(PhysicalInfraWinrm bean, ChangeContext<Yaml> changeContext) {
     Yaml yaml = changeContext.getYaml();
     String accountId = changeContext.getChange().getAccountId();
+    String appId = yamlHelper.getAppId(accountId, changeContext.getChange().getFilePath());
     SettingAttribute cloudProvider = settingsService.getSettingAttributeByName(accountId, yaml.getCloudProviderName());
+    notNullCheck(format("Cloud Provider with name %s does not exist", yaml.getCloudProviderName()), cloudProvider);
+    settingsService.checkRbacOnSettingAttribute(appId, cloudProvider);
     SettingAttribute winRmConnectionAttr =
         settingsService.getSettingAttributeByName(accountId, yaml.getWinRmConnectionAttributesName());
-    notNullCheck(format("Cloud Provider with name %s does not exist", yaml.getCloudProviderName()), cloudProvider);
     notNullCheck(format("winRmConnectionAttr with name %s does not exist", yaml.getWinRmConnectionAttributesName()),
         winRmConnectionAttr);
     bean.setCloudProviderId(cloudProvider.getUuid());

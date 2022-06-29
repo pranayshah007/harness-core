@@ -57,7 +57,7 @@ public class PagerDutyNotificationFeature extends AbstractNotificationFeature {
   }
 
   private PageResponse<UserGroup> getUserGroups(String accountId) {
-    return userGroupService.list(accountId, new PageRequest<>(), false);
+    return userGroupService.list(accountId, new PageRequest<>(), false, null, null);
   }
 
   private static boolean hasPagerDuty(UserGroup userGroup) {

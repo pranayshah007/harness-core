@@ -58,13 +58,12 @@ public class ConnectorInstrumentationHelper extends InstrumentationHelper {
         }
         eventPropertiesMap.put(ACCOUNT_ID, accountId);
         eventPropertiesMap.put(CONNECTOR_ID, connector.getIdentifier());
-        eventPropertiesMap.put(CONNECTOR_TYPE, connector.getConnectorType());
+        eventPropertiesMap.put(CONNECTOR_TYPE, connector.getConnectorType().getDisplayName());
         eventPropertiesMap.put(CONNECTOR_NAME, connector.getName());
         String userId = getUserId();
         return CompletableFuture.runAsync(
             ()
-                -> telemetryReporter.sendTrackEvent("connector_creation_finished", userId, accountId,
-                    eventPropertiesMap,
+                -> telemetryReporter.sendTrackEvent("Connector Created", userId, accountId, eventPropertiesMap,
                     ImmutableMap.<Destination, Boolean>builder()
                         .put(Destination.AMPLITUDE, true)
                         .put(Destination.ALL, false)

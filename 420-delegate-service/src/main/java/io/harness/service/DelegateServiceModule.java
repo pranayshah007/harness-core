@@ -11,7 +11,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.filter.DelegateFilterPropertiesMapper;
 import io.harness.delegate.filter.DelegateProfileFilterPropertiesMapper;
-import io.harness.ff.FeatureFlagModule;
 import io.harness.filter.FilterType;
 import io.harness.filter.FiltersModule;
 import io.harness.filter.mapper.FilterPropertiesMapper;
@@ -21,6 +20,7 @@ import io.harness.service.impl.DelegateCacheImpl;
 import io.harness.service.impl.DelegateCallbackRegistryImpl;
 import io.harness.service.impl.DelegateInsightsServiceImpl;
 import io.harness.service.impl.DelegateMtlsEndpointServiceImpl;
+import io.harness.service.impl.DelegateMtlsEndpointServiceReadOnlyImpl;
 import io.harness.service.impl.DelegateSetupServiceImpl;
 import io.harness.service.impl.DelegateTaskSelectorMapServiceImpl;
 import io.harness.service.impl.DelegateTaskServiceImpl;
@@ -57,11 +57,12 @@ public class DelegateServiceModule extends AbstractModule {
 
   @Override
   protected void configure() {
-    install(FeatureFlagModule.getInstance());
     install(FiltersModule.getInstance());
 
-    // register only if mtlsSubdomain is provided - UTs and other services don't need it.
-    if (StringUtils.isNotEmpty(this.mtlsSubdomain)) {
+    // Depending on configuration, only use read-only impl. so any non-get operations throw runtime exceptions.
+    if (StringUtils.isBlank(this.mtlsSubdomain)) {
+      bind(DelegateMtlsEndpointService.class).to(DelegateMtlsEndpointServiceReadOnlyImpl.class);
+    } else {
       bind(DelegateMtlsEndpointService.class).to(DelegateMtlsEndpointServiceImpl.class);
     }
 

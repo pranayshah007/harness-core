@@ -29,11 +29,11 @@ import lombok.NonNull;
 @RecasterAlias("io.harness.cdng.provision.cloudformation.CloudformationCreateStackStepParameters")
 public class CloudformationCreateStackStepParameters
     extends CloudformationCreateStackBaseStepInfo implements SpecParameters {
-  @NonNull CloudformationCreateStackStepConfiguration configuration;
+  @NonNull CloudformationCreateStackStepConfigurationParameters configuration;
   @Builder(builderMethodName = "infoBuilder")
   public CloudformationCreateStackStepParameters(ParameterField<String> provisionerIdentifier,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, String uuid,
-      @NonNull CloudformationCreateStackStepConfiguration configuration) {
+      @NonNull CloudformationCreateStackStepConfigurationParameters configuration) {
     super(provisionerIdentifier, delegateSelectors, uuid);
     this.configuration = configuration;
   }

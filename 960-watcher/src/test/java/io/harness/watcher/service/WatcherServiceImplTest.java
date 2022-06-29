@@ -23,13 +23,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.concurent.HTimeLimiterMocker;
 import io.harness.delegate.beans.DelegateConfiguration;
-import io.harness.delegate.message.MessageService;
 import io.harness.event.client.impl.tailer.ChronicleEventTailer;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
@@ -59,9 +57,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.DEL)
-public class WatcherServiceImplTest extends CategoryTest {
+public class WatcherServiceImplTest {
   @Mock private TimeLimiter timeLimiter;
-  @Mock private MessageService messageService;
   @Mock private WatcherConfiguration watcherConfiguration;
   @InjectMocks @Spy private WatcherServiceImpl watcherService;
 
@@ -286,12 +283,16 @@ public class WatcherServiceImplTest extends CategoryTest {
         RestResponse.Builder.aRestResponse().withResource(delegateConfiguration).build();
     HTimeLimiterMocker.mockCallInterruptible(timeLimiter, ofSeconds(15)).thenReturn(restResponse);
     ExecutionException ioException = new ExecutionException(new IOException("test"));
-    HTimeLimiterMocker.mockCallInterruptible(timeLimiter, ofMinutes(1)).thenThrow(ioException);
+    HTimeLimiterMocker.mockCallInterruptible(timeLimiter, ofMinutes(1)).thenAnswer(invocation -> {
+      throw ioException;
+    });
 
     boolean downloadSuccesful = watcherService.downloadRunScriptsBeforeRestartingDelegateAndWatcher();
     assertThat(downloadSuccesful).isFalse();
 
-    HTimeLimiterMocker.mockCallInterruptible(timeLimiter, ofMinutes(1)).thenThrow(Exception.class);
+    HTimeLimiterMocker.mockCallInterruptible(timeLimiter, ofMinutes(1)).thenAnswer(invocation -> {
+      throw new Exception();
+    });
     downloadSuccesful = watcherService.downloadRunScriptsBeforeRestartingDelegateAndWatcher();
     assertThat(downloadSuccesful).isFalse();
   }
@@ -302,17 +303,6 @@ public class WatcherServiceImplTest extends CategoryTest {
   public void testSwitchStorage() {
     try {
       watcherService.switchStorage();
-    } catch (Exception ex) {
-      fail(ex.getMessage());
-    }
-  }
-
-  @Test
-  @Owner(developers = MARKO)
-  @Category(UnitTests.class)
-  public void testRestartWatcherToUpgradeJre() {
-    try {
-      watcherService.restartWatcherToUpgradeJre("openjdk");
     } catch (Exception ex) {
       fail(ex.getMessage());
     }
@@ -376,6 +366,7 @@ public class WatcherServiceImplTest extends CategoryTest {
     when(watcherConfiguration.getDelegateCheckLocation()).thenReturn(DELEGATE_CHECK_LOCATION);
     doReturn(VALID_FIVE_DIGITS_VERSION).when(watcherService).getResponseStringFromUrl();
     when(watcherService.getVersion()).thenReturn(CURRENT_VERSION);
+    doReturn(true).when(watcherService).downloadRunScriptsBeforeRestartingDelegateAndWatcher();
 
     watcherService.checkForWatcherUpgrade();
 
@@ -391,6 +382,7 @@ public class WatcherServiceImplTest extends CategoryTest {
     when(watcherConfiguration.getDelegateCheckLocation()).thenReturn(DELEGATE_CHECK_LOCATION);
     doReturn(VALID_FIVE_DIGITS_WITH_HYPHEN).when(watcherService).getResponseStringFromUrl();
     when(watcherService.getVersion()).thenReturn(CURRENT_VERSION);
+    doReturn(true).when(watcherService).downloadRunScriptsBeforeRestartingDelegateAndWatcher();
 
     watcherService.checkForWatcherUpgrade();
 
@@ -406,6 +398,7 @@ public class WatcherServiceImplTest extends CategoryTest {
     when(watcherConfiguration.getDelegateCheckLocation()).thenReturn(DELEGATE_CHECK_LOCATION);
     doReturn(VALID_SIX_DIGITS_VERSION).when(watcherService).getResponseStringFromUrl();
     when(watcherService.getVersion()).thenReturn(CURRENT_VERSION);
+    doReturn(true).when(watcherService).downloadRunScriptsBeforeRestartingDelegateAndWatcher();
 
     watcherService.checkForWatcherUpgrade();
 
@@ -421,6 +414,7 @@ public class WatcherServiceImplTest extends CategoryTest {
     when(watcherConfiguration.getDelegateCheckLocation()).thenReturn(DELEGATE_CHECK_LOCATION);
     doReturn(VALID_SIX_DIGITS_VERSION_WITH_HYPHEN).when(watcherService).getResponseStringFromUrl();
     when(watcherService.getVersion()).thenReturn(CURRENT_VERSION);
+    doReturn(true).when(watcherService).downloadRunScriptsBeforeRestartingDelegateAndWatcher();
 
     watcherService.checkForWatcherUpgrade();
 
@@ -435,7 +429,6 @@ public class WatcherServiceImplTest extends CategoryTest {
     when(watcherConfiguration.isDoUpgrade()).thenReturn(true);
     when(watcherConfiguration.getDelegateCheckLocation()).thenReturn(DELEGATE_CHECK_LOCATION);
     doReturn(INVALID_UPGRADE_VERSION).when(watcherService).getResponseStringFromUrl();
-    when(watcherService.getVersion()).thenReturn(CURRENT_VERSION);
 
     watcherService.checkForWatcherUpgrade();
 

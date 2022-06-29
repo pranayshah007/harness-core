@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -31,20 +32,18 @@ import lombok.Data;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-@RunWith(PowerMockRunner.class)
 @PrepareForTest({RecastOrchestrationUtils.class})
 public class PmsOutcomeMapperTest extends PmsSdkCoreTestBase {
   @Before
   public void initialize() {
-    PowerMockito.mockStatic(RecastOrchestrationUtils.class);
-    PowerMockito.when(RecastOrchestrationUtils.toJson(any(Outcome.class))).thenReturn("test");
-    PowerMockito.when(RecastOrchestrationUtils.fromJson(any(String.class), eq(Outcome.class)))
+    MockedStatic<RecastOrchestrationUtils> aStatic = Mockito.mockStatic(RecastOrchestrationUtils.class);
+    aStatic.when(() -> RecastOrchestrationUtils.toJson(any(Outcome.class))).thenReturn("test");
+    aStatic.when(() -> RecastOrchestrationUtils.fromJson(any(String.class), eq(Outcome.class)))
         .thenReturn(DummyOutcome.builder().name("dummyOutcome").build());
   }
 
@@ -105,6 +104,7 @@ public class PmsOutcomeMapperTest extends PmsSdkCoreTestBase {
 
   @Data
   @Builder
+  @RecasterAlias("io.harness.pms.sdk.core.resolver.outcome.mapper.DummyOutcome")
   public static class DummyOutcome implements Outcome {
     String name;
   }

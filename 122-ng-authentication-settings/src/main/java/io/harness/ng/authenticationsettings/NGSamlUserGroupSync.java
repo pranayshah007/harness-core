@@ -8,13 +8,10 @@
 package io.harness.ng.authenticationsettings;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.utils.PageUtils.getPageRequest;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.Scope.ScopeKeys;
-import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.entities.UserGroup;
@@ -32,9 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PL)
@@ -107,7 +102,8 @@ public class NGSamlUserGroupSync {
     log.info("[NGSamlUserGroupSync] Checking removal of user: {} from all diff scopes post sync", userId);
     int countOfProjectLevelUserGroups =
         userGroupService
-            .list(Criteria.where(UserGroupKeys.projectIdentifier).exists(true).and(UserGroupKeys.users).in(userId))
+            .list(Criteria.where(UserGroupKeys.projectIdentifier).exists(true).and(UserGroupKeys.users).in(userId),
+                null, null)
             .size();
 
     if (countOfProjectLevelUserGroups == 0) {
@@ -125,7 +121,8 @@ public class NGSamlUserGroupSync {
                                                     .and(UserGroupKeys.projectIdentifier)
                                                     .exists(false)
                                                     .and(UserGroupKeys.users)
-                                                    .in(userId))
+                                                    .in(userId),
+                                              null, null)
                                           .size();
 
       if (countOfOrgLevelUserGroups == 0) {
@@ -146,7 +143,8 @@ public class NGSamlUserGroupSync {
                                                           .and(UserGroupKeys.projectIdentifier)
                                                           .exists(false)
                                                           .and(UserGroupKeys.users)
-                                                          .in(userId))
+                                                          .in(userId),
+                                                    null, null)
                                                 .size();
 
         if (countOfAccountLevelUserGroups == 0) {
@@ -162,38 +160,5 @@ public class NGSamlUserGroupSync {
         }
       }
     }
-  }
-
-  @VisibleForTesting
-  public boolean checkUserIsOtherGroupMember(Scope scope, String userId) {
-    List<UserGroup> userGroupsAtScope =
-        getUserGroupsAtScope(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
-    if (isNotEmpty(userGroupsAtScope)) {
-      for (UserGroup userGroup : userGroupsAtScope) {
-        if (userGroup.getUsers().contains(userId)) {
-          return true;
-        }
-      }
-      return false;
-    }
-    return false;
-  }
-
-  @VisibleForTesting
-  public List<UserGroup> getUserGroupsAtScope(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    Page<UserGroup> pagedUserGroups = null;
-    List<UserGroup> userGroups = new ArrayList<>();
-    do {
-      pagedUserGroups = userGroupService.list(accountIdentifier, orgIdentifier, projectIdentifier, null,
-          getPageRequest(PageRequest.builder()
-                             .pageIndex(pagedUserGroups == null ? 0 : pagedUserGroups.getNumber() + 1)
-                             .pageSize(40)
-                             .build()));
-      if (pagedUserGroups != null) {
-        userGroups.addAll(pagedUserGroups.stream().collect(Collectors.toList()));
-      }
-    } while (pagedUserGroups != null && pagedUserGroups.hasNext());
-    return userGroups;
   }
 }

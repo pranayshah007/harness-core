@@ -17,6 +17,7 @@ import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import java.time.Instant;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -27,7 +28,6 @@ public class ClusterEntityMapperTest extends CategoryTest {
   public void testToEntity() {
     ClusterRequest request = ClusterRequest.builder()
                                  .identifier("id")
-                                 .name("name")
                                  .envRef("env")
                                  .orgIdentifier("orgId")
                                  .projectIdentifier("orgId")
@@ -38,28 +38,28 @@ public class ClusterEntityMapperTest extends CategoryTest {
     assertThat(entity.getAccountId()).isEqualTo("accountId");
     assertThat(entity.getOrgIdentifier()).isEqualTo("orgId");
     assertThat(entity.getProjectIdentifier()).isEqualTo("orgId");
-    assertThat(entity.getIdentifier()).isEqualTo("id");
-    assertThat(entity.getName()).isEqualTo("name");
+    assertThat(entity.getClusterRef()).isEqualTo("id");
   }
 
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void testWriteDTO() {
+    long epochSecond = Instant.now().getEpochSecond();
     Cluster request = Cluster.builder()
                           .accountId("accountId")
-                          .identifier("id")
-                          .name("name")
+                          .clusterRef("id")
                           .envRef("env")
                           .orgIdentifier("orgId")
                           .projectIdentifier("orgId")
+                          .createdAt(epochSecond)
                           .build();
 
     ClusterResponse entity = ClusterEntityMapper.writeDTO(request);
 
     assertThat(entity.getOrgIdentifier()).isEqualTo("orgId");
     assertThat(entity.getProjectIdentifier()).isEqualTo("orgId");
-    assertThat(entity.getIdentifier()).isEqualTo("id");
-    assertThat(entity.getName()).isEqualTo("name");
+    assertThat(entity.getClusterRef()).isEqualTo("id");
+    assertThat(entity.getLinkedAt()).isEqualTo(epochSecond);
   }
 }

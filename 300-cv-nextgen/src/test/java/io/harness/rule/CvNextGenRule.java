@@ -18,9 +18,6 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
-import io.harness.cf.AbstractCfModule;
-import io.harness.cf.CfClientConfig;
-import io.harness.cf.CfMigrationConfig;
 import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.CVNextGenCommonsServiceModule;
 import io.harness.cvng.CVServiceModule;
@@ -37,13 +34,14 @@ import io.harness.cvng.client.VerificationManagerService;
 import io.harness.cvng.core.NGManagerServiceConfig;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.impl.AlwaysFalseFeatureFlagServiceImpl;
+import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
-import io.harness.ff.FeatureFlagConfig;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.lock.PersistentLockModule;
 import io.harness.metrics.modules.MetricsModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -56,11 +54,16 @@ import io.harness.notification.constant.NotificationClientSecrets;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.notification.module.NotificationClientPersistenceModule;
 import io.harness.notification.notificationclient.NotificationClient;
+import io.harness.outbox.api.OutboxService;
+import io.harness.outbox.api.impl.OutboxDaoImpl;
+import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.persistence.HPersistence;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.repositories.outbox.OutboxEventRepository;
 import io.harness.serializer.CvNextGenRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
@@ -68,6 +71,7 @@ import io.harness.threading.CurrentThreadExecutor;
 import io.harness.threading.ExecutorModule;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
@@ -78,6 +82,7 @@ import com.google.inject.util.Modules;
 import io.dropwizard.configuration.YamlConfigurationFactory;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.jersey.validation.Validators;
+import io.serializer.HObjectMapper;
 import java.io.Closeable;
 import java.io.File;
 import java.lang.annotation.Annotation;
@@ -96,6 +101,7 @@ import org.junit.runners.model.Statement;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import org.mongodb.morphia.converters.TypeConverter;
+import org.springframework.core.convert.converter.Converter;
 import org.yaml.snakeyaml.Yaml;
 import retrofit2.Call;
 import retrofit2.Response;
@@ -141,8 +147,17 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
             .addAll(CvNextGenRegistrars.morphiaConverters)
             .build();
       }
+
+      @Provides
+      @Singleton
+      List<Class<? extends Converter<?, ?>>> springConverters() {
+        return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
+            .addAll(CvNextGenRegistrars.springConverters)
+            .build();
+      }
     });
 
+    modules.add(TestMongoModule.getInstance());
     modules.add(mongoTypeModule(annotations));
     modules.add(new AbstractModule() {
       @Override
@@ -150,9 +165,19 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
         bind(HPersistence.class).to(MongoPersistence.class);
       }
     });
+
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
+      }
+    });
+
     modules.add(new CVNextGenCommonsServiceModule());
 
     modules.add(TestMongoModule.getInstance());
+
     VerificationConfiguration verificationConfiguration = getVerificationConfiguration();
     modules.add(Modules.override(new CVServiceModule(verificationConfiguration)).with(binder -> {
       binder.bind(FeatureFlagService.class).to(AlwaysFalseFeatureFlagServiceImpl.class);
@@ -160,12 +185,13 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       binder.bind(Clock.class).toInstance(CVNGTestConstants.FIXED_TIME_FOR_TESTS);
       binder.bind(TemplateResourceClient.class).toInstance(getMockedTemplateResourceClient());
       binder.bind(NextGenService.class).to(FakeNextGenService.class);
+      binder.bind(EnforcementClientService.class).toInstance(Mockito.mock(EnforcementClientService.class));
     }));
     MongoBackendConfiguration mongoBackendConfiguration =
         MongoBackendConfiguration.builder().uri("mongodb://localhost:27017/notificationChannel").build();
     modules.add(new EventsFrameworkModule(verificationConfiguration.getEventsFrameworkConfiguration()));
     mongoBackendConfiguration.setType("MONGO");
-    modules.add(new NotificationClientPersistenceModule());
+    modules.add(Modules.override(new SpringPersistenceTestModule()).with(new NotificationClientPersistenceModule()));
     modules.add(new NextGenClientModule(
         NGManagerServiceConfig.builder().managerServiceSecret("secret").ngManagerUrl("http://test-ng-host").build()));
     modules.add(new VerificationManagerClientModule("http://test-host"));
@@ -215,23 +241,6 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
             .build();
     modules.add(Modules.override(new NotificationClientModule(notificationClientConfiguration))
                     .with(binder -> binder.bind(NotificationClient.class).to(FakeNotificationClient.class)));
-
-    modules.add(new AbstractCfModule() {
-      @Override
-      public CfClientConfig cfClientConfig() {
-        return CfClientConfig.builder().build();
-      }
-
-      @Override
-      public CfMigrationConfig cfMigrationConfig() {
-        return CfMigrationConfig.builder().build();
-      }
-
-      @Override
-      public FeatureFlagConfig featureFlagConfig() {
-        return FeatureFlagConfig.builder().build();
-      }
-    });
     return modules;
   }
 
@@ -298,5 +307,11 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       data = (Map<String, Object>) data.get(paths[i]);
     }
     return (String) data.get(paths[paths.length - 1]);
+  }
+
+  @Provides
+  @Singleton
+  OutboxService getOutboxService(OutboxEventRepository outboxEventRepository) {
+    return new OutboxServiceImpl(new OutboxDaoImpl(outboxEventRepository), HObjectMapper.NG_DEFAULT_OBJECT_MAPPER);
   }
 }

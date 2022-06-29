@@ -50,21 +50,25 @@ public class ResourceGroupUpdateEvent implements Event {
   @JsonIgnore
   @Override
   public ResourceScope getResourceScope() {
-    if (isEmpty(newResourceGroup.getOrgIdentifier())) {
+    if (isEmpty(newResourceGroupV2.getOrgIdentifier())) {
       return new AccountScope(accountIdentifier);
-    } else if (isEmpty(newResourceGroup.getProjectIdentifier())) {
-      return new OrgScope(accountIdentifier, newResourceGroup.getOrgIdentifier());
+    } else if (isEmpty(newResourceGroupV2.getProjectIdentifier())) {
+      return new OrgScope(accountIdentifier, newResourceGroupV2.getOrgIdentifier());
     }
     return new ProjectScope(
-        accountIdentifier, newResourceGroup.getOrgIdentifier(), newResourceGroup.getProjectIdentifier());
+        accountIdentifier, newResourceGroupV2.getOrgIdentifier(), newResourceGroupV2.getProjectIdentifier());
   }
 
   @JsonIgnore
   @Override
   public Resource getResource() {
     Map<String, String> labels = new HashMap<>();
-    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, newResourceGroup.getName());
-    return Resource.builder().identifier(newResourceGroup.getIdentifier()).type(RESOURCE_GROUP).labels(labels).build();
+    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, newResourceGroupV2.getName());
+    return Resource.builder()
+        .identifier(newResourceGroupV2.getIdentifier())
+        .type(RESOURCE_GROUP)
+        .labels(labels)
+        .build();
   }
 
   @JsonIgnore

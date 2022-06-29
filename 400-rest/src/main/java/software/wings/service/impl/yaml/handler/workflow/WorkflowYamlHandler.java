@@ -422,8 +422,10 @@ public abstract class WorkflowYamlHandler<Y extends WorkflowYaml> extends BaseYa
     // Environment can be null in case of incomplete cloned workflows
     String envName = null;
     if (isNotBlank(workflow.getEnvId())) {
-      Environment environment = environmentService.get(appId, workflow.getEnvId());
-      envName = environment != null ? environment.getName() : null;
+      if (!workflow.checkEnvironmentTemplatized()) {
+        Environment environment = environmentService.get(appId, workflow.getEnvId());
+        envName = environment != null ? environment.getName() : null;
+      }
     }
 
     CanaryOrchestrationWorkflow orchestrationWorkflow =

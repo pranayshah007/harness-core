@@ -83,6 +83,19 @@ public class PolicyStepHelperTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
+  public void testGetEntityMetadataString() {
+    String stepName = "noSpaces";
+    String entityMetadataString = PolicyStepHelper.getEntityMetadataString(stepName);
+    assertThat(entityMetadataString).isEqualTo("%7B%22entityName%22%3A%22noSpaces%22%7D");
+
+    stepName = "has Spaces";
+    entityMetadataString = PolicyStepHelper.getEntityMetadataString(stepName);
+    assertThat(entityMetadataString).isEqualTo("%7B%22entityName%22%3A%22has+Spaces%22%7D");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
   public void testBuildPolicyEvaluationFailureMessage() {
     OpaEvaluationResponseHolder evaluationResponse0 =
         OpaEvaluationResponseHolder.builder()

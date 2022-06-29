@@ -170,11 +170,14 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
     List<EntityDetailProtoDTO> templateReferences =
         templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml, true);
     assertThat(templateReferences).isNotNull().hasSize(2);
-
+    Map<String, String> metadata1 = new HashMap<>();
+    Map<String, String> metadata2 = new HashMap<>();
+    metadata1.put("fqn", "stage.spec.execution.steps.http.template");
+    metadata2.put("fqn", "stage.spec.execution.steps.approval.template");
     EntityDetailProtoDTO expected1 = TemplateReferenceTestHelper.generateTemplateRefEntityDetailProto(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", "1");
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", "1", metadata2);
     EntityDetailProtoDTO expected2 = TemplateReferenceTestHelper.generateTemplateRefEntityDetailProto(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1");
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", metadata1);
     assertThat(templateReferences).containsExactlyInAnyOrder(expected1, expected2);
   }
 
@@ -218,10 +221,14 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
   }
 
   private List<EntityDetailProtoDTO> getStageTemplateProtoReferences() {
+    HashMap<String, String> metadata1 = new HashMap<>();
+    metadata1.put("fqn", "stage.spec.execution.steps.approval.template");
+    HashMap<String, String> metadata2 = new HashMap<>();
+    metadata2.put("fqn", "stage.spec.execution.steps.jiraApprovalTemplate.template");
     EntityDetailProtoDTO expected1 = TemplateReferenceTestHelper.generateTemplateRefEntityDetailProto(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", "1");
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", "1", metadata1);
     EntityDetailProtoDTO expected2 = TemplateReferenceTestHelper.generateTemplateRefEntityDetailProto(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, "jiraApprovalTemplate", "1");
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "jiraApprovalTemplate", "1", metadata2);
     EntityDetailProtoDTO expected3 = TemplateReferenceTestHelper.generateIdentifierRefEntityDetailProto(ACCOUNT_ID,
         ORG_ID, PROJECT_ID, "jiraConnector",
         new HashMap<>(Collections.singletonMap(
@@ -271,10 +278,14 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
         templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
 
     assertThat(referredEntities).isNotNull().hasSize(3);
+    Map<String, String> metadata1 = new HashMap<>();
+    Map<String, String> metadata2 = new HashMap<>();
+    metadata1.put("fqn", "pipeline.stages.qaStage.template");
+    metadata2.put("fqn", "pipeline.stages.qaStage2.spec.execution.steps.approval.template");
     EntityDetailProtoDTO expected1 = TemplateReferenceTestHelper.generateTemplateRefEntityDetailProto(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "1");
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "1", metadata1);
     EntityDetailProtoDTO expected2 = TemplateReferenceTestHelper.generateTemplateRefEntityDetailProto(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", STABLE_VERSION);
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", STABLE_VERSION, metadata2);
     Map<String, String> expectedMap = new HashMap<>();
     expectedMap.put(PreFlightCheckMetadata.FQN,
         "pipeline.stages.qaStage.template.templateInputs.spec.execution.steps.jiraApprovalTemplate.template.templateInputs.spec.connectorRef");

@@ -28,6 +28,8 @@ public class DelegateAuthCallCredentials extends CallCredentials {
   static final Metadata.Key<String> ACCOUNT_ID_METADATA_KEY =
       Metadata.Key.of("accountId", Metadata.ASCII_STRING_MARSHALLER);
   static final Metadata.Key<String> DELEGATE_ID = Metadata.Key.of("delegateId", Metadata.ASCII_STRING_MARSHALLER);
+  static final Metadata.Key<String> DELEGATE_TOKEN_NAME =
+      Metadata.Key.of("delegateTokenName", Metadata.ASCII_STRING_MARSHALLER);
 
   private final TokenGenerator tokenGenerator;
   private final String accountId;
@@ -55,6 +57,7 @@ public class DelegateAuthCallCredentials extends CallCredentials {
       headers.put(ACCOUNT_ID_METADATA_KEY, accountId);
       headers.put(TOKEN_METADATA_KEY, token);
       headers.put(DELEGATE_ID, DelegateAgentCommonVariables.getDelegateId());
+      headers.put(DELEGATE_TOKEN_NAME, DelegateAgentCommonVariables.getDelegateTokenName());
       applier.apply(headers);
     }
   }

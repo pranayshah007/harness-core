@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
 import io.harness.ModuleType;
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -30,9 +31,9 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(GTM)
 @Schema(name = "FeedbackForm", description = "This is the view of feedback form defined in Harness")
 public class FeedbackFormDTO {
-  String accountId;
-  String email;
-  ModuleType moduleType;
-  Integer score;
-  String suggestion;
+  @Schema(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) String accountId;
+  @Schema(description = "The email address for the feedback.") String email;
+  @Schema(description = "Specifies the module type.") ModuleType moduleType;
+  @Schema(description = "Score given by the user to the module.") Integer score;
+  @Schema(description = "Suggestion provided by the user.") String suggestion;
 }

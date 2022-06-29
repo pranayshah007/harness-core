@@ -61,8 +61,7 @@ public class DatadogLogHealthSourceSpec extends HealthSourceSpec {
   @Value
   @Builder
   private static class Key {
-    String serviceIdentifier;
-    String envIdentifier;
+    String monitoredServiceIdentifier;
     String queryName;
   }
 
@@ -123,8 +122,7 @@ public class DatadogLogHealthSourceSpec extends HealthSourceSpec {
 
   private Key getKeyFromCVConfig(DatadogLogCVConfig datadogLogCVConfig) {
     return Key.builder()
-        .serviceIdentifier(datadogLogCVConfig.getServiceIdentifier())
-        .envIdentifier(datadogLogCVConfig.getEnvIdentifier())
+        .monitoredServiceIdentifier(datadogLogCVConfig.getMonitoredServiceIdentifier())
         .queryName(datadogLogCVConfig.getQueryName())
         .build();
   }
@@ -141,8 +139,6 @@ public class DatadogLogHealthSourceSpec extends HealthSourceSpec {
                                                   .connectorIdentifier(getConnectorRef())
                                                   .monitoringSourceName(name)
                                                   .productName(feature)
-                                                  .envIdentifier(environmentRef)
-                                                  .serviceIdentifier(serviceRef)
                                                   .queryName(queryDTO.getName())
                                                   .query(queryDTO.getQuery())
                                                   .serviceInstanceIdentifier(queryDTO.getServiceInstanceIdentifier())

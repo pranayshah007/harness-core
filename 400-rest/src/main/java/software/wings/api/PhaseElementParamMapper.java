@@ -11,8 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.artifact.Artifact;
+import software.wings.service.intfc.ArtifactService;
 import software.wings.sm.ContextElement;
 import software.wings.sm.ExecutionContext;
 
@@ -21,9 +23,15 @@ import java.util.Map;
 
 @OwnedBy(CDC)
 public class PhaseElementParamMapper implements ContextElementParamMapper {
+  private final ArtifactService artifactService;
+  private final FeatureFlagService featureFlagService;
+
   private final PhaseElement element;
 
-  public PhaseElementParamMapper(PhaseElement element) {
+  public PhaseElementParamMapper(
+      ArtifactService artifactService, FeatureFlagService featureFlagService, PhaseElement element) {
+    this.artifactService = artifactService;
+    this.featureFlagService = featureFlagService;
     this.element = element;
   }
 
@@ -33,10 +41,10 @@ public class PhaseElementParamMapper implements ContextElementParamMapper {
     map.put(ContextElement.SERVICE, this.element.getServiceElement());
 
     if (this.element.getRollbackArtifactId() != null) {
-      Artifact artifact = this.element.getArtifactService().getWithSource(this.element.getRollbackArtifactId());
+      Artifact artifact = this.artifactService.getWithSource(this.element.getRollbackArtifactId());
       map.put(ContextElement.ARTIFACT, artifact);
     } else if (this.element.isRollback()
-        && this.element.getFeatureFlagService().isEnabled(FeatureName.ROLLBACK_NONE_ARTIFACT, context.getAccountId())) {
+        && this.featureFlagService.isEnabled(FeatureName.ROLLBACK_NONE_ARTIFACT, context.getAccountId())) {
       // In case of rollback if don't find rollbackArtifactId, set artifact object to null.
       map.put(ContextElement.ARTIFACT, null);
     }

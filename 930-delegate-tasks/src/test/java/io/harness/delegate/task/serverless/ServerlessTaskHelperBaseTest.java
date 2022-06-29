@@ -122,6 +122,6 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
                 ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getIdentifier()),
             White, Bold));
     verify(logCallback).saveExecutionLog("Artifactory Artifact Path: " + artifactPath);
-    verify(logCallback).saveExecutionLog(color("Successfully downloaded artifact..%n", White, Bold));
+    verify(logCallback).saveExecutionLog(color("Successfully downloaded artifact..", White, Bold));
   }
 }

@@ -66,7 +66,7 @@ public class TemplateInputsRefreshHelper {
         getRefreshedTemplateInputsMap(accountId, orgId, projectId, yamlNode, templateCacheMap);
 
     // Returning the Refreshed YAML corresponding to the ResMap
-    return YamlUtils.write(refreshedTemplateInputsMap).replace("---\n", "");
+    return YamlPipelineUtils.writeYamlString(refreshedTemplateInputsMap);
   }
 
   // Gets the Updated ResMap -> Key,Value pairs of the YAML with Refreshed Template Inputs
@@ -113,7 +113,7 @@ public class TemplateInputsRefreshHelper {
         arrayList.add(arrayElement);
       } else if (arrayElement.isArray()) {
         // Value -> Array
-        arrayList.add(getRefreshedTemplateInputsInArray(accountId, orgId, projectId, yamlNode, templateCacheMap));
+        arrayList.add(getRefreshedTemplateInputsInArray(accountId, orgId, projectId, arrayElement, templateCacheMap));
       } else {
         // Value -> Object
         arrayList.add(getRefreshedTemplateInputsMap(accountId, orgId, projectId, arrayElement, templateCacheMap));

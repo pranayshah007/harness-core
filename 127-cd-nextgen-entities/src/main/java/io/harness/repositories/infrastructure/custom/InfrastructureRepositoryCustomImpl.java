@@ -99,6 +99,40 @@ public class InfrastructureRepositoryCustomImpl implements InfrastructureReposit
     return mongoTemplate.findById(query, InfrastructureEntity.class);
   }
 
+  @Override
+  public List<InfrastructureEntity> findAllFromInfraIdentifierList(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String envIdentifier, List<String> infraIdentifierList) {
+    Criteria baseCriteria = Criteria.where(InfrastructureEntityKeys.accountId)
+                                .is(accountIdentifier)
+                                .and(InfrastructureEntityKeys.orgIdentifier)
+                                .is(orgIdentifier)
+                                .and(InfrastructureEntityKeys.projectIdentifier)
+                                .is(projectIdentifier)
+                                .and(InfrastructureEntityKeys.envIdentifier)
+                                .is(envIdentifier)
+                                .and(InfrastructureEntityKeys.identifier)
+                                .in(infraIdentifierList);
+
+    Query query = new Query(baseCriteria);
+    return mongoTemplate.find(query, InfrastructureEntity.class);
+  }
+
+  @Override
+  public List<InfrastructureEntity> findAllFromEnvIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+    Criteria baseCriteria = Criteria.where(InfrastructureEntityKeys.accountId)
+                                .is(accountIdentifier)
+                                .and(InfrastructureEntityKeys.orgIdentifier)
+                                .is(orgIdentifier)
+                                .and(InfrastructureEntityKeys.projectIdentifier)
+                                .is(projectIdentifier)
+                                .and(InfrastructureEntityKeys.envIdentifier)
+                                .is(envIdentifier);
+
+    Query query = new Query(baseCriteria);
+    return mongoTemplate.find(query, InfrastructureEntity.class);
+  }
+
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
     return new RetryPolicy<>()
         .handle(OptimisticLockingFailureException.class)

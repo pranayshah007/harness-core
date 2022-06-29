@@ -57,9 +57,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -214,8 +215,8 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
                                                    .build();
     ShellScriptTaskParametersNGBuilder taskParamsBuilder = ShellScriptTaskParametersNG.builder();
 
-    PowerMockito.mockStatic(NGRestUtils.class);
-    when(NGRestUtils.getResponse(any(), any())).thenReturn(null);
+    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
+    aStatic.when(() -> NGRestUtils.getResponse(any(), any())).thenReturn(null);
     assertThatThrownBy(()
                            -> shellScriptHelperServiceImpl.prepareTaskParametersForExecutionTarget(
                                ambiance, stepParameters, taskParamsBuilder))
@@ -259,16 +260,23 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
   public void testGetWorkingDirectory() {
     ShellScriptStepParameters stepParameters =
         ShellScriptStepParameters.infoBuilder().onDelegate(ParameterField.createValueField(true)).build();
-    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(stepParameters, ScriptType.BASH)).isEqualTo("/tmp");
-    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(stepParameters, ScriptType.POWERSHELL))
+    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(
+                   ParameterField.ofNull(), ScriptType.BASH, stepParameters.onDelegate.getValue()))
+        .isEqualTo("/tmp");
+    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(
+                   ParameterField.ofNull(), ScriptType.POWERSHELL, stepParameters.onDelegate.getValue()))
         .isEqualTo("/tmp");
     stepParameters.setOnDelegate(ParameterField.createValueField(false));
-    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(stepParameters, ScriptType.POWERSHELL))
+    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(
+                   ParameterField.ofNull(), ScriptType.POWERSHELL, stepParameters.onDelegate.getValue()))
         .isEqualTo("%TEMP%");
 
     stepParameters.setExecutionTarget(
         ExecutionTarget.builder().workingDirectory(ParameterField.createValueField("dir")).build());
-    assertThat(shellScriptHelperServiceImpl.getWorkingDirectory(stepParameters, ScriptType.BASH)).isEqualTo("dir");
+    assertThat(
+        shellScriptHelperServiceImpl.getWorkingDirectory(stepParameters.getExecutionTarget().getWorkingDirectory(),
+            ScriptType.BASH, stepParameters.onDelegate.getValue()))
+        .isEqualTo("dir");
   }
 
   @Test
@@ -299,7 +307,9 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     doReturn(k8sInfraDelegateConfig).when(shellScriptHelperService).getK8sInfraDelegateConfig(ambiance, script);
     doReturn(taskEnvVariables).when(shellScriptHelperService).getEnvironmentVariables(inputVars);
     doReturn(taskOutputVars).when(shellScriptHelperService).getOutputVars(outputVars);
-    doReturn("/tmp").when(shellScriptHelperService).getWorkingDirectory(stepParameters, ScriptType.BASH);
+    doReturn("/tmp")
+        .when(shellScriptHelperService)
+        .getWorkingDirectory(ParameterField.ofNull(), ScriptType.BASH, stepParameters.onDelegate.getValue());
 
     ShellScriptTaskParametersNG taskParams =
         shellScriptHelperServiceImpl.buildShellScriptTaskParametersNG(ambiance, stepParameters);

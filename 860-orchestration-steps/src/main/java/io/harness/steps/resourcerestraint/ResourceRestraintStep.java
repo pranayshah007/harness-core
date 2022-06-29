@@ -22,16 +22,18 @@ import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.resourcerestraint.beans.HoldingScope;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraint;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintOutcome;
+import io.harness.steps.resourcerestraint.beans.ResourceRestraintResponseData;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceService;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintService;
 import io.harness.steps.resourcerestraint.utils.ResourceRestraintUtils;
 import io.harness.tasks.ResponseData;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -57,20 +59,18 @@ public class ResourceRestraintStep
   public StepResponse executeSync(Ambiance ambiance, StepElementParameters stepElementParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     ResourceRestraintSpecParameters specParameters = (ResourceRestraintSpecParameters) stepElementParameters.getSpec();
-    final ResourceRestraint resourceRestraint =
-        resourceRestraintService.getByNameAndAccountId(specParameters.getName(), AmbianceUtils.getAccountId(ambiance));
-    String releaseEntityId = ResourceRestraintUtils.getReleaseEntityId(specParameters, ambiance.getPlanExecutionId());
+    ResourceRestraintPassThroughData data = (ResourceRestraintPassThroughData) passThroughData;
 
     return StepResponse.builder()
         .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(STEP_TYPE.getType())
+                         .name(YAMLFieldNameConstants.OUTPUT)
                          .outcome(ResourceRestraintOutcome.builder()
-                                      .name(resourceRestraint.getName())
-                                      .capacity(resourceRestraint.getCapacity())
-                                      .resourceUnit(specParameters.getResourceUnit())
+                                      .name(specParameters.getName())
+                                      .capacity(data.getCapacity())
+                                      .resourceUnit(data.getResourceUnit())
                                       .usage(specParameters.getPermits())
                                       .alreadyAcquiredPermits(getAlreadyAcquiredPermits(
-                                          specParameters.getHoldingScope().getScope(), releaseEntityId))
+                                          specParameters.getHoldingScope(), data.getReleaseEntityId()))
                                       .build())
                          .build())
         .status(Status.SUCCEEDED)
@@ -89,25 +89,21 @@ public class ResourceRestraintStep
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, StepElementParameters stepElementParameters, Map<String, ResponseData> responseDataMap) {
     ResourceRestraintSpecParameters specParameters = (ResourceRestraintSpecParameters) stepElementParameters.getSpec();
-
-    final ResourceRestraint resourceRestraint =
-        resourceRestraintService.getByNameAndAccountId(specParameters.getName(), AmbianceUtils.getAccountId(ambiance));
-
-    resourceRestraintInstanceService.updateBlockedConstraints(ImmutableSet.of(resourceRestraint.getUuid()));
-
+    ResourceRestraintResponseData responseData =
+        (ResourceRestraintResponseData) responseDataMap.values().iterator().next();
+    final ResourceRestraint resourceRestraint = resourceRestraintService.get(responseData.getResourceRestraintId());
     return StepResponse.builder()
         .stepOutcome(
             StepResponse.StepOutcome.builder()
-                .name(STEP_TYPE.getType())
-                .outcome(
-                    ResourceRestraintOutcome.builder()
-                        .name(resourceRestraint.getName())
-                        .capacity(resourceRestraint.getCapacity())
-                        .resourceUnit(specParameters.getResourceUnit())
-                        .usage(specParameters.getPermits())
-                        .alreadyAcquiredPermits(getAlreadyAcquiredPermits(specParameters.getHoldingScope().getScope(),
-                            ResourceRestraintUtils.getReleaseEntityId(specParameters, ambiance.getPlanExecutionId())))
-                        .build())
+                .name(YAMLFieldNameConstants.OUTPUT)
+                .outcome(ResourceRestraintOutcome.builder()
+                             .name(resourceRestraint.getName())
+                             .capacity(resourceRestraint.getCapacity())
+                             .resourceUnit(specParameters.getResourceUnit().getValue())
+                             .usage(specParameters.getPermits())
+                             .alreadyAcquiredPermits(getAlreadyAcquiredPermits(specParameters.getHoldingScope(),
+                                 ResourceRestraintUtils.getReleaseEntityId(ambiance, specParameters.getHoldingScope())))
+                             .build())
                 .build())
         .status(Status.SUCCEEDED)
         .build();
@@ -122,10 +118,10 @@ public class ResourceRestraintStep
         Preconditions.checkNotNull(executableResponse.getCallbackIdsList().get(0),
             "CallbackId should not be null in handleAbort() for nodeExecution with id %s",
             AmbianceUtils.obtainCurrentRuntimeId(ambiance)),
-        specParameters.getResourceUnit());
+        specParameters.getResourceUnit().getValue());
   }
 
-  private int getAlreadyAcquiredPermits(String holdingScope, String releaseEntityId) {
+  private int getAlreadyAcquiredPermits(HoldingScope holdingScope, String releaseEntityId) {
     return resourceRestraintInstanceService.getAllCurrentlyAcquiredPermits(holdingScope, releaseEntityId);
   }
 }

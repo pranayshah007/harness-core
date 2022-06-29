@@ -8,6 +8,7 @@
 package software.wings.delegatetasks.validation.capabilities;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -48,5 +49,12 @@ public class HelmCommandCapability implements ExecutionCapability {
   @Override
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
+  }
+
+  @Override
+  public String getCapabilityToString() {
+    return isNotEmpty(commandRequest.getHelmVersion().name())
+        ? String.format("Capability reach Helm version : %s ", commandRequest.getHelmVersion().name())
+        : null;
   }
 }

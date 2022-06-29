@@ -300,7 +300,7 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
                                             .buildValidatorFactory();
 
     modules.add(new ValidationModule(validatorFactory));
-    modules.add(new DelegateServiceModule());
+    modules.add(new DelegateServiceModule("delegate.ut.harness.io"));
     modules.add(new CapabilityModule());
     modules.add(new AbstractRemoteObserverModule() {
       @Override

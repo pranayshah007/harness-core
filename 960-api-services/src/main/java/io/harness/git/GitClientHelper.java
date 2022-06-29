@@ -43,6 +43,7 @@ import static org.apache.commons.codec.binary.Hex.encodeHexString;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GitClientException;
 import io.harness.exception.GitConnectionDelegateException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NonPersistentLockException;
 import io.harness.exception.YamlException;
 import io.harness.filesystem.FileIo;
@@ -75,19 +76,27 @@ import org.eclipse.jgit.api.errors.RefNotFoundException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.errors.TransportException;
+import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(CDP)
 @Singleton
 @Slf4j
 public class GitClientHelper {
   private static final String GIT_URL_REGEX =
-      "(http|https|git|ssh)(:\\/\\/|@)([^\\/:]+(:\\d+)?)[\\/:]([^\\/:]+)\\/(.+)?(.git)?";
+      "(http|https|git|ssh)(:\\/\\/|@)([^\\/:]+(:\\d+)?)[\\/:](v\\d\\/)?([^\\/:]+)\\/(.+)?(.git)?";
   private static final String GIT_URL_REGEX_NO_OWNER = "(http|https|git|ssh)(:\\/\\/|@)([^\\/:]+(:\\d+)?)";
   private static final Pattern GIT_URL = Pattern.compile(GIT_URL_REGEX);
   private static final Pattern GIT_URL_NO_OWNER = Pattern.compile(GIT_URL_REGEX_NO_OWNER);
-  private static final Integer OWNER_GROUP = 5;
-  private static final Integer REPO_GROUP = 6;
+  private static final Integer OWNER_GROUP = 6;
+  private static final Integer REPO_GROUP = 7;
   private static final Integer SCM_GROUP = 3;
+  private static final Integer PROTOCOL_GROUP = 1;
+  private static final String DOT_SEPARATOR = ".";
+  private static final String PATH_SEPARATOR = "/";
+  private static final String COLON_SEPARATOR = ":";
+  private static final String AZURE_REPO_GIT_LABEL = "/_git/";
+  private static final String AZURE_SSH_PROTOCOl = "git@ssh";
+  private static final String AZURE_SSH_API_VERSION = "v3";
 
   static {
     try {
@@ -127,6 +136,19 @@ public class GitClientHelper {
     }
   }
 
+  public static String getGitProtocol(String url) {
+    Matcher m = GIT_URL.matcher(url);
+    try {
+      if (m.find()) {
+        return m.toMatchResult().group(PROTOCOL_GROUP);
+      } else {
+        throw new GitClientException(format("Invalid git repo url  %s", url), SRE);
+      }
+    } catch (Exception e) {
+      throw new GitClientException(format("Failed to parse protocol from git url  %s", url), SRE, e);
+    }
+  }
+
   public static String getGitOwner(String url, boolean isAccountLevelConnector) {
     if (!url.endsWith("/") && isAccountLevelConnector) {
       url += "/";
@@ -148,6 +170,16 @@ public class GitClientHelper {
     }
   }
 
+  public static boolean isHTTPProtocol(String url) {
+    String protocol = getGitProtocol(url);
+    return protocol.equals("http") || protocol.equals("https");
+  }
+
+  public static boolean isSSHProtocol(String url) {
+    String protocol = getGitProtocol(url);
+    return protocol.equals("git") || protocol.equals("ssh");
+  }
+
   public static boolean isGithubSAAS(String url) {
     String host = getGitSCM(url);
     return host.equals("github.com") || host.equals("www.github.com");
@@ -163,20 +195,37 @@ public class GitClientHelper {
     return host.equals("bitbucket.org") || host.equals("www.bitbucket.org");
   }
 
+  public static boolean isAzureRepoSAAS(String url) {
+    String host = getGitSCM(url);
+    return host.equals("dev.azure.com") || host.equals("www.dev.azure.com");
+  }
+
   public static String getGithubApiURL(String url) {
     if (GitClientHelper.isGithubSAAS(url)) {
       return "https://api.github.com/";
     } else {
       String domain = GitClientHelper.getGitSCM(url);
-      return "https://" + domain + "/api/v3/";
+      return getHttpProtocolPrefix(url) + domain + "/api/v3/";
     }
   }
+
+  private static boolean isUrlHTTP(String url) {
+    return url.startsWith("http") && !url.startsWith("https");
+  }
+
+  private static String getHttpProtocolPrefix(String url) {
+    if (isUrlHTTP(url)) {
+      return "http://";
+    }
+    return "https://";
+  }
+
   public static String getGitlabApiURL(String url) {
     if (GitClientHelper.isGitlabSAAS(url)) {
       return "https://gitlab.com/";
     } else {
       String domain = GitClientHelper.getGitSCM(url);
-      return "https://" + domain + "/";
+      return getHttpProtocolPrefix(url) + domain + "/";
     }
   }
 
@@ -185,17 +234,22 @@ public class GitClientHelper {
       return "https://api.bitbucket.org/";
     } else {
       String domain = GitClientHelper.getGitSCM(url);
-      return "https://" + domain + "/";
+      return getHttpProtocolPrefix(url) + domain + "/";
     }
   }
 
   public static String getAzureRepoApiURL(String url) {
-    return "https://dev.azure.com/";
+    if (isAzureRepoSAAS(url)) {
+      return "https://dev.azure.com/";
+    } else {
+      String domain = GitClientHelper.getGitSCM(url);
+      return getHttpProtocolPrefix(url) + domain + "/";
+    }
   }
 
-  public static String getAzureRepoOrgAndProject(String url) {
+  public static String getAzureRepoOrgAndProjectHTTP(String url) {
     String temp = StringUtils.substringBeforeLast(url, "/_git/");
-    return StringUtils.substringAfter(temp, "dev.azure.com/");
+    return StringUtils.substringAfter(temp, "azure.com/");
   }
 
   public static String getAzureRepoOrg(String orgAndProject) {
@@ -204,6 +258,11 @@ public class GitClientHelper {
 
   public static String getAzureRepoProject(String orgAndProject) {
     return StringUtils.substringAfter(orgAndProject, "/");
+  }
+
+  public static String getAzureRepoOrgAndProjectSSH(String url) {
+    String temp = StringUtils.substringBeforeLast(url, "/");
+    return StringUtils.substringAfter(temp, "/");
   }
 
   private static String getGitSCMHost(String url) {
@@ -436,5 +495,34 @@ public class GitClientHelper {
         unhandled(gitDiffChangeType);
     }
     return null;
+  }
+
+  public static void validateURL(@NotNull String url) {
+    Matcher m = GIT_URL_NO_OWNER.matcher(url);
+    log.info("url==" + url);
+    if (!(m.find())) {
+      throw new InvalidRequestException(
+          format("Invalid repo url  %s,should start with either http:// , https:// , ssh:// or git@", url));
+    }
+  }
+
+  public static String getCompleteUrlForAccountLevelAzureConnector(String url, String projectName, String repoName) {
+    String azureCompleteUrl = StringUtils.join(
+        StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR, StringUtils.stripStart(projectName, PATH_SEPARATOR));
+    if (GitClientHelper.isHTTPProtocol(azureCompleteUrl)) {
+      azureCompleteUrl = StringUtils.join(azureCompleteUrl, AZURE_REPO_GIT_LABEL);
+    } else if (GitClientHelper.isSSHProtocol(azureCompleteUrl)) {
+      azureCompleteUrl = StringUtils.join(azureCompleteUrl, PATH_SEPARATOR);
+    }
+    return StringUtils.join(azureCompleteUrl, StringUtils.stripStart(repoName, PATH_SEPARATOR));
+  }
+
+  public static String getCompleteSSHUrlFromHttpUrlForAzure(String httpUrl) {
+    String scmGroup = getGitSCM(httpUrl);
+    String gitOwner = getGitOwner(httpUrl, true);
+    String gitRepo = getGitRepo(httpUrl);
+    String completeUrl = StringUtils.join(AZURE_SSH_PROTOCOl, DOT_SEPARATOR, scmGroup, COLON_SEPARATOR,
+        AZURE_SSH_API_VERSION, PATH_SEPARATOR, gitOwner, PATH_SEPARATOR, gitRepo);
+    return completeUrl.replaceFirst(AZURE_REPO_GIT_LABEL, PATH_SEPARATOR);
   }
 }

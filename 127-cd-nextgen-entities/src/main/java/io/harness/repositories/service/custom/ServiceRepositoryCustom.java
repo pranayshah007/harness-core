@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.service.entity.ServiceEntity;
 
-import com.mongodb.client.result.UpdateResult;
+import com.mongodb.client.result.DeleteResult;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,7 +22,10 @@ public interface ServiceRepositoryCustom {
   Page<ServiceEntity> findAll(Criteria criteria, Pageable pageable);
   ServiceEntity upsert(Criteria criteria, ServiceEntity serviceEntity);
   ServiceEntity update(Criteria criteria, ServiceEntity serviceEntity);
-  UpdateResult delete(Criteria criteria);
+  @Deprecated boolean softDelete(Criteria criteria);
+  boolean delete(Criteria criteria);
+  DeleteResult deleteMany(Criteria criteria);
+
   Long findActiveServiceCountAtGivenTimestamp(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, long timestampInMs);
 

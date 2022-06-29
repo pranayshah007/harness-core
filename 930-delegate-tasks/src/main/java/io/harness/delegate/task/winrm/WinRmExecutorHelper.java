@@ -8,6 +8,7 @@
 package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
@@ -15,6 +16,8 @@ import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+
+import software.wings.beans.WinRmCommandParameter;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -40,7 +43,7 @@ public class WinRmExecutorHelper {
    * writes one line at a time.
    */
   public static List<List<String>> constructPSScriptWithCommands(
-      String command, String psScriptFile, String powershell) {
+      String command, String psScriptFile, String powershell, List<WinRmCommandParameter> commandParameters) {
     command = "$ErrorActionPreference=\"Stop\"\n" + command;
 
     // Yes, replace() is intentional. We are replacing only character and not a regex pattern.
@@ -50,8 +53,9 @@ public class WinRmExecutorHelper {
 
     // write commands to a file and then execute the file
     String appendPSInvokeCommandtoCommandString;
-    appendPSInvokeCommandtoCommandString =
-        powershell + " Invoke-Command -command {[IO.File]::AppendAllText(\\\"%s\\\", \\\"%s\\\" ) }";
+    String commandParametersString = buildCommandParameters(commandParameters);
+    appendPSInvokeCommandtoCommandString = powershell + " Invoke-Command " + commandParametersString
+        + " -command {[IO.File]::AppendAllText(\\\"%s\\\", \\\"%s\\\" ) }";
     // Split the command at newline character
     List<String> listofCommands = Arrays.asList(command.split("\n"));
 
@@ -74,11 +78,29 @@ public class WinRmExecutorHelper {
     return Lists.partition(commandList, SPLITLISTOFCOMMANDSBY);
   }
 
+  private static String buildCommandParameters(List<WinRmCommandParameter> commandParameters) {
+    StringBuilder parametersStringBuilder = new StringBuilder();
+    if (commandParameters == null || isEmpty(commandParameters)) {
+      return parametersStringBuilder.toString();
+    }
+    for (WinRmCommandParameter parameter : commandParameters) {
+      parametersStringBuilder.append('-').append(parameter.getParameter());
+      if (parameter.getValue() != null) {
+        parametersStringBuilder.append(' ').append(parameter.getValue());
+      }
+      parametersStringBuilder.append(' ');
+    }
+    String parametersString = parametersStringBuilder.toString();
+    log.debug(format("WinRM additional command parameters: %s", parametersString));
+    return parametersString;
+  }
+
   public static String getScriptExecutingCommand(String psScriptFile, String powershell) {
     return format("%s -f \"%s\" ", powershell, psScriptFile);
   }
 
-  public static List<String> constructPSScriptWithCommandsBulk(String command, String psScriptFile, String powershell) {
+  public static List<String> constructPSScriptWithCommandsBulk(
+      String command, String psScriptFile, String powershell, List<WinRmCommandParameter> commandParameters) {
     command = "$ErrorActionPreference=\"Stop\"\n" + command;
 
     // Yes, replace() is intentional. We are replacing only character and not a regex pattern.
@@ -91,8 +113,9 @@ public class WinRmExecutorHelper {
 
     // write commands to a file and then execute the file
     String appendPSInvokeCommandtoCommandString;
-    appendPSInvokeCommandtoCommandString =
-        powershell + " Invoke-Command -command {[IO.File]::WriteAllText(\\\"%s\\\", \\\"%s\\\" ) }";
+    String commandParametersString = buildCommandParameters(commandParameters);
+    appendPSInvokeCommandtoCommandString = powershell + " Invoke-Command " + commandParametersString
+        + " -command {[IO.File]::WriteAllText(\\\"%s\\\", \\\"%s\\\" ) }";
 
     // Replace pipe only if part of a string, else skip
     Pattern patternForPipeWithinAString = Pattern.compile("[a-zA-Z]+\\|");
@@ -117,22 +140,25 @@ public class WinRmExecutorHelper {
    * Constructs powershell command by encoding the command string to base64 command.
    * @param command Command String
    * @param powershell
+   * @param commandParameters additional command parameters
    * @return powershell command string that will convert that command from base64 to UTF8 string on windows host and
    * then run it on cmd.
    */
   @VisibleForTesting
-  public static String psWrappedCommandWithEncoding(String command, String powershell) {
+  public static String psWrappedCommandWithEncoding(
+      String command, String powershell, List<WinRmCommandParameter> commandParameters) {
     command = "$ErrorActionPreference=\"Stop\"\n" + command;
     String base64Command = encodeBase64String(command.getBytes(StandardCharsets.UTF_8));
+    String commandParametersString = buildCommandParameters(commandParameters);
     String wrappedCommand = format(
         "$decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(\\\"%s\\\")); $expanded = [Environment]::ExpandEnvironmentVariables($decoded); Invoke-Expression $expanded",
         base64Command);
-    return format("%s Invoke-Command -command {%s}", powershell, wrappedCommand);
+    return format("%s Invoke-Command %s -command {%s}", powershell, commandParametersString, wrappedCommand);
   }
 
   @VisibleForTesting
-  public static void cleanupFiles(
-      WinRmSession session, String file, String powershell, boolean disableCommandEncoding) {
+  public static void cleanupFiles(WinRmSession session, String file, String powershell, boolean disableCommandEncoding,
+      List<WinRmCommandParameter> parameters) {
     if (file == null) {
       return;
     }
@@ -146,7 +172,7 @@ public class WinRmExecutorHelper {
         session.executeCommandString(command, outputAccumulator, outputAccumulator, false);
       } else {
         session.executeCommandString(
-            psWrappedCommandWithEncoding(command, powershell), outputAccumulator, outputAccumulator, false);
+            psWrappedCommandWithEncoding(command, powershell, parameters), outputAccumulator, outputAccumulator, false);
       }
     } catch (RuntimeException re) {
       throw re;

@@ -8,6 +8,7 @@
 package io.harness.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.GARVIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,6 +24,7 @@ import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -33,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -59,10 +62,10 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
     JiraIssueCreateMetadataNG createMetadata = new JiraIssueCreateMetadataNG(node);
     JiraIssueTypeNG issueType = createMetadata.getProjects().get("JEL").getIssueTypes().get("Story");
     assertThat(issueType).isNotNull();
-    assertThat(issueType.getFields().size()).isEqualTo(19);
+    assertThat(issueType.getFields().size()).isEqualTo(22);
 
     issueType.removeField(JiraConstantsNG.STATUS_NAME);
-    assertThat(issueType.getFields().size()).isEqualTo(18);
+    assertThat(issueType.getFields().size()).isEqualTo(21);
 
     Map<String, Object> currFieldsTmp = new HashMap<>();
     assertThatThrownBy(()
@@ -99,10 +102,11 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
     fields.put("customtime", "2021-03-25T18:58:16.535+0000");
     fields.put("Original Estimate", "3d");
     fields.put("Remaining Estimate", "2d");
+    fields.put("Reporter", "userid");
 
     Map<String, Object> currFields = new HashMap<>();
     JiraIssueUtilsNG.updateFieldValues(currFields, issueType.getFields(), fields, true);
-    assertThat(currFields.size()).isEqualTo(15);
+    assertThat(currFields.size()).isEqualTo(16);
     assertThat(currFields.get("summary")).isEqualTo("summary");
     assertThat(currFields.get("description")).isEqualTo("description");
     assertThat(((List<JiraFieldAllowedValueNG>) currFields.get("components"))
@@ -129,6 +133,8 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
     assertThat((Double) currFields.get("customfield_10207")).isCloseTo(18.18, offset(0.000001));
     assertThat(currFields.get("customfield_10210")).isEqualTo("2021-03-25");
     assertThat(currFields.get("customfield_10211")).isEqualTo("2021-03-25T18:58:16.535+0000");
+    JiraFieldUserPickerNG reporter = (JiraFieldUserPickerNG) currFields.get("reporter");
+    assertThat(reporter.getName()).isEqualTo("userid");
 
     assertThat(((JiraTimeTrackingFieldNG) currFields.get("timetracking")).getOriginalEstimate()).isEqualTo("3d");
     assertThat(((JiraTimeTrackingFieldNG) currFields.get("timetracking")).getRemainingEstimate()).isEqualTo("2d");
@@ -239,6 +245,18 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
         .required(required)
         .schema(JiraFieldSchemaNG.builder().type(JiraFieldTypeNG.STRING).build())
         .build();
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_PUTHRAYA)
+  @Category(UnitTests.class)
+  public void testGetIssueTicket() throws IOException {
+    JsonNode json = new ObjectMapper().readTree(getResource("jira-api-output.json"));
+    JiraIssueNG issue = new JiraIssueNG(json);
+    Assertions.assertThat(issue).isNotNull();
+    Assertions.assertThat(issue.getFields()).isNotEmpty();
+    Assertions.assertThat(issue.getKey()).isEqualTo("EDNK-6594");
+    Assertions.assertThat(issue.getFields().get("Status")).isEqualTo("Done");
   }
 
   private String getResource(String path) throws IOException {

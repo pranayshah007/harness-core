@@ -27,6 +27,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.resourcegroup.beans.ValidatorType;
 import io.harness.resourcegroup.framework.v1.service.Resource;
 import io.harness.resourcegroup.framework.v1.service.ResourceInfo;
+import io.harness.resourcegroup.v2.model.AttributeFilter;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -109,5 +110,10 @@ public class EnvironmentResourceImpl implements Resource {
         ScopeLevel.ORGANIZATION,
         EnumSet.of(BY_RESOURCE_IDENTIFIER, BY_RESOURCE_TYPE, BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES),
         ScopeLevel.PROJECT, EnumSet.of(BY_RESOURCE_IDENTIFIER, BY_RESOURCE_TYPE));
+  }
+
+  @Override
+  public boolean isValidAttributeFilter(AttributeFilter attributeFilter) {
+    return attributeFilter.getAttributeName().equals("type") && !attributeFilter.getAttributeValues().isEmpty();
   }
 }

@@ -27,9 +27,11 @@ import io.harness.ccm.graphql.dto.perspectives.PerspectiveTimeSeriesData;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveTrendStats;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
+import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
+import io.harness.ccm.views.graphql.QLCEViewPreferences;
 import io.harness.ccm.views.graphql.QLCEViewSortCriteria;
 import io.harness.ccm.views.graphql.QLCEViewTrendData;
 import io.harness.ccm.views.graphql.QLCEViewTrendInfo;
@@ -44,8 +46,12 @@ import io.leangen.graphql.annotations.GraphQLArgument;
 import io.leangen.graphql.annotations.GraphQLEnvironment;
 import io.leangen.graphql.annotations.GraphQLQuery;
 import io.leangen.graphql.execution.ResolutionEnvironment;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.jooq.tools.StringUtils;
 
 @Slf4j
 @Singleton
@@ -167,10 +173,13 @@ public class PerspectivesQuery {
       @GraphQLArgument(name = "groupBy") List<QLCEViewGroupBy> groupBy,
       @GraphQLArgument(name = "sortCriteria") List<QLCEViewSortCriteria> sortCriteria,
       @GraphQLArgument(name = "limit") Integer limit, @GraphQLArgument(name = "offset") Integer offset,
-      @GraphQLArgument(name = "includeOthers") boolean includeOthers,
+      @GraphQLArgument(name = "preferences") QLCEViewPreferences preferences,
       @GraphQLArgument(name = "isClusterQuery") Boolean isClusterQuery,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
+    final boolean includeOthers = Objects.nonNull(preferences) && Boolean.TRUE.equals(preferences.getIncludeOthers());
+    final boolean includeUnallocatedCost =
+        Objects.nonNull(preferences) && Boolean.TRUE.equals(preferences.getIncludeUnallocatedCost());
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
     BigQuery bigQuery = bigQueryService.get();
     long timePeriod = perspectiveTimeSeriesHelper.getTimePeriod(groupBy);
@@ -184,13 +193,20 @@ public class PerspectivesQuery {
     // If group by business mapping is present, query unified table
     isClusterQuery = isClusterQuery && businessMappingId == null;
 
+    ViewQueryParams viewQueryParams = viewsQueryHelper.buildQueryParams(accountId, true, false, isClusterQuery, false);
+
     PerspectiveTimeSeriesData data = perspectiveTimeSeriesHelper.fetch(
         viewsBillingService.getTimeSeriesStatsNg(bigQuery, filters, groupBy, aggregateFunction, sortCriteria,
-            cloudProviderTableName, includeOthers, limit,
-            viewsQueryHelper.buildQueryParams(accountId, true, false, isClusterQuery, false)),
+            cloudProviderTableName, includeOthers, limit, viewQueryParams),
         timePeriod, conversionField, businessMappingId, accountId);
 
-    return perspectiveTimeSeriesHelper.postFetch(data, limit, includeOthers);
+    Map<Long, Double> unallocatedCost = null;
+    if (includeUnallocatedCost) {
+      unallocatedCost = viewsBillingService.getUnallocatedCostDataNg(
+          bigQuery, filters, groupBy, Collections.emptyList(), cloudProviderTableName, viewQueryParams);
+    }
+
+    return perspectiveTimeSeriesHelper.postFetch(data, limit, includeOthers, unallocatedCost);
   }
 
   @GraphQLQuery(name = "perspectiveFields", description = "Fields for perspective explorer")
@@ -201,9 +217,16 @@ public class PerspectivesQuery {
   }
 
   @GraphQLQuery(name = "perspectives", description = "Fetch perspectives for account")
-  public PerspectiveData perspectives(@GraphQLEnvironment final ResolutionEnvironment env) {
+  public PerspectiveData perspectives(@GraphQLArgument(name = "folderId") String folderId,
+      @GraphQLArgument(name = "sortCriteria") QLCEViewSortCriteria sortCriteria,
+      @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    return PerspectiveData.builder().customerViews(viewService.getAllViews(accountId, true)).build();
+    if (StringUtils.isEmpty(folderId)) {
+      return PerspectiveData.builder().customerViews(viewService.getAllViews(accountId, true, sortCriteria)).build();
+    }
+    return PerspectiveData.builder()
+        .customerViews(viewService.getAllViews(accountId, folderId, true, sortCriteria))
+        .build();
   }
 
   @GraphQLQuery(name = "perspectiveTotalCount", description = "Get total count of rows for query")

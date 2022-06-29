@@ -8,13 +8,14 @@
 package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.common.NGExpressionUtils.matchesInputSetPattern;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -39,6 +40,11 @@ public class YamlRefreshHelper {
    * @return refreshed jsonNode with updated values
    */
   public JsonNode refreshNodeFromSourceNode(JsonNode nodeToRefresh, JsonNode sourceNode) {
+    // if there is nothing to refresh from, return null
+    if (sourceNode == null) {
+      return null;
+    }
+
     // Add dummy node to sourceNode and create template from it.
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode dummySourceNodeSpecNode = mapper.createObjectNode();
@@ -86,19 +92,36 @@ public class YamlRefreshHelper {
     YamlConfig nodeToRefreshYamlConfig = new YamlConfig(nodeToRefreshYaml);
     Map<FQN, Object> nodeToRefreshFqnToValueMap = new LinkedHashMap<>(nodeToRefreshYamlConfig.getFqnToValueMap());
 
-    // Iterating all the Runtime Inputs in the sourceNodeFqnToValueMap and replacing the updated values of the runtime
-    // inputs with those in the nodeToRefreshFqnToValueMap.
-    // TODO: This is incorrect. This doesn't cover the case when the replaced value is an object.
+    Map<FQN, Object> refreshedFqnToValueMap = new LinkedHashMap<>();
+    // Iterating all the Runtime Inputs in the sourceNodeFqnToValueMap and adding the updated values of the runtime
+    // inputs in refreshedFqnToValueMap.
     sourceNodeFqnToValueMap.keySet().forEach(key -> {
+      Object sourceValue = sourceNodeFqnToValueMap.get(key);
       if (nodeToRefreshFqnToValueMap.containsKey(key)) {
-        Object value = nodeToRefreshFqnToValueMap.get(key);
-        if (matchesInputSetPattern(sourceNodeFqnToValueMap.get(key).toString())) {
-          sourceNodeFqnToValueMap.replace(key, value);
+        Object linkedValue = nodeToRefreshFqnToValueMap.get(key);
+        if (key.isType() || key.isIdentifierOrVariableName()) {
+          refreshedFqnToValueMap.put(key, sourceValue);
+        } else {
+          // validate if linkedValue can replace runtime input value or not.
+          if (!RuntimeInputValuesValidator.validateInputValues(sourceValue, linkedValue)) {
+            refreshedFqnToValueMap.put(key, sourceValue);
+          } else {
+            refreshedFqnToValueMap.put(key, linkedValue);
+          }
+        }
+      } else {
+        Map<FQN, Object> subMap = YamlSubMapExtractor.getFQNToObjectSubMap(nodeToRefreshFqnToValueMap, key);
+        // If subMap is empty, add sourceValue since value is not present in nodeToValidateFqnToValueMap.
+        if (isEmpty(subMap)) {
+          refreshedFqnToValueMap.put(key, sourceValue);
+        } else {
+          // get object value and add complete object value to refreshedFqnToValueMap
+          refreshedFqnToValueMap.put(key, YamlSubMapExtractor.getNodeForFQN(nodeToRefreshYamlConfig, key));
         }
       }
     });
 
-    return new YamlConfig(sourceNodeFqnToValueMap, sourceNodeYamlConfig.getYamlMap()).getYamlMap();
+    return new YamlConfig(refreshedFqnToValueMap, sourceNodeYamlConfig.getYamlMap()).getYamlMap();
   }
 
   private String convertToYaml(Object object) {

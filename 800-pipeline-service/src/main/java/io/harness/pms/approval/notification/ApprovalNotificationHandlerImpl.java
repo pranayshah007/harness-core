@@ -13,7 +13,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.Objects.isNull;
 
-import io.harness.Team;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
@@ -25,6 +24,7 @@ import io.harness.ng.core.dto.UserGroupFilterDTO.UserGroupFilterDTOBuilder;
 import io.harness.ng.core.notification.EmailConfigDTO;
 import io.harness.ng.core.notification.NotificationSettingConfigDTO;
 import io.harness.ng.core.notification.SlackConfigDTO;
+import io.harness.notification.Team;
 import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.channeldetails.SlackChannel;

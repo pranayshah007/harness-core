@@ -27,12 +27,14 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.HarnessJiraException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.ff.FeatureFlagService;
 import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCreateMetaResponse;
 import io.harness.jira.JiraCustomFieldValue;
@@ -126,6 +128,7 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
   @Inject private transient ActivityService activityService;
   @Inject @Transient private LogService logService;
   @Inject @Transient private JiraHelperService jiraHelperService;
+  @Inject FeatureFlagService featureFlagService;
 
   @Inject @Transient private transient WingsPersistence wingsPersistence;
   @Inject @Transient private DelegateService delegateService;
@@ -186,6 +189,14 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
     JiraConfig jiraConfig = getJiraConfig(jiraConnectorId, accountId);
     JiraCreateMetaResponse createMeta = null;
     renderExpressions(context);
+
+    if (featureFlagService.isEnabled(FeatureName.ALLOW_USER_TYPE_FIELDS_JIRA, accountId)) {
+      if (jiraAction == JiraAction.UPDATE_TICKET) {
+        jiraAction = JiraAction.UPDATE_TICKET_NG;
+      } else if (jiraAction == JiraAction.CREATE_TICKET) {
+        jiraAction = JiraAction.CREATE_TICKET_NG;
+      }
+    }
 
     final long timeoutMillis = getTimeoutMillis() != null ? getTimeoutMillis() : JIRA_TASK_TIMEOUT_MILLIS;
     if (areRequiredFieldsTemplatized) {
@@ -256,7 +267,7 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
                                         .appId(context.getAppId())
                                         .build();
 
-    if (jiraAction == JiraAction.UPDATE_TICKET) {
+    if (jiraAction == JiraAction.UPDATE_TICKET || jiraAction == JiraAction.UPDATE_TICKET_NG) {
       List<String> issueIds = parseExpression(issueId);
       if (EmptyPredicate.isEmpty(issueIds)) {
         return ExecutionResponse.builder()

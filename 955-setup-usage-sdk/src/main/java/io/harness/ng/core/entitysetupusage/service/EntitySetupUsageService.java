@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.ng.core.entitysetupusage.dto.EntityReferencesDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.entity.EntitySetupUsage;
@@ -54,6 +55,8 @@ public interface EntitySetupUsageService {
 
   long deleteByReferredByEntityType(EntityType referredByEntityType);
 
-  Page<EntitySetupUsageDTO> listAllEntityUsagePerEntityScope(int page, int size, String accountIdentifier,
-      String referredEntityFQScope, EntityType referredEntityType, EntityType referredByEntityType, Sort sort);
+  List<EntitySetupUsageDTO> listAllEntityUsagePerReferredEntityScope(Scope scope, String referredEntityFQScope,
+      EntityType referredEntityType, EntityType referredByEntityType, String referredByEntityName, Sort sort);
+
+  Long countReferredByEntitiesByFQNsIn(String accountIdentifier, List<String> referredEntityFQNs);
 }

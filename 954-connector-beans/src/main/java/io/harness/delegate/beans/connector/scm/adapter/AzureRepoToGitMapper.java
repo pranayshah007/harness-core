@@ -53,7 +53,8 @@ public class AzureRepoToGitMapper {
     final AzureRepoUsernameTokenDTO azureRepoUsernameTokenDTO =
         (AzureRepoUsernameTokenDTO) credentials.getHttpCredentialsSpec();
     username = azureRepoUsernameTokenDTO.getUsername();
-    validationProjAndRepo = createValidationProjectRepo(validationProject, validationRepo);
+    validationProjAndRepo = createValidationProjectRepo(
+        validationProject, validationRepo, azureRepoConnectorDTO.getAuthentication().getAuthType());
     usernameRef = azureRepoUsernameTokenDTO.getUsernameRef();
     tokenRef = azureRepoUsernameTokenDTO.getTokenRef();
     GitConfigDTO gitConfigForHttp = GitConfigCreater.getGitConfigForHttp(connectionType, url, validationProjAndRepo,
@@ -64,7 +65,8 @@ public class AzureRepoToGitMapper {
 
   public GitConfigDTO mapToGitSSH(AzureRepoConnectorDTO azureRepoConnectorDTO, GitConnectionType connectionType,
       String url, String validationProject, String validationRepo) {
-    String validationProjAndRepo = createValidationProjectRepo(validationProject, validationRepo);
+    String validationProjAndRepo = createValidationProjectRepo(
+        validationProject, validationRepo, azureRepoConnectorDTO.getAuthentication().getAuthType());
     final AzureRepoSshCredentialsDTO credentials =
         (AzureRepoSshCredentialsDTO) azureRepoConnectorDTO.getAuthentication().getCredentials();
     final SecretRefData sshKeyRef = credentials.getSshKeyRef();
@@ -74,7 +76,10 @@ public class AzureRepoToGitMapper {
     return gitConfigForSsh;
   }
 
-  public String createValidationProjectRepo(String validationProject, String validationRepo) {
-    return validationProject + GIT + validationRepo;
+  public String createValidationProjectRepo(String validationProject, String validationRepo, GitAuthType authType) {
+    if (authType == GitAuthType.HTTP) {
+      return validationProject + GIT + validationRepo;
+    }
+    return validationProject + "/" + validationRepo;
   }
 }

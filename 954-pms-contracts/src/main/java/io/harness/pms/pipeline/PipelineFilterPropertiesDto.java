@@ -18,6 +18,7 @@ import io.harness.ng.core.common.beans.NGTag;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -37,11 +38,16 @@ import lombok.experimental.FieldDefaults;
 @ApiModel("PipelineFilterProperties")
 @JsonTypeName(PIPELINE_SETUP_FILTER)
 @OwnedBy(PIPELINE)
+@Schema(name = "PipelineFilterProperties", description = "Properties of the Pipelines Filter defined in Harness")
 public class PipelineFilterPropertiesDto extends FilterPropertiesDTO {
+  @Schema(description = "This is the list of the Pipeline Tags on which the filter will be applied.")
   private List<NGTag> pipelineTags;
+  @Schema(description = "This is the list of the Pipeline Identifiers on which the filter will be applied.")
   private List<String> pipelineIdentifiers;
-  private String name;
+  @Schema(description = "This is the Pipeline Name on which the filter will be applied.") private String name;
+  @Schema(description = "This is the Pipeline Description on which the filter will be applied.")
   private String description;
+  @Schema(description = "These are the Module Properties on which the filter will be applied.")
   private org.bson.Document moduleProperties;
 
   @Override

@@ -65,7 +65,7 @@ public class DemoActivitySideKickExecutor implements SideKickExecutor<DemoActivi
               .accountIdentifier(deploymentActivity.getAccountId())
               .orgIdentifier(deploymentActivity.getOrgIdentifier())
               .projectIdentifier(deploymentActivity.getProjectIdentifier())
-              .monitoredServiceIdentifier(deploymentActivity.getMonitoredServiceIdentifier())
+              .monitoredServiceIdentifier(serviceDependencyDTO.get().getMonitoredServiceIdentifier())
               .build(),
           ChangeSourceType.KUBERNETES);
       if (!changeSources.isEmpty()) {

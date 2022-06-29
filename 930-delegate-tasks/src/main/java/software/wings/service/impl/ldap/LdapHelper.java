@@ -8,12 +8,13 @@
 package software.wings.service.impl.ldap;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import software.wings.beans.dto.LdapSettings;
 import software.wings.beans.sso.LdapGroupSettings;
 import software.wings.beans.sso.LdapSearchConfig;
-import software.wings.beans.sso.LdapSettingsDTO;
 import software.wings.beans.sso.LdapUserSettings;
 import software.wings.helpers.ext.ldap.LdapConnectionConfig;
 import software.wings.helpers.ext.ldap.LdapConstants;
@@ -24,7 +25,6 @@ import software.wings.helpers.ext.ldap.LdapSearch;
 import software.wings.helpers.ext.ldap.LdapUserConfig;
 
 import com.google.common.collect.Lists;
-import de.danielbechler.util.Collections;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -113,7 +113,7 @@ public class LdapHelper {
     }
   }
 
-  LdapResponse validateUserConfig(LdapSettingsDTO ldapSettings) {
+  LdapResponse validateUserConfig(LdapSettings ldapSettings) {
     Status searchStatus = Status.FAILURE;
     String searchStatusMsg = null;
     List<? extends LdapUserConfig> configs = ldapSettings.getUserSettingsList();
@@ -123,7 +123,7 @@ public class LdapHelper {
       searchStatus = connectionTestResponse.getStatus();
       searchStatusMsg = connectionTestResponse.getMessage();
     } else { // now test for user config
-      if (!Collections.isEmpty(configs)) {
+      if (!isEmpty(configs)) {
         LdapUserConfig config = configs.get(0);
         SearchResult searchResult = null;
         try {
@@ -158,7 +158,7 @@ public class LdapHelper {
     return LdapResponse.builder().status(searchStatus).message(searchStatusMsg).build();
   }
 
-  LdapResponse validateGroupConfig(LdapSettingsDTO settings) {
+  LdapResponse validateGroupConfig(LdapSettings settings) {
     LdapGroupConfig config = settings.getGroupSettingsList().get(0);
     LdapResponse connectionTestResponse = validateConnectionConfig();
     if (Status.FAILURE == connectionTestResponse.getStatus()) {
@@ -190,7 +190,7 @@ public class LdapHelper {
     return LdapResponse.builder().status(status).message(message).build();
   }
 
-  private LdapSearch.Builder getDefaultLdapSearchBuilder(LdapSettingsDTO settings, LdapSearchConfig config) {
+  private LdapSearch.Builder getDefaultLdapSearchBuilder(LdapSettings settings, LdapSearchConfig config) {
     return LdapSearch.builder()
         .bindCredential(settings.getConnectionSettings().getBindPassword())
         .bindDn(settings.getConnectionSettings().getBindDN())
@@ -200,7 +200,7 @@ public class LdapHelper {
         .maxReferralHops(connectionConfig.getMaxReferralHops());
   }
 
-  private LdapUserConfig userExists(LdapSettingsDTO ldapSettings, String identifier) {
+  private LdapUserConfig userExists(LdapSettings ldapSettings, String identifier) {
     List<LdapUserSettings> userConfigs = ldapSettings.getUserSettingsList();
     LdapUserConfig ldapUserConfig = null;
     List<LdapUserExistsRequest> searchDnResolverList = null;
@@ -226,7 +226,7 @@ public class LdapHelper {
     return ldapUserConfig;
   }
 
-  private List<LdapListGroupsResponse> listGroups(LdapSettingsDTO ldapSettings,
+  private List<LdapListGroupsResponse> listGroups(LdapSettings ldapSettings,
       List<? extends LdapGroupConfig> ldapGroupConfigs, String additionalFilter, int limit, String... returnFields)
       throws LdapException {
     List<LdapListGroupsResponse> ldapListGroupsResponses = Lists.newArrayList();
@@ -239,7 +239,7 @@ public class LdapHelper {
     return ldapListGroupsResponses;
   }
 
-  private List<LdapListGroupsRequest> getLdapGetUsersRequests(LdapSettingsDTO ldapSettings,
+  private List<LdapListGroupsRequest> getLdapGetUsersRequests(LdapSettings ldapSettings,
       List<? extends LdapGroupConfig> ldapGroupConfigs, String additionalFilter, int limit, String... returnFields) {
     return ldapGroupConfigs.stream()
         .map(groupConfig -> {
@@ -253,17 +253,16 @@ public class LdapHelper {
         .collect(Collectors.toList());
   }
 
-  private List<LdapListGroupsResponse> listGroupsByName(LdapSettingsDTO ldapSettings, String name)
-      throws LdapException {
+  private List<LdapListGroupsResponse> listGroupsByName(LdapSettings ldapSettings, String name) throws LdapException {
     return listGroups(ldapSettings, ldapSettings.getGroupSettingsList(), String.format("*%s*", name),
         LdapConstants.MAX_GROUP_SEARCH_SIZE);
   }
 
-  List<LdapGetUsersResponse> listGroupUsers(LdapSettingsDTO ldapSettings, List<String> groupDnList) {
+  List<LdapGetUsersResponse> listGroupUsers(LdapSettings ldapSettings, List<String> groupDnList) {
     List<? extends LdapUserConfig> ldapUserConfigs = ldapSettings.getUserSettingsList();
     List<LdapGetUsersResponse> ldapGetUsersResponse = new ArrayList<>();
     List<LdapGetUsersRequest> ldapGetUsersRequests;
-    if (!Collections.isEmpty(ldapUserConfigs)) {
+    if (!isEmpty(ldapUserConfigs)) {
       ldapGetUsersRequests =
           groupDnList.stream()
               .flatMap(groupDn -> ldapUserConfigs.stream().map(userConfig -> {
@@ -288,7 +287,7 @@ public class LdapHelper {
     return ldapGetUsersResponse;
   }
 
-  void populateGroupSize(SearchResult groups, LdapSettingsDTO ldapSettings) throws LdapException {
+  void populateGroupSize(SearchResult groups, LdapSettings ldapSettings) throws LdapException {
     long startTime = System.currentTimeMillis();
     List<String> groupDnList = groups.getEntries().stream().map(LdapEntry::getDn).collect(Collectors.toList());
     List<LdapGetUsersResponse> ldapGetUsersResponses = listGroupUsers(ldapSettings, groupDnList);
@@ -308,11 +307,11 @@ public class LdapHelper {
     log.info("elapsedTime : {}", elapsedTime);
   }
 
-  List<LdapListGroupsResponse> searchGroupsByName(LdapSettingsDTO ldapSettings, String name) throws LdapException {
+  List<LdapListGroupsResponse> searchGroupsByName(LdapSettings ldapSettings, String name) throws LdapException {
     return listGroupsByName(ldapSettings, name);
   }
 
-  LdapListGroupsResponse getGroupByDn(LdapSettingsDTO settings, String dn) throws LdapException {
+  LdapListGroupsResponse getGroupByDn(LdapSettings settings, String dn) throws LdapException {
     List<LdapGroupSettings> groupConfigs = settings.getGroupSettingsList();
     LdapListGroupsResponse listGroupsResponse = null;
     for (LdapGroupSettings groupConfig : groupConfigs) {
@@ -337,7 +336,7 @@ public class LdapHelper {
     return listGroupsResponse;
   }
 
-  public LdapResponse authenticate(LdapSettingsDTO ldapSettings, String identifier, String password) {
+  public LdapResponse authenticate(LdapSettings ldapSettings, String identifier, String password) {
     List<LdapUserSettings> userConfigs = ldapSettings.getUserSettingsList();
     LdapUserConfig ldapUserConfig = null;
     try {

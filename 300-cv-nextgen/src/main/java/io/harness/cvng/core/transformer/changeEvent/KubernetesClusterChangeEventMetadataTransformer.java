@@ -12,6 +12,7 @@ import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.KubernetesChangeEventMetadata;
 
 import java.time.Instant;
+import java.util.List;
 
 public class KubernetesClusterChangeEventMetadataTransformer
     extends ChangeEventMetaDataTransformer<KubernetesClusterActivity, KubernetesChangeEventMetadata> {
@@ -41,6 +42,7 @@ public class KubernetesClusterChangeEventMetadataTransformer
 
   @Override
   protected KubernetesChangeEventMetadata getMetadata(KubernetesClusterActivity activity) {
+    List<String> dependentMonitoredServiceIdentifiers = activity.getRealatedAppMonitoredServiceIdentifiers();
     return KubernetesChangeEventMetadata.builder()
         .oldYaml(activity.getOldYaml())
         .newYaml(activity.getNewYaml())
@@ -52,6 +54,8 @@ public class KubernetesClusterChangeEventMetadataTransformer
         .workload(activity.getWorkload())
         .timestamp(activity.getEventTime())
         .resourceVersion(activity.getResourceVersion())
+        .dependentMonitoredService(
+            !dependentMonitoredServiceIdentifiers.isEmpty() ? dependentMonitoredServiceIdentifiers.get(0) : null)
         .build();
   }
 }

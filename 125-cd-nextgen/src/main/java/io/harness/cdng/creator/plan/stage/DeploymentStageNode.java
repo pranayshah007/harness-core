@@ -14,13 +14,15 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
-import io.harness.steps.StepSpecTypeConstants;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import javax.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -28,7 +30,9 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(StepSpecTypeConstants.DEPLOYMENT_STAGE)
 @TypeAlias("DeploymentStageNode")

@@ -35,9 +35,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 public class KubernetesContainerTaskTest extends WingsBaseTest {
-  static final String DOCKER_IMAGE_NAME_PLACEHOLDER_REGEX = "\\$\\{DOCKER_IMAGE_NAME}";
-  static final String DOCKER_IMAGE_NAME_REGEX = "(\\s*\"?image\"?\\s*:\\s*\"?)";
-
   @Mock private AppService appService;
   @Inject private HPersistence persistence;
   @Inject @InjectMocks private ServiceResourceService serviceResourceService;
@@ -48,17 +45,17 @@ public class KubernetesContainerTaskTest extends WingsBaseTest {
   public void shouldCheckDaemonSet() {
     KubernetesContainerTask kubernetesContainerTask = new KubernetesContainerTask();
     kubernetesContainerTask.setAdvancedConfig("a: b\n kind: DaemonSet\nfoo: bar");
-    assertThat(kubernetesContainerTask.checkDaemonSet()).isTrue();
+    assertThat(KubernetesContainerTaskUtils.checkDaemonSet(kubernetesContainerTask.getAdvancedConfig())).isTrue();
     kubernetesContainerTask.setAdvancedConfig("a: b\n kind: \"DaemonSet\"\nfoo: bar");
-    assertThat(kubernetesContainerTask.checkDaemonSet()).isTrue();
+    assertThat(KubernetesContainerTaskUtils.checkDaemonSet(kubernetesContainerTask.getAdvancedConfig())).isTrue();
     kubernetesContainerTask.setAdvancedConfig("a: b\n kind:DaemonSet\nfoo: bar");
-    assertThat(kubernetesContainerTask.checkDaemonSet()).isTrue();
+    assertThat(KubernetesContainerTaskUtils.checkDaemonSet(kubernetesContainerTask.getAdvancedConfig())).isTrue();
     kubernetesContainerTask.setAdvancedConfig("a: b\n kind:  DaemonSet\nfoo: bar");
-    assertThat(kubernetesContainerTask.checkDaemonSet()).isTrue();
+    assertThat(KubernetesContainerTaskUtils.checkDaemonSet(kubernetesContainerTask.getAdvancedConfig())).isTrue();
     kubernetesContainerTask.setAdvancedConfig("a: b\n kind:\t\"DaemonSet\"\nfoo: bar");
-    assertThat(kubernetesContainerTask.checkDaemonSet()).isTrue();
+    assertThat(KubernetesContainerTaskUtils.checkDaemonSet(kubernetesContainerTask.getAdvancedConfig())).isTrue();
     kubernetesContainerTask.setAdvancedConfig("a: b\n kind: Deployment\nfoo: bar");
-    assertThat(kubernetesContainerTask.checkDaemonSet()).isFalse();
+    assertThat(KubernetesContainerTaskUtils.checkDaemonSet(kubernetesContainerTask.getAdvancedConfig())).isFalse();
   }
 
   @Test
@@ -88,7 +85,7 @@ public class KubernetesContainerTaskTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void validateDomainNameReplacement() {
     String domainName = "abc.xyz.com";
-    Pattern pattern = ContainerTask.compileRegexPattern(domainName);
+    Pattern pattern = ContainerTaskCommons.compileRegexPattern(domainName);
 
     String imageNameText = "   image: abc.xyz.com/${DOCKER_IMAGE_NAME}";
     Matcher matcher = pattern.matcher(imageNameText);
@@ -135,7 +132,7 @@ public class KubernetesContainerTaskTest extends WingsBaseTest {
     assertThat(matcher.find()).isEqualTo(false);
 
     domainName = "abc*";
-    pattern = ContainerTask.compileRegexPattern(domainName);
+    pattern = ContainerTaskCommons.compileRegexPattern(domainName);
 
     imageNameText = "   image: abc*/${DOCKER_IMAGE_NAME}";
     matcher = pattern.matcher(imageNameText);

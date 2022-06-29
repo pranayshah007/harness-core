@@ -8,7 +8,6 @@
 package software.wings.app;
 
 import static io.harness.beans.DelegateTask.Status.QUEUED;
-import static io.harness.beans.FeatureName.DELEGATE_TASK_REBROADCAST_ITERATOR;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -112,9 +111,6 @@ public class DelegateQueueTask implements Runnable {
       int count = 0;
       while (iterator.hasNext()) {
         DelegateTask delegateTask = iterator.next();
-        if (featureFlagService.isEnabled(DELEGATE_TASK_REBROADCAST_ITERATOR, delegateTask.getAccountId())) {
-          return;
-        }
         Query<DelegateTask> query = persistence.createQuery(DelegateTask.class, excludeAuthority)
                                         .filter(DelegateTaskKeys.uuid, delegateTask.getUuid())
                                         .filter(DelegateTaskKeys.broadcastCount, delegateTask.getBroadcastCount());

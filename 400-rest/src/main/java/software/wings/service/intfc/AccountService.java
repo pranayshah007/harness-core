@@ -117,6 +117,8 @@ public interface AccountService {
 
   DelegateConfiguration getDelegateConfiguration(String accountId);
 
+  List<String> getWatcherVersion(String accountId);
+
   String getAccountPrimaryDelegateVersion(String accountId);
 
   List<Account> listAllAccounts();
@@ -178,6 +180,8 @@ public interface AccountService {
   boolean updateAccountName(String accountId, String accountName);
 
   boolean updateCompanyName(String accountId, String companyName);
+
+  boolean updateAccountActivelyUsed(String accountId, boolean accountActivelyUsed);
 
   boolean updateRingName(String accountId, String ringName);
 
@@ -250,4 +254,6 @@ public interface AccountService {
   Void setDefaultExperience(String accountId, DefaultExperience defaultExperience);
 
   AuthenticationInfo getAuthenticationInfo(String accountId);
+
+  boolean isAccountActivelyUsed(String accountId);
 }

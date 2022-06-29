@@ -31,12 +31,14 @@ import lombok.NonNull;
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformApplyStepParameters")
 public class TerraformApplyStepParameters extends TerraformApplyBaseStepInfo implements SpecParameters {
   @NonNull TerraformStepConfigurationParameters configuration;
+  List<String> planStepsFqn;
 
   @Builder(builderMethodName = "infoBuilder")
   public TerraformApplyStepParameters(ParameterField<String> provisionerIdentifier,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, List<String> planStepsFqn,
       @NonNull TerraformStepConfigurationParameters configuration) {
     super(provisionerIdentifier, delegateSelectors);
+    this.planStepsFqn = planStepsFqn;
     this.configuration = configuration;
   }
 }

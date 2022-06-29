@@ -15,6 +15,7 @@ import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
+import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.serializer.SerializerUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmJunitTestReport;
@@ -25,7 +26,6 @@ import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.stateutils.buildstate.ConnectorUtils;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.OutputNGVariable;
@@ -73,6 +73,10 @@ public class VmRunTestStepSerializer {
         "TestAnnotations", stepName, identifier, runTestsStepInfo.getTestAnnotations(), false);
     String packages = RunTimeInputHandler.resolveStringParameter(
         "Packages", stepName, identifier, runTestsStepInfo.getPackages(), false);
+    String namespaces = RunTimeInputHandler.resolveStringParameter(
+        "Namespaces", stepName, identifier, runTestsStepInfo.getNamespaces(), false);
+    String buildEnvironment = RunTimeInputHandler.resolveDotNetBuildEnvName(runTestsStepInfo.getBuildEnvironment());
+    String frameworkVersion = RunTimeInputHandler.resolveDotNetVersion(runTestsStepInfo.getFrameworkVersion());
 
     boolean runOnlySelectedTests = resolveBooleanParameter(runTestsStepInfo.getRunOnlySelectedTests(), true);
 
@@ -93,13 +97,16 @@ public class VmRunTestStepSerializer {
             .language(language)
             .buildTool(buildTool)
             .packages(packages)
+            .namespaces(namespaces)
             .testAnnotations(testAnnotations)
             .runOnlySelectedTests(runOnlySelectedTests)
             .preCommand(preCommand)
             .postCommand(postCommand)
             .envVariables(envVars)
             .outputVariables(outputVarNames)
-            .timeoutSecs(timeout);
+            .timeoutSecs(timeout)
+            .buildEnvironment(buildEnvironment)
+            .frameworkVersion(frameworkVersion);
 
     ConnectorDetails connectorDetails;
     if (!StringUtils.isEmpty(image) && !StringUtils.isEmpty(connectorIdentifier)) {

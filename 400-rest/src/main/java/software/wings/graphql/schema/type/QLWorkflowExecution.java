@@ -32,6 +32,7 @@ import lombok.experimental.FieldNameConstants;
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
 public class QLWorkflowExecution implements QLExecution {
   private String id;
+  private String executionUrl;
   private String workflowId;
   private Long createdAt;
   private Long startedAt;

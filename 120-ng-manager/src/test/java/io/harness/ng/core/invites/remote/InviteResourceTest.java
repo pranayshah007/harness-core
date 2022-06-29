@@ -9,9 +9,6 @@ package io.harness.ng.core.invites.remote;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.core.invites.InviteType.ADMIN_INITIATED_INVITE;
-import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_ADDED;
-import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_INVITED;
-import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_INVITED_SUCCESSFULLY;
 import static io.harness.rule.OwnerRule.ANKUSH;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
@@ -26,9 +23,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.invites.api.InviteService;
-import io.harness.ng.core.invites.dto.CreateInviteDTO;
 import io.harness.ng.core.invites.dto.InviteDTO;
-import io.harness.ng.core.invites.dto.InviteOperationResponse;
 import io.harness.ng.core.invites.entities.Invite;
 import io.harness.ng.core.invites.mapper.InviteMapper;
 import io.harness.ng.core.user.service.NgUserService;
@@ -104,26 +99,6 @@ public class InviteResourceTest extends CategoryTest {
 
     List<String> inviteIds = returnInvites.stream().map(InviteDTO::getId).collect(Collectors.toList());
     assertThat(inviteIds).isEqualTo(actualInviteIds);
-  }
-
-  @Test
-  @Owner(developers = ANKUSH)
-  @Category(UnitTests.class)
-  public void testCreateInvitations() {
-    List<String> emailIds = getDummyEmailIds(3);
-    CreateInviteDTO createInviteDTO =
-        CreateInviteDTO.builder().inviteType(ADMIN_INITIATED_INVITE).users(emailIds).build();
-    List<InviteOperationResponse> results = new ArrayList<>();
-    results.add(USER_ALREADY_INVITED);
-    results.add(USER_INVITED_SUCCESSFULLY);
-    results.add(USER_ALREADY_ADDED);
-    when(inviteService.createInvitations(any(), any(), any(), any())).thenReturn(results);
-    List<InviteOperationResponse> operationResponses =
-        inviteResource.createInvitations(accountIdentifier, orgIdentifier, projectIdentifier, createInviteDTO)
-            .getData();
-    assertThat(operationResponses.get(0)).isEqualTo(USER_ALREADY_INVITED);
-    assertThat(operationResponses.get(1)).isEqualTo(USER_INVITED_SUCCESSFULLY);
-    assertThat(operationResponses.get(2)).isEqualTo(USER_ALREADY_ADDED);
   }
 
   @Test

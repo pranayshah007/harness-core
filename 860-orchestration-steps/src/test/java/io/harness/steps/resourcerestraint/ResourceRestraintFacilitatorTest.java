@@ -30,11 +30,11 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.execution.facilitator.DefaultFacilitatorParams;
 import io.harness.pms.expression.PmsEngineExpressionService;
 import io.harness.pms.sdk.core.execution.events.node.facilitate.FacilitatorResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.resourcerestraint.beans.AcquireMode;
 import io.harness.steps.resourcerestraint.beans.HoldingScope;
-import io.harness.steps.resourcerestraint.beans.HoldingScope.HoldingScopeBuilder;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraint;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceService;
@@ -52,7 +52,8 @@ import org.mockito.Mock;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ResourceRestraintFacilitatorTest extends OrchestrationStepsTestBase {
   private static final String RESOURCE_RESTRAINT_ID = generateUuid();
-  private static final String RESOURCE_UNIT = generateUuid();
+  private static final ParameterField<String> RESOURCE_UNIT =
+      ParameterField.<String>builder().value(generateUuid()).build();
 
   @Inject private KryoSerializer kryoSerializer;
   @Mock private ResourceRestraintInstanceService resourceRestraintInstanceService;
@@ -71,14 +72,14 @@ public class ResourceRestraintFacilitatorTest extends OrchestrationStepsTestBase
                                                .build();
     ConstraintId constraintId = new ConstraintId(RESOURCE_RESTRAINT_ID);
     when(resourceRestraintService.getByNameAndAccountId(any(), any())).thenReturn(resourceConstraint);
-    when(resourceRestraintService.get(any(), any())).thenReturn(resourceConstraint);
+    when(resourceRestraintService.get(any())).thenReturn(resourceConstraint);
     doReturn(Constraint.builder()
                  .id(constraintId)
                  .spec(Constraint.Spec.builder().limits(1).strategy(Constraint.Strategy.FIFO).build())
                  .build())
         .when(resourceRestraintInstanceService)
         .createAbstraction(any());
-    when(pmsEngineExpressionService.renderExpression(any(), any())).thenReturn(RESOURCE_UNIT);
+    when(pmsEngineExpressionService.renderExpression(any(), any())).thenReturn(RESOURCE_UNIT.getValue());
   }
 
   @Test
@@ -87,9 +88,9 @@ public class ResourceRestraintFacilitatorTest extends OrchestrationStepsTestBase
   public void shouldReturnAsyncMode() {
     String uuid = generateUuid();
     String planNodeId = generateUuid();
-    HoldingScope holdingScope = HoldingScopeBuilder.aPlan().build();
+    String planExecutionId = generateUuid();
     Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(generateUuid())
+                            .setPlanExecutionId(planExecutionId)
                             .addAllLevels(Collections.singletonList(
                                 Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
                             .build();
@@ -97,7 +98,7 @@ public class ResourceRestraintFacilitatorTest extends OrchestrationStepsTestBase
     ResourceRestraintSpecParameters specParameters = ResourceRestraintSpecParameters.builder()
                                                          .resourceUnit(RESOURCE_UNIT)
                                                          .acquireMode(AcquireMode.ACCUMULATE)
-                                                         .holdingScope(holdingScope)
+                                                         .holdingScope(HoldingScope.PIPELINE)
                                                          .permits(1)
                                                          .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(specParameters).build();
@@ -105,8 +106,8 @@ public class ResourceRestraintFacilitatorTest extends OrchestrationStepsTestBase
     doReturn(Collections.singletonList(ResourceRestraintInstance.builder()
                                            .state(Consumer.State.ACTIVE)
                                            .permits(1)
-                                           .releaseEntityType(holdingScope.getScope())
-                                           .releaseEntityId(holdingScope.getNodeSetupId())
+                                           .releaseEntityType(HoldingScope.PIPELINE.name())
+                                           .releaseEntityId(planExecutionId)
                                            .build()))
         .when(resourceRestraintInstanceService)
         .getAllByRestraintIdAndResourceUnitAndStates(any(), any(), any());
@@ -123,7 +124,6 @@ public class ResourceRestraintFacilitatorTest extends OrchestrationStepsTestBase
   public void shouldReturnSyncMode() {
     String uuid = generateUuid();
     String planNodeId = generateUuid();
-    HoldingScope holdingScope = HoldingScopeBuilder.aPlan().build();
     Ambiance ambiance = Ambiance.newBuilder()
                             .setPlanExecutionId(generateUuid())
                             .addAllLevels(Collections.singletonList(
@@ -133,7 +133,7 @@ public class ResourceRestraintFacilitatorTest extends OrchestrationStepsTestBase
     ResourceRestraintSpecParameters specParameters = ResourceRestraintSpecParameters.builder()
                                                          .resourceUnit(RESOURCE_UNIT)
                                                          .acquireMode(AcquireMode.ENSURE)
-                                                         .holdingScope(holdingScope)
+                                                         .holdingScope(HoldingScope.PIPELINE)
                                                          .permits(1)
                                                          .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(specParameters).build();

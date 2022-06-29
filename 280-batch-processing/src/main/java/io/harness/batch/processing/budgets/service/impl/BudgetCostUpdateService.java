@@ -14,12 +14,10 @@ import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.graphql.core.budget.BudgetService;
 
-import software.wings.beans.Account;
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
 
 import com.google.inject.Singleton;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,8 +33,7 @@ public class BudgetCostUpdateService {
   @Autowired private BudgetService budgetService;
 
   public void updateCosts() {
-    List<Account> ceEnabledAccounts = accountShardService.getCeEnabledAccounts();
-    List<String> accountIds = ceEnabledAccounts.stream().map(Account::getUuid).collect(Collectors.toList());
+    List<String> accountIds = accountShardService.getCeEnabledAccountIds();
     log.info("ceEnabledAccounts ids list {}", accountIds);
 
     accountIds.forEach(accountId -> {

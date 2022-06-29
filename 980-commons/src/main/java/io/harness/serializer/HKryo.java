@@ -70,6 +70,7 @@ import java.math.BigInteger;
 import java.net.SocketException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -95,9 +96,23 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
 @OwnedBy(HarnessTeam.PL)
 public class HKryo extends Kryo {
   @Setter private String currentLocation;
+  private final boolean skipHarnessClassOriginRegistrarCheck;
 
   public HKryo(ClassResolver classResolver) {
+    this(classResolver, false);
+  }
+
+  /**
+   * Creates a new HKryo instance.
+   * @param classResolver the class resolver.
+   * @param skipHarnessClassOriginRegistrarCheck if true, classes can be registered by registrars from other sources -
+   *     only meant for UTs.
+   */
+  public HKryo(ClassResolver classResolver, boolean skipHarnessClassOriginRegistrarCheck) {
     super(classResolver, new MapReferenceResolver(), new DefaultStreamFactory());
+
+    this.skipHarnessClassOriginRegistrarCheck = skipHarnessClassOriginRegistrarCheck;
+
     setInstantiatorStrategy(new Kryo.DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
     setDefaultSerializer(CompatibleFieldSerializer.class);
     getFieldSerializerConfig().setCachedFieldNameStrategy(FieldSerializer.CachedFieldNameStrategy.EXTENDED);
@@ -180,6 +195,7 @@ public class HKryo extends Kryo {
     register(java.util.LinkedList.class, 78);
     register(ArrayListMultimap.class, new ArrayListMultimapSerializer(), 51);
     register(HashMultimap.class, new HashMultimapSerializer(), 52);
+    register(Instant.class, 7235);
 
     // External Serializers
     UnmodifiableCollectionsSerializer.registerSerializers(this);
@@ -223,7 +239,7 @@ public class HKryo extends Kryo {
   }
 
   private Registration check(Registration registration, int id) {
-    if (CodeUtils.isHarnessClass(registration.getType())) {
+    if (CodeUtils.isHarnessClass(registration.getType()) && !this.skipHarnessClassOriginRegistrarCheck) {
       final String location = CodeUtils.location(registration.getType());
       if (currentLocation != null && !currentLocation.equals(location)) {
         throw new IllegalStateException(format("The class %s in %s is registered from registrar from module %s",

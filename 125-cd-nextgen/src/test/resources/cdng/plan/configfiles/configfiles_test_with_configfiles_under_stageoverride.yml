@@ -1,0 +1,31 @@
+stageOverrides:
+  artifacts: []
+  manifests: []
+  configFiles:
+    - configFile:
+        identifier: gitConfigFileIdentifier
+        spec:
+          store:
+            type: Git
+            spec:
+              connectorRef: gitConnectorIdentifier
+              gitFetchType: Branch
+              paths:
+                - test/1
+              repoName: repoName
+              branch: test
+          type: Remote
+    - configFile:
+        identifier: harnessFSConfigFileIdentifier
+        spec:
+          store:
+            type: Harness
+            spec:
+              files:
+                - path: /folder/config.yml,
+                  scope: account
+  manifestOverrideSets: []
+  variables: []
+service:
+  name: service
+  identifier: service1

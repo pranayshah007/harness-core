@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
 import io.harness.cf.CfClientConfig;
 import io.harness.cvng.core.NGManagerServiceConfig;
+import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.grpc.client.GrpcClientConfig;
@@ -24,6 +25,9 @@ import io.harness.mongo.MongoConfig;
 import io.harness.notification.NotificationClientConfiguration;
 import io.harness.remote.ManagerAuthConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.secret.ConfigSecret;
+
+import software.wings.app.PortalConfig;
 
 import ch.qos.logback.access.spi.IAccessEvent;
 import ch.qos.logback.classic.Level;
@@ -52,6 +56,9 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
   @JsonProperty("mongo") private MongoConfig mongoConnectionFactory = MongoConfig.builder().build();
   private ServiceHttpClientConfig managerClientConfig;
+  @JsonProperty("ngManagerClientConfig") private ServiceHttpClientConfig ngManagerClientConfig;
+  @JsonProperty("ngManagerServiceSecret") @ConfigSecret private String ngManagerServiceSecret;
+  @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;
   private ManagerAuthConfig managerAuthConfig;
   @JsonProperty("nextGen") private NGManagerServiceConfig ngManagerServiceConfig;
   @JsonProperty("notificationClient") private NotificationClientConfiguration notificationClientConfiguration;
@@ -59,6 +66,7 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("pmsSdkGrpcServerConfig") private GrpcServerConfig pmsSdkGrpcServerConfig;
   @JsonProperty("pmsGrpcClientConfig") private GrpcClientConfig pmsGrpcClientConfig;
   @JsonProperty("shouldConfigureWithPMS") private Boolean shouldConfigureWithPMS;
+  @JsonProperty("shouldConfigureWithNotification") private Boolean shouldConfigureWithNotification;
   @JsonProperty("cfClientConfig") private CfClientConfig cfClientConfig;
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
@@ -67,6 +75,9 @@ public class VerificationConfiguration extends Configuration {
   private DistributedLockImplementation distributedLockImplementation = DistributedLockImplementation.MONGO;
   private ServiceHttpClientConfig templateServiceClientConfig;
   private String templateServiceSecret;
+  @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
+  @JsonProperty(value = "enableAudit") private boolean enableAudit;
+  @JsonProperty @ConfigSecret private PortalConfig portal = new PortalConfig();
 
   private String portalUrl;
   /**

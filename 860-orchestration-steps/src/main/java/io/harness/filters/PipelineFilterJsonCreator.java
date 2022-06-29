@@ -13,6 +13,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.SecretRefData;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.plancreator.PipelineServiceFilter;
 import io.harness.plancreator.pipeline.PipelineInfoConfig;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
@@ -81,8 +82,17 @@ public class PipelineFilterJsonCreator extends ChildrenFilterJsonCreator<Pipelin
   }
 
   @Override
-  public PipelineFilter getFilterForGivenField() {
-    return null;
+  public PipelineFilter getFilterForGivenField(FilterCreationContext filterCreationContext) {
+    return PipelineServiceFilter.builder()
+        .stageTypes(StagesFilterJsonCreator
+                        .getStageYamlFields(
+                            filterCreationContext.getCurrentField().getNode().getField(YAMLFieldNameConstants.STAGES))
+                        .stream()
+                        .map(YamlField::getNode)
+                        .map(YamlNode::getType)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet()))
+        .build();
   }
 
   @Override

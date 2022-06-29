@@ -129,13 +129,20 @@ public class NGTriggerResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "Identifier of the target pipeline") @NotNull @QueryParam("targetIdentifier")
-      @ResourceIdentifier String targetIdentifier, @NotNull @ApiParam(hidden = true, type = "") String yaml) {
+      @ResourceIdentifier String targetIdentifier, @NotNull @ApiParam(hidden = true, type = "") String yaml,
+      @QueryParam("ignoreError") @DefaultValue("false") boolean ignoreError) {
     NGTriggerEntity createdEntity = null;
     try {
       TriggerDetails triggerDetails =
           ngTriggerElementMapper.toTriggerDetails(accountIdentifier, orgIdentifier, projectIdentifier, yaml);
       ngTriggerService.validateTriggerConfig(triggerDetails);
-      createdEntity = ngTriggerService.create(triggerDetails.getNgTriggerEntity());
+
+      if (ignoreError) {
+        createdEntity = ngTriggerService.create(triggerDetails.getNgTriggerEntity());
+      } else {
+        ngTriggerService.validateInputSets(triggerDetails);
+        createdEntity = ngTriggerService.create(triggerDetails.getNgTriggerEntity());
+      }
       return ResponseDTO.newResponse(
           createdEntity.getVersion().toString(), ngTriggerElementMapper.toResponseDTO(createdEntity));
     } catch (InvalidTriggerYamlException e) {
@@ -193,7 +200,8 @@ public class NGTriggerResource {
       @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
           "targetIdentifier") @ResourceIdentifier String targetIdentifier,
       @PathParam("triggerIdentifier") String triggerIdentifier,
-      @NotNull @ApiParam(hidden = true, type = "") String yaml) {
+      @NotNull @ApiParam(hidden = true, type = "") String yaml,
+      @QueryParam("ignoreError") @DefaultValue("false") boolean ignoreError) {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
     if (!ngTriggerEntity.isPresent()) {
@@ -206,8 +214,14 @@ public class NGTriggerResource {
 
       ngTriggerService.validateTriggerConfig(triggerDetails);
       triggerDetails.getNgTriggerEntity().setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
+      NGTriggerEntity updatedEntity;
 
-      NGTriggerEntity updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity());
+      if (ignoreError) {
+        updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity());
+      } else {
+        ngTriggerService.validateInputSets(triggerDetails);
+        updatedEntity = ngTriggerService.update(triggerDetails.getNgTriggerEntity());
+      }
       return ResponseDTO.newResponse(
           updatedEntity.getVersion().toString(), ngTriggerElementMapper.toResponseDTO(updatedEntity));
     } catch (InvalidTriggerYamlException e) {

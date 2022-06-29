@@ -17,6 +17,7 @@ import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.principals.PrincipalType;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
 import io.harness.accesscontrol.resources.resourcegroups.persistence.ResourceGroupDBO;
 import io.harness.accesscontrol.resources.resourcegroups.persistence.ResourceGroupRepository;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
@@ -69,7 +70,7 @@ public class ResourceGroupChangeConsumerImpl implements ChangeConsumer<ResourceG
 
   @Override
   public void consumeUpdateEvent(String id, ResourceGroupDBO updatedResourceGroup) {
-    if (updatedResourceGroup.getResourceSelectors() == null && updatedResourceGroup.getFullScopeSelected() == null) {
+    if (updatedResourceGroup.getResourceSelectors() == null && updatedResourceGroup.getResourceSelectorsV2() == null) {
       return;
     }
 
@@ -139,18 +140,22 @@ public class ResourceGroupChangeConsumerImpl implements ChangeConsumer<ResourceG
 
     @Override
     public Result call() {
-      Set<String> existingResourceSelectors =
-          Sets.newHashSet(aclRepository.getDistinctResourceSelectorsInACLs(roleAssignmentDBO.getId()));
-      Set<String> newResourceSelectors = new HashSet<>();
-      if (updatedResourceGroup.isFullScopeSelected()) {
-        newResourceSelectors.add("/*/*");
-      } else if (updatedResourceGroup.getResourceSelectors() != null) {
-        newResourceSelectors = updatedResourceGroup.getResourceSelectors();
+      Set<ResourceSelector> existingResourceSelectors =
+          aclRepository.getDistinctResourceSelectorsInACLs(roleAssignmentDBO.getId());
+      Set<ResourceSelector> newResourceSelectors = new HashSet<>();
+      if (updatedResourceGroup.getResourceSelectors() != null) {
+        newResourceSelectors.addAll(updatedResourceGroup.getResourceSelectors()
+                                        .stream()
+                                        .map(selector -> ResourceSelector.builder().selector(selector).build())
+                                        .collect(Collectors.toList()));
+      }
+      if (updatedResourceGroup.getResourceSelectorsV2() != null) {
+        newResourceSelectors.addAll(updatedResourceGroup.getResourceSelectorsV2());
       }
 
-      Set<String> resourceSelectorsRemovedFromResourceGroup =
+      Set<ResourceSelector> resourceSelectorsRemovedFromResourceGroup =
           Sets.difference(existingResourceSelectors, newResourceSelectors);
-      Set<String> resourceSelectorsAddedToResourceGroup =
+      Set<ResourceSelector> resourceSelectorsAddedToResourceGroup =
           Sets.difference(newResourceSelectors, existingResourceSelectors);
 
       long numberOfACLsDeleted = aclRepository.deleteByRoleAssignmentIdAndResourceSelectors(

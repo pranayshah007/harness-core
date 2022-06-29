@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
@@ -28,15 +29,15 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(NON_NULL)
-@Schema(name = "ServiceRequest", description = "This is the ServiceRequest entity defined in Harness")
+@Schema(name = "ServiceRequest", description = "Service Request details defined in Harness.")
 public class ServiceRequestDTO {
-  @EntityIdentifier String identifier;
-  String orgIdentifier;
-  String projectIdentifier;
+  @Schema(description = "Identifier of the Service Request.") @EntityIdentifier String identifier;
+  @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
+  @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
 
-  @EntityName String name;
-  String description;
-  Map<String, String> tags;
+  @Schema(description = "Name of the Service Request.") @EntityName String name;
+  @Schema(description = NGCommonEntityConstants.DESCRIPTION) String description;
+  @Schema(description = NGCommonEntityConstants.TAGS) Map<String, String> tags;
 
-  String yaml;
+  @Schema(description = "YAML for the Service Request") String yaml;
 }

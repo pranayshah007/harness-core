@@ -26,6 +26,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
+import io.harness.repositories.UpsertOptions;
 import io.harness.steps.EntityReferenceExtractorUtils;
 
 import com.google.inject.Inject;
@@ -51,7 +52,7 @@ public class ServiceStep implements SyncExecutable<ServiceStepParameters> {
     ServiceStepUtils.validateResources(
         entityReferenceExtractorUtils, pipelineRbacHelper, accessControlClient, ambiance, stepParameters);
     ServiceEntity serviceEntity = ServiceStepUtils.getServiceEntity(serviceEntityService, ambiance, stepParameters);
-    serviceEntityService.upsert(serviceEntity);
+    serviceEntityService.upsert(serviceEntity, UpsertOptions.DEFAULT.withNoOutbox());
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
         .stepOutcome(StepOutcome.builder()

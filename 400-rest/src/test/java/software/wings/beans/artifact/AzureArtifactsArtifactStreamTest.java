@@ -17,8 +17,6 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
-import software.wings.beans.artifact.AzureArtifactsArtifactStream.ProtocolType;
-
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -33,14 +31,18 @@ public class AzureArtifactsArtifactStreamTest extends CategoryTest {
     AzureArtifactsArtifactStream artifactStream = AzureArtifactsArtifactStream.builder().build();
     assertThat(artifactStream.generateSourceName()).isEqualTo("");
 
-    artifactStream =
-        AzureArtifactsArtifactStream.builder().protocolType(ProtocolType.maven.name()).packageName("gid:aid").build();
+    artifactStream = AzureArtifactsArtifactStream.builder()
+                         .protocolType(AzureArtifactsArtifactStreamProtocolType.maven.name())
+                         .packageName("gid:aid")
+                         .build();
     assertThat(artifactStream.generateSourceName()).isEqualTo("gid:aid");
     artifactStream.setPackageName(null);
     assertThat(artifactStream.generateSourceName()).isEqualTo("");
 
-    artifactStream =
-        AzureArtifactsArtifactStream.builder().protocolType(ProtocolType.nuget.name()).packageName("pn").build();
+    artifactStream = AzureArtifactsArtifactStream.builder()
+                         .protocolType(AzureArtifactsArtifactStreamProtocolType.nuget.name())
+                         .packageName("pn")
+                         .build();
     assertThat(artifactStream.generateSourceName()).isEqualTo("pn");
     artifactStream.setPackageName(null);
     assertThat(artifactStream.generateSourceName()).isEqualTo("");
@@ -104,25 +106,27 @@ public class AzureArtifactsArtifactStreamTest extends CategoryTest {
   }
 
   private AzureArtifactsArtifactStream prepareMavenArtifactStream() {
-    AzureArtifactsArtifactStream artifactStream = AzureArtifactsArtifactStream.builder()
-                                                      .appId(GLOBAL_APP_ID)
-                                                      .protocolType(ProtocolType.maven.name())
-                                                      .feed(FEED)
-                                                      .packageId(PACKAGE_ID)
-                                                      .packageName("gid:aid")
-                                                      .build();
+    AzureArtifactsArtifactStream artifactStream =
+        AzureArtifactsArtifactStream.builder()
+            .appId(GLOBAL_APP_ID)
+            .protocolType(AzureArtifactsArtifactStreamProtocolType.maven.name())
+            .feed(FEED)
+            .packageId(PACKAGE_ID)
+            .packageName("gid:aid")
+            .build();
     artifactStream.setSourceName(artifactStream.generateSourceName());
     return artifactStream;
   }
 
   private AzureArtifactsArtifactStream prepareNuGetArtifactStream() {
-    AzureArtifactsArtifactStream artifactStream = AzureArtifactsArtifactStream.builder()
-                                                      .appId(GLOBAL_APP_ID)
-                                                      .protocolType(ProtocolType.nuget.name())
-                                                      .feed(FEED)
-                                                      .packageId(PACKAGE_ID)
-                                                      .packageName("pn")
-                                                      .build();
+    AzureArtifactsArtifactStream artifactStream =
+        AzureArtifactsArtifactStream.builder()
+            .appId(GLOBAL_APP_ID)
+            .protocolType(AzureArtifactsArtifactStreamProtocolType.nuget.name())
+            .feed(FEED)
+            .packageId(PACKAGE_ID)
+            .packageName("pn")
+            .build();
     artifactStream.setSourceName(artifactStream.generateSourceName());
     return artifactStream;
   }

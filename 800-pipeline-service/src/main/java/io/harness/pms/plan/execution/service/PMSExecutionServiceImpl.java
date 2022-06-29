@@ -19,13 +19,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.dto.OrchestrationGraphDTO;
 import io.harness.engine.OrchestrationService;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.interrupts.InterruptPackage;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.interrupts.Interrupt;
 import io.harness.ng.core.common.beans.NGTag;
@@ -45,6 +48,7 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
+import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
 import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
 import io.harness.repositories.executions.PmsExecutionSummaryRespository;
@@ -86,6 +90,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   @Inject private YamlExpressionResolveHelper yamlExpressionResolveHelper;
   @Inject private ValidateAndMergeHelper validateAndMergeHelper;
   @Inject private PmsGitSyncHelper pmsGitSyncHelper;
+  @Inject PlanExecutionMetadataService planExecutionMetadataService;
 
   @Override
   public Criteria formCriteria(String accountId, String orgId, String projectId, String pipelineIdentifier,
@@ -132,7 +137,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       // Check for pipeline with no filters also - empty pipeline or pipelines with only approval stage
       moduleCriteria.orOperator(Criteria.where(PlanExecutionSummaryKeys.modules).is(Collections.emptyList()),
           // This is here just for backward compatibility should be removed
-          Criteria.where(PlanExecutionSummaryKeys.modules).in(ModuleType.PMS.name().toLowerCase()),
+          Criteria.where(PlanExecutionSummaryKeys.modules)
+              .is(Collections.singletonList(ModuleType.PMS.name().toLowerCase())),
           Criteria.where(PlanExecutionSummaryKeys.modules).in(moduleName));
     }
 
@@ -161,10 +167,14 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       Criteria gitCriteriaNew = Criteria
                                     .where(PlanExecutionSummaryKeys.entityGitDetails + "."
                                         + "branch")
-                                    .is(entityGitDetails.getBranch())
-                                    .and(PlanExecutionSummaryKeys.entityGitDetails + "."
-                                        + "repoIdentifier")
-                                    .is(entityGitDetails.getRepoIdentifier());
+                                    .is(entityGitDetails.getBranch());
+      if (entityGitDetails.getRepoIdentifier() != null
+          && !entityGitDetails.getRepoIdentifier().equals(GitAwareEntityHelper.DEFAULT)) {
+        gitCriteriaNew
+            .and(PlanExecutionSummaryKeys.entityGitDetails + "."
+                + "repoIdentifier")
+            .is(entityGitDetails.getRepoIdentifier());
+      }
       gitCriteria.orOperator(gitCriteriaDeprecated, gitCriteriaNew);
     }
 
@@ -311,13 +321,14 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   }
 
   @Override
-  public OrchestrationGraphDTO getOrchestrationGraph(String stageNodeId, String planExecutionId) {
+  public OrchestrationGraphDTO getOrchestrationGraph(
+      String stageNodeId, String planExecutionId, String stageNodeExecutionId) {
     if (EmptyPredicate.isEmpty(stageNodeId)) {
       return graphGenerationService.generateOrchestrationGraphV2(planExecutionId);
     }
-    return graphGenerationService.generatePartialOrchestrationGraphFromSetupNodeId(stageNodeId, planExecutionId);
+    return graphGenerationService.generatePartialOrchestrationGraphFromSetupNodeIdAndExecutionId(
+        stageNodeId, planExecutionId, stageNodeExecutionId);
   }
-
   @Override
   public InterruptDTO registerInterrupt(
       PlanExecutionInterruptType executionInterruptType, String planExecutionId, String nodeExecutionId) {
@@ -389,5 +400,19 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   public long getCountOfExecutions(Criteria criteria) {
     Pageable pageRequest = PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, PlanExecutionSummaryKeys.startTs));
     return pmsExecutionSummaryRespository.findAll(criteria, pageRequest).getTotalElements();
+  }
+
+  @Override
+  public ExecutionDataResponseDTO getExecutionData(String planExecutionId) {
+    Optional<PlanExecutionMetadata> planExecutionMetadata =
+        planExecutionMetadataService.findByPlanExecutionId(planExecutionId);
+
+    if (!planExecutionMetadata.isPresent()) {
+      throw new InvalidRequestException(
+          String.format("Execution with id [%s] is not present or deleted", planExecutionId));
+    }
+    String executionYaml = planExecutionMetadata.get().getYaml();
+
+    return ExecutionDataResponseDTO.builder().executionYaml(executionYaml).executionId(planExecutionId).build();
   }
 }

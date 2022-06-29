@@ -31,6 +31,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJEC
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_SCOPE_RECONCILIATION;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.VARIABLE_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 
 import static java.lang.Boolean.TRUE;
@@ -39,9 +40,6 @@ import io.harness.AccessControlClientModule;
 import io.harness.GitopsModule;
 import io.harness.Microservice;
 import io.harness.NgIteratorsConfig;
-import io.harness.OrchestrationModule;
-import io.harness.OrchestrationModuleConfig;
-import io.harness.OrchestrationStepsModule;
 import io.harness.YamlBaseUrlServiceImpl;
 import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.accesscontrol.AccessControlAdminClientModule;
@@ -58,9 +56,10 @@ import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
 import io.harness.ccm.license.remote.CeLicenseClientModule;
 import io.harness.cdng.NGModule;
-import io.harness.cdng.expressions.CDExpressionEvaluatorProvider;
 import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
+import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperService;
+import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperServiceImpl;
 import io.harness.connector.ConnectorModule;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.connector.events.ConnectorEventHandler;
@@ -85,8 +84,9 @@ import io.harness.exception.exceptionmanager.ExceptionModule;
 import io.harness.exception.exceptionmanager.exceptionhandler.CCMConnectorExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.file.NGFileServiceModule;
-import io.harness.filter.FilterType;
-import io.harness.filter.mapper.FilterPropertiesMapper;
+import io.harness.filestore.NgFileStoreModule;
+import io.harness.filestore.outbox.FileEventHandler;
+import io.harness.gitops.GitopsResourceClientModule;
 import io.harness.gitsync.GitSyncConfigClientModule;
 import io.harness.gitsync.GitSyncModule;
 import io.harness.gitsync.common.events.FullSyncMessageListener;
@@ -112,6 +112,8 @@ import io.harness.ng.accesscontrol.migrations.AccessControlMigrationModule;
 import io.harness.ng.accesscontrol.user.AggregateUserService;
 import io.harness.ng.accesscontrol.user.AggregateUserServiceImpl;
 import io.harness.ng.authenticationsettings.AuthenticationSettingsModule;
+import io.harness.ng.core.AccountOrgProjectHelper;
+import io.harness.ng.core.AccountOrgProjectHelperImpl;
 import io.harness.ng.core.CoreModule;
 import io.harness.ng.core.DefaultOrganizationModule;
 import io.harness.ng.core.DelegateServiceModule;
@@ -131,7 +133,6 @@ import io.harness.ng.core.api.impl.NGSecretServiceV2Impl;
 import io.harness.ng.core.api.impl.TokenServiceImpl;
 import io.harness.ng.core.api.impl.UserGroupServiceImpl;
 import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClientModule;
-import io.harness.ng.core.dto.filestore.mapper.FilesFilterPropertiesMapper;
 import io.harness.ng.core.encryptors.NGManagerKmsEncryptor;
 import io.harness.ng.core.encryptors.NGManagerVaultEncryptor;
 import io.harness.ng.core.entityactivity.event.EntityActivityCrudEventMessageListener;
@@ -148,6 +149,8 @@ import io.harness.ng.core.event.SecretEntityCRUDStreamListener;
 import io.harness.ng.core.event.UserGroupEntityCRUDStreamListener;
 import io.harness.ng.core.event.UserMembershipReconciliationMessageProcessor;
 import io.harness.ng.core.event.UserMembershipStreamListener;
+import io.harness.ng.core.event.VariableEntityCRUDStreamListener;
+import io.harness.ng.core.event.gitops.ClusterCrudStreamListener;
 import io.harness.ng.core.globalkms.client.NgConnectorManagerClientModule;
 import io.harness.ng.core.globalkms.impl.NgGlobalKmsServiceImpl;
 import io.harness.ng.core.globalkms.services.NgGlobalKmsService;
@@ -156,7 +159,6 @@ import io.harness.ng.core.impl.ProjectServiceImpl;
 import io.harness.ng.core.outbox.ApiKeyEventHandler;
 import io.harness.ng.core.outbox.DelegateProfileEventHandler;
 import io.harness.ng.core.outbox.EnvironmentEventHandler;
-import io.harness.ng.core.outbox.FileEventHandler;
 import io.harness.ng.core.outbox.NextGenOutboxEventHandler;
 import io.harness.ng.core.outbox.OrganizationEventHandler;
 import io.harness.ng.core.outbox.ProjectEventHandler;
@@ -187,6 +189,8 @@ import io.harness.ng.opa.OpaService;
 import io.harness.ng.opa.OpaServiceImpl;
 import io.harness.ng.opa.entities.connector.OpaConnectorService;
 import io.harness.ng.opa.entities.connector.OpaConnectorServiceImpl;
+import io.harness.ng.opa.entities.secret.OpaSecretService;
+import io.harness.ng.opa.entities.secret.OpaSecretServiceImpl;
 import io.harness.ng.overview.service.CDLandingDashboardService;
 import io.harness.ng.overview.service.CDLandingDashboardServiceImpl;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
@@ -218,8 +222,7 @@ import io.harness.opaclient.OpaClientModule;
 import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.persistence.UserProvider;
-import io.harness.pipeline.PipelineRemoteClientModule;
-import io.harness.pms.listener.NgOrchestrationNotifyEventListener;
+import io.harness.pipeline.remote.PipelineRemoteClientModule;
 import io.harness.polling.service.impl.PollingPerpetualTaskServiceImpl;
 import io.harness.polling.service.impl.PollingServiceImpl;
 import io.harness.polling.service.intfc.PollingPerpetualTaskService;
@@ -239,14 +242,17 @@ import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
+import io.harness.serializer.NGLdapServiceRegistrars;
 import io.harness.serializer.NextGenRegistrars;
 import io.harness.serializer.kryo.KryoConverterFactory;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.InstanceModule;
 import io.harness.service.stats.usagemetrics.eventconsumer.InstanceStatsEventListener;
 import io.harness.signup.SignupModule;
+import io.harness.subscription.SubscriptionModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
+import io.harness.template.TemplateResourceClientModule;
 import io.harness.time.TimeModule;
 import io.harness.timescaledb.JooqModule;
 import io.harness.timescaledb.TimeScaleDBConfig;
@@ -256,9 +262,9 @@ import io.harness.timescaledb.metrics.HExecuteListener;
 import io.harness.token.TokenClientModule;
 import io.harness.tracing.AbstractPersistenceTracerModule;
 import io.harness.user.UserClientModule;
-import io.harness.utils.featureflaghelper.FeatureFlagHelperService;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperServiceImpl;
 import io.harness.version.VersionModule;
+import io.harness.waiter.AbstractWaiterModule;
+import io.harness.waiter.WaiterConfiguration;
 import io.harness.yaml.YamlSdkModule;
 import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
@@ -512,6 +518,12 @@ public class NextGenModule extends AbstractModule {
         this.appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId(),
         appConfig.getSignupNotificationConfiguration(), appConfig.getAccessControlClientConfiguration()));
     install(GitopsModule.getInstance());
+    install(new AbstractWaiterModule() {
+      @Override
+      public WaiterConfiguration waiterConfiguration() {
+        return WaiterConfiguration.builder().persistenceLayer(WaiterConfiguration.PersistenceLayer.SPRING).build();
+      }
+    });
     install(new GitSyncModule());
     install(new GitSyncConfigClientModule(appConfig.getNgManagerClientConfig(),
         appConfig.getNextGenConfig().getNgManagerServiceSecret(), NG_MANAGER.getServiceId()));
@@ -529,6 +541,8 @@ public class NextGenModule extends AbstractModule {
     install(new PipelineRemoteClientModule(
         ServiceHttpClientConfig.builder().baseUrl(appConfig.getPipelineServiceClientConfig().getBaseUrl()).build(),
         appConfig.getNextGenConfig().getPipelineServiceSecret(), NG_MANAGER.toString()));
+    install(new TemplateResourceClientModule(appConfig.getTemplateServiceClientConfig(),
+        appConfig.getNextGenConfig().getTemplateServiceSecret(), NG_MANAGER.toString()));
     install(new ConnectorResourceClientModule(appConfig.getNgManagerClientConfig(),
         appConfig.getNextGenConfig().getNgManagerServiceSecret(), NG_MANAGER.getServiceId(), ClientMode.PRIVILEGED));
     install(new SecretManagementClientModule(this.appConfig.getManagerClientConfig(),
@@ -568,7 +582,10 @@ public class NextGenModule extends AbstractModule {
       @Provides
       @Singleton
       Set<Class<? extends KryoRegistrar>> kryoRegistrars() {
-        return ImmutableSet.<Class<? extends KryoRegistrar>>builder().addAll(NextGenRegistrars.kryoRegistrars).build();
+        return ImmutableSet.<Class<? extends KryoRegistrar>>builder()
+            .addAll(NextGenRegistrars.kryoRegistrars)
+            .addAll(NGLdapServiceRegistrars.kryoRegistrars)
+            .build();
       }
 
       @Provides
@@ -576,6 +593,7 @@ public class NextGenModule extends AbstractModule {
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
         return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
             .addAll(NextGenRegistrars.morphiaRegistrars)
+            .addAll(NGLdapServiceRegistrars.morphiaRegistrars)
             .build();
       }
 
@@ -606,16 +624,17 @@ public class NextGenModule extends AbstractModule {
         return appConfig.getBaseUrls();
       }
     });
-    install(OrchestrationModule.getInstance(getOrchestrationConfig()));
-    install(OrchestrationStepsModule.getInstance(null));
+    install(new NGLdapModule(appConfig));
     install(EntitySetupUsageModule.getInstance());
     install(PersistentLockModule.getInstance());
     install(new TransactionOutboxModule(
         appConfig.getOutboxPollConfig(), NG_MANAGER.getServiceId(), appConfig.isExportMetricsToStackDriver()));
     install(new ResourceGroupClientModule(appConfig.getResourceGroupClientConfig().getServiceConfig(),
         appConfig.getResourceGroupClientConfig().getSecret(), NG_MANAGER.getServiceId()));
-    install(new NGFileServiceModule(appConfig.getFileServiceConfiguration().getFileStorageMode(),
+    install(NGFileServiceModule.getInstance(appConfig.getFileServiceConfiguration().getFileStorageMode(),
         appConfig.getFileServiceConfiguration().getClusterName()));
+    install(NgFileStoreModule.getInstance());
+    install(new GitopsResourceClientModule(appConfig.getGitopsResourceClientConfig(), NG_MANAGER.getServiceId()));
     if (TRUE.equals(appConfig.getAccessControlAdminClientConfiguration().getMockAccessControlService())) {
       AccessControlAdminClientConfiguration accessControlAdminClientConfiguration =
           AccessControlAdminClientConfiguration.builder()
@@ -642,6 +661,7 @@ public class NextGenModule extends AbstractModule {
     });
 
     install(LicenseModule.getInstance());
+    install(SubscriptionModule.createInstance(appConfig.getSubscriptionConfig()));
     bind(AggregateUserService.class).to(AggregateUserServiceImpl.class);
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(NextGenOutboxEventHandler.class);
@@ -660,6 +680,7 @@ public class NextGenModule extends AbstractModule {
         .to(SecretManagerConnectorServiceImpl.class);
     bind(LastAdminCheckService.class).to(LastAdminCheckServiceImpl.class);
     bind(NgUserService.class).to(NgUserServiceImpl.class);
+    bind(AccountOrgProjectHelper.class).to(AccountOrgProjectHelperImpl.class);
     bind(UserGroupService.class).to(UserGroupServiceImpl.class);
     bind(YamlBaseUrlService.class).to(YamlBaseUrlServiceImpl.class);
     bind(UserInfoService.class).to(UserInfoServiceImpl.class);
@@ -686,6 +707,7 @@ public class NextGenModule extends AbstractModule {
     bind(FeedbackService.class).to(FeedbackServiceImpl.class);
     bind(PollingService.class).to(PollingServiceImpl.class);
     bind(PollingPerpetualTaskService.class).to(PollingPerpetualTaskServiceImpl.class);
+    bind(JenkinsBuildStepHelperService.class).to(JenkinsBuildStepHelperServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("ngTelemetryPublisherExecutor"))
         .toInstance(new ScheduledThreadPoolExecutor(1,
@@ -704,14 +726,9 @@ public class NextGenModule extends AbstractModule {
 
     registerEventsFrameworkMessageListeners();
     registerEncryptors();
-    bind(FeatureFlagHelperService.class).to(NGFeatureFlagHelperServiceImpl.class);
 
     bind(VariableService.class).to(VariableServiceImpl.class);
     bindExceptionHandlers();
-
-    MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
-        MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
-    filterPropertiesMapper.addBinding(FilterType.FILESTORE.toString()).to(FilesFilterPropertiesMapper.class);
   }
 
   private void bindExceptionHandlers() {
@@ -795,10 +812,17 @@ public class NextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(SECRET_ENTITY + ENTITY_CRUD))
         .to(SecretEntityCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(VARIABLE_ENTITY + ENTITY_CRUD))
+        .to(VariableEntityCRUDStreamListener.class);
     bind(MessageListener.class).annotatedWith(Names.named(INSTANCE_STATS)).to(InstanceStatsEventListener.class);
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkMetadataConstants.USER_GROUP + ENTITY_CRUD))
         .to(UserGroupEntityCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkMetadataConstants.GITOPS_CLUSTER_ENTITY + ENTITY_CRUD))
+        .to(ClusterCrudStreamListener.class);
+
     bind(MessageListener.class)
         .annotatedWith(Names.named(USER_SCOPE_RECONCILIATION))
         .to(UserMembershipReconciliationMessageProcessor.class);
@@ -827,15 +851,7 @@ public class NextGenModule extends AbstractModule {
     bind(ServiceAccountService.class).to(ServiceAccountServiceImpl.class);
     bind(OpaService.class).to(OpaServiceImpl.class);
     bind(OpaConnectorService.class).to(OpaConnectorServiceImpl.class);
-  }
-
-  private OrchestrationModuleConfig getOrchestrationConfig() {
-    return OrchestrationModuleConfig.builder()
-        .serviceName("CD_NG")
-        .withPMS(appConfig.getShouldConfigureWithPMS())
-        .expressionEvaluatorProvider(new CDExpressionEvaluatorProvider())
-        .publisherName(NgOrchestrationNotifyEventListener.NG_ORCHESTRATION)
-        .build();
+    bind(OpaSecretService.class).to(OpaSecretServiceImpl.class);
   }
 
   private ValidatorFactory getValidatorFactory() {

@@ -13,7 +13,7 @@ import lombok.Builder;
 import lombok.Data;
 
 @Data
-@Builder
+@Builder(toBuilder = true)
 public class TemplateParameters {
   private final String delegateXmx;
   private final String accountId;
@@ -39,4 +39,6 @@ public class TemplateParameters {
   private final String delegateTags;
   private final K8sPermissionType k8sPermissionsType;
   private final String delegateGroupName;
+  private final boolean watcher;
+  private final boolean mtlsEnabled;
 }

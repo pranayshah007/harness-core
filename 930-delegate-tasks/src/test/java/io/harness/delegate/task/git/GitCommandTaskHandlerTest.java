@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.MANKRIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.doNothing;
@@ -110,7 +111,7 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
     doReturn(response)
         .when(gitCommandTaskHandler)
         .handleValidateTask(
-            any(GitConfigDTO.class), any(ScmConnector.class), any(String.class), any(SshSessionConfig.class));
+            any(GitConfigDTO.class), any(ScmConnector.class), any(String.class), nullable(SshSessionConfig.class));
 
     ConnectorValidationResult validationResult =
         gitCommandTaskHandler.validateGitCredentials(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig);
@@ -127,7 +128,7 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
     doThrow(new JGitRuntimeException(SIMULATED_EXCEPTION_MESSAGE))
         .when(gitCommandTaskHandler)
         .handleValidateTask(
-            any(GitConfigDTO.class), any(ScmConnector.class), any(String.class), any(SshSessionConfig.class));
+            any(GitConfigDTO.class), any(ScmConnector.class), any(String.class), nullable(SshSessionConfig.class));
 
     gitCommandTaskHandler.validateGitCredentials(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig);
   }

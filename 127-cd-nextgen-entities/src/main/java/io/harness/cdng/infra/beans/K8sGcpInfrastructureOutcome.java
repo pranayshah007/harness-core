@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
@@ -29,7 +30,7 @@ public class K8sGcpInfrastructureOutcome implements InfrastructureOutcome {
   String namespace;
   String cluster;
   String releaseName;
-  EnvironmentOutcome environment;
+  @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
   String infrastructureKey;
 
   @Override

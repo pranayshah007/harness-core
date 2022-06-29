@@ -22,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.helm.HelmConstants;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.KubernetesConfig;
@@ -48,11 +49,11 @@ import com.amazonaws.services.ecs.model.DescribeTasksResult;
 import com.amazonaws.services.ecs.model.ListTasksRequest;
 import com.amazonaws.services.ecs.model.ListTasksResult;
 import com.amazonaws.services.ecs.model.Task;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.hazelcast.internal.util.Preconditions;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.kubernetes.client.openapi.models.V1Pod;
 import java.util.ArrayList;
@@ -115,6 +116,8 @@ public class ContainerServiceImpl implements ContainerService {
       KubernetesClusterConfig kubernetesClusterConfig =
           (KubernetesClusterConfig) containerServiceParams.getSettingAttribute().getValue();
       encryptionService.decrypt(kubernetesClusterConfig, containerServiceParams.getEncryptionDetails(), isInstanceSync);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+          kubernetesClusterConfig, containerServiceParams.getEncryptionDetails());
       kubernetesConfig = kubernetesClusterConfig.createKubernetesConfig(containerServiceParams.getNamespace());
     }
 
@@ -296,7 +299,8 @@ public class ContainerServiceImpl implements ContainerService {
     } else if (value instanceof KubernetesClusterConfig) {
       KubernetesClusterConfig kubernetesClusterConfig = (KubernetesClusterConfig) value;
       encryptionService.decrypt(kubernetesClusterConfig, containerServiceParams.getEncryptionDetails(), false);
-
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+          kubernetesClusterConfig, containerServiceParams.getEncryptionDetails());
       KubernetesConfig kubernetesConfig = kubernetesClusterConfig.createKubernetesConfig(namespace);
       kubernetesContainerService.validate(kubernetesConfig, useNewKubectlVersion);
       return true;
@@ -330,8 +334,8 @@ public class ContainerServiceImpl implements ContainerService {
 
   private KubernetesConfig getKubernetesConfigFromParams(ContainerServiceParams containerServiceParams) {
     SettingValue value = containerServiceParams.getSettingAttribute().getValue();
-    Preconditions.checkInstanceOf(
-        KubernetesClusterConfig.class, value, "SettingAttribute should be instanceof KubernetesClusterConfig.");
+    Preconditions.checkState(
+        value instanceof KubernetesClusterConfig, "SettingAttribute should be instanceof KubernetesClusterConfig.");
 
     KubernetesClusterConfig kubernetesClusterConfig = (KubernetesClusterConfig) value;
     return kubernetesClusterConfig.createKubernetesConfig(containerServiceParams.getNamespace());

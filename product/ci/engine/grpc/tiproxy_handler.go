@@ -249,6 +249,34 @@ func (h *tiProxyHandler) getCgFiles(dir, ext1, ext2 string) ([]string, []string,
 	return cgFiles, visFiles, nil
 }
 
+// DownloadLink calls TI service to provide download link(s) for given input
+func (h *tiProxyHandler) DownloadLink(ctx context.Context, req *pb.DownloadLinkRequest) (*pb.DownloadLinkResponse, error) {
+	var err error
+	tc, err := remoteTiClient()
+	if err != nil {
+		h.log.Errorw("could not create a client to the TI service", zap.Error(err))
+		return nil, err
+	}
+	language := req.GetLanguage()
+	os := req.GetOs()
+	arch := req.GetArch()
+	framework := req.GetFramework()
+	version := req.GetVersion()
+	env := req.GetEnv()
+	link, err := tc.DownloadLink(ctx, language, os, arch, framework, version, env)
+	if err != nil {
+		return nil, err
+	}
+
+	jsonStr, err := json.Marshal(link)
+	if err != nil {
+		return &pb.DownloadLinkResponse{}, err
+	}
+	return &pb.DownloadLinkResponse{
+		Links: string(jsonStr),
+	}, nil
+}
+
 // getEncodedData reads all files of specified format from datadir folder and returns byte array of avro encoded format
 func (h *tiProxyHandler) getEncodedData(req *pb.UploadCgRequest) ([]byte, error) {
 	var parser cgp.Parser

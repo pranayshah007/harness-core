@@ -72,7 +72,7 @@ public class InitializeStepInfo implements CIStepInfo, WithConnectorRef {
   private String name;
   @Min(MIN_RETRY) @Max(MAX_RETRY) private int retry;
 
-  BuildJobEnvInfo buildJobEnvInfo;
+  @Deprecated BuildJobEnvInfo buildJobEnvInfo;
   @NotNull String accountId;
   @NotNull ExecutionElementConfig executionElementConfig;
   CodeBase ciCodebase;
@@ -134,6 +134,11 @@ public class InitializeStepInfo implements CIStepInfo, WithConnectorRef {
     if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_DIRECT) {
       connectorRefMap.put(
           YAMLFieldNameConstants.CONNECTOR_REF, ((K8sDirectInfraYaml) infrastructure).getSpec().getConnectorRef());
+    }
+
+    if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
+      connectorRefMap.put(
+          YAMLFieldNameConstants.CONNECTOR_REF, ParameterField.createValueField("account.Harness_Kubernetes_Cluster"));
     }
 
     if (!skipGitClone) {

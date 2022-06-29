@@ -28,7 +28,7 @@ public class InfrastructureResponseDTO {
   String identifier;
   String orgIdentifier;
   String projectIdentifier;
-  String envIdentifier;
+  String environmentRef;
   String name;
   String description;
   Map<String, String> tags;

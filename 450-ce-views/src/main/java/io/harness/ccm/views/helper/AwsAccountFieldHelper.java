@@ -14,16 +14,22 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewRule;
+import io.harness.ccm.views.graphql.QLCEViewFilter;
+import io.harness.ccm.views.graphql.QLCEViewRule;
 
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Singleton
 @OwnedBy(CE)
@@ -91,5 +97,80 @@ public class AwsAccountFieldHelper {
     return values.stream()
         .map(value -> mergeAwsAccountIdAndName(value, entityIdToName.get(value)))
         .collect(Collectors.toList());
+  }
+
+  public static List<QLCEViewFilter> removeAccountNameFromAWSAccountIdFilter(final List<QLCEViewFilter> idFilters) {
+    final List<QLCEViewFilter> updatedIdFilters = new ArrayList<>();
+    idFilters.forEach(idFilter -> {
+      if (Objects.nonNull(idFilter.getField()) && AWS_ACCOUNT_FIELD.equals(idFilter.getField().getFieldName())
+          && Objects.nonNull(idFilter.getValues())) {
+        final String[] updatedValues = Arrays.stream(idFilter.getValues())
+                                           .map(AwsAccountFieldHelper::removeAwsAccountNameFromValue)
+                                           .toArray(String[] ::new);
+        updatedIdFilters.add(QLCEViewFilter.builder()
+                                 .field(idFilter.getField())
+                                 .operator(idFilter.getOperator())
+                                 .values(updatedValues)
+                                 .build());
+      } else {
+        updatedIdFilters.add(idFilter);
+      }
+    });
+    return updatedIdFilters;
+  }
+
+  public List<QLCEViewFilter> addAccountIdsByAwsAccountNameFilter(
+      final List<QLCEViewFilter> idFilters, final String accountId) {
+    final List<QLCEViewFilter> updatedIdFilters = new ArrayList<>();
+    idFilters.forEach(idFilter -> {
+      if (Objects.nonNull(idFilter.getField()) && AWS_ACCOUNT_FIELD.equals(idFilter.getField().getFieldName())
+          && Objects.nonNull(idFilter.getValues()) && idFilter.getValues().length != 0
+          && !idFilter.getValues()[0].isEmpty()) {
+        final String[] updatedValues =
+            Arrays.stream(idFilter.getValues())
+                .map(value -> entityMetadataService.getAccountIdAndNameByAccountNameFilter(value, accountId).keySet())
+                .flatMap(Set::stream)
+                .distinct()
+                .toArray(String[] ::new);
+        updatedIdFilters.add(
+            QLCEViewFilter.builder()
+                .field(idFilter.getField())
+                .operator(idFilter.getOperator())
+                .values(Stream.concat(Arrays.stream(idFilter.getValues()), Arrays.stream(updatedValues))
+                            .toArray(String[] ::new))
+                .build());
+      } else {
+        updatedIdFilters.add(idFilter);
+      }
+    });
+    return updatedIdFilters;
+  }
+
+  public static List<QLCEViewRule> removeAccountNameFromAWSAccountRuleFilter(final List<QLCEViewRule> ruleFilters) {
+    final List<QLCEViewRule> updatedRuleFilters = new ArrayList<>();
+    ruleFilters.forEach(ruleFilter -> {
+      if (Objects.nonNull(ruleFilter.getConditions())) {
+        final List<QLCEViewFilter> updatedConditions = new ArrayList<>();
+        ruleFilter.getConditions().forEach(condition -> {
+          if (Objects.nonNull(condition.getField()) && AWS_ACCOUNT_FIELD.equals(condition.getField().getFieldName())
+              && Objects.nonNull(condition.getValues())) {
+            final String[] updatedValues = Arrays.stream(condition.getValues())
+                                               .map(AwsAccountFieldHelper::removeAwsAccountNameFromValue)
+                                               .toArray(String[] ::new);
+            updatedConditions.add(QLCEViewFilter.builder()
+                                      .field(condition.getField())
+                                      .operator(condition.getOperator())
+                                      .values(updatedValues)
+                                      .build());
+          } else {
+            updatedConditions.add(condition);
+          }
+        });
+        updatedRuleFilters.add(QLCEViewRule.builder().conditions(updatedConditions).build());
+      } else {
+        updatedRuleFilters.add(ruleFilter);
+      }
+    });
+    return updatedRuleFilters;
   }
 }

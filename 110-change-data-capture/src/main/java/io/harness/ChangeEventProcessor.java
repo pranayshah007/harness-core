@@ -42,7 +42,7 @@ class ChangeEventProcessor {
 
   boolean processChangeEvent(ChangeEvent<?> changeEvent) {
     try {
-      log.info(
+      log.trace(
           "Adding change event of type {}:{} in the queue", changeEvent.getEntityType(), changeEvent.getChangeType());
       changeEventQueue.put(changeEvent);
     } catch (InterruptedException e) {

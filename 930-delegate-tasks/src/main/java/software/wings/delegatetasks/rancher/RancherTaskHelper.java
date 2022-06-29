@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.KeyValuePair;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.http.HttpService;
 import io.harness.http.beans.HttpInternalConfig;
 import io.harness.http.beans.HttpInternalResponse;
@@ -70,6 +71,7 @@ public class RancherTaskHelper {
   public RancherClusterDataResponse resolveRancherClusters(
       final RancherConfig rancherConfig, final List<EncryptedDataDetail> encryptedDataDetails) throws IOException {
     encryptionService.decrypt(rancherConfig, encryptedDataDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(rancherConfig, encryptedDataDetails);
     HttpInternalResponse httpResponse = makeRancherApi("GET", "/v3/clusters", rancherConfig);
 
     return objectMapper.readValue(httpResponse.getHttpResponseBody(), RancherClusterDataResponse.class);
@@ -110,6 +112,7 @@ public class RancherTaskHelper {
       final List<EncryptedDataDetail> encryptedDataDetails, final String clusterName, final String namespace)
       throws IOException {
     encryptionService.decrypt(rancherConfig, encryptedDataDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(rancherConfig, encryptedDataDetails);
     KubernetesConfigBuilder kubernetesConfigBuilder = KubernetesConfig.builder().namespace(namespace);
 
     RancherClusterDataResponse rancherClusterData = resolveRancherClusters(rancherConfig, encryptedDataDetails);

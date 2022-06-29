@@ -30,6 +30,7 @@ directories:
   876-orchestration-beans
   878-ng-common-utilities
   879-pms-sdk
+  880-pipeline-cd-commons
   882-pms-sdk-core
   884-pms-commons
   888-pms-client
@@ -52,6 +53,7 @@ directories:
   945-account-mgmt
   948-access-control-admin-client
   948-access-control-sdk
+  948-cv-nextgen-beans
   949-access-control-commons
   950-command-library-common
   950-delegate-tasks-beans

@@ -19,7 +19,6 @@ import io.harness.EntityType;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.NGExpressionUtils;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -35,7 +34,6 @@ import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.preflight.PreFlightCheckMetadata;
-import io.harness.remote.client.RestClientUtils;
 import io.harness.template.TemplateReferenceProtoUtils;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.services.NGTemplateServiceHelper;
@@ -69,30 +67,32 @@ public class TemplateReferenceHelper {
   TemplateSetupUsageHelper templateSetupUsageHelper;
   AccountClient accountClient;
 
-  private boolean isFeatureFlagEnabled(String accountId) {
-    return RestClientUtils.getResponse(
-        accountClient.isFeatureFlagEnabled(FeatureName.NG_TEMPLATE_REFERENCES_SUPPORT.name(), accountId));
+  private boolean skipTemplateReference(TemplateEntity templateEntity) {
+    return !templateEntity.getTemplateEntityType().getOwnerTeam().equals(HarnessTeam.PIPELINE);
   }
 
   public void deleteTemplateReferences(TemplateEntity templateEntity) {
-    if (!isFeatureFlagEnabled(templateEntity.getAccountId())) {
+    if (skipTemplateReference(templateEntity)) {
       return;
     }
     templateSetupUsageHelper.deleteExistingSetupUsages(templateEntity);
   }
 
   public void populateTemplateReferences(TemplateEntity templateEntity) {
-    if (!isFeatureFlagEnabled(templateEntity.getAccountId())) {
+    if (skipTemplateReference(templateEntity)) {
       return;
     }
-    String pmsUnderstandableYaml =
-        templateYamlConversionHelper.convertTemplateYamlToPMSUnderstandableYaml(templateEntity);
+    String pmsUnderstandableYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(templateEntity);
     EntityReferenceRequest.Builder entityReferenceRequestBuilder =
         EntityReferenceRequest.newBuilder()
             .setYaml(pmsUnderstandableYaml)
-            .setAccountIdentifier(templateEntity.getAccountIdentifier())
-            .setOrgIdentifier(templateEntity.getOrgIdentifier())
-            .setProjectIdentifier(templateEntity.getProjectIdentifier());
+            .setAccountIdentifier(templateEntity.getAccountIdentifier());
+    if (isNotEmpty(templateEntity.getOrgIdentifier())) {
+      entityReferenceRequestBuilder.setOrgIdentifier(templateEntity.getOrgIdentifier());
+    }
+    if (isNotEmpty(templateEntity.getProjectIdentifier())) {
+      entityReferenceRequestBuilder.setProjectIdentifier(templateEntity.getProjectIdentifier());
+    }
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal();
     if (gitSyncBranchContext != null) {
       entityReferenceRequestBuilder.setGitSyncBranchContext(gitSyncBranchContext);
@@ -160,7 +160,7 @@ public class TemplateReferenceHelper {
         List<FQNNode> fqnList = new ArrayList<>(key.getFqnList());
         FQNNode lastNode = fqnList.get(fqnList.size() - 1);
         FQNNode secondLastNode = fqnList.get(fqnList.size() - 2);
-        if (lastNode.getKey().equals(TEMPLATE_REF) && secondLastNode.getKey().equals(TEMPLATE)) {
+        if (TEMPLATE_REF.equals(lastNode.getKey()) && TEMPLATE.equals(secondLastNode.getKey())) {
           String identifier = ((JsonNode) fqnToValueMap.get(key)).asText();
           IdentifierRef templateIdentifierRef =
               IdentifierRefHelper.getIdentifierRef(identifier, accountId, orgId, projectId);
@@ -184,13 +184,13 @@ public class TemplateReferenceHelper {
 
           // remove versionLabel from FQN.
           fqnList.remove(fqnList.size() - 1);
+          String fqn = FQN.builder().fqnList(fqnList).build().getExpressionFqn();
           // add linked template as reference
-          referredEntities.add(
-              getTemplateReference(templateIdentifierRef, versionLabelNode == null ? STABLE_VERSION : versionLabel));
+          referredEntities.add(getTemplateReference(
+              templateIdentifierRef, versionLabelNode == null ? STABLE_VERSION : versionLabel, fqn));
           // add runtime entities referred by linked template as references
-          referredEntities.addAll(
-              getEntitiesReferredByTemplate(accountId, orgId, projectId, templateIdentifierRef, versionLabel,
-                  fqnStringToValueMap, FQN.builder().fqnList(fqnList).build().getExpressionFqn(), shouldModifyFqn));
+          referredEntities.addAll(getEntitiesReferredByTemplate(accountId, orgId, projectId, templateIdentifierRef,
+              versionLabel, fqnStringToValueMap, fqn, shouldModifyFqn));
         }
       }
     });
@@ -264,11 +264,13 @@ public class TemplateReferenceHelper {
     }
   }
 
-  private EntityDetailProtoDTO getTemplateReference(IdentifierRef templateIdentifierRef, String versionLabel) {
+  private EntityDetailProtoDTO getTemplateReference(IdentifierRef identifierRef, String versionLabel, String fqn) {
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(PreFlightCheckMetadata.FQN, fqn);
     return EntityDetailProtoDTO.newBuilder()
         .setType(EntityTypeProtoEnum.TEMPLATE)
         .setTemplateRef(TemplateReferenceProtoUtils.createTemplateReferenceProtoFromIdentifierRef(
-            templateIdentifierRef, versionLabel))
+            identifierRef, versionLabel, metadata))
         .build();
   }
 

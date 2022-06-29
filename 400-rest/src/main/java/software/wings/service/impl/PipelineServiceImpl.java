@@ -42,6 +42,7 @@ import static software.wings.expression.ManagerExpressionEvaluator.getName;
 import static software.wings.expression.ManagerExpressionEvaluator.matchesVariablePattern;
 import static software.wings.service.impl.pipeline.PipelineServiceValidator.checkUniqueApprovalPublishedVariable;
 import static software.wings.service.impl.pipeline.PipelineServiceValidator.validateTemplateExpressions;
+import static software.wings.service.impl.pipeline.PipelineServiceValidator.validateUserGroupExpression;
 import static software.wings.sm.StateType.APPROVAL;
 import static software.wings.sm.StateType.ENV_STATE;
 
@@ -237,6 +238,9 @@ public class PipelineServiceImpl implements PipelineService {
   @Override
   public Pipeline update(Pipeline pipeline, boolean migration, boolean fromYaml) {
     validateTemplateExpressions(pipeline);
+
+    validateUserGroupExpression(pipeline);
+
     Pipeline savedPipeline = wingsPersistence.getWithAppId(Pipeline.class, pipeline.getAppId(), pipeline.getUuid());
     notNullCheck("Pipeline not saved", savedPipeline, USER);
 
@@ -1067,10 +1071,14 @@ public class PipelineServiceImpl implements PipelineService {
   @VisibleForTesting
   void setPipelineVariablesApproval(PipelineStageElement pse, List<Variable> pipelineVariables, String stageName) {
     Map<String, Object> properties = pse.getProperties();
-    List<Map<String, Object>> templateExpressions = (List<Map<String, Object>>) properties.get("templateExpressions");
 
-    if (templateExpressions != null) {
-      addToUserVariablePipelineApproval(templateExpressions, pipelineVariables, pse.getType(), APPROVAL.name());
+    Object obj = properties.get("templateExpressions");
+    if (obj instanceof List) {
+      List<Map<String, Object>> templateExpressions = (List<Map<String, Object>>) obj;
+
+      if (templateExpressions != null) {
+        addToUserVariablePipelineApproval(templateExpressions, pipelineVariables, pse.getType(), APPROVAL.name());
+      }
     }
   }
 
@@ -1723,6 +1731,8 @@ public class PipelineServiceImpl implements PipelineService {
   @ValidationGroups(Create.class)
   public Pipeline save(Pipeline pipeline) {
     validateTemplateExpressions(pipeline);
+    validateUserGroupExpression(pipeline);
+
     validatePipelineNameForDuplicates(pipeline);
     ensurePipelineStageUuidAndParallelIndex(pipeline);
     checkUniquePipelineStepName(pipeline);
@@ -2093,6 +2103,10 @@ public class PipelineServiceImpl implements PipelineService {
           }
         });
       } else {
+        if (stageElement.getRuntimeInputsConfig() != null) {
+          List<String> userGroupIds = stageElement.getRuntimeInputsConfig().getUserGroupIds();
+          userGroups.addAll(userGroupIds);
+        }
         String workflowId = (String) stageElement.getProperties().get("workflowId");
         Workflow workflow = getWorkflow(pipeline, workflowCache, workflowId);
         workflowCache.put(workflowId, workflow);

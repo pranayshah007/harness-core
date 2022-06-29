@@ -34,6 +34,7 @@ import io.harness.plan.Node;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.OrchestrationEvent;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.contracts.governance.GovernanceMetadata;
@@ -67,6 +68,12 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
 
   @Override
   public PlanExecution runNode(@NonNull Ambiance ambiance, @NonNull Plan plan, PlanExecutionMetadata metadata) {
+    return runNode(ambiance, plan, metadata, InitiateMode.CREATE_AND_START);
+  }
+
+  @Override
+  public PlanExecution runNode(
+      @NonNull Ambiance ambiance, @NonNull Plan plan, PlanExecutionMetadata metadata, InitiateMode initiateMode) {
     long startTs = System.currentTimeMillis();
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       String accountId = ambiance.getSetupAbstractionsMap().get(SetupAbstractionKeys.accountId);

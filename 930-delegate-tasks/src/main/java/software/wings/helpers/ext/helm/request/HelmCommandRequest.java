@@ -32,7 +32,7 @@ import software.wings.beans.AwsConfig;
 import software.wings.beans.GcpConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
-import software.wings.beans.container.HelmChartSpecificationDTO;
+import software.wings.beans.dto.HelmChartSpecification;
 import software.wings.delegatetasks.delegatecapability.CapabilityHelper;
 import software.wings.delegatetasks.validation.capabilities.GitConnectionCapability;
 import software.wings.delegatetasks.validation.capabilities.HelmCommandCapability;
@@ -67,7 +67,7 @@ public class HelmCommandRequest implements TaskParameters, ActivityAccess, Execu
   private String activityId;
   private ContainerServiceParams containerServiceParams;
   private String releaseName;
-  private HelmChartSpecificationDTO chartSpecification;
+  private HelmChartSpecification chartSpecification;
   private String repoName;
   private GitConfig gitConfig;
   private List<EncryptedDataDetail> encryptedDataDetails;

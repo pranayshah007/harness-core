@@ -21,8 +21,11 @@ public enum InfrastructureType {
   @JsonProperty(InfrastructureKind.KUBERNETES_GCP) KUBERNETES_GCP(InfrastructureKind.KUBERNETES_GCP),
   @JsonProperty(InfrastructureKind.KUBERNETES_AZURE) KUBERNETES_AZURE(InfrastructureKind.KUBERNETES_AZURE),
   @JsonProperty(InfrastructureKind.PDC) PDC(InfrastructureKind.PDC),
+  @JsonProperty(InfrastructureKind.SSH_WINRM_AZURE) SSH_WINRM_AZURE(InfrastructureKind.SSH_WINRM_AZURE),
   @JsonProperty(InfrastructureKind.SERVERLESS_AWS_LAMBDA)
-  SERVERLESS_AWS_LAMBDA(InfrastructureKind.SERVERLESS_AWS_LAMBDA);
+  SERVERLESS_AWS_LAMBDA(InfrastructureKind.SERVERLESS_AWS_LAMBDA),
+  @JsonProperty(InfrastructureKind.AZURE_WEB_APP) AZURE_WEB_APP(InfrastructureKind.AZURE_WEB_APP),
+  @JsonProperty(InfrastructureKind.SSH_WINRM_AWS) SSH_WINRM_AWS(InfrastructureKind.SSH_WINRM_AWS);
 
   private final String displayName;
 

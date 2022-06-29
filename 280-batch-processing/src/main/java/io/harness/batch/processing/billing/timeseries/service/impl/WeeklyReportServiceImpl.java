@@ -47,7 +47,6 @@ import io.harness.ccm.communication.entities.CommunicationType;
 import io.harness.rest.RestResponse;
 import io.harness.timescaledb.TimeScaleDBService;
 
-import software.wings.beans.Account;
 import software.wings.graphql.datafetcher.billing.BillingDataQueryMetadata;
 import software.wings.helpers.ext.mail.EmailData;
 import software.wings.service.impl.instance.CloudToHarnessMappingServiceImpl;
@@ -74,7 +73,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -144,8 +142,7 @@ public class WeeklyReportServiceImpl {
   public static final String COMMUNICATION_MEDIUM = "utm_medium";
 
   public void generateAndSendWeeklyReport() {
-    List<Account> ceEnabledAccounts = accountShardService.getCeEnabledAccounts();
-    List<String> accountIds = ceEnabledAccounts.stream().map(Account::getUuid).collect(Collectors.toList());
+    List<String> accountIds = accountShardService.getCeEnabledAccountIds();
 
     String currentWeekStartTime = getStartTime(getStartOfDayTimestamp(0)).toString();
     String currentWeekEndTime = getEndTime(getStartOfDayTimestamp(0)).toString();

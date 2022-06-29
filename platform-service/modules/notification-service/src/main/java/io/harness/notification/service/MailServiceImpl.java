@@ -16,8 +16,6 @@ import static io.harness.exception.WingsException.USER;
 import static freemarker.template.Configuration.VERSION_2_3_23;
 import static org.apache.commons.lang3.StringUtils.stripToNull;
 
-import io.harness.NotificationRequest;
-import io.harness.Team;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.MailTaskParams;
@@ -25,7 +23,9 @@ import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.notification.NotificationChannelType;
+import io.harness.notification.NotificationRequest;
 import io.harness.notification.SmtpConfig;
+import io.harness.notification.Team;
 import io.harness.notification.exception.NotificationException;
 import io.harness.notification.remote.SmtpConfigResponse;
 import io.harness.notification.remote.dto.EmailSettingDTO;
@@ -138,7 +138,7 @@ public class MailServiceImpl implements ChannelService {
       List<String> emailIds, String subject, String body, String notificationId, String accountId) {
     NotificationProcessingResponse notificationProcessingResponse;
     SmtpConfigResponse smtpConfigResponse = notificationSettingsService.getSmtpConfigResponse(accountId);
-    if (notificationSettingsService.getSendNotificationViaDelegate(accountId) && Objects.nonNull(smtpConfigResponse)) {
+    if (Objects.nonNull(smtpConfigResponse)) {
       DelegateTaskRequest delegateTaskRequest =
           DelegateTaskRequest.builder()
               .accountId(accountId)
@@ -219,7 +219,7 @@ public class MailServiceImpl implements ChannelService {
     List<String> recipients = new ArrayList<>(emailDetails.getEmailIdsList());
     if (isNotEmpty(emailDetails.getUserGroupList())) {
       List<String> resolvedRecipients = notificationSettingsService.getNotificationRequestForUserGroups(
-          emailDetails.getUserGroupList(), NotificationChannelType.EMAIL, notificationRequest.getAccountId());
+          emailDetails.getUserGroupList(), NotificationChannelType.EMAIL, notificationRequest.getAccountId(), 0L);
       recipients.addAll(resolvedRecipients);
     }
     return recipients.stream().distinct().collect(Collectors.toList());

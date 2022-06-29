@@ -158,7 +158,8 @@ public class HttpServiceImpl implements HttpService {
     }
   }
 
-  private HttpInternalResponse executeHttpStep(CloseableHttpClient httpclient,
+  @VisibleForTesting
+  protected HttpInternalResponse executeHttpStep(CloseableHttpClient httpclient,
       HttpInternalResponse httpInternalResponse, HttpUriRequest httpUriRequest, HttpInternalConfig httpInternalConfig,
       boolean isSupportingErrorFramework) throws IOException {
     HttpResponse httpResponse = httpclient.execute(httpUriRequest);

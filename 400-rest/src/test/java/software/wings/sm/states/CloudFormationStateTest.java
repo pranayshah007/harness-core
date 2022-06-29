@@ -14,7 +14,6 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.pcf.ResizeStrategy.RESIZE_NEW_FIRST;
 import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_BODY;
 import static io.harness.rule.OwnerRule.ADWAIT;
-import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
@@ -27,10 +26,6 @@ import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.command.Command.Builder.aCommand;
 import static software.wings.beans.command.ServiceCommand.Builder.aServiceCommand;
-import static software.wings.service.impl.aws.model.AwsConstants.BASE_DELAY_ACCOUNT_VARIABLE;
-import static software.wings.service.impl.aws.model.AwsConstants.MAX_BACKOFF_ACCOUNT_VARIABLE;
-import static software.wings.service.impl.aws.model.AwsConstants.MAX_ERROR_RETRY_ACCOUNT_VARIABLE;
-import static software.wings.service.impl.aws.model.AwsConstants.THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 import static software.wings.sm.WorkflowStandardParams.Builder.aWorkflowStandardParams;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
@@ -56,9 +51,9 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
@@ -88,7 +83,6 @@ import software.wings.api.WorkflowElement;
 import software.wings.app.MainConfiguration;
 import software.wings.app.PortalConfig;
 import software.wings.beans.Activity;
-import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
 import software.wings.beans.Application;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.AwsInfrastructureMapping;
@@ -295,7 +289,7 @@ public class CloudFormationStateTest extends WingsBaseTest {
 
   @Before
   public void setup() throws IllegalAccessException {
-    when(infrastructureProvisionerService.get(anyString(), anyString()))
+    when(infrastructureProvisionerService.get(nullable(String.class), nullable(String.class)))
         .thenReturn(
             CloudFormationInfrastructureProvisioner.builder()
                 .uuid(INFRA_PROV_ID)
@@ -370,7 +364,8 @@ public class CloudFormationStateTest extends WingsBaseTest {
     FieldUtils.writeField(
         cloudFormationDeleteStackState, "templateExpressionProcessor", templateExpressionProcessor, true);
 
-    when(workflowExecutionService.getExecutionDetails(anyString(), anyString(), anyBoolean(), anyBoolean()))
+    when(workflowExecutionService.getExecutionDetails(
+             nullable(String.class), nullable(String.class), anyBoolean(), anyBoolean()))
         .thenReturn(WorkflowExecution.builder().build());
     context = new ExecutionContextImpl(stateExecutionInstance);
     on(context).set("variableProcessor", variableProcessor);
@@ -385,7 +380,8 @@ public class CloudFormationStateTest extends WingsBaseTest {
     on(context).set("contextElementParamMapperFactory", contextElementParamMapperFactory);
 
     when(variableProcessor.getVariables(any(), any())).thenReturn(emptyMap());
-    //    when(evaluator.substitute(anyString(), anyMap(), anyString())).thenAnswer(i -> i.getArguments()[0]);
+    //    when(evaluator.substitute(nullable(String.class), anyMap(), nullable(String.class))).thenAnswer(i ->
+    //    i.getArguments()[0]);
     PortalConfig portalConfig = new PortalConfig();
     portalConfig.setUrl(BASE_URL);
     when(configuration.getPortal()).thenReturn(portalConfig);
@@ -393,7 +389,7 @@ public class CloudFormationStateTest extends WingsBaseTest {
     when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
     when(featureFlagService.isEnabled(FeatureName.SKIP_BASED_ON_STACK_STATUSES, ACCOUNT_ID)).thenReturn(true);
     when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn("baseUrl");
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(nullable(String.class), any());
   }
 
   @Test
@@ -549,42 +545,5 @@ public class CloudFormationStateTest extends WingsBaseTest {
     assertThat(cloudFormationDeleteStackState.validateFields().size()).isEqualTo(1);
     cloudFormationDeleteStackState.setProvisionerId("test provisioner");
     assertThat(cloudFormationDeleteStackState.validateFields().size()).isEqualTo(0);
-  }
-
-  @Test
-  @Owner(developers = IVAN)
-  @Category(UnitTests.class)
-  public void testSetAmazonClientSDKDefaultBackoffStrategyIfExists() {
-    when(executionContext.renderExpression(BASE_DELAY_ACCOUNT_VARIABLE)).thenReturn("100");
-    when(executionContext.renderExpression(THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE)).thenReturn("500");
-    when(executionContext.renderExpression(MAX_BACKOFF_ACCOUNT_VARIABLE)).thenReturn("20000");
-    when(executionContext.renderExpression(MAX_ERROR_RETRY_ACCOUNT_VARIABLE)).thenReturn("5");
-
-    AwsConfig awsConfig = AwsConfig.builder().build();
-    cloudFormationCreateStackState.setAmazonClientSDKDefaultBackoffStrategyIfExists(executionContext, awsConfig);
-
-    AmazonClientSDKDefaultBackoffStrategy amazonClientSDKDefaultBackoffStrategy =
-        awsConfig.getAmazonClientSDKDefaultBackoffStrategy();
-    assertThat(amazonClientSDKDefaultBackoffStrategy.getBaseDelayInMs()).isEqualTo(100);
-    assertThat(amazonClientSDKDefaultBackoffStrategy.getThrottledBaseDelayInMs()).isEqualTo(500);
-    assertThat(amazonClientSDKDefaultBackoffStrategy.getMaxBackoffInMs()).isEqualTo(20000);
-    assertThat(amazonClientSDKDefaultBackoffStrategy.getMaxErrorRetry()).isEqualTo(5);
-  }
-
-  @Test
-  @Owner(developers = IVAN)
-  @Category(UnitTests.class)
-  public void testSetAmazonClientSDKDefaultBackoffStrategyIfExistsWithInvalidValues() {
-    when(executionContext.renderExpression(BASE_DELAY_ACCOUNT_VARIABLE)).thenReturn("not_valid");
-    when(executionContext.renderExpression(THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE)).thenReturn("not_valid");
-    when(executionContext.renderExpression(MAX_BACKOFF_ACCOUNT_VARIABLE)).thenReturn("not_valid");
-    when(executionContext.renderExpression(MAX_ERROR_RETRY_ACCOUNT_VARIABLE)).thenReturn("not_valid");
-
-    AwsConfig awsConfig = AwsConfig.builder().build();
-    cloudFormationCreateStackState.setAmazonClientSDKDefaultBackoffStrategyIfExists(executionContext, awsConfig);
-
-    AmazonClientSDKDefaultBackoffStrategy amazonClientSDKDefaultBackoffStrategy =
-        awsConfig.getAmazonClientSDKDefaultBackoffStrategy();
-    assertThat(amazonClientSDKDefaultBackoffStrategy).isNull();
   }
 }

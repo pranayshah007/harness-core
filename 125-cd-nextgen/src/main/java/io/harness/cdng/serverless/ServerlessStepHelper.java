@@ -35,7 +35,8 @@ public interface ServerlessStepHelper {
   ServerlessManifestConfig getServerlessManifestConfig(
       ManifestOutcome manifestOutcome, Ambiance ambiance, Map<String, Object> manifestParams);
 
-  List<ServerInstanceInfo> getServerlessDeployFunctionInstanceInfo(ServerlessDeployResult serverlessDeployResult);
+  List<ServerInstanceInfo> getServerlessDeployFunctionInstanceInfo(
+      ServerlessDeployResult serverlessDeployResult, String infraStructureKey);
 
   Optional<Pair<String, String>> getManifestFileContent(
       Map<String, FetchFilesResult> fetchFilesResultMap, ManifestOutcome manifestOutcome);

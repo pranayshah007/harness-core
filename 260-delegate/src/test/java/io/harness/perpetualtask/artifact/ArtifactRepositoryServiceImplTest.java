@@ -28,7 +28,6 @@ import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.buildsource.BuildSourceParameters;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.service.impl.ServiceClassLocator;
-import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.intfc.CustomBuildService;
 import software.wings.service.intfc.DockerBuildService;
 import software.wings.service.intfc.JenkinsBuildService;
@@ -211,7 +210,8 @@ public class ArtifactRepositoryServiceImplTest extends CategoryTest {
       BuildSourceParameters buildSourceParameters) {
     Function<BuildDetails, String> buildDetailsKeyFn = DelegateArtifactCollectionUtils.getBuildDetailsKeyFn(
         buildSourceParameters.getArtifactStreamType(), buildSourceParameters.getArtifactStreamAttributes());
-    boolean enableCleanup = ArtifactCollectionUtils.supportsCleanup(buildSourceParameters.getArtifactStreamType());
+    boolean enableCleanup =
+        DelegateArtifactCollectionUtils.supportsCleanup(buildSourceParameters.getArtifactStreamType());
     return new ArtifactsPublishedCache(
         buildSourceParameters.getSavedBuildDetailsKeys(), buildDetailsKeyFn, enableCleanup);
   }

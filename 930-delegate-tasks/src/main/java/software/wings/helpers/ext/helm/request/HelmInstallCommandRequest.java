@@ -19,7 +19,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
-import software.wings.beans.container.HelmChartSpecificationDTO;
+import software.wings.beans.dto.HelmChartSpecification;
 import software.wings.helpers.ext.k8s.request.K8sDelegateManifestConfig;
 import software.wings.service.impl.ContainerServiceParams;
 
@@ -51,7 +51,7 @@ public class HelmInstallCommandRequest extends HelmCommandRequest {
   @Builder
   public HelmInstallCommandRequest(String accountId, String appId, String kubeConfigLocation, String commandName,
       String activityId, ContainerServiceParams containerServiceParams, String releaseName,
-      HelmChartSpecificationDTO chartSpecification, int newReleaseVersion, int prevReleaseVersion, String namespace,
+      HelmChartSpecification chartSpecification, int newReleaseVersion, int prevReleaseVersion, String namespace,
       long timeoutInMillis, Map<String, String> valueOverrides, List<String> variableOverridesYamlFiles,
       String repoName, GitConfig gitConfig, GitFileConfig gitFileConfig, List<EncryptedDataDetail> encryptedDataDetails,
       LogCallback executionLogCallback, String commandFlags, HelmCommandFlag helmCommandFlag,

@@ -25,13 +25,16 @@ import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.apiexamples.PipelineAPIConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
+import io.harness.gitsync.interceptor.GitImportInfoDTO;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -39,21 +42,21 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.inputset.InputSetSchemaConstants;
+import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.inputset.MergeInputSetTemplateRequestDTO;
-import io.harness.pms.inputset.OverlayInputSetErrorWrapperDTOPMS;
 import io.harness.pms.merger.helpers.InputSetYamlHelper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSanitiseResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSummaryResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateRequestDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
-import io.harness.pms.ngpipeline.inputset.beans.resource.MergeInputSetRequestDTOPMS;
 import io.harness.pms.ngpipeline.inputset.exceptions.InvalidInputSetException;
-import io.harness.pms.ngpipeline.inputset.exceptions.InvalidOverlayInputSetException;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
@@ -74,6 +77,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -115,7 +119,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
 
-@Tag(name = "InputSets", description = "Contain APIs corresponding to the Input Sets, including Overlay Input Sets.")
+@Tag(name = "Pipeline Input Set", description = "This contains APIs related to Input Sets")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =
     {
@@ -140,7 +144,8 @@ public class InputSetResourcePMS {
   @ApiOperation(value = "Gets an InputSet by identifier", nickname = "getInputSetForPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   @Operation(operationId = "getInputSet",
-      summary = "Gets Input Set for a given identifier. Throws error if no Input Set exists for the given identifier.",
+      description = "Returns Input Set for a Given Identifier (Throws an Error if no Input Set Exists)",
+      summary = "Fetch an Input Set",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -160,17 +165,26 @@ public class InputSetResourcePMS {
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     log.info(String.format("Retrieving input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
-    Optional<InputSetEntity> inputSetEntity = pmsInputSetService.get(
+    Optional<InputSetEntity> optionalInputSetEntity = pmsInputSetService.get(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false);
-    String version = "0";
-    if (inputSetEntity.isPresent()) {
-      version = inputSetEntity.get().getVersion().toString();
+    if (!optionalInputSetEntity.isPresent()) {
+      throw new InvalidRequestException(
+          String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
+    }
+    InputSetEntity inputSetEntity = optionalInputSetEntity.get();
+    InputSetResponseDTOPMS inputSet = PMSInputSetElementMapper.toInputSetResponseDTOPMS(inputSetEntity);
+
+    if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
+      // todo: move the business logic to service layer, and in service layer make use of helpers as required.
+      InputSetErrorWrapperDTOPMS errorWrapperDTOPMS = validateAndMergeHelper.validateInputSet(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetEntity.getYaml(), null, null);
+      if (errorWrapperDTOPMS != null) {
+        return ResponseDTO.newResponse(
+            PMSInputSetElementMapper.toInputSetResponseDTOPMSWithErrors(inputSetEntity, errorWrapperDTOPMS));
+      }
     }
 
-    InputSetResponseDTOPMS inputSet = PMSInputSetElementMapper.toInputSetResponseDTOPMS(inputSetEntity.orElseThrow(
-        ()
-            -> new InvalidRequestException(String.format(
-                "InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier))));
+    String version = inputSetEntity.getVersion().toString();
 
     return ResponseDTO.newResponse(version, inputSet);
   }
@@ -185,6 +199,7 @@ public class InputSetResourcePMS {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
             description = "The Overlay Input Set that corresponds to the given Overlay Input Set Identifier")
       })
+  @Hidden
   public ResponseDTO<OverlayInputSetResponseDTOPMS>
   getOverlayInputSet(
       @PathParam(NGCommonEntityConstants.INPUT_SET_IDENTIFIER_KEY) @Parameter(
@@ -201,18 +216,27 @@ public class InputSetResourcePMS {
     log.info(String.format(
         "Retrieving overlay input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
-    Optional<InputSetEntity> inputSetEntity = pmsInputSetService.get(
+    Optional<InputSetEntity> optionalInputSetEntity = pmsInputSetService.get(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false);
-    String version = "0";
-    if (inputSetEntity.isPresent()) {
-      version = inputSetEntity.get().getVersion().toString();
+    if (!optionalInputSetEntity.isPresent()) {
+      throw new InvalidRequestException(
+          String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
+    }
+    InputSetEntity inputSetEntity = optionalInputSetEntity.get();
+    OverlayInputSetResponseDTOPMS overlayInputSet =
+        PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(inputSetEntity);
+
+    if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
+      // todo: move the business logic to service layer, and in service layer make use of helpers as required.
+      Map<String, String> overlayInputSetErrorResponse = validateAndMergeHelper.validateOverlayInputSet(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetEntity.getYaml());
+      if (!overlayInputSetErrorResponse.isEmpty()) {
+        return ResponseDTO.newResponse(PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(
+            inputSetEntity, true, overlayInputSetErrorResponse));
+      }
     }
 
-    OverlayInputSetResponseDTOPMS overlayInputSet =
-        PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(inputSetEntity.orElseThrow(
-            ()
-                -> new InvalidRequestException(String.format(
-                    "InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier))));
+    String version = inputSetEntity.getVersion().toString();
 
     return ResponseDTO.newResponse(version, overlayInputSet);
   }
@@ -220,7 +244,8 @@ public class InputSetResourcePMS {
   @POST
   @ApiOperation(value = "Create an InputSet For Pipeline", nickname = "createInputSetForPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
-  @Operation(operationId = "postInputSet", summary = "Create an Input Set for a Pipeline",
+  @Operation(operationId = "postInputSet", description = "Creates an Input Set for a Pipeline",
+      summary = "Create an Input Set",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -243,21 +268,19 @@ public class InputSetResourcePMS {
       String pipelineRepoID, @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo,
       @RequestBody(required = true,
           description =
-              "Input set YAML to be created. The Account, Org, Project, and Pipeline identifiers inside the YAML should match the query parameters.")
-      @NotNull String yaml) {
+              "Input set YAML to be created. The Account, Org, Project, and Pipeline identifiers inside the YAML should match the query parameters.",
+          content = {
+            @Content(mediaType = "application/yaml",
+                examples = @ExampleObject(name = "Create", summary = "Sample Input Set YAML",
+                    value = PipelineAPIConstants.CREATE_INPUTSET_API, description = "Sample Input Set YAML"))
+          }) @NotNull String yaml) {
     yaml = removeRuntimeInputFromYaml(yaml);
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
     log.info(String.format("Create input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         entity.getIdentifier(), pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
 
-    InputSetErrorWrapperDTOPMS errorWrapperDTO = validateAndMergeHelper.validateInputSet(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml, pipelineBranch, pipelineRepoID);
-    if (errorWrapperDTO != null) {
-      throw new InvalidInputSetException("Exception in creating the Input Set", errorWrapperDTO);
-    }
-
-    InputSetEntity createdEntity = pmsInputSetService.create(entity);
+    InputSetEntity createdEntity = pmsInputSetService.create(entity, pipelineBranch, pipelineRepoID);
     return ResponseDTO.newResponse(
         createdEntity.getVersion().toString(), PMSInputSetElementMapper.toInputSetResponseDTOPMS(createdEntity));
   }
@@ -273,6 +296,7 @@ public class InputSetResourcePMS {
             description =
                 "If the YAML is valid, returns created Overlay Input Set. If not, it sends what is wrong with the YAML")
       })
+  @Hidden
   public ResponseDTO<OverlayInputSetResponseDTOPMS>
   createOverlayInputSet(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(
@@ -294,17 +318,8 @@ public class InputSetResourcePMS {
         String.format("Create overlay input set with identifier %s for pipeline %s in project %s, org %s, account %s",
             entity.getIdentifier(), pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
 
-    Map<String, String> invalidReferences = validateAndMergeHelper.validateOverlayInputSet(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
-    if (!invalidReferences.isEmpty()) {
-      OverlayInputSetErrorWrapperDTOPMS overlayInputSetErrorWrapperDTOPMS =
-          OverlayInputSetErrorWrapperDTOPMS.builder().invalidReferences(invalidReferences).build();
-
-      throw new InvalidOverlayInputSetException(
-          "Exception in creating the Overlay Input Set", overlayInputSetErrorWrapperDTOPMS);
-    }
-
-    InputSetEntity createdEntity = pmsInputSetService.create(entity);
+    // overlay input set validation does not require pipeline branch and repo, hence sending null here
+    InputSetEntity createdEntity = pmsInputSetService.create(entity, null, null);
     return ResponseDTO.newResponse(
         createdEntity.getVersion().toString(), PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(createdEntity));
   }
@@ -313,7 +328,8 @@ public class InputSetResourcePMS {
   @Path("{inputSetIdentifier}")
   @ApiOperation(value = "Update an InputSet by identifier", nickname = "updateInputSetForPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
-  @Operation(operationId = "putInputSet", summary = "Update Input Set for Pipeline",
+  @Operation(operationId = "putInputSet", description = "Updates the Input Set for a Pipeline",
+      summary = "Update an Input Set",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -342,22 +358,21 @@ public class InputSetResourcePMS {
       String pipelineRepoID, @BeanParam GitEntityUpdateInfoDTO gitEntityInfo,
       @RequestBody(required = true,
           description =
-              "Input set YAML to be updated. The query parameters should match the Account, Org, Project, and Pipeline Ids in the YAML.")
-      @NotNull String yaml) {
+              "Input set YAML to be updated. The query parameters should match the Account, Org, Project, and Pipeline Ids in the YAML.",
+          content = {
+            @Content(mediaType = "application/yaml",
+                examples = @ExampleObject(name = "Update", summary = "Sample Input Set YAML",
+                    value = PipelineAPIConstants.CREATE_INPUTSET_API, description = "Sample Input Set YAML"))
+          }) @NotNull String yaml) {
     log.info(String.format("Updating input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
     yaml = removeRuntimeInputFromYaml(yaml);
 
-    InputSetErrorWrapperDTOPMS errorWrapperDTO = validateAndMergeHelper.validateInputSet(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml, pipelineBranch, pipelineRepoID);
-    if (errorWrapperDTO != null) {
-      throw new InvalidInputSetException("Exception in updating the Input Set", errorWrapperDTO);
-    }
-
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
     InputSetEntity entityWithVersion = entity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
-    InputSetEntity updatedEntity = pmsInputSetService.update(entityWithVersion, ChangeType.MODIFY);
+    InputSetEntity updatedEntity =
+        pmsInputSetService.update(entityWithVersion, ChangeType.MODIFY, pipelineBranch, pipelineRepoID);
     return ResponseDTO.newResponse(
         updatedEntity.getVersion().toString(), PMSInputSetElementMapper.toInputSetResponseDTOPMS(updatedEntity));
   }
@@ -373,6 +388,7 @@ public class InputSetResourcePMS {
             description =
                 "If the YAML is valid, returns the updated Overlay Input Set. If not, it sends what is wrong with the YAML")
       })
+  @Hidden
   public ResponseDTO<OverlayInputSetResponseDTOPMS>
   updateOverlayInputSet(
       @Parameter(description = PipelineResourceConstants.IF_MATCH_PARAM_MESSAGE) @HeaderParam(IF_MATCH) String ifMatch,
@@ -398,17 +414,8 @@ public class InputSetResourcePMS {
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
     InputSetEntity entityWithVersion = entity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
 
-    Map<String, String> invalidReferences = validateAndMergeHelper.validateOverlayInputSet(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
-    if (!invalidReferences.isEmpty()) {
-      OverlayInputSetErrorWrapperDTOPMS overlayInputSetErrorWrapperDTOPMS =
-          OverlayInputSetErrorWrapperDTOPMS.builder().invalidReferences(invalidReferences).build();
-
-      throw new InvalidOverlayInputSetException(
-          "Exception in updating the Overlay Input Set", overlayInputSetErrorWrapperDTOPMS);
-    }
-
-    InputSetEntity updatedEntity = pmsInputSetService.update(entityWithVersion, ChangeType.MODIFY);
+    // overlay input set validation does not require pipeline branch and repo, hence sending null here
+    InputSetEntity updatedEntity = pmsInputSetService.update(entityWithVersion, ChangeType.MODIFY, null, null);
     return ResponseDTO.newResponse(
         updatedEntity.getVersion().toString(), PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(updatedEntity));
   }
@@ -417,7 +424,8 @@ public class InputSetResourcePMS {
   @Path("{inputSetIdentifier}")
   @ApiOperation(value = "Delete an InputSet by identifier", nickname = "deleteInputSetForPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_DELETE)
-  @Operation(operationId = "deleteInputSet", summary = "Delete the Input Set by Identifier",
+  @Operation(operationId = "deleteInputSet", description = "Deletes the Input Set by Identifier",
+      summary = "Delete an Input Set",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -446,7 +454,8 @@ public class InputSetResourcePMS {
   @GET
   @ApiOperation(value = "Gets InputSets list for a pipeline", nickname = "getInputSetsListForPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
-  @Operation(operationId = "listInputSet", summary = "List all Input Sets for a pipeline",
+  @Operation(operationId = "listInputSet", description = "Lists all Input Sets for a Pipeline",
+      summary = "List Input Sets",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -504,7 +513,8 @@ public class InputSetResourcePMS {
   @Path("template")
   @ApiOperation(value = "Get template from a pipeline YAML", nickname = "getTemplateFromPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
-  @Operation(operationId = "runtimeInputTemplate", summary = "Fetch Runtime Input Template for a Pipeline",
+  @Operation(operationId = "runtimeInputTemplate", description = "Returns Runtime Input Template for a Pipeline",
+      summary = "Fetch Runtime Input Template",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -542,6 +552,7 @@ public class InputSetResourcePMS {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Merge given Input Sets into A single Runtime Input YAML")
       })
+  @Hidden
   public ResponseDTO<MergeInputSetResponseDTOPMS>
   getMergeInputSetFromPipelineTemplate(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Parameter(
@@ -558,9 +569,16 @@ public class InputSetResourcePMS {
       @QueryParam("pipelineRepoID") String pipelineRepoID, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @NotNull @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO) {
     List<String> inputSetReferences = mergeInputSetRequestDTO.getInputSetReferences();
-    String mergedYaml = validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId, orgIdentifier,
-        projectIdentifier, pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID,
-        mergeInputSetRequestDTO.getStageIdentifiers());
+    String mergedYaml;
+    try {
+      mergedYaml = validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId, orgIdentifier,
+          projectIdentifier, pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID,
+          mergeInputSetRequestDTO.getStageIdentifiers());
+    } catch (InvalidInputSetException e) {
+      InputSetErrorWrapperDTOPMS errorWrapperDTO = (InputSetErrorWrapperDTOPMS) e.getMetadata();
+      return ResponseDTO.newResponse(
+          MergeInputSetResponseDTOPMS.builder().isErrorResponse(true).inputSetErrorWrapper(errorWrapperDTO).build());
+    }
     String fullYaml = "";
     if (mergeInputSetRequestDTO.isWithMergedPipelineYaml()) {
       fullYaml = validateAndMergeHelper.mergeInputSetIntoPipeline(accountId, orgIdentifier, projectIdentifier,
@@ -587,6 +605,7 @@ public class InputSetResourcePMS {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Merge given Runtime Input YAML into the Pipeline")
       })
+  @Hidden
   // TODO(Naman): Correct PipelineServiceClient when modifying this api
   public ResponseDTO<MergeInputSetResponseDTOPMS>
   getMergeInputSetFromPipelineTemplate(
@@ -646,7 +665,7 @@ public class InputSetResourcePMS {
       @RequestBody(required = true,
           description = "The invalid Input Set Yaml to be sanitized") @NotNull String invalidInputSetYaml) {
     String pipelineYaml = validateAndMergeHelper.getPipelineYaml(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID);
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false);
     String sanitizedRuntimeInputYaml = InputSetSanitizer.sanitizeInputSet(pipelineYaml, invalidInputSetYaml);
     if (EmptyPredicate.isEmpty(sanitizedRuntimeInputYaml)) {
       return ResponseDTO.newResponse(InputSetSanitiseResponseDTO.builder().shouldDeleteInputSet(true).build());
@@ -659,11 +678,40 @@ public class InputSetResourcePMS {
 
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, newInputSetYaml);
-    InputSetEntity updatedEntity = pmsInputSetService.update(entity, ChangeType.MODIFY);
+    InputSetEntity updatedEntity = pmsInputSetService.update(entity, ChangeType.MODIFY, pipelineBranch, pipelineRepoID);
     return ResponseDTO.newResponse(
         InputSetSanitiseResponseDTO.builder()
             .shouldDeleteInputSet(false)
             .inputSetUpdateResponse(PMSInputSetElementMapper.toInputSetResponseDTOPMS(updatedEntity))
             .build());
+  }
+
+  @POST
+  @Path("/import/{inputSetIdentifier}")
+  @Hidden
+  @ApiOperation(value = "Get Input Set YAML from Git Repository", nickname = "importInputSet")
+  @Operation(operationId = "importInputSet", summary = "Get Input Set YAML from Git Repository",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Fetches Input Set YAML from Git Repository and saves a record for it in Harness")
+      })
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  public ResponseDTO<InputSetImportResponseDTO>
+  importInputSetFromGit(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Parameter(
+                            description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier @Parameter(
+          description = PipelineResourceConstants.ORG_PARAM_MESSAGE) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier @Parameter(
+          description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier,
+      @Parameter(description = InputSetSchemaConstants.PIPELINE_ID_FOR_INPUT_SET_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier String pipelineIdentifier,
+      @PathParam(NGCommonEntityConstants.INPUT_SET_IDENTIFIER_KEY) @Parameter(
+          description = PipelineResourceConstants.INPUT_SET_ID_PARAM_MESSAGE) String inputSetIdentifier,
+      @BeanParam GitImportInfoDTO gitImportInfoDTO, InputSetImportRequestDTO inputSetImportRequestDTO) {
+    InputSetEntity inputSetEntity = pmsInputSetService.importInputSetFromRemote(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, inputSetImportRequestDTO);
+    return ResponseDTO.newResponse(
+        InputSetImportResponseDTO.builder().identifier(inputSetEntity.getIdentifier()).build());
   }
 }

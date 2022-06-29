@@ -28,11 +28,17 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.template.RefreshRequestDTO;
+import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.ng.core.template.exception.NGTemplateResolveException;
 import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.rule.Owner;
+import io.harness.template.beans.refresh.ErrorNodeSummary;
+import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.template.beans.refresh.YamlFullRefreshResponseDTO;
 import io.harness.template.remote.TemplateResourceClient;
 
 import java.io.IOException;
@@ -73,10 +79,13 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testResolveTemplateRefsInPipelineWhenFFIsOff() {
     doReturn(false).when(pmsFeatureFlagHelper).isEnabled(ACCOUNT_ID, FeatureName.NG_TEMPLATES);
-    String resolveTemplateRefsInPipeline =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML)
-            .getMergedPipelineYaml();
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML);
+    String resolveTemplateRefsInPipeline = templateMergeResponseDTO.getMergedPipelineYaml();
+    String resolveTemplateRefsInPipelineWithOPAresponse =
+        templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
     assertThat(resolveTemplateRefsInPipeline).isEqualTo(GIVEN_YAML);
+    assertThat(resolveTemplateRefsInPipelineWithOPAresponse).isEqualTo(GIVEN_YAML);
   }
 
   @Test
@@ -129,7 +138,8 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     Call<ResponseDTO<List<EntityDetailProtoDTO>>> callRequest = mock(Call.class);
     doReturn(callRequest)
         .when(templateResourceClient)
-        .getTemplateReferenceForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, GIVEN_YAML);
+        .getTemplateReferenceForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null,
+            TemplateReferenceRequestDTO.builder().yaml(GIVEN_YAML).build());
     List<EntityDetailProtoDTO> expected =
         Collections.singletonList(EntityDetailProtoDTO.newBuilder().setType(EntityTypeProtoEnum.TEMPLATE).build());
     when(callRequest.execute()).thenReturn(Response.success(ResponseDTO.newResponse(expected)));
@@ -137,5 +147,62 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     List<EntityDetailProtoDTO> finalList =
         pipelineTemplateHelper.getTemplateReferencesForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML);
     assertThat(finalList).isEqualTo(expected);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testGetRefreshedYamlWhenGitSyncNotEnabled() throws IOException {
+    RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(GIVEN_YAML).build();
+    RefreshResponseDTO refreshResponseDTO = RefreshResponseDTO.builder().refreshedYaml("refreshed yaml").build();
+    Call<ResponseDTO<RefreshResponseDTO>> callRequest = mock(Call.class);
+    doReturn(callRequest)
+        .when(templateResourceClient)
+        .getRefreshedYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, refreshRequest);
+    when(callRequest.execute()).thenReturn(Response.success(ResponseDTO.newResponse(refreshResponseDTO)));
+
+    RefreshResponseDTO refreshedResponse =
+        pipelineTemplateHelper.getRefreshedYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML);
+    assertThat(refreshedResponse).isEqualTo(refreshResponseDTO);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testValidateTemplateInputsForGivenYamlWhenGitSyncNotEnabled() throws IOException {
+    RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(GIVEN_YAML).build();
+    ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
+        ValidateTemplateInputsResponseDTO.builder()
+            .validYaml(false)
+            .errorNodeSummary(ErrorNodeSummary.builder().build())
+            .build();
+    Call<ResponseDTO<ValidateTemplateInputsResponseDTO>> callRequest = mock(Call.class);
+    doReturn(callRequest)
+        .when(templateResourceClient)
+        .validateTemplateInputsForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, refreshRequest);
+    when(callRequest.execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(validateTemplateInputsResponseDTO)));
+
+    ValidateTemplateInputsResponseDTO responseDTO =
+        pipelineTemplateHelper.validateTemplateInputsForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML);
+    assertThat(responseDTO).isEqualTo(validateTemplateInputsResponseDTO);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testRefreshAllTemplatesForYamlWhenGitSyncNotEnabled() throws IOException {
+    RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(GIVEN_YAML).build();
+    YamlFullRefreshResponseDTO refreshResponseDTO =
+        YamlFullRefreshResponseDTO.builder().shouldRefreshYaml(true).refreshedYaml("refreshed yaml").build();
+    Call<ResponseDTO<YamlFullRefreshResponseDTO>> callRequest = mock(Call.class);
+    doReturn(callRequest)
+        .when(templateResourceClient)
+        .refreshAllTemplatesForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, refreshRequest);
+    when(callRequest.execute()).thenReturn(Response.success(ResponseDTO.newResponse(refreshResponseDTO)));
+
+    YamlFullRefreshResponseDTO refreshedResponse =
+        pipelineTemplateHelper.refreshAllTemplatesForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML);
+    assertThat(refreshedResponse).isEqualTo(refreshResponseDTO);
   }
 }

@@ -266,7 +266,7 @@ public class SecretTextTest extends WingsBaseTest {
 
     when(vaultEncryptor.deleteSecret(anyString(), anyObject(), anyObject())).thenReturn(true);
 
-    when(kmsEncryptorsRegistry.getKmsEncryptor(any(KmsConfig.class))).thenReturn(kmsEncryptor);
+    when(kmsEncryptorsRegistry.getKmsEncryptor(any())).thenReturn(kmsEncryptor);
     when(vaultEncryptorsRegistry.getVaultEncryptor(any())).thenReturn(vaultEncryptor);
 
     when(delegateProxyFactory.get(eq(SecretManagementDelegateService.class), any(SyncTaskContext.class)))

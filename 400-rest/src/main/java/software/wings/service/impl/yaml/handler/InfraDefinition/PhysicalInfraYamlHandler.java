@@ -17,6 +17,7 @@ import software.wings.beans.yaml.ChangeContext;
 import software.wings.infra.PhysicalInfra;
 import software.wings.infra.PhysicalInfra.Yaml;
 import software.wings.service.impl.yaml.handler.CloudProviderInfrastructure.CloudProviderInfrastructureYamlHandler;
+import software.wings.service.impl.yaml.service.YamlHelper;
 import software.wings.service.intfc.SettingsService;
 
 import com.google.inject.Inject;
@@ -26,6 +27,8 @@ import java.util.List;
 @Singleton
 public class PhysicalInfraYamlHandler extends CloudProviderInfrastructureYamlHandler<Yaml, PhysicalInfra> {
   @Inject private SettingsService settingsService;
+  @Inject private YamlHelper yamlHelper;
+
   @Override
   public Yaml toYaml(PhysicalInfra bean, String appId) {
     SettingAttribute cloudProvider = settingsService.get(bean.getCloudProviderId());
@@ -51,10 +54,12 @@ public class PhysicalInfraYamlHandler extends CloudProviderInfrastructureYamlHan
   private void toBean(PhysicalInfra bean, ChangeContext<Yaml> changeContext) {
     Yaml yaml = changeContext.getYaml();
     String accountId = changeContext.getChange().getAccountId();
+    String appId = yamlHelper.getAppId(accountId, changeContext.getChange().getFilePath());
     SettingAttribute cloudProvider = settingsService.getSettingAttributeByName(accountId, yaml.getCloudProviderName());
+    notNullCheck(format("Cloud Provider with name %s does not exist", yaml.getCloudProviderName()), cloudProvider);
+    settingsService.checkRbacOnSettingAttribute(appId, cloudProvider);
     SettingAttribute hostConnectionAttr =
         settingsService.getSettingAttributeByName(accountId, yaml.getHostConnectionAttrsName());
-    notNullCheck(format("Cloud Provider with name %s does not exist", yaml.getCloudProviderName()), cloudProvider);
     bean.setCloudProviderId(cloudProvider.getUuid());
     bean.setHosts(yaml.getHosts());
     bean.setHostNames(yaml.getHostNames());

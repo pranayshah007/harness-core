@@ -50,6 +50,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.artifact.ArtifactCollectionResponseHandler;
 import io.harness.artifact.ArtifactUtilities;
+import io.harness.artifacts.docker.service.DockerRegistryUtils;
 import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
@@ -122,7 +123,6 @@ import software.wings.utils.ArtifactType;
 import software.wings.utils.DelegateArtifactCollectionUtils;
 import software.wings.utils.RepositoryType;
 
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
@@ -137,7 +137,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
 
 @TargetModule(_870_CG_ORCHESTRATION)
 @OwnedBy(CDC)
@@ -159,11 +158,6 @@ public class ArtifactCollectionUtils {
   @Inject private ArtifactStreamPTaskHelper artifactStreamPTaskHelper;
   @Inject private MainConfiguration mainConfiguration;
 
-  public static final List<String> SUPPORTED_ARTIFACT_CLEANUP_LIST =
-      Lists.newArrayList(DOCKER, AMI, ARTIFACTORY, GCR, ECR, ACR, NEXUS, AZURE_MACHINE_IMAGE, CUSTOM)
-          .stream()
-          .map(Enum::name)
-          .collect(Collectors.toList());
   public static final Long DELEGATE_QUEUE_TIMEOUT = Duration.ofSeconds(60).toMillis();
 
   static final List<String> metadataOnlyStreams = Collections.unmodifiableList(
@@ -180,10 +174,6 @@ public class ArtifactCollectionUtils {
     }
     return System.currentTimeMillis() + timeout;
   }
-
-  @Transient
-  private static final String DOCKER_REGISTRY_CREDENTIAL_TEMPLATE =
-      "{\"%s\":{\"username\":\"%s\",\"password\":\"%s\"}}";
 
   public Artifact getArtifact(ArtifactStream artifactStream, BuildDetails buildDetails) {
     String accountId = null;
@@ -314,14 +304,9 @@ public class ArtifactCollectionUtils {
     ImageDetails imageDetails = getDockerImageDetailsInternal(artifactStream, null);
     if (isNotBlank(imageDetails.getRegistryUrl()) && isNotBlank(imageDetails.getUsername())
         && isNotBlank(imageDetails.getPassword())) {
-      return encodeBase64(getDockerRegistryCredentials(imageDetails));
+      return encodeBase64(DockerRegistryUtils.getDockerRegistryCredentials(imageDetails));
     }
     return "";
-  }
-
-  public static String getDockerRegistryCredentials(ImageDetails imageDetails) {
-    return format(DOCKER_REGISTRY_CREDENTIAL_TEMPLATE, imageDetails.getRegistryUrl(), imageDetails.getUsername(),
-        imageDetails.getPassword().replaceAll("\"", "\\\\\""));
   }
 
   public DelegateTaskBuilder fetchCustomDelegateTask(String waitId, ArtifactStream artifactStream,
@@ -1014,9 +999,5 @@ public class ArtifactCollectionUtils {
     return builds.stream()
         .map(buildDetails -> artifactService.create(getArtifact(artifactStream, buildDetails)))
         .collect(Collectors.toList());
-  }
-
-  public static boolean supportsCleanup(String artifactStreamType) {
-    return SUPPORTED_ARTIFACT_CLEANUP_LIST.stream().anyMatch(x -> x.equals(artifactStreamType));
   }
 }

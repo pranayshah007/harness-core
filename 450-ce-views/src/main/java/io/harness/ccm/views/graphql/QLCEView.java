@@ -9,6 +9,7 @@ package io.harness.ccm.views.graphql;
 
 import io.harness.ccm.views.entities.ViewChartType;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
+import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.entities.ViewState;
 import io.harness.ccm.views.entities.ViewTimeRangeType;
 import io.harness.ccm.views.entities.ViewType;
@@ -28,6 +29,8 @@ import lombok.experimental.FieldDefaults;
 public class QLCEView {
   String id;
   String name;
+  String folderId;
+  String folderName;
   @Hidden double totalCost;
   @Hidden String createdBy;
   @Hidden Long createdAt;
@@ -35,6 +38,7 @@ public class QLCEView {
   @Hidden ViewChartType chartType;
   @Hidden ViewType viewType;
   @Hidden ViewState viewState;
+  @Hidden ViewPreferences viewPreferences;
 
   @Hidden QLCEViewField groupBy;
   @Hidden ViewTimeRangeType timeRange;

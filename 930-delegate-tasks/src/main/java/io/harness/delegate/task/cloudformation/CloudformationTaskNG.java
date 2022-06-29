@@ -65,12 +65,12 @@ public class CloudformationTaskNG extends AbstractDelegateRunnableTask {
     try {
       CloudformationTaskNGResponse response =
           handler.executeTask(taskParameters, getDelegateId(), getTaskId(), logCallback);
-      response.setUnitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
       if (response.getCommandExecutionStatus().equals(CommandExecutionStatus.SUCCESS)) {
         logCallback.saveExecutionLog("Success", INFO, CommandExecutionStatus.SUCCESS);
       } else {
         logCallback.saveExecutionLog("Failure", ERROR, CommandExecutionStatus.FAILURE);
       }
+      response.setUnitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
       return response;
     } catch (Exception e) {
       throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), e);

@@ -8,6 +8,7 @@
 package io.harness.pms.plan.execution;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -20,21 +21,27 @@ import io.harness.engine.executions.retry.RetryInfo;
 import io.harness.engine.executions.retry.RetryLatestExecutionResponseDto;
 import io.harness.engine.executions.retry.RetryStageInfo;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
+import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plan.Plan;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.ExecutionStatus;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.plan.utils.PlanResourceUtility;
 import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.template.yaml.TemplateRefHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -66,6 +73,7 @@ public class RetryExecutionHelper {
   private final PmsExecutionSummaryRespository pmsExecutionSummaryRespository;
   private final PMSPipelineService pmsPipelineService;
   private final PMSExecutionService pmsExecutionService;
+  private final PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
 
   public List<String> fetchOnlyFailedStages(List<RetryStageInfo> info, List<String> retryStagesIdentifier) {
     List<String> onlyFailedStage = new ArrayList<>();
@@ -148,6 +156,17 @@ public class RetryExecutionHelper {
     }
     PlanExecutionMetadata planExecutionMetadata = byPlanExecutionId.get();
     String executedPipeline = planExecutionMetadata.getYaml();
+    TemplateMergeResponseDTO templateMergeResponseDTO = null;
+    // if pipeline is having templates we need to use resolved yaml
+    if (TemplateRefHelper.hasTemplateRef(updatedPipeline)) {
+      templateMergeResponseDTO = pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(
+          accountId, orgIdentifier, projectIdentifier, updatedPipeline);
+      if (templateMergeResponseDTO != null) {
+        updatedPipeline = isNotEmpty(templateMergeResponseDTO.getMergedPipelineYaml())
+            ? templateMergeResponseDTO.getMergedPipelineYaml()
+            : updatedPipeline;
+      }
+    }
     StagesExecutionMetadata stagesExecutionMetadata = planExecutionMetadata.getStagesExecutionMetadata();
     if (stagesExecutionMetadata != null && stagesExecutionMetadata.isStagesExecution()) {
       updatedPipeline =
@@ -238,6 +257,9 @@ public class RetryExecutionHelper {
     }
     int stageCounter = 0;
     JsonNode stagesNode = previousRootJsonNode.get("pipeline").get("stages");
+    // When strategy is defined in the stage, in that case we might not run some stages(under the strategy for that
+    // stage). So we need to update the uuid for strategy node and next node.
+    boolean isStrategyNodeProcessed = false;
     for (JsonNode stage : stagesNode) {
       // stage is not a part of parallel group
       if (stage.get("stage") != null) {
@@ -245,7 +267,7 @@ public class RetryExecutionHelper {
         // previous processed yaml
         JsonNode previousExecutionStageNodeJson = stage.get("stage");
         String stageIdentifier = previousExecutionStageNodeJson.get("identifier").textValue();
-        if (!retryStages.contains(stageIdentifier)) {
+        if (!retryStages.contains(stageIdentifier) && !isStrategyNodeProcessed) {
           identifierOfSkipStages.add(stageIdentifier);
           ((ArrayNode) currentRootJsonNode.get("pipeline").get("stages")).set(stageCounter, stage);
           stageCounter = stageCounter + 1;
@@ -254,11 +276,28 @@ public class RetryExecutionHelper {
           JsonNode currentResumableStagejsonNode =
               currentRootJsonNode.get("pipeline").get("stages").get(stageCounter).get("stage");
           ((ObjectNode) currentResumableStagejsonNode).set("__uuid", previousExecutionStageNodeJson.get("__uuid"));
-          // here onwards we need to retry the pipeline, no further copy of nodes required
-          break;
+
+          // if this is true then pipeline is being retried from previous stage. And previous node had the strategy
+          // defined.
+          if (isStrategyNodeProcessed) {
+            break;
+          }
+
+          JsonNode currentResumableStrategyJsonNode = currentResumableStagejsonNode.get("strategy");
+          // If strategy id defined then copy the strategyNode uuid and toggle isStrategyNodeProcessed so that we can
+          // copy next stage uuid in next iteration.
+          if (currentResumableStrategyJsonNode != null) {
+            ((ObjectNode) currentResumableStrategyJsonNode)
+                .set("__uuid", previousExecutionStageNodeJson.get("strategy").get("__uuid"));
+            stageCounter++;
+            isStrategyNodeProcessed = true;
+          } else {
+            break;
+          }
         }
       } else {
         // parallel group
+        // TODO(BRIJESH): handle paralle after strategy
         if (!isRetryStagesInParallelStages(stage.get("parallel"), retryStages, identifierOfSkipStages)) {
           // if the parallel group does not contain the retry stages, copy the whole parallel node
           ((ArrayNode) currentRootJsonNode.get("pipeline").get("stages")).set(stageCounter, stage);
@@ -318,13 +357,20 @@ public class RetryExecutionHelper {
     return false;
   }
 
-  public Plan transformPlan(Plan plan, List<String> identifierOfSkipStages, String previousExecutionId) {
+  public Plan transformPlan(Plan plan, List<String> identifierOfSkipStages, String previousExecutionId,
+      List<String> stageIdentifiersToRetrytWith) {
     List<Node> planNodes = plan.getPlanNodes();
 
+    List<String> stagesFqnToRetryWith =
+        nodeExecutionService.fetchStageFqnFromStageIdentifiers(previousExecutionId, stageIdentifiersToRetrytWith);
+    List<NodeExecution> strategyNodeExecutions =
+        nodeExecutionService.fetchStrategyNodeExecutions(previousExecutionId, stagesFqnToRetryWith);
+    List<Node> strategyNodes = new ArrayList<>();
     /*
     Fetching stageFqn from previousExecutionId and stage
      */
     // TODO: add a condition: stagesFqn size should be equal to the size of identifierOfSkipStages
+    // identifierOfSkipStages: previousStageIdentifiers we want to skip
     List<String> stagesFqn =
         nodeExecutionService.fetchStageFqnFromStageIdentifiers(previousExecutionId, identifierOfSkipStages);
 
@@ -336,14 +382,24 @@ public class RetryExecutionHelper {
         nodeExecutionService.mapNodeExecutionIdWithPlanNodeForGivenStageFQN(previousExecutionId, stagesFqn);
 
     // filtering nodes which need to be resumed/retried
-    updatedPlanNodes =
-        planNodes.stream().filter(node -> !stagesFqn.contains(node.getStageFqn())).collect(Collectors.toList());
+    updatedPlanNodes = planNodes.stream()
+                           .filter(node -> {
+                             if (node.getStepCategory() == StepCategory.STRATEGY
+                                 && stagesFqnToRetryWith.contains(node.getStageFqn())) {
+                               strategyNodes.add(node);
+                               return false;
+                             }
+                             return !stagesFqn.contains(node.getStageFqn());
+                           })
+                           .collect(Collectors.toList());
 
     // converting planNode to IdentityNode
     List<Node> finalUpdatedPlanNodes = updatedPlanNodes;
     nodeUuidToNodeExecutionUuid.forEach((nodeExecutionUuid, planNode)
                                             -> finalUpdatedPlanNodes.add(IdentityPlanNode.mapPlanNodeToIdentityNode(
                                                 planNode, planNode.getStepType(), nodeExecutionUuid)));
+
+    finalUpdatedPlanNodes.addAll(getIdentityNodeForStrategyNodes(strategyNodes, strategyNodeExecutions));
 
     return Plan.builder()
         .uuid(plan.getUuid())
@@ -372,6 +428,26 @@ public class RetryExecutionHelper {
         .executionInfos(executionInfos)
         .latestExecutionId(latestRetryExecutionId)
         .build();
+  }
+
+  private List<Node> getIdentityNodeForStrategyNodes(List<Node> planNodes, List<NodeExecution> nodeExecutions) {
+    List<Node> processedNodes = new ArrayList<>();
+    for (Node node : planNodes) {
+      List<NodeExecution> strategyNodeExecution =
+          nodeExecutions.stream()
+              .filter(o
+                  -> o.getStageFqn().equals(node.getStageFqn())
+                      && node.getIdentifier().equals(o.getNode().getIdentifier()))
+              .filter(o -> AmbianceUtils.isCurrentStrategyLevelAtStage(o.getAmbiance()))
+              .collect(Collectors.toList());
+      if (strategyNodeExecution.isEmpty()) {
+        processedNodes.add(node);
+      } else {
+        processedNodes.add(IdentityPlanNode.mapPlanNodeToIdentityNode(
+            node, node.getStepType(), strategyNodeExecution.get(0).getUuid()));
+      }
+    }
+    return processedNodes;
   }
 
   public RetryLatestExecutionResponseDto getRetryLatestExecutionId(String rootParentId) {

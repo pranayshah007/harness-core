@@ -19,7 +19,6 @@ import static software.wings.beans.ServiceInstance.Builder.aServiceInstance;
 import static software.wings.beans.ServiceTemplate.Builder.aServiceTemplate;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.beans.artifact.ArtifactFile.Builder.anArtifactFile;
-import static software.wings.beans.command.Command.Builder.aCommand;
 import static software.wings.beans.command.CommandUnitType.SCP;
 import static software.wings.beans.command.ExecCommandUnit.Builder.anExecCommandUnit;
 import static software.wings.beans.infrastructure.Host.Builder.aHost;
@@ -43,11 +42,11 @@ import software.wings.beans.ServiceInstance;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.artifact.ArtifactFile;
-import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandExecutionContext;
 import software.wings.beans.command.ExecCommandUnit;
 import software.wings.beans.command.ScpCommandUnit;
 import software.wings.beans.command.ScpCommandUnit.ScpFileCategory;
+import software.wings.beans.dto.Command;
 import software.wings.beans.infrastructure.Host;
 import software.wings.dl.WingsPersistence;
 import software.wings.rules.Integration;
@@ -109,9 +108,9 @@ public class CommandExecutionIntegrationTest extends WingsBaseTest {
           .build();
 
   private Command command =
-      aCommand()
-          .withName("INSTALL")
-          .addCommandUnits(
+      Command.builder()
+          .name("INSTALL")
+          .commandUnits(asList(
               anExecCommandUnit().withName("Delete start and stop script").withCommandString("rm -f ./bin/*").build(),
               anExecCommandUnit()
                   .withName("Create service startup file")
@@ -131,7 +130,7 @@ public class CommandExecutionIntegrationTest extends WingsBaseTest {
                   .withCommandUnitType(SCP)
                   .withFileCategory(ScpFileCategory.ARTIFACTS)
                   .build(),
-              anExecCommandUnit().withName("EXEC").withCommandString("./bin/start.sh").build())
+              anExecCommandUnit().withName("EXEC").withCommandString("./bin/start.sh").build()))
           .build();
 
   /**

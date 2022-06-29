@@ -137,7 +137,7 @@ public class BillingTimeSeriesDataFetcherTest extends AbstractDataFetcherTestBas
     labels.put(LABEL_NAME, LABEL_VALUE);
     k8sWorkloadDao.save(getTestWorkload(WORKLOAD_NAME_ACCOUNT1, labels));
     aggregationFunction = Collections.singletonList(makeBillingAmtAggregation());
-    when(statsHelper.getEntityName(any(), anyString())).thenAnswer(i -> i.getArgumentAt(1, String.class));
+    when(statsHelper.getEntityName(any(), anyString())).thenAnswer(i -> i.getArgument(1, String.class));
 
     Connection mockConnection = mock(Connection.class);
     Statement mockStatement = mock(Statement.class);

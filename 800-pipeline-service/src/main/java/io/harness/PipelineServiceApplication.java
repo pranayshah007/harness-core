@@ -78,6 +78,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.Store;
 import io.harness.plan.consumers.PartialPlanResponseRedisConsumer;
 import io.harness.plancreator.pipeline.PipelineConfig;
+import io.harness.plancreator.strategy.StrategyConstants;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.approval.ApprovalInstanceExpirationJob;
 import io.harness.pms.approval.ApprovalInstanceHandler;
@@ -94,7 +95,6 @@ import io.harness.pms.migration.PipelineCoreMigrationProvider;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.observers.InputSetPipelineObserver;
 import io.harness.pms.notification.orchestration.handlers.NotificationInformHandler;
-import io.harness.pms.notification.orchestration.handlers.PipelineStartNotificationHandler;
 import io.harness.pms.notification.orchestration.handlers.StageStartNotificationHandler;
 import io.harness.pms.notification.orchestration.handlers.StageStatusUpdateNotificationEventHandler;
 import io.harness.pms.outbox.PipelineOutboxEventHandler;
@@ -142,12 +142,13 @@ import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
 import io.harness.springdata.HMongoTemplate;
+import io.harness.steps.approval.step.custom.CustomApprovalInstanceHandler;
 import io.harness.steps.barriers.BarrierInitializer;
 import io.harness.steps.barriers.event.BarrierDropper;
 import io.harness.steps.barriers.event.BarrierPositionHelperEventHandler;
 import io.harness.steps.barriers.service.BarrierServiceImpl;
 import io.harness.steps.resourcerestraint.ResourceRestraintInitializer;
-import io.harness.steps.resourcerestraint.ResourceRestraintOrchestrationEndObserver;
+import io.harness.steps.resourcerestraint.ResourceRestraintObserver;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintPersistenceMonitor;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.telemetry.filter.APIAuthTelemetryFilter;
@@ -342,6 +343,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     injector.getInstance(TimeoutEngine.class).registerIterators(iteratorsConfig.getTimeoutEngineConfig());
     injector.getInstance(BarrierServiceImpl.class).registerIterators(iteratorsConfig.getBarrierConfig());
     injector.getInstance(ApprovalInstanceHandler.class).registerIterators();
+    injector.getInstance(CustomApprovalInstanceHandler.class)
+        .registerIterators(iteratorsConfig.getApprovalInstanceConfig());
     injector.getInstance(ResourceRestraintPersistenceMonitor.class)
         .registerIterators(iteratorsConfig.getResourceRestraintConfig());
     injector.getInstance(InterruptMonitor.class).registerIterators(iteratorsConfig.getInterruptMonitorConfig());
@@ -428,6 +431,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     nodeExecutionService.getStepStatusUpdateSubject().register(injector.getInstance(Key.get(BarrierDropper.class)));
     nodeExecutionService.getStepStatusUpdateSubject().register(
         injector.getInstance(Key.get(NodeExecutionStatusUpdateEventHandler.class)));
+    nodeExecutionService.getStepStatusUpdateSubject().register(
+        injector.getInstance(Key.get(ResourceRestraintObserver.class)));
 
     nodeExecutionService.getStepStatusUpdateSubject().register(
         injector.getInstance(Key.get(TimeoutInstanceRemover.class)));
@@ -463,8 +468,6 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     PlanExecutionStrategy planExecutionStrategy = injector.getInstance(Key.get(PlanExecutionStrategy.class));
     // StartObservers
     planExecutionStrategy.getOrchestrationStartSubject().register(
-        injector.getInstance(Key.get(PipelineStartNotificationHandler.class)));
-    planExecutionStrategy.getOrchestrationStartSubject().register(
         injector.getInstance(Key.get(BarrierInitializer.class)));
     planExecutionStrategy.getOrchestrationStartSubject().register(
         injector.getInstance(Key.get(ResourceRestraintInitializer.class)));
@@ -486,7 +489,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     planExecutionStrategy.getOrchestrationEndSubject().register(
         injector.getInstance(Key.get(PipelineStatusUpdateEventHandler.class)));
     planExecutionStrategy.getOrchestrationEndSubject().register(
-        injector.getInstance(Key.get(ResourceRestraintOrchestrationEndObserver.class)));
+        injector.getInstance(Key.get(ResourceRestraintObserver.class)));
 
     HMongoTemplate mongoTemplate = (HMongoTemplate) injector.getInstance(MongoTemplate.class);
     mongoTemplate.getTracerSubject().register(injector.getInstance(MongoRedisTracer.class));
@@ -592,6 +595,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     aliases.put(OrchestrationConstants.PIPELINE_SUCCESS,
         "<+pipeline.currentStatus> == \"SUCCEEDED\" || <+pipeline.currentStatus> == \"IGNORE_FAILED\"");
     aliases.put(OrchestrationConstants.ALWAYS, "true");
+    aliases.put(StrategyConstants.MATRIX, "strategy.matrix");
     return aliases;
   }
 

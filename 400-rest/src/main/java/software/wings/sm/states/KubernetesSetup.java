@@ -46,6 +46,7 @@ import software.wings.beans.command.ContainerSetupCommandUnitExecutionData;
 import software.wings.beans.command.ContainerSetupParams;
 import software.wings.beans.command.KubernetesSetupParams;
 import software.wings.beans.container.ContainerTask;
+import software.wings.beans.container.ContainerTaskMapper;
 import software.wings.beans.container.IstioConfig;
 import software.wings.beans.container.KubernetesBlueGreenConfig;
 import software.wings.beans.container.KubernetesContainerTask;
@@ -241,7 +242,7 @@ public class KubernetesSetup extends ContainerServiceSetup {
         .withNamespace(namespace)
         .withImageDetails(imageDetails)
         .withClusterIP(clusterIP)
-        .withContainerTask(containerTask)
+        .withContainerTask(ContainerTaskMapper.toKubernetesContainerTaskDTO((KubernetesContainerTask) containerTask))
         .withExternalIPs(externalIPs)
         .withExternalName(externalName)
         .withServiceYaml(serviceYamlEvaluated)

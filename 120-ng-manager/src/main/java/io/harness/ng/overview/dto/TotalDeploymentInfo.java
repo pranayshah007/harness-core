@@ -21,5 +21,6 @@ public class TotalDeploymentInfo {
   private long count;
   private long production;
   private long nonProduction;
+  private double rate;
   private List<DeploymentDateAndCount> countList;
 }

@@ -16,6 +16,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(CDP)
 @UtilityClass
 public class OutcomeExpressionConstants {
+  public final String CREATE_PR_OUTCOME = "createPROutcome";
   public final String SERVICE = "service";
   public final String ARTIFACTS = "artifacts";
   public final String MANIFESTS = "manifests";
@@ -35,4 +36,8 @@ public class OutcomeExpressionConstants {
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME = "serverlessAwsLambdaRollbackDataOutcome";
   public final String SERVERLESS_GIT_FETCH_OUTCOME = "serverlessGitFetchOutcome";
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_OUTCOME = "serverlessAwsLambdaRollbackOutcome";
+  public final String CONFIG_FILES = "configFiles";
+  public final String STARTUP_SCRIPT = "startupScript";
+  public final String APPLICATION_SETTINGS = "applicationSettings";
+  public final String CONNECTION_STRINGS = "connectionStrings";
 }

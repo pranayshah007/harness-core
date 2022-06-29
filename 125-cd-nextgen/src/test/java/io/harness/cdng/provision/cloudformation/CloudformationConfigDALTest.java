@@ -8,6 +8,7 @@
 package io.harness.cdng.provision.cloudformation;
 
 import static io.harness.rule.OwnerRule.TMACARI;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -78,11 +79,37 @@ public class CloudformationConfigDALTest extends CategoryTest {
     verify(mockQuery, times(1)).filter(eq(CloudformationConfigKeys.provisionerIdentifier), eq(provisionerIdentifier));
   }
 
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testClearStoredCloudformationConfig() {
+    String provisionerIdentifier = "provisionerIdentifier";
+    Query mockQuery = mock(Query.class);
+    doReturn(mockQuery).when(persistence).createQuery(any());
+    doReturn(mockQuery).when(mockQuery).filter(any(), any());
+    doReturn(true).when(persistence).delete(eq(mockQuery));
+
+    cloudformationConfigDAL.clearStoredCloudformationConfig(getAmbiance(), provisionerIdentifier);
+    verify(persistence, times(1)).createQuery(CloudformationConfig.class);
+    verify(persistence, times(1)).delete(mockQuery);
+
+    verify(mockQuery, times(1)).filter(eq(CloudformationConfigKeys.accountId), eq("account"));
+    verify(mockQuery, times(1)).filter(eq(CloudformationConfigKeys.orgId), eq("org"));
+    verify(mockQuery, times(1)).filter(eq(CloudformationConfigKeys.projectId), eq("project"));
+    verify(mockQuery, times(1)).filter(eq(CloudformationConfigKeys.provisionerIdentifier), eq(provisionerIdentifier));
+    verify(mockQuery, times(1)).filter(eq(CloudformationConfigKeys.stageExecutionId), eq("stageExecutionId"));
+    verify(persistence, times(1)).createQuery(CloudformationConfig.class);
+    verify(persistence, times(1)).delete(mockQuery);
+  }
+
   private Ambiance getAmbiance() {
     Map<String, String> setupAbstractions = new HashMap<>();
     setupAbstractions.put(SetupAbstractionKeys.accountId, "account");
     setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "org");
     setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "project");
-    return Ambiance.newBuilder().putAllSetupAbstractions(setupAbstractions).build();
+    return Ambiance.newBuilder()
+        .putAllSetupAbstractions(setupAbstractions)
+        .setStageExecutionId("stageExecutionId")
+        .build();
   }
 }

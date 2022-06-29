@@ -188,6 +188,12 @@ public class ArtifactCollectionServiceAsyncImpl implements ArtifactCollectionSer
 
   @Override
   public Artifact collectNewArtifacts(String appId, ArtifactStream artifactStream, String buildNumber) {
+    if (CUSTOM.name().equals(artifactStream.getArtifactStreamType())) {
+      Artifact artifact = saveCustomArtifactWithNoScript((CustomArtifactStream) artifactStream, buildNumber);
+      if (artifact != null) {
+        return artifact;
+      }
+    }
     List<BuildDetails> builds =
         buildSourceService.getBuilds(appId, artifactStream.getUuid(), artifactStream.getSettingId());
     if (isNotEmpty(builds)) {
@@ -198,6 +204,24 @@ public class ArtifactCollectionServiceAsyncImpl implements ArtifactCollectionSer
       }
     }
     return null;
+  }
+
+  private Artifact saveCustomArtifactWithNoScript(CustomArtifactStream artifactStream, String buildNumber) {
+    if (artifactStream.getScripts() == null) {
+      return null;
+    }
+    CustomArtifactStream.Script versionScript =
+        artifactStream.getScripts()
+            .stream()
+            .filter(script
+                -> script.getAction() == null || script.getAction() == CustomArtifactStream.Action.FETCH_VERSIONS)
+            .findFirst()
+            .orElse(CustomArtifactStream.Script.builder().build());
+    if (isNotEmpty(versionScript.getScriptString())) {
+      return null;
+    }
+    BuildDetails buildDetails = BuildDetails.Builder.aBuildDetails().withNumber(buildNumber).build();
+    return artifactService.create(artifactCollectionUtils.getArtifact(artifactStream, buildDetails));
   }
 
   @Override

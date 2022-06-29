@@ -55,6 +55,9 @@ message RunTestsStep {
   // TODO (Vistaar): Proxy this call from addon to LE.
   string diff_files = 13;
   map<string, string> environment = 14;
+  string buildEnvironment = 15;  // Dot net build environment Core | Framework
+  string frameworkVersion = 16;  // Dot net version 6.0 | 5.0
+  string namespaces = 17;        // Same funtion as java package for namespace languages
 }
 
 message RunStep {

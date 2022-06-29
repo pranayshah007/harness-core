@@ -194,7 +194,7 @@ public class CloudWatchState extends AbstractMetricAnalysisState {
             .serviceId(getPhaseServiceId(context))
             .analysisComparisonStrategy(getComparisonStrategy())
             .startTime(dataCollectionStartTimeStamp)
-            .collectionTime(Integer.parseInt(getTimeDuration()))
+            .collectionTime(Integer.parseInt(getTimeDuration(context)))
             .dataCollectionMinute(0)
             .encryptedDataDetails(
                 secretManager.getEncryptionDetails(awsConfig, context.getAppId(), context.getWorkflowExecutionId()))
@@ -227,7 +227,7 @@ public class CloudWatchState extends AbstractMetricAnalysisState {
                       .async(true)
                       .taskType(TaskType.CLOUD_WATCH_COLLECT_METRIC_DATA.name())
                       .parameters(new Object[] {dataCollectionInfo})
-                      .timeout(TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration()) + 120))
+                      .timeout(TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(context)) + 120))
                       .build())
             .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, envId)
             .setupAbstraction(Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD, infrastructureMappingId)
@@ -238,7 +238,7 @@ public class CloudWatchState extends AbstractMetricAnalysisState {
             .stateExecutionId(context.getStateExecutionInstanceId())
             .dataCollectionStartTime(dataCollectionStartTimeStamp)
             .dataCollectionEndTime(
-                dataCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration())))
+                dataCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(context))))
             .executionData(executionData)
             .build(),
         waitId);
@@ -260,12 +260,18 @@ public class CloudWatchState extends AbstractMetricAnalysisState {
     Map<String, TimeSeriesMetricDefinition> rv = new HashMap<>();
     for (Entry<AwsNameSpace, List<CloudWatchMetric>> entry : timeSeriesToCollect.entrySet()) {
       for (CloudWatchMetric timeSeries : entry.getValue()) {
-        rv.put(timeSeries.getMetricName(),
-            TimeSeriesMetricDefinition.builder()
-                .metricName(timeSeries.getMetricName())
-                .metricType(MetricType.valueOf(timeSeries.getMetricType()))
-                .tags(Sets.newHashSet(entry.getKey().name()))
-                .build());
+        if (rv.containsKey(timeSeries.getMetricName())) {
+          TimeSeriesMetricDefinition timeSeriesMetricDefinition = rv.get(timeSeries.getMetricName());
+          // update the tags as for same metric name all the other values will remain same. This tag is used by LE.
+          timeSeriesMetricDefinition.getTags().add(entry.getKey().name());
+        } else {
+          rv.put(timeSeries.getMetricName(),
+              TimeSeriesMetricDefinition.builder()
+                  .metricName(timeSeries.getMetricName())
+                  .metricType(MetricType.valueOf(timeSeries.getMetricType()))
+                  .tags(Sets.newHashSet(entry.getKey().name()))
+                  .build());
+        }
       }
     }
     return rv;

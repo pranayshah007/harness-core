@@ -1,0 +1,28 @@
+---
+name: rule
+identifier: rule
+orgIdentifier: $orgIdentifier
+projectIdentifier: $projectIdentifier
+type: MonitoredService
+conditions:
+  - type: ChangeImpact
+    spec:
+      changeEventTypes:
+        - Deployment
+        - Infrastructure
+      threshold: $ChangeImpactThreshold
+      period: $ChangeImpactDuration
+  - type: HealthScore
+    spec:
+      threshold: $HealthScoreThreshold
+      period: $HealthScoreDuration
+  - type: ChangeObserved
+    spec:
+      changeEventTypes:
+        - Deployment
+        - Infrastructure
+notificationMethod:
+  type: Email
+  spec:
+    userGroups: [testUserGroup]
+    recipients: [test@harness.io]

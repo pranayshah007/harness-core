@@ -28,18 +28,14 @@ public class CFApi extends DefaultApi {
     super(apiClient);
   }
 
-  public List<PatchInstruction> getFeatureFlagRulesForTargetingAccounts(
-      Collection<String> accountIDs, int startPriority) {
-    int priority = startPriority;
+  public List<PatchInstruction> getFeatureFlagRulesForTargetingAccounts(Collection<String> accountIDs) {
     List<PatchInstruction> patchInstructions = new ArrayList<>();
-    for (String account : accountIDs) {
-      List<String> accountIDList = new ArrayList<>(accountIDs);
-      AddTargetToVariationMapParams params = new AddTargetToVariationMapParams("true", accountIDList);
-      PatchInstruction patchInstruction =
-          PatchInstruction.builder().kind("addTargetsToVariationTargetMap").parameters(params).build();
-      patchInstructions.add(patchInstruction);
-      priority = priority + 100;
-    }
+    List<String> accountIDList = new ArrayList<>(accountIDs);
+    AddTargetToVariationMapParams params = new AddTargetToVariationMapParams("true", accountIDList);
+    PatchInstruction patchInstruction =
+        PatchInstruction.builder().kind("addTargetsToVariationTargetMap").parameters(params).build();
+    patchInstructions.add(patchInstruction);
+
     return patchInstructions;
   }
 

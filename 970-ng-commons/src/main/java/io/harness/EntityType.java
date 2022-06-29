@@ -30,6 +30,11 @@ import java.util.stream.Collectors;
 // todo(abhinav): refactor/adapt this according to needs later depending on how service registration comes in
 // one more enum might come in here for product types.
 public enum EntityType {
+  @JsonProperty(EntityTypeConstants.GITOPS_CREATE_PR)
+  GITOPS_CREATE_PR(
+      ModuleType.CD, EntityTypeConstants.GITOPS_CREATE_PR, IdentifierRef.class, EntityYamlRootNames.GITOPS_CREATE_PR),
+  GITOPS_MERGE_PR(
+      ModuleType.CD, EntityTypeConstants.GITOPS_MERGE_PR, IdentifierRef.class, EntityYamlRootNames.GITOPS_MERGE_PR),
   @JsonProperty(EntityTypeConstants.PROJECTS)
   PROJECTS(ModuleType.CORE, EntityTypeConstants.PROJECTS, IdentifierRef.class, EntityYamlRootNames.PROJECT),
   @JsonProperty(EntityTypeConstants.PIPELINES)
@@ -51,8 +56,13 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.HARNESS_APPROVAL)
   HARNESS_APPROVAL_STEP(
       ModuleType.PMS, EntityTypeConstants.HARNESS_APPROVAL, IdentifierRef.class, EntityYamlRootNames.HARNESS_APPROVAL),
+  @JsonProperty(EntityTypeConstants.CUSTOM_APPROVAL)
+  CUSTOM_APPROVAL_STEP(
+      ModuleType.PMS, EntityTypeConstants.CUSTOM_APPROVAL, IdentifierRef.class, EntityYamlRootNames.CUSTOM_APPROVAL),
   @JsonProperty(EntityTypeConstants.BARRIER)
   BARRIER_STEP(ModuleType.PMS, EntityTypeConstants.BARRIER, IdentifierRef.class, EntityYamlRootNames.BARRIER),
+  @JsonProperty(EntityTypeConstants.QUEUE)
+  QUEUE_STEP(ModuleType.PMS, EntityTypeConstants.QUEUE, IdentifierRef.class, EntityYamlRootNames.QUEUE),
   @JsonProperty(EntityTypeConstants.FlagConfiguration)
   FLAG_CONFIGURATION(ModuleType.CF, EntityTypeConstants.FlagConfiguration, IdentifierRef.class,
       EntityYamlRootNames.FLAG_CONFIGURATION),
@@ -235,7 +245,29 @@ public enum EntityType {
   CUSTOM_STAGE(ModuleType.PMS, EntityTypeConstants.CUSTOM_STAGE, IdentifierRef.class, EntityYamlRootNames.CUSTOM_STAGE),
   @JsonProperty(EntityTypeConstants.CLOUDFORMATION_ROLLBACK_STACK_STEP)
   CLOUDFORMATION_ROLLBACK_STACK_STEP(ModuleType.CD, EntityTypeConstants.CLOUDFORMATION_ROLLBACK_STACK_STEP,
-      IdentifierRef.class, EntityYamlRootNames.CLOUDFORMATION_ROLLBACK_STACK_STEP);
+      IdentifierRef.class, EntityYamlRootNames.CLOUDFORMATION_ROLLBACK_STACK_STEP),
+  @JsonProperty(EntityTypeConstants.INFRASTRUCTURE)
+  INFRASTRUCTURE(
+      ModuleType.CORE, EntityTypeConstants.INFRASTRUCTURE, IdentifierRef.class, EntityYamlRootNames.INFRASTRUCTURE),
+  @JsonProperty(EntityTypeConstants.COMMAND)
+  COMMAND_STEP(ModuleType.CD, EntityTypeConstants.COMMAND, IdentifierRef.class, EntityYamlRootNames.COMMAND),
+  @JsonProperty(EntityTypeConstants.STRATEGY_NODE)
+  STRATEGY_NODE(
+      ModuleType.PMS, EntityTypeConstants.STRATEGY_NODE, IdentifierRef.class, EntityYamlRootNames.STRATEGY_NODE),
+  AZURE_SLOT_DEPLOYMENT_STEP(ModuleType.CD, EntityTypeConstants.AZURE_SLOT_DEPLOYMENT, IdentifierRef.class,
+      EntityYamlRootNames.AZURE_SLOT_DEPLOYMENT_STEP),
+  @JsonProperty(EntityTypeConstants.AZURE_TRAFFIC_SHIFT)
+  AZURE_TRAFFIC_SHIFT_STEP(ModuleType.CD, EntityTypeConstants.AZURE_TRAFFIC_SHIFT, IdentifierRef.class,
+      EntityYamlRootNames.AZURE_TRAFFIC_SHIFT_STEP),
+  @JsonProperty(EntityTypeConstants.AZURE_SWAP_SLOT)
+  AZURE_SWAP_SLOT_STEP(ModuleType.CD, EntityTypeConstants.AZURE_SWAP_SLOT, IdentifierRef.class,
+      EntityYamlRootNames.AZURE_SWAP_SLOT_STEP),
+  @JsonProperty(EntityTypeConstants.AZURE_WEBAPP_ROLLBACK)
+  AZURE_WEBAPP_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.AZURE_WEBAPP_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.AZURE_WEBAPP_ROLLBACK_STEP),
+  @JsonProperty(EntityTypeConstants.JENKINS_BUILD)
+  JENKINS_BUILD(
+      ModuleType.CD, EntityTypeConstants.JENKINS_BUILD, IdentifierRef.class, EntityYamlRootNames.JENKINS_BUILD);
 
   private final ModuleType moduleType;
   String yamlName;

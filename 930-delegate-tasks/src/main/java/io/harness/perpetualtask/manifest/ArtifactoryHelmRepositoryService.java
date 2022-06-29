@@ -9,10 +9,10 @@ package io.harness.perpetualtask.manifest;
 
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.delegate.task.manifests.request.ManifestCollectionParams;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
 import software.wings.delegatetasks.helm.ArtifactoryHelmTaskHelper;
 import software.wings.helpers.ext.artifactory.ArtifactoryService;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
@@ -49,8 +49,10 @@ public class ArtifactoryHelmRepositoryService implements ManifestRepositoryServi
 
     String repoName = artifactoryHelmTaskHelper.getArtifactoryRepoNameFromHelmConfig(helmRepoConfig);
 
-    List<HelmChart> helmCharts = artifactoryService.getHelmCharts(
-        request, repoName, helmChartCollectionParams.getHelmChartConfigParams().getChartName(), maxVersions);
+    List<HelmChart> helmCharts = artifactoryService.getHelmCharts(request, repoName,
+        helmChartCollectionParams.getHelmChartConfigParams().getChartName(), maxVersions,
+        helmChartCollectionParams.getHelmChartConfigParams().getChartVersion(), helmChartCollectionParams.isRegex());
+
     if (helmCharts == null) {
       return new ArrayList<>();
     }
@@ -64,6 +66,7 @@ public class ArtifactoryHelmRepositoryService implements ManifestRepositoryServi
                    .name(helmChartCollectionParams.getHelmChartConfigParams().getChartName())
                    .version(helmChart.getVersion())
                    .displayName(helmChart.getDisplayName())
+                   .appVersion(helmChart.getAppVersion())
                    .build())
         .collect(Collectors.toList());
   }

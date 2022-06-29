@@ -88,12 +88,12 @@ public class K8sRollingBaseHandler {
     }
   }
 
-  public void addLabelsInDeploymentSelectorForCanary(boolean inCanaryWorkflow,
-      List<KubernetesResource> managedWorkloads, boolean skipAddingTrackSelectorToDeployment) {
+  public void addLabelsInDeploymentSelectorForCanary(
+      boolean inCanaryWorkflow, List<KubernetesResource> workloads, boolean skipAddingTrackSelectorToDeployment) {
     if (!inCanaryWorkflow && !skipAddingTrackSelectorToDeployment) {
       return;
     }
-    addDeploymentSelector(managedWorkloads);
+    addDeploymentSelector(workloads);
   }
 
   private void addDeploymentSelector(List<KubernetesResource> managedWorkloads) {
@@ -109,14 +109,30 @@ public class K8sRollingBaseHandler {
     }
   }
 
-  public void addLabelsInManagedWorkloadPodSpec(
-      boolean inCanaryWorkflow, List<KubernetesResource> managedWorkloads, String releaseName) {
-    Map<String, String> podLabels = inCanaryWorkflow
-        ? ImmutableMap.of(HarnessLabels.releaseName, releaseName, HarnessLabels.track, HarnessLabelValues.trackStable)
-        : ImmutableMap.of(HarnessLabels.releaseName, releaseName);
+  public void addLabelsInManagedWorkloadPodSpec(boolean inCanaryWorkflow, boolean skipAddingTrackSelectorToDeployment,
+      List<KubernetesResource> managedWorkloads, List<KubernetesResource> deploymentContainingTrackStableSelector,
+      String releaseName) {
+    addReleaseNameInPodSpec(managedWorkloads, releaseName);
 
-    for (KubernetesResource kubernetesResource : managedWorkloads) {
-      kubernetesResource.addLabelsInPodSpec(podLabels);
+    if (inCanaryWorkflow || skipAddingTrackSelectorToDeployment) {
+      List<KubernetesResource> workloadsToAddTrackLabel =
+          inCanaryWorkflow ? managedWorkloads : deploymentContainingTrackStableSelector;
+      addTrackLabelInPodSpec(workloadsToAddTrackLabel);
+    }
+  }
+
+  private void addTrackLabelInPodSpec(List<KubernetesResource> workloads) {
+    Map<String, String> releaseNameAndTrackPodLabels =
+        ImmutableMap.of(HarnessLabels.track, HarnessLabelValues.trackStable);
+    for (KubernetesResource kubernetesResource : workloads) {
+      kubernetesResource.addLabelsInPodSpec(releaseNameAndTrackPodLabels);
+    }
+  }
+
+  private void addReleaseNameInPodSpec(List<KubernetesResource> workloads, String releaseName) {
+    Map<String, String> releaseNamePodLabels = ImmutableMap.of(HarnessLabels.releaseName, releaseName);
+    for (KubernetesResource kubernetesResource : workloads) {
+      kubernetesResource.addLabelsInPodSpec(releaseNamePodLabels);
     }
   }
 
@@ -182,12 +198,9 @@ public class K8sRollingBaseHandler {
 
   public void addLabelsInDeploymentSelectorForCanary(boolean inCanaryWorkflow,
       boolean skipAddingTrackSelectorToDeployment, List<KubernetesResource> managedWorkloads,
-      KubernetesConfig kubernetesConfig) {
+      List<KubernetesResource> deploymentContainingTrackStableSelector) {
     if (skipAddingTrackSelectorToDeployment) {
-      List<KubernetesResource> workloadsFromServer = k8sTaskHelperBase.getDeploymentContainingTrackStableSelector(
-          kubernetesConfig, managedWorkloads, HARNESS_TRACK_STABLE_SELECTOR);
-      addLabelsInDeploymentSelectorForCanary(
-          inCanaryWorkflow, workloadsFromServer, skipAddingTrackSelectorToDeployment);
+      addLabelsInDeploymentSelectorForCanary(inCanaryWorkflow, deploymentContainingTrackStableSelector, true);
     } else {
       addLabelsInDeploymentSelectorForCanary(inCanaryWorkflow, managedWorkloads, false);
     }

@@ -24,13 +24,12 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.secret.SecretSanitizerThreadLocal;
 
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
 import software.wings.delegatetasks.k8s.taskhandler.K8sTaskHandler;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
@@ -55,7 +54,6 @@ public class K8sTask extends AbstractDelegateRunnableTask {
   public K8sTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
-    SecretSanitizerThreadLocal.addAll(delegateTaskPackage.getSecrets());
   }
 
   @Override

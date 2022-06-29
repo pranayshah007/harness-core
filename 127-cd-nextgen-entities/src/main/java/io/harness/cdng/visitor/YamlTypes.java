@@ -17,18 +17,22 @@ import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 
 @OwnedBy(CDC)
 public interface YamlTypes {
+  String GITOPS_CREATE_PR = StepSpecTypeConstants.GITOPS_CREATE_PR;
+  String GITOPS_MERGE_PR = StepSpecTypeConstants.GITOPS_MERGE_PR;
+
   String PRIMARY_ARTIFACT = "primary";
   String ARTIFACT_LIST_CONFIG = "artifacts";
-  String ARTIFACT_OVERRIDE_SETS = "artifactOverrideSets";
   String SIDECAR_ARTIFACT_CONFIG = "sidecar";
   String SIDECARS_ARTIFACT_CONFIG = "sidecars";
   String ENVIRONMENT_YAML = "environment";
+  String ENVIRONMENT_GROUP_YAML = "environmentGroup";
+  String GITOPS_CLUSTERS = "gitopsClusters";
   String ENVIRONMENT_REF = "environmentRef";
+  String ENVIRONMENT_GROUP_REF = "envGroupRef";
   String INFRASTRUCTURE_DEF = "infrastructureDefinition";
+  String INFRASTRUCTURE_DEFS = "infrastructureDefinitions";
   String INFRASTRUCTURE_STEP_PARAMETERS = "infrastructureStepParameters";
-  String INFRA_USE_FROM_STAGE = "useFromStage";
-  String INFRA_USE_FROM_STAGE_OVERRIDES = "overrides";
-  String OVERRIDE_SET = "overrideSet";
+  String ENVIRONMENT_NODE_ID = "environmentNodeId";
 
   String K8S_ROLLING_ROLLBACK = StepSpecTypeConstants.K8S_ROLLING_ROLLBACK;
   String K8S_ROLLING_DEPLOY = StepSpecTypeConstants.K8S_ROLLING_DEPLOY;
@@ -45,10 +49,15 @@ public interface YamlTypes {
 
   String SERVERLESS_AWS_LAMBDA_DEPLOY = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY;
   String SERVERLESS_AWS_LAMBDA_ROLLBACK = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK;
+  String COMMAND = StepSpecTypeConstants.COMMAND;
+
+  String AZURE_SLOT_DEPLOYMENT = StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT;
+  String AZURE_TRAFFIC_SHIFT = StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT;
+  String AZURE_SWAP_SLOT = StepSpecTypeConstants.AZURE_SWAP_SLOT;
+  String AZURE_WEBAPP_ROLLBACK = StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK;
 
   String MANIFEST_LIST_CONFIG = "manifests";
   String MANIFEST_CONFIG = "manifest";
-  String MANIFEST_OVERRIDE_SETS = "manifestOverrideSets";
   String K8S_MANIFEST = ManifestType.K8Manifest;
   String HELM_CHART_MANIFEST = ManifestType.HelmChart;
   String KUSTOMIZE_MANIFEST = ManifestType.Kustomize;
@@ -56,12 +65,13 @@ public interface YamlTypes {
   String SPEC = "spec";
   String PIPELINE_INFRASTRUCTURE = "infrastructure";
   String SERVICE_CONFIG = "serviceConfig";
+  String SERVICE_SECTION = "serviceSection";
   String SERVICE_ENTITY = "service";
   String SERVICE_REF = "serviceRef";
   String SERVICE_DEFINITION = "serviceDefinition";
   String SERVICE_SPEC = "spec";
-  String SERVICE_USE_FROM_STAGE = "useFromStage";
-  String SERVICE_USE_FROM_STAGE_OVERRIDES = "overrides";
+  String SERVICE_OVERRIDE = "serviceOverrides";
+  String SERVICE_INPUTS = "serviceInputs";
   String STAGE_OVERRIDES_CONFIG = "stageOverrides";
   String PATH_CONNECTOR = VisitorParentPathUtils.PATH_CONNECTOR;
   String CONNECTOR_REF = "connectorRef";
@@ -74,6 +84,8 @@ public interface YamlTypes {
   String RELEASE_NAME = "releaseName";
   String CLUSTER = "cluster";
   String STORE_CONFIG_WRAPPER = "store";
+  String CONFIG_FILES = "configFiles";
+  String CONFIG_FILE = "configFile";
 
   String SKIP_DRY_RUN = "skipDryRun";
   String OUTPUT = "output";
@@ -92,4 +104,26 @@ public interface YamlTypes {
 
   String SUBSCRIPTION = "subscription";
   String RESOURCE_GROUP = "resourceGroup";
+
+  // METADATA for Service and Environment Plan Creator
+  String SERVICE_SPEC_UUID = "service_spec_uuid";
+  String POST_SERVICE_SPEC_UUID = "service_spec_uuid";
+  String INFRA_SECTION_UUID = "infra_section_uuid";
+  String NEXT_UUID = "nextUuid";
+
+  String CLOUD_PROVIDER = "cloudProvider";
+  String LOAD_BALANCER = "loadBalancer";
+  String HOST_NAME_CONVENTION = "hostNameConvention";
+
+  String APP_SERVICE = "appService";
+  String DEPLOYMENT_SLOT = "deploymentSlot";
+
+  String ENVIRONMENT_INPUTS = "environmentInputs";
+  String SERVICE_OVERRIDE_INPUTS = "serviceOverrideInputs";
+  String INPUTS = "inputs";
+  String REF = "ref";
+  String JENKINS_BUILD = StepSpecTypeConstants.JENKINS_BUILD;
+  String STARTUP_SCRIPT = "startupScript";
+  String APPLICATION_SETTINGS = "applicationSettings";
+  String CONNECTION_STRINGS = "connectionStrings";
 }

@@ -1,0 +1,6 @@
+variables:
+  - name: var1
+    type: String
+    value: value1
+
+

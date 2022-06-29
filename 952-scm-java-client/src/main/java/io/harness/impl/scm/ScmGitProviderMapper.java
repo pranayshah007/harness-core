@@ -8,11 +8,13 @@
 package io.harness.impl.scm;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cistatus.service.GithubAppConfig;
 import io.harness.cistatus.service.GithubService;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
@@ -23,6 +25,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenA
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
@@ -82,16 +85,25 @@ public class ScmGitProviderMapper {
 
   private Provider mapToAzureRepoProvider(AzureRepoConnectorDTO azureRepoConnector, boolean debug) {
     boolean skipVerify = checkScmSkipVerify();
-    String orgAndProject = GitClientHelper.getAzureRepoOrgAndProject(azureRepoConnector.getUrl());
-    String org = GitClientHelper.getAzureRepoOrg(orgAndProject);
-    String project = GitClientHelper.getAzureRepoProject(orgAndProject);
-
+    String org;
+    String orgAndProject;
+    String project;
+    if (azureRepoConnector.getAuthentication().getAuthType() == GitAuthType.HTTP) {
+      orgAndProject = GitClientHelper.getAzureRepoOrgAndProjectHTTP(azureRepoConnector.getUrl());
+    } else {
+      orgAndProject = GitClientHelper.getAzureRepoOrgAndProjectSSH(azureRepoConnector.getUrl());
+    }
+    org = GitClientHelper.getAzureRepoOrg(orgAndProject);
+    project = GitClientHelper.getAzureRepoProject(orgAndProject);
     String azureRepoApiURL = GitClientHelper.getAzureRepoApiURL(azureRepoConnector.getUrl());
     AzureRepoApiAccessDTO apiAccess = azureRepoConnector.getApiAccess();
     AzureRepoTokenSpecDTO azureRepoUsernameTokenApiAccessDTO = (AzureRepoTokenSpecDTO) apiAccess.getSpec();
     String personalAccessToken = String.valueOf(azureRepoUsernameTokenApiAccessDTO.getTokenRef().getDecryptedValue());
     AzureProvider.Builder azureProvider =
-        AzureProvider.newBuilder().setOrganization(org).setProject(project).setPersonalAccessToken(personalAccessToken);
+        AzureProvider.newBuilder().setOrganization(org).setPersonalAccessToken(personalAccessToken);
+    if (isNotEmpty(project)) {
+      azureProvider.setProject(project);
+    }
     Provider.Builder builder =
         Provider.newBuilder().setDebug(debug).setAzure(azureProvider).setEndpoint(azureRepoApiURL);
     return builder.setSkipVerify(skipVerify).setAdditionalCertsPath(getAdditionalCertsPath()).build();
@@ -186,6 +198,9 @@ public class ScmGitProviderMapper {
       case TOKEN:
         String accessToken = getAccessToken(githubConnector);
         return GithubProvider.newBuilder().setAccessToken(accessToken).build();
+      case OAUTH:
+        String oauthToken = getOauthToken(githubConnector);
+        return GithubProvider.newBuilder().setAccessToken(oauthToken).build();
       default:
         throw new NotImplementedException(String.format(
             "The scm apis for the api access type %s is not supported", githubConnector.getApiAccess().getType()));
@@ -218,5 +233,14 @@ public class ScmGitProviderMapper {
       throw new InvalidArgumentsException("The personal access token is not set");
     }
     return String.valueOf(apiAccessDTO.getTokenRef().getDecryptedValue());
+  }
+
+  private String getOauthToken(GithubConnectorDTO githubConnector) {
+    GithubApiAccessDTO apiAccess = githubConnector.getApiAccess();
+    GithubOauthDTO githubOauthDTO = (GithubOauthDTO) apiAccess.getSpec();
+    if (githubOauthDTO.getTokenRef() == null || githubOauthDTO.getTokenRef().getDecryptedValue() == null) {
+      throw new InvalidArgumentsException("The personal access token is not set");
+    }
+    return String.valueOf(githubOauthDTO.getTokenRef().getDecryptedValue());
   }
 }

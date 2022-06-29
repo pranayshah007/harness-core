@@ -139,6 +139,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.container.ContainerTask;
 import software.wings.beans.container.KubernetesContainerTask;
+import software.wings.beans.container.KubernetesContainerTaskUtils;
 import software.wings.beans.infrastructure.Host;
 import software.wings.common.InfrastructureConstants;
 import software.wings.delegatetasks.DelegateProxyFactory;
@@ -2352,7 +2353,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
         app.getUuid(), service.getUuid(), deploymentType.name());
     if (containerTask instanceof KubernetesContainerTask) {
       KubernetesContainerTask kubernetesContainerTask = (KubernetesContainerTask) containerTask;
-      isStatefulSet = kubernetesContainerTask.checkStatefulSet();
+      isStatefulSet = KubernetesContainerTaskUtils.checkStatefulSet(kubernetesContainerTask.getAdvancedConfig());
     }
 
     String kubernetesName;
@@ -2646,6 +2647,21 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
       } else {
         return null;
       }
+    }
+    return null;
+  }
+
+  @Override
+  public InfrastructureMapping getInfraMappingWithDeploymentType(
+      String appId, String serviceId, String infraDefinitionId) {
+    if (isNotEmpty(serviceId) && isNotEmpty(infraDefinitionId)) {
+      return wingsPersistence.createQuery(InfrastructureMapping.class)
+          .filter(InfrastructureMappingKeys.appId, appId)
+          .filter(InfrastructureMappingKeys.serviceId, serviceId)
+          .filter(InfrastructureMappingKeys.infrastructureDefinitionId, infraDefinitionId)
+          .project(InfrastructureMappingKeys.uuid, true)
+          .project(InfrastructureMappingKeys.deploymentType, true)
+          .get();
     }
     return null;
   }

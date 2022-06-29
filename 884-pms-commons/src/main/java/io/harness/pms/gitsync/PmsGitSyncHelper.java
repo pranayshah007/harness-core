@@ -11,8 +11,11 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncableEntity;
+import io.harness.gitsync.scm.beans.ScmGitMetaDataContext;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.manage.GlobalContextManager;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -35,11 +38,22 @@ public class PmsGitSyncHelper {
     return gitSyncBranchContext.toEntityGitDetails();
   }
 
-  public ByteString getGitSyncBranchContextBytesThreadLocal(GitSyncableEntity gitSyncableEntity) {
+  public ByteString getGitSyncBranchContextBytesThreadLocal(
+      GitSyncableEntity gitSyncableEntity, StoreType storeType, String repoName) {
     GitSyncBranchContext gitSyncBranchContext = GlobalContextManager.get(GitSyncBranchContext.NG_GIT_SYNC_CONTEXT);
+    ScmGitMetaDataContext gitMetaDataContext = GlobalContextManager.get(ScmGitMetaDataContext.NG_GIT_SYNC_CONTEXT);
+    String branchNameFromSCMGitMetadata =
+        gitMetaDataContext == null ? null : gitMetaDataContext.getScmGitMetaData().getBranchName();
     if (gitSyncBranchContext != null && gitSyncBranchContext.getGitBranchInfo() != null) {
       gitSyncBranchContext.getGitBranchInfo().setFilePath(gitSyncableEntity.getFilePath());
       gitSyncBranchContext.getGitBranchInfo().setFolderPath(gitSyncableEntity.getRootFolder());
+      gitSyncBranchContext.getGitBranchInfo().setStoreType(storeType);
+      gitSyncBranchContext.getGitBranchInfo().setRepoName(repoName);
+      if (EmptyPredicate.isNotEmpty(branchNameFromSCMGitMetadata)) {
+        // if API request does not have a branch, but the pipeline is of type remote, the git sdk figures out the
+        // default branch and fills it in the SCM Git Metadata
+        gitSyncBranchContext.getGitBranchInfo().setBranch(branchNameFromSCMGitMetadata);
+      }
     }
     return serializeGitSyncBranchContext(gitSyncBranchContext);
   }

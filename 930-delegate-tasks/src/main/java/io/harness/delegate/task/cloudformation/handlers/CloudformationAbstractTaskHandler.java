@@ -9,7 +9,6 @@ package io.harness.delegate.task.cloudformation.handlers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
@@ -57,9 +56,9 @@ public abstract class CloudformationAbstractTaskHandler {
     try {
       CloudformationTaskNGResponse response = executeTaskInternal(taskNGParameters, delegateId, taskId, logCallback);
       if (SUCCESS.equals(response.getCommandExecutionStatus())) {
-        logCallback.saveExecutionLog("Execution finished successfully.", LogLevel.INFO, SUCCESS);
+        logCallback.saveExecutionLog("Execution finished successfully.", LogLevel.INFO);
       } else {
-        logCallback.saveExecutionLog("Execution has been failed.", LogLevel.ERROR, FAILURE);
+        logCallback.saveExecutionLog("Execution has been failed.", LogLevel.ERROR);
       }
       return response;
     } catch (Exception e) {
@@ -88,10 +87,11 @@ public abstract class CloudformationAbstractTaskHandler {
       cloudformationBaseHelper.waitForStackToBeDeleted(
           taskNGParameters.getRegion(), awsInternalConfig, stackId, logCallback, stackEventsTs);
     } catch (Exception e) {
-      logCallback.saveExecutionLog("Stack deletion failed", ERROR);
+      String errorMessage = String.format("Stack deletion failed: %s", e.getMessage());
+      logCallback.saveExecutionLog(errorMessage, ERROR);
       return CloudformationTaskNGResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.FAILURE)
-          .errorMessage("Stack deletion failed")
+          .errorMessage(errorMessage)
           .build();
     }
     logCallback.saveExecutionLog("Stack deleted", INFO);

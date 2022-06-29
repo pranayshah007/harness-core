@@ -27,6 +27,6 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "StartTrial", description = "This contains details of the Start Trial object defined in Harness")
 public class StartTrialDTO {
-  @NotNull ModuleType moduleType;
-  @NotNull Edition edition;
+  @Schema(description = "Specifies the module type.") @NotNull ModuleType moduleType;
+  @Schema(description = "Specifies the type of the edition.") @NotNull Edition edition;
 }

@@ -85,7 +85,7 @@ public class ContextElementParamMapperFactory {
     } else if (element instanceof PcfInstanceElement) {
       return new PcfInstanceElementParamMapper((PcfInstanceElement) element);
     } else if (element instanceof PhaseElement) {
-      return new PhaseElementParamMapper((PhaseElement) element);
+      return new PhaseElementParamMapper(this.artifactService, this.featureFlagService, (PhaseElement) element);
     } else if (element instanceof RancherClusterElement) {
       return new RancherClusterElementParamMapper((RancherClusterElement) element);
     } else if (element instanceof ServiceElement) {

@@ -13,6 +13,8 @@ import static io.harness.rule.OwnerRule.INDER;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
@@ -22,6 +24,7 @@ import java.io.IOException;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+@OwnedBy(HarnessTeam.CDC)
 public class RuntimeInputsValidatorTest extends CategoryTest {
   private JsonNode convertYamlToJsonNode(String yaml) throws IOException {
     return YamlUtils.readTree(yaml).getNode().getCurrJsonNode();
@@ -66,6 +69,21 @@ public class RuntimeInputsValidatorTest extends CategoryTest {
         .isTrue();
     assertThat(areInputsValidAgainstSourceNode(
                    convertYamlToJsonNode("field: a.regex(a.*)"), convertYamlToJsonNode("field: <+input>.regex(a.*)")))
+        .isTrue();
+    assertThat(areInputsValidAgainstSourceNode(convertYamlToJsonNode("field: \"yes\""),
+                   convertYamlToJsonNode("field: <+input>.allowedValues(yes, no)")))
+        .isTrue();
+    assertThat(areInputsValidAgainstSourceNode(convertYamlToJsonNode("field: \"01\""),
+                   convertYamlToJsonNode("field: <+input>.allowedValues(01, 2)")))
+        .isTrue();
+    assertThat(areInputsValidAgainstSourceNode(convertYamlToJsonNode("field: yes.allowedValues(yes, no)"),
+                   convertYamlToJsonNode("field: <+input>.allowedValues(yes, no)")))
+        .isTrue();
+    assertThat(areInputsValidAgainstSourceNode(convertYamlToJsonNode("field: <+input>.allowedValues(yes, no)"),
+                   convertYamlToJsonNode("field: <+input>")))
+        .isTrue();
+    assertThat(areInputsValidAgainstSourceNode(
+                   convertYamlToJsonNode("field: <+input>.regex(a.*)"), convertYamlToJsonNode("field: <+input>")))
         .isTrue();
 
     // all false scenarios

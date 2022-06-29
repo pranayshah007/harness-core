@@ -23,8 +23,6 @@ import io.harness.filter.FilterType;
 import io.harness.ng.beans.PageResponse;
 import io.harness.utils.RestCallToNGManagerClientUtils;
 
-import software.wings.beans.Account;
-
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,18 +40,18 @@ public class ConnectorsHealthUpdateService {
   @Autowired private AccountShardService accountShardService;
 
   public void update() {
-    List<Account> accounts = accountShardService.getCeEnabledAccounts();
-    log.info("accounts size: {}", accounts.size());
-    for (Account account : accounts) {
-      log.info("Fetching connectors for account name {}, account id {}", account.getAccountName(), account.getUuid());
-      List<ConnectorResponseDTO> nextGenConnectorResponses = getNextGenConnectorResponses(account.getUuid());
+    List<String> accountIds = accountShardService.getCeEnabledAccountIds();
+    log.info("accounts size: {}", accountIds.size());
+    for (String accountId : accountIds) {
+      log.info("Fetching connectors for  account id {}", accountId);
+      List<ConnectorResponseDTO> nextGenConnectorResponses = getNextGenConnectorResponses(accountId);
       for (ConnectorResponseDTO connector : nextGenConnectorResponses) {
         ConnectorInfoDTO connectorInfo = connector.getConnector();
         try {
-          processConnector(connector, account.getUuid());
+          processConnector(connector, accountId);
         } catch (Exception e) {
-          log.error("Exception processing Connector id: {} for account id: {}", connectorInfo.getIdentifier(),
-              account.getUuid(), e);
+          log.error(
+              "Exception processing Connector id: {} for account id: {}", connectorInfo.getIdentifier(), accountId, e);
         }
       }
     }

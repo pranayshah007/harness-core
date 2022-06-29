@@ -12,7 +12,7 @@ import static io.harness.exception.WingsException.USER;
 
 import static com.google.common.io.ByteStreams.toByteArray;
 
-import io.harness.Team;
+import io.harness.notification.Team;
 import io.harness.notification.entities.NotificationTemplate;
 import io.harness.notification.exception.NotificationException;
 import io.harness.notification.repositories.NotificationTemplateRepository;

@@ -73,6 +73,7 @@ public class WorkflowExecutionMonitorHandlerTest extends WingsBaseTest {
   @Mock PersistenceIteratorFactory persistenceIteratorFactory;
   @Mock private ExecutionInterruptManager executionInterruptManager;
   @Mock private StateMachineExecutor stateMachineExecutor;
+  @Mock private WorkflowExecutionZombieHandler zombieHandler;
 
   @Inject private HPersistence persistence;
   @Inject @InjectMocks private WorkflowExecutionMonitorHandler workflowExecutionMonitorHandler;
@@ -84,8 +85,7 @@ public class WorkflowExecutionMonitorHandlerTest extends WingsBaseTest {
   @Before
   public void setUp() throws Exception {
     when(persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(any(), any(), any()))
-        .thenAnswer(
-            invocationOnMock -> invocationOnMock.getArgumentAt(2, MongoPersistenceIteratorBuilder.class).build());
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(2, MongoPersistenceIteratorBuilder.class).build());
 
     workflowExecution = WorkflowExecution.builder().appId(APP_ID).uuid(WORKFLOW_EXECUTION_ID).build();
     persistence.save(workflowExecution);

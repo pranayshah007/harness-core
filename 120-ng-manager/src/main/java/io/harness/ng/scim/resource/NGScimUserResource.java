@@ -22,6 +22,8 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -39,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Api("scim")
 @Path("/scim/account/{accountIdentifier}")
+@Hidden
 @Consumes({"application/scim+json", "application/json"})
 @Produces("application/scim+json")
 @Slf4j
@@ -67,7 +70,14 @@ public class NGScimUserResource extends ScimResource {
   @POST
   @Path("Users")
   @ApiOperation(value = "Create a new user", nickname = "createScimUser")
-  public Response createUser(ScimUser userQuery, @PathParam("accountIdentifier") String accountIdentifier) {
+  @Operation(operationId = "createScimUser", summary = "Creates a new user via SCIM",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the created user")
+      })
+  public Response
+  createUser(ScimUser userQuery, @PathParam("accountIdentifier") String accountIdentifier) {
     try {
       return scimUserService.createUser(userQuery, accountIdentifier);
     } catch (Exception ex) {
@@ -78,8 +88,16 @@ public class NGScimUserResource extends ScimResource {
 
   @PUT
   @Path("Users/{userIdentifier}")
+  @Hidden
   @ApiOperation(value = "Update an existing user by uuid", nickname = "updateScimUser")
-  public Response updateUser(@PathParam("userIdentifier") String userIdentifier,
+  @Operation(operationId = "updateScimUser", summary = "Updates a SCIM user",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the updated user")
+      })
+  public Response
+  updateUser(@PathParam("userIdentifier") String userIdentifier,
       @PathParam("accountIdentifier") String accountIdentifier, ScimUser userQuery) {
     try {
       return scimUserService.updateUser(userIdentifier, accountIdentifier, userQuery);
@@ -91,8 +109,17 @@ public class NGScimUserResource extends ScimResource {
 
   @GET
   @Path("Users/{userIdentifier}")
+  @Hidden
   @ApiOperation(value = "Get an existing user by uuid", nickname = "getScimUser")
-  public Response getUser(
+  @Operation(operationId = "getScimUser", summary = "Get user details",
+      description = "Gets the user details for the given Account ID and User ID.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Returns the user with the requested accountIdentifier and connectorIdentifier")
+      })
+  public Response
+  getUser(
       @PathParam("userIdentifier") String userIdentifier, @PathParam("accountIdentifier") String accountIdentifier) {
     try {
       return Response.status(Response.Status.OK)
@@ -106,10 +133,19 @@ public class NGScimUserResource extends ScimResource {
 
   @GET
   @Path("Users")
+  @Hidden
   @ApiOperation(
       value =
           "Search users by their email address. Supports pagination. If nothing is passed in filter, all results will be returned.",
       nickname = "searchScimUser")
+  @Operation(operationId = "searchScimUser", summary = "Search for users by email addresses",
+      description =
+          "Search for users by email addresses. If the filter parameter is left blank, all the users will be returned.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Returns the user with the requested accountIdentifier and filter")
+      })
   public Response
   searchUser(@PathParam("accountIdentifier") String accountIdentifier, @QueryParam("filter") String filter,
       @QueryParam("count") Integer count, @QueryParam("startIndex") Integer startIndex) {
@@ -126,8 +162,16 @@ public class NGScimUserResource extends ScimResource {
 
   @DELETE
   @Path("Users/{userIdentifier}")
+  @Hidden
   @ApiOperation(value = "Delete an user by uuid", nickname = "deleteScimUser")
-  public Response deleteUser(
+  @Operation(operationId = "deleteScimUser", summary = "Deletes user for the given ID",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "It does not return any content")
+      })
+  public Response
+  deleteUser(
       @PathParam("userIdentifier") String userIdentifier, @PathParam("accountIdentifier") String accountIdentifier) {
     scimUserService.deleteUser(userIdentifier, accountIdentifier);
     return Response.status(Response.Status.NO_CONTENT).build();
@@ -135,8 +179,16 @@ public class NGScimUserResource extends ScimResource {
 
   @PATCH
   @Path("Users/{userIdentifier}")
+  @Hidden
   @ApiOperation(value = "Update some fields of a user by uuid", nickname = "patchScimUser")
-  public ScimUser updateUser(@PathParam("accountIdentifier") String accountIdentifier,
+  @Operation(operationId = "patchScimUser", summary = "Updates user for the given UUID",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the updated User")
+      })
+  public ScimUser
+  updateUser(@PathParam("accountIdentifier") String accountIdentifier,
       @PathParam("userIdentifier") String userIdentifier, PatchRequest patchRequest) {
     return scimUserService.updateUser(accountIdentifier, userIdentifier, patchRequest);
   }

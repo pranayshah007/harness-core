@@ -8,6 +8,7 @@
 package io.harness.template.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static java.lang.Long.parseLong;
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
@@ -38,6 +39,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.pms.contracts.service.VariableMergeResponseProto;
@@ -57,6 +59,7 @@ import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.helpers.TemplateMergeHelper;
 import io.harness.template.helpers.TemplateReferenceHelper;
 import io.harness.template.helpers.TemplateYamlConversionHelper;
+import io.harness.template.helpers.YamlVariablesUtils;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
@@ -222,8 +225,6 @@ public class NGTemplateResource {
     TemplateEntity templateEntity = NGTemplateDtoMapper.toTemplateEntity(accountId, orgId, projectId, templateYaml);
     log.info(String.format("Creating Template with identifier %s with label %s in project %s, org %s, account %s",
         templateEntity.getIdentifier(), templateEntity.getVersionLabel(), projectId, orgId, accountId));
-
-    // TODO(archit): Add schema validations
     TemplateEntity createdTemplate = templateService.create(templateEntity, setDefaultTemplate, comments);
     TemplateWrapperResponseDTO templateWrapperResponseDTO =
         TemplateWrapperResponseDTO.builder()
@@ -302,8 +303,6 @@ public class NGTemplateResource {
         String.format("Updating Template with identifier %s with versionLabel %s in project %s, org %s, account %s",
             templateEntity.getIdentifier(), templateEntity.getVersionLabel(), projectId, orgId, accountId));
     templateEntity = templateEntity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
-
-    // TODO(archit): Add schema validations
     TemplateEntity createdTemplate =
         templateService.updateTemplateEntity(templateEntity, ChangeType.MODIFY, setDefaultTemplate, comments);
     TemplateWrapperResponseDTO templateWrapperResponseDTO =
@@ -528,8 +527,9 @@ public class NGTemplateResource {
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull TemplateApplyRequestDTO templateApplyRequestDTO) {
     log.info("Applying templates to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
     long start = System.currentTimeMillis();
-    TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeHelper.applyTemplatesToYaml(
-        accountId, orgId, projectId, templateApplyRequestDTO.getOriginalEntityYaml());
+    TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeHelper.applyTemplatesToYaml(accountId, orgId,
+        projectId, templateApplyRequestDTO.getOriginalEntityYaml(),
+        templateApplyRequestDTO.isGetMergedYamlWithTemplateField());
     if (templateApplyRequestDTO.isCheckForAccess() && templateMergeResponseDTO != null
         && EmptyPredicate.isNotEmpty(templateMergeResponseDTO.getTemplateReferenceSummaries())) {
       Set<String> templateIdentifiers = templateMergeResponseDTO.getTemplateReferenceSummaries()
@@ -574,15 +574,19 @@ public class NGTemplateResource {
       @RequestBody(required = true, description = "Template YAML") @NotNull @ApiParam(hidden = true) String yaml) {
     log.info("Creating variables for template.");
     String appliedTemplateYaml =
-        templateMergeHelper.applyTemplatesToYaml(accountId, orgId, projectId, yaml).getMergedPipelineYaml();
+        templateMergeHelper.applyTemplatesToYaml(accountId, orgId, projectId, yaml, false).getMergedPipelineYaml();
     TemplateEntity templateEntity =
         NGTemplateDtoMapper.toTemplateEntity(accountId, orgId, projectId, appliedTemplateYaml);
-    String pmsUnderstandableYaml =
-        templateYamlConversionHelper.convertTemplateYamlToPMSUnderstandableYaml(templateEntity);
-    VariablesServiceRequest request = VariablesServiceRequest.newBuilder().setYaml(pmsUnderstandableYaml).build();
-    VariableMergeResponseProto variables = variablesServiceBlockingStub.getVariables(request);
-    VariableMergeServiceResponse variableMergeServiceResponse = VariablesResponseDtoMapper.toDto(variables);
-    return ResponseDTO.newResponse(variableMergeServiceResponse);
+    String entityYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(templateEntity);
+    if (templateEntity.getTemplateEntityType().getOwnerTeam().equals(PIPELINE)) {
+      VariablesServiceRequest request = VariablesServiceRequest.newBuilder().setYaml(entityYaml).build();
+      VariableMergeResponseProto variables = variablesServiceBlockingStub.getVariables(request);
+      VariableMergeServiceResponse variableMergeServiceResponse = VariablesResponseDtoMapper.toDto(variables);
+      return ResponseDTO.newResponse(variableMergeServiceResponse);
+    } else {
+      return ResponseDTO.newResponse(
+          YamlVariablesUtils.getVariablesFromYaml(entityYaml, templateEntity.getTemplateEntityType()));
+    }
   }
 
   @GET
@@ -617,8 +621,9 @@ public class NGTemplateResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgId,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectId,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull String yaml) {
-    return ResponseDTO.newResponse(
-        templateReferenceHelper.getNestedTemplateReferences(accountId, orgId, projectId, yaml, false));
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @NotNull TemplateReferenceRequestDTO templateReferenceRequestDTO) {
+    return ResponseDTO.newResponse(templateReferenceHelper.getNestedTemplateReferences(
+        accountId, orgId, projectId, templateReferenceRequestDTO.getYaml(), false));
   }
 }

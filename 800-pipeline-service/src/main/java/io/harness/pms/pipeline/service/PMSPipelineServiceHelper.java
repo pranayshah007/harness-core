@@ -13,18 +13,25 @@ import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
+import io.harness.ModuleType;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.engine.GovernanceService;
+import io.harness.engine.governance.PolicyEvaluationFailureException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnexpectedException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
+import io.harness.gitaware.dto.GitContextRequestParams;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -35,6 +42,7 @@ import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.contracts.governance.ExpansionResponseBatch;
 import io.harness.pms.contracts.governance.GovernanceMetadata;
+import io.harness.pms.contracts.governance.PolicySetMetadata;
 import io.harness.pms.filter.creation.FilterCreatorMergeService;
 import io.harness.pms.filter.creation.FilterCreatorMergeServiceResponse;
 import io.harness.pms.filter.utils.ModuleInfoFilterUtils;
@@ -49,8 +57,13 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineEntityUtils;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
+import io.harness.pms.pipeline.PipelineImportRequestDTO;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.telemetry.TelemetryReporter;
+import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -59,8 +72,10 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -83,6 +98,7 @@ public class PMSPipelineServiceHelper {
   @Inject private final PmsFeatureFlagService pmsFeatureFlagService;
   @Inject private final PmsGitSyncHelper gitSyncHelper;
   @Inject private final TelemetryReporter telemetryReporter;
+  @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
 
   public static String PIPELINE_SAVE = "pipeline_save";
   public static String PIPELINE_SAVE_ACTION_TYPE = "action";
@@ -155,8 +171,27 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  public GovernanceMetadata validatePipelineYamlAndSetTemplateRefIfAny(
-      PipelineEntity pipelineEntity, boolean checkAgainstOPAPolicies) {
+  public void validatePipelineFromRemote(PipelineEntity pipelineEntity) {
+    GovernanceMetadata governanceMetadata = validatePipelineYaml(pipelineEntity);
+    if (governanceMetadata.getDeny()) {
+      List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
+                                             .stream()
+                                             .filter(PolicySetMetadata::getDeny)
+                                             .map(PolicySetMetadata::getIdentifier)
+                                             .collect(Collectors.toList());
+      throw new PolicyEvaluationFailureException(
+          "Pipeline does not follow the Policies in these Policy Sets: " + denyingPolicySetIds.toString(),
+          governanceMetadata, pipelineEntity.getYaml());
+    }
+  }
+
+  public GovernanceMetadata validatePipelineYaml(PipelineEntity pipelineEntity) {
+    boolean governanceEnabled =
+        pmsFeatureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE);
+    return validatePipelineYaml(pipelineEntity, governanceEnabled);
+  }
+
+  public GovernanceMetadata validatePipelineYaml(PipelineEntity pipelineEntity, boolean checkAgainstOPAPolicies) {
     try {
       GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
       if (gitEntityInfo != null && gitEntityInfo.isNewBranch()) {
@@ -168,10 +203,10 @@ public class PMSPipelineServiceHelper {
                                    .build())
                 .build();
         try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
-          return validatePipelineYamlAndSetTemplateRefIfAnyInternal(pipelineEntity, checkAgainstOPAPolicies);
+          return validatePipelineYamlInternal(pipelineEntity, checkAgainstOPAPolicies);
         }
       } else {
-        return validatePipelineYamlAndSetTemplateRefIfAnyInternal(pipelineEntity, checkAgainstOPAPolicies);
+        return validatePipelineYamlInternal(pipelineEntity, checkAgainstOPAPolicies);
       }
     } catch (io.harness.yaml.validator.InvalidYamlException ex) {
       ex.setYaml(pipelineEntity.getData());
@@ -187,23 +222,21 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  private GovernanceMetadata validatePipelineYamlAndSetTemplateRefIfAnyInternal(
+  private GovernanceMetadata validatePipelineYamlInternal(
       PipelineEntity pipelineEntity, boolean checkAgainstOPAPolicies) {
     String accountId = pipelineEntity.getAccountId();
     String orgIdentifier = pipelineEntity.getOrgIdentifier();
     String projectIdentifier = pipelineEntity.getProjectIdentifier();
     // Apply all the templateRefs(if any) then check for schema validation.
     TemplateMergeResponseDTO templateMergeResponseDTO =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity);
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, checkAgainstOPAPolicies);
     String resolveTemplateRefsInPipeline = templateMergeResponseDTO.getMergedPipelineYaml();
     pmsYamlSchemaService.validateYamlSchema(accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipeline);
     // validate unique fqn in resolveTemplateRefsInPipeline
     pmsYamlSchemaService.validateUniqueFqn(resolveTemplateRefsInPipeline);
-    pipelineEntity.setTemplateReference(
-        EmptyPredicate.isNotEmpty(templateMergeResponseDTO.getTemplateReferenceSummaries()));
     if (checkAgainstOPAPolicies) {
-      String expandedPipelineJSON =
-          fetchExpandedPipelineJSONFromYaml(accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipeline);
+      String expandedPipelineJSON = fetchExpandedPipelineJSONFromYaml(
+          accountId, orgIdentifier, projectIdentifier, templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef());
       return governanceService.evaluateGovernancePolicies(expandedPipelineJSON, accountId, orgIdentifier,
           projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE, "");
     }
@@ -268,10 +301,23 @@ public class PMSPipelineServiceHelper {
 
     Criteria moduleCriteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(module)) {
+      // Add approval stage criteria to check for the pipelines containing the given module and the approval stage.
+      Criteria approvalStageCriteria =
+          Criteria
+              .where(String.format("%s.%s.stageTypes", PipelineEntityKeys.filters, ModuleType.PMS.name().toLowerCase()))
+              .exists(true);
+      for (ModuleType moduleType : ModuleType.values()) {
+        if (moduleType.isInternal()) {
+          continue;
+        }
+        // This query ensures that only pipelines containing approval stage are visible.
+        approvalStageCriteria.and(String.format("%s.%s", PipelineEntityKeys.filters, moduleType.name().toLowerCase()))
+            .exists(false);
+      }
       // Check for pipeline with no filters also - empty pipeline or pipelines with only approval stage
       // criteria = { "$or": [ { "filters": {} } , { "filters.MODULE": { $exists: true } } ] }
       moduleCriteria.orOperator(where(PipelineEntityKeys.filters).is(new Document()),
-          where(String.format("%s.%s", PipelineEntityKeys.filters, module)).exists(true));
+          where(String.format("%s.%s", PipelineEntityKeys.filters, module)).exists(true), approvalStageCriteria);
     }
 
     Criteria searchCriteria = new Criteria();
@@ -301,5 +347,97 @@ public class PMSPipelineServiceHelper {
         PipelineEntityUtils.getModuleNameFromPipelineEntity(entity, "cd"));
     telemetryReporter.sendTrackEvent(PIPELINE_SAVE, null, entity.getAccountId(), properties,
         Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
+  }
+
+  public static InvalidYamlException buildInvalidYamlException(String errorMessage, String pipelineYaml) {
+    YamlSchemaErrorWrapperDTO errorWrapperDTO =
+        YamlSchemaErrorWrapperDTO.builder()
+            .schemaErrors(
+                Collections.singletonList(YamlSchemaErrorDTO.builder().message(errorMessage).fqn("$.pipeline").build()))
+            .build();
+    InvalidYamlException invalidYamlException = new InvalidYamlException(errorMessage, errorWrapperDTO);
+    invalidYamlException.setYaml(pipelineYaml);
+    return invalidYamlException;
+  }
+
+  public String importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    Scope scope = Scope.of(accountId, orgIdentifier, projectIdentifier);
+    GitContextRequestParams gitContextRequestParams = GitContextRequestParams.builder()
+                                                          .branchName(gitEntityInfo.getBranch())
+                                                          .connectorRef(gitEntityInfo.getConnectorRef())
+                                                          .filePath(gitEntityInfo.getFilePath())
+                                                          .repoName(gitEntityInfo.getRepoName())
+                                                          .build();
+    return gitAwareEntityHelper.fetchYAMLFromRemote(scope, gitContextRequestParams, Collections.emptyMap());
+  }
+
+  public static String updateFieldsInImportedPipeline(String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, String importedPipeline) {
+    if (EmptyPredicate.isEmpty(importedPipeline)) {
+      String errorMessage = PipelineCRUDErrorResponse.errorMessageForEmptyYamlOnGit(
+          orgIdentifier, projectIdentifier, pipelineIdentifier, GitAwareContextHelper.getBranchInRequest());
+      throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
+    }
+    YamlField pipelineYamlField;
+    try {
+      pipelineYamlField = YamlUtils.readTree(importedPipeline);
+    } catch (IOException e) {
+      String errorMessage = PipelineCRUDErrorResponse.errorMessageForNotAYAMLFile(
+          GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
+      throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
+    }
+    YamlField pipelineInnerField = pipelineYamlField.getNode().getField(YAMLFieldNameConstants.PIPELINE);
+    if (pipelineInnerField == null) {
+      String errorMessage = PipelineCRUDErrorResponse.errorMessageForNotAPipelineYAML(
+          GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
+      throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
+    }
+
+    boolean hasMetadataChanged = false;
+    String identifierFromGit = pipelineInnerField.getNode().getIdentifier();
+    if (!pipelineIdentifier.equals(identifierFromGit)) {
+      YamlUtils.setStringValueForField(YAMLFieldNameConstants.IDENTIFIER, pipelineIdentifier, pipelineInnerField);
+      hasMetadataChanged = true;
+    }
+
+    String nameFromGit = pipelineInnerField.getNode().getName();
+    if (!pipelineImportRequest.getPipelineName().equals(nameFromGit)) {
+      YamlUtils.setStringValueForField(
+          YAMLFieldNameConstants.NAME, pipelineImportRequest.getPipelineName(), pipelineInnerField);
+      hasMetadataChanged = true;
+    }
+
+    String orgIdentifierFromGit = pipelineInnerField.getNode().getStringValue(YAMLFieldNameConstants.ORG_IDENTIFIER);
+    if (!orgIdentifier.equals(orgIdentifierFromGit)) {
+      YamlUtils.setStringValueForField(YAMLFieldNameConstants.ORG_IDENTIFIER, orgIdentifier, pipelineInnerField);
+      hasMetadataChanged = true;
+    }
+
+    String projectIdentifierFromGit =
+        pipelineInnerField.getNode().getStringValue(YAMLFieldNameConstants.PROJECT_IDENTIFIER);
+    if (!projectIdentifier.equals(projectIdentifierFromGit)) {
+      YamlUtils.setStringValueForField(
+          YAMLFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifier, pipelineInnerField);
+      hasMetadataChanged = true;
+    }
+
+    String descriptionFromGit = pipelineInnerField.getNode().getStringValue(YAMLFieldNameConstants.DESCRIPTION);
+    if (pipelineImportRequest.getPipelineDescription() != null
+        && !pipelineImportRequest.getPipelineDescription().equals(descriptionFromGit)) {
+      YamlUtils.setStringValueForField(
+          YAMLFieldNameConstants.DESCRIPTION, pipelineImportRequest.getPipelineDescription(), pipelineInnerField);
+      hasMetadataChanged = true;
+    }
+
+    if (hasMetadataChanged) {
+      try {
+        importedPipeline = YamlUtils.writeYamlString(pipelineYamlField).replace("---\n", "");
+      } catch (IOException e) {
+        log.error("Unexpected error when trying to set description", e);
+        throw new UnexpectedException("Unexpected error when trying to set Pipeline Metadata. Please try again.", e);
+      }
+    }
+    return importedPipeline;
   }
 }

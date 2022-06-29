@@ -7,13 +7,19 @@
 
 package io.harness.ci.config;
 
+import io.harness.annotation.RecasterAlias;
+
 import java.util.List;
 import lombok.Builder;
 import lombok.Value;
+import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
+@TypeAlias("stepImageConfig")
+@RecasterAlias("io.harness.ci.config.StepImageConfig")
 public class StepImageConfig {
   String image;
   List<String> entrypoint;
+  List<String> windowsEntrypoint;
 }

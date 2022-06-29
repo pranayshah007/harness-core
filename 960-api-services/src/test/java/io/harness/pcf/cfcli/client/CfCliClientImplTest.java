@@ -28,6 +28,8 @@ import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
@@ -120,8 +122,8 @@ public class CfCliClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPerformConfigureAutoscalar() throws Exception {
     CfCliClientImpl cfCliClient = spy(CfCliClientImpl.class);
-    doNothing().when(logCallback).saveExecutionLog(anyString());
-    doAnswer((Answer<Boolean>) invocation -> { return true; }).when(cfCliClient).doLogin(any(), any(), anyString());
+    doNothing().when(logCallback).saveExecutionLog(any());
+    doAnswer((Answer<Boolean>) invocation -> { return true; }).when(cfCliClient).doLogin(any(), any(), any());
 
     String AUTOSCALAR_MANIFEST = "autoscalar config";
 
@@ -132,7 +134,7 @@ public class CfCliClientImplTest extends CategoryTest {
     ProcessExecutor processExecutor = mock(ProcessExecutor.class);
     ProcessResult processResult = mock(ProcessResult.class);
     doReturn(processResult).when(processExecutor).execute();
-    doReturn(0).doReturn(1).when(processResult).getExitValue();
+    doReturn(0).doReturn(0).doReturn(1).doReturn(1).when(processResult).getExitValue();
 
     doReturn(processExecutor).when(cfCliClient).createProcessExecutorForCfTask(anyLong(), anyString(), anyMap(), any());
     cfCliClient.performConfigureAutoscaler(
@@ -151,7 +153,7 @@ public class CfCliClientImplTest extends CategoryTest {
       assertThat(e instanceof PivotalClientApiException).isTrue();
     }
 
-    doThrow(Exception.class).when(processExecutor).execute();
+    doThrow(IOException.class).when(processExecutor).execute();
     try {
       cfCliClient.performConfigureAutoscaler(
           CfAppAutoscalarRequestData.builder().autoscalarFilePath(file.getAbsolutePath()).timeoutInMins(1).build(),
@@ -167,8 +169,8 @@ public class CfCliClientImplTest extends CategoryTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testCheckIfAppHasAutoscalarAttached() throws Exception {
-    doNothing().when(logCallback).saveExecutionLog(anyString());
-    doAnswer((Answer<Boolean>) invocation -> { return true; }).when(cfCliClient).doLogin(any(), any(), anyString());
+    doNothing().when(logCallback).saveExecutionLog(any());
+    doAnswer((Answer<Boolean>) invocation -> { return true; }).when(cfCliClient).doLogin(any(), any(), any());
 
     ProcessExecutor processExecutor = mock(ProcessExecutor.class);
     ProcessResult processResult = mock(ProcessResult.class);
@@ -188,7 +190,7 @@ public class CfCliClientImplTest extends CategoryTest {
 
     assertThat(cfCliClient.checkIfAppHasAutoscalerAttached(autoscalarRequestData, logCallback)).isFalse();
     assertThat(cfCliClient.checkIfAppHasAutoscalerAttached(autoscalarRequestData, logCallback)).isFalse();
-    doThrow(Exception.class).when(processExecutor).execute();
+    doThrow(IOException.class).when(processExecutor).execute();
     try {
       cfCliClient.checkIfAppHasAutoscalerAttached(CfAppAutoscalarRequestData.builder().build(), logCallback);
     } catch (Exception e) {
@@ -200,13 +202,13 @@ public class CfCliClientImplTest extends CategoryTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testChangeAutoscalarState() throws Exception {
-    doNothing().when(logCallback).saveExecutionLog(anyString());
-    doAnswer((Answer<Boolean>) invocation -> { return true; }).when(cfCliClient).doLogin(any(), any(), anyString());
+    doNothing().when(logCallback).saveExecutionLog(any());
+    doAnswer((Answer<Boolean>) invocation -> { return true; }).when(cfCliClient).doLogin(any(), any(), any());
 
     ProcessExecutor processExecutor = mock(ProcessExecutor.class);
     ProcessResult processResult = mock(ProcessResult.class);
     doReturn(processResult).when(processExecutor).execute();
-    doReturn(0).doReturn(1).when(processResult).getExitValue();
+    doReturn(0).doReturn(0).doReturn(1).doReturn(1).when(processResult).getExitValue();
 
     CfAppAutoscalarRequestData cfAppAutoscalarRequestData = CfAppAutoscalarRequestData.builder()
                                                                 .applicationName(APP_NAME)
@@ -223,7 +225,7 @@ public class CfCliClientImplTest extends CategoryTest {
       assertThat(e instanceof PivotalClientApiException).isTrue();
     }
 
-    doThrow(Exception.class).when(processExecutor).execute();
+    doThrow(IOException.class).when(processExecutor).execute();
     try {
       cfCliClient.changeAutoscalerState(cfAppAutoscalarRequestData, logCallback, true);
     } catch (Exception e) {
@@ -308,12 +310,12 @@ public class CfCliClientImplTest extends CategoryTest {
     CfAppAutoscalarRequestData autoscalarRequestData =
         CfAppAutoscalarRequestData.builder().cfRequestConfig(CfRequestConfig.builder().loggedin(true).build()).build();
     cfCliClient.logInForAppAutoscalarCliCommand(autoscalarRequestData, logCallback);
-    verify(cfCliClient, never()).doLogin(any(), any(), anyString());
+    verify(cfCliClient, never()).doLogin(any(), any(), any());
 
-    doReturn(true).when(cfCliClient).doLogin(any(), any(), anyString());
+    doReturn(true).when(cfCliClient).doLogin(any(), any(), any());
     autoscalarRequestData.getCfRequestConfig().setLoggedin(false);
     cfCliClient.logInForAppAutoscalarCliCommand(autoscalarRequestData, logCallback);
-    verify(cfCliClient, times(1)).doLogin(any(), any(), anyString());
+    verify(cfCliClient, times(1)).doLogin(any(), any(), any());
   }
 
   @Test(expected = Test.None.class)
@@ -329,7 +331,9 @@ public class CfCliClientImplTest extends CategoryTest {
 
     doNothing().when(logCallback).saveExecutionLog(anyString());
     doReturn(true).when(cfCliClient).doLogin(any(CfRequestConfig.class), any(LogCallback.class), anyString());
-    doReturn(new ProcessResult(0, null)).when(cfCliClient).runProcessExecutor(any(ProcessExecutor.class));
+    doReturn(new ProcessResult(0, null))
+        .when(cfCliClient)
+        .getProcessResult(nullable(String.class), any(), anyInt(), any());
     cfCliClient.runPcfPluginScript(requestData, logCallback);
   }
 
@@ -483,10 +487,10 @@ public class CfCliClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSetEnvVariablesForApplication() throws Exception {
     reset(cfCliClient);
-    doReturn(false).when(cfCliClient).doLogin(any(), any(), anyString());
+    doReturn(false).when(cfCliClient).doLogin(any(), any(), any());
 
     CfRequestConfig cfRequestConfig = getCfRequestConfigWithCfCliPath();
-    doNothing().when(logCallback).saveExecutionLog(anyString());
+    doNothing().when(logCallback).saveExecutionLog(any());
 
     // login failed
     try {
@@ -497,8 +501,8 @@ public class CfCliClientImplTest extends CategoryTest {
     }
 
     // check command generated
-    doReturn(true).when(cfCliClient).doLogin(any(), any(), anyString());
-    doReturn(0).when(cfCliClient).executeCommand(anyString(), anyMap(), any(), any());
+    doReturn(true).when(cfCliClient).doLogin(any(), any(), any());
+    doReturn(0).when(cfCliClient).executeCommand(any(), anyMap(), any(), any());
     cfCliClient.setEnvVariablesForApplication(
         Collections.singletonMap(HARNESS__STATUS__IDENTIFIER, HARNESS__ACTIVE__IDENTIFIER), cfRequestConfig,
         logCallback);
@@ -525,7 +529,7 @@ public class CfCliClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUnsetEnvVariablesForApplication() throws Exception {
     reset(cfCliClient);
-    doReturn(false).when(cfCliClient).doLogin(any(), any(), anyString());
+    doReturn(false).when(cfCliClient).doLogin(any(), any(), any());
 
     CfRequestConfig cfRequestConfig = getCfRequestConfigWithCfCliPath();
     doNothing().when(logCallback).saveExecutionLog(anyString());
@@ -539,8 +543,8 @@ public class CfCliClientImplTest extends CategoryTest {
     }
 
     // check command generated
-    doReturn(true).when(cfCliClient).doLogin(any(), any(), anyString());
-    doReturn(0).when(cfCliClient).executeCommand(anyString(), anyMap(), any(), any());
+    doReturn(true).when(cfCliClient).doLogin(any(), any(), any());
+    doReturn(0).when(cfCliClient).executeCommand(any(), anyMap(), any(), any());
     cfCliClient.unsetEnvVariablesForApplication(
         Collections.singletonList(HARNESS__STATUS__IDENTIFIER), cfRequestConfig, logCallback);
     ArgumentCaptor<String> commandCaptor = ArgumentCaptor.forClass(String.class);
@@ -564,8 +568,8 @@ public class CfCliClientImplTest extends CategoryTest {
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testcheckIfAppHasAutoscalarWithExpectedState() throws Exception {
-    doNothing().when(logCallback).saveExecutionLog(anyString());
-    doAnswer((Answer<Boolean>) invocation -> { return true; }).when(cfCliClient).doLogin(any(), any(), anyString());
+    doNothing().when(logCallback).saveExecutionLog(any());
+    doAnswer((Answer<Boolean>) invocation -> { return true; }).when(cfCliClient).doLogin(any(), any(), any());
 
     ProcessExecutor processExecutor = mock(ProcessExecutor.class);
     ProcessResult processResult = mock(ProcessResult.class);

@@ -39,4 +39,5 @@ public class HelmChartManifestOutcome implements ManifestOutcome {
   ParameterField<Boolean> skipResourceVersioning;
   HelmVersion helmVersion;
   List<HelmManifestCommandFlag> commandFlags;
+  ParameterField<List<String>> valuesPaths;
 }

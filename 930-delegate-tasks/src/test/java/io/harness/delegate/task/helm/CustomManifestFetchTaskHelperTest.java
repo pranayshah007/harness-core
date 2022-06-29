@@ -27,6 +27,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -67,7 +68,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 
 @OwnedBy(CDP)
 public class CustomManifestFetchTaskHelperTest extends CategoryTest {
@@ -75,7 +75,7 @@ public class CustomManifestFetchTaskHelperTest extends CategoryTest {
   @Mock LogCallback logCallback;
   @Mock DelegateFileManagerBase delegateFileManagerBase;
 
-  @Spy @InjectMocks private CustomManifestFetchTaskHelper manifestFetchTaskHelper;
+  @InjectMocks private CustomManifestFetchTaskHelper manifestFetchTaskHelper = spy(CustomManifestFetchTaskHelper.class);
 
   private static final String ACTIVITY_ID = "activityId";
   private static final String APP_ID = "appId";
@@ -122,6 +122,7 @@ public class CustomManifestFetchTaskHelperTest extends CategoryTest {
     doThrow(new FileNotFoundException())
         .when(customManifestService)
         .fetchValues(eq(MISSING_FILE), anyString(), eq(ACTIVITY_ID), eq(logCallback));
+    doReturn("WORK_DIR").when(customManifestService).getWorkingDirectory();
   }
 
   @Test

@@ -8,13 +8,13 @@
 package software.wings.service.impl.ldap;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 
 import software.wings.helpers.ext.ldap.LdapSearch;
 
 import com.google.common.collect.Lists;
-import de.danielbechler.util.Collections;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -54,7 +54,7 @@ public class LdapParallelSearchExecutor {
       Function<LdapUserExistsRequest, LdapUserExistsResponse> executeLdapUserExistsRequest) {
     LdapUserExistsResponse ldapUserExistsReturn = null;
 
-    if (!Collections.isEmpty(userExistsQueryObjectList)) {
+    if (!isEmpty(userExistsQueryObjectList)) {
       if (userExistsQueryObjectList.size() == 1) {
         ldapUserExistsReturn = executeLdapUserExistsRequest.apply(userExistsQueryObjectList.get(0));
       } else {

@@ -7,6 +7,8 @@
 
 package io.harness.cdng.service.steps;
 
+import static java.lang.Boolean.TRUE;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -35,6 +37,7 @@ public class ServiceStepOutcome implements Outcome, ExecutionSweepingOutput {
   String description;
   String type;
   Map<String, String> tags;
+  boolean gitOpsEnabled;
 
   public String getServiceDefinitionType() {
     return type;
@@ -48,11 +51,23 @@ public class ServiceStepOutcome implements Outcome, ExecutionSweepingOutput {
     return ServiceStepOutcome.builder()
         .identifier(serviceEntity.getIdentifier())
         .name(serviceEntity.getName())
-        .description(serviceEntity.getName())
+        .description(serviceEntity.getDescription())
         .type(type)
         .tags(serviceEntity.getTags() == null
                 ? Collections.emptyMap()
                 : serviceEntity.getTags().stream().collect(Collectors.toMap(NGTag::getKey, NGTag::getValue)))
+        .build();
+  }
+
+  public static ServiceStepOutcome fromServiceStepV2(String identifier, String name, String type, String description,
+      Map<String, String> tags, Boolean gitOpsEnabled) {
+    return ServiceStepOutcome.builder()
+        .identifier(identifier)
+        .name(name)
+        .description(description)
+        .tags(tags)
+        .type(type)
+        .gitOpsEnabled(gitOpsEnabled == TRUE)
         .build();
   }
 }

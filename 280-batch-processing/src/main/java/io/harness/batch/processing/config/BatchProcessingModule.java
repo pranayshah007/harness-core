@@ -8,6 +8,7 @@
 package io.harness.batch.processing.config;
 
 import static io.harness.AuthorizationServiceHeader.BATCH_PROCESSING;
+import static io.harness.AuthorizationServiceHeader.MANAGER;
 
 import io.harness.annotations.retry.MethodExecutionHelper;
 import io.harness.annotations.retry.RetryOnException;
@@ -43,10 +44,12 @@ import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
 import io.harness.ccm.service.intf.AWSOrganizationHelperService;
 import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingServiceImpl;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.PerspectiveAnomalyService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
+import io.harness.ccm.views.service.impl.CEViewFolderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
 import io.harness.ccm.views.service.impl.PerspectiveAnomalyServiceImpl;
 import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
@@ -57,11 +60,13 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.ff.FeatureFlagServiceImpl;
 import io.harness.govern.ProviderMethodInterceptor;
 import io.harness.instanceng.InstanceNGResourceClientModule;
+import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.lock.PersistentLocker;
 import io.harness.lock.noop.PersistentNoopLocker;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.metrics.service.api.MetricsPublisher;
 import io.harness.mongo.MongoConfig;
+import io.harness.notifications.NotificationResourceClientModule;
 import io.harness.persistence.HPersistence;
 import io.harness.pricing.client.CloudInfoPricingClientModule;
 import io.harness.remote.client.ClientMode;
@@ -74,10 +79,12 @@ import io.harness.time.TimeModule;
 
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.dl.WingsPersistence;
+import software.wings.service.impl.SlackMessageSenderImpl;
 import software.wings.service.impl.ce.CeAccountExpirationCheckerImpl;
 import software.wings.service.impl.instance.CloudToHarnessMappingServiceImpl;
 import software.wings.service.impl.instance.DeploymentServiceImpl;
 import software.wings.service.impl.security.NoOpSecretManagerImpl;
+import software.wings.service.intfc.SlackMessageSender;
 import software.wings.service.intfc.ce.CeAccountExpirationChecker;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 import software.wings.service.intfc.instance.DeploymentService;
@@ -122,10 +129,12 @@ public class BatchProcessingModule extends AbstractModule {
     bind(CloudToHarnessMappingService.class).to(CloudToHarnessMappingServiceImpl.class);
     bind(ProductMetricsService.class).to(ProductMetricsServiceImpl.class);
     bind(CESlackWebhookService.class).to(CESlackWebhookServiceImpl.class);
+    bind(SlackMessageSender.class).to(SlackMessageSenderImpl.class);
     bind(BigQueryService.class).to(BigQueryServiceImpl.class);
     bind(CeCloudMetricsService.class).to(CeCloudMetricsServiceImpl.class);
     bind(CENGTelemetryService.class).to(CENGTelemetryServiceImpl.class);
     bind(CEViewService.class).to(CEViewServiceImpl.class);
+    bind(CEViewFolderService.class).to(CEViewFolderServiceImpl.class);
     bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
     bind(ViewCustomFieldService.class).to(ViewCustomFieldServiceImpl.class);
     bind(BusinessMappingService.class).to(BusinessMappingServiceImpl.class);
@@ -135,6 +144,10 @@ public class BatchProcessingModule extends AbstractModule {
         batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
     install(new InstanceNGResourceClientModule(batchMainConfig.getNgManagerServiceHttpClientConfig(),
         batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
+    install(NgLicenseHttpClientModule.getInstance(batchMainConfig.getNgManagerServiceHttpClientConfig(),
+        batchMainConfig.getNgManagerServiceSecret(), MANAGER.getServiceId()));
+    install(new NotificationResourceClientModule(batchMainConfig.getCeNgServiceHttpClientConfig(),
+        batchMainConfig.getCeNgServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
     install(new AbstractTelemetryModule() {
       @Override
       public TelemetryConfiguration telemetryConfiguration() {

@@ -10,6 +10,7 @@ package io.harness.ci.creator.variables;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.IntegrationStageNode;
+import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.sdk.core.variables.AbstractStageVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
@@ -91,7 +92,8 @@ public class CIStageVariableCreator extends AbstractStageVariableCreator<Integra
 
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
-    return Collections.singletonMap(YAMLFieldNameConstants.STAGE, Collections.singleton("CI"));
+    return Collections.singletonMap(
+        YAMLFieldNameConstants.STAGE, Collections.singleton(StepSpecTypeConstants.CI_STAGE));
   }
 
   @Override

@@ -108,7 +108,7 @@ public class CloudformationCreateStackStepInfo
     return CloudformationCreateStackStepParameters.infoBuilder()
         .delegateSelectors(getDelegateSelectors())
         .provisionerIdentifier(getProvisionerIdentifier())
-        .configuration(cloudformationStepConfiguration)
+        .configuration(cloudformationStepConfiguration.toStepParameters())
         .build();
   }
 

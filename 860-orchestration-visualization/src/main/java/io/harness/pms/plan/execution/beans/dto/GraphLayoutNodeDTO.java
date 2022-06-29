@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dto.FailureInfoDTO;
 import io.harness.pms.contracts.execution.ExecutionErrorInfo;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.execution.run.NodeRunInfo;
 import io.harness.pms.contracts.execution.skip.SkipInfo;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
@@ -27,6 +28,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.FieldNameConstants;
 
 @Data
 @Builder
@@ -35,6 +37,7 @@ import lombok.experimental.FieldDefaults;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @ApiModel("GraphLayoutNode")
 @OwnedBy(PIPELINE)
+@FieldNameConstants(innerTypeName = "GraphLayoutNodeDTOKeys")
 @Schema(name = "GraphLayoutNode", description = "This is the view of the Graph for execution of the Pipeline.")
 public class GraphLayoutNodeDTO {
   String nodeType;
@@ -54,4 +57,7 @@ public class GraphLayoutNodeDTO {
   @Deprecated ExecutionErrorInfo failureInfo;
   FailureInfoDTO failureInfoDTO;
   private Map<String, PmsStepDetails> stepDetails;
+  private Boolean hidden; // If hidden then we should not render the field in UI.
+  String nodeExecutionId;
+  StrategyMetadata strategyMetadata;
 }

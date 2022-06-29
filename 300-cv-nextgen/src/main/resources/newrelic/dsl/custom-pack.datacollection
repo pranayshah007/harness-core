@@ -49,7 +49,7 @@ while Var:index !=  Var:lengthOfItems {
             Var metricVal = Var:metricValArr[Var:innerIndex]
             Var timestamp = Var:timestampArr[Var:innerIndex]
             if Var:metricVal != Var:nullVal  {
-                Var tsRecord = new TimeseriesRecord(txnName=Env:groupName, metricName=Var:metricName, metricIdentifier=Var:metricIdentifier, metricValue=Var:metricVal, timestamp=Var:timestamp, host=Var:host)
+                Var tsRecord = new TimeseriesRecord(txnName=Env:groupName, metricIdentifier=Var:metricIdentifier, metricName=Var:metricName, metricValue=Var:metricVal, timestamp=Var:timestamp, host=Var:host)
                 Var:returnList.append(Var:tsRecord)
             }
             innerIndex = Var:innerIndex + Var:one

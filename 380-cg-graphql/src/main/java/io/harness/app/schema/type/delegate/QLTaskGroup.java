@@ -94,7 +94,8 @@ public enum QLTaskGroup implements QLEnum {
   SERVICENOW_NG,
   CLOUDFORMATION_NG,
   AZURE,
-  SERVERLESS_NG;
+  SERVERLESS_NG,
+  COMMAND_TASK_NG;
 
   @Override
   public String getStringValue() {

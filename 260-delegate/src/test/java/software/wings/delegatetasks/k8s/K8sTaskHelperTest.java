@@ -44,7 +44,6 @@ import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -103,7 +102,6 @@ import software.wings.beans.GitConfig;
 import software.wings.beans.GitConfig.ProviderType;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.appmanifest.ManifestFile;
-import software.wings.beans.appmanifest.ManifestFileDTO;
 import software.wings.beans.appmanifest.StoreType;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.beans.yaml.GitFetchFilesResult;
@@ -405,8 +403,10 @@ public class K8sTaskHelperTest extends CategoryTest {
 
     // only values.yaml
     FileData fileData = prepareValuesYamlFile();
-    ManifestFileDTO values =
-        ManifestFileDTO.builder().fileName(fileData.getFileName()).fileContent(fileData.getFileContent()).build();
+    software.wings.beans.dto.ManifestFile values = software.wings.beans.dto.ManifestFile.builder()
+                                                       .fileName(fileData.getFileName())
+                                                       .fileContent(fileData.getFileContent())
+                                                       .build();
     assertThat(helper.fetchManifestFilesAndWriteToDirectory(
                    K8sDelegateManifestConfig.builder().manifestFiles(asList(values)).manifestStoreTypes(Local).build(),
                    manifestFileDirectory, logCallback, LONG_TIMEOUT_INTERVAL))
@@ -511,9 +511,13 @@ public class K8sTaskHelperTest extends CategoryTest {
     assertThat(file.list()).contains("test.yaml");
   }
 
-  private List<ManifestFileDTO> convertFileDataToManifestFiles(List<FileData> fileDataList) {
+  private List<software.wings.beans.dto.ManifestFile> convertFileDataToManifestFiles(List<FileData> fileDataList) {
     return fileDataList.stream()
-        .map(p -> ManifestFileDTO.builder().fileName(p.getFileName()).fileContent(p.getFileContent()).build())
+        .map(p
+            -> software.wings.beans.dto.ManifestFile.builder()
+                   .fileName(p.getFileName())
+                   .fileContent(p.getFileContent())
+                   .build())
         .collect(Collectors.toList());
   }
 
@@ -746,8 +750,7 @@ public class K8sTaskHelperTest extends CategoryTest {
         K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).helmPath("helm").build();
     doReturn(Arrays.asList(FileData.builder().filePath("test").fileContent("manifest").build()))
         .when(mockK8sTaskHelperBase)
-        .renderTemplateForHelm(anyString(), anyString(), anyListOf(String.class), anyString(), anyString(),
-            any(LogCallback.class), any(HelmVersion.class), anyLong(), any(HelmCommandFlag.class));
+        .renderTemplateForHelm(any(), any(), anyList(), any(), any(), any(), any(), anyLong(), any());
 
     final List<FileData> manifestFiles = helper.renderTemplate(k8sDelegateTaskParams,
         K8sDelegateManifestConfig.builder().manifestStoreTypes(HelmSourceRepo).build(), ".", valuesFiles, "release",
@@ -756,7 +759,7 @@ public class K8sTaskHelperTest extends CategoryTest {
     assertThat(manifestFiles.size()).isEqualTo(1);
     verify(mockK8sTaskHelperBase, times(1))
         .renderTemplateForHelm(eq("helm"), eq("."), eq(valuesFiles), eq("release"), eq("namespace"),
-            eq(executionLogCallback), eq(HelmVersion.V3), anyLong(), any(HelmCommandFlag.class));
+            eq(executionLogCallback), eq(HelmVersion.V3), anyLong(), any());
   }
 
   @Test
@@ -812,8 +815,8 @@ public class K8sTaskHelperTest extends CategoryTest {
         ".", new ArrayList<>(), "release", "namespace", executionLogCallback, K8sApplyTaskParameters.builder().build());
 
     verify(mockK8sTaskHelperBase, times(1))
-        .renderTemplateForHelm(eq("helm"), eq("./chart"), anyListOf(String.class), anyString(), anyString(),
-            eq(executionLogCallback), any(HelmVersion.class), anyLong(), any(HelmCommandFlag.class));
+        .renderTemplateForHelm(
+            eq("helm"), eq("./chart"), anyList(), any(), any(), eq(executionLogCallback), any(), anyLong(), any());
   }
 
   /**
@@ -835,8 +838,8 @@ public class K8sTaskHelperTest extends CategoryTest {
         ".", new ArrayList<>(), "release", "namespace", executionLogCallback, K8sApplyTaskParameters.builder().build());
 
     verify(mockK8sTaskHelperBase, times(1))
-        .renderTemplateForHelm(eq("helm"), eq("./nginx"), anyListOf(String.class), anyString(), anyString(),
-            eq(executionLogCallback), any(HelmVersion.class), anyLong(), any(HelmCommandFlag.class));
+        .renderTemplateForHelm(
+            eq("helm"), eq("./nginx"), anyList(), any(), any(), eq(executionLogCallback), any(), anyLong(), any());
   }
 
   @Test
@@ -1022,7 +1025,7 @@ public class K8sTaskHelperTest extends CategoryTest {
     K8sDelegateManifestConfig config =
         K8sDelegateManifestConfig.builder()
             .manifestStoreTypes(Remote)
-            .manifestFiles(singletonList(ManifestFileDTO.builder().accountId("1234").build()))
+            .manifestFiles(singletonList(software.wings.beans.dto.ManifestFile.builder().accountId("1234").build()))
             .build();
 
     FileData fileData = FileData.builder().fileName("test").build();
@@ -1053,7 +1056,7 @@ public class K8sTaskHelperTest extends CategoryTest {
     K8sDelegateManifestConfig config =
         K8sDelegateManifestConfig.builder()
             .manifestStoreTypes(Remote)
-            .manifestFiles(singletonList(ManifestFileDTO.builder().accountId("1234").build()))
+            .manifestFiles(singletonList(software.wings.beans.dto.ManifestFile.builder().accountId("1234").build()))
             .build();
     KubernetesResource resource = KubernetesResource.builder().spec("spec").build();
 

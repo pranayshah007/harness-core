@@ -21,6 +21,7 @@ import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.DHRUV;
 import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 import static io.harness.rule.OwnerRule.SRINIVAS;
@@ -74,7 +75,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -97,6 +97,7 @@ import io.harness.context.ContextElementType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
@@ -234,6 +235,7 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Mock private TemplateExpressionProcessor templateExpressionProcessor;
   @Mock private ServiceResourceService serviceResourceService;
   @Mock private ActivityService activityService;
+  @Mock private FeatureFlagService featureFlagService;
   @InjectMocks private ApprovalState approvalState = new ApprovalState("ApprovalState");
 
   @Inject KryoSerializer kryoSerializer;
@@ -777,8 +779,8 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testFillSweepingOutput() {
-    when(context.renderExpression(anyString(), any(StateExecutionContext.class)))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
+    when(context.renderExpression(any(), any(StateExecutionContext.class)))
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
     when(context.prepareSweepingOutputBuilder(any())).thenReturn(SweepingOutputInstance.builder());
     Reflect.on(approvalState).set("kryoSerializer", kryoSerializer);
     approvalState.setSweepingOutputName("test");
@@ -792,8 +794,7 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testExecuteJiraApprovalFailure() {
-    when(context.renderExpression(anyString()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
+    when(context.renderExpression(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
 
     ApprovalStateParams approvalStateParams = new ApprovalStateParams();
     JiraApprovalParams jiraApprovalParams = new JiraApprovalParams();
@@ -822,8 +823,7 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testExecuteJiraApprovalIfAlreadyApproved() {
     String approvalValue = "DONE";
-    when(context.renderExpression(anyString()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
+    when(context.renderExpression(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
     when(jiraHelperService.fetchIssue(any(), any(), any(), any()))
         .thenReturn(JiraExecutionData.builder().currentStatus(approvalValue).build());
 
@@ -846,8 +846,7 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testExecuteJiraApprovalIfAlreadyRejected() {
     String rejectionValue = "REJECTED";
-    when(context.renderExpression(anyString()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
+    when(context.renderExpression(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
     when(jiraHelperService.fetchIssue(any(), any(), any(), any()))
         .thenReturn(JiraExecutionData.builder().currentStatus(rejectionValue).build());
 
@@ -869,8 +868,7 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testExecuteJiraApprovalWithPollingService() {
-    when(context.renderExpression(anyString()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
+    when(context.renderExpression(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
     when(jiraHelperService.fetchIssue(any(), any(), any(), any()))
         .thenReturn(JiraExecutionData.builder().currentStatus("TODO").build());
 
@@ -897,8 +895,7 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testExecuteSnowApprovalFailure() {
-    when(context.renderExpression(anyString()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
+    when(context.renderExpression(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
 
     ApprovalStateParams approvalStateParams = new ApprovalStateParams();
     ServiceNowApprovalParams serviceNowApprovalParams = ServiceNowApprovalParams.builder().issueNumber("${a}").build();
@@ -918,9 +915,8 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testExecuteSnowApprovalIfAlreadyApprovedWithMultipleValues() {
     String approvalValue = "Approved";
-    when(context.renderExpression(anyString()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
-    when(serviceNowService.getIssueUrl(anyString(), anyString(), any()))
+    when(context.renderExpression(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
+    when(serviceNowService.getIssueUrl(any(), any(), any()))
         .thenReturn(ServiceNowExecutionData.builder()
                         .currentState(SERVICENOW_STATE)
                         .currentStatus(Collections.singletonMap("approval", approvalValue))
@@ -948,10 +944,8 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testExecuteSnowApprovalIfAlreadyRejectedWithMultipleANDConditions() {
-    String approvalValue = "Approved";
-    when(context.renderExpression(anyString()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
-    when(serviceNowService.getIssueUrl(anyString(), anyString(), any()))
+    when(context.renderExpression(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
+    when(serviceNowService.getIssueUrl(any(), any(), any()))
         .thenReturn(ServiceNowExecutionData.builder()
                         .currentState(SERVICENOW_STATE)
                         .currentStatus(ImmutableMap.of(SERVICENOW_STATE, "Closed", "approval", "Approved"))
@@ -985,11 +979,10 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testExecuteSnowApprovalIfAlreadyRejectedWithMultipleORConditions() {
-    when(context.renderExpression(anyString()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
+    when(context.renderExpression(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
     Date todayDate = new Date(System.currentTimeMillis());
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    when(serviceNowService.getIssueUrl(anyString(), anyString(), any()))
+    when(serviceNowService.getIssueUrl(any(), any(), any()))
         .thenReturn(
             ServiceNowExecutionData.builder()
                 .currentState(SERVICENOW_STATE)
@@ -1029,9 +1022,8 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testExecuteSnowApprovalPausedIfConditionsNotMet() {
-    when(context.renderExpression(anyString()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
-    when(serviceNowService.getIssueUrl(anyString(), anyString(), any()))
+    when(context.renderExpression(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
+    when(serviceNowService.getIssueUrl(any(), any(), any()))
         .thenReturn(ServiceNowExecutionData.builder()
                         .currentState(SERVICENOW_STATE)
                         .currentStatus(ImmutableMap.of(SERVICENOW_STATE, "Scheduled", "approval", "Approved"))
@@ -1065,9 +1057,8 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void shouldApproveSnowApprovalIfBothCriteriaMet() {
-    when(context.renderExpression(anyString()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
-    when(serviceNowService.getIssueUrl(anyString(), anyString(), any()))
+    when(context.renderExpression(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
+    when(serviceNowService.getIssueUrl(any(), any(), any()))
         .thenReturn(ServiceNowExecutionData.builder()
                         .currentState(SERVICENOW_STATE)
                         .currentStatus(ImmutableMap.of(SERVICENOW_STATE, "Scheduled", "approval", "Approved"))
@@ -1102,9 +1093,8 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testExecuteSnowApprovalIfAlreadyRejected() {
     String rejectionValue = "REJECTED";
-    when(context.renderExpression(anyString()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
-    when(serviceNowService.getIssueUrl(anyString(), anyString(), any()))
+    when(context.renderExpression(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
+    when(serviceNowService.getIssueUrl(any(), any(), any()))
         .thenReturn(ServiceNowExecutionData.builder()
                         .currentStatus(Collections.singletonMap(SERVICENOW_STATE, rejectionValue))
                         .build());
@@ -1133,9 +1123,8 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testExecuteSnowApprovalWithPollingServiceWithApprovalField() {
-    when(context.renderExpression(anyString()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
-    when(serviceNowService.getIssueUrl(anyString(), anyString(), any()))
+    when(context.renderExpression(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
+    when(serviceNowService.getIssueUrl(any(), any(), any()))
         .thenReturn(ServiceNowExecutionData.builder()
                         .currentStatus(Collections.singletonMap(SERVICENOW_STATE, "REQUESTED"))
                         .build());
@@ -1166,11 +1155,10 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testExecuteSnowApprovalWithChangeWindow() {
-    when(context.renderExpression(anyString()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
+    when(context.renderExpression(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
     Date todayDate = new Date(System.currentTimeMillis());
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    when(serviceNowService.getIssueUrl(anyString(), anyString(), any()))
+    when(serviceNowService.getIssueUrl(any(), any(), any()))
         .thenReturn(ServiceNowExecutionData.builder()
                         .currentState(SERVICENOW_STATE)
                         .currentStatus(ImmutableMap.of(SERVICENOW_STATE, "Scheduled", "approval", "Approved", "start",
@@ -1208,11 +1196,10 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testExecuteSnowApprovalWithChangeWindowNullValues() {
-    when(context.renderExpression(anyString()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
+    when(context.renderExpression(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
     Date todayDate = new Date(System.currentTimeMillis());
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    when(serviceNowService.getIssueUrl(anyString(), anyString(), any()))
+    when(serviceNowService.getIssueUrl(any(), any(), any()))
         .thenReturn(ServiceNowExecutionData.builder()
                         .currentState(SERVICENOW_STATE)
                         .currentStatus(ImmutableMap.of(SERVICENOW_STATE, "Scheduled", "approval", "Approved", "start",
@@ -1246,7 +1233,7 @@ public class ApprovalStateTest extends WingsBaseTest {
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(FAILED);
     assertThat(executionResponse.getErrorMessage()).isEqualTo("Change Window End Time value in Ticket is invalid");
 
-    when(serviceNowService.getIssueUrl(anyString(), anyString(), any()))
+    when(serviceNowService.getIssueUrl(any(), any(), any()))
         .thenReturn(
             ServiceNowExecutionData.builder()
                 .currentState(SERVICENOW_STATE)
@@ -1264,11 +1251,10 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testExecuteSnowApprovalWithChangeWindowNotSatisfied() {
-    when(context.renderExpression(anyString()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
+    when(context.renderExpression(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
     Date todayDate = new Date(System.currentTimeMillis());
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    when(serviceNowService.getIssueUrl(anyString(), anyString(), any()))
+    when(serviceNowService.getIssueUrl(any(), any(), any()))
         .thenReturn(
             ServiceNowExecutionData.builder()
                 .currentState(SERVICENOW_STATE)
@@ -1426,7 +1412,7 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldFailProjectValidation() throws IOException {
     when(context.renderExpression("${project}")).thenReturn("UNKNOWN");
-    when(jiraHelperService.getProjects(anyString(), anyString(), anyString())).thenReturn(projects);
+    when(jiraHelperService.getProjects(any(), any(), any())).thenReturn(projects);
 
     ApprovalStateParams approvalStateParams = new ApprovalStateParams();
     JiraApprovalParams jiraApprovalParams = new JiraApprovalParams();
@@ -1450,8 +1436,8 @@ public class ApprovalStateTest extends WingsBaseTest {
   public void shouldFailApprovalStatusValidation() throws IOException {
     when(context.renderExpression("${project}")).thenReturn("PN");
     when(context.renderExpression("${approvalValue}")).thenReturn("UNKNOWN");
-    when(jiraHelperService.getProjects(anyString(), anyString(), anyString())).thenReturn(projects);
-    when(jiraHelperService.getStatuses(anyString(), anyString(), anyString(), anyString())).thenReturn(statuses);
+    when(jiraHelperService.getProjects(any(), any(), any())).thenReturn(projects);
+    when(jiraHelperService.getStatuses(any(), any(), any(), any())).thenReturn(statuses);
 
     ApprovalStateParams approvalStateParams = new ApprovalStateParams();
     JiraApprovalParams jiraApprovalParams = new JiraApprovalParams();
@@ -1477,8 +1463,8 @@ public class ApprovalStateTest extends WingsBaseTest {
     when(context.renderExpression("${project}")).thenReturn("PN");
     when(context.renderExpression("${approvalValue}")).thenReturn("In Progress");
     when(context.renderExpression("${rejectionValue}")).thenReturn("UNKNOWN");
-    when(jiraHelperService.getProjects(anyString(), anyString(), anyString())).thenReturn(projects);
-    when(jiraHelperService.getStatuses(anyString(), anyString(), anyString(), anyString())).thenReturn(statuses);
+    when(jiraHelperService.getProjects(any(), any(), any())).thenReturn(projects);
+    when(jiraHelperService.getStatuses(any(), any(), any(), any())).thenReturn(statuses);
 
     ApprovalStateParams approvalStateParams = new ApprovalStateParams();
     JiraApprovalParams jiraApprovalParams = new JiraApprovalParams();
@@ -1595,7 +1581,9 @@ public class ApprovalStateTest extends WingsBaseTest {
   public void shouldValidateMessageLengthWhenServiceDetailsNull() {
     String excessiveInfo = "first,second,third," + String.join(",", createCharSequence("lotsOfLongExcessiveInfo", 100));
     WorkflowNotificationDetails infraDetails = WorkflowNotificationDetails.builder().name(excessiveInfo).build();
-    StringBuilder artifacts = new StringBuilder(String.format("*Artifacts:* %s", excessiveInfo.replace(",", ", ")));
+    StringBuilder artifacts = new StringBuilder(String.format("*Artifacts*: %s", excessiveInfo.replace(",", ", ")));
+    StringBuilder environments =
+        new StringBuilder(String.format("*Environments*: %s", excessiveInfo.replace(",", ", ")));
     SlackApprovalParams slackApprovalParams =
         SlackApprovalParams.builder()
             .appId(APP_ID)
@@ -1609,7 +1597,7 @@ public class ApprovalStateTest extends WingsBaseTest {
             .approvalId(APPROVAL_EXECUTION_ID)
             .pausedStageName(WORKFLOW_NAME)
             .servicesInvolved("#Services#Involved#")
-            .environmentsInvolved(ENV_NAME)
+            .environmentsInvolved(environments.toString())
             .artifactsInvolved(artifacts.toString())
             .infraDefinitionsInvolved(String.format("*Infrastructure Definitions*: %s", infraDetails.getName()))
             .confirmation(false)
@@ -1630,11 +1618,62 @@ public class ApprovalStateTest extends WingsBaseTest {
 
     String trimmedMessage = approvalState.validateMessageLength(displayText, slackApprovalParams,
         ApprovalState.class.getResource(SlackApprovalMessageKeys.PIPELINE_APPROVAL_MESSAGE_TEMPLATE), null, artifacts,
-        infraDetails);
+        infraDetails, environments);
     assertThat(trimmedMessage.length()).isLessThanOrEqualTo(2000);
     assertThat(trimmedMessage).contains(slackApprovalParams.getServicesInvolved());
-    assertThat(trimmedMessage).contains("*Artifacts:* first, second, third... 100 more");
+    assertThat(trimmedMessage).contains("*Artifacts*: first, second, third... 100 more");
+    assertThat(trimmedMessage).contains("*Environments*: first, second, third... 100 more");
     assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getArtifactsInvolved());
+    assertThat(trimmedMessage).contains("*Infrastructure Definitions*: first, second, third... 100 more");
+    assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getInfraDefinitionsInvolved());
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldValidateMessageLengthWhenEnvironmentsIsNull() {
+    String excessiveInfo = "first,second,third," + String.join(",", createCharSequence("lotsOfLongExcessiveInfo", 100));
+    WorkflowNotificationDetails serviceDetails = WorkflowNotificationDetails.builder().name(excessiveInfo).build();
+    WorkflowNotificationDetails infraDetails = WorkflowNotificationDetails.builder().name(excessiveInfo).build();
+    SlackApprovalParams slackApprovalParams =
+        SlackApprovalParams.builder()
+            .appId(APP_ID)
+            .appName(APP_NAME)
+            .routingId(ACCOUNT_ID)
+            .deploymentId(WORKFLOW_EXECUTION_ID)
+            .workflowId(WORKFLOW_ID)
+            .workflowExecutionName(WORKFLOW_NAME)
+            .stateExecutionId(STATE_EXECUTION_ID)
+            .stateExecutionInstanceName(STATE_NAME)
+            .approvalId(APPROVAL_EXECUTION_ID)
+            .pausedStageName(WORKFLOW_NAME)
+            .servicesInvolved(String.format("*Services*: %s", serviceDetails.getName()))
+            .environmentsInvolved(ENV_NAME)
+            .artifactsInvolved("#Artifacts#Involved#")
+            .infraDefinitionsInvolved(String.format("*Infrastructure Definitions*: %s", infraDetails.getName()))
+            .confirmation(false)
+            .pipeline(true)
+            .workflowUrl(WORKFLOW_URL)
+            .jwtToken("token")
+            .startTsSecs("mockEpochTimeMillis")
+            .endTsSecs("mockEpochTimeMillis")
+            .startDate("mockEpochTimeMillis")
+            .expiryTsSecs("mockEpochTimeMillis")
+            .endDate("mockEpochTimeMillis")
+            .expiryDate("someMockDate")
+            .verb("paused")
+            .build();
+
+    String displayText = createSlackApprovalMessage(slackApprovalParams,
+        ApprovalState.class.getResource(SlackApprovalMessageKeys.PIPELINE_APPROVAL_MESSAGE_TEMPLATE));
+
+    String trimmedMessage = approvalState.validateMessageLength(displayText, slackApprovalParams,
+        ApprovalState.class.getResource(SlackApprovalMessageKeys.PIPELINE_APPROVAL_MESSAGE_TEMPLATE), serviceDetails,
+        null, infraDetails, null);
+    assertThat(trimmedMessage.length()).isLessThanOrEqualTo(2000);
+    assertThat(trimmedMessage).contains("*Services*: first, second, third... 100 more");
+    assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getServicesInvolved());
+    assertThat(trimmedMessage).contains(slackApprovalParams.getArtifactsInvolved());
     assertThat(trimmedMessage).contains("*Infrastructure Definitions*: first, second, third... 100 more");
     assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getInfraDefinitionsInvolved());
   }
@@ -1680,7 +1719,7 @@ public class ApprovalStateTest extends WingsBaseTest {
 
     String trimmedMessage = approvalState.validateMessageLength(displayText, slackApprovalParams,
         ApprovalState.class.getResource(SlackApprovalMessageKeys.PIPELINE_APPROVAL_MESSAGE_TEMPLATE), serviceDetails,
-        null, infraDetails);
+        null, infraDetails, null);
     assertThat(trimmedMessage.length()).isLessThanOrEqualTo(2000);
     assertThat(trimmedMessage).contains("*Services*: first, second, third... 100 more");
     assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getServicesInvolved());
@@ -1695,7 +1734,9 @@ public class ApprovalStateTest extends WingsBaseTest {
   public void shouldValidateMessageLengthWhenInfraDetailsIsNull() {
     String excessiveInfo = "first,second,third," + String.join(",", createCharSequence("lotsOfLongExcessiveInfo", 100));
     WorkflowNotificationDetails serviceDetails = WorkflowNotificationDetails.builder().name(excessiveInfo).build();
-    StringBuilder artifacts = new StringBuilder(String.format("*Artifacts:* %s", excessiveInfo.replace(",", ", ")));
+    StringBuilder artifacts = new StringBuilder(String.format("*Artifacts*: %s", excessiveInfo.replace(",", ", ")));
+    StringBuilder environments =
+        new StringBuilder(String.format("*Environments*: %s", excessiveInfo.replace(",", ", ")));
     SlackApprovalParams slackApprovalParams =
         SlackApprovalParams.builder()
             .appId(APP_ID)
@@ -1730,11 +1771,12 @@ public class ApprovalStateTest extends WingsBaseTest {
 
     String trimmedMessage = approvalState.validateMessageLength(displayText, slackApprovalParams,
         ApprovalState.class.getResource(SlackApprovalMessageKeys.PIPELINE_APPROVAL_MESSAGE_TEMPLATE), serviceDetails,
-        artifacts, null);
+        artifacts, null, environments);
     assertThat(trimmedMessage.length()).isLessThanOrEqualTo(2000);
     assertThat(trimmedMessage).contains("*Services*: first, second, third... 100 more");
     assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getServicesInvolved());
-    assertThat(trimmedMessage).contains("*Artifacts:* first, second, third... 100 more");
+    assertThat(trimmedMessage).contains("*Artifacts*: first, second, third... 100 more");
+    assertThat(trimmedMessage).contains("*Environments*: first, second, third... 100 more");
     assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getArtifactsInvolved());
     assertThat(trimmedMessage).contains(slackApprovalParams.getInfraDefinitionsInvolved());
   }
@@ -1747,7 +1789,7 @@ public class ApprovalStateTest extends WingsBaseTest {
         "first,second,third,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo";
     WorkflowNotificationDetails serviceDetails = WorkflowNotificationDetails.builder().name(excessiveInfo).build();
     WorkflowNotificationDetails infraDetails = WorkflowNotificationDetails.builder().name(excessiveInfo).build();
-    StringBuilder artifacts = new StringBuilder(String.format("*Artifacts:* %s", excessiveInfo.replace(",", ", ")));
+    StringBuilder artifacts = new StringBuilder(String.format("*Artifacts*: %s", excessiveInfo.replace(",", ", ")));
     SlackApprovalParams slackApprovalParams =
         SlackApprovalParams.builder()
             .appId(APP_ID)
@@ -1781,11 +1823,11 @@ public class ApprovalStateTest extends WingsBaseTest {
 
     String trimmedMessage = approvalState.validateMessageLength(displayText, slackApprovalParams,
         ApprovalState.class.getResource(SlackApprovalMessageKeys.PIPELINE_APPROVAL_MESSAGE_TEMPLATE), serviceDetails,
-        artifacts, infraDetails);
+        artifacts, infraDetails, null);
     assertThat(trimmedMessage.length()).isLessThanOrEqualTo(2000);
     assertThat(trimmedMessage).contains("*Services*: first, second, third... 25 more");
     assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getServicesInvolved());
-    assertThat(trimmedMessage).contains("*Artifacts:* first, second, third... 25 more");
+    assertThat(trimmedMessage).contains("*Artifacts*: first, second, third... 25 more");
     assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getArtifactsInvolved());
     assertThat(trimmedMessage).contains("*Infrastructure Definitions*: first, second, third... 25 more");
     assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getInfraDefinitionsInvolved());

@@ -108,6 +108,8 @@ public class InputSetErrorsHelper {
     return res;
   }
 
+  // TODO(BRIJESH): This method is duplicated in ExecutionInputServiceImpl. Do the refactoring and keep this at only one
+  // place.
   public Map<FQN, String> getInvalidFQNsInInputSet(String templateYaml, String inputSetPipelineCompYaml) {
     Map<FQN, String> errorMap = new LinkedHashMap<>();
     YamlConfig inputSetConfig = new YamlConfig(inputSetPipelineCompYaml);
@@ -141,7 +143,7 @@ public class InputSetErrorsHelper {
         subMap.keySet().forEach(inputSetFQNs::remove);
       }
     });
-    inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Field either not present in pipeline or not a runtime input"));
+    inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Field not a runtime input"));
     return errorMap;
   }
 }

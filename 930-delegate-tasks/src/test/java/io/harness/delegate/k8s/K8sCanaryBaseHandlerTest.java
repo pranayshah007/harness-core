@@ -11,10 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.k8s.K8sTestConstants.CONFIG_MAP_YAML;
 import static io.harness.delegate.k8s.K8sTestConstants.DAEMON_SET_YAML;
 import static io.harness.delegate.k8s.K8sTestConstants.DEPLOYMENT_YAML;
+import static io.harness.k8s.model.Release.Status.Failed;
+import static io.harness.k8s.model.Release.Status.InProgress;
+import static io.harness.k8s.model.ReleaseHistory.defaultVersion;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.lang.String.format;
@@ -93,8 +97,8 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeploymentWorkloadsForCanaryNoWorkload() throws Exception {
     K8sCanaryHandlerConfig k8sCanaryHandlerConfig = prepareNoWorkloadNoResource();
-    boolean result =
-        k8sCanaryBaseHandler.prepareForCanary(k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, false);
+    boolean result = k8sCanaryBaseHandler.prepareForCanary(
+        k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, false, false);
     assertInvalidWorkloadsInManifest(result,
         "\nNo workload found in the Manifests. Can't do Canary Deployment. Only Deployment, DeploymentConfig (OpenShift) and StatefulSet workloads are supported in Canary workflow type.");
   }
@@ -106,7 +110,7 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
     K8sCanaryHandlerConfig k8sCanaryHandlerConfig = prepareNoWorkloadNoResource();
     assertThatThrownBy(()
                            -> k8sCanaryBaseHandler.prepareForCanary(
-                               k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, true))
+                               k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, true, false))
         .matches(throwable -> {
           HintException hint = ExceptionUtils.cause(HintException.class, throwable);
           ExplanationException explanation = ExceptionUtils.cause(ExplanationException.class, throwable);
@@ -124,8 +128,8 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeploymentWorkloadsForCanaryMultipleWorkloads() throws Exception {
     K8sCanaryHandlerConfig k8sCanaryHandlerConfig = prepareMultipleWorkloads();
-    boolean result =
-        k8sCanaryBaseHandler.prepareForCanary(k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, false);
+    boolean result = k8sCanaryBaseHandler.prepareForCanary(
+        k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, false, false);
     assertInvalidWorkloadsInManifest(result,
         "\nMore than one workloads found in the Manifests. Canary deploy supports only one workload. Others should be marked with annotation harness.io/direct-apply: true");
   }
@@ -137,7 +141,7 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
     K8sCanaryHandlerConfig k8sCanaryHandlerConfig = prepareMultipleWorkloads();
     assertThatThrownBy(()
                            -> k8sCanaryBaseHandler.prepareForCanary(
-                               k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, true))
+                               k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, true, false))
         .matches(throwable -> {
           HintException hint = ExceptionUtils.cause(HintException.class, throwable);
           ExplanationException explanation = ExceptionUtils.cause(ExplanationException.class, throwable);
@@ -160,9 +164,29 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
     k8sCanaryHandlerConfig.setReleaseHistory(ReleaseHistory.createNew());
 
     doNothing().when(k8sTaskHelperBase).cleanup(any(), any(), any(), any());
-    boolean result =
-        k8sCanaryBaseHandler.prepareForCanary(k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, false);
+    boolean result = k8sCanaryBaseHandler.prepareForCanary(
+        k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, false, false);
     assertThat(result).isTrue();
+    verify(k8sTaskHelperBase, times(1)).cleanup(any(), any(), any(), any());
+    verify(k8sTaskHelperBase, times(1)).getResourcesInTableFormat(any());
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testDeploymentWorkloadsForCanaryCleanupCanaryTrue() throws Exception {
+    K8sCanaryHandlerConfig k8sCanaryHandlerConfig = prepareValidWorkloads();
+    List<Release> releaseList = new ArrayList<>();
+    releaseList.add(Release.builder().number(1).status(Release.Status.InProgress).build());
+    k8sCanaryHandlerConfig.setReleaseHistory(
+        ReleaseHistory.builder().version(defaultVersion).releases(releaseList).build());
+    ArgumentCaptor<ReleaseHistory> captor = ArgumentCaptor.forClass(ReleaseHistory.class);
+    doNothing().when(k8sTaskHelperBase).cleanup(any(), any(), captor.capture(), any());
+    boolean result = k8sCanaryBaseHandler.prepareForCanary(
+        k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, false, true);
+    assertThat(result).isTrue();
+    assertThat(captor.getValue().getRelease(1).getStatus()).isEqualTo(Failed);
+    assertThat(captor.getValue().getRelease(2).getStatus()).isEqualTo(InProgress);
     verify(k8sTaskHelperBase, times(1)).cleanup(any(), any(), any(), any());
     verify(k8sTaskHelperBase, times(1)).getResourcesInTableFormat(any());
   }
@@ -178,8 +202,8 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
     kubernetesResources.addAll(ManifestHelper.processYaml(DAEMON_SET_YAML));
     k8sCanaryHandlerConfig.setResources(kubernetesResources);
 
-    boolean result =
-        k8sCanaryBaseHandler.prepareForCanary(k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, false);
+    boolean result = k8sCanaryBaseHandler.prepareForCanary(
+        k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, false, false);
     assertInvalidWorkloadsInManifest(result,
         "\nNo workload found in the Manifests. Can't do Canary Deployment. Only Deployment, DeploymentConfig (OpenShift) and StatefulSet workloads are supported in Canary workflow type.");
   }
@@ -255,7 +279,7 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
     canaryHandlerConfig.setResources(resources);
 
     boolean success = k8sCanaryBaseHandler.prepareForCanary(
-        canaryHandlerConfig, K8sDelegateTaskParams.builder().build(), false, logCallback, false);
+        canaryHandlerConfig, K8sDelegateTaskParams.builder().build(), false, logCallback, false, false);
 
     assertThat(success).isFalse();
   }
@@ -269,7 +293,7 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
     canaryHandlerConfig.setResources(resources);
 
     boolean success = k8sCanaryBaseHandler.prepareForCanary(
-        canaryHandlerConfig, K8sDelegateTaskParams.builder().build(), false, logCallback, false);
+        canaryHandlerConfig, K8sDelegateTaskParams.builder().build(), false, logCallback, false, false);
 
     assertThat(success).isFalse();
   }
@@ -290,8 +314,8 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
     canaryHandlerConfig.setReleaseName("release-01");
     canaryHandlerConfig.setClient(client);
 
-    boolean success =
-        k8sCanaryBaseHandler.prepareForCanary(canaryHandlerConfig, delegateTaskParams, false, logCallback, false);
+    boolean success = k8sCanaryBaseHandler.prepareForCanary(
+        canaryHandlerConfig, delegateTaskParams, false, logCallback, false, false);
 
     assertThat(success).isTrue();
     assertThat(canaryHandlerConfig.getCanaryWorkload()).isNotNull();
@@ -354,7 +378,7 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
 
     k8sCanaryBaseHandler.failAndSaveKubernetesRelease(canaryHandlerConfig, "release");
 
-    verify(releaseHistory, times(1)).setReleaseStatus(Release.Status.Failed);
+    verify(releaseHistory, times(1)).setReleaseStatus(Failed);
     verify(k8sTaskHelperBase, times(1))
         .saveReleaseHistoryInConfigMap(kubernetesConfig, "release", releaseHistoryAsYaml);
   }

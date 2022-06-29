@@ -16,6 +16,7 @@ import static io.harness.beans.SwaggerConstants.STRING_MAP_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.data.validator.EntityIdentifier;
@@ -44,6 +45,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @TypeAlias("ciServiceInfo")
+@RecasterAlias("io.harness.beans.dependencies.CIServiceInfo")
 @OwnedBy(CI)
 public class CIServiceInfo implements DependencySpecType {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
@@ -68,7 +70,9 @@ public class CIServiceInfo implements DependencySpecType {
 
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> image;
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> connectorRef;
-  @YamlSchemaTypes({string}) @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) private ParameterField<Boolean> privileged;
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
+  private ParameterField<Boolean> privileged;
   @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) private ParameterField<Integer> runAsUser;
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)

@@ -7,14 +7,19 @@
 
 package io.harness.engine.pms.execution.strategy;
 
+import io.harness.beans.FeatureName;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.OrchestrationEngine;
+import io.harness.engine.execution.WaitForExecutionInputHelper;
 import io.harness.engine.pms.execution.SdkResponseProcessorFactory;
 import io.harness.event.handlers.SdkResponseProcessor;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PmsNodeExecutionMetadata;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.Node;
+import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
@@ -30,12 +35,21 @@ public abstract class AbstractNodeExecutionStrategy<P extends Node, M extends Pm
   @Inject private OrchestrationEngine orchestrationEngine;
   @Inject private SdkResponseProcessorFactory sdkResponseProcessorFactory;
   @Inject @Named("EngineExecutorService") private ExecutorService executorService;
-
+  @Inject WaitForExecutionInputHelper waitForExecutionInputHelper;
+  @Inject PmsFeatureFlagService pmsFeatureFlagService;
   @Override
   public NodeExecution runNode(@NonNull Ambiance ambiance, @NonNull P node, M metadata) {
+    return runNode(ambiance, node, metadata, InitiateMode.CREATE_AND_START);
+  }
+
+  @Override
+  public NodeExecution runNode(@NonNull Ambiance ambiance, @NonNull P node, M metadata, InitiateMode initiateMode) {
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       String parentId = AmbianceUtils.obtainParentRuntimeId(ambiance);
       String notifyId = parentId == null ? null : AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+      if (initiateMode == InitiateMode.CREATE) {
+        return createNodeExecution(ambiance, node, metadata, notifyId, parentId, null);
+      }
       return createAndRunNodeExecution(ambiance, node, metadata, notifyId, parentId, null);
     } catch (Exception ex) {
       log.error("Exception happened while running Node", ex);
@@ -60,7 +74,13 @@ public abstract class AbstractNodeExecutionStrategy<P extends Node, M extends Pm
   private NodeExecution createAndRunNodeExecution(
       Ambiance ambiance, P node, M metadata, String notifyId, String parentId, String previousId) {
     NodeExecution savedExecution = createNodeExecution(ambiance, node, metadata, notifyId, parentId, previousId);
-    executorService.submit(() -> orchestrationEngine.startNodeExecution(savedExecution.getAmbiance()));
+    if (pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_EXECUTION_INPUT)
+        && !EmptyPredicate.isEmpty(node.getExecutionInputTemplate())) {
+      waitForExecutionInputHelper.waitForExecutionInput(
+          ambiance, savedExecution.getUuid(), node.getExecutionInputTemplate());
+    } else {
+      executorService.submit(() -> orchestrationEngine.startNodeExecution(savedExecution.getAmbiance()));
+    }
     return savedExecution;
   }
 

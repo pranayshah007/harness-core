@@ -10,6 +10,7 @@ package software.wings.delegatetasks.k8s.taskhandler;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.k8s.K8sRollingBaseHandler.HARNESS_TRACK_STABLE_SELECTOR;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.k8s.K8sCommandUnitConstants.Apply;
@@ -416,10 +417,15 @@ public class K8sRollingDeployTaskHandler extends K8sTaskHandler {
           addRevisionNumber(k8sRollingHandlerConfig.getResources(), k8sRollingHandlerConfig.getRelease().getNumber());
         }
 
+        final List<KubernetesResource> deploymentContainingTrackStableSelector = skipAddingTrackSelectorToDeployment
+            ? k8sTaskHelperBase.getDeploymentContainingTrackStableSelector(
+                k8sRollingHandlerConfig.getKubernetesConfig(), managedWorkloads, HARNESS_TRACK_STABLE_SELECTOR)
+            : emptyList();
+
         k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(inCanaryWorkflow,
-            skipAddingTrackSelectorToDeployment, managedWorkloads, k8sRollingHandlerConfig.getKubernetesConfig());
-        k8sRollingBaseHandler.addLabelsInManagedWorkloadPodSpec(
-            inCanaryWorkflow, managedWorkloads, k8sRollingHandlerConfig.getReleaseName());
+            skipAddingTrackSelectorToDeployment, managedWorkloads, deploymentContainingTrackStableSelector);
+        k8sRollingBaseHandler.addLabelsInManagedWorkloadPodSpec(inCanaryWorkflow, skipAddingTrackSelectorToDeployment,
+            managedWorkloads, deploymentContainingTrackStableSelector, k8sRollingHandlerConfig.getReleaseName());
       }
     } catch (Exception e) {
       log.error("Exception:", e);

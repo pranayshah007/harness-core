@@ -15,16 +15,21 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
+import io.harness.cdng.infra.yaml.InfrastructurePlanCreatorConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.utils.YamlPipelineUtils;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class InfrastructureEntityConfigMapper {
+  @NotNull
   public String toYaml(InfrastructureConfig infrastructureConfig) {
     try {
       return YamlPipelineUtils.getYamlString(infrastructureConfig);
@@ -33,15 +38,18 @@ public class InfrastructureEntityConfigMapper {
     }
   }
 
+  @NotNull
   public InfrastructureConfig toInfrastructureConfig(InfrastructureEntity infrastructureEntity) {
     Infrastructure infrastructure = null;
+    boolean allowSimultaneousDeployments = false;
     if (isNotEmpty(infrastructureEntity.getYaml())) {
       try {
         final InfrastructureConfig config =
             YamlPipelineUtils.read(infrastructureEntity.getYaml(), InfrastructureConfig.class);
         infrastructure = config.getInfrastructureDefinitionConfig().getSpec();
+        allowSimultaneousDeployments = config.getInfrastructureDefinitionConfig().isAllowSimultaneousDeployments();
       } catch (IOException e) {
-        throw new InvalidRequestException("Cannot create service ng service config due to " + e.getMessage());
+        throw new InvalidRequestException("Cannot create infrastructure config due to " + e.getMessage());
       }
     }
     return InfrastructureConfig.builder()
@@ -55,7 +63,20 @@ public class InfrastructureEntityConfigMapper {
                                             .environmentRef(infrastructureEntity.getEnvIdentifier())
                                             .type(infrastructureEntity.getType())
                                             .spec(infrastructure)
+                                            .allowSimultaneousDeployments(allowSimultaneousDeployments)
                                             .build())
         .build();
+  }
+
+  @NotNull
+  public List<InfrastructurePlanCreatorConfig> toInfrastructurePlanCreatorConfig(
+      List<InfrastructureConfig> infrastructureConfigs) {
+    return infrastructureConfigs.stream()
+        .map(config
+            -> InfrastructurePlanCreatorConfig.builder()
+                   .ref(config.getInfrastructureDefinitionConfig().getIdentifier())
+                   .infrastructureDefinitionConfig(config.getInfrastructureDefinitionConfig())
+                   .build())
+        .collect(Collectors.toList());
   }
 }

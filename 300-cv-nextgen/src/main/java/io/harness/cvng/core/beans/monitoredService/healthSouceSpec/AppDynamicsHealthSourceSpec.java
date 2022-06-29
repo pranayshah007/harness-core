@@ -127,8 +127,6 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
                                                     .productName(feature)
                                                     .applicationName(applicationName)
                                                     .tierName(tierName)
-                                                    .envIdentifier(environmentRef)
-                                                    .serviceIdentifier(serviceRef)
                                                     .metricPack(metricPackFromDb)
                                                     .category(metricPackFromDb.getCategory())
                                                     .build();
@@ -151,8 +149,6 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
                                    .productName(feature)
                                    .applicationName(applicationName)
                                    .tierName(tierName)
-                                   .envIdentifier(environmentRef)
-                                   .serviceIdentifier(serviceRef)
                                    .monitoredServiceIdentifier(monitoredServiceIdentifier)
                                    .groupName(mdList.get(0).getGroupName())
                                    .category(mdList.get(0).getRiskProfile().getCategory())
@@ -181,7 +177,6 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
     return Key.builder()
         .appName(appDynamicsCVConfig.getApplicationName())
         .metricPack(appDynamicsCVConfig.getMetricPack())
-        .serviceIdentifier(appDynamicsCVConfig.getServiceIdentifier())
         .tierName(appDynamicsCVConfig.getTierName())
         .groupName(appDynamicsCVConfig.getGroupName())
         .build();
@@ -204,7 +199,6 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
   private static class Key {
     String appName;
     String tierName;
-    String serviceIdentifier;
     MetricPack metricPack;
     String groupName;
   }

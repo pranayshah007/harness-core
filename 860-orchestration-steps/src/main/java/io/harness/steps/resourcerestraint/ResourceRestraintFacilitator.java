@@ -36,7 +36,9 @@ import io.harness.pms.sdk.core.execution.events.node.facilitate.FacilitatorRespo
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.steps.resourcerestraint.beans.AcquireMode;
+import io.harness.steps.resourcerestraint.beans.HoldingScope;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraint;
+import io.harness.steps.resourcerestraint.beans.ResourceRestraint.ResourceRestraintKeys;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance.ResourceRestraintInstanceKeys;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceService;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintRegistry;
@@ -69,19 +71,19 @@ public class ResourceRestraintFacilitator implements Facilitator {
   public FacilitatorResponse facilitate(
       Ambiance ambiance, StepParameters stepParameters, byte[] parameters, StepInputPackage inputPackage) {
     StepElementParameters stepElementParameters = (StepElementParameters) stepParameters;
-    FacilitatorResponseBuilder responseBuilder = FacilitatorResponse.builder();
 
     ResourceRestraintSpecParameters specParameters = (ResourceRestraintSpecParameters) stepElementParameters.getSpec();
 
     final ResourceRestraint resourceRestraint = Preconditions.checkNotNull(
         resourceRestraintService.getByNameAndAccountId(specParameters.getName(), AmbianceUtils.getAccountId(ambiance)));
 
-    ConstraintUnit renderedResourceUnit =
-        new ConstraintUnit(pmsEngineExpressionService.renderExpression(ambiance, specParameters.getResourceUnit()));
+    ConstraintUnit renderedResourceUnit = new ConstraintUnit(
+        pmsEngineExpressionService.renderExpression(ambiance, specParameters.getResourceUnit().getValue()));
 
     final Constraint constraint = resourceRestraintInstanceService.createAbstraction(resourceRestraint);
 
-    String releaseEntityId = ResourceRestraintUtils.getReleaseEntityId(specParameters, ambiance.getPlanExecutionId());
+    HoldingScope holdingScope = specParameters.getHoldingScope();
+    String releaseEntityId = ResourceRestraintUtils.getReleaseEntityId(ambiance, holdingScope);
 
     try (AcquiredLock<?> lock = persistentLocker.waitToAcquireLock(
              LOCK_PREFIX + resourceRestraint.getUuid(), Duration.ofSeconds(10), Duration.ofMinutes(1))) {
@@ -92,12 +94,15 @@ public class ResourceRestraintFacilitator implements Facilitator {
 
       int permits = specParameters.getPermits();
       if (AcquireMode.ENSURE == specParameters.getAcquireMode()) {
-        permits -= resourceRestraintInstanceService.getAllCurrentlyAcquiredPermits(
-            specParameters.getHoldingScope().getScope(), releaseEntityId);
+        permits -= resourceRestraintInstanceService.getAllCurrentlyAcquiredPermits(holdingScope, releaseEntityId);
       }
 
+      FacilitatorResponseBuilder responseBuilder = FacilitatorResponse.builder();
       if (permits <= 0) {
-        return responseBuilder.executionMode(ExecutionMode.SYNC).build();
+        return responseBuilder.executionMode(ExecutionMode.SYNC)
+            .passThroughData(buildPassThroughData(
+                specParameters, resourceRestraint, null, releaseEntityId, renderedResourceUnit.getValue()))
+            .build();
       }
 
       Map<String, Object> constraintContext =
@@ -109,25 +114,44 @@ public class ResourceRestraintFacilitator implements Facilitator {
             renderedResourceUnit, new ConsumerId(consumerId), permits, constraintContext, resourceRestraintRegistry);
 
         if (ACTIVE == state) {
-          return responseBuilder.executionMode(ExecutionMode.SYNC).build();
+          return responseBuilder.executionMode(ExecutionMode.SYNC)
+              .passThroughData(buildPassThroughData(
+                  specParameters, resourceRestraint, consumerId, releaseEntityId, renderedResourceUnit.getValue()))
+              .build();
         }
       } catch (InvalidPermitsException | UnableToRegisterConsumerException | PermanentlyBlockedConsumerException e) {
         log.error("Exception on ResourceRestraintStep for id [{}]", AmbianceUtils.obtainCurrentRuntimeId(ambiance), e);
       }
 
       return responseBuilder.executionMode(ExecutionMode.CONSTRAINT)
-          .passThroughData(ResourceRestraintPassThroughData.builder().consumerId(consumerId).build())
+          .passThroughData(buildPassThroughData(
+              specParameters, resourceRestraint, consumerId, releaseEntityId, renderedResourceUnit.getValue()))
           .build();
     }
+  }
+
+  private ResourceRestraintPassThroughData buildPassThroughData(ResourceRestraintSpecParameters specParameters,
+      ResourceRestraint resourceRestraint, String consumerId, String releaseEntityId, String unit) {
+    return ResourceRestraintPassThroughData.builder()
+        .consumerId(consumerId)
+        .name(specParameters.getName())
+        .resourceRestraintId(resourceRestraint.getUuid())
+        .resourceUnit(unit)
+        .capacity(resourceRestraint.getCapacity())
+        .releaseEntityType(specParameters.getHoldingScope().name())
+        .releaseEntityId(releaseEntityId)
+        .build();
   }
 
   private Map<String, Object> populateConstraintContext(
       ResourceRestraint resourceRestraint, ResourceRestraintSpecParameters stepParameters, String releaseEntityId) {
     Map<String, Object> constraintContext = new HashMap<>();
-    constraintContext.put(ResourceRestraintInstanceKeys.releaseEntityType, stepParameters.getHoldingScope().getScope());
+    constraintContext.put(ResourceRestraintInstanceKeys.releaseEntityType, stepParameters.getHoldingScope().name());
     constraintContext.put(ResourceRestraintInstanceKeys.releaseEntityId, releaseEntityId);
     constraintContext.put(ResourceRestraintInstanceKeys.order,
         resourceRestraintInstanceService.getMaxOrder(resourceRestraint.getUuid()) + 1);
+    constraintContext.put(ResourceRestraintKeys.capacity, resourceRestraint.getCapacity());
+    constraintContext.put(ResourceRestraintKeys.name, resourceRestraint.getName());
 
     return constraintContext;
   }

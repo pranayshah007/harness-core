@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
-import io.harness.commandlibrary.api.dto.CommandDTO;
+import io.harness.commandlibrary.api.dto.CommandEntityDTO;
 import io.harness.commandlibrary.api.dto.CommandStoreDTO;
 import io.harness.commandlibrary.api.dto.CommandVersionDTO;
 import io.harness.commandlibrary.server.CommandLibraryServerTestBase;
@@ -81,10 +81,10 @@ public class CommandStoreResourceTest extends CommandLibraryServerTestBase {
   @Owner(developers = OwnerRule.ROHIT_KUMAR)
   @Category(UnitTests.class)
   public void test_listCommands() {
-    final RestResponse<PageResponse<CommandDTO>> restResponse = commandStoreResource.listCommands(
+    final RestResponse<PageResponse<CommandEntityDTO>> restResponse = commandStoreResource.listCommands(
         "accountid", "harness", aPageRequest().withOffset("0").withLimit("10").build(), 1, "Azure");
 
-    final PageResponse<CommandDTO> pageResponse = restResponse.getResource();
+    final PageResponse<CommandEntityDTO> pageResponse = restResponse.getResource();
     assertThat(pageResponse.getTotal()).isEqualTo(2L);
     assertThat(commandMap.keySet()).contains(pageResponse.get(0).getName(), pageResponse.get(1).getName());
   }
@@ -94,12 +94,12 @@ public class CommandStoreResourceTest extends CommandLibraryServerTestBase {
   @Category(UnitTests.class)
   public void test_getCommandDetails() {
     final String commandName = commandMap.keySet().iterator().next();
-    final CommandDTO commandDTO =
+    final CommandEntityDTO commandEntityDTO =
         commandStoreResource.getCommandDetails("accountid", "harness", commandName).getResource();
-    assertThat(commandDTO.getName()).isEqualTo(commandName);
+    assertThat(commandEntityDTO.getName()).isEqualTo(commandName);
     final Collection<String> versions = commandMap.get(commandName);
-    assertThat(versions).contains(commandDTO.getLatestVersion().getVersion());
-    assertThat(commandDTO.getCommandStoreName()).isEqualTo("harness");
+    assertThat(versions).contains(commandEntityDTO.getLatestVersion().getVersion());
+    assertThat(commandEntityDTO.getCommandStoreName()).isEqualTo("harness");
   }
 
   @Test
@@ -187,12 +187,12 @@ public class CommandStoreResourceTest extends CommandLibraryServerTestBase {
       assertThat(commandVersionDTO.getCommandName()).isEqualTo("command1");
     }
     {
-      final CommandDTO commandDTO =
+      final CommandEntityDTO commandEntityDTO =
           commandStoreResource.getCommandDetails("accountid", "harness", "command1").getResource();
-      assertThat(commandDTO.getLatestVersion().getVersion()).isEqualTo("2.0.0");
-      assertThat(commandDTO.getVersionList().get(0).getVersion()).isEqualTo("2.0.0");
-      assertThat(commandDTO.getVersionList().get(1).getVersion()).isEqualTo("1.0.4");
-      assertThat(commandDTO.getVersionList().size()).isEqualTo(2);
+      assertThat(commandEntityDTO.getLatestVersion().getVersion()).isEqualTo("2.0.0");
+      assertThat(commandEntityDTO.getVersionList().get(0).getVersion()).isEqualTo("2.0.0");
+      assertThat(commandEntityDTO.getVersionList().get(1).getVersion()).isEqualTo("1.0.4");
+      assertThat(commandEntityDTO.getVersionList().size()).isEqualTo(2);
     }
   }
 

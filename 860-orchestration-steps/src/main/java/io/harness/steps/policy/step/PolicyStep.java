@@ -88,8 +88,9 @@ public class PolicyStep implements SyncExecutable<StepElementParameters> {
     try {
       String policySetsQueryParam = PolicyStepHelper.getPolicySetsStringForQueryParam(policySets);
       JsonNode payloadObject = YamlUtils.readTree(payload).getNode().getCurrJsonNode();
-      opaEvaluationResponseHolder = SafeHttpCall.executeWithErrorMessage(opaServiceClient.evaluateWithCredentialsByID(
-          accountId, orgIdentifier, projectIdentifier, policySetsQueryParam, payloadObject));
+      opaEvaluationResponseHolder = SafeHttpCall.executeWithErrorMessage(
+          opaServiceClient.evaluateWithCredentialsByID(accountId, orgIdentifier, projectIdentifier,
+              policySetsQueryParam, PolicyStepHelper.getEntityMetadataString(stepParameters.getName()), payloadObject));
     } catch (InvalidRequestException ex) {
       return PolicyStepHelper.buildPolicyEvaluationErrorStepResponse(ex.getMessage());
     } catch (Exception ex) {

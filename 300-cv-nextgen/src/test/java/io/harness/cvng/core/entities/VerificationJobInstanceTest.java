@@ -269,8 +269,7 @@ public class VerificationJobInstanceTest extends CategoryTest {
     cvConfig.setVerificationType(VerificationType.LOG);
     cvConfig.setAccountId(accountId);
     cvConfig.setConnectorIdentifier(generateUuid());
-    cvConfig.setServiceIdentifier("service");
-    cvConfig.setEnvIdentifier("env");
+    cvConfig.setMonitoredServiceIdentifier("service_env");
     cvConfig.setProjectIdentifier(projectIdentifier);
     cvConfig.setOrgIdentifier(orgIdentifier);
     cvConfig.setIdentifier(monitoringSourceIdentifier);

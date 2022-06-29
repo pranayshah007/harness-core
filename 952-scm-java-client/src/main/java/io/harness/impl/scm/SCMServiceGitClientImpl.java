@@ -208,4 +208,11 @@ public class SCMServiceGitClientImpl implements ScmClient {
       ScmConnector scmConnector, String newBranchName, String baseBranchName) {
     return scmServiceClient.createNewBranchV2(scmConnector, newBranchName, baseBranchName, scmBlockingStub);
   }
+
+  @Override
+  public CreatePRResponse createPullRequestV2(
+      ScmConnector scmConnector, String sourceBranchName, String targetBranchName, String prTitle) {
+    return scmServiceClient.createPullRequestV2(
+        scmConnector, sourceBranchName, targetBranchName, prTitle, scmBlockingStub);
+  }
 }

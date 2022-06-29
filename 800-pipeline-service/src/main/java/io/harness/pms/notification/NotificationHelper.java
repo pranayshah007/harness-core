@@ -97,7 +97,7 @@ public class NotificationHelper {
       sendNotificationInternal(notificationRules, pipelineEventType, identifier, accountId,
           constructTemplateData(
               ambiance, pipelineEventType, nodeExecution, identifier, updatedAt, orgIdentifier, projectIdentifier),
-          orgIdentifier, projectIdentifier);
+          orgIdentifier, projectIdentifier, ambiance);
     } catch (Exception ex) {
       log.error("Exception occurred in sendNotificationInternal", ex);
     }
@@ -105,7 +105,7 @@ public class NotificationHelper {
 
   private void sendNotificationInternal(List<NotificationRules> notificationRulesList,
       PipelineEventType pipelineEventType, String identifier, String accountIdentifier,
-      Map<String, String> notificationContent, String orgIdentifier, String projectIdentifier) {
+      Map<String, String> notificationContent, String orgIdentifier, String projectIdentifier, Ambiance ambiance) {
     for (NotificationRules notificationRules : notificationRulesList) {
       if (!notificationRules.isEnabled()) {
         continue;
@@ -116,7 +116,7 @@ public class NotificationHelper {
         NotificationChannelWrapper wrapper = notificationRules.getNotificationChannelWrapper().getValue();
         String templateId = getNotificationTemplate(pipelineEventType.getLevel(), wrapper.getType());
         NotificationChannel channel = wrapper.getNotificationChannel().toNotificationChannel(
-            accountIdentifier, orgIdentifier, projectIdentifier, templateId, notificationContent);
+            accountIdentifier, orgIdentifier, projectIdentifier, templateId, notificationContent, ambiance);
         log.info("Sending notification via notification-client");
         try {
           notificationClient.sendNotificationAsync(channel);

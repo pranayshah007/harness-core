@@ -26,6 +26,7 @@ import static io.harness.provision.TerraformConstants.TF_VAR_FILES_DIR;
 import static io.harness.provision.TerraformConstants.USER_DIR_KEY;
 import static io.harness.provision.TerragruntConstants.DESTROY_PLAN;
 import static io.harness.provision.TerragruntConstants.FETCH_CONFIG_FILES;
+import static io.harness.provision.TerragruntConstants.FORCE_FLAG;
 import static io.harness.provision.TerragruntConstants.INIT;
 import static io.harness.provision.TerragruntConstants.PLAN;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_INTERNAL_CACHE_FOLDER;
@@ -40,6 +41,7 @@ import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.delegation.TerragruntProvisionParameters.TerragruntCommandUnit.Destroy;
 import static software.wings.delegatetasks.TerragruntProvisionTaskHelper.copyFilesToWorkingDirectory;
 import static software.wings.delegatetasks.TerragruntProvisionTaskHelper.getExecutionLogCallback;
+import static software.wings.delegatetasks.TerragruntProvisionTaskHelper.getTfBinaryPath;
 import static software.wings.delegatetasks.validation.terraform.TerraformTaskUtils.fetchAllTfVarFilesArgument;
 
 import static java.lang.String.format;
@@ -62,17 +64,18 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.secretmanagerclient.EncryptDecryptHelper;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.serializer.JsonUtils;
 import io.harness.terragrunt.ActivityLogOutputStream;
 import io.harness.terragrunt.ErrorLogOutputStream;
 import io.harness.terragrunt.PlanJsonLogOutputStream;
 import io.harness.terragrunt.PlanLogOutputStream;
 import io.harness.terragrunt.TerragruntCliCommandRequestParams;
+import io.harness.terragrunt.TerragruntCliCommandRequestParams.TerragruntCliCommandRequestParamsBuilder;
 import io.harness.terragrunt.TerragruntClient;
 import io.harness.terragrunt.TerragruntDelegateTaskOutput;
 import io.harness.terragrunt.WorkspaceCommand;
@@ -175,12 +178,14 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
 
       try {
         encryptionService.decrypt(gitConfig, parameters.getSourceRepoEncryptionDetails(), false);
+        ExceptionMessageSanitizer.storeAllSecretsForSanitizing(gitConfig, parameters.getSourceRepoEncryptionDetails());
         gitClient.ensureRepoLocallyClonedAndUpdated(gitOperationContext);
       } catch (RuntimeException ex) {
-        log.error("Exception in processing git operation", ex);
+        Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+        log.error("Exception in processing git operation", sanitizedException);
         return TerragruntExecutionData.builder()
             .executionStatus(ExecutionStatus.FAILED)
-            .errorMessage(TerraformTaskUtils.getGitExceptionMessageIfExists(ex))
+            .errorMessage(TerraformTaskUtils.getGitExceptionMessageIfExists(sanitizedException))
             .build();
       }
 
@@ -196,11 +201,12 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
       try {
         copyFilesToWorkingDirectory(gitClientHelper.getRepoDirectory(gitOperationContext), workingDir);
       } catch (Exception ex) {
-        log.error("Exception in copying files to provisioner specific directory", ex);
+        Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+        log.error("Exception in copying files to provisioner specific directory", sanitizedException);
         FileUtils.deleteQuietly(new File(baseDir));
         return TerragruntExecutionData.builder()
             .executionStatus(ExecutionStatus.FAILED)
-            .errorMessage(ExceptionUtils.getMessage(ex))
+            .errorMessage(ExceptionUtils.getMessage(sanitizedException))
             .build();
       }
 
@@ -211,7 +217,8 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
       fetchConfigFilesLogCallback.saveExecutionLog("Config files have been fetched successfully", INFO, SUCCESS);
 
     } catch (Exception ex) {
-      String message = String.format("Failed to fetch config files successfully - [%s]", ex.getMessage());
+      String message = format("Failed to fetch config files successfully - [%s]",
+          ExceptionMessageSanitizer.sanitizeException(ex).getMessage());
       fetchConfigFilesLogCallback.saveExecutionLog(message, ERROR, FAILURE);
       throw ex;
     }
@@ -267,7 +274,7 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
       varParams = format("%s %s", tfVarFiles, varParams);
       uiLogs = format("%s %s", tfVarFiles, uiLogs);
 
-      TerragruntCliCommandRequestParams cliCommandRequestParams =
+      TerragruntCliCommandRequestParamsBuilder cliCommandRequestBuilder =
           TerragruntCliCommandRequestParams.builder()
               .commandUnitName(parameters.getCommandUnit().name())
               .backendConfigFilePath(tfBackendConfigsFile.getAbsolutePath())
@@ -282,24 +289,27 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
               .planJsonLogOutputStream(planJsonLogOutputStream)
               .tfOutputsFile(tfOutputsFile)
               .errorLogOutputStream(errorLogOutputStream)
-              .build();
+              .useAutoApproveFlag(parameters.isUseAutoApproveFlag());
 
       CliResponse terragruntCliResponse;
-      String terraformConfigFileDirectoryPath = StringUtils.EMPTY;
+      String terraformConfigFileDirectoryPath = EMPTY;
       TerragruntDelegateTaskOutput terragruntDelegateTaskOutput = null;
+      CliResponse tgInfoResponse;
 
       if (parameters.isRunAll()) {
         terragruntDelegateTaskOutput = terragruntRunAllTaskHandler.executeRunAllTask(
-            parameters, cliCommandRequestParams, delegateLogService, parameters.getCommand());
+            parameters, cliCommandRequestBuilder.build(), delegateLogService, parameters.getCommand());
         terragruntCliResponse = terragruntDelegateTaskOutput.getCliResponse();
       } else {
         try {
-          terragruntCliResponse = terragruntClient.version(cliCommandRequestParams, initLogCallback);
+          terragruntCliResponse = terragruntClient.version(cliCommandRequestBuilder.build(), initLogCallback);
           if (terragruntCliResponse.getCommandExecutionStatus() == SUCCESS) {
-            terragruntCliResponse = terragruntClient.init(cliCommandRequestParams, initLogCallback);
+            terragruntCliResponse = terragruntClient.init(cliCommandRequestBuilder.build(), initLogCallback);
           }
+
+          tgInfoResponse = terragruntClient.terragruntInfo(cliCommandRequestBuilder.build(), initLogCallback);
           terraformConfigFileDirectoryPath =
-              getTerraformConfigFileDirectoryPath(cliCommandRequestParams, initLogCallback);
+              TerragruntProvisionTaskHelper.getTerraformConfigFileDirectoryPath(tgInfoResponse);
 
           terragruntProvisionTaskHelper.downloadTfStateFile(parameters, terraformConfigFileDirectoryPath);
 
@@ -307,17 +317,18 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
             WorkspaceCommand workspaceCommand =
                 getWorkspaceCommand(scriptDirectory, parameters.getWorkspace(), parameters.getTimeoutInMillis());
             terragruntCliResponse = terragruntClient.workspace(
-                cliCommandRequestParams, workspaceCommand.command, parameters.getWorkspace(), initLogCallback);
+                cliCommandRequestBuilder.build(), workspaceCommand.command, parameters.getWorkspace(), initLogCallback);
           }
           if (terragruntCliResponse.getCommandExecutionStatus() == SUCCESS
               && !terragruntProvisionTaskHelper.shouldSkipRefresh(parameters)) {
-            terragruntCliResponse =
-                terragruntClient.refresh(cliCommandRequestParams, targetArgs, varParams, uiLogs, initLogCallback);
+            terragruntCliResponse = terragruntClient.refresh(
+                cliCommandRequestBuilder.build(), targetArgs, varParams, uiLogs, initLogCallback);
           }
           initLogCallback.saveExecutionLog(
               "Finished terragrunt init task", INFO, terragruntCliResponse.getCommandExecutionStatus());
         } catch (Exception ex) {
-          String message = String.format("Failed to perform terragrunt init tasks - [%s]", ex.getMessage());
+          String message = format("Failed to perform terragrunt init tasks - [%s]",
+              ExceptionMessageSanitizer.sanitizeException(ex).getMessage());
           initLogCallback.saveExecutionLog(message, ERROR, FAILURE);
           throw ex;
         }
@@ -325,12 +336,21 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
         if (terragruntCliResponse.getCommandExecutionStatus() == SUCCESS) {
           switch (parameters.getCommand()) {
             case APPLY: {
-              terragruntDelegateTaskOutput = terragruntApplyDestroyTaskHandler.executeApplyTask(
-                  parameters, cliCommandRequestParams, delegateLogService, planName, terraformConfigFileDirectoryPath);
+              terragruntDelegateTaskOutput = terragruntApplyDestroyTaskHandler.executeApplyTask(parameters,
+                  cliCommandRequestBuilder.build(), delegateLogService, planName, terraformConfigFileDirectoryPath);
               terragruntCliResponse = terragruntDelegateTaskOutput.getCliResponse();
               break;
             }
             case DESTROY: {
+              String tfAutoApproveArgument = FORCE_FLAG;
+              if (parameters.isUseAutoApproveFlag()) {
+                String tfBinaryPath = getTfBinaryPath(tgInfoResponse);
+                tfAutoApproveArgument = terragruntProvisionTaskHelper.getTfAutoApproveArgument(
+                    cliCommandRequestBuilder.build(), tfBinaryPath);
+              }
+              TerragruntCliCommandRequestParams cliCommandRequestParams =
+                  cliCommandRequestBuilder.autoApproveArgument(tfAutoApproveArgument).build();
+
               terragruntDelegateTaskOutput = terragruntApplyDestroyTaskHandler.executeDestroyTask(
                   parameters, cliCommandRequestParams, delegateLogService, planName, terraformConfigFileDirectoryPath);
               terragruntCliResponse = terragruntDelegateTaskOutput.getCliResponse();
@@ -433,17 +453,23 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
       return terragruntExecutionDataBuilder.build();
 
     } catch (WingsException ex) {
-      return logErrorAndGetFailureResponse(wrapUpLogCallBack, ex, ExceptionUtils.getMessage(ex));
-    } catch (IOException ex) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
       return logErrorAndGetFailureResponse(
-          wrapUpLogCallBack, ex, format("IO Failure occurred while performing Terragrunt Task: %s", ex.getMessage()));
+          wrapUpLogCallBack, sanitizedException, ExceptionUtils.getMessage(sanitizedException));
+    } catch (IOException ex) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+      return logErrorAndGetFailureResponse(wrapUpLogCallBack, sanitizedException,
+          format("IO Failure occurred while performing Terragrunt Task: %s", sanitizedException.getMessage()));
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
-      return logErrorAndGetFailureResponse(wrapUpLogCallBack, ex, "Interrupted while performing Terragrunt Task");
+      return logErrorAndGetFailureResponse(wrapUpLogCallBack, ExceptionMessageSanitizer.sanitizeException(ex),
+          "Interrupted while performing Terragrunt Task");
     } catch (TimeoutException | UncheckedTimeoutException ex) {
-      return logErrorAndGetFailureResponse(wrapUpLogCallBack, ex, "Timed out while performing Terragrunt Task");
+      return logErrorAndGetFailureResponse(wrapUpLogCallBack, ExceptionMessageSanitizer.sanitizeException(ex),
+          "Timed out while performing Terragrunt Task");
     } catch (Exception ex) {
-      return logErrorAndGetFailureResponse(wrapUpLogCallBack, ex, "Failed to complete Terragrunt Task");
+      return logErrorAndGetFailureResponse(
+          wrapUpLogCallBack, ExceptionMessageSanitizer.sanitizeException(ex), "Failed to complete Terragrunt Task");
     } finally {
       FileUtils.deleteQuietly(new File(workingDir));
       FileUtils.deleteQuietly(new File(baseDir));
@@ -456,14 +482,15 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
             log.info("Terraform Plan has been safely deleted from vault");
           }
         } catch (Exception ex) {
+          Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
           wrapUpLogCallBack.saveExecutionLog(
               color(format("Failed to delete secret: [%s] from vault: [%s], please clean it up",
                         parameters.getEncryptedTfPlan().getEncryptionKey(),
                         parameters.getSecretManagerConfig().getName()),
                   LogColor.Yellow, LogWeight.Bold),
               WARN, CommandExecutionStatus.RUNNING);
-          wrapUpLogCallBack.saveExecutionLog(ex.getMessage(), WARN, CommandExecutionStatus.RUNNING);
-          log.error("Exception occurred while deleting Terraform Plan from vault", ex);
+          wrapUpLogCallBack.saveExecutionLog(sanitizedException.getMessage(), WARN, CommandExecutionStatus.RUNNING);
+          log.error("Exception occurred while deleting Terraform Plan from vault", sanitizedException);
         }
       }
     }
@@ -519,13 +546,6 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
     return workspaces;
   }
 
-  private String getTerraformConfigFileDirectoryPath(TerragruntCliCommandRequestParams cliCommandRequestParams,
-      LogCallback logCallback) throws InterruptedException, IOException, TimeoutException {
-    CliResponse terragruntInfo = terragruntClient.terragruntInfo(cliCommandRequestParams, logCallback);
-    String terragruntInfoOutput = terragruntInfo.getOutput();
-    return (String) JsonUtils.jsonPath(terragruntInfoOutput, "WorkingDir");
-  }
-
   @NotNull
   private String getPlanName(TerragruntCommand command) {
     switch (command) {
@@ -540,7 +560,7 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
 
   private TerragruntExecutionData logErrorAndGetFailureResponse(LogCallback logCallback, Exception ex, String message) {
     logCallback.saveExecutionLog(message, ERROR, CommandExecutionStatus.FAILURE);
-    log.error("Exception in processing terragrunt operation", ex);
+    log.error("Exception in processing terragrunt operation", ExceptionMessageSanitizer.sanitizeException(ex));
     return TerragruntExecutionData.builder().executionStatus(ExecutionStatus.FAILED).errorMessage(message).build();
   }
 

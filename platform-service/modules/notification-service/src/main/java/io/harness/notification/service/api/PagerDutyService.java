@@ -7,7 +7,7 @@
 
 package io.harness.notification.service.api;
 
-import io.harness.Team;
+import io.harness.notification.Team;
 
 import java.util.List;
 import java.util.Map;

@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.INDER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
@@ -21,7 +22,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.TemplateServiceTestBase;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
 import io.harness.enforcement.client.services.EnforcementClientService;
@@ -38,6 +41,7 @@ import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.project.remote.ProjectClient;
 import io.harness.repositories.NGTemplateRepository;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.springdata.TransactionHelper;
 import io.harness.template.TemplateFilterPropertiesDTO;
@@ -83,8 +87,11 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock private ProjectClient projectClient;
   @Mock private OrganizationClient organizationClient;
   @Mock private TemplateReferenceHelper templateReferenceHelper;
+  @Mock AccountClient accountClient;
 
   @InjectMocks NGTemplateServiceImpl templateService;
+
+  @Mock NGTemplateSchemaServiceImpl templateSchemaService;
 
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
@@ -111,6 +118,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     on(templateService).set("projectClient", projectClient);
     on(templateService).set("organizationClient", organizationClient);
     on(templateService).set("templateReferenceHelper", templateReferenceHelper);
+    on(templateService).set("accountClient", accountClient);
 
     doNothing().when(enforcementClientService).checkAvailability(any(), any());
     entity = TemplateEntity.builder()
@@ -128,6 +136,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
                  .build();
 
     Call<ResponseDTO<Optional<ProjectResponse>>> projectCall = mock(Call.class);
+    doNothing().when(templateSchemaService).validateYamlSchemaInternal(entity);
     when(projectClient.getProject(anyString(), anyString(), anyString())).thenReturn(projectCall);
     when(projectCall.execute())
         .thenReturn(Response.success(ResponseDTO.newResponse(Optional.of(ProjectResponse.builder().build()))));
@@ -136,6 +145,11 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     when(organizationClient.getOrganization(anyString(), anyString())).thenReturn(organizationCall);
     when(organizationCall.execute())
         .thenReturn(Response.success(ResponseDTO.newResponse(Optional.of(OrganizationResponse.builder().build()))));
+
+    Call<RestResponse<Boolean>> ffCall = mock(Call.class);
+    when(accountClient.isFeatureFlagEnabled(eq(FeatureName.HARD_DELETE_ENTITIES.name()), anyString()))
+        .thenReturn(ffCall);
+    when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(false)));
   }
 
   @Test
@@ -170,7 +184,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(updatedTemplateEntity.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
     assertThat(updatedTemplateEntity.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
     assertThat(updatedTemplateEntity.getVersionLabel()).isEqualTo(TEMPLATE_VERSION_LABEL);
-    assertThat(updatedTemplateEntity.getVersion()).isEqualTo(2L);
+    assertThat(updatedTemplateEntity.getVersion()).isEqualTo(1L);
     assertThat(updatedTemplateEntity.getDescription()).isEqualTo(description);
 
     TemplateEntity incorrectTemplate = entity.withVersionLabel("incorrect version");
@@ -219,7 +233,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(updateStableTemplateVersion.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
     assertThat(updateStableTemplateVersion.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
     assertThat(updateStableTemplateVersion.getVersionLabel()).isEqualTo("version2");
-    assertThat(updateStableTemplateVersion.getVersion()).isEqualTo(2L);
+    assertThat(updateStableTemplateVersion.getVersion()).isEqualTo(1L);
     assertThat(updateStableTemplateVersion.isStableTemplate()).isTrue();
 
     // Add 1 more entry to template db
@@ -389,7 +403,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(updatedTemplateEntity.getProjectIdentifier()).isNull();
     assertThat(updatedTemplateEntity.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
     assertThat(updatedTemplateEntity.getVersionLabel()).isEqualTo(TEMPLATE_VERSION_LABEL);
-    assertThat(updatedTemplateEntity.getVersion()).isEqualTo(2L);
+    assertThat(updatedTemplateEntity.getVersion()).isEqualTo(1L);
     assertThat(updatedTemplateEntity.getDescription()).isEqualTo(description);
 
     TemplateEntity incorrectTemplate = entity.withVersionLabel("incorrect version");
@@ -435,7 +449,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(updateStableTemplateVersion.getProjectIdentifier()).isNull();
     assertThat(updateStableTemplateVersion.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
     assertThat(updateStableTemplateVersion.getVersionLabel()).isEqualTo("version2");
-    assertThat(updateStableTemplateVersion.getVersion()).isEqualTo(2L);
+    assertThat(updateStableTemplateVersion.getVersion()).isEqualTo(1L);
     assertThat(updateStableTemplateVersion.isStableTemplate()).isTrue();
 
     // delete template stable template
@@ -453,7 +467,6 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Category(UnitTests.class)
   public void testTemplateSettingsChangeScope() throws JsonProcessingException {
     // Test to update scope from project to org
-
     templateService.create(entity, false, "");
     // Add 1 more entry to template db
     TemplateEntity version2 = entity.withVersionLabel("version2");
@@ -582,6 +595,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(templateEntities.getContent().get(2).getTemplateScope()).isEqualTo(Scope.PROJECT);
 
     // Test multiple template delete
+
     boolean deleteTemplates = templateService.deleteTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
         TEMPLATE_IDENTIFIER, new HashSet<>(Arrays.asList(TEMPLATE_VERSION_LABEL, "version2", "version3")), "");
     assertThat(deleteTemplates).isTrue();

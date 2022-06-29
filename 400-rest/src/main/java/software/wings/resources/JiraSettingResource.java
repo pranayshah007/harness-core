@@ -10,6 +10,7 @@ package software.wings.resources;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 
 import io.harness.jira.JiraCreateMetaResponse;
+import io.harness.jira.JiraUserData;
 import io.harness.rest.RestResponse;
 
 import software.wings.service.impl.JiraHelperService;
@@ -17,6 +18,7 @@ import software.wings.service.impl.JiraHelperService;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import java.util.List;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -93,5 +95,16 @@ public class JiraSettingResource {
       @QueryParam("expand") String expand, @QueryParam("project") String project) {
     return new RestResponse<>(jiraHelperService.getCreateMetadata(
         connectorId, expand, project, accountId, appId, DEFAULT_SYNC_CALL_TIMEOUT, null));
+  }
+
+  @GET
+  @Path("{connectorId}/searchuser")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<List<JiraUserData>> getUserSearch(@QueryParam("appId") String appId,
+      @QueryParam("accountId") @NotEmpty String accountId, @PathParam("connectorId") String connectorId,
+      @QueryParam("user") String userQuery, @QueryParam("offset") String offset) {
+    return new RestResponse<>(
+        jiraHelperService.searchUser(connectorId, accountId, appId, DEFAULT_SYNC_CALL_TIMEOUT, userQuery, offset));
   }
 }

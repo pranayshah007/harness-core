@@ -13,18 +13,22 @@ import static io.harness.cache.CacheBackend.NOOP;
 
 import io.harness.AccessControlClientConfiguration;
 import io.harness.ModuleType;
+import io.harness.SCMGrpcClientModule;
+import io.harness.ScmConnectionConfig;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.CIManagerConfiguration;
 import io.harness.app.CIManagerServiceModule;
 import io.harness.app.PrimaryVersionManagerModule;
-import io.harness.app.SCMGrpcClientModule;
-import io.harness.app.ScmConnectionConfig;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
 import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
+import io.harness.ci.registrars.ExecutionAdvisers;
+import io.harness.ci.registrars.ExecutionRegistrar;
+import io.harness.ci.serializer.CiExecutionRegistrars;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
@@ -34,13 +38,10 @@ import io.harness.opaclient.OpaServiceConfiguration;
 import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkModule;
 import io.harness.pms.sdk.core.SdkDeployMode;
-import io.harness.registrars.ExecutionAdvisers;
-import io.harness.registrars.ExecutionRegistrar;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.serializer.CiBeansRegistrars;
-import io.harness.serializer.CiExecutionRegistrars;
 import io.harness.serializer.ConnectorNextGenRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.OrchestrationBeansRegistrars;
@@ -57,7 +58,6 @@ import io.harness.threading.ThreadPoolConfig;
 import io.harness.yaml.YamlSdkModule;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
-import ci.pipeline.execution.OrchestrationExecutionEventHandlerRegistrar;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Injector;
@@ -152,7 +152,15 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
         CIManagerConfiguration.builder()
             .managerAuthority("localhost")
             .managerTarget("localhost:9880")
-            .accessControlClientConfiguration(AccessControlClientConfiguration.builder().build())
+            .accessControlClientConfiguration(AccessControlClientConfiguration.builder()
+                                                  .enableAccessControl(false)
+                                                  .accessControlServiceSecret("token")
+                                                  .accessControlServiceConfig(ServiceHttpClientConfig.builder()
+                                                                                  .baseUrl("http://localhost:9006/api/")
+                                                                                  .readTimeOutSeconds(15)
+                                                                                  .connectTimeOutSeconds(15)
+                                                                                  .build())
+                                                  .build())
             .ciExecutionServiceConfig(CIExecutionServiceConfig.builder()
                                           .addonImageTag("v1.4-alpha")
                                           .defaultCPULimit(200)

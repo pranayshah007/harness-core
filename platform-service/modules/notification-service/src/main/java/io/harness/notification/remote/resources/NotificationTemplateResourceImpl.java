@@ -11,10 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.notification.remote.mappers.TemplateMapper.toDTO;
 
-import io.harness.Team;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.notification.Team;
 import io.harness.notification.entities.NotificationTemplate;
 import io.harness.notification.remote.dto.TemplateDTO;
 import io.harness.notification.service.api.NotificationTemplateService;

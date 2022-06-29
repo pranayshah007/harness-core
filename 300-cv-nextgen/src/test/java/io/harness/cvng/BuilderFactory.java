@@ -41,6 +41,12 @@ import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.cdng.beans.CVNGStepInfo;
 import io.harness.cvng.cdng.beans.CVNGStepInfo.CVNGStepInfoBuilder;
+import io.harness.cvng.cdng.beans.ConfiguredMonitoredServiceSpec;
+import io.harness.cvng.cdng.beans.ConfiguredMonitoredServiceSpec.ConfiguredMonitoredServiceSpecBuilder;
+import io.harness.cvng.cdng.beans.DefaultMonitoredServiceSpec;
+import io.harness.cvng.cdng.beans.DefaultMonitoredServiceSpec.DefaultMonitoredServiceSpecBuilder;
+import io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec;
+import io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec.TemplateMonitoredServiceSpecBuilder;
 import io.harness.cvng.cdng.beans.TestVerificationJobSpec;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskBuilder;
@@ -70,6 +76,8 @@ import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricRespons
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
+import io.harness.cvng.core.beans.sidekick.VerificationJobInstanceCleanupSideKickData;
+import io.harness.cvng.core.beans.sidekick.VerificationJobInstanceCleanupSideKickData.VerificationJobInstanceCleanupSideKickDataBuilder;
 import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig.AppDynamicsCVConfigBuilder;
@@ -91,6 +99,8 @@ import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.PrometheusCVConfig.PrometheusCVConfigBuilder;
 import io.harness.cvng.core.entities.SplunkCVConfig;
 import io.harness.cvng.core.entities.SplunkCVConfig.SplunkCVConfigBuilder;
+import io.harness.cvng.core.entities.SplunkMetricCVConfig;
+import io.harness.cvng.core.entities.SplunkMetricCVConfig.SplunkMetricCVConfigBuilder;
 import io.harness.cvng.core.entities.StackdriverCVConfig;
 import io.harness.cvng.core.entities.StackdriverCVConfig.StackdriverCVConfigBuilder;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig;
@@ -146,9 +156,14 @@ import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHeal
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.RollingSLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.ServiceLevelObjectiveBuilder;
+import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
+import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob.BlueGreenVerificationJobBuilder;
+import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob.CanaryBlueGreenVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.CanaryVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
+import io.harness.cvng.verificationjob.entities.TestVerificationJob.TestVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
+import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceBuilder;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthMethod;
@@ -341,8 +356,6 @@ public class BuilderFactory {
         .accountId(context.getAccountId())
         .orgIdentifier(context.getOrgIdentifier())
         .projectIdentifier(context.getProjectIdentifier())
-        .serviceIdentifier(context.getServiceIdentifier())
-        .envIdentifier(context.getEnvIdentifier())
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
         .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
         .monitoringSourceName(generateUuid())
@@ -363,8 +376,6 @@ public class BuilderFactory {
         .accountId(context.getAccountId())
         .orgIdentifier(context.getOrgIdentifier())
         .projectIdentifier(context.getProjectIdentifier())
-        .serviceIdentifier(context.getServiceIdentifier())
-        .envIdentifier(context.getEnvIdentifier())
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
         .queryName(randomAlphabetic(10))
         .query(randomAlphabetic(10))
@@ -382,8 +393,6 @@ public class BuilderFactory {
         .accountId(context.getAccountId())
         .orgIdentifier(context.getOrgIdentifier())
         .projectIdentifier(context.getProjectIdentifier())
-        .serviceIdentifier(context.getServiceIdentifier())
-        .envIdentifier(context.getEnvIdentifier())
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
         .queryName(randomAlphabetic(10))
         .query(randomAlphabetic(10))
@@ -400,8 +409,7 @@ public class BuilderFactory {
         .accountId(context.getAccountId())
         .orgIdentifier(context.getOrgIdentifier())
         .projectIdentifier(context.getProjectIdentifier())
-        .serviceIdentifier(context.getServiceIdentifier())
-        .envIdentifier(context.getEnvIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
         .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier());
   }
@@ -412,9 +420,7 @@ public class BuilderFactory {
         .accountId(context.getAccountId())
         .orgIdentifier(context.getOrgIdentifier())
         .projectIdentifier(context.getProjectIdentifier())
-        .serviceIdentifier(context.getServiceIdentifier())
         .connectorIdentifier("DynatraceConnector")
-        .envIdentifier(context.getEnvIdentifier())
         .identifier(context.getMonitoredServiceIdentifier() + "/healthSourceIdentifier")
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier());
   }
@@ -424,8 +430,18 @@ public class BuilderFactory {
         .accountId(context.getAccountId())
         .orgIdentifier(context.getOrgIdentifier())
         .projectIdentifier(context.getProjectIdentifier())
-        .serviceIdentifier(context.getServiceIdentifier())
-        .envIdentifier(context.getEnvIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .connectorIdentifier("connectorRef")
+        .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
+        .category(CVMonitoringCategory.PERFORMANCE);
+  }
+
+  public SplunkMetricCVConfigBuilder splunkMetricCVConfigBuilder() {
+    return SplunkMetricCVConfig.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
         .connectorIdentifier("connectorRef")
         .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
         .category(CVMonitoringCategory.PERFORMANCE);
@@ -454,9 +470,7 @@ public class BuilderFactory {
         .accountId(context.getAccountId())
         .orgIdentifier(context.getOrgIdentifier())
         .projectIdentifier(context.getProjectIdentifier())
-        .serviceIdentifier(context.getServiceIdentifier())
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
-        .envIdentifier(context.getEnvIdentifier())
         .connectorIdentifier("connectorRef")
         .dashboardName("dashboardName")
         .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
@@ -468,8 +482,6 @@ public class BuilderFactory {
         .accountId(context.getAccountId())
         .orgIdentifier(context.getOrgIdentifier())
         .projectIdentifier(context.getProjectIdentifier())
-        .serviceIdentifier(context.getServiceIdentifier())
-        .envIdentifier(context.getEnvIdentifier())
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
         .connectorIdentifier("connectorRef")
         .dashboardId("dashboardId")
@@ -483,9 +495,7 @@ public class BuilderFactory {
         .accountId(context.getAccountId())
         .orgIdentifier(context.getOrgIdentifier())
         .projectIdentifier(context.getProjectIdentifier())
-        .serviceIdentifier(context.getServiceIdentifier())
         .serviceInstanceIdentifier(randomAlphabetic(10))
-        .envIdentifier(context.getEnvIdentifier())
         .createdAt(clock.millis())
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
         .queryName(randomAlphabetic(10))
@@ -499,11 +509,15 @@ public class BuilderFactory {
         .productName(generateUuid());
   }
 
-  public CustomHealthSourceMetricSpec customHealthMetricSourceSpecBuilder(String metricValueJSONPath, String groupName,
-      String metricName, String identifier, HealthSourceQueryType queryType, CVMonitoringCategory monitoringCategory,
-      boolean isDeploymentEnabled, boolean isLiveMonitoringEnabled, boolean isSliEnabled) {
-    MetricResponseMapping responseMapping =
-        MetricResponseMapping.builder().metricValueJsonPath(metricValueJSONPath).build();
+  public CustomHealthSourceMetricSpec customHealthMetricSourceSpecBuilder(String metricValueJSONPath,
+      String timestampJsonPath, String serviceInstanceJsonPath, String groupName, String metricName, String identifier,
+      HealthSourceQueryType queryType, CVMonitoringCategory monitoringCategory, boolean isDeploymentEnabled,
+      boolean isLiveMonitoringEnabled, boolean isSliEnabled) {
+    MetricResponseMapping responseMapping = MetricResponseMapping.builder()
+                                                .metricValueJsonPath(metricValueJSONPath)
+                                                .timestampJsonPath(timestampJsonPath)
+                                                .serviceInstanceJsonPath(serviceInstanceJsonPath)
+                                                .build();
 
     CustomHealthMetricDefinition metricDefinition =
         CustomHealthMetricDefinition.builder()
@@ -542,6 +556,45 @@ public class BuilderFactory {
             .liveMonitoring(AnalysisInfo.LiveMonitoring.builder().enabled(isLiveMonitoringEnabled).build())
             .metricResponseMapping(responseMapping)
             .requestDefinition(CustomHealthRequestDefinition.builder().method(method).requestBody(requestBody).build())
+            .build();
+
+    return CustomHealthMetricCVConfig.builder()
+        .metricDefinitions(new ArrayList<CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition>() {
+          { add(metricDefinition); }
+        })
+        .groupName(group)
+        .queryType(queryType)
+        .category(category)
+        .build();
+  }
+
+  public CustomHealthMetricCVConfig customHealthMetricCVConfigBuilderForAppd(String metricName,
+      boolean isDeploymentEnabled, boolean isLiveMonitoringEnabled, boolean isSliEnabled,
+      MetricResponseMapping responseMapping, String group, HealthSourceQueryType queryType, CustomHealthMethod method,
+      CVMonitoringCategory category, String requestBody) {
+    CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition metricDefinition =
+        CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition.builder()
+            .metricName(metricName)
+            .identifier(metricName)
+            .sli(AnalysisInfo.SLI.builder().enabled(isSliEnabled).build())
+            .deploymentVerification(AnalysisInfo.DeploymentVerification.builder().enabled(isDeploymentEnabled).build())
+            .liveMonitoring(AnalysisInfo.LiveMonitoring.builder().enabled(isLiveMonitoringEnabled).build())
+            .metricResponseMapping(responseMapping)
+            .requestDefinition(
+                CustomHealthRequestDefinition.builder()
+                    .startTimeInfo(TimestampInfo.builder()
+                                       .placeholder("start_time")
+                                       .timestampFormat(TimestampInfo.TimestampFormat.MILLISECONDS)
+                                       .build())
+                    .endTimeInfo(TimestampInfo.builder()
+                                     .placeholder("end_time")
+                                     .timestampFormat(TimestampInfo.TimestampFormat.MILLISECONDS)
+                                     .build())
+                    .method(method)
+                    .urlPath(
+                        "rest/applications/cv-app/metric-data?metric-path=Overall Application Performance|docker-tier|Individual Nodes|*|Errors per Minute&time-range-type=BETWEEN_TIMES&start-time=start_time&end-time=end_time&rollup=false&output=json")
+                    .requestBody(requestBody)
+                    .build())
             .build();
 
     return CustomHealthMetricCVConfig.builder()
@@ -753,9 +806,8 @@ public class BuilderFactory {
         .activityStartTime(clock.instant())
         .activityName("K8 Activity")
         .resourceVersion("resource-version")
-        .relatedAppServices(Arrays.asList(RelatedAppMonitoredService.builder()
-                                              .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
-                                              .build()));
+        .relatedAppServices(Arrays.asList(
+            RelatedAppMonitoredService.builder().monitoredServiceIdentifier("dependent_service").build()));
   }
 
   public ChangeEventDTOBuilder harnessCDChangeEventDTOBuilder() {
@@ -998,6 +1050,7 @@ public class BuilderFactory {
     testVerificationJob.setEnvIdentifier(context.getEnvIdentifier(), false);
     testVerificationJob.setBaselineVerificationJobInstanceId(generateUuid());
     testVerificationJob.setDuration(Duration.ofMinutes(5));
+    testVerificationJob.setMonitoredServiceIdentifier(context.getMonitoredServiceIdentifier());
     testVerificationJob.setProjectIdentifier(context.getProjectIdentifier());
     testVerificationJob.setOrgIdentifier(context.getOrgIdentifier());
     return testVerificationJob;
@@ -1018,6 +1071,47 @@ public class BuilderFactory {
     return canaryVerificationJob;
   }
 
+  public CanaryBlueGreenVerificationJobBuilder canaryVerificationJobBuilder() {
+    return CanaryVerificationJob.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .identifier("identifier")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .serviceIdentifier(RuntimeParameter.builder().value(context.getServiceIdentifier()).build())
+        .envIdentifier(RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
+        .monitoringSources(Collections.singletonList(context.getMonitoredServiceIdentifier() + "/" + generateUuid()))
+        .sensitivity(RuntimeParameter.builder().value("High").build())
+        .duration(RuntimeParameter.builder().value("10m").build());
+  }
+  public BlueGreenVerificationJobBuilder blueGreenVerificationJobBuilder() {
+    return BlueGreenVerificationJob.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .identifier("identifier")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .serviceIdentifier(RuntimeParameter.builder().value(context.getServiceIdentifier()).build())
+        .envIdentifier(RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
+        .monitoringSources(Collections.singletonList(context.getMonitoredServiceIdentifier() + "/" + generateUuid()))
+        .sensitivity(RuntimeParameter.builder().value("High").build())
+        .trafficSplitPercentage(10)
+        .duration(RuntimeParameter.builder().value("10m").build());
+  }
+  public TestVerificationJobBuilder testVerificationJobBuilder() {
+    return TestVerificationJob.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .identifier("identifier")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .serviceIdentifier(RuntimeParameter.builder().value(context.getServiceIdentifier()).build())
+        .envIdentifier(RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
+        .monitoringSources(Collections.singletonList(context.getMonitoredServiceIdentifier() + "/" + generateUuid()))
+        .sensitivity(RuntimeParameter.builder().value("Medium").build())
+        .baselineVerificationJobInstanceId(generateUuid())
+        .duration(RuntimeParameter.builder().value("15m").build());
+  }
   public static class BuilderFactoryBuilder {
     public BuilderFactory build() {
       BuilderFactory builder = unsafeBuild();
@@ -1118,6 +1212,32 @@ public class BuilderFactory {
                                           .userGroups(Arrays.asList("testUserGroup"))
                                           .build())
                                 .build());
+  }
+
+  public DefaultMonitoredServiceSpecBuilder getDefaultMonitoredServiceSpecBuilder() {
+    return DefaultMonitoredServiceSpec.builder();
+  }
+
+  public ConfiguredMonitoredServiceSpecBuilder getConfiguredMonitoredServiceSpecBuilder() {
+    return ConfiguredMonitoredServiceSpec.builder().monitoredServiceRef(
+        ParameterField.<String>builder().value(context.getMonitoredServiceIdentifier()).build());
+  }
+
+  public TemplateMonitoredServiceSpecBuilder getTemplateMonitoredServiceSpecBuilder() {
+    return TemplateMonitoredServiceSpec.builder()
+        .monitoredServiceTemplateRef(
+            ParameterField.<String>builder().value(context.getMonitoredServiceIdentifier()).build())
+        .versionLabel("1");
+  }
+
+  public VerificationJobInstanceCleanupSideKickDataBuilder getVerificationJobInstanceCleanupSideKickDataBuilder(
+      String verificationJobInstanceId, List<String> sources) {
+    return VerificationJobInstanceCleanupSideKickData.builder()
+        .accountIdentifier(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .verificationJobInstanceIdentifier(verificationJobInstanceId)
+        .sourceIdentifiers(sources);
   }
 
   private List<NotificationRuleCondition> getNotificationRuleConditions(NotificationRuleType type) {

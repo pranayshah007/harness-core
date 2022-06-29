@@ -56,6 +56,9 @@ public class JiraTaskParameters implements ExecutionCapabilityDemander {
   private String rejectionField;
   private String rejectionValue;
 
+  private String userQuery;
+  private String userQueryOffset;
+
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     return CapabilityHelper.generateDelegateCapabilities(jiraConfig, encryptionDetails, maskingEvaluator);

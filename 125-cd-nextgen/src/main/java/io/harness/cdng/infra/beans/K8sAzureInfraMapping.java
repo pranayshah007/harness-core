@@ -26,9 +26,10 @@ import org.springframework.data.annotation.TypeAlias;
 public class K8sAzureInfraMapping implements InfraMapping {
   @Id private String uuid;
   private String accountId;
-  private String gcpConnector;
+  private String azureConnector;
   private String namespace;
   private String cluster;
   private String subscription;
   private String resourceGroup;
+  private Boolean useClusterAdminCredentials;
 }

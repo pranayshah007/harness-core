@@ -9,6 +9,7 @@ package io.harness.pms.plan.execution.handlers;
 
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.observers.PlanStatusUpdateObserver;
+import io.harness.exception.ExceptionUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.ExecutionStatus;
@@ -17,6 +18,7 @@ import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.security.PmsSecurityContextEventGuard;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -24,8 +26,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
+@Slf4j
 public class ExecutionInfoUpdateEventHandler implements PlanStatusUpdateObserver {
   private final PMSPipelineService pmsPipelineService;
   private final PlanExecutionService planExecutionService;
@@ -39,28 +43,40 @@ public class ExecutionInfoUpdateEventHandler implements PlanStatusUpdateObserver
 
   @Override
   public void onPlanStatusUpdate(Ambiance ambiance) {
-    String accountId = AmbianceUtils.getAccountId(ambiance);
-    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
-    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
-    String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
-    Optional<PipelineEntity> pipelineEntity = pmsPipelineService.get(accountId, orgId, projectId, pipelineId, false);
-    if (!pipelineEntity.isPresent()) {
-      return;
-    }
-    Status status = planExecutionService.get(ambiance.getPlanExecutionId()).getStatus();
-    ExecutionSummaryInfo executionSummaryInfo = pipelineEntity.get().getExecutionSummaryInfo();
-    executionSummaryInfo.setLastExecutionStatus(ExecutionStatus.getExecutionStatus(status));
-    if (StatusUtils.brokeStatuses().contains(status)) {
-      Map<String, Integer> errors = executionSummaryInfo.getNumOfErrors();
-      Date date = new Date();
-      SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-      String strDate = formatter.format(date);
-      if (errors.containsKey(strDate)) {
-        errors.put(strDate, errors.get(strDate) + 1);
-      } else {
-        errors.put(strDate, 1);
+    // this security context guard is needed because now pipeline get requires proper permissions to be set in the case
+    // when the Pipeline is REMOTE
+    try (PmsSecurityContextEventGuard ignore = new PmsSecurityContextEventGuard(ambiance)) {
+      String accountId = AmbianceUtils.getAccountId(ambiance);
+      String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+      String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+      String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
+      Optional<PipelineEntity> pipelineEntity = pmsPipelineService.get(accountId, orgId, projectId, pipelineId, false);
+      if (!pipelineEntity.isPresent()) {
+        return;
       }
+      Status status = planExecutionService.get(ambiance.getPlanExecutionId()).getStatus();
+      ExecutionSummaryInfo executionSummaryInfo = pipelineEntity.get().getExecutionSummaryInfo();
+      if (executionSummaryInfo != null) {
+        executionSummaryInfo.setLastExecutionStatus(ExecutionStatus.getExecutionStatus(status));
+        if (StatusUtils.brokeStatuses().contains(status)) {
+          Map<String, Integer> errors = executionSummaryInfo.getNumOfErrors();
+          Date date = new Date();
+          SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+          String strDate = formatter.format(date);
+          if (errors.containsKey(strDate)) {
+            errors.put(strDate, errors.get(strDate) + 1);
+          } else {
+            errors.put(strDate, 1);
+          }
+        }
+        pmsPipelineService.saveExecutionInfo(accountId, orgId, projectId, pipelineId, executionSummaryInfo);
+      } else {
+        log.error("ExecutionSummaryInfo is null for executionId - " + ambiance.getPlanExecutionId());
+      }
+    } catch (Exception e) {
+      log.error("Error while updating Plan Status for execution with ID " + ambiance.getPlanExecutionId() + ": "
+              + ExceptionUtils.getMessage(e),
+          e);
     }
-    pmsPipelineService.saveExecutionInfo(accountId, orgId, projectId, pipelineId, executionSummaryInfo);
   }
 }

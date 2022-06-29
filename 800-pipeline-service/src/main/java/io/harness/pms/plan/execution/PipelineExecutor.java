@@ -24,6 +24,7 @@ import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.instrumentaion.PipelineTelemetryHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.dto.RunStageRequestDTO;
@@ -118,14 +119,14 @@ public class PipelineExecutor {
     PlanExecution planExecution;
     if (useV2) {
       planExecution = executionHelper.startExecutionV2(accountId, orgIdentifier, projectIdentifier,
-          execArgs.getMetadata(), execArgs.getPlanExecutionMetadata(), false, null, null);
+          execArgs.getMetadata(), execArgs.getPlanExecutionMetadata(), false, null, null, null);
     } else {
       planExecution = executionHelper.startExecution(accountId, orgIdentifier, projectIdentifier,
-          execArgs.getMetadata(), execArgs.getPlanExecutionMetadata(), false, null, null);
+          execArgs.getMetadata(), execArgs.getPlanExecutionMetadata(), false, null, null, null);
     }
     return PlanExecutionResponseDto.builder()
         .planExecution(planExecution)
-        .gitDetails(EntityGitDetailsMapper.mapEntityGitDetails(pipelineEntity))
+        .gitDetails(PMSPipelineDtoMapper.getEntityGitDetails(pipelineEntity))
         .build();
   }
 
@@ -153,6 +154,8 @@ public class PipelineExecutor {
     List<String> identifierOfSkipStages = new ArrayList<>();
 
     // RetryExecutionParameters
+    // TODO(BRIJESH): Stage identifiers should be same as YAML and not with the matrix prefix. Its temp. Do something
+    // here.
     RetryExecutionParameters retryExecutionParameters =
         buildRetryExecutionParameters(true, previousProcessedYaml, retryStagesIdentifier, identifierOfSkipStages);
 
@@ -163,13 +166,13 @@ public class PipelineExecutor {
         previousExecutionId, retryExecutionParameters);
     PlanExecution planExecution;
     if (useV2) {
-      planExecution =
-          executionHelper.startExecutionV2(accountId, orgIdentifier, projectIdentifier, execArgs.getMetadata(),
-              execArgs.getPlanExecutionMetadata(), true, identifierOfSkipStages, previousExecutionId);
+      planExecution = executionHelper.startExecutionV2(accountId, orgIdentifier, projectIdentifier,
+          execArgs.getMetadata(), execArgs.getPlanExecutionMetadata(), true, identifierOfSkipStages,
+          previousExecutionId, retryStagesIdentifier);
     } else {
-      planExecution =
-          executionHelper.startExecution(accountId, orgIdentifier, projectIdentifier, execArgs.getMetadata(),
-              execArgs.getPlanExecutionMetadata(), true, identifierOfSkipStages, previousExecutionId);
+      planExecution = executionHelper.startExecution(accountId, orgIdentifier, projectIdentifier,
+          execArgs.getMetadata(), execArgs.getPlanExecutionMetadata(), true, identifierOfSkipStages,
+          previousExecutionId, retryStagesIdentifier);
     }
     return PlanExecutionResponseDto.builder()
         .planExecution(planExecution)

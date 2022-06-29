@@ -1,0 +1,29 @@
+template:
+  name: PipelineTemplevel1
+  identifier: PipelineTemplevel1
+  versionLabel: 1
+  type: Pipeline
+  projectIdentifier: projId
+  orgIdentifier: orgId
+  tags: {}
+  spec:
+    stages:
+      - stage:
+          name: lvl2temp
+          identifier: lvl2temp
+          template:
+            templateRef: stg_temp2
+            versionLabel: "1"
+            templateInputs:
+              type: Approval
+              spec:
+                execution:
+                  steps:
+                    - step:
+                        identifier: shell
+                        type: ShellScript
+                        spec:
+                          source:
+                            type: Inline
+                            spec:
+                              script: "ls"

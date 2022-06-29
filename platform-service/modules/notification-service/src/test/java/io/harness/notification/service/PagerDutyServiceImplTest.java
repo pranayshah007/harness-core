@@ -8,6 +8,7 @@
 package io.harness.notification.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ANKUSH;
 import static io.harness.rule.OwnerRule.VUK;
 
@@ -19,11 +20,12 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
-import io.harness.NotificationRequest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.data.algorithm.HashGenerator;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
+import io.harness.notification.NotificationRequest;
 import io.harness.notification.exception.NotificationException;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.remote.dto.PagerDutySettingDTO;
@@ -57,6 +59,7 @@ public class PagerDutyServiceImplTest extends CategoryTest {
   private String accountId = "accountId";
   private String pdTemplateName = "pd_test";
   private String pdKey = "pd-key";
+  private String pdKey2 = "pd-key2";
   private String id = "id";
   private PagerDutyTemplate pdTemplate = new PagerDutyTemplate();
 
@@ -153,6 +156,59 @@ public class PagerDutyServiceImplTest extends CategoryTest {
                               .setPagerDuty(NotificationRequest.PagerDuty.newBuilder()
                                                 .setTemplateId(pdTemplateName)
                                                 .addAllPagerDutyIntegrationKeys(Collections.singletonList(pdKey))
+                                                .build())
+                              .build();
+    notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
+    when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
+        .thenReturn(Optional.of("this is test notification"));
+    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
+    notificationProcessingResponse = pagerdutyService.send(notificationRequest);
+    assertEquals(notificationExpectedResponse, notificationProcessingResponse);
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void sendNotification_WhenSecretIsPassedForWebhookURl() {
+    NotificationRequest notificationRequest =
+        NotificationRequest.newBuilder()
+            .setId(id)
+            .setAccountId(accountId)
+            .setPagerDuty(NotificationRequest.PagerDuty.newBuilder()
+                              .setTemplateId(pdTemplateName)
+                              .addAllPagerDutyIntegrationKeys(Collections.singletonList(pdKey))
+                              .setExpressionFunctorToken(HashGenerator.generateIntegerHash())
+                              .setOrgIdentifier("orgIdentifier")
+                              .setProjectIdentifier("projectIdentifier")
+                              .build())
+            .build();
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
+    when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
+        .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
+    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
+    when(pagerDutySender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(yamlUtils.read(any(), (TypeReference<PagerDutyTemplate>) any())).thenReturn(pdTemplate);
+
+    NotificationProcessingResponse notificationProcessingResponse = pagerdutyService.send(notificationRequest);
+    assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));
+
+    notificationProcessingResponse = pagerdutyService.send(notificationRequest);
+    assertEquals(notificationExpectedResponse, notificationProcessingResponse);
+
+    notificationRequest = NotificationRequest.newBuilder()
+                              .setId(id)
+                              .setAccountId(accountId)
+                              .setPagerDuty(NotificationRequest.PagerDuty.newBuilder()
+                                                .setTemplateId(pdTemplateName)
+                                                .addAllPagerDutyIntegrationKeys(Arrays.asList(pdKey, pdKey2))
+                                                .setExpressionFunctorToken(HashGenerator.generateIntegerHash())
+                                                .setOrgIdentifier("orgIdentifier")
+                                                .setProjectIdentifier("projectIdentifier")
                                                 .build())
                               .build();
     notificationExpectedResponse =

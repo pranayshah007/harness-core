@@ -9,6 +9,7 @@ package io.harness.pms.sdk.core.plan.creation.mappers;
 
 import static io.harness.rule.OwnerRule.SAHIL;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
@@ -47,20 +48,26 @@ public class PlanNodeProtoMapperTest extends PmsSdkCoreTestBase {
                             .skipCondition("skip")
                             .group("group")
                             .build();
-    PlanNodeProto response = PlanNodeProto.newBuilder()
-                                 .setName("name")
-                                 .setStageFqn("fqn")
-                                 .setUuid("uuid")
-                                 .setServiceName(PMS_SDK_CORE_SERVICE_NAME)
-                                 .setStepType(StepType.newBuilder().getDefaultInstanceForType())
-                                 .setIdentifier("identifier")
-                                 .setSkipExpressionChain(false)
-                                 .setSkipType(SkipType.SKIP_NODE)
-                                 .setSkipUnresolvedExpressionsCheck(true)
-                                 .setWhenCondition("when")
-                                 .setSkipCondition("skip")
-                                 .setGroup("group")
-                                 .build();
-    assertThat(planNodeProtoMapper.toPlanNodeProtoWithDecoratedFields(planNode)).isEqualTo(response);
+    PlanNodeProto.Builder response = PlanNodeProto.newBuilder()
+                                         .setName("name")
+                                         .setStageFqn("fqn")
+                                         .setUuid("uuid")
+                                         .setServiceName(PMS_SDK_CORE_SERVICE_NAME)
+                                         .setStepType(StepType.newBuilder().getDefaultInstanceForType())
+                                         .setIdentifier("identifier")
+                                         .setSkipExpressionChain(false)
+                                         .setSkipType(SkipType.SKIP_NODE)
+                                         .setSkipUnresolvedExpressionsCheck(true)
+                                         .setWhenCondition("when")
+                                         .setSkipCondition("skip")
+                                         .setGroup("group");
+    assertThat(planNodeProtoMapper.toPlanNodeProtoWithDecoratedFields(planNode)).isEqualTo(response.build());
+
+    // setting executionInputTemplate to some value. So planNodeProto should have this field.
+    planNode.setExecutionInputTemplate("executionInputTemplate");
+    assertThat(planNodeProtoMapper.toPlanNodeProtoWithDecoratedFields(planNode)).isNotEqualTo(response.build());
+
+    response.setExecutionInputTemplate("executionInputTemplate");
+    assertEquals(planNodeProtoMapper.toPlanNodeProtoWithDecoratedFields(planNode), response.build());
   }
 }

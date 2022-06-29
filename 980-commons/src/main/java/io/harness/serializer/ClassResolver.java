@@ -10,9 +10,16 @@ package io.harness.serializer;
 import com.esotericsoftware.kryo.Registration;
 import com.esotericsoftware.kryo.util.DefaultClassResolver;
 import com.esotericsoftware.kryo.util.IntMap;
+import com.esotericsoftware.kryo.util.ObjectMap;
+import com.google.common.annotations.VisibleForTesting;
 
 public class ClassResolver extends DefaultClassResolver {
   public IntMap<Registration> getRegistrations() {
     return idToRegistration;
+  }
+
+  @VisibleForTesting
+  public ObjectMap<Class, Registration> getClassRegistrations() {
+    return classToRegistration;
   }
 }

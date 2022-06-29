@@ -64,6 +64,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.expression.ExpressionReflectionUtils;
+import io.harness.ff.FeatureFlagService;
 import io.harness.logging.Misc;
 import io.harness.scheduler.PersistentScheduler;
 import io.harness.serializer.KryoSerializer;
@@ -177,6 +178,7 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
   @Getter @Setter private List<String> userGroups = new ArrayList<>();
   @Getter @Setter private boolean disable;
   @Getter @Setter private String disableAssertion;
+  @Getter @Setter private boolean autoRejectPreviousDeployments;
   @Setter @SchemaIgnore private String stageName;
   @Getter @Setter private boolean userGroupAsExpression;
   /**
@@ -207,6 +209,7 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
   @Inject private UserGroupService userGroupService;
   @Inject private ServiceResourceService serviceResourceService;
   @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Inject @Transient private TemplateExpressionProcessor templateExpressionProcessor;
   @Transient @Inject KryoSerializer kryoSerializer;
@@ -251,6 +254,7 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
                                                    .approvalStateType(approvalStateType)
                                                    .timeoutMillis(getTimeoutMillis())
                                                    .variables(getVariables())
+                                                   .stageName(getStageName())
                                                    .triggeredBy(workflowStandardParams.getCurrentUser())
                                                    .build();
     if (disableAssertion != null) {
@@ -914,6 +918,7 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
       Map<String, String> placeholderValues, String approvalId, ApprovalStateExecutionData executionData, String appId,
       ExecutionContext context) {
     executionData.setUserGroups(userGroups);
+    executionData.setAutoRejectPreviousDeployments(autoRejectPreviousDeployments);
     updatePlaceholderValuesForSlackApproval(approvalId, accountId, placeholderValues, context);
     sendNotificationForUserGroupApproval(userGroups, appId, accountId, APPROVAL_NEEDED_NOTIFICATION, placeholderValues);
 
@@ -1050,8 +1055,8 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
     }
 
     String displayText = createSlackApprovalMessage(slackApprovalParams, notificationTemplateUrl);
-    String validatedMessage = validateMessageLength(
-        displayText, slackApprovalParams, notificationTemplateUrl, serviceDetails, artifacts, infraDetails);
+    String validatedMessage = validateMessageLength(displayText, slackApprovalParams, notificationTemplateUrl,
+        serviceDetails, artifacts, infraDetails, environments);
     String buttonValue = customData.toString();
     buttonValue = StringEscapeUtils.escapeJson(buttonValue);
     placeHolderValues.put(SlackApprovalMessageKeys.SLACK_APPROVAL_PARAMS, buttonValue);
@@ -1061,7 +1066,8 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
 
   @VisibleForTesting
   String validateMessageLength(String displayText, SlackApprovalParams slackApprovalParams, URL notificationTemplateUrl,
-      WorkflowNotificationDetails serviceDetails, StringBuilder artifacts, WorkflowNotificationDetails infraDetails) {
+      WorkflowNotificationDetails serviceDetails, StringBuilder artifacts, WorkflowNotificationDetails infraDetails,
+      StringBuilder environments) {
     // Current caller never send notificationTemplateUrl argument as null
     if (displayText.length() < 1900) {
       return displayText;
@@ -1076,7 +1082,7 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
       int artifactsCount = 0;
       boolean areArtifactsTrimmed = false;
       if (artifacts != null) {
-        artifactsCount = artifacts.toString().replace("*Artifacts:* ", "").split(", ").length;
+        artifactsCount = artifacts.toString().replace("*Artifacts*: ", "").split(", ").length;
         areArtifactsTrimmed = trimArtifacts(artifacts, artifactsCount);
       }
 
@@ -1087,17 +1093,27 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
         areInfrasTrimmed = trimNotificationDetails(infraDetails, infraCount);
       }
 
+      int envCount = 0;
+      boolean areEnvsTrimmed = false;
+      if (environments != null) {
+        envCount = environments.toString().replace("*Environments*: ", "").split(", ").length;
+        areEnvsTrimmed = trimEnvironments(environments, envCount);
+      }
+
       SlackApprovalParams params =
           slackApprovalParams.toBuilder()
               .servicesInvolved(areServicesTrimmed
                       ? String.format("*Services*: %s... %s more", serviceDetails.getName(), serviceCount - 3)
                       : slackApprovalParams.getServicesInvolved())
               .artifactsInvolved(areArtifactsTrimmed
-                      ? String.format("*Artifacts:* %s... %s more", artifacts.toString(), artifactsCount - 3)
+                      ? String.format("*Artifacts*: %s... %s more", artifacts.toString(), artifactsCount - 3)
                       : slackApprovalParams.getArtifactsInvolved())
               .infraDefinitionsInvolved(areInfrasTrimmed ? String.format("*Infrastructure Definitions*: %s... %s more",
                                             infraDetails.getName(), infraCount - 3)
                                                          : slackApprovalParams.getInfraDefinitionsInvolved())
+              .environmentsInvolved(areEnvsTrimmed
+                      ? String.format("*Environments*: %s... %s more", environments, envCount - 3)
+                      : slackApprovalParams.getEnvironmentsInvolved())
               .build();
       return createSlackApprovalMessage(params, notificationTemplateUrl);
     }
@@ -1106,13 +1122,28 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
   private boolean trimArtifacts(StringBuilder artifactsDetails, int artifactsCount) {
     if (artifactsCount > 3) {
       String[] trimmedArtifacts =
-          Arrays.copyOfRange(artifactsDetails.toString().replace("*Artifacts:* ", "").split(", "), 0, 3);
+          Arrays.copyOfRange(artifactsDetails.toString().replace("*Artifacts*: ", "").split(", "), 0, 3);
       StringJoiner artifacts = new StringJoiner(", ");
       for (String artifact : trimmedArtifacts) {
         artifacts.add(artifact);
       }
       artifactsDetails.setLength(0);
       artifactsDetails.append(artifacts);
+      return true;
+    }
+    return false;
+  }
+
+  private boolean trimEnvironments(StringBuilder environmentsDetails, int environmentsCount) {
+    if (environmentsCount > 3) {
+      String[] trimmedArtifacts =
+          Arrays.copyOfRange(environmentsDetails.toString().replace("*Environments*: ", "").split(", "), 0, 3);
+      StringJoiner artifacts = new StringJoiner(", ");
+      for (String artifact : trimmedArtifacts) {
+        artifacts.add(artifact);
+      }
+      environmentsDetails.setLength(0);
+      environmentsDetails.append(artifacts);
       return true;
     }
     return false;

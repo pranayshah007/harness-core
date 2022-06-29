@@ -7,19 +7,31 @@
 
 package io.harness.batch.processing.shard;
 
+import io.harness.ModuleType;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.config.PodInfoConfig;
 import io.harness.batch.processing.dao.intfc.AccountShardMappingDao;
 import io.harness.batch.processing.entities.AccountShardMapping;
+import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseType;
+import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.remote.NgLicenseHttpClient;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.utils.RestCallToNGManagerClientUtils;
 
 import software.wings.beans.Account;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import retrofit2.Call;
 
 @Slf4j
 @Component
@@ -27,24 +39,32 @@ public class AccountShardService {
   private BatchMainConfig mainConfig;
   private CloudToHarnessMappingService cloudToHarnessMappingService;
   private AccountShardMappingDao accountShardMappingDao;
+  private NgLicenseHttpClient ngLicenseHttpClient;
 
   @Autowired
   public AccountShardService(BatchMainConfig mainConfig, CloudToHarnessMappingService cloudToHarnessMappingService,
-      AccountShardMappingDao accountShardMappingDao) {
+      AccountShardMappingDao accountShardMappingDao, NgLicenseHttpClient ngLicenseHttpClient) {
     this.mainConfig = mainConfig;
     this.cloudToHarnessMappingService = cloudToHarnessMappingService;
     this.accountShardMappingDao = accountShardMappingDao;
+    this.ngLicenseHttpClient = ngLicenseHttpClient;
   }
 
-  public List<Account> getCeEnabledAccounts() {
+  public List<String> getCeEnabledAccountIds() {
+    List<AccountLicenseDTO> ceEnabledAccounts = getCeEnabledAccounts();
+    return ceEnabledAccounts.stream().map(AccountLicenseDTO::getAccountIdentifier).collect(Collectors.toList());
+  }
+
+  public List<AccountLicenseDTO> getCeEnabledAccounts() {
     log.info("Shard Id {} master pod {}", getShardId(), isMasterPod());
+
     List<AccountShardMapping> accountShardMappings = accountShardMappingDao.getAccountShardMapping();
     List<String> isolatedAccounts =
         accountShardMappings.stream().map(AccountShardMapping::getAccountId).collect(Collectors.toList());
     int shardId = getShardId();
     int replicas = getReplicaCount();
-    List<Account> ceEnabledAccounts = cloudToHarnessMappingService.getCeEnabledAccounts();
-    List<Account> accounts;
+    List<AccountLicenseDTO> ceEnabledAccounts = getCeAccounts();
+    List<AccountLicenseDTO> accounts;
 
     if (checkIsolatedPod(shardId, replicas)) {
       List<String> eligibleIsolatedAccounts =
@@ -53,17 +73,59 @@ public class AccountShardService {
               .map(AccountShardMapping::getAccountId)
               .collect(Collectors.toList());
       accounts = ceEnabledAccounts.stream()
-                     .filter(account -> eligibleIsolatedAccounts.contains(account.getUuid()))
+                     .filter(account -> eligibleIsolatedAccounts.contains(account.getAccountIdentifier()))
                      .collect(Collectors.toList());
     } else {
       accounts = ceEnabledAccounts.stream()
-                     .filter(account -> !isolatedAccounts.contains(account.getUuid()))
-                     .filter(account -> eligibleAccount(account.getUuid(), shardId, replicas))
+                     .filter(account -> !isolatedAccounts.contains(account.getAccountIdentifier()))
+                     .filter(account -> eligibleAccount(account.getAccountIdentifier(), shardId, replicas))
                      .collect(Collectors.toList());
     }
-    List<String> collect = accounts.stream().map(Account::getUuid).collect(Collectors.toList());
+    Set<String> collect = accounts.stream().map(AccountLicenseDTO::getAccountIdentifier).collect(Collectors.toSet());
     log.info("Account size {} :: {} :: {}", ceEnabledAccounts.size(), accounts.size(), collect);
     return accounts;
+  }
+
+  private List<AccountLicenseDTO> getCeAccounts() {
+    List<ModuleLicenseDTO> ngAccounts = getNgAccounts();
+    List<Account> cgAccounts = getCgAccounts();
+    Set<String> ngAccountIds =
+        ngAccounts.stream().map(ModuleLicenseDTO::getAccountIdentifier).collect(Collectors.toSet());
+    List<AccountLicenseDTO> accounts = ngAccounts.stream()
+                                           .map(ngAccount
+                                               -> AccountLicenseDTO.builder()
+                                                      .accountIdentifier(ngAccount.getAccountIdentifier())
+                                                      .licenseType(ngAccount.getLicenseType())
+                                                      .edition(ngAccount.getEdition())
+                                                      .build())
+                                           .collect(Collectors.toList());
+    int ngAccountSize = ngAccounts.size();
+    cgAccounts.stream()
+        .filter(cgAccount -> !ngAccountIds.contains(cgAccount.getUuid()))
+        .forEach(cgAccount
+            -> accounts.add(AccountLicenseDTO.builder()
+                                .accountIdentifier(cgAccount.getUuid())
+                                .licenseType(LicenseType.PAID)
+                                .edition(Edition.ENTERPRISE)
+                                .build()));
+    log.info("Account size Ng {} : Ng+CG {}", ngAccountSize, ngAccounts.size());
+    return accounts;
+  }
+
+  private List<Account> getCgAccounts() {
+    return cloudToHarnessMappingService.getCeEnabledAccounts();
+  }
+
+  private List<ModuleLicenseDTO> getNgAccounts() {
+    long expiryTime = Instant.now().minus(15, ChronoUnit.DAYS).toEpochMilli();
+    try {
+      Call<ResponseDTO<List<ModuleLicenseDTO>>> moduleLicensesByModuleType =
+          ngLicenseHttpClient.getModuleLicensesByModuleType(ModuleType.CE, expiryTime);
+      return RestCallToNGManagerClientUtils.execute(moduleLicensesByModuleType);
+    } catch (Exception ex) {
+      log.error("Exception in account shard ", ex);
+    }
+    return Collections.emptyList();
   }
 
   private int getShardId() {

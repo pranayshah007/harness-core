@@ -13,16 +13,20 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.environment.helper.EnvironmentYamlV2VisitorHelper;
-import io.harness.cdng.infra.yaml.InfraStructureDefinition;
+import io.harness.cdng.gitops.yaml.ClusterYaml;
+import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -40,10 +44,25 @@ public class EnvironmentYamlV2 implements Visitable {
   @ApiModelProperty(hidden = true)
   private String uuid;
 
-  // For New Service Yaml
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Pattern(regexp = NGRegexValidatorConstants.RUNTIME_OR_FIXED_IDENTIFIER_PATTERN)
   private ParameterField<String> environmentRef;
 
-  List<InfraStructureDefinition> infrastructureDefinitions;
+  /*
+  Deploy to all underlying infrastructures (or gitops clusters)
+   */
+  boolean deployToAll;
+
+  List<InfraStructureDefinitionYaml> infrastructureDefinitions;
+
+  // environmentInputs
+  @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH) Map<String, Object> environmentInputs;
+
+  @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH) Map<String, Object> serviceOverrideInputs;
+
+  List<ClusterYaml> gitOpsClusters;
+
+  // For Visitor Framework Impl
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 }

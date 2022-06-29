@@ -29,6 +29,7 @@ import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
+import io.harness.ccm.views.graphql.QLCEViewPreferences;
 import io.harness.ccm.views.graphql.QLCEViewSortCriteria;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -203,9 +204,12 @@ public class RESTWrapperCostDetails {
       throw new InvalidArgumentsException(e.getMessage());
     }
 
-    PerspectiveTimeSeriesData perspectiveTimeSeriesData =
-        perspectivesQuery.perspectiveTimeSeriesStats(aggregationList, filters, groupBy, sortList,
-            firstNonNull(limit, (int) DEFAULT_LIMIT), firstNonNull(offset, (int) DEFAULT_OFFSET), false, false, env);
+    QLCEViewPreferences qlCEViewPreferences =
+        QLCEViewPreferences.builder().includeOthers(false).includeUnallocatedCost(false).build();
+
+    PerspectiveTimeSeriesData perspectiveTimeSeriesData = perspectivesQuery.perspectiveTimeSeriesStats(aggregationList,
+        filters, groupBy, sortList, firstNonNull(limit, (int) DEFAULT_LIMIT),
+        firstNonNull(offset, (int) DEFAULT_OFFSET), qlCEViewPreferences, false, env);
     return ResponseDTO.newResponse(perspectiveTimeSeriesData);
   }
 

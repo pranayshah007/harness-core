@@ -133,6 +133,11 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       return;
     }
 
+    if (delegateAuth2API()) {
+      validateDelegateAuth2Request(containerRequestContext);
+      return;
+    }
+
     if (learningEngineServiceAPI()) {
       validateLearningEngineRequest(containerRequestContext);
       return; // do nothing
@@ -391,12 +396,29 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       String header = containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
       if (header != null && header.contains("Delegate")) {
         String delegateId = containerRequestContext.getHeaderString("delegateId");
+        String delegateTokeName = containerRequestContext.getHeaderString("delegateTokenName");
 
         authService.validateDelegateToken(accountId,
             substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate "), delegateId,
-            true);
+            delegateTokeName, true);
       } else {
         throw new IllegalStateException("Invalid header:" + header);
+      }
+    }
+  }
+
+  protected void validateDelegateAuth2Request(ContainerRequestContext containerRequestContext) {
+    MultivaluedMap<String, String> pathParameters = containerRequestContext.getUriInfo().getPathParameters();
+    MultivaluedMap<String, String> queryParameters = containerRequestContext.getUriInfo().getQueryParameters();
+
+    String accountId = getRequestParamFromContext("accountId", pathParameters, queryParameters);
+    try (AccountLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      String authHeader = containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
+      if (authHeader != null && authHeader.contains("Delegate")) {
+        authService.validateDelegateToken(
+            accountId, substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate "));
+      } else {
+        throw new IllegalStateException("Invalid authentication header:" + authHeader);
       }
     }
   }
@@ -460,6 +482,14 @@ public class AuthenticationFilter implements ContainerRequestFilter {
   boolean identityServiceAPI() {
     return resourceInfo.getResourceMethod().getAnnotation(IdentityServiceAuth.class) != null
         || resourceInfo.getResourceClass().getAnnotation(IdentityServiceAuth.class) != null;
+  }
+
+  protected boolean delegateAuth2API() {
+    Class<?> resourceClass = resourceInfo.getResourceClass();
+    Method resourceMethod = resourceInfo.getResourceMethod();
+
+    return resourceMethod.getAnnotation(io.harness.security.annotations.DelegateAuth2.class) != null
+        || resourceClass.getAnnotation(io.harness.security.annotations.DelegateAuth2.class) != null;
   }
 
   protected boolean delegateAPI() {

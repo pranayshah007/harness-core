@@ -440,6 +440,7 @@ public class VerificationServiceApplication extends Application<VerificationServ
     PersistenceIterator dataCollectionIterator =
         MongoPersistenceIterator.<AnalysisContext, MorphiaFilterExpander<AnalysisContext>>builder()
             .mode(ProcessMode.PUMP)
+            .iteratorName("WorkflowIterator." + iteratorFieldName)
             .clazz(AnalysisContext.class)
             .fieldName(iteratorFieldName)
             .targetInterval(interval)
@@ -466,6 +467,7 @@ public class VerificationServiceApplication extends Application<VerificationServ
     PersistenceIterator dataCollectionIterator =
         MongoPersistenceIterator.<AnalysisContext, MorphiaFilterExpander<AnalysisContext>>builder()
             .mode(ProcessMode.PUMP)
+            .iteratorName("WorkflowDataCollectionIterator")
             .clazz(AnalysisContext.class)
             .fieldName(iteratorFieldName)
             .targetInterval(interval)
@@ -495,6 +497,7 @@ public class VerificationServiceApplication extends Application<VerificationServ
     PersistenceIterator alertsCleanupIterator =
         MongoPersistenceIterator.<Alert, MorphiaFilterExpander<Alert>>builder()
             .mode(ProcessMode.PUMP)
+            .iteratorName("AlertsCleanupIterator")
             .clazz(Alert.class)
             .fieldName(AlertKeys.cvCleanUpIteration)
             .targetInterval(interval)
@@ -521,6 +524,7 @@ public class VerificationServiceApplication extends Application<VerificationServ
     PersistenceIterator dataCollectionIterator =
         MongoPersistenceIterator.<AnalysisContext, MorphiaFilterExpander<AnalysisContext>>builder()
             .mode(ProcessMode.PUMP)
+            .iteratorName("CreateCVTaskIterator")
             .clazz(AnalysisContext.class)
             .fieldName(AnalysisContextKeys.cvTaskCreationIteration)
             .targetInterval(interval)

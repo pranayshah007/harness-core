@@ -17,7 +17,6 @@ import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -121,9 +120,7 @@ public class EcsBlueGreenSetupCommandHandlerTest extends WingsBaseTest {
     EcsBGServiceSetupRequest request =
         EcsBGServiceSetupRequest.builder().ecsSetupParams(anEcsSetupParams().build()).build();
 
-    doReturn(nonForwardListener)
-        .when(mockAwsElbHelperServiceDelegate)
-        .getElbListener(any(), any(), anyString(), anyString());
+    doReturn(nonForwardListener).when(mockAwsElbHelperServiceDelegate).getElbListener(any(), any(), any(), any());
 
     EcsCommandExecutionResponse response = handler.executeTaskInternal(request, null, mockCallback);
     assertThat(response).isNotNull();
@@ -139,12 +136,10 @@ public class EcsBlueGreenSetupCommandHandlerTest extends WingsBaseTest {
     EcsBGServiceSetupRequest request =
         EcsBGServiceSetupRequest.builder().ecsSetupParams(anEcsSetupParams().build()).build();
 
-    doReturn(nonForwardListener)
-        .when(mockAwsElbHelperServiceDelegate)
-        .getElbListener(any(), any(), anyString(), anyString());
+    doReturn(nonForwardListener).when(mockAwsElbHelperServiceDelegate).getElbListener(any(), any(), any(), any());
     doReturn(Arrays.asList(prodSpecificListener, stageSpecificListener))
         .when(mockAwsElbHelperServiceDelegate)
-        .getElbListenersForLoadBalaner(any(), any(), anyString(), anyString());
+        .getElbListenersForLoadBalaner(any(), any(), any(), any());
 
     EcsCommandExecutionResponse response = handler.executeTaskInternal(request, null, mockCallback);
     assertThat(response).isNotNull();
@@ -164,12 +159,10 @@ public class EcsBlueGreenSetupCommandHandlerTest extends WingsBaseTest {
                 anEcsSetupParams().withProdListenerArn(PROD_LISTENER_ARN).withUseSpecificListenerRuleArn(true).build())
             .build();
 
-    doReturn(nonForwardListener)
-        .when(mockAwsElbHelperServiceDelegate)
-        .getElbListener(any(), any(), anyString(), anyString());
+    doReturn(nonForwardListener).when(mockAwsElbHelperServiceDelegate).getElbListener(any(), any(), any(), any());
     doReturn(Arrays.asList(prodSpecificListener))
         .when(mockAwsElbHelperServiceDelegate)
-        .getElbListenersForLoadBalaner(any(), any(), anyString(), anyString());
+        .getElbListenersForLoadBalaner(any(), any(), any(), any());
     doReturn(null)
         .when(mockAwsElbHelperServiceDelegate)
         .fetchTargetGroupForSpecificRules(any(), any(), any(), any(), any(), any());
@@ -204,12 +197,10 @@ public class EcsBlueGreenSetupCommandHandlerTest extends WingsBaseTest {
                                                                .build())
                                            .build();
 
-    doReturn(nonForwardListener)
-        .when(mockAwsElbHelperServiceDelegate)
-        .getElbListener(any(), any(), anyString(), anyString());
+    doReturn(nonForwardListener).when(mockAwsElbHelperServiceDelegate).getElbListener(any(), any(), any(), any());
     doReturn(Arrays.asList(prodSpecificListener))
         .when(mockAwsElbHelperServiceDelegate)
-        .getElbListenersForLoadBalaner(any(), any(), anyString(), anyString());
+        .getElbListenersForLoadBalaner(any(), any(), any(), any());
     doReturn(targetGroup2)
         .when(mockAwsElbHelperServiceDelegate)
         .fetchTargetGroupForSpecificRules(any(), any(), any(), any(), any(), any());
@@ -236,9 +227,7 @@ public class EcsBlueGreenSetupCommandHandlerTest extends WingsBaseTest {
                                            .ecsSetupParams(anEcsSetupParams().withStageListenerArn("arn").build())
                                            .build();
 
-    doReturn(forwardListener)
-        .when(mockAwsElbHelperServiceDelegate)
-        .getElbListener(any(), any(), anyString(), anyString());
+    doReturn(forwardListener).when(mockAwsElbHelperServiceDelegate).getElbListener(any(), any(), any(), any());
 
     linearClosure(mockCallback, request);
   }
@@ -251,13 +240,9 @@ public class EcsBlueGreenSetupCommandHandlerTest extends WingsBaseTest {
     EcsBGServiceSetupRequest request =
         EcsBGServiceSetupRequest.builder().ecsSetupParams(anEcsSetupParams().withTargetGroupArn("arn").build()).build();
 
-    doReturn(forwardListener)
-        .when(mockAwsElbHelperServiceDelegate)
-        .getElbListener(any(), any(), anyString(), anyString());
+    doReturn(forwardListener).when(mockAwsElbHelperServiceDelegate).getElbListener(any(), any(), any(), any());
 
-    doReturn(Optional.empty())
-        .when(mockAwsElbHelperServiceDelegate)
-        .getTargetGroup(any(), any(), anyString(), anyString());
+    doReturn(Optional.empty()).when(mockAwsElbHelperServiceDelegate).getTargetGroup(any(), any(), any(), any());
 
     EcsCommandExecutionResponse response = handler.executeTaskInternal(request, null, mockCallback);
     assertThat(response).isNotNull();
@@ -273,13 +258,11 @@ public class EcsBlueGreenSetupCommandHandlerTest extends WingsBaseTest {
     EcsBGServiceSetupRequest request =
         EcsBGServiceSetupRequest.builder().ecsSetupParams(anEcsSetupParams().withTargetGroupArn("arn").build()).build();
 
-    doReturn(forwardListener)
-        .when(mockAwsElbHelperServiceDelegate)
-        .getElbListener(any(), any(), anyString(), anyString());
+    doReturn(forwardListener).when(mockAwsElbHelperServiceDelegate).getElbListener(any(), any(), any(), any());
 
     doReturn(Optional.of(new TargetGroup()))
         .when(mockAwsElbHelperServiceDelegate)
-        .getTargetGroup(any(), any(), anyString(), anyString());
+        .getTargetGroup(any(), any(), any(), any());
 
     linearClosure(mockCallback, request);
   }
@@ -298,17 +281,15 @@ public class EcsBlueGreenSetupCommandHandlerTest extends WingsBaseTest {
                                                                .build())
                                            .build();
 
-    doReturn(forwardListener)
-        .when(mockAwsElbHelperServiceDelegate)
-        .getElbListener(any(), any(), anyString(), anyString());
+    doReturn(forwardListener).when(mockAwsElbHelperServiceDelegate).getElbListener(any(), any(), any(), any());
 
     doReturn(Collections.singletonList(AwsElbListener.builder().port(8080).build()))
         .when(mockAwsElbHelperServiceDelegate)
-        .getElbListenersForLoadBalaner(any(), any(), anyString(), anyString());
+        .getElbListenersForLoadBalaner(any(), any(), any(), any());
 
     linearClosure(mockCallback, request);
 
-    verify(mockAwsElbHelperServiceDelegate, times(2)).getElbListener(any(), any(), anyString(), anyString());
+    verify(mockAwsElbHelperServiceDelegate, times(2)).getElbListener(any(), any(), any(), any());
     verify(mockEcsSetupCommandTaskHelper).getTargetGroupForDefaultAction(any(), any());
   }
 
@@ -326,31 +307,28 @@ public class EcsBlueGreenSetupCommandHandlerTest extends WingsBaseTest {
                                                                .build())
                                            .build();
 
-    doReturn(forwardListener)
-        .when(mockAwsElbHelperServiceDelegate)
-        .getElbListener(any(), any(), anyString(), anyString());
+    doReturn(forwardListener).when(mockAwsElbHelperServiceDelegate).getElbListener(any(), any(), any(), any());
 
     doReturn(Collections.singletonList(AwsElbListener.builder().port(80).build()))
         .when(mockAwsElbHelperServiceDelegate)
-        .getElbListenersForLoadBalaner(any(), any(), anyString(), anyString());
+        .getElbListenersForLoadBalaner(any(), any(), any(), any());
 
     doReturn(Optional.of(new TargetGroup()))
         .when(mockAwsElbHelperServiceDelegate)
-        .getTargetGroup(any(), any(), anyString(), anyString());
+        .getTargetGroup(any(), any(), any(), any());
 
     doReturn(Optional.of(new TargetGroup()))
         .when(mockAwsElbHelperServiceDelegate)
-        .getTargetGroupByName(any(), any(), anyString(), anyString());
+        .getTargetGroupByName(any(), any(), any(), any());
 
     doReturn(forwardListener)
         .when(mockAwsElbHelperServiceDelegate)
-        .createStageListener(any(), any(), anyString(), anyString(), anyInt(), anyString());
+        .createStageListener(any(), any(), any(), any(), anyInt(), any());
 
     linearClosure(mockCallback, request);
 
-    verify(mockAwsElbHelperServiceDelegate).getElbListener(any(), any(), anyString(), anyString());
-    verify(mockAwsElbHelperServiceDelegate)
-        .createStageListener(any(), any(), anyString(), anyString(), anyInt(), anyString());
+    verify(mockAwsElbHelperServiceDelegate).getElbListener(any(), any(), any(), any());
+    verify(mockAwsElbHelperServiceDelegate).createStageListener(any(), any(), any(), any(), anyInt(), any());
   }
 
   @Test
@@ -367,35 +345,30 @@ public class EcsBlueGreenSetupCommandHandlerTest extends WingsBaseTest {
                                                                .build())
                                            .build();
 
-    doReturn(forwardListener)
-        .when(mockAwsElbHelperServiceDelegate)
-        .getElbListener(any(), any(), anyString(), anyString());
+    doReturn(forwardListener).when(mockAwsElbHelperServiceDelegate).getElbListener(any(), any(), any(), any());
 
     doReturn(Collections.singletonList(AwsElbListener.builder().port(80).build()))
         .when(mockAwsElbHelperServiceDelegate)
-        .getElbListenersForLoadBalaner(any(), any(), anyString(), anyString());
+        .getElbListenersForLoadBalaner(any(), any(), any(), any());
 
     doReturn(Optional.of(new TargetGroup()))
         .when(mockAwsElbHelperServiceDelegate)
-        .getTargetGroup(any(), any(), anyString(), anyString());
+        .getTargetGroup(any(), any(), any(), any());
 
     doReturn(new TargetGroup())
         .when(mockAwsElbHelperServiceDelegate)
-        .cloneTargetGroup(any(), any(), anyString(), anyString(), anyString());
+        .cloneTargetGroup(any(), any(), any(), any(), any());
 
-    doReturn(Optional.empty())
-        .when(mockAwsElbHelperServiceDelegate)
-        .getTargetGroupByName(any(), any(), anyString(), anyString());
+    doReturn(Optional.empty()).when(mockAwsElbHelperServiceDelegate).getTargetGroupByName(any(), any(), any(), any());
 
     doReturn(forwardListener)
         .when(mockAwsElbHelperServiceDelegate)
-        .createStageListener(any(), any(), anyString(), anyString(), anyInt(), anyString());
+        .createStageListener(any(), any(), any(), any(), anyInt(), any());
 
     linearClosure(mockCallback, request);
 
-    verify(mockAwsElbHelperServiceDelegate).getElbListener(any(), any(), anyString(), anyString());
-    verify(mockAwsElbHelperServiceDelegate)
-        .createStageListener(any(), any(), anyString(), anyString(), anyInt(), anyString());
+    verify(mockAwsElbHelperServiceDelegate).getElbListener(any(), any(), any(), any());
+    verify(mockAwsElbHelperServiceDelegate).createStageListener(any(), any(), any(), any(), anyInt(), any());
   }
 
   private void linearClosure(ExecutionLogCallback mockCallback, EcsBGServiceSetupRequest request) {
@@ -411,7 +384,7 @@ public class EcsBlueGreenSetupCommandHandlerTest extends WingsBaseTest {
 
     verify(mockEcsSetupCommandTaskHelper)
         .storeCurrentServiceNameAndCountInfo(eq(request.getAwsConfig()), any(), any(), any(), eq(SERVICE_ID));
-    verify(mockEcsSetupCommandTaskHelper).backupAutoScalarConfig(any(), any(), any(), anyString(), any(), any());
+    verify(mockEcsSetupCommandTaskHelper).backupAutoScalarConfig(any(), any(), any(), any(), any(), any());
     verify(mockEcsSetupCommandTaskHelper).logLoadBalancerInfo(any(), any());
 
     assertThat(response).isNotNull();

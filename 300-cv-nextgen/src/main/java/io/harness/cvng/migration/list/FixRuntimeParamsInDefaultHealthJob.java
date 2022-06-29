@@ -34,7 +34,7 @@ public class FixRuntimeParamsInDefaultHealthJob implements CVNGMigration {
     updateOperations.set("envIdentifier.isRuntimeParam", true);
     Query<VerificationJob> query = hPersistence.createQuery(VerificationJob.class);
     query.filter(VerificationJobKeys.isDefaultJob, true);
-    query.filter(VerificationJobKeys.type, VerificationJobType.HEALTH);
+    query.filter("type", VerificationJobType.HEALTH);
     UpdateResults updateResults = hPersistence.update(query, updateOperations);
     log.info("Update results count: " + updateResults.getUpdatedCount());
   }

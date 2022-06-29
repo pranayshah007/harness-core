@@ -62,7 +62,6 @@ import io.harness.security.AsymmetricDecryptor;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
-import io.harness.serializer.kryo.CvNextGenCommonsBeansKryoRegistrar;
 import io.harness.serializer.morphia.BatchProcessingMorphiaRegistrar;
 import io.harness.serializer.morphia.EventServerMorphiaRegistrar;
 import io.harness.service.DelegateServiceModule;
@@ -207,10 +206,7 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
       @Provides
       @Singleton
       Set<Class<? extends KryoRegistrar>> registrars() {
-        return ImmutableSet.<Class<? extends KryoRegistrar>>builder()
-            .addAll(ManagerRegistrars.kryoRegistrars)
-            .add(CvNextGenCommonsBeansKryoRegistrar.class)
-            .build();
+        return ImmutableSet.<Class<? extends KryoRegistrar>>builder().addAll(ManagerRegistrars.kryoRegistrars).build();
       }
 
       @Provides
@@ -305,7 +301,7 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
       }
     });
     modules.add(new ValidationModule(validatorFactory));
-    modules.add(new DelegateServiceModule());
+    modules.add(new DelegateServiceModule("delegate.ut.harness.io"));
     modules.add(new CapabilityModule());
     modules.add(new WingsModule((MainConfiguration) configuration, StartupMode.MANAGER));
     modules.add(new TestTotpModule());

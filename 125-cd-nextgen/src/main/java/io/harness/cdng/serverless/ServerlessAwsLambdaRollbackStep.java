@@ -108,7 +108,8 @@ public class ServerlessAwsLambdaRollbackStep extends TaskExecutableWithRollbackA
         (ServerlessAwsLambdaRollbackDataOutcome) serverlessRollbackDataOptionalOutput.getOutput();
     ServerlessGitFetchOutcome serverlessGitFetchOutcome =
         (ServerlessGitFetchOutcome) serverlessGitFetchOptionalOutput.getOutput();
-    if (EmptyPredicate.isEmpty(rollbackDataOutcome.getPreviousVersionTimeStamp())) {
+    if (!rollbackDataOutcome.isFirstDeployment()
+        && EmptyPredicate.isEmpty(rollbackDataOutcome.getPreviousVersionTimeStamp())) {
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(
               SkipTaskRequest.newBuilder().setMessage("No previous version exist. Skipping rollback.").build())
@@ -127,6 +128,7 @@ public class ServerlessAwsLambdaRollbackStep extends TaskExecutableWithRollbackA
     ServerlessAwsLambdaRollbackConfig serverlessAwsLambdaRollbackConfig =
         ServerlessAwsLambdaRollbackConfig.builder()
             .previousVersionTimeStamp(rollbackDataOutcome.getPreviousVersionTimeStamp())
+            .isFirstDeployment(rollbackDataOutcome.isFirstDeployment())
             .build();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
     ServerlessRollbackRequest serverlessRollbackRequest =
@@ -143,7 +145,7 @@ public class ServerlessAwsLambdaRollbackStep extends TaskExecutableWithRollbackA
             .build();
     return serverlessStepCommonHelper
         .queueServerlessTask(stepElementParameters, serverlessRollbackRequest, ambiance,
-            ServerlessExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build())
+            ServerlessExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true)
         .getTaskRequest();
   }
 

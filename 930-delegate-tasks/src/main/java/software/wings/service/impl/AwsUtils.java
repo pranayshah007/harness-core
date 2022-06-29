@@ -14,14 +14,28 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.util.Arrays.asList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.task.aws.AwsNgConfigMapper;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.AwsInstanceFilter;
 import software.wings.common.InfrastructureConstants;
 import software.wings.expression.ManagerExpressionEvaluator;
 
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
+import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
+import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.Filter;
+import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
+import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClientBuilder;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
@@ -35,6 +49,9 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(CDP)
 public class AwsUtils {
   @Inject private ManagerExpressionEvaluator expressionEvaluator;
+  @Inject private AwsApiHelperService awsApiHelperService;
+  @Inject private AwsNgConfigMapper awsNgConfigMapper;
+  @Inject private SecretDecryptionService secretDecryptionService;
 
   public String getHostnameFromPrivateDnsName(String dnsName) {
     return isNotEmpty(dnsName) ? dnsName.split("\\.")[0] : "";
@@ -70,5 +87,39 @@ public class AwsUtils {
       }
     }
     return filters;
+  }
+
+  public AwsInternalConfig getAwsInternalConfig(AwsConnectorDTO awsConnectorDTO, String region) {
+    AwsInternalConfig awsInternalConfig = awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO);
+    awsInternalConfig.setDefaultRegion(region);
+    return awsInternalConfig;
+  }
+
+  public void decryptRequestDTOs(AwsConnectorDTO awsConnectorDTO, List<EncryptedDataDetail> encryptionDetails) {
+    if (awsConnectorDTO.getCredential() != null && awsConnectorDTO.getCredential().getConfig() != null) {
+      secretDecryptionService.decrypt(
+          (AwsManualConfigSpecDTO) awsConnectorDTO.getCredential().getConfig(), encryptionDetails);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+          (AwsManualConfigSpecDTO) awsConnectorDTO.getCredential().getConfig(), encryptionDetails);
+    }
+  }
+
+  public AmazonEC2Client getAmazonEc2Client(Regions region, AwsInternalConfig awsConfig) {
+    AmazonEC2ClientBuilder builder = AmazonEC2ClientBuilder.standard().withRegion(region);
+    awsApiHelperService.attachCredentialsAndBackoffPolicy(builder, awsConfig);
+    return (AmazonEC2Client) builder.build();
+  }
+
+  public AmazonElasticLoadBalancingClient getAmazonElbClient(Regions region, AwsInternalConfig awsConfig) {
+    AmazonElasticLoadBalancingClientBuilder builder =
+        AmazonElasticLoadBalancingClientBuilder.standard().withRegion(region);
+    awsApiHelperService.attachCredentialsAndBackoffPolicy(builder, awsConfig);
+    return (AmazonElasticLoadBalancingClient) builder.build();
+  }
+
+  public AmazonAutoScalingClient getAmazonAutoScalingClient(Regions region, AwsInternalConfig awsConfig) {
+    AmazonAutoScalingClientBuilder builder = AmazonAutoScalingClientBuilder.standard().withRegion(region);
+    awsApiHelperService.attachCredentialsAndBackoffPolicy(builder, awsConfig);
+    return (AmazonAutoScalingClient) builder.build();
   }
 }

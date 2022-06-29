@@ -21,4 +21,10 @@ import lombok.Value;
 @RecasterAlias("io.harness.steps.resourcerestraint.ResourceRestraintPassThroughData")
 public class ResourceRestraintPassThroughData implements PassThroughData {
   String consumerId;
+  String resourceRestraintId;
+  String resourceUnit;
+  String name;
+  int capacity;
+  String releaseEntityId;
+  String releaseEntityType;
 }

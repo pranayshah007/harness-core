@@ -15,7 +15,9 @@ import static software.wings.beans.delegation.TerragruntProvisionParameters.Terr
 import static software.wings.beans.delegation.TerragruntProvisionParameters.TerragruntCommand.DESTROY;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
+import static software.wings.utils.WingsTestConstants.ENTITY_ID;
 import static software.wings.utils.WingsTestConstants.PROVISIONER_ID;
+import static software.wings.utils.WingsTestConstants.SOURCE_REPO_SETTINGS_ID;
 import static software.wings.utils.WingsTestConstants.UUID;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
 import static software.wings.utils.WingsTestConstants.WORKSPACE;
@@ -23,9 +25,7 @@ import static software.wings.utils.WingsTestConstants.WORKSPACE;
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -43,6 +43,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.FileBucket;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HIterator;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -109,15 +110,17 @@ public class TerragruntRollbackStateTest extends WingsBaseTest {
   @Mock private GitConfigHelperService gitConfigHelperService;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private TerragruntStateHelper terragruntStateHelper;
+  @Mock private FeatureFlagService featureFlagService;
+
   @InjectMocks
   TerragruntRollbackState terragruntRollbackState = new TerragruntRollbackState("Rollback Terragrunt Test");
 
   @Before
   public void setup() {
-    Answer<String> doReturnSameValue = invocation -> invocation.getArgumentAt(0, String.class);
+    Answer<String> doReturnSameValue = invocation -> invocation.getArgument(0, String.class);
     BiFunction<String, Collector, Answer> extractVariablesOfType = (type, collector) -> {
       return invocation -> {
-        List<NameValuePair> input = invocation.getArgumentAt(0, List.class);
+        List<NameValuePair> input = invocation.getArgument(0, List.class);
         return input.stream().filter(value -> type.equals(value.getValueType())).collect(collector);
       };
     };
@@ -130,15 +133,15 @@ public class TerragruntRollbackStateTest extends WingsBaseTest {
         .extractUnresolvedTextVariables(anyListOf(NameValuePair.class));
     doAnswer(doExtractEncryptedVariables)
         .when(infrastructureProvisionerService)
-        .extractEncryptedTextVariables(anyListOf(NameValuePair.class), anyString(), anyString());
+        .extractEncryptedTextVariables(anyListOf(NameValuePair.class), anyString(), any());
     doAnswer(doReturnSameValue).when(executionContext).renderExpression(anyString());
+    when(executionContext.getAppId()).thenReturn(APP_ID);
   }
 
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testExecuteInternalNoApply() {
-    when(executionContext.getAppId()).thenReturn(APP_ID);
     terragruntRollbackState.setProvisionerId(PROVISIONER_ID);
     terragruntRollbackState.setPathToModule("module1");
     TerragruntInfrastructureProvisioner terragruntInfrastructureProvisioner =
@@ -175,7 +178,7 @@ public class TerragruntRollbackStateTest extends WingsBaseTest {
     verifyResponse(executionResponse, "sourceRepoBranch", true, 1, DESTROY);
 
     // no variables, no backend configs, no source repo branch
-    when(terragruntStateHelper.getGitConfigAndPopulate(any(TerragruntConfig.class), anyString()))
+    when(terragruntStateHelper.getGitConfigAndPopulate(any(TerragruntConfig.class), any()))
         .thenReturn(GitConfig.builder().build());
     setUp(null, false, WORKFLOW_EXECUTION_ID);
     executionResponse = terragruntRollbackState.executeInternal(executionContext, ACTIVITY_ID);
@@ -211,7 +214,7 @@ public class TerragruntRollbackStateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testHandleAsyncResponseApply() {
     when(executionContext.getWorkflowExecutionId()).thenReturn(WORKFLOW_EXECUTION_ID);
-    when(executionContext.getAppId()).thenReturn(APP_ID);
+
     Environment environment = new Environment();
     environment.setUuid(UUID);
     when(executionContext.getEnv()).thenReturn(environment);
@@ -220,6 +223,7 @@ public class TerragruntRollbackStateTest extends WingsBaseTest {
         TerragruntInfrastructureProvisioner.builder()
             .name("Terragrunt Provisioner")
             .sourceRepoBranch("sourceRepoBranch")
+            .sourceRepoSettingId(SOURCE_REPO_SETTINGS_ID)
             .build();
     when(infrastructureProvisionerService.get(APP_ID, PROVISIONER_ID)).thenReturn(terragruntInfrastructureProvisioner);
     Map<String, ResponseData> response = new HashMap<>();
@@ -229,6 +233,7 @@ public class TerragruntRollbackStateTest extends WingsBaseTest {
                                                           .commandExecuted(APPLY)
                                                           .pathToModule("module1")
                                                           .branch("master")
+                                                          .entityId(ENTITY_ID)
                                                           .build();
     response.put("activityId", terragruntExecutionData);
 
@@ -236,7 +241,7 @@ public class TerragruntRollbackStateTest extends WingsBaseTest {
     verifyResponse(executionResponse, 1);
     verify(fileService, times(1))
         .updateParentEntityIdAndVersion(
-            any(Class.class), anyString(), anyInt(), anyString(), anyMap(), any(FileBucket.class));
+            any(Class.class), anyString(), any(), anyString(), any(), any(FileBucket.class));
 
     // no state file
     terragruntExecutionData.setStateFileId(null);
@@ -248,16 +253,16 @@ public class TerragruntRollbackStateTest extends WingsBaseTest {
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testHandleAsyncResponseDestroy() {
-    when(executionContext.getAppId()).thenReturn(APP_ID);
     terragruntRollbackState.setProvisionerId(PROVISIONER_ID);
     TerragruntInfrastructureProvisioner terragruntInfrastructureProvisioner =
-        TerragruntInfrastructureProvisioner.builder().build();
+        TerragruntInfrastructureProvisioner.builder().sourceRepoSettingId(SOURCE_REPO_SETTINGS_ID).build();
     when(infrastructureProvisionerService.get(APP_ID, PROVISIONER_ID)).thenReturn(terragruntInfrastructureProvisioner);
     Map<String, ResponseData> response = new HashMap<>();
     TerragruntExecutionData terragruntExecutionData = TerragruntExecutionData.builder()
                                                           .executionStatus(SUCCESS)
                                                           .stateFileId("stateFileId")
                                                           .commandExecuted(DESTROY)
+                                                          .entityId(ENTITY_ID)
                                                           .build();
     response.put("activityId", terragruntExecutionData);
 
@@ -268,7 +273,7 @@ public class TerragruntRollbackStateTest extends WingsBaseTest {
 
     verify(fileService, times(1))
         .updateParentEntityIdAndVersion(
-            any(Class.class), anyString(), anyInt(), anyString(), anyMap(), any(FileBucket.class));
+            any(Class.class), anyString(), any(), anyString(), any(), any(FileBucket.class));
     verify(infrastructureProvisionerService, times(1)).get(APP_ID, PROVISIONER_ID);
     verify(terragruntStateHelper)
         .deleteTerragruntConfiguUsingOekflowExecutionId(any(ExecutionContext.class), anyString());
@@ -281,12 +286,12 @@ public class TerragruntRollbackStateTest extends WingsBaseTest {
     terragruntRollbackState.setProvisionerId(PROVISIONER_ID);
 
     when(executionContext.getWorkflowExecutionId()).thenReturn(workflowExecutionId);
-    when(executionContext.getAppId()).thenReturn(APP_ID);
 
     TerragruntInfrastructureProvisioner terragruntInfrastructureProvisioner =
         TerragruntInfrastructureProvisioner.builder()
             .name("Terragrunt Provisioner")
             .sourceRepoBranch(sourceRepoBranch)
+            .appId(APP_ID)
             .build();
     when(infrastructureProvisionerService.get(APP_ID, PROVISIONER_ID)).thenReturn(terragruntInfrastructureProvisioner);
     when(executionContext.prepareSweepingOutputInquiryBuilder()).thenReturn(SweepingOutputInquiry.builder());

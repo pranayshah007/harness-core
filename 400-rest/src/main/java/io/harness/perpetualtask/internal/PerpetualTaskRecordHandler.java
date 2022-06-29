@@ -49,7 +49,7 @@ import io.harness.perpetualtask.PerpetualTaskUnassignedReason;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord.PerpetualTaskRecordKeys;
 import io.harness.serializer.KryoSerializer;
 import io.harness.workers.background.AccountLevelEntityProcessController;
-import io.harness.workers.background.AccountStatusBasedEntityProcessController;
+import io.harness.workers.background.CrossEnvironmentAccountStatusBasedEntityProcessController;
 
 import software.wings.beans.Account;
 import software.wings.beans.Account.AccountKeys;
@@ -105,7 +105,7 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
                 -> query.filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_UNASSIGNED)
                        .field(PerpetualTaskRecordKeys.assignAfterMs)
                        .lessThanOrEq(System.currentTimeMillis()))
-            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+            .entityProcessController(new CrossEnvironmentAccountStatusBasedEntityProcessController<>(accountService))
             .schedulingType(IRREGULAR_SKIP_MISSED)
             .persistenceProvider(persistenceProvider)
             .redistribute(true));

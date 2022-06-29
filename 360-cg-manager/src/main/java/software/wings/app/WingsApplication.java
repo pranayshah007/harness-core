@@ -64,6 +64,7 @@ import io.harness.delegate.beans.StartupMode;
 import io.harness.delegate.event.handler.DelegateProfileEventHandler;
 import io.harness.delegate.eventstream.EntityCRUDConsumer;
 import io.harness.delegate.resources.DelegateTaskResource;
+import io.harness.delegate.resources.DelegateTaskResourceV2;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.telemetry.DelegateTelemetryPublisher;
 import io.harness.dms.DmsModule;
@@ -89,7 +90,6 @@ import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.insights.DelegateInsightsSummaryJob;
 import io.harness.iterator.DelegateTaskExpiryCheckIterator;
-import io.harness.iterator.DelegateTaskRebroadcastIterator;
 import io.harness.iterator.FailDelegateTaskIterator;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.DistributedLockImplementation;
@@ -1143,7 +1143,8 @@ public class WingsApplication extends Application<MainConfiguration> {
             .stream()
             .filter(klazz
                 -> StringUtils.startsWithAny(klazz.getPackage().getName(), AppResource.class.getPackage().getName(),
-                    DelegateTaskResource.class.getPackage().getName()))
+                    DelegateTaskResource.class.getPackage().getName(),
+                    DelegateTaskResourceV2.class.getPackage().getName()))
             .collect(Collectors.toSet());
 
     if (!configuration.isGraphQLEnabled()) {
@@ -1435,8 +1436,6 @@ public class WingsApplication extends Application<MainConfiguration> {
             iteratorsConfig.getPerpetualTaskRebalanceIteratorConfig().getThreadPoolSize());
     injector.getInstance(DelegateTaskExpiryCheckIterator.class)
         .registerIterators(iteratorsConfig.getDelegateTaskExpiryCheckIteratorConfig().getThreadPoolSize());
-    injector.getInstance(DelegateTaskRebroadcastIterator.class)
-        .registerIterators(iteratorsConfig.getDelegateTaskRebroadcastIteratorConfig().getThreadPoolSize());
     injector.getInstance(FailDelegateTaskIterator.class)
         .registerIterators(iteratorsConfig.getFailDelegateTaskIteratorConfig().getThreadPoolSize());
     injector.getInstance(DelegateTelemetryPublisher.class).registerIterators();

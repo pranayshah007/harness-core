@@ -16,6 +16,7 @@ import static io.harness.pms.contracts.execution.Status.ERRORED;
 import static io.harness.pms.contracts.execution.Status.EXPIRED;
 import static io.harness.pms.contracts.execution.Status.FAILED;
 import static io.harness.pms.contracts.execution.Status.IGNORE_FAILED;
+import static io.harness.pms.contracts.execution.Status.INPUT_WAITING;
 import static io.harness.pms.contracts.execution.Status.INTERVENTION_WAITING;
 import static io.harness.pms.contracts.execution.Status.PAUSED;
 import static io.harness.pms.contracts.execution.Status.PAUSING;
@@ -53,6 +54,9 @@ public class StatusUtils {
   private final EnumSet<Status> POSITIVE_STATUSES = EnumSet.of(SUCCEEDED, SKIPPED, SUSPENDED, IGNORE_FAILED);
 
   private final EnumSet<Status> BROKE_STATUSES = EnumSet.of(FAILED, ERRORED, EXPIRED, APPROVAL_REJECTED);
+
+  private final EnumSet<Status> BROKE_AND_ABORTED_STATUSES =
+      EnumSet.of(FAILED, ERRORED, EXPIRED, APPROVAL_REJECTED, ABORTED);
 
   private final EnumSet<Status> RESUMABLE_STATUSES = EnumSet.of(QUEUED, RUNNING, ASYNC_WAITING, APPROVAL_WAITING,
       RESOURCE_WAITING, TASK_WAITING, TIMED_WAITING, INTERVENTION_WAITING);
@@ -93,6 +97,10 @@ public class StatusUtils {
     return BROKE_STATUSES;
   }
 
+  public EnumSet<Status> brokeAndAbortedStatuses() {
+    return BROKE_AND_ABORTED_STATUSES;
+  }
+
   public EnumSet<Status> resumableStatuses() {
     return RESUMABLE_STATUSES;
   }
@@ -129,7 +137,7 @@ public class StatusUtils {
     switch (status) {
       case RUNNING:
         return EnumSet.of(QUEUED, ASYNC_WAITING, APPROVAL_WAITING, RESOURCE_WAITING, TASK_WAITING, TIMED_WAITING,
-            INTERVENTION_WAITING, PAUSED, PAUSING, APPROVAL_REJECTED);
+            INTERVENTION_WAITING, PAUSED, PAUSING, APPROVAL_REJECTED, INPUT_WAITING);
       case INTERVENTION_WAITING:
         return BROKE_STATUSES;
       case TIMED_WAITING:
@@ -139,6 +147,7 @@ public class StatusUtils {
       case TASK_WAITING:
       case PAUSING:
       case SKIPPED:
+      case INPUT_WAITING:
         return EnumSet.of(QUEUED, RUNNING);
       case PAUSED:
         return EnumSet.of(QUEUED, RUNNING, PAUSING);

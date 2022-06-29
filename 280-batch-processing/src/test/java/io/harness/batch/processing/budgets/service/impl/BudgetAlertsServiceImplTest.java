@@ -21,7 +21,6 @@ import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.config.BillingDataPipelineConfig;
 import io.harness.batch.processing.mail.CEMailNotificationService;
 import io.harness.batch.processing.shard.AccountShardService;
-import io.harness.batch.processing.slackNotification.CESlackNotificationService;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.budget.AlertThreshold;
 import io.harness.ccm.budget.AlertThresholdBase;
@@ -34,11 +33,11 @@ import io.harness.ccm.communication.entities.CESlackWebhook;
 import io.harness.rule.Owner;
 import io.harness.timescaledb.TimeScaleDBService;
 
-import software.wings.beans.Account;
 import software.wings.beans.User;
 import software.wings.beans.security.UserGroup;
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
 import software.wings.graphql.datafetcher.budget.BudgetTimescaleQueryHelper;
+import software.wings.service.intfc.SlackMessageSender;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import java.sql.Connection;
@@ -60,7 +59,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 public class BudgetAlertsServiceImplTest extends CategoryTest {
   @Mock private TimeScaleDBService timeScaleDBService;
   @Mock private CEMailNotificationService emailNotificationService;
-  @Mock private CESlackNotificationService slackNotificationService;
+  @Mock private SlackMessageSender slackMessageSender;
   @Mock private BudgetTimescaleQueryHelper budgetTimescaleQueryHelper;
   @Mock private CESlackWebhookService ceSlackWebhookService;
   @Mock private BatchMainConfig mainConfiguration;
@@ -96,8 +95,7 @@ public class BudgetAlertsServiceImplTest extends CategoryTest {
     when(timeScaleDBService.isValid()).thenReturn(true);
     when(mockConnection.createStatement()).thenReturn(mockStatement);
     when(emailNotificationService.send(any())).thenReturn(true);
-    when(accountShardService.getCeEnabledAccounts())
-        .thenReturn(Arrays.asList(Account.Builder.anAccount().withUuid(ACCOUNT_ID).build()));
+    when(accountShardService.getCeEnabledAccountIds()).thenReturn(Arrays.asList(ACCOUNT_ID));
     alertThreshold = AlertThreshold.builder().percentage(0.5).basedOn(AlertThresholdBase.ACTUAL_COST).build();
     budget = Budget.builder()
                  .uuid(BUDGET_ID)

@@ -65,6 +65,7 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
 
        spec:
          deploymentType: Kubernetes
+         gitOpsEnabled: false
          service:
             serviceConfigRef: ref
    */
@@ -73,6 +74,12 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   ServiceDefinitionType deploymentType;
+
+  public boolean getGitOpsEnabled() {
+    return gitOpsEnabled == Boolean.TRUE;
+  }
+
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) Boolean gitOpsEnabled;
 
   // TODO: need to remove infraStructure from here after multi-infra feature rollout. Need to keep environment instead
   // of infraStructure
@@ -94,8 +101,13 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
   public VisitableChildren getChildrenToWalk() {
     List<VisitableChild> children = new ArrayList<>();
     children.add(VisitableChild.builder().value(serviceConfig).fieldName("serviceConfig").build());
-    children.add(VisitableChild.builder().value(service).fieldName("service").build());
+    if (service != null) {
+      children.add(VisitableChild.builder().value(service).fieldName("service").build());
+    }
     children.add(VisitableChild.builder().value(infrastructure).fieldName("infrastructure").build());
+    if (environment != null) {
+      children.add(VisitableChild.builder().value(environment).fieldName("environment").build());
+    }
     return VisitableChildren.builder().visitableChildList(children).build();
   }
 }

@@ -7,8 +7,8 @@
 
 package io.harness.notification.service.api;
 
-import io.harness.NotificationRequest;
 import io.harness.delegate.beans.NotificationProcessingResponse;
+import io.harness.notification.NotificationRequest;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 
 public interface ChannelService {

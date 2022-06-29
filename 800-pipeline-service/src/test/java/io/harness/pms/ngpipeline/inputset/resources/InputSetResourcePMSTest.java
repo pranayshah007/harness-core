@@ -9,6 +9,7 @@ package io.harness.pms.ngpipeline.inputset.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SAMARTH;
 
 import static junit.framework.TestCase.assertEquals;
@@ -18,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -25,18 +27,25 @@ import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.scm.beans.ScmGitMetaData;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.Status;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
+import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSummaryResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateRequestDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
-import io.harness.pms.ngpipeline.inputset.beans.resource.MergeInputSetRequestDTOPMS;
+import io.harness.pms.ngpipeline.inputset.exceptions.InvalidInputSetException;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
@@ -48,6 +57,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.junit.Before;
@@ -148,6 +158,70 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   }
 
   @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetInlineAndRemoteInputSet() {
+    InputSetEntity inlineInputSetEntity = inputSetEntity.withStoreType(StoreType.INLINE);
+    doReturn(Optional.of(inlineInputSetEntity))
+        .when(pmsInputSetService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false);
+
+    ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMS.getInputSet(
+        INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null);
+
+    InputSetResponseDTOPMS data = responseDTO.getData();
+    assertThat(data.getVersion()).isEqualTo(1L);
+    assertThat(data.getInputSetYaml()).isEqualTo(inputSetYaml);
+    getCallAssertions(data.getName(), INPUT_SET_ID, data.getIdentifier(), data.getPipelineIdentifier(),
+        data.getProjectIdentifier(), data.getOrgIdentifier(), data.getAccountId());
+    assertThat(data.getStoreType()).isEqualTo(StoreType.INLINE);
+    assertThat(data.getConnectorRef()).isNull();
+    assertThat(data.getEntityValidityDetails().isValid()).isTrue();
+    verify(validateAndMergeHelper, times(0)).validateInputSet(any(), any(), any(), any(), any(), any(), any());
+
+    GitAwareContextHelper.updateScmGitMetaData(
+        ScmGitMetaData.builder().branchName("brName").repoName("repoName").build());
+    InputSetEntity remoteInputSetEntity = inputSetEntity.withStoreType(StoreType.REMOTE);
+    remoteInputSetEntity.setRepo("repoName");
+    remoteInputSetEntity.setConnectorRef("conn");
+    doReturn(Optional.of(remoteInputSetEntity))
+        .when(pmsInputSetService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false);
+
+    responseDTO = inputSetResourcePMS.getInputSet(
+        INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null);
+
+    data = responseDTO.getData();
+    assertThat(data.getVersion()).isEqualTo(1L);
+    assertThat(data.getInputSetYaml()).isEqualTo(inputSetYaml);
+    getCallAssertions(data.getName(), INPUT_SET_ID, data.getIdentifier(), data.getPipelineIdentifier(),
+        data.getProjectIdentifier(), data.getOrgIdentifier(), data.getAccountId());
+    assertThat(data.getStoreType()).isEqualTo(StoreType.REMOTE);
+    assertThat(data.getConnectorRef()).isEqualTo("conn");
+    EntityGitDetails gitDetails = data.getGitDetails();
+    assertThat(gitDetails.getRepoName()).isEqualTo("repoName");
+    assertThat(gitDetails.getBranch()).isEqualTo("brName");
+    assertThat(data.getEntityValidityDetails().isValid()).isTrue();
+    verify(validateAndMergeHelper, times(1))
+        .validateInputSet(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, inputSetYaml, null, null);
+
+    InputSetErrorWrapperDTOPMS dummyErrorResponse =
+        InputSetErrorWrapperDTOPMS.builder().uuidToErrorResponseMap(Collections.singletonMap("fqn", null)).build();
+    doReturn(dummyErrorResponse)
+        .when(validateAndMergeHelper)
+        .validateInputSet(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, inputSetYaml, null, null);
+    responseDTO = inputSetResourcePMS.getInputSet(
+        INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null);
+    data = responseDTO.getData();
+    assertThat(data.isErrorResponse()).isTrue();
+    assertThat(data.getInputSetErrorWrapper()).isEqualTo(dummyErrorResponse);
+    gitDetails = data.getGitDetails();
+    assertThat(gitDetails.getRepoName()).isEqualTo("repoName");
+    assertThat(gitDetails.getBranch()).isEqualTo("brName");
+    assertThat(data.getEntityValidityDetails().isValid()).isFalse();
+  }
+
+  @Test
   @Owner(developers = SAMARTH)
   @Category(UnitTests.class)
   public void testGetInputSetWithInvalidInputSetId() {
@@ -181,6 +255,71 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
         responseDTO.getData().getOrgIdentifier(), responseDTO.getData().getAccountId());
   }
 
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetInlineAndRemoteOverlayInputSet() {
+    InputSetEntity inlineInputSetEntity = overlayInputSetEntity.withStoreType(StoreType.INLINE);
+    doReturn(Optional.of(inlineInputSetEntity))
+        .when(pmsInputSetService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false);
+
+    ResponseDTO<OverlayInputSetResponseDTOPMS> responseDTO = inputSetResourcePMS.getOverlayInputSet(
+        INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null);
+
+    OverlayInputSetResponseDTOPMS data = responseDTO.getData();
+    assertThat(data.getVersion()).isEqualTo(1L);
+    assertThat(data.getOverlayInputSetYaml()).isEqualTo(overlayInputSetYaml);
+    getCallAssertions(data.getName(), OVERLAY_INPUT_SET_ID, data.getIdentifier(), data.getPipelineIdentifier(),
+        data.getProjectIdentifier(), data.getOrgIdentifier(), data.getAccountId());
+    assertThat(data.getStoreType()).isEqualTo(StoreType.INLINE);
+    assertThat(data.getConnectorRef()).isNull();
+    assertThat(data.getEntityValidityDetails().isValid()).isTrue();
+    verify(validateAndMergeHelper, times(0)).validateOverlayInputSet(any(), any(), any(), any(), any());
+
+    GitAwareContextHelper.updateScmGitMetaData(
+        ScmGitMetaData.builder().branchName("brName").repoName("repoName").build());
+    InputSetEntity remoteInputSetEntity = overlayInputSetEntity.withStoreType(StoreType.REMOTE);
+    remoteInputSetEntity.setRepo("repoName");
+    remoteInputSetEntity.setConnectorRef("conn");
+    doReturn(Optional.of(remoteInputSetEntity))
+        .when(pmsInputSetService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false);
+
+    responseDTO = inputSetResourcePMS.getOverlayInputSet(
+        INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null);
+
+    data = responseDTO.getData();
+    assertThat(data.getVersion()).isEqualTo(1L);
+    assertThat(data.getOverlayInputSetYaml()).isEqualTo(overlayInputSetYaml);
+    getCallAssertions(data.getName(), OVERLAY_INPUT_SET_ID, data.getIdentifier(), data.getPipelineIdentifier(),
+        data.getProjectIdentifier(), data.getOrgIdentifier(), data.getAccountId());
+    assertThat(data.getStoreType()).isEqualTo(StoreType.REMOTE);
+    assertThat(data.getConnectorRef()).isEqualTo("conn");
+    EntityGitDetails gitDetails = data.getGitDetails();
+    assertThat(gitDetails.getRepoName()).isEqualTo("repoName");
+    assertThat(gitDetails.getBranch()).isEqualTo("brName");
+    assertThat(data.getEntityValidityDetails().isValid()).isTrue();
+    verify(validateAndMergeHelper, times(1))
+        .validateOverlayInputSet(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, overlayInputSetYaml);
+
+    Map<String, String> overlayInputSetErrorResponse = Collections.singletonMap("key", "val");
+    doReturn(overlayInputSetErrorResponse)
+        .when(validateAndMergeHelper)
+        .validateOverlayInputSet(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, overlayInputSetYaml);
+    responseDTO = inputSetResourcePMS.getOverlayInputSet(
+        INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null);
+    data = responseDTO.getData();
+    assertThat(data.isErrorResponse()).isTrue();
+    assertThat(data.getInvalidInputSetReferences()).hasSize(1);
+    assertThat(data.getInvalidInputSetReferences().containsKey("key")).isTrue();
+    assertThat(data.getInvalidInputSetReferences().containsValue("val")).isTrue();
+    gitDetails = data.getGitDetails();
+    assertThat(gitDetails.getRepoName()).isEqualTo("repoName");
+    assertThat(gitDetails.getBranch()).isEqualTo("brName");
+    assertThat(data.getEntityValidityDetails().isValid()).isFalse();
+  }
+
   private void getCallAssertions(String name, String inputSetId, String identifier, String pipelineIdentifier,
       String projectIdentifier, String orgIdentifier, String accountId) {
     assertThat(name).isEqualTo(inputSetId);
@@ -211,7 +350,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testCreateInputSet() {
-    doReturn(inputSetEntity).when(pmsInputSetService).create(any());
+    doReturn(inputSetEntity).when(pmsInputSetService).create(any(), any(), any());
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMS.createInputSet(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYaml);
     assertEquals(responseDTO.getData().getInputSetYaml(), inputSetYaml);
@@ -225,7 +364,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testCreateOverlayInputSet() {
-    doReturn(inputSetEntity).when(pmsInputSetService).create(any());
+    doReturn(inputSetEntity).when(pmsInputSetService).create(any(), any(), any());
     ResponseDTO<OverlayInputSetResponseDTOPMS> responseDTO = inputSetResourcePMS.createOverlayInputSet(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, overlayInputSetYaml);
     assertEquals(responseDTO.getData().getAccountId(), inputSetEntity.getAccountIdentifier());
@@ -238,7 +377,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testUpdateInputSet() {
-    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any());
+    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), any(), any());
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMS.updateInputSet(null, INPUT_SET_ID, ACCOUNT_ID,
         ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYaml);
     assertEquals(responseDTO.getData().getInputSetYaml(), inputSetYaml);
@@ -252,7 +391,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testUpdateOverlayInputSet() {
-    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any());
+    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), any(), any());
     ResponseDTO<OverlayInputSetResponseDTOPMS> responseDTO = inputSetResourcePMS.updateOverlayInputSet(null,
         INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, overlayInputSetYaml);
     assertEquals(responseDTO.getData().getAccountId(), inputSetEntity.getAccountIdentifier());
@@ -356,5 +495,39 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     verify(validateAndMergeHelper, times(1))
         .getMergeInputSetFromPipelineTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
             Collections.emptyList(), null, null, stages);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetMergeInputSetFromPipelineTemplateWithErrors() {
+    List<String> inputSetReferences = Arrays.asList("is1", "is2", "ois3");
+    InputSetErrorWrapperDTOPMS dummyErrorResponse =
+        InputSetErrorWrapperDTOPMS.builder().uuidToErrorResponseMap(Collections.singletonMap("fqn", null)).build();
+    doThrow(new InvalidInputSetException("merging error", dummyErrorResponse))
+        .when(validateAndMergeHelper)
+        .getMergeInputSetFromPipelineTemplate(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, inputSetReferences, null, null, null);
+    MergeInputSetRequestDTOPMS inputSetRequestDTO = MergeInputSetRequestDTOPMS.builder()
+                                                        .withMergedPipelineYaml(true)
+                                                        .inputSetReferences(inputSetReferences)
+                                                        .build();
+    ResponseDTO<MergeInputSetResponseDTOPMS> responseDTO = inputSetResourcePMS.getMergeInputSetFromPipelineTemplate(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetRequestDTO);
+    MergeInputSetResponseDTOPMS data = responseDTO.getData();
+    assertThat(data.isErrorResponse()).isTrue();
+    assertThat(data.getInputSetErrorWrapper()).isEqualTo(dummyErrorResponse);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testImportInputSetFromGit() {
+    doReturn(inputSetEntity)
+        .when(pmsInputSetService)
+        .importInputSetFromRemote(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, null);
+    ResponseDTO<InputSetImportResponseDTO> inputSetImportResponse = inputSetResourcePMS.importInputSetFromGit(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, null, null);
+    assertThat(inputSetImportResponse.getData().getIdentifier()).isEqualTo(INPUT_SET_ID);
   }
 }
