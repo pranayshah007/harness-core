@@ -30,7 +30,6 @@ import io.harness.delegate.beans.serverless.ServerlessAwsLambdaDeployResult;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaFunction;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaManifestSchema;
 import io.harness.delegate.exception.ServerlessNGException;
-import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.serverless.ServerlessAwsCommandTaskHelper;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
@@ -56,7 +55,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeoutException;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -64,6 +62,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+
 
 @OwnedBy(CDP)
 public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTest {
@@ -344,6 +343,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
     assertThat(serverlessDeployResponse.getServerlessDeployResult()).isEqualTo(serverlessAwsLambdaDeployResult);
     assertThat(serverlessDeployResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
   }
+
   @Test(expected = IOException.class)
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
@@ -392,40 +392,6 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
             serverlessCommandRequest, serverlessDelegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
   }
 
-
-  @Test(expected = TimeoutException.class)
-  @Owner(developers = ALLU_VAMSI)
-  @Category(UnitTests.class)
-  public void deployprepareRollbackExceptionTest() throws Exception {
-    ServerlessCliResponse intiServerlessCliResponse =
-            ServerlessCliResponse.builder().output(output).build();
-
-    doReturn(initLogCallback)
-            .when(serverlessTaskHelperBase)
-            .getLogCallback(
-                    iLogStreamingTaskClient, ServerlessCommandUnitConstants.init.toString(), true, commandUnitsProgress);
-    doReturn(setupDirectoryLogCallback)
-            .when(serverlessTaskHelperBase)
-            .getLogCallback(iLogStreamingTaskClient, ServerlessCommandUnitConstants.setupDirectory.toString(), true,
-                    commandUnitsProgress);
-    doReturn(artifactLogCallback)
-            .when(serverlessTaskHelperBase)
-            .getLogCallback(
-                    iLogStreamingTaskClient, ServerlessCommandUnitConstants.artifact.toString(), true, commandUnitsProgress);
-    doReturn(configureCredsLogCallback)
-            .when(serverlessTaskHelperBase)
-            .getLogCallback(iLogStreamingTaskClient, ServerlessCommandUnitConstants.configureCred.toString(), true,
-                    commandUnitsProgress);
-    doReturn(serverlessAwsLambdaConfig).when(serverlessInfraConfigHelper).createServerlessConfig(serverlessInfraConfig);
-    ServerlessClient serverlessClient = ServerlessClient.client(serverlessDelegateTaskParams.getServerlessClientPath());
-    doThrow(TimeoutException.class)
-            .when(serverlessAwsCommandTaskHelper)
-            .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams,
-                    configureCredsLogCallback, true, timeout * 60000);
-    serverlessAwsLambdaDeployCommandTaskHandler.executeTaskInternal(
-            serverlessCommandRequest, serverlessDelegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
-  }
-
   @Test(expected = NullPointerException.class)
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
@@ -456,8 +422,6 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
             .when(serverlessTaskHelperBase)
             .getLogCallback(
                     iLogStreamingTaskClient, ServerlessCommandUnitConstants.plugin.toString(), true, commandUnitsProgress);
-//    doThrow(IOException.class).when(serverlessAwsCommandTaskHelper).installPlugins(serverlessManifestSchema, serverlessDelegateTaskParams,
-//            pluginLogCallback, serverlessClient, timeout * 60000, serverlessAwsLambdaManifestConfig);
     serverlessAwsLambdaDeployCommandTaskHandler.executeTaskInternal(
             serverlessCommandRequest, serverlessDelegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
   }

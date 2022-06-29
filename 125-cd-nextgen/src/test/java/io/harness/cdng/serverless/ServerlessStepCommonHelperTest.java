@@ -12,17 +12,13 @@ import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
-import static io.harness.steps.StepUtils.prepareTaskRequest;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
@@ -48,7 +44,6 @@ import io.harness.delegate.beans.serverless.ServerlessDeployResult;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.git.TaskStatus;
-import io.harness.delegate.task.serverless.request.ServerlessCommandRequest;
 import io.harness.delegate.task.serverless.request.ServerlessDeployRequest;
 import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
@@ -56,7 +51,6 @@ import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
 import io.harness.delegate.task.serverless.response.ServerlessGitFetchResponse;
-import io.harness.delegate.task.serverless.ServerlessGitFetchFileConfig;
 import io.harness.delegate.task.serverless.response.ServerlessPrepareRollbackDataResponse;
 import io.harness.exception.GeneralException;
 import io.harness.git.model.FetchFilesResult;
@@ -96,7 +90,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -176,7 +169,6 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
     mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
             .thenReturn(TaskRequest.newBuilder().build());
-    ServerlessStepPassThroughData passThroughData = ServerlessStepPassThroughData.builder().build();
 
     TaskChainResponse taskChainResponse = serverlessStepCommonHelper.startChainLink(ambiance, stepElementParameters, serverlessStepHelper);
 
@@ -197,10 +189,10 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void queueServerlessTaskTest() {
     ServerlessDeployRequest serverlessCommandRequest = ServerlessDeployRequest.builder()
-            .accountId("accountId")
-            .commandName("commandName")
-            .timeoutIntervalInMin(10)
-            .manifestContent("content").build();
+                                                      .accountId("accountId")
+                                                      .commandName("commandName")
+                                                      .timeoutIntervalInMin(10)
+                                                      .manifestContent("content").build();
     ServerlessExecutionPassThroughData executionPassThroughData = ServerlessExecutionPassThroughData.builder().build();
     mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
@@ -213,33 +205,6 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
     StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
   }
 
-//  @Test
-//  @Owner(developers = ALLU_VAMSI)
-//  @Category(UnitTests.class)
-//  public void getGitFetchFileTaskResponseTest() {
-//    ServerlessStepPassThroughData passThroughData = ServerlessStepPassThroughData.builder().build();
-//    GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder().build();
-//    ServerlessGitFetchFileConfig serverlessGitFetchFilesConfig = ServerlessGitFetchFileConfig
-//                                                                .builder().gitStoreDelegateConfig(gitStoreDelegateConfig)
-//                                                                .build();
-//    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-//            .thenReturn(TaskRequest.newBuilder().build());
-//    ServerlessStepPassThroughData passThroughData = ServerlessStepPassThroughData.builder().build();
-//
-//    TaskChainResponse taskChainResponse = serverlessStepCommonHelper
-//                           .getGitFetchFileTaskResponse(ambiance,true, stepElementParameters,passThroughData,
-//                                   serverlessGitFetchFilesConfig);
-//
-//    PowerMockito.verifyStatic(StepUtils.class, times(1));
-//    StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
-//  }
-
-//@Test(expected = GeneralException.class)
-//@Owner(developers = ALLU_VAMSI)
-//@Category(UnitTests.class)
-//public void getGitFetchFileTaskResponseTest(){
-//
-//}
   @Test(expected = GeneralException.class)
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
@@ -557,21 +522,6 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
 
   }
 
-
-  @Test
-  @Owner(developers = ALLU_VAMSI)
-  @Category(UnitTests.class)
-  public void handleServerlessPrepareRollbackDataResponseTest1() {
-
-  }
-
-  @Test
-  @Owner(developers = ALLU_VAMSI)
-  @Category(UnitTests.class)
-  public void handleServerlessPrepareRollbackDataResponseTest2() {
-
-  }
-
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
@@ -675,5 +625,17 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
     assertThat(
         serverlessStepCommonHelper.renderManifestContent(ambiance, manifestFileContent, serverlessArtifactConfig))
         .isEqualTo(manifestFileContent);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void getManifestDefaultFileNameServerlessStepUtilsTest() {
+    assertThat(serverlessStepCommonHelper.getManifestDefaultFileName("filePath/serverless.yaml"))
+            .isEqualTo("serverless.yaml");
+    assertThat(serverlessStepCommonHelper.getManifestDefaultFileName("filePath/serverless.yml"))
+            .isEqualTo("serverless.yml");
+    assertThat(serverlessStepCommonHelper.getManifestDefaultFileName("filePath/serverless.json"))
+            .isEqualTo("serverless.json");
   }
 }

@@ -25,14 +25,12 @@ import io.harness.connector.service.git.NGGitServiceImpl;
 import io.harness.connector.task.git.GitDecryptionHelper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesTaskHelper;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
-import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.GitClientV2;
 import io.harness.git.model.AuthInfo;
 import io.harness.git.model.AuthRequest;
@@ -40,7 +38,6 @@ import io.harness.git.model.FetchFilesResult;
 import io.harness.logging.LogCallback;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
 
 import java.io.IOException;
@@ -115,7 +112,8 @@ public class ServerlessGitFetchTaskHelperTest extends CategoryTest {
             .branch("branch").commitId("commitId").connectorName("connector").manifestId("manifest").gitConfigDTO(gitConfigDTO)
             .fetchType(FetchType.BRANCH).paths(new ArrayList<String>(Arrays.asList("path1", "path2"))).optimizedFilesFetch(true).build();
     List<String> filePaths = new ArrayList<String>(Arrays.asList("path1", "path2"));
-    FetchFilesResult fetchFilesResult = serverlessGitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths,"accountId",gitConfigDTO);
+    FetchFilesResult fetchFilesResult = serverlessGitFetchTaskHelper
+            .fetchFileFromRepo(gitStoreDelegateConfig, filePaths,"accountId",gitConfigDTO);
     verify(scmFetchFilesHelper).fetchFilesFromRepoWithScm(gitStoreDelegateConfig, filePaths);
   }
 
@@ -131,8 +129,8 @@ public class ServerlessGitFetchTaskHelperTest extends CategoryTest {
 
     SshSessionConfig sshSessionConfig = SshSessionConfig.Builder.aSshSessionConfig().withAccountId(accountId).build();
     doReturn(sshSessionConfig).when(gitDecryptionHelper).getSSHSessionConfig(any(),any());
-    FetchFilesResult fetchFilesResult = serverlessGitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths,accountId,gitConfigDTO);
-    System.out.println(fetchFilesResult);
+    serverlessGitFetchTaskHelper
+            .fetchFileFromRepo(gitStoreDelegateConfig, filePaths,accountId,gitConfigDTO);
     verify(ngGitService).getAuthRequest(gitConfigDTO, sshSessionConfig);
   }
 

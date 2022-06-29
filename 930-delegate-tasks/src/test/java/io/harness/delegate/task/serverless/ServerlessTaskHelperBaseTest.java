@@ -8,10 +8,7 @@
 package io.harness.delegate.task.serverless;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
-import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
-import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -21,6 +18,7 @@ import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 
+import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.data.structure.UUIDGenerator.*;
 
 import io.harness.CategoryTest;
@@ -30,7 +28,6 @@ import io.harness.artifactory.ArtifactoryNgService;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.service.git.NGGitServiceImpl;
 import io.harness.connector.task.git.GitDecryptionHelper;
 import io.harness.data.structure.UUIDGenerator;
@@ -55,7 +52,6 @@ import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HintException;
-import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.git.GitClientV2;
@@ -65,11 +61,7 @@ import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
@@ -220,74 +212,6 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
             "accountId", logCallback, serverlessDelegateTaskParams);
   }
 
-//  @Test(expected = HintException.class)
-//  @Owner(developers = ALLU_VAMSI)
-//  @Category(UnitTests.class)
-//  public void getManifestFileNamesInLogFormatTest(){
-//
-//  }
-
-
-//  @Test
-//  @Owner(developers = PIYUSH_BHUWALKA)
-//  @Category(UnitTests.class)
-//  public void fetchArtifactTest() throws Exception {
-//    doReturn(artifactoryConfigRequest).when(artifactoryRequestMapper).toArtifactoryRequest(connectorConfigDTO);
-//    Map<String, String> artifactMetadata = new HashMap<>();
-//    artifactMetadata.put(ARTIFACTORY_ARTIFACT_PATH, repositoryName + "/" + ARTIFACTORY_PATH);
-//    artifactMetadata.put(ARTIFACTORY_ARTIFACT_NAME, repositoryName + "/" + ARTIFACTORY_PATH);
-//
-//    String input = "asfd";
-//    InputStream inputStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
-//    String artifactPath = Paths
-//            .get(((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getRepositoryName(),
-//                    ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getArtifactPath())
-//            .toString();
-//
-//    doReturn(inputStream)
-//            .when(artifactoryNgService)
-//            .downloadArtifacts(artifactoryConfigRequest, repositoryName, artifactMetadata, ARTIFACTORY_ARTIFACT_PATH,
-//                    ARTIFACTORY_ARTIFACT_NAME);
-//    serverlessTaskHelperBase.fetchArtifact(serverlessArtifactConfig, logCallback, ARTIFACT_DIRECTORY);
-//    verify(logCallback)
-//            .saveExecutionLog(color(
-//                    format("Downloading %s artifact with identifier: %s", serverlessArtifactConfig.getServerlessArtifactType(),
-//                            ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getIdentifier()),
-//                    White, Bold));
-//    verify(logCallback).saveExecutionLog("Artifactory Artifact Path: " + artifactPath);
-//    verify(logCallback).saveExecutionLog(color("Successfully downloaded artifact..", White, Bold));
-//  }
-
-//  @Test
-//  @Owner(developers = ALLU_VAMSI)
-//  @Category(UnitTests.class)
-//  public void fetchArtifactFailCreateFileTest() throws Exception {
-//    doReturn(artifactoryConfigRequest).when(artifactoryRequestMapper).toArtifactoryRequest(connectorConfigDTO);
-//    Map<String, String> artifactMetadata = new HashMap<>();
-//    String artifactoryDirectory = Paths.get("dir",ARTIFACT_DIR_NAME).toAbsolutePath().toString();
-//    artifactMetadata.put(ARTIFACTORY_ARTIFACT_PATH, repositoryName + "/" + ARTIFACTORY_PATH);
-//    artifactMetadata.put(ARTIFACTORY_ARTIFACT_NAME, repositoryName + "/" + ARTIFACTORY_PATH);
-//    FileIo.createDirectoryIfDoesNotExist(artifactoryDirectory);
-//    waitForDirectoryToBeAccessibleOutOfProcess(artifactoryDirectory, 10);
-////    FileIo.writeUtf8StringToFile(Paths.get(artifactoryDirectory, ARTIFACT_FILE_NAME).toAbsolutePath().toString(),"content");
-//    String artifactFilePath = Paths.get(artifactoryDirectory, ARTIFACT_FILE_NAME).toAbsolutePath().toString();
-//    File artifactFile = new File(artifactFilePath);artifactFile.createNewFile();
-//    String input = "asfd";
-//    InputStream inputStream = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8));
-//    String artifactPath = Paths
-//            .get(((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getRepositoryName(),
-//                    ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getArtifactPath())
-//            .toString();
-//
-//    doReturn(inputStream)
-//            .when(artifactoryNgService)
-//            .downloadArtifacts(artifactoryConfigRequest, repositoryName, artifactMetadata, ARTIFACTORY_ARTIFACT_PATH,
-//                    ARTIFACTORY_ARTIFACT_NAME);
-//    ServerlessArtifactoryArtifactConfig serverlessArtifactoryArtifactConfig =
-//            (ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig;
-//    serverlessTaskHelperBase.fetchArtifactoryArtifact(serverlessArtifactoryArtifactConfig, logCallback, artifactoryDirectory);
-//  }
-
   @Test(expected = HintException.class)
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
@@ -354,7 +278,7 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
   @Test
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
-  public void replaceManifestWithRenderedContentTest() throws IOException {//// Blocker at Paths
+  public void replaceManifestWithRenderedContentTest() throws IOException {
     String workingDir = Paths.get("workingDir",convertBase64UuidToCanonicalForm(generateUuid())).normalize().toAbsolutePath().toString();
     FileIo.createDirectoryIfDoesNotExist(workingDir);
     ServerlessDelegateTaskParams serverlessDelegateTaskParams =

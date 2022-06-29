@@ -137,13 +137,13 @@ public class ServerlessGitFetchTaskTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-//    Reflect.on(serverlessGitFetchTask).set("serverlessGitFetchTaskHelper", serverlessGitFetchTaskHelper);
-//    Reflect.on(serverlessGitFetchTaskHelper).set("gitDecryptionHelper", gitDecryptionHelper);
-//    Reflect.on(serverlessGitFetchTaskHelper).set("gitClientV2", gitClientV2);
-//    Reflect.on(serverlessGitFetchTaskHelper).set("gitFetchFilesTaskHelper", gitFetchFilesTaskHelper);
-//    Reflect.on(serverlessGitFetchTaskHelper).set("scmFetchFilesHelper", scmFetchFilesHelper);
-//    Reflect.on(serverlessGitFetchTaskHelper).set("ngGitService", ngGitService);
-//    Reflect.on(serverlessGitFetchTaskHelper).set("secretDecryptionService", secretDecryptionService);
+    Reflect.on(serverlessGitFetchTask).set("serverlessGitFetchTaskHelper", serverlessGitFetchTaskHelper);
+    Reflect.on(serverlessGitFetchTaskHelper).set("gitDecryptionHelper", gitDecryptionHelper);
+    Reflect.on(serverlessGitFetchTaskHelper).set("gitClientV2", gitClientV2);
+    Reflect.on(serverlessGitFetchTaskHelper).set("gitFetchFilesTaskHelper", gitFetchFilesTaskHelper);
+    Reflect.on(serverlessGitFetchTaskHelper).set("scmFetchFilesHelper", scmFetchFilesHelper);
+    Reflect.on(serverlessGitFetchTaskHelper).set("ngGitService", ngGitService);
+    Reflect.on(serverlessGitFetchTaskHelper).set("secretDecryptionService", secretDecryptionService);
     doReturn(taskProgressClient).when(logStreamingTaskClient).obtainTaskProgressClient();
     doReturn(executorService).when(logStreamingTaskClient).obtainTaskProgressExecutor();
   }
@@ -178,37 +178,6 @@ public class ServerlessGitFetchTaskTest extends CategoryTest {
     ServerlessGitFetchResponse serverlessGitFetchResponse =
             (ServerlessGitFetchResponse) serverlessGitFetchTask.run(taskParameters);
   }
-
-//  @Test
-//  @Owner(developers = ALLU_VAMSI)
-//  @Category(UnitTests.class)
-//  public void fetchManifestFileInPriorityOrderTest() throws IOException {
-//    GitConfigDTO gitConfigDTO = GitConfigDTO.builder().url(url).build();
-//    GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
-//            .branch(branch).commitId("commitId").connectorName("connector").manifestId("manifest").path(path).gitConfigDTO(gitConfigDTO)
-//            .fetchType(FetchType.BRANCH).optimizedFilesFetch(false).build();
-//    ServerlessGitFetchFileConfig serverlessGitFetchFileConfig =
-//            ServerlessGitFetchFileConfig.builder()
-//                    .identifier(identifier)
-//                    .manifestType(manifestType)
-//                    .gitStoreDelegateConfig(gitStoreDelegateConfig)
-//                    .build();
-//    FetchFilesResult fetchFilesResult = FetchFilesResult.builder()
-//            .commitResult(CommitResult.builder().commitId("commitId").accountId(accountId).build()).build();
-//    String combinedPath = path + configOverridePath;
-//    List<String> filePaths = Collections.singletonList(combinedPath);
-//    doReturn(fetchFilesResult).when(serverlessGitFetchTaskHelper).fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
-////    doReturn(fetchFilesResult).when(gitClientV2).fetchFilesByPath(any());
-//    TaskParameters taskParameters = ServerlessGitFetchRequest.builder()
-//            .activityId(activityId)
-//            .accountId(accountId)
-//            .serverlessGitFetchFileConfig(serverlessGitFetchFileConfig)
-//            .shouldOpenLogStream(true)
-//            .closeLogStream(true)
-//            .build();
-//    ServerlessGitFetchResponse serverlessGitFetchResponse =
-//            (ServerlessGitFetchResponse) serverlessGitFetchTask.run(taskParameters);
-//  }
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)

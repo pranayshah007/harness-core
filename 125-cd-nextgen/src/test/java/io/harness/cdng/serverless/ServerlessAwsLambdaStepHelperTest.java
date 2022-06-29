@@ -23,7 +23,6 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
-import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.ServerlessAwsLambdaServerInstanceInfo;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.serverless.ServerlessDeployResult;
@@ -39,7 +38,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.git.model.FetchFilesResult;
-import io.harness.git.model.CommitResult;
 import io.harness.git.model.GitFile;
 
 import java.util.*;
@@ -65,8 +63,6 @@ public class ServerlessAwsLambdaStepHelperTest extends CategoryTest {
                                         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
                                         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
                                         .build();
-
-  @Spy private ServerlessStepUtils serverlessStepUtils;
 
   @Mock private ServerlessStepCommonHelper serverlessStepCommonHelper;
   @Mock private LogCallback mockLogCallback;
@@ -196,49 +192,6 @@ public class ServerlessAwsLambdaStepHelperTest extends CategoryTest {
       assertThat(serverlessAwsLambdaStepHelper.getManifestFileContent(fetchFilesResultMap,manifestOutcome))
               .isEqualTo(manifestFileContent);
   }
-
-  @Test
-  @Owner(developers = ALLU_VAMSI)
-  @Category(UnitTests.class)
-  public void getManifestFileContentIsEmptyFileJsonPathTest(){
-    GitStoreConfig gitStoreConfig = GitStore.builder().build();
-    ManifestOutcome manifestOutcome  = ServerlessAwsLambdaManifestOutcome.builder()
-            .configOverridePath(ParameterField.createValueField(""))
-            .store(gitStoreConfig).identifier("identifier")
-            .build();
-    GitFile gitFile = GitFile.builder().filePath("filePath/serverless.json").fileContent("fileContent").build();
-    List<GitFile> gitFileList = Arrays.asList(gitFile);
-    FetchFilesResult fetchFilesResult = FetchFilesResult.builder().files(gitFileList).build();
-    Map<String, FetchFilesResult> fetchFilesResultMap = new HashMap<String, FetchFilesResult>()
-    {{
-      put("identifier",fetchFilesResult);
-    }};
-    Optional<Pair<String, String>> manifestFileContent = serverlessAwsLambdaStepHelper.getManifestFileContent(fetchFilesResultMap,manifestOutcome);
-    Optional<Pair<String, String>> manifestFileContentExpected = Optional.of(new MutablePair<>("serverless.json", "fileContent"));
-    assertThat(manifestFileContent).isEqualTo(manifestFileContentExpected);
-  }
-
-  @Test
-  @Owner(developers = ALLU_VAMSI)
-  @Category(UnitTests.class)
-  public void getManifestFileContentIsEmptyFileYAMLPathTest() {
-    GitStoreConfig gitStoreConfig = GitStore.builder().build();
-    ManifestOutcome manifestOutcome  = ServerlessAwsLambdaManifestOutcome.builder()
-            .configOverridePath(ParameterField.createValueField(""))
-            .store(gitStoreConfig).identifier("identifier")
-            .build();
-    GitFile gitFile = GitFile.builder().filePath("filePath/serverless.yaml").fileContent("fileContent").build();
-    List<GitFile> gitFileList = Arrays.asList(gitFile);
-    FetchFilesResult fetchFilesResult = FetchFilesResult.builder().files(gitFileList).build();
-    Map<String, FetchFilesResult> fetchFilesResultMap = new HashMap<String, FetchFilesResult>()
-    {{
-      put("identifier",fetchFilesResult);
-    }};
-    Optional<Pair<String, String>> manifestFileContent = serverlessAwsLambdaStepHelper.getManifestFileContent(fetchFilesResultMap,manifestOutcome);
-    Optional<Pair<String, String>> manifestFileContentExpected = Optional.of(new MutablePair<>("serverless.yaml", "fileContent"));
-    assertThat(manifestFileContent).isEqualTo(manifestFileContentExpected);
-  }
-
 
   @Test
   @Owner(developers = ALLU_VAMSI)

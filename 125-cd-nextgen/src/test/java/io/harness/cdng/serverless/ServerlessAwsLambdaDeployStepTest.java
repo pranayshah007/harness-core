@@ -28,7 +28,6 @@ import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
-import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.ServerlessAwsLambdaServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -41,10 +40,8 @@ import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
 import io.harness.delegate.task.serverless.response.ServerlessPrepareRollbackDataResponse;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
-import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -63,10 +60,9 @@ import org.mockito.Mock;
 
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessAwsLambdaDeployStepTest extends AbstractServerlessStepExecutorTestBase {
-  @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
-  @InjectMocks private ServerlessAwsLambdaDeployStep serverlessAwsLambdaDeployStep;
   @Mock private InstanceInfoService instanceInfoService;
-  @Mock private ServerlessStepCommonHelper serverlessStepCommonHelper;
+
+  @InjectMocks private ServerlessAwsLambdaDeployStep serverlessAwsLambdaDeployStep;
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
@@ -286,7 +282,7 @@ public class ServerlessAwsLambdaDeployStepTest extends AbstractServerlessStepExe
             .build();
 
 
-    doReturn(expectedTaskChainResponse).when(serverlessStepCommonHelper).queueServerlessTask(any(), any(), any(), any(), anyBoolean());
+    doReturn(expectedTaskChainResponse).when(serverlessStepHelper).queueServerlessTask(any(), any(), any(), any(), anyBoolean());
     TaskChainResponse taskChainResponse = serverlessAwsLambdaDeployStep.executeServerlessPrepareRollbackTask(manifestOutcome,
             ambiance, stepElementParameters,
              serverlessStepPassThroughData, unitProgressData,
