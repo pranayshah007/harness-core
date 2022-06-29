@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-import javax.ws.rs.DefaultValue;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -50,11 +49,20 @@ public class EnvironmentYamlV2 implements Visitable {
   @Pattern(regexp = NGRegexValidatorConstants.RUNTIME_OR_FIXED_IDENTIFIER_PATTERN)
   private ParameterField<String> environmentRef;
 
+  /*
+  Deploy to all underlying infrastructures (or gitops clusters)
+   */
+  boolean deployToAll;
+
   List<InfraStructureDefinitionYaml> infrastructureDefinitions;
 
   // environmentInputs
-  Map<String, Object> environmentInputs;
-  Map<String, Object> serviceOverrideInputs;
-  @DefaultValue("false") Boolean deployToAll;
+  @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH) Map<String, Object> environmentInputs;
+
+  @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH) Map<String, Object> serviceOverrideInputs;
+
   List<ClusterYaml> gitOpsClusters;
+
+  // For Visitor Framework Impl
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 }

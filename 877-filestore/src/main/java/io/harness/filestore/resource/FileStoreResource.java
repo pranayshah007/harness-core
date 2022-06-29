@@ -25,7 +25,6 @@ import static io.harness.NGResourceFilterConstants.PAGE_KEY;
 import static io.harness.NGResourceFilterConstants.SEARCH_TERM_KEY;
 import static io.harness.NGResourceFilterConstants.SIZE_KEY;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.filestore.FilePermissionConstants.FILE_ACCESS_PERMISSION;
 import static io.harness.filestore.FilePermissionConstants.FILE_DELETE_PERMISSION;
 import static io.harness.filestore.FilePermissionConstants.FILE_EDIT_PERMISSION;
 import static io.harness.filestore.FilePermissionConstants.FILE_VIEW_PERMISSION;
@@ -43,6 +42,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SearchPageParams;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
+import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.ng.beans.PageRequest;
@@ -74,6 +74,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -186,12 +187,11 @@ public class FileStoreResource {
         ApiResponse(responseCode = "default", description = "Download the file with content")
       })
   public Response
-  downloadFile(
+  downloadFile(@Parameter(description = FILE_PARAM_MESSAGE) @PathParam(
+                   IDENTIFIER_KEY) @NotBlank @EntityIdentifier String fileIdentifier,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
-      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = FILE_PARAM_MESSAGE) @PathParam(
-          IDENTIFIER_KEY) @NotBlank @EntityIdentifier String fileIdentifier) {
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, fileIdentifier), FILE_VIEW_PERMISSION);
 
@@ -345,38 +345,11 @@ public class FileStoreResource {
       String identifier, @Parameter(description = "Entity type") @QueryParam(ENTITY_TYPE) EntityType entityType,
       @QueryParam(SEARCH_TERM_KEY) String searchTerm) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(FILE, identifier), FILE_ACCESS_PERMISSION);
+        Resource.of(FILE, identifier), FILE_VIEW_PERMISSION);
 
     return ResponseDTO.newResponse(fileStoreService.listReferencedBy(
         SearchPageParams.builder().page(page).size(size).searchTerm(searchTerm).build(), accountIdentifier,
         orgIdentifier, projectIdentifier, identifier, entityType));
-  }
-
-  @GET
-  @Consumes({"application/json"})
-  @Path("referenced-by-entity-scope")
-  @ApiOperation(value = "Get referenced by entities in scope", nickname = "getReferencedByInScope")
-  @Operation(operationId = "getReferencedByInScope", summary = "Get Referenced by Entities in scope.",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(description = "Returns the list of reference by entities per referenced entity type and scope. ")
-      })
-  public ResponseDTO<Page<EntitySetupUsageDTO>>
-  getReferencedByInScope(@Parameter(description = "Page number of navigation. The default value is 0") @QueryParam(
-                             PAGE_KEY) @DefaultValue("0") int page,
-      @Parameter(description = "Number of entries per page. The default value is 100") @QueryParam(
-          SIZE_KEY) @DefaultValue("100") int size,
-      @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
-      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
-      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = "Entity type") @QueryParam(ENTITY_TYPE) EntityType referredByEntityType) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(FILE, null), FILE_VIEW_PERMISSION);
-
-    return ResponseDTO.newResponse(
-        fileStoreService.listReferencedByInScope(SearchPageParams.builder().page(page).size(size).build(),
-            accountIdentifier, orgIdentifier, projectIdentifier, referredByEntityType));
   }
 
   @GET
@@ -438,5 +411,35 @@ public class FileStoreResource {
 
     return ResponseDTO.newResponse(
         fileStoreService.getCreatedByList(accountIdentifier, orgIdentifier, projectIdentifier));
+  }
+
+  @GET
+  @Path("files/{identifier}")
+  @ApiOperation(value = "Get file", nickname = "getFile")
+  @Operation(operationId = "getFile", summary = "Get File",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Download the file with content")
+      })
+  public ResponseDTO<FileStoreNodeDTO>
+  getFile(@Parameter(description = FILE_PARAM_MESSAGE) @PathParam(
+              IDENTIFIER_KEY) @NotBlank @EntityIdentifier String fileIdentifier,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = "Include content") @QueryParam("includeContent") Boolean includeContent) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(FILE, fileIdentifier), FILE_VIEW_PERMISSION);
+
+    Optional<FileStoreNodeDTO> file =
+        fileStoreService.get(accountIdentifier, orgIdentifier, projectIdentifier, fileIdentifier, includeContent);
+
+    if (file.isPresent()) {
+      return ResponseDTO.newResponse(file.get());
+    } else {
+      throw new IllegalArgumentException(
+          "File or folder with specified identifier, account, org and project could not be found.");
+    }
   }
 }

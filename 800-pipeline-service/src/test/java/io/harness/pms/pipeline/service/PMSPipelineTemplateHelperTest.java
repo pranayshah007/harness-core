@@ -32,6 +32,7 @@ import io.harness.ng.core.template.RefreshRequestDTO;
 import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.ng.core.template.exception.NGTemplateResolveException;
 import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.rule.Owner;
@@ -78,10 +79,13 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testResolveTemplateRefsInPipelineWhenFFIsOff() {
     doReturn(false).when(pmsFeatureFlagHelper).isEnabled(ACCOUNT_ID, FeatureName.NG_TEMPLATES);
-    String resolveTemplateRefsInPipeline =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML)
-            .getMergedPipelineYaml();
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, GIVEN_YAML);
+    String resolveTemplateRefsInPipeline = templateMergeResponseDTO.getMergedPipelineYaml();
+    String resolveTemplateRefsInPipelineWithOPAresponse =
+        templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
     assertThat(resolveTemplateRefsInPipeline).isEqualTo(GIVEN_YAML);
+    assertThat(resolveTemplateRefsInPipelineWithOPAresponse).isEqualTo(GIVEN_YAML);
   }
 
   @Test
@@ -134,7 +138,8 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     Call<ResponseDTO<List<EntityDetailProtoDTO>>> callRequest = mock(Call.class);
     doReturn(callRequest)
         .when(templateResourceClient)
-        .getTemplateReferenceForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, GIVEN_YAML);
+        .getTemplateReferenceForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null,
+            TemplateReferenceRequestDTO.builder().yaml(GIVEN_YAML).build());
     List<EntityDetailProtoDTO> expected =
         Collections.singletonList(EntityDetailProtoDTO.newBuilder().setType(EntityTypeProtoEnum.TEMPLATE).build());
     when(callRequest.execute()).thenReturn(Response.success(ResponseDTO.newResponse(expected)));

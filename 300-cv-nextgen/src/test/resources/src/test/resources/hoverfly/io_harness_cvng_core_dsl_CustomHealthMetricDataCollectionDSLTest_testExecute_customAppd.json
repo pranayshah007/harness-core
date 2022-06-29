@@ -1,0 +1,81 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/controller/rest/applications/cv-app/metric-data"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "harness-test.saas.appdynamics.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "end-time" : [ {
+            "matcher" : "exact",
+            "value" : "1655806860000"
+          } ],
+          "metric-path" : [ {
+            "matcher" : "exact",
+            "value" : "Overall Application Performance|docker-tier|Individual Nodes|*|Errors per Minute"
+          } ],
+          "output" : [ {
+            "matcher" : "exact",
+            "value" : "json"
+          } ],
+          "rollup" : [ {
+            "matcher" : "exact",
+            "value" : "false"
+          } ],
+          "start-time" : [ {
+            "matcher" : "exact",
+            "value" : "1655799660000"
+          } ],
+          "time-range-type" : [ {
+            "matcher" : "exact",
+            "value" : "BETWEEN_TIMES"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "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",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Connection" : [ "keep-alive" ],
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "1785" ],
+          "Content-Type" : [ "application/json;charset=UTF-8" ],
+          "Date" : [ "Wed, 22 Jun 2022 15:10:27 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Server" : [ "AppDynamics" ],
+          "Set-Cookie" : [ "JSESSIONID=bf6f9715c78994f7efce573f1211; Path=/controller; HttpOnly; Secure" ],
+          "X-Content-Type-Options" : [ "nosniff" ],
+          "X-Frame-Options" : [ "SAMEORIGIN" ],
+          "X-Xss-Protection" : [ "1; mode=block" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-06-22T15:27:00Z"
+  }
+}

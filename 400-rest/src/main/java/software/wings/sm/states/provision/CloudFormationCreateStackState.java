@@ -242,69 +242,73 @@ public class CloudFormationCreateStackState extends CloudFormationState {
   private ExecutionResponse buildAndQueueCreateStackTask(ExecutionContextImpl executionContext,
       CloudFormationInfrastructureProvisioner provisioner, AwsConfig awsConfig, String activityId,
       CloudFormationCreateStackRequestBuilder builder) {
-    Map<String, String> infrastructureVariables =
-        infrastructureProvisionerService.extractTextVariables(getVariables(), executionContext);
-    Map<String, String> renderedInfrastructureVariables = infrastructureVariables;
+    try {
+      Map<String, String> infrastructureVariables =
+          infrastructureProvisionerService.extractTextVariables(getVariables(), executionContext);
+      Map<String, String> renderedInfrastructureVariables = infrastructureVariables;
 
-    if (EmptyPredicate.isNotEmpty(infrastructureVariables.entrySet())) {
-      renderedInfrastructureVariables = infrastructureVariables.entrySet().stream().collect(Collectors.toMap(
-          e
-          -> {
-            if (EmptyPredicate.isNotEmpty(e.getKey())) {
-              return executionContext.renderExpression(e.getKey());
-            }
-            return e.getKey();
-          },
-          e -> {
-            if (EmptyPredicate.isNotEmpty(e.getValue())) {
-              return executionContext.renderExpression(e.getValue());
-            }
-            return e.getValue();
-          }));
+      if (EmptyPredicate.isNotEmpty(infrastructureVariables.entrySet())) {
+        renderedInfrastructureVariables = infrastructureVariables.entrySet().stream().collect(Collectors.toMap(
+            e
+            -> {
+              if (EmptyPredicate.isNotEmpty(e.getKey())) {
+                return executionContext.renderExpression(e.getKey());
+              }
+              return e.getKey();
+            },
+            e -> {
+              if (EmptyPredicate.isNotEmpty(e.getValue())) {
+                return executionContext.renderExpression(e.getValue());
+              }
+              return e.getValue();
+            }));
+      }
+
+      Map<String, EncryptedDataDetail> encryptedInfrastructureVariables =
+          infrastructureProvisionerService.extractEncryptedTextVariables(
+              getVariables(), executionContext.getAppId(), executionContext.getWorkflowExecutionId());
+
+      Map<String, EncryptedDataDetail> renderedEncryptedInfrastructureVariables = encryptedInfrastructureVariables;
+      if (EmptyPredicate.isNotEmpty(encryptedInfrastructureVariables.entrySet())) {
+        renderedEncryptedInfrastructureVariables =
+            encryptedInfrastructureVariables.entrySet().stream().collect(Collectors.toMap(e -> {
+              if (EmptyPredicate.isNotEmpty(e.getKey())) {
+                return executionContext.renderExpression(e.getKey());
+              }
+              return e.getKey();
+            }, e -> e.getValue()));
+      }
+
+      builder.stackNameSuffix(getStackNameSuffix(executionContext, provisioner.getUuid()))
+          .customStackName(useCustomStackName ? executionContext.renderExpression(customStackName) : StringUtils.EMPTY)
+          .commandType(CloudFormationCommandType.CREATE_STACK)
+          .accountId(executionContext.getApp().getAccountId())
+          .appId(executionContext.getApp().getUuid())
+          .activityId(activityId)
+          .commandName(mainCommandUnit())
+          .variables(renderedInfrastructureVariables)
+          .encryptedVariables(renderedEncryptedInfrastructureVariables)
+          .awsConfig(awsConfig)
+          .skipWaitForResources(
+              featureFlagService.isEnabled(CLOUDFORMATION_SKIP_WAIT_FOR_RESOURCES, executionContext.getAccountId()))
+          .deploy(featureFlagService.isEnabled(CLOUDFORMATION_CHANGE_SET, executionContext.getAccountId()));
+
+      CloudFormationCreateStackRequest request = builder.build();
+      setTimeOutOnRequest(request);
+      DelegateTask delegateTask = getCreateStackDelegateTask(executionContext, awsConfig, activityId, request);
+
+      String delegateTaskId = delegateService.queueTask(delegateTask);
+      appendDelegateTaskDetails(executionContext, delegateTask);
+
+      return ExecutionResponse.builder()
+          .async(true)
+          .correlationIds(Collections.singletonList(activityId))
+          .delegateTaskId(delegateTaskId)
+          .stateExecutionData(ScriptStateExecutionData.builder().activityId(activityId).build())
+          .build();
+    } catch (Exception e) {
+      return ExecutionResponse.builder().executionStatus(ExecutionStatus.FAILED).errorMessage(e.getMessage()).build();
     }
-
-    Map<String, EncryptedDataDetail> encryptedInfrastructureVariables =
-        infrastructureProvisionerService.extractEncryptedTextVariables(
-            getVariables(), executionContext.getAppId(), executionContext.getWorkflowExecutionId());
-
-    Map<String, EncryptedDataDetail> renderedEncryptedInfrastructureVariables = encryptedInfrastructureVariables;
-    if (EmptyPredicate.isNotEmpty(encryptedInfrastructureVariables.entrySet())) {
-      renderedEncryptedInfrastructureVariables =
-          encryptedInfrastructureVariables.entrySet().stream().collect(Collectors.toMap(e -> {
-            if (EmptyPredicate.isNotEmpty(e.getKey())) {
-              return executionContext.renderExpression(e.getKey());
-            }
-            return e.getKey();
-          }, e -> e.getValue()));
-    }
-
-    builder.stackNameSuffix(getStackNameSuffix(executionContext, provisioner.getUuid()))
-        .customStackName(useCustomStackName ? executionContext.renderExpression(customStackName) : StringUtils.EMPTY)
-        .commandType(CloudFormationCommandType.CREATE_STACK)
-        .accountId(executionContext.getApp().getAccountId())
-        .appId(executionContext.getApp().getUuid())
-        .activityId(activityId)
-        .commandName(mainCommandUnit())
-        .variables(renderedInfrastructureVariables)
-        .encryptedVariables(renderedEncryptedInfrastructureVariables)
-        .awsConfig(awsConfig)
-        .skipWaitForResources(
-            featureFlagService.isEnabled(CLOUDFORMATION_SKIP_WAIT_FOR_RESOURCES, executionContext.getAccountId()))
-        .deploy(featureFlagService.isEnabled(CLOUDFORMATION_CHANGE_SET, executionContext.getAccountId()));
-
-    CloudFormationCreateStackRequest request = builder.build();
-    setTimeOutOnRequest(request);
-    DelegateTask delegateTask = getCreateStackDelegateTask(executionContext, awsConfig, activityId, request);
-
-    String delegateTaskId = delegateService.queueTask(delegateTask);
-    appendDelegateTaskDetails(executionContext, delegateTask);
-
-    return ExecutionResponse.builder()
-        .async(true)
-        .correlationIds(Collections.singletonList(activityId))
-        .delegateTaskId(delegateTaskId)
-        .stateExecutionData(ScriptStateExecutionData.builder().activityId(activityId).build())
-        .build();
   }
 
   private DelegateTask getCreateStackDelegateTask(ExecutionContextImpl executionContext, AwsConfig awsConfig,
@@ -553,7 +557,10 @@ public class CloudFormationCreateStackState extends CloudFormationState {
 
     if (ExecutionStatus.FAILED == executionStatus) {
       activityService.updateStatus(activityId, appId, executionStatus);
-      return ExecutionResponse.builder().executionStatus(ExecutionStatus.FAILED).build();
+      return ExecutionResponse.builder()
+          .executionStatus(ExecutionStatus.FAILED)
+          .errorMessage(executionResponse.getErrorMessage())
+          .build();
     }
 
     GitFetchFilesFromMultipleRepoResult gitCommandResult =
@@ -606,7 +613,10 @@ public class CloudFormationCreateStackState extends CloudFormationState {
 
     if (ExecutionStatus.FAILED == executionStatus) {
       activityService.updateStatus(activityId, appId, executionStatus);
-      return ExecutionResponse.builder().executionStatus(ExecutionStatus.FAILED).build();
+      return ExecutionResponse.builder()
+          .executionStatus(ExecutionStatus.FAILED)
+          .errorMessage(executionResponse.getErrorMessage())
+          .build();
     } else {
       setParametersFilePaths(
           getParametersFilePaths().stream().map(context::renderExpression).collect(Collectors.toList()));

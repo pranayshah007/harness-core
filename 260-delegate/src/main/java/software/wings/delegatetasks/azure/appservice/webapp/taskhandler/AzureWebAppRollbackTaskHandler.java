@@ -230,7 +230,7 @@ public class AzureWebAppRollbackTaskHandler extends AbstractAzureWebAppTaskHandl
       ILogStreamingTaskClient logStreamingTaskClient) {
     AzureAppServicePreDeploymentData preDeploymentData = rollbackParameters.getPreDeploymentData();
     return AzureAppServiceDockerDeploymentContext.builder()
-        .logStreamingTaskClient(logStreamingTaskClient)
+        .logCallbackProvider(logCallbackProviderFactory.createCg(logStreamingTaskClient))
         .appSettingsToAdd(AzureAppServiceConfigurationDTOMapper.getAzureAppServiceAppSettings(
             preDeploymentData.getAppSettingsToAdd()))
         .appSettingsToRemove(AzureAppServiceConfigurationDTOMapper.getAzureAppServiceAppSettings(
@@ -259,7 +259,7 @@ public class AzureWebAppRollbackTaskHandler extends AbstractAzureWebAppTaskHandl
 
     AzureAppServicePreDeploymentData preDeploymentData = rollbackParameters.getPreDeploymentData();
     return AzureAppServicePackageDeploymentContext.builder()
-        .logStreamingTaskClient(logStreamingTaskClient)
+        .logCallbackProvider(logCallbackProviderFactory.createCg(logStreamingTaskClient))
         .appSettingsToAdd(AzureAppServiceConfigurationDTOMapper.getAzureAppServiceAppSettings(
             preDeploymentData.getAppSettingsToAdd()))
         .appSettingsToRemove(AzureAppServiceConfigurationDTOMapper.getAzureAppServiceAppSettings(
@@ -282,7 +282,7 @@ public class AzureWebAppRollbackTaskHandler extends AbstractAzureWebAppTaskHandl
     double trafficWeight = preDeploymentData.getTrafficWeight();
     String slotName = preDeploymentData.getSlotName();
     azureAppServiceDeploymentService.rerouteProductionSlotTraffic(
-        azureWebClientContext, slotName, trafficWeight, logStreamingTaskClient);
+        azureWebClientContext, slotName, trafficWeight, logCallbackProviderFactory.createCg(logStreamingTaskClient));
   }
 
   private void markCommandUnitAsDone(

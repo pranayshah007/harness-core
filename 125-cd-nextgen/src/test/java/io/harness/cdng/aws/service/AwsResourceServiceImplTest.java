@@ -9,6 +9,7 @@ package io.harness.cdng.aws.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -28,6 +29,7 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.connector.awsconnector.AwsCFTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsIAMRolesResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.exception.AwsCFException;
 import io.harness.exception.AwsIAMRolesException;
@@ -38,7 +40,10 @@ import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.service.impl.aws.model.AwsCFTemplateParamsData;
+import software.wings.service.impl.aws.model.AwsEC2Instance;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -115,7 +120,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
     GitStoreDelegateConfig mockGitStoreDelegateConfig = GitStoreDelegateConfig.builder().build();
     doReturn(mockGitStoreDelegateConfig)
         .when(gitHelper)
-        .getGitStoreDelegateConfig(any(), any(), any(), any(), any(), anyString());
+        .getGitStoreDelegateConfig(any(), any(), any(), any(), any(), any(), anyString());
     List<AwsCFTemplateParamsData> response = new LinkedList<>();
     response.add(AwsCFTemplateParamsData.builder().paramKey("param1").paramType("value1").build());
     response.add(AwsCFTemplateParamsData.builder().paramKey("param2").paramType("value2").build());
@@ -127,7 +132,8 @@ public class AwsResourceServiceImplTest extends CategoryTest {
     doReturn(mockAwsCFTaskResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
     IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
-    service.getCFparametersKeys("s3", "bar", true, "far", "cat", "baz", mockIdentifierRef, "quux", "corge");
+    service.getCFparametersKeys(
+        "s3", "bar", true, "far", null, "cat", "baz", mockIdentifierRef, "quux", "corge", "abc", "efg", "hij");
     assertThat(mockAwsCFTaskResponse.getListOfParams().size()).isEqualTo(2);
   }
 
@@ -146,7 +152,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
     GitStoreDelegateConfig mockGitStoreDelegateConfig = GitStoreDelegateConfig.builder().build();
     doReturn(mockGitStoreDelegateConfig)
         .when(gitHelper)
-        .getGitStoreDelegateConfig(any(), any(), any(), any(), any(), anyString());
+        .getGitStoreDelegateConfig(any(), any(), any(), any(), any(), any(), anyString());
     List<AwsCFTemplateParamsData> response = new LinkedList<>();
     response.add(AwsCFTemplateParamsData.builder().paramKey("param1").paramType("value1").build());
     response.add(AwsCFTemplateParamsData.builder().paramKey("param2").paramType("value2").build());
@@ -158,7 +164,70 @@ public class AwsResourceServiceImplTest extends CategoryTest {
     doReturn(mockAwsCFTaskResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
     IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
-    service.getCFparametersKeys("s3", "bar", true, "far", "cat", "baz", mockIdentifierRef, "quux", "corge");
+    service.getCFparametersKeys(
+        "s3", "bar", true, "far", null, "zar", "baz", mockIdentifierRef, "quux", "corge", "abc", "efg", "hij");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testAwsFilterHosts() {
+    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
+    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    BaseNGAccess mockAccess = BaseNGAccess.builder().build();
+    doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
+    List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
+    doReturn(encryptedDataDetails).when(serviceHelper).getAwsEncryptionDetails(any(), any());
+    ConnectorInfoDTO mockConnectorInfoDTO = mock(ConnectorInfoDTO.class);
+    doReturn(mockConnectorInfoDTO).when(gitHelper).getConnectorInfoDTO(any(), any());
+
+    List<AwsEC2Instance> instances = Arrays.asList(AwsEC2Instance.builder().build());
+
+    AwsListEC2InstancesTaskResponse mockResponse = AwsListEC2InstancesTaskResponse.builder()
+                                                       .instances(instances)
+                                                       .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                       .build();
+
+    doReturn(mockResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
+    IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
+
+    List<String> vpcIds = Collections.emptyList();
+    Map<String, String> tags = Collections.emptyMap();
+    String autoScalingGroupName = null;
+
+    service.filterHosts(mockIdentifierRef, true, "region", vpcIds, tags, autoScalingGroupName);
+    assertThat(mockResponse.getInstances().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testAwsFilterHostsASG() {
+    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
+    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    BaseNGAccess mockAccess = BaseNGAccess.builder().build();
+    doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
+    List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
+    doReturn(encryptedDataDetails).when(serviceHelper).getAwsEncryptionDetails(any(), any());
+    ConnectorInfoDTO mockConnectorInfoDTO = mock(ConnectorInfoDTO.class);
+    doReturn(mockConnectorInfoDTO).when(gitHelper).getConnectorInfoDTO(any(), any());
+
+    List<AwsEC2Instance> instances = Arrays.asList(AwsEC2Instance.builder().build());
+
+    AwsListEC2InstancesTaskResponse mockResponse = AwsListEC2InstancesTaskResponse.builder()
+                                                       .instances(instances)
+                                                       .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                       .build();
+
+    doReturn(mockResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
+    IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
+
+    List<String> vpcIds = null;
+    Map<String, String> tags = null;
+    String autoScalingGroupName = "autoScalingGroupName";
+
+    service.filterHosts(mockIdentifierRef, true, "region", vpcIds, tags, autoScalingGroupName);
+    assertThat(mockResponse.getInstances().size()).isEqualTo(1);
   }
 
   @Test()
@@ -199,7 +268,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
     GitStoreDelegateConfig mockGitStoreDelegateConfig = GitStoreDelegateConfig.builder().build();
     doReturn(mockGitStoreDelegateConfig)
         .when(gitHelper)
-        .getGitStoreDelegateConfig(any(), any(), any(), any(), any(), anyString());
+        .getGitStoreDelegateConfig(any(), any(), any(), any(), any(), any(), anyString());
     List<AwsCFTemplateParamsData> response = new LinkedList<>();
     response.add(AwsCFTemplateParamsData.builder().paramKey("param1").paramType("value1").build());
     response.add(AwsCFTemplateParamsData.builder().paramKey("param2").paramType("value2").build());
@@ -211,23 +280,28 @@ public class AwsResourceServiceImplTest extends CategoryTest {
     doReturn(mockAwsCFTaskResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
     IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
-    assertThatThrownBy(
-        () -> service.getCFparametersKeys("s3", "bar", true, "far", "cat", "baz", mockIdentifierRef, "", "corge"))
+    assertThatThrownBy(()
+                           -> service.getCFparametersKeys("s3", "bar", true, "far", null, "cat", "baz",
+                               mockIdentifierRef, "", "corge", "abc", "efg", "hij"))
         .isInstanceOf(InvalidRequestException.class);
 
-    assertThatThrownBy(
-        () -> service.getCFparametersKeys("git", "bar", true, "far", "cat", "baz", mockIdentifierRef, "", ""))
+    assertThatThrownBy(()
+                           -> service.getCFparametersKeys("git", "bar", true, "far", null, "cat", "baz",
+                               mockIdentifierRef, "", "", "abc", "efg", "hij"))
         .isInstanceOf(InvalidRequestException.class);
 
-    assertThatThrownBy(() -> service.getCFparametersKeys("", "", true, "", "", "", mockIdentifierRef, "", ""))
+    assertThatThrownBy(()
+                           -> service.getCFparametersKeys(
+                               "", "", true, "", null, "", "", mockIdentifierRef, "", "", "abc", "efg", "hij"))
         .isInstanceOf(InvalidRequestException.class);
     AwsCFTaskResponse mockAwsCFTaskResponseFailed = AwsCFTaskResponse.builder()
                                                         .listOfParams(response)
                                                         .commandExecutionStatus(CommandExecutionStatus.FAILURE)
                                                         .build();
     doReturn(mockAwsCFTaskResponseFailed).when(serviceHelper).getResponseData(any(), any(), anyString());
-    assertThatThrownBy(
-        () -> service.getCFparametersKeys("s3", "bar", true, "far", "cat", "baz", mockIdentifierRef, "data", "corge"))
+    assertThatThrownBy(()
+                           -> service.getCFparametersKeys("s3", "bar", true, "far", null, "cat", "baz",
+                               mockIdentifierRef, "data", "corge", "abc", "efg", "hij"))
         .isInstanceOf(AwsCFException.class);
   }
 }

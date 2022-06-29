@@ -7,6 +7,7 @@
 
 package io.harness.ccm;
 
+import static io.harness.AuthorizationServiceHeader.BATCH_PROCESSING;
 import static io.harness.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
@@ -267,6 +268,7 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
   private void registerInternalApiAuthFilter(CENextGenConfiguration configuration, Environment environment) {
     Map<String, String> serviceToSecretMapping = new HashMap<>();
     serviceToSecretMapping.put(DEFAULT.getServiceId(), configuration.getNgManagerServiceSecret());
+    serviceToSecretMapping.put(BATCH_PROCESSING.getServiceId(), configuration.getNgManagerServiceSecret());
 
     environment.jersey().register(
         new InternalApiAuthFilter(getAuthFilterPredicate(InternalApi.class), null, serviceToSecretMapping));

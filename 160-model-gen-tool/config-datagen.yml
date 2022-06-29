@@ -216,6 +216,7 @@ cdnConfig:
 
 fileStorageMode: MONGO
 clusterName: ""
+delegateMtlsSubdomain: "delegate.local.harness.io"
 
 ngManagerServiceHttpClientConfig:
   baseUrl: http://localhost:7457/

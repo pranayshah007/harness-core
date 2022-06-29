@@ -8,15 +8,19 @@
 package io.harness.cvng.core.services.api;
 
 import io.harness.cvng.beans.SplunkSavedSearch;
+import io.harness.cvng.core.beans.TimeSeriesSampleDTO;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.SortedSet;
 
 public interface SplunkService extends DataSourceConnectivityChecker {
   List<SplunkSavedSearch> getSavedSearches(
       String accountId, String orgIdentifier, String projectIdentifier, String connectorIdentifier, String requestGuid);
 
   List<LinkedHashMap> getSampleData(String accountId, String orgIdentifier, String projectIdentifier,
+      String connectorIdentifier, String query, String requestGuid);
+  SortedSet<TimeSeriesSampleDTO> getMetricSampleData(String accountId, String orgIdentifier, String projectIdentifier,
       String connectorIdentifier, String query, String requestGuid);
 
   List<LinkedHashMap> getLatestHistogram(String accountId, String orgIdentifier, String projectIdentifier,

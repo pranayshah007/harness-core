@@ -8,6 +8,7 @@
 package io.harness.cdng.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -83,6 +84,7 @@ import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.helm.HelmSubCommandType;
 import io.harness.k8s.model.HelmVersion;
+import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -131,9 +133,6 @@ import org.hibernate.validator.constraints.NotEmpty;
 @OwnedBy(CDP)
 @Singleton
 public class K8sStepHelper extends CDStepHelper {
-  public static final Set<String> K8S_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(
-      ManifestType.K8Manifest, ManifestType.HelmChart, ManifestType.Kustomize, ManifestType.OpenshiftTemplate);
-
   private static final Set<String> VALUES_YAML_SUPPORTED_MANIFEST_TYPES =
       ImmutableSet.of(ManifestType.K8Manifest, ManifestType.HelmChart);
 
@@ -219,7 +218,9 @@ public class K8sStepHelper extends CDStepHelper {
     String taskName = TaskType.K8S_COMMAND_TASK_NG.getDisplayName() + " : " + k8sDeployRequest.getCommandName();
     K8sSpecParameters k8SSpecParameters = (K8sSpecParameters) stepElementParameters.getSpec();
     final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        k8SSpecParameters.getCommandUnits(), taskName,
+        k8SSpecParameters.getCommandUnits(cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.PRUNE_KUBERNETES_RESOURCES)),
+        taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(k8SSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
@@ -552,7 +553,9 @@ public class K8sStepHelper extends CDStepHelper {
     String taskName = TaskType.HELM_VALUES_FETCH_NG.getDisplayName();
     K8sSpecParameters k8SSpecParameters = (K8sSpecParameters) stepElementParameters.getSpec();
     final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        k8SSpecParameters.getCommandUnits(), taskName,
+        k8SSpecParameters.getCommandUnits(cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.PRUNE_KUBERNETES_RESOURCES)),
+        taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(k8SSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
 
@@ -589,7 +592,9 @@ public class K8sStepHelper extends CDStepHelper {
     String taskName = TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName();
     K8sSpecParameters k8SSpecParameters = (K8sSpecParameters) stepElementParameters.getSpec();
     final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        k8SSpecParameters.getCommandUnits(), taskName,
+        k8SSpecParameters.getCommandUnits(cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.PRUNE_KUBERNETES_RESOURCES)),
+        taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(k8SSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
 
@@ -984,16 +989,6 @@ public class K8sStepHelper extends CDStepHelper {
     }
   }
 
-  public InfrastructureOutcome getInfrastructureOutcome(Ambiance ambiance) {
-    OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-    if (!optionalOutcome.isFound()) {
-      throw new InvalidRequestException(MISSING_INFRASTRUCTURE_ERROR, USER);
-    }
-
-    return (InfrastructureOutcome) optionalOutcome.getOutcome();
-  }
-
   public StepResponse handleTaskException(
       Ambiance ambiance, K8sExecutionPassThroughData executionPassThroughData, Exception e) throws Exception {
     // Trying to figure out if exception is coming from k8s task or it is an exception from delegate service.
@@ -1037,5 +1032,13 @@ public class K8sStepHelper extends CDStepHelper {
         valuesFileContents.addAll(baseValuesFileContent);
       }
     }
+  }
+
+  public List<KubernetesResourceId> getPrunedResourcesIds(
+      String accountId, List<KubernetesResourceId> prunedResourceIds) {
+    if (isPruningEnabled(accountId)) {
+      return prunedResourceIds == null ? Collections.emptyList() : prunedResourceIds;
+    }
+    return Collections.emptyList();
   }
 }

@@ -1,0 +1,6 @@
+shell: Bash
+onDelegate: true
+source:
+  type: Inline
+  spec:
+    script: echo hi

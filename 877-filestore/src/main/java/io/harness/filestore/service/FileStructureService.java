@@ -9,6 +9,9 @@ package io.harness.filestore.service;
 
 import io.harness.beans.Scope;
 import io.harness.filestore.dto.node.FolderNodeDTO;
+import io.harness.filestore.entities.NGFile;
+
+import java.util.List;
 
 public interface FileStructureService {
   /**
@@ -27,4 +30,20 @@ public interface FileStructureService {
    * @return file content
    */
   String getFileContent(String fileUuid);
+
+  /**
+   * Lists folders by path
+   *
+   * @param folder for getting its children
+   * @return list of ng files
+   */
+  List<NGFile> listFolderChildrenByPath(NGFile folder);
+
+  /**
+   * Lists folder children FQNs
+   *
+   * @param folder folder for which we are getting FQNs
+   * @return List of FQNs
+   */
+  List<String> listFolderChildrenFQNs(NGFile folder);
 }

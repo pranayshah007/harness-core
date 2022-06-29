@@ -8,18 +8,27 @@
 package io.harness.cdng.azure;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.acr.mappers.AcrResourceMapper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.harness.HarnessStoreFile;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.common.NGTaskType;
+import io.harness.common.ParameterRuntimeFiledHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.connector.utils.ConnectorUtils;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.azure.AcrResponseDTO;
@@ -37,16 +46,22 @@ import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
+import io.harness.encryption.Scope;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.filestore.dto.node.FileStoreNodeDTO;
+import io.harness.filestore.service.FileStoreService;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 
+import io.harness.utils.IdentifierRefHelper;
 import software.wings.beans.TaskType;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -68,6 +83,7 @@ public class AzureHelperService {
   @Inject @Named(DEFAULT_CONNECTOR_SERVICE) private ConnectorService connectorService;
   @Inject private SecretManagerClientService secretManagerClientService;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Inject private FileStoreService fileStoreService;
   @VisibleForTesting static final int defaultTimeoutInSecs = 30;
 
   public AzureConnectorDTO getConnector(IdentifierRef azureConnectorRef) {
@@ -201,6 +217,16 @@ public class AzureHelperService {
     return AcrResourceMapper.toAcrResponse(acrArtifactDelegateResponses);
   }
 
+  public void validateSettingsStoreReferences(StoreConfigWrapper storeConfigWrapper, Ambiance ambiance, String entityType) {
+    StoreConfig storeConfig = storeConfigWrapper.getSpec();
+    String storeKind = storeConfig.getKind();
+    if (HARNESS_STORE_TYPE.equals(storeKind)) {
+      validateSettingsFileRefs((HarnessStore) storeConfig, ambiance, entityType);
+    } else {
+      validateSettingsConnectorByRef(storeConfig, ambiance, entityType);
+    }
+  }
+
   private LinkedHashMap<String, String> createLogStreamingAbstractions(BaseNGAccess ngAccess, Ambiance ambiance) {
     LinkedHashMap<String, String> logStreamingAbstractions = new LinkedHashMap<>();
     logStreamingAbstractions.put(SetupAbstractionKeys.accountId, ngAccess.getAccountIdentifier());
@@ -216,5 +242,73 @@ public class AzureHelperService {
       }
     }
     return logStreamingAbstractions;
+  }
+
+  private void validateSettingsFileRefs(HarnessStore harnessStore, Ambiance ambiance, String entityType) {
+    if (harnessStore.getFiles().isExpression()) {
+      return;
+    }
+
+    List<HarnessStoreFile> fileReferences = harnessStore.getFiles().getValue();
+    if (isEmpty(fileReferences)) {
+      throw new InvalidRequestException(
+              format("Cannot find any file for %s, store kind: %s", entityType, harnessStore.getKind()));
+    }
+    if (fileReferences.size() > 1) {
+      throw new InvalidRequestException(
+              format("Only one file should be provided for %s, store kind: %s", entityType, harnessStore.getKind()));
+    }
+
+    validateSettingsFileByPath(harnessStore, ambiance, harnessStore.getFiles().getValue().get(0), entityType);
+  }
+
+  private void validateSettingsFileByPath(HarnessStore harnessStore, Ambiance ambiance, HarnessStoreFile file, String entityType) {
+    if (ParameterField.isNull(file.getPath())) {
+      throw new InvalidRequestException(
+              format("File path not found for one for %s, store kind: %s", entityType, harnessStore.getKind()));
+    }
+
+    if (file.getPath().isExpression()) {
+      return;
+    }
+
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    Scope scope =
+            ParameterRuntimeFiledHelper.getScopeParameterFieldFinalValue(file.getScope())
+                    .orElseThrow(() -> new InvalidRequestException("Config file scope cannot be null or empty"));
+    io.harness.beans.Scope fileScope = io.harness.beans.Scope.of(
+            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), scope);
+
+    Optional<FileStoreNodeDTO> fileNode = fileStoreService.getByPath(fileScope.getAccountIdentifier(),
+            fileScope.getOrgIdentifier(), fileScope.getProjectIdentifier(), file.getPath().getValue(), false);
+
+    if (!fileNode.isPresent()) {
+      throw new InvalidRequestException(
+              format("%s file not found in File Store with ref : [%s]", entityType, file.getPath().getValue()));
+    }
+  }
+
+  private void validateSettingsConnectorByRef(StoreConfig storeConfig, Ambiance ambiance, String entityType) {
+    if (ParameterField.isNull(storeConfig.getConnectorReference())) {
+      throw new InvalidRequestException(
+              format("Connector ref field not present in %S, store kind: %s ", entityType, storeConfig.getKind()));
+    }
+
+    if (storeConfig.getConnectorReference().isExpression()) {
+      return;
+    }
+
+    String connectorIdentifierRef = storeConfig.getConnectorReference().getValue();
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(connectorIdentifierRef,
+            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+
+    Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(connectorRef.getAccountIdentifier(),
+            connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier(), connectorRef.getIdentifier());
+    if (!connectorDTO.isPresent()) {
+      throw new InvalidRequestException(format("Connector not found with identifier: [%s]", connectorIdentifierRef));
+    }
+
+    ConnectorUtils.checkForConnectorValidityOrThrow(connectorDTO.get());
   }
 }

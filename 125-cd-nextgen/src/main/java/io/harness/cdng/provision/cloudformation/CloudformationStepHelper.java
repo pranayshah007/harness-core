@@ -243,11 +243,13 @@ public class CloudformationStepHelper {
       Ambiance ambiance, UnitProgressData unitProgressData, Exception e) {
     return TaskChainResponse.builder()
         .chainEnd(true)
-        .passThroughData(StepExceptionPassThroughData.builder()
-                             .unitProgressData(cdStepHelper.completeUnitProgressData(
-                                 unitProgressData, ambiance, ExceptionUtils.getMessage(e)))
-                             .errorMessage(e.getMessage())
-                             .build())
+        .passThroughData(
+            StepExceptionPassThroughData.builder()
+                .unitProgressData(
+                    cdStepHelper.completeUnitProgressData(unitProgressData, ambiance, ExceptionUtils.getMessage(e)))
+                .errorMessage(e.getCause() != null ? String.format("%s: %s", e.getMessage(), e.getCause().getMessage())
+                                                   : e.getMessage())
+                .build())
         .build();
   }
 

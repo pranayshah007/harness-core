@@ -49,7 +49,7 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   boolean delete(ProjectParams projectParams, String identifier);
   List<MonitoredServiceResponse> get(ProjectParams projectParams, Set<String> identifier);
   MonitoredServiceResponse get(ProjectParams projectParams, String identifier);
-  @Deprecated MonitoredServiceResponse get(ServiceEnvironmentParams serviceEnvironmentParams);
+  MonitoredServiceResponse getApplicationMonitoredServiceResponse(ServiceEnvironmentParams serviceEnvironmentParams);
   PageResponse<MonitoredServiceResponse> getList(ProjectParams projectParams, List<String> environmentIdentifiers,
       Integer offset, Integer pageSize, String filter);
   List<MonitoredServiceWithHealthSources> getAllWithTimeSeriesHealthSources(ProjectParams projectParams);
@@ -68,6 +68,7 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
 
   PageResponse<MonitoredServiceListItemDTO> list(ProjectParams projectParams, String environmentIdentifiers,
       Integer offset, Integer pageSize, String filter, boolean servicesAtRiskFilter);
+
   List<EnvironmentResponse> listEnvironments(String accountId, String orgIdentifier, String projectIdentifier);
   MonitoredServiceResponse createDefault(
       ProjectParams projectParams, String serviceIdentifier, String environmentIdentifier);
@@ -108,4 +109,5 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   PageResponse<NotificationRuleResponse> getNotificationRules(
       ProjectParams projectParams, String monitoredServiceIdentifier, PageParams pageParams);
   void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);
+  long countUniqueEnabledServices(String accountId);
 }

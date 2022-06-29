@@ -11,7 +11,6 @@ import static io.harness.AuthorizationServiceHeader.CI_MANAGER;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 
 import io.harness.AccessControlClientModule;
-import io.harness.CIExecutionServiceModule;
 import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -20,6 +19,20 @@ import io.harness.app.intfc.CIYamlSchemaService;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
+import io.harness.ci.CIExecutionServiceModule;
+import io.harness.ci.buildstate.SecretDecryptorViaNg;
+import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.ci.ff.impl.CIFeatureFlagServiceImpl;
+import io.harness.ci.logserviceclient.CILogServiceClientModule;
+import io.harness.ci.tiserviceclient.TIServiceClientModule;
+import io.harness.cistatus.service.GithubService;
+import io.harness.cistatus.service.GithubServiceImpl;
+import io.harness.cistatus.service.azurerepo.AzureRepoService;
+import io.harness.cistatus.service.azurerepo.AzureRepoServiceImpl;
+import io.harness.cistatus.service.bitbucket.BitbucketService;
+import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
+import io.harness.cistatus.service.gitlab.GitlabService;
+import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.core.ci.services.BuildNumberService;
@@ -28,24 +41,24 @@ import io.harness.core.ci.services.CIOverviewDashboardService;
 import io.harness.core.ci.services.CIOverviewDashboardServiceImpl;
 import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
-import io.harness.ff.CIFeatureFlagService;
-import io.harness.ff.impl.CIFeatureFlagServiceImpl;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.client.AbstractManagerGrpcClientModule;
 import io.harness.grpc.client.ManagerGrpcClientModule;
+import io.harness.impl.scm.ScmServiceClientImpl;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
-import io.harness.logserviceclient.CILogServiceClientModule;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
 import io.harness.opaclient.OpaClientModule;
-import io.harness.packages.HarnessPackages;
 import io.harness.persistence.HPersistence;
 import io.harness.redis.RedisConfig;
+import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ClientMode;
+import io.harness.secrets.SecretDecryptor;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.service.DelegateServiceDriverModule;
+import io.harness.service.ScmServiceClient;
 import io.harness.stoserviceclient.STOServiceClientModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
@@ -53,7 +66,6 @@ import io.harness.threading.ThreadPool;
 import io.harness.timescaledb.TimeScaleDBConfig;
 import io.harness.timescaledb.TimeScaleDBService;
 import io.harness.timescaledb.TimeScaleDBServiceImpl;
-import io.harness.tiserviceclient.TIServiceClientModule;
 import io.harness.token.TokenClientModule;
 import io.harness.user.UserClientModule;
 import io.harness.yaml.core.StepSpecType;
@@ -78,7 +90,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
-import org.reflections.Reflections;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -136,9 +147,8 @@ public class CIManagerServiceModule extends AbstractModule {
   @Named("yaml-schema-subtypes")
   @Singleton
   public Map<Class<?>, Set<Class<?>>> yamlSchemaSubtypes() {
-    Reflections reflections = new Reflections(HarnessPackages.IO_HARNESS);
-
-    Set<Class<? extends StepSpecType>> subTypesOfStepSpecType = reflections.getSubTypesOf(StepSpecType.class);
+    Set<Class<? extends StepSpecType>> subTypesOfStepSpecType =
+        HarnessReflections.get().getSubTypesOf(StepSpecType.class);
     Set<Class<?>> set = new HashSet<>(subTypesOfStepSpecType);
 
     return ImmutableMap.of(StepSpecType.class, set);
@@ -172,6 +182,13 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(CIYamlSchemaService.class).to(CIYamlSchemaServiceImpl.class).in(Singleton.class);
     bind(CIFeatureFlagService.class).to(CIFeatureFlagServiceImpl.class).in(Singleton.class);
     bind(CIOverviewDashboardService.class).to(CIOverviewDashboardServiceImpl.class);
+    bind(ScmServiceClient.class).to(ScmServiceClientImpl.class);
+    bind(GithubService.class).to(GithubServiceImpl.class);
+    bind(GitlabService.class).to(GitlabServiceImpl.class);
+    bind(BitbucketService.class).to(BitbucketServiceImpl.class);
+    bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
+    bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);
+
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));

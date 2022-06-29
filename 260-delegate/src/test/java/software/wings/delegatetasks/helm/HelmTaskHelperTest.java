@@ -71,6 +71,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.helm.HelmCliCommandType;
 import io.harness.k8s.K8sGlobalConfigService;
+import io.harness.k8s.model.HelmVersion;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -441,6 +442,11 @@ public class HelmTaskHelperTest extends WingsBaseTest {
 
     Path outputTemporaryDir = Files.createTempDirectory("chartFile");
     ProcessResult successfulResult = new ProcessResult(0, null);
+
+    doNothing()
+        .when(helmTaskHelperBase)
+        .loginOciRegistry(repoConfig.getChartRepoUrl(), repoConfig.getUsername(), repoConfig.getPassword(),
+            HelmVersion.V380, LONG_TIMEOUT_INTERVAL, outputTemporaryDir.toString());
 
     doReturn(successfulResult).when(processExecutor).execute();
     helmTaskHelper.downloadChartFiles(configParams, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);

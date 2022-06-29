@@ -18,6 +18,7 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.plancreator.steps.TaskSelectorYaml;
+import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.validator.NGRegexValidatorConstants;
@@ -73,6 +74,8 @@ public abstract class AbstractStageNode {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes(value = {runtime})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+
+  @VariableExpression(skipVariableExpression = true) @JsonProperty("strategy") StrategyConfig strategy;
 
   @JsonIgnore public abstract String getType();
   @JsonIgnore public abstract StageInfoConfig getStageInfoConfig();

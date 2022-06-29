@@ -7,12 +7,24 @@
 
 package io.harness.pms.plan.creation;
 
+import io.harness.plancreator.PipelineServiceFilter;
 import io.harness.pms.filter.creation.FilterCreationResponse;
 import io.harness.pms.sdk.core.pipeline.filters.FilterCreationResponseMerger;
+
+import java.util.HashSet;
 
 public class PipelineServiceFilterCreationResponseMerger implements FilterCreationResponseMerger {
   @Override
   public void mergeFilterCreationResponse(FilterCreationResponse finalResponse, FilterCreationResponse current) {
-    // nothing to do
+    if (finalResponse.getPipelineFilter() == null) {
+      finalResponse.setPipelineFilter(PipelineServiceFilter.builder().stageTypes(new HashSet<>()).build());
+    }
+    PipelineServiceFilter finalFilter = (PipelineServiceFilter) finalResponse.getPipelineFilter();
+    PipelineServiceFilter currentFilter = (PipelineServiceFilter) current.getPipelineFilter();
+    if (currentFilter != null) {
+      finalFilter.setFeatureFlagStepCount(
+          currentFilter.getFeatureFlagStepCount() + finalFilter.getFeatureFlagStepCount());
+      finalFilter.mergeStageTypes(currentFilter.getStageTypes());
+    }
   }
 }

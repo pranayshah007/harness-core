@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.plan.creator.filter.CIFilter;
 import io.harness.ci.plan.creator.filter.CIFilter.CIFilterBuilder;
@@ -39,7 +40,6 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.stateutils.buildstate.ConnectorUtils;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.walktree.visitor.SimpleVisitorFactory;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
@@ -55,6 +55,7 @@ import lombok.extern.slf4j.Slf4j;
 public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreator {
   @Inject ConnectorUtils connectorUtils;
   @Inject private SimpleVisitorFactory simpleVisitorFactory;
+  @Inject ValidationUtils validationUtils;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -120,7 +121,7 @@ public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreator {
       throw new CIStageExecutionException("Infrastructure is mandatory for execution");
     }
     if (infrastructure.getType() == Infrastructure.Type.VM) {
-      ValidationUtils.validateVmInfraDependencies(integrationStageConfig.getServiceDependencies().getValue());
+      validationUtils.validateVmInfraDependencies(integrationStageConfig.getServiceDependencies().getValue());
     }
   }
 

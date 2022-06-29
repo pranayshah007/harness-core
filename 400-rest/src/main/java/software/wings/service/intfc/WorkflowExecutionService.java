@@ -195,7 +195,8 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   boolean updateNotes(String appId, String workflowExecutionId, ExecutionArgs executionArgs);
 
-  boolean approveOrRejectExecution(String appId, List<String> userGroupIds, ApprovalDetails approvalDetails);
+  boolean approveOrRejectExecution(
+      String appId, List<String> userGroupIds, ApprovalDetails approvalDetails, String executionUuid);
 
   boolean approveOrRejectExecution(
       String appId, List<String> userGroupIds, ApprovalDetails approvalDetails, ApiKeyEntry apiEntryKey);
@@ -231,7 +232,8 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   List<Artifact> obtainLastGoodDeployedArtifacts(@NotEmpty String appId, @NotEmpty String workflowId);
 
-  List<Artifact> obtainLastGoodDeployedArtifacts(WorkflowExecution workflowExecution, List<String> infraMappingList);
+  List<Artifact> obtainLastGoodDeployedArtifacts(
+      WorkflowExecution workflowExecution, List<String> infraMappingList, boolean useInfraMappingBasedRollbackArtifact);
 
   List<ArtifactVariable> obtainLastGoodDeployedArtifactsVariables(String appId, String workflowId);
 

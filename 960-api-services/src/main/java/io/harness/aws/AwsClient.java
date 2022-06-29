@@ -16,6 +16,7 @@ import com.amazonaws.services.codecommit.model.RepositoryMetadata;
 import com.amazonaws.services.costandusagereport.model.ReportDefinition;
 import com.amazonaws.services.identitymanagement.model.EvaluationResult;
 import com.amazonaws.services.organizations.AWSOrganizationsClient;
+import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.ObjectListing;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +53,9 @@ public interface AwsClient {
   Policy getRolePolicy(AWSCredentialsProvider credentialsProvider, String roleName, String policyName);
 
   ObjectListing getBucket(AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix);
+
+  S3Objects getIterableS3ObjectSummaries(
+      AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix);
 
   AWSOrganizationsClient getAWSOrganizationsClient(
       String crossAccountRoleArn, String externalId, String awsAccessKey, String awsSecretKey);

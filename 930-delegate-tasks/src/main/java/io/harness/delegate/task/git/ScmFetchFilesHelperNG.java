@@ -35,6 +35,7 @@ import io.harness.git.model.GitFile;
 import io.harness.impl.ScmResponseStatusUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.product.ci.scm.proto.FileContent;
 import io.harness.product.ci.scm.proto.SCMGrpc;
@@ -221,5 +222,17 @@ public class ScmFetchFilesHelperNG {
           e);
     }
     return createPRResponse;
+  }
+
+  public CreateBranchResponse createNewBranch(ScmConnector scmConnector, String branch, String baseBranch) {
+    CreateBranchResponse createBranchResponse = scmDelegateClient.processScmRequest(
+        c -> scmServiceClient.createNewBranch(scmConnector, branch, baseBranch, SCMGrpc.newBlockingStub(c)));
+    try {
+      ScmResponseStatusUtils.checkScmResponseStatusAndThrowException(
+          createBranchResponse.getStatus(), createBranchResponse.getError());
+    } catch (WingsException e) {
+      throw new ExplanationException(String.format("Could not create a new branch %s from %s", branch, baseBranch), e);
+    }
+    return createBranchResponse;
   }
 }

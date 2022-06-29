@@ -7,6 +7,7 @@
 
 package io.harness.ng.gitops.resource;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
 import static io.harness.utils.PageUtils.getNGPageResponse;
@@ -53,6 +54,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
@@ -63,7 +65,6 @@ import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -73,6 +74,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import retrofit2.Response;
 
 @NextGenManagerAuth
@@ -115,7 +117,8 @@ public class ClusterResource {
   @Inject private AccessControlClient accessControlClient;
   @Inject private GitopsResourceClient gitopsResourceClient;
 
-  public static final String CLUSTER_PARAM_MESSAGE = "Cluster Identifier for the entity";
+  private static final String CLUSTER_PARAM_MESSAGE = "Cluster Identifier for the entity";
+  private static final int UNLIMITED_PAGE_SIZE = 10000;
 
   @GET
   @Path("{identifier}")
@@ -142,7 +145,7 @@ public class ClusterResource {
         accountId, orgIdentifier, projectIdentifier, environmentIdentifier, ENVIRONMENT_VIEW_PERMISSION, "view");
 
     Optional<Cluster> entity =
-        clusterService.get(orgIdentifier, projectIdentifier, accountId, environmentIdentifier, clusterRef, deleted);
+        clusterService.get(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, clusterRef);
     if (!entity.isPresent()) {
       throw new NotFoundException(format("Cluster with clusterRef [%s] in project [%s], org [%s] not found", clusterRef,
           projectIdentifier, orgIdentifier));
@@ -151,14 +154,14 @@ public class ClusterResource {
   }
 
   @POST
-  @ApiOperation(value = "Create a Cluster", nickname = "createCluster")
-  @Operation(operationId = "createCluster", summary = "Create a Cluster",
-      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the created Cluster") },
+  @ApiOperation(value = "Link a gitops cluster to an environment", nickname = "linkCluster")
+  @Operation(operationId = "linkCluster", summary = "link a Cluster",
+      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the linked Cluster") },
       hidden = true)
   public ResponseDTO<ClusterResponse>
-  create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-             NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the createCluster to be created") @Valid ClusterRequest request) {
+  link(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+           NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @Parameter(description = "Details of the createCluster to be linked") @Valid ClusterRequest request) {
     throwExceptionForNoRequestDTO(request);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         request.getOrgIdentifier(), request.getProjectIdentifier(), accountId);
@@ -176,13 +179,13 @@ public class ClusterResource {
 
   @POST
   @Path("/batch")
-  @ApiOperation(value = "Create Clusters", nickname = "createClusters")
-  @Operation(operationId = "createClusters", summary = "Create Clusters",
-      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the created Cluster") },
+  @ApiOperation(value = "Link gitops clusters to an environment", nickname = "linkClusters")
+  @Operation(operationId = "linkClusters", summary = "Link Clusters",
+      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the linked Clusters") },
       hidden = true)
   public ResponseDTO<PageResponse<ClusterResponse>>
-  create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-             NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+  linkBatch(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = "Details of the createCluster to be created") @Valid ClusterBatchRequest request) {
     throwExceptionForNoRequestDTO(request);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
@@ -193,9 +196,37 @@ public class ClusterResource {
     checkForAccessOrThrow(accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getEnvRef(),
         ENVIRONMENT_UPDATE_PERMISSION, "create");
 
-    List<Cluster> entities = ClusterEntityMapper.toEntities(accountId, request);
+    List<Cluster> entities = new ArrayList<>();
+    if (!request.isLinkAllClusters()) {
+      entities = ClusterEntityMapper.toEntities(accountId, request);
+    } else {
+      // fetch clusters from gitops service using search term
+      final ClusterQuery query = ClusterQuery.builder()
+                                     .accountId(accountId)
+                                     .orgIdentifier(request.getOrgIdentifier())
+                                     .projectIdentifier(request.getProjectIdentifier())
+                                     .pageSize(UNLIMITED_PAGE_SIZE)
+                                     .pageIndex(0)
+                                     .searchTerm(request.getSearchTerm())
+                                     .build();
 
-    Page<Cluster> created = clusterService.bulkCreate(accountId, entities);
+      final Response<PageResponse<io.harness.gitops.models.Cluster>> clusterResponse;
+      try {
+        clusterResponse = gitopsResourceClient.listClusters(query).execute();
+        if (!clusterResponse.isSuccessful()) {
+          handleFailureResponse(clusterResponse);
+        } else if (clusterResponse.body() != null) {
+          List<io.harness.gitops.models.Cluster> clusters = clusterResponse.body().getContent();
+          entities = ClusterEntityMapper.toEntities(
+              accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getEnvRef(), clusters);
+        }
+      } catch (IOException io) {
+        throw new InvalidRequestException(
+            "failed to fetch cluster list from gitops. Cannot proceed with linking to the environment", io);
+      }
+    }
+    Page<Cluster> created =
+        isNotEmpty(entities) ? clusterService.bulkCreate(accountId, entities) : new PageImpl<>(new ArrayList<>());
     return ResponseDTO.newResponse(getNGPageResponse(created.map(ClusterEntityMapper::writeDTO)));
   }
 
@@ -222,28 +253,6 @@ public class ClusterResource {
         accountId, orgIdentifier, projectIdentifier, environmentIdentifier, ENVIRONMENT_UPDATE_PERMISSION, "delete");
     return ResponseDTO.newResponse(
         clusterService.delete(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, clusterRef));
-  }
-
-  @PUT
-  @ApiOperation(value = "Update a cluster by identifier", nickname = "updateCluster")
-  @Operation(operationId = "updateCluster", summary = "Update a cluster by identifier",
-      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the updated Cluster") },
-      hidden = true)
-  public ResponseDTO<ClusterResponse>
-  update(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-             NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the Cluster to be updated") @Valid ClusterRequest request) {
-    throwExceptionForNoRequestDTO(request);
-    orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
-        request.getOrgIdentifier(), request.getProjectIdentifier(), accountId);
-    environmentValidationHelper.checkThatEnvExists(
-        accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getEnvRef());
-    checkForAccessOrThrow(accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getEnvRef(),
-        ENVIRONMENT_UPDATE_PERMISSION, "update");
-
-    Cluster entity = ClusterEntityMapper.toEntity(accountId, request);
-    Cluster updatedEntity = clusterService.update(entity);
-    return ResponseDTO.newResponse(ClusterEntityMapper.writeDTO(updatedEntity));
   }
 
   @GET

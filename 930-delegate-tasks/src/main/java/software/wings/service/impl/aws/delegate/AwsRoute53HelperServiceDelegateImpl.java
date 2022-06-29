@@ -16,6 +16,7 @@ import static java.util.stream.Collectors.toList;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
@@ -54,6 +55,7 @@ public class AwsRoute53HelperServiceDelegateImpl
       AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String region) {
     try {
       encryptionService.decrypt(awsConfig, encryptionDetails, false);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
       AmazonRoute53 client = getAmazonRoute53Client(region, awsConfig);
       tracker.trackR53Call("List Hosted Zones");
       ListHostedZonesResult listHostedZonesResult = client.listHostedZones();
@@ -78,6 +80,7 @@ public class AwsRoute53HelperServiceDelegateImpl
       int greenServiceWeight, String greenServiceRecord, int ttl) {
     try {
       encryptionService.decrypt(awsConfig, encryptionDetails, false);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
       AmazonRoute53 client = getAmazonRoute53Client(region, awsConfig);
       ChangeResourceRecordSetsRequest changeResourceRecordSetsRequest =
           new ChangeResourceRecordSetsRequest()

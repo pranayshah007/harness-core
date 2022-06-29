@@ -26,6 +26,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.spring.FileStoreRepository;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -86,8 +87,9 @@ public class FileFailsafeServiceImpl implements FileFailsafeService {
         return newFileDTO;
       }));
     } catch (DuplicateKeyException ex) {
-      throw new DuplicateFieldException(String.format("Try using another name, [%s] already exists with root [%s]",
-                                            newNGFile.getName(), newNGFile.getParentIdentifier()),
+      throw new DuplicateFieldException(
+          String.format("Try using another name, [%s] already exists in parent folder [%s]", newNGFile.getName(),
+              newNGFile.getParentIdentifier()),
           USER, ex);
     }
   }
@@ -111,7 +113,8 @@ public class FileFailsafeServiceImpl implements FileFailsafeService {
     }
   }
 
-  private void createFileCreationActivity(FileDTO fileDTO) {
+  @VisibleForTesting
+  void createFileCreationActivity(FileDTO fileDTO) {
     try {
       fileActivityService.createFileCreationActivity(fileDTO.getAccountIdentifier(), fileDTO);
     } catch (Exception ex) {
@@ -120,7 +123,8 @@ public class FileFailsafeServiceImpl implements FileFailsafeService {
     }
   }
 
-  private void createFileUpdateActivity(FileDTO fileDTO) {
+  @VisibleForTesting
+  void createFileUpdateActivity(FileDTO fileDTO) {
     try {
       fileActivityService.createFileUpdateActivity(fileDTO.getAccountIdentifier(), fileDTO);
     } catch (Exception ex) {
@@ -129,8 +133,8 @@ public class FileFailsafeServiceImpl implements FileFailsafeService {
     }
   }
 
-  private void deleteActivities(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+  @VisibleForTesting
+  void deleteActivities(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     try {
       String fullyQualifiedIdentifier = FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
           accountIdentifier, orgIdentifier, projectIdentifier, identifier);

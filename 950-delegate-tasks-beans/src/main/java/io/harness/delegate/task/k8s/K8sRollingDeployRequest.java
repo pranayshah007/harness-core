@@ -43,4 +43,5 @@ public class K8sRollingDeployRequest implements K8sDeployRequest {
   boolean useLatestKustomizeVersion;
   boolean useNewKubectlVersion;
   boolean skipAddingTrackSelectorToDeployment;
+  boolean pruningEnabled;
 }

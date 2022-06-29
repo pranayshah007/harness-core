@@ -21,6 +21,8 @@ import static org.mockito.Mockito.when;
 
 import io.harness.accesscontrol.AccessControlCoreTestBase;
 import io.harness.accesscontrol.acl.api.Principal;
+import io.harness.accesscontrol.acl.conditions.ACLExpressionEvaluatorProvider;
+import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.ACLDAO;
 import io.harness.accesscontrol.permissions.Permission;
 import io.harness.accesscontrol.permissions.PermissionFilter;
@@ -47,7 +49,8 @@ public class ACLServiceImplTest extends AccessControlCoreTestBase {
   public void setup() {
     aclDAO = mock(ACLDAO.class);
     permissionService = mock(PermissionService.class);
-    aclService = new ACLServiceImpl(aclDAO, permissionService);
+    ACLExpressionEvaluatorProvider aclExpressionEvaluatorProvider = mock(ACLExpressionEvaluatorProvider.class);
+    aclService = new ACLServiceImpl(aclDAO, permissionService, aclExpressionEvaluatorProvider);
   }
 
   @Test
@@ -67,12 +70,12 @@ public class ACLServiceImplTest extends AccessControlCoreTestBase {
     for (int i = 0; i < 10; i++) {
       permissionChecks.add(PermissionCheck.builder().permission(disabledPermissions.get(0).getIdentifier()).build());
     }
-    List<Boolean> aclResults = new ArrayList<>();
+    List<List<ACL>> aclResults = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
-      aclResults.add(false);
+      aclResults.add(new ArrayList<>());
     }
-    when(aclDAO.checkForAccess(principal, permissionChecks)).thenReturn(aclResults);
-    List<PermissionCheckResult> response = aclService.checkAccess(principal, permissionChecks);
+    when(aclDAO.getMatchingACLs(principal, permissionChecks)).thenReturn(aclResults);
+    List<PermissionCheckResult> response = aclService.checkAccess(principal, permissionChecks, null);
 
     assertEquals(10, response.size());
     response.forEach(check -> assertTrue(check.isPermitted()));

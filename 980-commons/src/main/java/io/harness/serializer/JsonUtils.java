@@ -226,8 +226,10 @@ public class JsonUtils {
    * @param jsonString     json to deserialize.
    * @param classToConvert target class type.
    * @return Deserialized object.
+   * This is deprecated as it bypasses all the exception mappers and cast it is as Runtime Exception
    */
   @JsonDeserialize
+  @Deprecated
   public static <T> T asObject(String jsonString, Class<T> classToConvert) {
     return asObject(jsonString, classToConvert, mapper);
   }
@@ -240,8 +242,10 @@ public class JsonUtils {
    * @param classToConvert the class to convert
    * @param objectMapper   the object mapper
    * @return the t
+   * This is deprecated as it bypasses all the exception mappers and cast it is as Runtime Exception
    */
   @JsonDeserialize
+  @Deprecated
   public static <T> T asObject(String jsonString, Class<T> classToConvert, ObjectMapper objectMapper) {
     try {
       return objectMapper.readValue(jsonString, classToConvert);
@@ -480,5 +484,10 @@ public class JsonUtils {
     JsonParser jsonParser = new JsonParser();
     JsonElement jsonElement = jsonParser.parse(jsonString);
     return gson.toJson(jsonElement);
+  }
+  @JsonDeserialize
+  public static <T> T asObjectWithExceptionHandlingType(String jsonString, Class<T> classToConvert)
+      throws JsonProcessingException {
+    return mapper.readValue(jsonString, classToConvert);
   }
 }

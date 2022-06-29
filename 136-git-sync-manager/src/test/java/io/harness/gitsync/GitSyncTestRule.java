@@ -7,12 +7,17 @@
 
 package io.harness.gitsync;
 
+import static io.harness.Microservice.CF;
+import static io.harness.Microservice.CORE;
+import static io.harness.Microservice.PMS;
+import static io.harness.Microservice.TEMPLATESERVICE;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 import static org.mockito.Mockito.mock;
 
+import io.harness.EntityType;
 import io.harness.Microservice;
 import io.harness.SCMGrpcClientModule;
 import io.harness.ScmConnectionConfig;
@@ -101,6 +106,7 @@ import software.wings.service.impl.security.NGEncryptorServiceImpl;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
@@ -113,12 +119,14 @@ import com.google.inject.name.Names;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
+import javax.net.ssl.SSLException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
@@ -239,6 +247,32 @@ public class GitSyncTestRule implements InjectorRuleMixin, MethodRule, MongoRule
       }
 
       @Provides
+      @Singleton
+      Map<EntityType, Microservice> getEntityTypeMicroserviceMap() {
+        return ImmutableMap.<EntityType, Microservice>builder()
+            .put(EntityType.CONNECTORS, CORE)
+            .put(EntityType.PIPELINES, PMS)
+            .put(EntityType.FEATURE_FLAGS, CF)
+            .put(EntityType.INPUT_SETS, PMS)
+            .put(EntityType.TEMPLATE, TEMPLATESERVICE)
+            .build();
+      }
+
+      @Provides
+      @Singleton
+      List<Microservice> getMicroservicesProcessingOrder() {
+        return Arrays.asList(CORE, TEMPLATESERVICE, CF, PMS);
+      }
+
+      @Provides
+      @Singleton
+      public Map<Microservice, GitToHarnessServiceGrpc.GitToHarnessServiceBlockingStub> gitToHarnessServiceGrpcClient(
+          @Named("GitSyncGrpcClientConfigs") Map<Microservice, GrpcClientConfig> clientConfigs) throws SSLException {
+        Map<Microservice, GitToHarnessServiceGrpc.GitToHarnessServiceBlockingStub> map = new HashMap<>();
+        return map;
+      }
+
+      @Provides
       @Named(OUTBOX_TRANSACTION_TEMPLATE)
       @Singleton
       TransactionTemplate getTransactionTemplate(MongoTransactionManager mongoTransactionManager) {
@@ -256,7 +290,7 @@ public class GitSyncTestRule implements InjectorRuleMixin, MethodRule, MongoRule
       @Named("GitSyncGrpcClientConfigs")
       public Map<Microservice, GrpcClientConfig> grpcClientConfigs() {
         Map<Microservice, GrpcClientConfig> map = new HashMap<>();
-        map.put(Microservice.CORE, GrpcClientConfig.builder().target("localhost:12001").authority("localhost").build());
+        map.put(CORE, GrpcClientConfig.builder().target("localhost:12001").authority("localhost").build());
         return map;
       }
 

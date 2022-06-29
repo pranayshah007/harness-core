@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.environment.remote.EnvironmentResourceClient;
 import io.harness.environment.remote.EnvironmentResourceClientHttpFactory;
+import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
@@ -26,6 +27,7 @@ public class EnvironmentResourceClientModule extends AbstractModule {
   private final ServiceHttpClientConfig ngManagerClientConfig;
   private final String serviceSecret;
   private final String clientId;
+  private final ClientMode clientMode;
 
   @Inject
   public EnvironmentResourceClientModule(
@@ -33,13 +35,23 @@ public class EnvironmentResourceClientModule extends AbstractModule {
     this.ngManagerClientConfig = ngManagerClientConfig;
     this.serviceSecret = serviceSecret;
     this.clientId = clientId;
+    this.clientMode = ClientMode.NON_PRIVILEGED;
+  }
+
+  @Inject
+  public EnvironmentResourceClientModule(
+      ServiceHttpClientConfig ngManagerClientConfig, String serviceSecret, String clientId, ClientMode clientMode) {
+    this.ngManagerClientConfig = ngManagerClientConfig;
+    this.serviceSecret = serviceSecret;
+    this.clientId = clientId;
+    this.clientMode = clientMode;
   }
 
   @Provides
   private EnvironmentResourceClientHttpFactory secretManagerHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new EnvironmentResourceClientHttpFactory(
-        this.ngManagerClientConfig, this.serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);
+        this.ngManagerClientConfig, this.serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId, clientMode);
   }
 
   @Override

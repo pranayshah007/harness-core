@@ -110,6 +110,11 @@ public class AmbianceUtils {
     return ambiance.getLevelsList().get(ambiance.getLevelsList().size() - 1);
   }
 
+  public static String obtainOriginalStepIdentifier(Ambiance ambiance) {
+    Level level = obtainCurrentLevel(ambiance);
+    return level == null || isEmpty(level.getOriginalIdentifier()) ? null : level.getOriginalIdentifier();
+  }
+
   public static String obtainStepIdentifier(Ambiance ambiance) {
     Level level = obtainCurrentLevel(ambiance);
     return level == null || isEmpty(level.getIdentifier()) ? null : level.getIdentifier();
@@ -223,6 +228,12 @@ public class AmbianceUtils {
   public static String getStrategyPostfix(Level level) {
     if (level == null || !level.hasStrategyMetadata()) {
       return StringUtils.EMPTY;
+    }
+    if (!level.getStrategyMetadata().hasMatrixMetadata()) {
+      if (level.getStrategyMetadata().getTotalIterations() <= 0) {
+        return StringUtils.EMPTY;
+      }
+      return "_" + level.getStrategyMetadata().getCurrentIteration();
     }
     if (level.getStrategyMetadata().getMatrixMetadata().getMatrixCombinationList().isEmpty()) {
       return StringUtils.EMPTY;

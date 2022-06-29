@@ -10,6 +10,7 @@ package io.harness.filestore.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.FileBucket.FILE_STORE;
+import static io.harness.filestore.entities.NGFile.NGFiles;
 import static io.harness.filestore.utils.FileStoreNodeUtils.joinFolderNames;
 import static io.harness.repositories.FileStoreRepositoryCriteriaCreator.createCriteriaByScopeAndParentIdentifier;
 import static io.harness.repositories.FileStoreRepositoryCriteriaCreator.createSortByLastModifiedAtDesc;
@@ -29,6 +30,7 @@ import io.harness.manage.ManagedExecutorService;
 import io.harness.ng.core.filestore.NGFileType;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.repositories.spring.FileStoreRepository;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import software.wings.service.intfc.FileService;
 
@@ -43,9 +45,11 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.data.domain.Sort;
 
 @OwnedBy(CDP)
 @Singleton
@@ -120,5 +124,24 @@ public class FileStructureServiceImpl implements FileStructureService {
     ByteArrayOutputStream os = new ByteArrayOutputStream();
     fileService.downloadToStream(fileUuid, os, FILE_STORE);
     return CHARSET.decode(ByteBuffer.wrap(os.toByteArray())).toString();
+  }
+
+  @Override
+  public List<NGFile> listFolderChildrenByPath(NGFile folder) {
+    return fileStoreRepository
+        .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifierNotAndPathStartsWith(
+            folder.getAccountIdentifier(), folder.getOrgIdentifier(), folder.getProjectIdentifier(),
+            folder.getIdentifier(), folder.getPath(), Sort.by(Sort.Direction.DESC, NGFiles.path));
+  }
+  @Override
+  public List<String> listFolderChildrenFQNs(NGFile folder) {
+    List<NGFile> childrenFiles = listFolderChildrenByPath(folder);
+    return childrenFiles.stream().map(mapNgFileToFQN()).collect(Collectors.toList());
+  }
+
+  private Function<NGFile, String> mapNgFileToFQN() {
+    return file
+        -> FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
+            file.getAccountIdentifier(), file.getOrgIdentifier(), file.getProjectIdentifier(), file.getIdentifier());
   }
 }

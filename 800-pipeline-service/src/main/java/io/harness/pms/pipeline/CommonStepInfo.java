@@ -30,8 +30,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 public class CommonStepInfo {
-  private static final String APPROVAL_STEP_CATEGORY = "Approval";
-
   @Inject PmsFeatureFlagHelper pmsFeatureFlagHelper;
 
   StepInfo shellScriptStepInfo =
@@ -56,6 +54,18 @@ public class CommonStepInfo {
                                .addFolderPaths(FolderPathConstants.APPROVAL)
                                .build())
           .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_HARNESS_UI.name())
+          .build();
+  StepInfo customApprovalStepInfo =
+      StepInfo.newBuilder()
+          .setName("Custom Approval")
+          .setType("CustomApproval")
+          .setStepMetaData(StepMetaData.newBuilder()
+                               .addCategory(StepCategoryConstants.PROVISIONER)
+                               .addCategory(StepCategoryConstants.APPROVAL)
+                               .addFolderPaths(FolderPathConstants.APPROVAL)
+                               .build())
+          .setFeatureRestrictionName(FeatureRestrictionName.INTEGRATED_APPROVALS_WITH_CUSTOM_SCRIPT.name())
+          .setFeatureFlag(FeatureName.NG_CUSTOM_APPROVAL.name())
           .build();
   StepInfo jiraApprovalStepInfo =
       StepInfo.newBuilder()
@@ -91,6 +101,12 @@ public class CommonStepInfo {
           .setType("Barrier")
           .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("FlowControl/Barrier").build())
           .build();
+  StepInfo queueStepInfo = StepInfo.newBuilder()
+                               .setName("Queue")
+                               .setType("Queue")
+                               .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("FlowControl/Queue").build())
+                               .setFeatureFlag(FeatureName.PIPELINE_QUEUE_STEP.name())
+                               .build();
   StepInfo serviceNowApprovalStepInfo =
       StepInfo.newBuilder()
           .setName("ServiceNow Approval")
@@ -142,10 +158,12 @@ public class CommonStepInfo {
     stepInfos.add(shellScriptStepInfo);
     stepInfos.add(httpStepInfo);
     stepInfos.add(harnessApprovalStepInfo);
+    stepInfos.add(customApprovalStepInfo);
     stepInfos.add(jiraApprovalStepInfo);
     stepInfos.add(jiraCreateStepInfo);
     stepInfos.add(jiraUpdateStepInfo);
     stepInfos.add(barrierStepInfo);
+    stepInfos.add(queueStepInfo);
     stepInfos.add(serviceNowApprovalStepInfo);
     stepInfos.add(policyStepInfo);
     stepInfos.add(serviceNowCreateStepInfo);

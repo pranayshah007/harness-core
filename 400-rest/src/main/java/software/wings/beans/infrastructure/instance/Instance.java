@@ -136,6 +136,13 @@ public class Instance extends Base implements AccountAccess, ApplicationAccess {
                  .field(InstanceKeys.instanceInfoPodName)
                  .descSortField(InstanceKeys.createdAt)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("instance_index_appId_infraMappingId_lastWorkflowExecutionId_lastUpdatedAt")
+                 .field(InstanceKeys.appId)
+                 .field(InstanceKeys.infraMappingId)
+                 .field(InstanceKeys.lastWorkflowExecutionId)
+                 .descSortField(InstanceKeys.lastUpdatedAt)
+                 .build())
         .build();
   }
 
@@ -246,5 +253,6 @@ public class Instance extends Base implements AccountAccess, ApplicationAccess {
     public static final String lastWorkflowExecutionName = "lastWorkflowExecutionName";
     public static final String infraMappingId = "infraMappingId";
     public static final String infraMappingName = "infraMappingName";
+    public static final String lastUpdatedAt = "lastUpdatedAt";
   }
 }

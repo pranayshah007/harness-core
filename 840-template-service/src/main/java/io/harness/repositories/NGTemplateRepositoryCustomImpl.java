@@ -152,6 +152,16 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
+  public void hardDeleteTemplate(TemplateEntity templateToDelete, String comments) {
+    String accountId = templateToDelete.getAccountId();
+    String orgIdentifier = templateToDelete.getOrgIdentifier();
+    String projectIdentifier = templateToDelete.getProjectIdentifier();
+    gitAwarePersistence.delete(templateToDelete, ChangeType.DELETE, TemplateEntity.class);
+    outboxService.save(
+        new TemplateDeleteEvent(accountId, orgIdentifier, projectIdentifier, templateToDelete, comments));
+  }
+
+  @Override
   public Page<TemplateEntity> findAll(Criteria criteria, Pageable pageable, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, boolean getDistinctFromBranches) {
     if (getDistinctFromBranches) {

@@ -30,7 +30,6 @@ import org.junit.experimental.categories.Category;
 
 public class ParameterFieldDeserializerTest extends CategoryTest implements MultilineStringMixin {
   private ObjectMapper objectMapper;
-
   @Before
   public void setUp() {
     objectMapper = new ObjectMapper(new YAMLFactory());

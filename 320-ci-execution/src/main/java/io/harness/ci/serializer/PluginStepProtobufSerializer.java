@@ -8,7 +8,7 @@
 package io.harness.ci.serializer;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMapParameter;
-import static io.harness.common.CIExecutionConstants.PLUGIN_ENV_PREFIX;
+import static io.harness.ci.common.CIExecutionConstants.PLUGIN_ENV_PREFIX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.util.Collections.emptyList;

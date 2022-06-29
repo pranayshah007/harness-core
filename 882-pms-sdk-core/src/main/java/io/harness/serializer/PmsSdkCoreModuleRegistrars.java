@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.pms.serializer.kryo.PmsContractsKryoRegistrar;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -28,6 +29,7 @@ public class PmsSdkCoreModuleRegistrars {
       ImmutableSet.<Class<? extends KryoRegistrar>>builder()
           .add(PmsSdkCoreKryoRegistrar.class)
           .addAll(PmsCommonsModuleRegistrars.kryoRegistrars)
+          .add(PmsContractsKryoRegistrar.class)
           .build();
 
   public final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =

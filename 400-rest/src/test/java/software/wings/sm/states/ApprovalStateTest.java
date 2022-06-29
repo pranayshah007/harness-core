@@ -21,6 +21,7 @@ import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.DHRUV;
 import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 import static io.harness.rule.OwnerRule.SRINIVAS;
@@ -88,7 +89,6 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.ExecutionStatus;
-import io.harness.beans.FeatureName;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.WorkflowType;
@@ -1581,7 +1581,9 @@ public class ApprovalStateTest extends WingsBaseTest {
   public void shouldValidateMessageLengthWhenServiceDetailsNull() {
     String excessiveInfo = "first,second,third," + String.join(",", createCharSequence("lotsOfLongExcessiveInfo", 100));
     WorkflowNotificationDetails infraDetails = WorkflowNotificationDetails.builder().name(excessiveInfo).build();
-    StringBuilder artifacts = new StringBuilder(String.format("*Artifacts:* %s", excessiveInfo.replace(",", ", ")));
+    StringBuilder artifacts = new StringBuilder(String.format("*Artifacts*: %s", excessiveInfo.replace(",", ", ")));
+    StringBuilder environments =
+        new StringBuilder(String.format("*Environments*: %s", excessiveInfo.replace(",", ", ")));
     SlackApprovalParams slackApprovalParams =
         SlackApprovalParams.builder()
             .appId(APP_ID)
@@ -1595,7 +1597,7 @@ public class ApprovalStateTest extends WingsBaseTest {
             .approvalId(APPROVAL_EXECUTION_ID)
             .pausedStageName(WORKFLOW_NAME)
             .servicesInvolved("#Services#Involved#")
-            .environmentsInvolved(ENV_NAME)
+            .environmentsInvolved(environments.toString())
             .artifactsInvolved(artifacts.toString())
             .infraDefinitionsInvolved(String.format("*Infrastructure Definitions*: %s", infraDetails.getName()))
             .confirmation(false)
@@ -1616,11 +1618,62 @@ public class ApprovalStateTest extends WingsBaseTest {
 
     String trimmedMessage = approvalState.validateMessageLength(displayText, slackApprovalParams,
         ApprovalState.class.getResource(SlackApprovalMessageKeys.PIPELINE_APPROVAL_MESSAGE_TEMPLATE), null, artifacts,
-        infraDetails);
+        infraDetails, environments);
     assertThat(trimmedMessage.length()).isLessThanOrEqualTo(2000);
     assertThat(trimmedMessage).contains(slackApprovalParams.getServicesInvolved());
-    assertThat(trimmedMessage).contains("*Artifacts:* first, second, third... 100 more");
+    assertThat(trimmedMessage).contains("*Artifacts*: first, second, third... 100 more");
+    assertThat(trimmedMessage).contains("*Environments*: first, second, third... 100 more");
     assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getArtifactsInvolved());
+    assertThat(trimmedMessage).contains("*Infrastructure Definitions*: first, second, third... 100 more");
+    assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getInfraDefinitionsInvolved());
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldValidateMessageLengthWhenEnvironmentsIsNull() {
+    String excessiveInfo = "first,second,third," + String.join(",", createCharSequence("lotsOfLongExcessiveInfo", 100));
+    WorkflowNotificationDetails serviceDetails = WorkflowNotificationDetails.builder().name(excessiveInfo).build();
+    WorkflowNotificationDetails infraDetails = WorkflowNotificationDetails.builder().name(excessiveInfo).build();
+    SlackApprovalParams slackApprovalParams =
+        SlackApprovalParams.builder()
+            .appId(APP_ID)
+            .appName(APP_NAME)
+            .routingId(ACCOUNT_ID)
+            .deploymentId(WORKFLOW_EXECUTION_ID)
+            .workflowId(WORKFLOW_ID)
+            .workflowExecutionName(WORKFLOW_NAME)
+            .stateExecutionId(STATE_EXECUTION_ID)
+            .stateExecutionInstanceName(STATE_NAME)
+            .approvalId(APPROVAL_EXECUTION_ID)
+            .pausedStageName(WORKFLOW_NAME)
+            .servicesInvolved(String.format("*Services*: %s", serviceDetails.getName()))
+            .environmentsInvolved(ENV_NAME)
+            .artifactsInvolved("#Artifacts#Involved#")
+            .infraDefinitionsInvolved(String.format("*Infrastructure Definitions*: %s", infraDetails.getName()))
+            .confirmation(false)
+            .pipeline(true)
+            .workflowUrl(WORKFLOW_URL)
+            .jwtToken("token")
+            .startTsSecs("mockEpochTimeMillis")
+            .endTsSecs("mockEpochTimeMillis")
+            .startDate("mockEpochTimeMillis")
+            .expiryTsSecs("mockEpochTimeMillis")
+            .endDate("mockEpochTimeMillis")
+            .expiryDate("someMockDate")
+            .verb("paused")
+            .build();
+
+    String displayText = createSlackApprovalMessage(slackApprovalParams,
+        ApprovalState.class.getResource(SlackApprovalMessageKeys.PIPELINE_APPROVAL_MESSAGE_TEMPLATE));
+
+    String trimmedMessage = approvalState.validateMessageLength(displayText, slackApprovalParams,
+        ApprovalState.class.getResource(SlackApprovalMessageKeys.PIPELINE_APPROVAL_MESSAGE_TEMPLATE), serviceDetails,
+        null, infraDetails, null);
+    assertThat(trimmedMessage.length()).isLessThanOrEqualTo(2000);
+    assertThat(trimmedMessage).contains("*Services*: first, second, third... 100 more");
+    assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getServicesInvolved());
+    assertThat(trimmedMessage).contains(slackApprovalParams.getArtifactsInvolved());
     assertThat(trimmedMessage).contains("*Infrastructure Definitions*: first, second, third... 100 more");
     assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getInfraDefinitionsInvolved());
   }
@@ -1666,7 +1719,7 @@ public class ApprovalStateTest extends WingsBaseTest {
 
     String trimmedMessage = approvalState.validateMessageLength(displayText, slackApprovalParams,
         ApprovalState.class.getResource(SlackApprovalMessageKeys.PIPELINE_APPROVAL_MESSAGE_TEMPLATE), serviceDetails,
-        null, infraDetails);
+        null, infraDetails, null);
     assertThat(trimmedMessage.length()).isLessThanOrEqualTo(2000);
     assertThat(trimmedMessage).contains("*Services*: first, second, third... 100 more");
     assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getServicesInvolved());
@@ -1681,7 +1734,9 @@ public class ApprovalStateTest extends WingsBaseTest {
   public void shouldValidateMessageLengthWhenInfraDetailsIsNull() {
     String excessiveInfo = "first,second,third," + String.join(",", createCharSequence("lotsOfLongExcessiveInfo", 100));
     WorkflowNotificationDetails serviceDetails = WorkflowNotificationDetails.builder().name(excessiveInfo).build();
-    StringBuilder artifacts = new StringBuilder(String.format("*Artifacts:* %s", excessiveInfo.replace(",", ", ")));
+    StringBuilder artifacts = new StringBuilder(String.format("*Artifacts*: %s", excessiveInfo.replace(",", ", ")));
+    StringBuilder environments =
+        new StringBuilder(String.format("*Environments*: %s", excessiveInfo.replace(",", ", ")));
     SlackApprovalParams slackApprovalParams =
         SlackApprovalParams.builder()
             .appId(APP_ID)
@@ -1716,11 +1771,12 @@ public class ApprovalStateTest extends WingsBaseTest {
 
     String trimmedMessage = approvalState.validateMessageLength(displayText, slackApprovalParams,
         ApprovalState.class.getResource(SlackApprovalMessageKeys.PIPELINE_APPROVAL_MESSAGE_TEMPLATE), serviceDetails,
-        artifacts, null);
+        artifacts, null, environments);
     assertThat(trimmedMessage.length()).isLessThanOrEqualTo(2000);
     assertThat(trimmedMessage).contains("*Services*: first, second, third... 100 more");
     assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getServicesInvolved());
-    assertThat(trimmedMessage).contains("*Artifacts:* first, second, third... 100 more");
+    assertThat(trimmedMessage).contains("*Artifacts*: first, second, third... 100 more");
+    assertThat(trimmedMessage).contains("*Environments*: first, second, third... 100 more");
     assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getArtifactsInvolved());
     assertThat(trimmedMessage).contains(slackApprovalParams.getInfraDefinitionsInvolved());
   }
@@ -1733,7 +1789,7 @@ public class ApprovalStateTest extends WingsBaseTest {
         "first,second,third,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo,lotsOfLongExcessiveInfo";
     WorkflowNotificationDetails serviceDetails = WorkflowNotificationDetails.builder().name(excessiveInfo).build();
     WorkflowNotificationDetails infraDetails = WorkflowNotificationDetails.builder().name(excessiveInfo).build();
-    StringBuilder artifacts = new StringBuilder(String.format("*Artifacts:* %s", excessiveInfo.replace(",", ", ")));
+    StringBuilder artifacts = new StringBuilder(String.format("*Artifacts*: %s", excessiveInfo.replace(",", ", ")));
     SlackApprovalParams slackApprovalParams =
         SlackApprovalParams.builder()
             .appId(APP_ID)
@@ -1767,11 +1823,11 @@ public class ApprovalStateTest extends WingsBaseTest {
 
     String trimmedMessage = approvalState.validateMessageLength(displayText, slackApprovalParams,
         ApprovalState.class.getResource(SlackApprovalMessageKeys.PIPELINE_APPROVAL_MESSAGE_TEMPLATE), serviceDetails,
-        artifacts, infraDetails);
+        artifacts, infraDetails, null);
     assertThat(trimmedMessage.length()).isLessThanOrEqualTo(2000);
     assertThat(trimmedMessage).contains("*Services*: first, second, third... 25 more");
     assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getServicesInvolved());
-    assertThat(trimmedMessage).contains("*Artifacts:* first, second, third... 25 more");
+    assertThat(trimmedMessage).contains("*Artifacts*: first, second, third... 25 more");
     assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getArtifactsInvolved());
     assertThat(trimmedMessage).contains("*Infrastructure Definitions*: first, second, third... 25 more");
     assertThat(trimmedMessage).doesNotContain(slackApprovalParams.getInfraDefinitionsInvolved());
@@ -2183,7 +2239,6 @@ public class ApprovalStateTest extends WingsBaseTest {
     approvalState.setUserGroupAsExpression(true);
     approvalState.setUserGroupExpression(expression);
 
-    when(featureFlagService.isNotEnabled(eq(FeatureName.USER_GROUP_AS_EXPRESSION), any())).thenReturn(false);
     when(context.renderExpression(expression)).thenReturn("group1, group2");
     when(context.getAccountId()).thenReturn(ACCOUNT_ID);
     when(userGroupService.get(ACCOUNT_ID, "group1")).thenReturn(UserGroup.builder().uuid("A1").build());
@@ -2198,8 +2253,6 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
   public void shouldThrowInvalidRequestWhenUserGroupExpressionNull() {
-    when(featureFlagService.isNotEnabled(eq(FeatureName.USER_GROUP_AS_EXPRESSION), any())).thenReturn(false);
-
     assertThatThrownBy(() -> {
       approvalState.setUserGroupExpression(null);
       approvalState.resolveUserGroupFromExpression(context);
@@ -2213,8 +2266,6 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
   public void shouldThrowInvalidRequestWhenUserGroupExpressionEmpty() {
-    when(featureFlagService.isNotEnabled(eq(FeatureName.USER_GROUP_AS_EXPRESSION), any())).thenReturn(false);
-
     assertThatThrownBy(() -> {
       approvalState.setUserGroupExpression("");
       approvalState.resolveUserGroupFromExpression(context);
@@ -2228,8 +2279,6 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
   public void shouldThrowInvalidRequestWhenRenderedExpressionEmpty() {
-    when(featureFlagService.isNotEnabled(eq(FeatureName.USER_GROUP_AS_EXPRESSION), any())).thenReturn(false);
-
     String expression = "${userGroupExpression}";
     approvalState.setUserGroupAsExpression(true);
     approvalState.setUserGroupExpression(expression);

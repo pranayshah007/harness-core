@@ -56,6 +56,19 @@ message SelectTestsResponse {
   string selected = 1;
 }
 
+message DownloadLinkRequest {
+  string language = 1;
+  string os = 2;
+  string arch = 3;
+  string framework = 4;
+  string version = 5;
+  string env = 6;
+}
+
+message DownloadLinkResponse {
+  string links = 1;
+}
+
 service TiProxy {
   // RPC to stream test cases from the addon
   rpc WriteTests(stream WriteTestsRequest) returns (WriteTestsResponse);
@@ -68,4 +81,7 @@ service TiProxy {
 
   // Upload callgraph to lite engine which forwards the call to ti service.
   rpc UploadCg(UploadCgRequest) returns (UploadCgResponse);
+
+  // Get download links from lite engine which forwards the call to ti service.
+  rpc DownloadLink(DownloadLinkRequest) returns (DownloadLinkResponse);
 }

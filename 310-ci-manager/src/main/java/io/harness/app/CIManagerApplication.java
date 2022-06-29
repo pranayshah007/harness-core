@@ -8,6 +8,7 @@
 package io.harness.app;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.app.CIManagerConfiguration.HARNESS_RESOURCE_CLASSES;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.pms.contracts.plan.ExpansionRequestType.KEY;
@@ -18,20 +19,25 @@ import static java.util.Collections.singletonList;
 import io.harness.AuthorizationServiceHeader;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
+import io.harness.SCMGrpcClientModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheModule;
 import io.harness.ci.app.InspectCommand;
+import io.harness.ci.enforcement.BuildRestrictionUsageImpl;
+import io.harness.ci.enforcement.BuildsPerMonthRestrictionUsageImpl;
+import io.harness.ci.enforcement.TotalBuildsRestrictionUsageImpl;
+import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
 import io.harness.ci.plan.creator.CIPipelineServiceInfoProvider;
 import io.harness.ci.plan.creator.filter.CIFilterCreationResponseMerger;
+import io.harness.ci.registrars.ExecutionAdvisers;
+import io.harness.ci.registrars.ExecutionRegistrar;
+import io.harness.ci.serializer.CiExecutionRegistrars;
 import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.core.ci.services.CIActiveCommitterUsageImpl;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
-import io.harness.enforcement.BuildRestrictionUsageImpl;
-import io.harness.enforcement.BuildsPerMonthRestrictionUsageImpl;
-import io.harness.enforcement.TotalBuildsRestrictionUsageImpl;
 import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
 import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
 import io.harness.enforcement.client.services.EnforcementSdkRegisterService;
@@ -72,13 +78,10 @@ import io.harness.pms.serializer.jackson.PmsBeansJacksonModule;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
-import io.harness.registrars.ExecutionAdvisers;
-import io.harness.registrars.ExecutionRegistrar;
 import io.harness.resource.VersionInfoResource;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.serializer.CiBeansRegistrars;
-import io.harness.serializer.CiExecutionRegistrars;
 import io.harness.serializer.ConnectorNextGenRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
@@ -100,7 +103,6 @@ import io.harness.yaml.YamlSdkInitHelper;
 import io.harness.yaml.YamlSdkModule;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
-import ci.pipeline.execution.OrchestrationExecutionEventHandlerRegistrar;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -125,7 +127,6 @@ import io.serializer.HObjectMapper;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -135,7 +136,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
-import javax.ws.rs.Path;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ResourceInfo;
 import lombok.extern.slf4j.Slf4j;
@@ -144,7 +144,6 @@ import org.apache.log4j.LogManager;
 import org.glassfish.jersey.server.model.Resource;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
 import org.mongodb.morphia.converters.TypeConverter;
-import org.reflections.Reflections;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
@@ -154,9 +153,6 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
   private static final SecureRandom random = new SecureRandom();
   public static final Store HARNESS_STORE = Store.builder().name("harness").build();
   private static final String APP_NAME = "CI Manager Service Application";
-  public static final String BASE_PACKAGE = "io.harness.app.resources";
-  public static final String NG_PIPELINE_PACKAGE = "io.harness.ngpipeline";
-  public static final String ENFORCEMENT_CLIENT_PACKAGE = "io.harness.enforcement.client.resources";
 
   public static void main(String[] args) throws Exception {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -164,17 +160,6 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
       MaintenanceController.forceMaintenance(true);
     }));
     new CIManagerApplication().run(args);
-  }
-
-  public static Collection<Class<?>> getResourceClasses() {
-    Reflections basePackageClasses = new Reflections(BASE_PACKAGE);
-    Set<Class<?>> classSet = basePackageClasses.getTypesAnnotatedWith(Path.class);
-    Reflections pipelinePackageClasses = new Reflections(NG_PIPELINE_PACKAGE);
-    classSet.addAll(pipelinePackageClasses.getTypesAnnotatedWith(Path.class));
-    Reflections enforcementClientPackageClasses = new Reflections(ENFORCEMENT_CLIENT_PACKAGE);
-    classSet.addAll(enforcementClientPackageClasses.getTypesAnnotatedWith(Path.class));
-
-    return classSet;
   }
 
   @Override
@@ -318,6 +303,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     initializeLogging();
     log.info("bootstrapping ...");
     bootstrap.addCommand(new InspectCommand<>(this));
+    bootstrap.addCommand(new ScanClasspathMetadataCommand());
     bootstrap.addCommand(new GenerateOpenApiSpecCommand());
 
     bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
@@ -334,7 +320,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
   }
 
   private void registerResources(Environment environment, Injector injector) {
-    for (Class<?> resource : getResourceClasses()) {
+    for (Class<?> resource : HARNESS_RESOURCE_CLASSES) {
       if (Resource.isAcceptable(resource)) {
         environment.jersey().register(injector.getInstance(resource));
       }

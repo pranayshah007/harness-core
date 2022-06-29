@@ -13,6 +13,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.advisers.RollbackCustomStepParameters;
 import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
+import io.harness.cdng.azure.webapp.ApplicationSettingsParameters;
+import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
+import io.harness.cdng.azure.webapp.StartupScriptParameters;
 import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.gitops.CreatePRPassThroughData;
@@ -31,6 +34,7 @@ import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
+import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.k8s.DeleteResourcesWrapper;
 import io.harness.cdng.k8s.K8sBlueGreenOutcome;
@@ -41,6 +45,7 @@ import io.harness.cdng.k8s.K8sDeleteStepInfo;
 import io.harness.cdng.k8s.K8sDeleteStepParameters;
 import io.harness.cdng.k8s.K8sInstanceUnitType;
 import io.harness.cdng.k8s.K8sRollingOutcome;
+import io.harness.cdng.k8s.K8sRollingRollbackOutcome;
 import io.harness.cdng.k8s.K8sRollingRollbackStepInfo;
 import io.harness.cdng.k8s.K8sRollingRollbackStepParameters;
 import io.harness.cdng.k8s.K8sRollingStepInfo;
@@ -74,6 +79,7 @@ import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.service.steps.ServiceStepParameters;
+import io.harness.cdng.ssh.CommandStepInfo;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
 import io.harness.serializer.KryoRegistrar;
@@ -95,6 +101,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(K8SDirectInfrastructure.class, 8028);
     kryo.register(EnvironmentYaml.class, 8029);
     kryo.register(K8sRollingOutcome.class, 8034);
+    kryo.register(K8sRollingRollbackOutcome.class, 8054);
     kryo.register(InfraUseFromStage.class, 8039);
     kryo.register(InfraUseFromStage.Overrides.class, 8040);
     kryo.register(InfraStepParameters.class, 8042);
@@ -116,6 +123,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(K8sGcpInfrastructure.class, 8301);
     kryo.register(PdcInfrastructure.class, 8302);
     kryo.register(SshWinRmAzureInfrastructure.class, 8303);
+    kryo.register(SshWinRmAwsInfrastructure.class, 8304);
 
     // Starting using 12500 series as 8100 series is also used in 400-rest
     kryo.register(K8sBlueGreenOutcome.class, 12500);
@@ -164,5 +172,9 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(ServerlessAwsLambdaRollbackDataOutcome.class, 12583);
     kryo.register(CloudformationRollbackStepInfo.class, 12584);
     kryo.register(ConfigFileStepParameters.class, 12585);
+    kryo.register(CommandStepInfo.class, 12600);
+    kryo.register(StartupScriptParameters.class, 12601);
+    kryo.register(ApplicationSettingsParameters.class, 12602);
+    kryo.register(ConnectionStringsParameters.class, 12603);
   }
 }

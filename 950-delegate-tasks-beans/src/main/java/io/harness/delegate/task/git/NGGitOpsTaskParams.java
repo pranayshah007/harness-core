@@ -1,6 +1,13 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.task.git;
 
-import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
@@ -19,18 +26,14 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
-@OwnedBy(CDP)
+@OwnedBy(GITOPS)
 @Data
 @Builder
 public class NGGitOpsTaskParams implements TaskParameters, ExecutionCapabilityDemander {
   private GitFetchFilesConfig gitFetchFilesConfig; // will have ScmConnector
-  private Map<String, String> stringMap;
-  private String commitMessage;
-  private boolean isNewBranch;
-  private String sourceBranch;
-  private String targetBranch;
+  private Map<String, Map<String, String>> filesToVariablesMap;
+  private boolean overrideConfig;
   private String accountId;
-  private String prTitle;
   private String activityId;
   ConnectorInfoDTO connectorInfoDTO;
   GitOpsTaskType gitOpsTaskType;

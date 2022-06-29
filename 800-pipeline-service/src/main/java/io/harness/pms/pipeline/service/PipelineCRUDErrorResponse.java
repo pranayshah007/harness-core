@@ -41,11 +41,6 @@ public class PipelineCRUDErrorResponse {
     return format("File found on Git in branch [%s] for filepath [%s] is not a Pipeline YAML.", branch, filepath);
   }
 
-  public String errorMessageForInvalidField(String field, String identifierInYAML, String expectedIdentifier) {
-    return format(
-        "%s in YAML [%s] does not match the expected %s [%s].", field, identifierInYAML, field, expectedIdentifier);
-  }
-
   public void checkForGovernanceErrorAndThrow(GovernanceMetadata governanceMetadata) {
     if (governanceMetadata.getDeny()) {
       List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
@@ -57,5 +52,11 @@ public class PipelineCRUDErrorResponse {
       throw new InvalidRequestException(
           "Pipeline does not follow the Policies in these Policy Sets: " + denyingPolicySetIds);
     }
+  }
+
+  public String errorMessageForPipelinesNotDeleted(
+      String accountID, String orgId, String projectId, String exceptionMessage) {
+    return format("Error while deleting Pipelines in Project [%s], in Org [%s] for Account [%s] : %s", projectId, orgId,
+        accountID, exceptionMessage);
   }
 }

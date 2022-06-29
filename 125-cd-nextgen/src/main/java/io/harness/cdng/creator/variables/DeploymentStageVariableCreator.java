@@ -9,6 +9,7 @@ package io.harness.cdng.creator.variables;
 
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.sdk.core.variables.AbstractStageVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
@@ -102,7 +103,8 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
 
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
-    return Collections.singletonMap(YAMLFieldNameConstants.STAGE, Collections.singleton("Deployment"));
+    return Collections.singletonMap(
+        YAMLFieldNameConstants.STAGE, Collections.singleton(StepSpecTypeConstants.DEPLOYMENT_STAGE));
   }
 
   @Override

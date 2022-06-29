@@ -23,7 +23,7 @@ import io.harness.ngtriggers.service.impl.NGTriggerYamlSchemaServiceImpl;
 import io.harness.ngtriggers.utils.AwsCodeCommitDataObtainer;
 import io.harness.ngtriggers.utils.GitProviderBaseDataObtainer;
 import io.harness.ngtriggers.utils.SCMDataObtainer;
-import io.harness.pipeline.PipelineRemoteClientModule;
+import io.harness.pipeline.remote.PipelineRemoteClientModule;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.webhook.WebhookConfigProvider;
 
@@ -84,6 +84,7 @@ public class NGTriggersModule extends AbstractModule {
         MapBinder.newMapBinder(binder(), String.class, GitProviderBaseDataObtainer.class);
     gitProviderBaseDataObtainerMap.addBinding(WebhookSourceRepo.AWS_CODECOMMIT.name())
         .to(AwsCodeCommitDataObtainer.class);
+    gitProviderBaseDataObtainerMap.addBinding(WebhookSourceRepo.AZURE_REPO.name()).to(SCMDataObtainer.class);
     gitProviderBaseDataObtainerMap.addBinding(WebhookSourceRepo.GITHUB.name()).to(SCMDataObtainer.class);
     gitProviderBaseDataObtainerMap.addBinding(WebhookSourceRepo.BITBUCKET.name()).to(SCMDataObtainer.class);
     gitProviderBaseDataObtainerMap.addBinding(WebhookSourceRepo.GITLAB.name()).to(SCMDataObtainer.class);

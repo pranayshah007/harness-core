@@ -30,6 +30,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.ff.FeatureFlagService;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -178,6 +179,7 @@ public class GitConfigHelperService {
         List<EncryptedDataDetail> encryptionDetails =
             secretManager.getEncryptionDetails(attributeValue, GLOBAL_APP_ID, null);
         managerDecryptionService.decrypt(attributeValue, encryptionDetails);
+        ExceptionMessageSanitizer.storeAllSecretsForSanitizing(attributeValue, encryptionDetails);
         gitConfig.setSshSettingAttribute(settingAttribute);
       }
     }

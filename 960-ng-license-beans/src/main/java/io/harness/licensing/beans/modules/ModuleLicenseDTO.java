@@ -55,6 +55,8 @@ public abstract class ModuleLicenseDTO {
   LicenseStatus status;
   long startTime;
   long expiryTime;
+  boolean premiumSupport;
+  boolean selfService;
   Long createdAt;
   Long lastModifiedAt;
   Boolean trialExtended;

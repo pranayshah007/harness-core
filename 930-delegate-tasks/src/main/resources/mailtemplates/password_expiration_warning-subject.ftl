@@ -1,0 +1,1 @@
+Your password expires in less than ${passExpirationDays} days

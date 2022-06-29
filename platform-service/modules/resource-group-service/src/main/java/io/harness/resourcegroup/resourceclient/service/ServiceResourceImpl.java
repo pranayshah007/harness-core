@@ -26,6 +26,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.resourcegroup.beans.ValidatorType;
 import io.harness.resourcegroup.framework.v1.service.Resource;
 import io.harness.resourcegroup.framework.v1.service.ResourceInfo;
+import io.harness.resourcegroup.v2.model.AttributeFilter;
 import io.harness.service.remote.ServiceResourceClient;
 
 import com.google.common.collect.ImmutableMap;
@@ -83,6 +84,11 @@ public class ServiceResourceImpl implements Resource {
         .resourceType(getType())
         .resourceIdentifier(entityChangeDTO.getIdentifier().getValue())
         .build();
+  }
+
+  @Override
+  public boolean isValidAttributeFilter(AttributeFilter attributeFilter) {
+    return false;
   }
 
   @Override

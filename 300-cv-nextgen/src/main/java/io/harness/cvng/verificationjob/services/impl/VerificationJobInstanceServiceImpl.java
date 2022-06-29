@@ -7,7 +7,6 @@
 
 package io.harness.cvng.verificationjob.services.impl;
 
-import static io.harness.cvng.activity.CVActivityConstants.HEALTH_VERIFICATION_RETRIGGER_BUFFER_MINS;
 import static io.harness.cvng.beans.DataCollectionExecutionStatus.QUEUED;
 import static io.harness.cvng.beans.DataCollectionExecutionStatus.SUCCESS;
 import static io.harness.cvng.core.utils.DateTimeUtils.roundDownTo1MinBoundary;
@@ -19,10 +18,8 @@ import static io.harness.cvng.verificationjob.entities.VerificationJobInstance.P
 import static io.harness.cvng.verificationjob.entities.VerificationJobInstance.SERVICE_IDENTIFIER_KEY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
-
-import static java.util.stream.Collectors.groupingBy;
+import static io.harness.persistence.HQuery.excludeValidate;
 
 import io.harness.cvng.activity.beans.ActivityVerificationSummary;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary;
@@ -35,6 +32,7 @@ import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
+import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.entities.DataCollectionTask.Type;
@@ -54,8 +52,6 @@ import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.cvng.verificationjob.beans.AdditionalInfo;
-import io.harness.cvng.verificationjob.beans.TestVerificationBaselineExecutionDTO;
-import io.harness.cvng.verificationjob.entities.HealthVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.ExecutionStatus;
@@ -64,7 +60,6 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance.Verifica
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.metrics.AutoMetricContext;
 import io.harness.metrics.service.api.MetricService;
-import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.persistence.HPersistence;
 
@@ -72,11 +67,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.time.Clock;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -87,9 +80,7 @@ import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.FindAndModifyOptions;
 import org.mongodb.morphia.UpdateOptions;
-import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -119,40 +110,6 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
   public List<String> create(List<VerificationJobInstance> verificationJobInstances) {
     return hPersistence.save(verificationJobInstances);
   }
-  @Override
-  public List<String> dedupCreate(List<VerificationJobInstance> verificationJobInstances) {
-    verificationJobInstances.forEach(verificationJobInstance
-        -> Preconditions.checkState(verificationJobInstance.getResolvedJob().getType() == VerificationJobType.HEALTH));
-    Set<String> jobInstanceIds = new HashSet<>();
-    verificationJobInstances.forEach(verificationJobInstance -> {
-      String jobInstanceId = generateUuid();
-      Query<VerificationJobInstance> query =
-          hPersistence.createQuery(VerificationJobInstance.class, excludeAuthority)
-              .filter(VerificationJobInstanceKeys.accountId, verificationJobInstance.getAccountId())
-              .filter(ORG_IDENTIFIER_KEY, verificationJobInstance.getResolvedJob().getOrgIdentifier())
-              .filter(PROJECT_IDENTIFIER_KEY, verificationJobInstance.getResolvedJob().getProjectIdentifier())
-              .filter(ENV_IDENTIFIER_KEY, verificationJobInstance.getResolvedJob().getEnvIdentifier())
-              .filter(SERVICE_IDENTIFIER_KEY, verificationJobInstance.getResolvedJob().getServiceIdentifier())
-              .field(VerificationJobInstanceKeys.startTime)
-              .greaterThanOrEq(verificationJobInstance.getStartTime().minus(
-                  Duration.ofMinutes(HEALTH_VERIFICATION_RETRIGGER_BUFFER_MINS)))
-              .field(VerificationJobInstanceKeys.startTime)
-              .lessThanOrEq(verificationJobInstance.getStartTime());
-      VerificationJobInstance savedInstance = hPersistence.upsert(query,
-          hPersistence.createUpdateOperations(VerificationJobInstance.class)
-              .setOnInsert(VerificationJobInstanceKeys.uuid, jobInstanceId)
-              .setOnInsert(VerificationJobInstanceKeys.accountId, verificationJobInstance.getAccountId())
-              .setOnInsert(VerificationJobInstanceKeys.executionStatus, verificationJobInstance.getExecutionStatus())
-              .setOnInsert(VerificationJobInstanceKeys.startTime, verificationJobInstance.getStartTime())
-              .setOnInsert(VerificationJobInstanceKeys.resolvedJob, verificationJobInstance.getResolvedJob()),
-          new FindAndModifyOptions().upsert(true));
-      // only the activity which inserted should have verification associated.
-      if (jobInstanceId.equals(savedInstance.getUuid())) {
-        jobInstanceIds.add(savedInstance.getUuid());
-      }
-    });
-    return jobInstanceIds.stream().collect(Collectors.toList());
-  }
 
   @Override
   public List<VerificationJobInstance> get(List<String> verificationJobInstanceIds) {
@@ -173,28 +130,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
   @Override
   public void processVerificationJobInstance(VerificationJobInstance verificationJobInstance) {
     log.info("Processing verificationJobInstance with ID: {}", verificationJobInstance.getUuid());
-    if (verificationJobInstance.getResolvedJob().shouldDoDataCollection()) {
-      createDataCollectionTasks(verificationJobInstance);
-    } else {
-      createAndQueueHealthVerification(verificationJobInstance);
-    }
-  }
-
-  private void createAndQueueHealthVerification(VerificationJobInstance verificationJobInstance) {
-    // We dont do any data collection for health verification. So just queue the analysis.
-    List<CVConfig> cvConfigs = getCVConfigsForVerificationJob(verificationJobInstance.getResolvedJob());
-    cvConfigs.forEach(cvConfig -> {
-      String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(cvConfig.getAccountId(),
-          cvConfig.getUuid(), verificationJobInstance.getUuid(), cvConfig.getVerificationTaskTags());
-      log.info("For verificationJobInstance with ID: {}, creating a new health analysis with verificationTaskID {}",
-          verificationJobInstance.getUuid(), verificationTaskId);
-      orchestrationService.queueAnalysis(verificationTaskId,
-          ((HealthVerificationJob) verificationJobInstance.getResolvedJob())
-              .getPreActivityVerificationStartTime(verificationJobInstance.getStartTime()),
-          verificationJobInstance.getStartTime());
-    });
-
-    markRunning(verificationJobInstance.getUuid(), cvConfigs);
+    createDataCollectionTasks(verificationJobInstance);
   }
 
   // TODO: Cleanup this method. Remove else condition in the next release.
@@ -385,63 +321,21 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
   }
 
   @Override
-  public List<TestVerificationBaselineExecutionDTO> getTestJobBaselineExecutions(
-      String accountId, String orgIdentifier, String projectIdentifier, String verificationJobIdentifier) {
-    return getTestJobBaselineExecutions(accountId, orgIdentifier, projectIdentifier, verificationJobIdentifier, 5);
-  }
-
-  public List<TestVerificationBaselineExecutionDTO> getTestJobBaselineExecutions(
-      String accountId, String orgIdentifier, String projectIdentifier, String verificationJobIdentifier, int limit) {
-    List<VerificationJobInstance> verificationJobInstances =
-        hPersistence.createQuery(VerificationJobInstance.class)
+  public Optional<String> getLastSuccessfulTestVerificationJobExecutionId(
+      ServiceEnvironmentParams serviceEnvironmentParams) {
+    VerificationJobInstance verificationJobInstance =
+        hPersistence.createQuery(VerificationJobInstance.class, excludeValidate)
             .filter(VerificationJobInstanceKeys.executionStatus, ExecutionStatus.SUCCESS)
-            .filter(VerificationJobInstanceKeys.accountId, accountId)
-            .filter(PROJECT_IDENTIFIER_KEY, projectIdentifier)
-            .filter(ORG_IDENTIFIER_KEY, orgIdentifier)
-            .filter(VerificationJobInstance.VERIFICATION_JOB_IDENTIFIER_KEY, verificationJobIdentifier)
+            .filter(VerificationJobInstanceKeys.accountId, serviceEnvironmentParams.getAccountIdentifier())
+            .filter(PROJECT_IDENTIFIER_KEY, serviceEnvironmentParams.getProjectIdentifier())
+            .filter(ORG_IDENTIFIER_KEY, serviceEnvironmentParams.getOrgIdentifier())
+            .filter(SERVICE_IDENTIFIER_KEY, serviceEnvironmentParams.getServiceIdentifier())
+            .filter(ENV_IDENTIFIER_KEY, serviceEnvironmentParams.getEnvironmentIdentifier())
             .filter(VerificationJobInstance.VERIFICATION_JOB_TYPE_KEY, VerificationJobType.TEST)
             .filter(VerificationJobInstanceKeys.verificationStatus, ActivityVerificationStatus.VERIFICATION_PASSED)
             .order(Sort.descending(VerificationJobInstanceKeys.createdAt))
-            .asList(new FindOptions().limit(limit));
-    return verificationJobInstances.stream()
-        .map(verificationJobInstance
-            -> TestVerificationBaselineExecutionDTO.builder()
-                   .verificationJobInstanceId(verificationJobInstance.getUuid())
-                   .createdAt(verificationJobInstance.getCreatedAt())
-                   .build())
-        .collect(Collectors.toList());
-  }
-
-  @Override
-  public Optional<String> getLastSuccessfulTestVerificationJobExecutionId(
-      String accountId, String projectIdentifier, String orgIdentifier, String verificationJobIdentifier) {
-    List<TestVerificationBaselineExecutionDTO> testVerificationBaselineExecutionDTOs =
-        getTestJobBaselineExecutions(accountId, projectIdentifier, orgIdentifier, verificationJobIdentifier, 1);
-    if (testVerificationBaselineExecutionDTOs.isEmpty()) {
-      return Optional.empty();
-    } else {
-      return Optional.of(testVerificationBaselineExecutionDTOs.get(0).getVerificationJobInstanceId());
-    }
-  }
-
-  private List<VerificationJobInstance> getPostDeploymentVerificationJobInstances(
-      List<VerificationJobInstance> verificationJobInstances) {
-    return verificationJobInstances.stream()
-        .filter(
-            verificationJobInstance -> verificationJobInstance.getResolvedJob().getType() == VerificationJobType.HEALTH)
-        .collect(Collectors.toList());
-  }
-
-  private Map<EnvironmentType, List<VerificationJobInstance>> getPreAndProductionDeploymentGroup(
-      List<VerificationJobInstance> verificationJobInstances) {
-    return verificationJobInstances.stream()
-        .filter(
-            verificationJobInstance -> verificationJobInstance.getResolvedJob().getType() != VerificationJobType.HEALTH)
-        .collect(groupingBy(verificationJobInstance -> {
-          VerificationJob resolvedJob = verificationJobInstance.getResolvedJob();
-          EnvironmentResponseDTO environmentResponseDTO = getEnvironment(resolvedJob);
-          return environmentResponseDTO.getType();
-        }));
+            .get();
+    return Optional.ofNullable(verificationJobInstance).map(v -> v.getUuid());
   }
 
   //  TODO find the right place for this switch case

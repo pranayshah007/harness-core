@@ -79,6 +79,7 @@ import com.amazonaws.services.organizations.AWSOrganizationsClient;
 import com.amazonaws.services.organizations.AWSOrganizationsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
@@ -431,6 +432,17 @@ public class AwsClientImpl implements AwsClient {
 
     } catch (Exception e) {
       log.error("Exception getBucket", e);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+    }
+  }
+
+  @Override
+  public S3Objects getIterableS3ObjectSummaries(
+      AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix) {
+    try {
+      return S3Objects.withPrefix(getAmazonS3Client(credentialsProvider), s3BucketName, s3Prefix);
+    } catch (Exception e) {
+      log.error("Exception getIterableS3ObjectSummaries", e);
       throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
     }
   }

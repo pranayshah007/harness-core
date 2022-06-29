@@ -1,10 +1,15 @@
+/*
+ * Copyright 2021 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ */
+
 package io.harness.cdng.gitops;
 
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.CreatePRStepVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -27,7 +32,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
-@OwnedBy(CDP)
+@OwnedBy(HarnessTeam.GITOPS)
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
@@ -41,10 +46,9 @@ public class CreatePRStepInfo extends CreatePRBaseStepInfo implements CDStepInfo
 
   @Builder(builderMethodName = "infoBuilder")
   public CreatePRStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<Map<String, String>> stringMap, ParameterField<StoreConfigWrapper> store,
-      ParameterField<String> commitMessage, ParameterField<String> targetBranch, ParameterField<Boolean> isNewBranch,
-      ParameterField<String> prTitle) {
-    super(delegateSelectors, stringMap, store, commitMessage, targetBranch, isNewBranch, prTitle);
+      ParameterField<Map<String, String>> stringMap, CreatePRStepUpdateConfigScriptWrapper updateConfigScriptWrapper,
+      ShellType shellType, ParameterField<Boolean> overrideConfig) {
+    super(shellType, overrideConfig, stringMap, updateConfigScriptWrapper, delegateSelectors);
   }
 
   @Override
@@ -65,13 +69,11 @@ public class CreatePRStepInfo extends CreatePRBaseStepInfo implements CDStepInfo
   @Override
   public SpecParameters getSpecParameters() {
     return CreatePRStepParams.infoBuilder()
-        .delegateSelectors(delegateSelectors)
-        .stringMap(stringMap)
-        .store(store)
-        .commitMessage(commitMessage)
-        .isNewBranch(isNewBranch)
-        .prTitle(prTitle)
-        .targetBranch(targetBranch)
+        .shellType(getShell())
+        .overrideConfig(getOverrideConfig())
+        .updateConfigScriptWrapper(this.getSource())
+        .stringMap(getStringMap())
+        .delegateSelectors(getDelegateSelectors())
         .build();
   }
 }

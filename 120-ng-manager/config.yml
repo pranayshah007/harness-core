@@ -53,6 +53,8 @@ nextGen:
   ciManagerSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
   ceNextGenServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
   ffServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+  templateServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+  cvngServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM #get secret value.
 
 enableAudit: false
 
@@ -136,6 +138,11 @@ ciManagerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+cvngClientConfig:
+  baseUrl: http://localhost:6060/cv/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
 pipelineServiceClientConfig:
   baseUrl: http://localhost:12001/api/
   connectTimeOutSeconds: 15
@@ -158,6 +165,11 @@ lightwingClientConfig:
 
 ffServerClientConfig:
   baseUrl: http://localhost:3000/api/1.0/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+templateServiceClientConfig:
+  baseUrl: http://localhost:15001/api/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
@@ -303,6 +315,9 @@ segmentConfiguration:
   apiKey: "segment_api_key"
   certValidationRequired: false
 
+subscriptionConfig:
+  stripeApiKey: dummy
+
 accessControlClient:
   enableAccessControl: false
   accessControlServiceConfig:
@@ -325,9 +340,6 @@ accessControlAdminClient:
 gitGrpcClientConfigs:
   cf:
     target: localhost:11001
-    authority: localhost
-  policymgmt:
-    target: localhost:11002
     authority: localhost
   pms:
     target: localhost:14001
@@ -369,6 +381,7 @@ cfClientConfig:
   analyticsEnabled: true
   connectionTimeout: 10000
   readTimeout: 45000
+  bufferSize: 10240
   retries: 6
   sleepInterval: 5000
 

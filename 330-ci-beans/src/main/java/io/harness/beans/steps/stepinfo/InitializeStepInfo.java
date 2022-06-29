@@ -72,7 +72,7 @@ public class InitializeStepInfo implements CIStepInfo, WithConnectorRef {
   private String name;
   @Min(MIN_RETRY) @Max(MAX_RETRY) private int retry;
 
-  BuildJobEnvInfo buildJobEnvInfo;
+  @Deprecated BuildJobEnvInfo buildJobEnvInfo;
   @NotNull String accountId;
   @NotNull ExecutionElementConfig executionElementConfig;
   CodeBase ciCodebase;

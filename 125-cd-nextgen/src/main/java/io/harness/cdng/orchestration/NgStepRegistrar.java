@@ -14,10 +14,19 @@ import io.harness.cdng.artifact.steps.ArtifactStep;
 import io.harness.cdng.artifact.steps.ArtifactSyncStep;
 import io.harness.cdng.artifact.steps.ArtifactsStep;
 import io.harness.cdng.artifact.steps.SidecarsStep;
+import io.harness.cdng.azure.webapp.ApplicationSettingsStep;
+import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
+import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStep;
+import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStep;
+import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStep;
+import io.harness.cdng.azure.webapp.ConnectionStringsStep;
+import io.harness.cdng.azure.webapp.StartupScriptStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStep;
 import io.harness.cdng.configfile.steps.IndividualConfigFileStep;
 import io.harness.cdng.creator.plan.environment.steps.EnvironmentStepV2;
 import io.harness.cdng.gitops.CreatePRStep;
+import io.harness.cdng.gitops.MergePRStep;
+import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
 import io.harness.cdng.infra.steps.EnvironmentStep;
@@ -48,7 +57,6 @@ import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStep
 import io.harness.cdng.rollback.steps.InfrastructureDefinitionStep;
 import io.harness.cdng.rollback.steps.InfrastructureProvisionerStep;
 import io.harness.cdng.rollback.steps.RollbackStepsStep;
-import io.harness.cdng.rollback.steps.StepGroupRollbackStep;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStep;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStep;
 import io.harness.cdng.service.steps.ServiceConfigStep;
@@ -57,6 +65,7 @@ import io.harness.cdng.service.steps.ServiceSectionStep;
 import io.harness.cdng.service.steps.ServiceSpecStep;
 import io.harness.cdng.service.steps.ServiceStep;
 import io.harness.cdng.service.steps.ServiceStepV2;
+import io.harness.cdng.ssh.CommandStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
@@ -73,6 +82,7 @@ public class NgStepRegistrar {
 
     // Add CDNG steps here
     engineSteps.put(CreatePRStep.STEP_TYPE, CreatePRStep.class);
+    engineSteps.put(MergePRStep.STEP_TYPE, MergePRStep.class);
     engineSteps.put(RollbackOptionalChildChainStep.STEP_TYPE, RollbackOptionalChildChainStep.class);
     engineSteps.put(RollbackOptionalChildrenStep.STEP_TYPE, RollbackOptionalChildrenStep.class);
     engineSteps.put(NGSectionStep.STEP_TYPE, NGSectionStep.class);
@@ -107,7 +117,6 @@ public class NgStepRegistrar {
     engineSteps.put(InfrastructureDefinitionStep.STEP_TYPE, InfrastructureDefinitionStep.class);
     engineSteps.put(InfrastructureProvisionerStep.STEP_TYPE, InfrastructureProvisionerStep.class);
     engineSteps.put(RollbackStepsStep.STEP_TYPE, RollbackStepsStep.class);
-    engineSteps.put(StepGroupRollbackStep.STEP_TYPE, RollbackStepsStep.class);
     engineSteps.put(EnvironmentStep.STEP_TYPE, EnvironmentStep.class);
     engineSteps.put(EnvironmentStepV2.STEP_TYPE, EnvironmentStepV2.class);
     engineSteps.put(HelmDeployStep.STEP_TYPE, HelmDeployStep.class);
@@ -119,7 +128,16 @@ public class NgStepRegistrar {
     engineSteps.put(ServerlessAwsLambdaRollbackStep.STEP_TYPE, ServerlessAwsLambdaRollbackStep.class);
     engineSteps.put(IndividualConfigFileStep.STEP_TYPE, IndividualConfigFileStep.class);
     engineSteps.put(ConfigFilesStep.STEP_TYPE, ConfigFilesStep.class);
+    engineSteps.put(CommandStep.STEP_TYPE, CommandStep.class);
+    engineSteps.put(AzureWebAppSlotDeploymentStep.STEP_TYPE, AzureWebAppSlotDeploymentStep.class);
+    engineSteps.put(AzureWebAppTrafficShiftStep.STEP_TYPE, AzureWebAppTrafficShiftStep.class);
+    engineSteps.put(AzureWebAppSwapSlotStep.STEP_TYPE, AzureWebAppSwapSlotStep.class);
+    engineSteps.put(AzureWebAppRollbackStep.STEP_TYPE, AzureWebAppRollbackStep.class);
+    engineSteps.put(StartupScriptStep.STEP_TYPE, StartupScriptStep.class);
+    engineSteps.put(ApplicationSettingsStep.STEP_TYPE, ApplicationSettingsStep.class);
+    engineSteps.put(ConnectionStringsStep.STEP_TYPE, ConnectionStringsStep.class);
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
+    engineSteps.put(GitopsClustersStep.STEP_TYPE, GitopsClustersStep.class);
     return engineSteps;
   }
 }

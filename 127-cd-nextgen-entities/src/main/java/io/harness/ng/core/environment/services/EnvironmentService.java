@@ -8,8 +8,10 @@
 package io.harness.ng.core.environment.services;
 
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.repositories.UpsertOptions;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,12 +27,14 @@ public interface EnvironmentService {
   Environment update(Environment requestEnvironment);
 
   // TODO(archit): make it transactional
-  Environment upsert(Environment requestEnvironment);
+  Environment upsert(Environment requestEnvironment, UpsertOptions upsertOptions);
 
   Page<Environment> list(Criteria criteria, Pageable pageable);
 
   boolean delete(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentIdentifier, Long version);
+
+  boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier);
 
   List<Environment> listAccess(Criteria criteria);
 
@@ -39,4 +43,9 @@ public interface EnvironmentService {
 
   List<Environment> fetchesNonDeletedEnvironmentFromListOfIdentifiers(
       String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifierList);
+
+  String createEnvironmentInputsYaml(
+      String accountId, String projectIdentifier, String orgIdentifier, String envIdentifier);
+
+  List<Map<String, String>> getAttributes(String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers);
 }

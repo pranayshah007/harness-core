@@ -7,10 +7,12 @@
 
 package io.harness.ng.core.entities;
 
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 import static io.harness.notification.NotificationChannelType.MSTEAMS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.expression.Expression;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -24,7 +26,7 @@ import lombok.EqualsAndHashCode;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(HarnessTeam.PL)
 public class MicrosoftTeamsConfig extends NotificationSettingConfig {
-  String microsoftTeamsWebhookUrl;
+  @Expression(ALLOW_SECRETS) String microsoftTeamsWebhookUrl;
 
   @Builder
   public MicrosoftTeamsConfig(String microsoftTeamsWebhookUrl) {

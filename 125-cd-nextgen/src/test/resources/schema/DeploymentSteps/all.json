@@ -99,12 +99,12 @@
           "oneOf": [
             {
               "required": [
-                "folderPath"
+                "commitId"
               ]
             },
             {
               "required": [
-                "paths"
+                "branch"
               ]
             }
           ]
@@ -113,12 +113,12 @@
           "oneOf": [
             {
               "required": [
-                "commitId"
+                "folderPath"
               ]
             },
             {
               "required": [
-                "branch"
+                "paths"
               ]
             }
           ]
@@ -539,6 +539,118 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CommandStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "onDelegate"
+          ],
+          "properties": {
+            "commandUnits": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/CommandUnitWrapper"
+              }
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "environmentVariables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
+              }
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "onDelegate": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CommandUnitBaseSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CommandUnitWrapper": {
+      "type": "object",
+      "properties": {
+        "commandUnit": {
+          "$ref": "#/definitions/StepCommandUnit"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CopyCommandUnitSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CommandUnitBaseSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "destinationPath",
+            "sourceType"
+          ],
+          "properties": {
+            "destinationPath": {
+              "type": "string"
+            },
+            "sourceType": {
+              "type": "string",
+              "enum": [
+                "Artifact",
+                "Config"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "CountInstanceSelection": {
       "allOf": [
         {
@@ -572,10 +684,11 @@
         },
         {
           "type": "object",
+          "required": [
+            "overrideConfig",
+            "shell"
+          ],
           "properties": {
-            "commitMessage": {
-              "type": "string"
-            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -591,25 +704,89 @@
                 }
               ]
             },
-            "isNewBranch": {
-              "type": "boolean"
+            "overrideConfig": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             },
-            "prTitle": {
-              "type": "string"
+            "shell": {
+              "type": "string",
+              "enum": [
+                "Bash"
+              ]
             },
-            "store": {
-              "$ref": "#/definitions/StoreConfigWrapper"
+            "source": {
+              "$ref": "#/definitions/CreatePRStepUpdateConfigScriptWrapper"
             },
             "stringMap": {
               "$ref": "#/definitions/ParameterFieldMapStringString"
-            },
-            "targetBranch": {
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CreatePRStepUpdateConfigScriptBaseSource": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CreatePRStepUpdateConfigScriptInlineSource": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CreatePRStepUpdateConfigScriptBaseSource"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "updateConfigScript": {
               "type": "string"
             }
           }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CreatePRStepUpdateConfigScriptWrapper": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Inline"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CreatePRStepUpdateConfigScriptInlineSource"
+              }
+            }
+          }
+        }
+      ]
     },
     "DeleteManifestPathSpec": {
       "allOf": [
@@ -846,12 +1023,12 @@
           "oneOf": [
             {
               "required": [
-                "folderPath"
+                "commitId"
               ]
             },
             {
               "required": [
-                "paths"
+                "branch"
               ]
             }
           ]
@@ -860,12 +1037,12 @@
           "oneOf": [
             {
               "required": [
-                "commitId"
+                "folderPath"
               ]
             },
             {
               "required": [
-                "branch"
+                "paths"
               ]
             }
           ]
@@ -928,12 +1105,12 @@
           "oneOf": [
             {
               "required": [
-                "folderPath"
+                "commitId"
               ]
             },
             {
               "required": [
-                "paths"
+                "branch"
               ]
             }
           ]
@@ -942,12 +1119,12 @@
           "oneOf": [
             {
               "required": [
-                "commitId"
+                "folderPath"
               ]
             },
             {
               "required": [
-                "branch"
+                "paths"
               ]
             }
           ]
@@ -1010,12 +1187,12 @@
           "oneOf": [
             {
               "required": [
-                "folderPath"
+                "commitId"
               ]
             },
             {
               "required": [
-                "paths"
+                "branch"
               ]
             }
           ]
@@ -1024,12 +1201,12 @@
           "oneOf": [
             {
               "required": [
-                "commitId"
+                "folderPath"
               ]
             },
             {
               "required": [
-                "branch"
+                "paths"
               ]
             }
           ]
@@ -1044,31 +1221,53 @@
         },
         {
           "type": "object",
-          "required": [
-            "filePath",
-            "fileReference",
-            "fileType"
-          ],
           "properties": {
-            "filePath": {
-              "type": "string",
-              "minLength": 1
-            },
-            "fileReference": {
-              "type": "string",
-              "minLength": 1
-            },
-            "fileType": {
-              "type": "string",
-              "description": "io.harness.cdng.manifest.yaml.harness.HarnessFileType",
-              "enum": [
-                "FileStore",
-                "Encrypted"
+            "files": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/HarnessStoreFile"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
               ]
+            },
+            "secretFiles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HarnessStoreFile": {
+      "type": "object",
+      "required": [
+        "path",
+        "scope"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "account",
+            "org",
+            "project",
+            "unknown"
+          ]
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "HelmChartManifest": {
@@ -1996,7 +2195,8 @@
             "OpenshiftParam",
             "OpenshiftTemplate",
             "Values",
-            "ServerlessAwsLambda"
+            "ServerlessAwsLambda",
+            "ReleaseRepo"
           ]
         }
       },
@@ -2102,6 +2302,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "ReleaseRepo"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ReleaseRepoManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "ServerlessAwsLambda"
               }
             }
@@ -2139,6 +2355,34 @@
           "$ref": "#/definitions/ManifestConfig"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "MergePRStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ModuleSource": {
@@ -2231,6 +2475,96 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "OciHelmChartConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StoreConfig"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "basePath": {
+              "type": "string"
+            },
+            "config": {
+              "$ref": "#/definitions/OciHelmChartStoreConfigWrapper"
+            },
+            "metadata": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "OciHelmChartStoreConfig": {
+      "type": "object",
+      "discriminator": "type",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "OciHelmChartStoreConfigWrapper": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "Generic"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Generic"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/OciHelmChartStoreGenericConfig"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "OciHelmChartStoreGenericConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/OciHelmChartStoreConfig"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "connectorRef": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "OpenshiftManifest": {
       "allOf": [
         {
@@ -2300,6 +2634,12 @@
     "ParameterField": {
       "type": "object",
       "properties": {
+        "defaultValue": {
+          "type": "object"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
         "expression": {
           "type": "boolean"
         },
@@ -2327,6 +2667,12 @@
     "ParameterFieldBoolean": {
       "type": "object",
       "properties": {
+        "defaultValue": {
+          "type": "boolean"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
         "expression": {
           "type": "boolean"
         },
@@ -2354,6 +2700,15 @@
     "ParameterFieldMapStringString": {
       "type": "object",
       "properties": {
+        "defaultValue": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
         "expression": {
           "type": "boolean"
         },
@@ -2384,6 +2739,12 @@
     "ParameterFieldString": {
       "type": "object",
       "properties": {
+        "defaultValue": {
+          "type": "string"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
         "expression": {
           "type": "boolean"
         },
@@ -2428,6 +2789,25 @@
                   "type": "number"
                 }
               ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ReleaseRepoManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
             }
           }
         }
@@ -2580,6 +2960,41 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ScriptCommandUnitSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CommandUnitBaseSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "shell",
+            "source"
+          ],
+          "properties": {
+            "shell": {
+              "type": "string",
+              "enum": [
+                "Bash"
+              ]
+            },
+            "source": {
+              "$ref": "#/definitions/ShellScriptSourceWrapper"
+            },
+            "tailFiles": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TailFilePattern"
+              }
+            },
+            "workingDirectory": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SecretNGVariable": {
       "allOf": [
         {
@@ -2693,6 +3108,113 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ShellScriptBaseSource": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ShellScriptInlineSource": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ShellScriptBaseSource"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "script": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ShellScriptSourceWrapper": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Inline"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ShellScriptInlineSource"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "StepCommandUnit": {
+      "type": "object",
+      "required": [
+        "name",
+        "type"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Copy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CopyCommandUnitSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Script"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ScriptCommandUnitSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
     "StoreConfig": {
       "type": "object",
       "discriminator": "type",
@@ -2722,7 +3244,8 @@
             "Artifactory",
             "S3Url",
             "InheritFromManifest",
-            "Harness"
+            "Harness",
+            "OciHelmChart"
           ]
         }
       },
@@ -2892,6 +3415,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "OciHelmChart"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/OciHelmChartConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "S3"
               }
             }
@@ -2952,6 +3491,32 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TailFilePattern": {
+      "type": "object",
+      "properties": {
+        "tailFile": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ParameterFieldString"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "tailPattern": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ParameterFieldString"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "TerraformApplyStepInfo": {

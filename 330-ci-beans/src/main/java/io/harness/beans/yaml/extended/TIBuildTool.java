@@ -7,14 +7,18 @@
 
 package io.harness.beans.yaml.extended;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.CI)
+@TypeAlias("tiBuildTool")
+@RecasterAlias("io.harness.beans.yaml.extended.TIBuildTool")
 public enum TIBuildTool {
   @JsonProperty("Maven") MAVEN("Maven"),
   @JsonProperty("Bazel") BAZEL("Bazel"),

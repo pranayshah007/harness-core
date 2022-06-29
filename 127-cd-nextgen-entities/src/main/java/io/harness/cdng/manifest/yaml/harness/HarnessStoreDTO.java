@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
@@ -19,15 +20,13 @@ import lombok.Value;
 @Value
 @Builder
 public class HarnessStoreDTO {
-  String fileReference;
-  String filePath;
-  HarnessFileType fileType;
+  List<HarnessStoreFile> files;
+  List<String> secretFiles;
 
   public HarnessStore toHarnessStore() {
     return HarnessStore.builder()
-        .fileReference(ParameterField.createValueField(fileReference))
-        .filePath(ParameterField.createValueField(filePath))
-        .fileType(fileType)
+        .files(ParameterField.createValueField(files))
+        .secretFiles(ParameterField.createValueField(secretFiles))
         .build();
   }
 }

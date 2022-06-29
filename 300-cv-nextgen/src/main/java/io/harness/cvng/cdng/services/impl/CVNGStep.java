@@ -70,7 +70,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.Builder;
@@ -118,9 +117,7 @@ public class CVNGStep extends AsyncExecutableWithRollback {
                                                             .build();
 
     MonitoredServiceNode monitoredServiceNode = stepParameters.getMonitoredService();
-    MonitoredServiceSpecType monitoredServiceType = Objects.nonNull(monitoredServiceNode)
-        ? MonitoredServiceSpecType.valueOf(monitoredServiceNode.getType())
-        : MonitoredServiceSpecType.DEFAULT;
+    MonitoredServiceSpecType monitoredServiceType = CVNGStepUtils.getMonitoredServiceSpecType(monitoredServiceNode);
 
     ResolvedCVConfigInfo resolvedCVConfigInfo =
         verifyStepCvConfigServiceMap.get(monitoredServiceType)
@@ -171,6 +168,8 @@ public class CVNGStep extends AsyncExecutableWithRollback {
         activity.fillInVerificationJobInstanceDetails(verificationJobInstanceBuilder);
         verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstanceBuilder.build());
       }
+      verifyStepCvConfigServiceMap.get(monitoredServiceType)
+          .managePerpetualTasks(serviceEnvironmentParams, resolvedCVConfigInfo, verificationJobInstanceId);
       activity.setVerificationJobInstanceIds(Arrays.asList(verificationJobInstanceId));
       String activityId = activityService.upsert(activity);
       CVNGStepTask cvngStepTask = CVNGStepTask.builder()

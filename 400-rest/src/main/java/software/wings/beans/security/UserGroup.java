@@ -51,6 +51,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Transient;
@@ -86,6 +87,12 @@ public class UserGroup extends Base implements NotificationReceiverInfo, Account
                 .name("accountIdAndName")
                 .field(UserGroupKeys.accountId)
                 .field(UserGroupKeys.name)
+                .build(),
+            CompoundMongoIndex.builder()
+                .name("accountIdAndFilterTypeAndAppIds")
+                .field(UserGroupKeys.accountId)
+                .field(UserGroupKeys.appFilterType)
+                .field(UserGroupKeys.appIds)
                 .build())
         .build();
   }
@@ -278,5 +285,12 @@ public class UserGroup extends Base implements NotificationReceiverInfo, Account
 
   public boolean hasMember(User user) {
     return user != null && hasMember(user.getUuid());
+  }
+
+  @UtilityClass
+  public static final class UserGroupKeys {
+    // Temporary
+    public static final String appFilterType = "appPermissions.appFilter.filterType";
+    public static final String appIds = "appPermissions.appFilter.ids";
   }
 }

@@ -243,9 +243,9 @@ public class ExecutionHelper {
           InputSetTemplateHelper.createTemplateFromPipeline(pipelineEntity.getYaml()), mergedRuntimeInputYaml);
       if (EmptyPredicate.isNotEmpty(invalidFQNsInInputSet)) {
         throw new InvalidRequestException("Some fields are not valid: "
-            + invalidFQNsInInputSet.keySet()
+            + invalidFQNsInInputSet.entrySet()
                   .stream()
-                  .map(FQN::getExpressionFqn)
+                  .map(o -> o.getKey().getExpressionFqn() + ": " + o.getValue())
                   .collect(Collectors.toList())
                   .toString());
       }
@@ -260,7 +260,8 @@ public class ExecutionHelper {
               pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, true,
               featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE));
       pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
-      pipelineYamlWithTemplateRef = templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef() == null
+      pipelineYamlWithTemplateRef =
+          EmptyPredicate.isEmpty(templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef())
           ? pipelineYaml
           : templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
     }

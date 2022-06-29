@@ -12,6 +12,7 @@ import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
+import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
@@ -27,6 +28,7 @@ import org.mongodb.morphia.annotations.Entity;
   , @JsonSubTypes.Type(value = K8sGcpInfrastructure.class, name = "kubernetes-gcp"),
       @JsonSubTypes.Type(value = PdcInfrastructure.class, name = "pdc"),
       @JsonSubTypes.Type(value = SshWinRmAzureInfrastructure.class, name = "ssh-winrm-azure"),
+      @JsonSubTypes.Type(value = SshWinRmAwsInfrastructure.class, name = "ssh-winrm-aws"),
       @JsonSubTypes.Type(value = ServerlessAwsLambdaInfrastructure.class, name = "serverless-aws-lambda"),
       @JsonSubTypes.Type(value = AzureWebAppInfrastructure.class, name = "azure-webapp")
 })

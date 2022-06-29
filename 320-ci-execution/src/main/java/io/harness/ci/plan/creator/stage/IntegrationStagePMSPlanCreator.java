@@ -25,9 +25,13 @@ import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
+import io.harness.beans.steps.StepSpecTypeConstants;
+import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.CIIntegrationStageModifier;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.plan.creator.codebase.CodebasePlanCreator;
+import io.harness.ci.states.CISpecStep;
+import io.harness.ci.states.IntegrationStageStepPMS;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.stages.GenericStagePlanCreator;
@@ -51,10 +55,6 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
-import io.harness.states.CISpecStep;
-import io.harness.states.IntegrationStageStepPMS;
-import io.harness.stateutils.buildstate.ConnectorUtils;
-import io.harness.steps.StepSpecTypeConstants;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -63,9 +63,12 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
@@ -81,6 +84,8 @@ public class IntegrationStagePMSPlanCreator extends GenericStagePlanCreator {
       PlanCreationContext ctx, StageElementConfig stageElementConfig) {
     log.info("Received plan creation request for integration stage {}", stageElementConfig.getIdentifier());
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
+    Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
+    Map<String, ByteString> metadataMap = new HashMap<>();
 
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
@@ -103,6 +108,8 @@ public class IntegrationStagePMSPlanCreator extends GenericStagePlanCreator {
 
     ExecutionElementConfig modifiedExecutionPlan =
         modifyYAMLWithImplicitSteps(ctx, executionSource, executionField, stageElementConfig);
+
+    addStrategyFieldDependencyIfPresent(ctx, stageElementConfig, planCreationResponseMap, metadataMap);
 
     putNewExecutionYAMLInResponseMap(executionField, planCreationResponseMap, modifiedExecutionPlan, parentNode);
 
@@ -240,6 +247,7 @@ public class IntegrationStagePMSPlanCreator extends GenericStagePlanCreator {
       return BuildStatusUpdateParameter.builder()
           .sha(sha)
           .connectorIdentifier(codeBase.getConnectorRef().getValue())
+          .projectName(codeBase.getProjectName().getValue())
           .repoName(codeBase.getRepoName().getValue())
           .name(stageElementConfig.getName())
           .identifier(stageElementConfig.getIdentifier())
@@ -247,6 +255,7 @@ public class IntegrationStagePMSPlanCreator extends GenericStagePlanCreator {
     } else {
       return BuildStatusUpdateParameter.builder()
           .connectorIdentifier(codeBase.getConnectorRef().getValue())
+          .projectName(codeBase.getProjectName().getValue())
           .repoName(codeBase.getRepoName().getValue())
           .name(stageElementConfig.getName())
           .identifier(stageElementConfig.getIdentifier())

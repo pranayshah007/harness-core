@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.notification.Team;
 import io.harness.notification.channeldetails.MSTeamChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
+import io.harness.pms.contracts.ambiance.Ambiance;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -34,11 +35,14 @@ public class PmsMSTeamChannel extends PmsNotificationChannel {
 
   @Override
   public NotificationChannel toNotificationChannel(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateId, Map<String, String> templateData) {
+      String templateId, Map<String, String> templateData, Ambiance ambiance) {
     return MSTeamChannel.builder()
         .msTeamKeys(msTeamKeys)
         .accountId(accountId)
         .team(Team.PIPELINE)
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .expressionFunctorToken(ambiance.getExpressionFunctorToken())
         .templateData(templateData)
         .templateId(templateId)
         .userGroups(

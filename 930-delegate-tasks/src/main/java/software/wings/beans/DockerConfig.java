@@ -63,6 +63,7 @@ public class DockerConfig extends SettingValue implements EncryptableSetting, Ar
 
   @JsonView(JsonViews.Internal.class) @SchemaIgnore private String encryptedPassword;
 
+  private boolean skipValidation;
   /**
    * Instantiates a new Docker registry config.
    */
@@ -76,7 +77,7 @@ public class DockerConfig extends SettingValue implements EncryptableSetting, Ar
   }
 
   public DockerConfig(String dockerRegistryUrl, String username, char[] password, List<String> delegateSelectors,
-      String accountId, String encryptedPassword) {
+      String accountId, String encryptedPassword, boolean skipValidation) {
     super(SettingVariableTypes.DOCKER.name());
     setDockerRegistryUrl(dockerRegistryUrl);
     this.username = username;
@@ -84,6 +85,7 @@ public class DockerConfig extends SettingValue implements EncryptableSetting, Ar
     this.accountId = accountId;
     this.encryptedPassword = encryptedPassword;
     this.delegateSelectors = delegateSelectors;
+    this.skipValidation = skipValidation;
   }
 
   // override the setter for URL to enforce that we always put / (slash) at the end
@@ -132,12 +134,14 @@ public class DockerConfig extends SettingValue implements EncryptableSetting, Ar
   @EqualsAndHashCode(callSuper = true)
   public static final class Yaml extends ArtifactServerYaml {
     private List<String> delegateSelectors;
+    private Boolean skipValidation;
 
     @Builder
     public Yaml(String type, String harnessApiVersion, String url, String username, String password,
-        UsageRestrictions.Yaml usageRestrictions, List<String> delegateSelectors) {
+        UsageRestrictions.Yaml usageRestrictions, List<String> delegateSelectors, Boolean skipValidation) {
       super(type, harnessApiVersion, url, username, password, usageRestrictions);
       this.delegateSelectors = delegateSelectors;
+      this.skipValidation = skipValidation;
     }
   }
 }

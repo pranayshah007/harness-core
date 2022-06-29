@@ -22,6 +22,7 @@ import io.harness.delegate.beans.DelegateApproval;
 import io.harness.delegate.beans.DelegateApprovalResponse;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateDTO;
+import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateInitializationDetails;
 import io.harness.delegate.beans.DelegateParams;
@@ -72,7 +73,7 @@ public interface DelegateService extends OwnedByAccount {
 
   List<String> getAvailableVersions(String accountId);
 
-  Double getConnectedRatioWithPrimary(String targetVersion, String accountId);
+  Double getConnectedRatioWithPrimary(String targetVersion, String accountId, String ringName);
 
   Double getConnectedDelegatesRatio(String version, String accountId);
 
@@ -82,6 +83,9 @@ public interface DelegateService extends OwnedByAccount {
 
   File generateKubernetesYaml(String accountId, DelegateSetupDetails delegateSetupDetails, String managerHost,
       String verificationServiceUrl, MediaType fileFormat) throws IOException;
+
+  File generateNgHelmValuesYaml(String accountId, DelegateSetupDetails delegateSetupDetails, String managerHost,
+      String verificationServiceUrl) throws IOException;
 
   Delegate update(@Valid Delegate delegate);
 
@@ -221,4 +225,8 @@ public interface DelegateService extends OwnedByAccount {
 
   DelegateApprovalResponse approveDelegatesUsingToken(
       String accountId, String delegateTokenName, DelegateApproval action) throws InvalidRequestException;
+
+  void checkUniquenessOfDelegateName(String accountId, String delegateName, boolean isNg);
+
+  void markDelegatesAsDeletedOnDeletingOwner(String accountId, DelegateEntityOwner owner);
 }

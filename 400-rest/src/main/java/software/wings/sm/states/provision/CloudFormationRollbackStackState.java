@@ -51,6 +51,7 @@ import software.wings.helpers.ext.cloudformation.request.CloudFormationCreateSta
 import software.wings.helpers.ext.cloudformation.request.CloudFormationDeleteStackRequest;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCommandResponse;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCreateStackResponse;
+import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
@@ -232,7 +233,7 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
        * For details, see CD-4767
        */
       AwsConfig awsConfig = getAwsConfig(configParameter.getAwsConfigId());
-      setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
+      AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
       String roleArnRendered = executionContext.renderExpression(configParameter.getCloudFormationRoleArn());
       CloudFormationCreateStackRequestBuilder builder = CloudFormationCreateStackRequest.builder().awsConfig(awsConfig);
       if (CLOUDFORMATION_STACK_CREATE_URL.equals(configParameter.getCreateType())) {
@@ -323,7 +324,7 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
     CloudFormationRollbackInfoElement stackElement = stackElementOptional.get();
     ExecutionContextImpl executionContext = (ExecutionContextImpl) context;
     AwsConfig awsConfig = getAwsConfig(stackElement.getAwsConfigId());
-    setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
     DelegateTask delegateTask;
     if (!stackElement.isStackExisted()) {
       CloudFormationDeleteStackRequest request =

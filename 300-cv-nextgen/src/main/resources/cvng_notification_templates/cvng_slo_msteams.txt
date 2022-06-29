@@ -1,10 +1,31 @@
 {
   "@type": "MessageCard",
-  "themeColor": "${THEME_COLOR}",
-  "summary": "SLO ${sloName} breached Error Budget",
+  "themeColor": "#FFFFFF",
+  "summary": "Harness SRM",
   "sections": [
     {
-      "activityTitle": "This is a SLO notification from Harness. You have breached your SLO Error Budget with name ${sloName} inside project ${projectIdentifier}, organisation ${orgIdentifier} and account ${accountIdentifier}."
+      "activityTitle": "SLO: ${SLO_NAME} ${HEADER_MESSAGE} ${SERVICE_NAME} service",
+      "activitySubtitle": "Trigger ${TRIGGER_MESSAGE}. Incident occurred ${START_DATE}",
+      "facts": [
+              {
+                  "name": "Account Name",
+                  "value": "${ACCOUNT_NAME}"
+              },
+              {
+                  "name": "Organization Name",
+                  "value": "${ORG_NAME}"
+              },
+             {
+                  "name": "Project Name",
+                  "value": "${PROJECT_NAME}"
+             },
+             {
+                   "name": "View SLO details",
+                   "value": "[${URL}](${URL})"
+             },
+      ],
     }
   ]
 }
+
+

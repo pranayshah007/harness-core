@@ -7,13 +7,18 @@
 
 package io.harness.beans;
 
+import io.harness.annotation.RecasterAlias;
+
 import lombok.Builder;
 import lombok.Data;
 import lombok.Value;
+import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @Value
 @Builder
+@TypeAlias("gcpArtifactUploadInfo")
+@RecasterAlias("io.harness.beans.GCPArtifactUploadInfo")
 public class GCPArtifactUploadInfo implements ArtifactUploadInfo {
   private ArtifactUploadInfo.Type type = Type.GCP;
 

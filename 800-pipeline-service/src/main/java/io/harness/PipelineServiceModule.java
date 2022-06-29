@@ -41,6 +41,7 @@ import io.harness.filter.mapper.FilterPropertiesMapper;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.server.PipelineServiceGrpcModule;
+import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.logstreaming.LogStreamingModule;
@@ -65,6 +66,7 @@ import io.harness.pms.Dashboard.PMSLandingDashboardService;
 import io.harness.pms.Dashboard.PMSLandingDashboardServiceImpl;
 import io.harness.pms.approval.ApprovalResourceService;
 import io.harness.pms.approval.ApprovalResourceServiceImpl;
+import io.harness.pms.approval.custom.CustomApprovalHelperServiceImpl;
 import io.harness.pms.approval.jira.JiraApprovalHelperServiceImpl;
 import io.harness.pms.approval.notification.ApprovalNotificationHandlerImpl;
 import io.harness.pms.approval.servicenow.ServiceNowApprovalHelperServiceImpl;
@@ -133,6 +135,7 @@ import io.harness.serializer.OrchestrationStepsModuleRegistrars;
 import io.harness.serializer.PipelineServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.steps.approval.ApprovalNotificationHandler;
+import io.harness.steps.approval.step.custom.CustomApprovalHelperService;
 import io.harness.steps.approval.step.jira.JiraApprovalHelperService;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalHelperService;
 import io.harness.steps.jira.JiraStepHelperService;
@@ -360,6 +363,7 @@ public class PipelineServiceModule extends AbstractModule {
 
     bind(PMSBarrierService.class).to(PMSBarrierServiceImpl.class);
     bind(ApprovalResourceService.class).to(ApprovalResourceServiceImpl.class);
+    bind(CustomApprovalHelperService.class).to(CustomApprovalHelperServiceImpl.class);
     bind(JiraApprovalHelperService.class).to(JiraApprovalHelperServiceImpl.class);
     bind(JiraStepHelperService.class).to(JiraStepHelperServiceImpl.class);
     bind(PMSResourceConstraintService.class).to(PMSResourceConstraintServiceImpl.class);
@@ -392,6 +396,10 @@ public class PipelineServiceModule extends AbstractModule {
     install(EnforcementClientModule.getInstance(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId(),
         configuration.getEnforcementClientConfiguration()));
+
+    // ng-license dependencies
+    install(NgLicenseHttpClientModule.getInstance(configuration.getNgManagerServiceHttpClientConfig(),
+        configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
     registerEventsFrameworkMessageListeners();
   }
 

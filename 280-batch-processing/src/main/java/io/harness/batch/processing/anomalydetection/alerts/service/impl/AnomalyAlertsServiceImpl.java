@@ -36,6 +36,7 @@ import io.harness.notification.channeldetails.MSTeamChannel;
 import io.harness.notification.channeldetails.MSTeamChannel.MSTeamChannelBuilder;
 import io.harness.notification.channeldetails.SlackChannel;
 import io.harness.notification.channeldetails.SlackChannel.SlackChannelBuilder;
+import io.harness.notifications.NotificationResourceClient;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -69,6 +70,7 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
   @Autowired private CEViewService viewService;
   @Autowired private PerspectiveAnomalyService perspectiveAnomalyService;
   @Autowired private CCMNotificationsDao notificationSettingsDao;
+  @Autowired private NotificationResourceClient notificationResourceClient;
 
   int MAX_RETRY = 3;
 
@@ -189,6 +191,7 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
 
     // Sending email alerts
     emailChannelBuilder.templateData(templateData);
+    notificationResourceClient.sendNotification(accountId, emailChannelBuilder.build());
   }
 
   public List<CCMPerspectiveNotificationChannelsDTO> listNotificationChannelsPerPerspective(String accountId) {

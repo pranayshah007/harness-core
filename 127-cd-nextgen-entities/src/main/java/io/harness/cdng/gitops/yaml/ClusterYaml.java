@@ -38,5 +38,5 @@ public class ClusterYaml implements Visitable {
   @ApiModelProperty(hidden = true)
   private String uuid;
 
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) private ParameterField<String> ref;
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) private ParameterField<String> identifier;
 }

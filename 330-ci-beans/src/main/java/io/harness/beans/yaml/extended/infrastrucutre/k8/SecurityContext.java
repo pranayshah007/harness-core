@@ -13,6 +13,7 @@ import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
@@ -20,10 +21,13 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@TypeAlias("securityContext")
+@RecasterAlias("io.harness.beans.yaml.extended.infrastrucutre.k8.SecurityContext")
 public class SecurityContext {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)

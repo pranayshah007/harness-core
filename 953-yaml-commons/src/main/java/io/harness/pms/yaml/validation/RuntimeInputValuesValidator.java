@@ -175,7 +175,7 @@ public class RuntimeInputValuesValidator {
     return true;
   }
 
-  private static ParameterField<String> getInputSetParameterField(String inputSetValue) {
+  public static ParameterField<String> getInputSetParameterField(String inputSetValue) {
     if (EmptyPredicate.isEmpty(inputSetValue)) {
       return null;
     }

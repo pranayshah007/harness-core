@@ -127,6 +127,10 @@ public class AnomalyQueryBuilder {
           condition = condition.and(
               constructCondition(ANOMALIES.ACTUALCOST, filter.getValue().doubleValue(), filter.getOperator()));
           break;
+        case ANOMALOUS_SPEND:
+          condition = condition.and(constructConditionOnDifferenceOfFields(
+              ANOMALIES.ACTUALCOST, ANOMALIES.EXPECTEDCOST, filter.getValue().doubleValue(), filter.getOperator()));
+          break;
         default:
           throw new InvalidRequestException(
               String.format("%s numeric filter not supported", filter.getField().toString()));
@@ -293,6 +297,24 @@ public class AnomalyQueryBuilder {
         return value != null ? field.lessOrEqual(value) : DSL.noCondition();
       default:
         throw new InvalidRequestException(String.format("%s not supported for numeric fields", operator.toString()));
+    }
+  }
+
+  @NotNull
+  private static Condition constructConditionOnDifferenceOfFields(TableField<AnomaliesRecord, Double> field1,
+      TableField<AnomaliesRecord, Double> field2, Double value, CCMOperator operator) {
+    switch (operator) {
+      case GREATER_THAN:
+        return value != null ? field1.subtract(field2).greaterThan(value) : DSL.noCondition();
+      case GREATER_THAN_EQUALS_TO:
+        return value != null ? field1.subtract(field2).greaterOrEqual(value) : DSL.noCondition();
+      case LESS_THAN:
+        return value != null ? field1.subtract(field2).lessThan(value) : DSL.noCondition();
+      case LESS_THAN_EQUALS_TO:
+        return value != null ? field1.subtract(field2).lessOrEqual(value) : DSL.noCondition();
+      default:
+        throw new InvalidRequestException(
+            String.format("%s not supported for difference between two numeric fields", operator.toString()));
     }
   }
 

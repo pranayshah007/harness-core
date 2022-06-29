@@ -2652,6 +2652,21 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
   }
 
   @Override
+  public InfrastructureMapping getInfraMappingWithDeploymentType(
+      String appId, String serviceId, String infraDefinitionId) {
+    if (isNotEmpty(serviceId) && isNotEmpty(infraDefinitionId)) {
+      return wingsPersistence.createQuery(InfrastructureMapping.class)
+          .filter(InfrastructureMappingKeys.appId, appId)
+          .filter(InfrastructureMappingKeys.serviceId, serviceId)
+          .filter(InfrastructureMappingKeys.infrastructureDefinitionId, infraDefinitionId)
+          .project(InfrastructureMappingKeys.uuid, true)
+          .project(InfrastructureMappingKeys.deploymentType, true)
+          .get();
+    }
+    return null;
+  }
+
+  @Override
   public List<InfrastructureMapping> listByComputeProviderId(String accountId, String computeProviderId) {
     return wingsPersistence.createQuery(InfrastructureMapping.class)
         .filter(InfrastructureMappingKeys.accountId, accountId)

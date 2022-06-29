@@ -25,6 +25,7 @@ import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.apiexamples.PipelineAPIConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
@@ -33,6 +34,7 @@ import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
+import io.harness.gitsync.interceptor.GitImportInfoDTO;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -47,6 +49,8 @@ import io.harness.pms.inputset.OverlayInputSetErrorWrapperDTOPMS;
 import io.harness.pms.merger.helpers.InputSetYamlHelper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSanitiseResponseDTO;
@@ -75,6 +79,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -116,7 +121,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
 
-@Tag(name = "Pipeline InputSets", description = "Contain APIs corresponding to the Input Sets, including Overlay Input Sets.")
+@Tag(name = "Pipeline Input Set", description = "This contains APIs related to Input Sets")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =
     {
@@ -141,7 +146,8 @@ public class InputSetResourcePMS {
   @ApiOperation(value = "Gets an InputSet by identifier", nickname = "getInputSetForPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   @Operation(operationId = "getInputSet",
-      summary = "Gets Input Set for a given identifier. Throws error if no Input Set exists for the given identifier.",
+      description = "Returns Input Set for a Given Identifier (Throws an Error if no Input Set Exists)",
+      summary = "Fetch an Input Set",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -240,7 +246,8 @@ public class InputSetResourcePMS {
   @POST
   @ApiOperation(value = "Create an InputSet For Pipeline", nickname = "createInputSetForPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
-  @Operation(operationId = "postInputSet", summary = "Create an Input Set for a Pipeline",
+  @Operation(operationId = "postInputSet", description = "Creates an Input Set for a Pipeline",
+      summary = "Create an Input Set",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -263,8 +270,12 @@ public class InputSetResourcePMS {
       String pipelineRepoID, @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo,
       @RequestBody(required = true,
           description =
-              "Input set YAML to be created. The Account, Org, Project, and Pipeline identifiers inside the YAML should match the query parameters.")
-      @NotNull String yaml) {
+              "Input set YAML to be created. The Account, Org, Project, and Pipeline identifiers inside the YAML should match the query parameters.",
+          content = {
+            @Content(mediaType = "application/yaml",
+                examples = @ExampleObject(name = "Create", summary = "Sample Input Set YAML",
+                    value = PipelineAPIConstants.CREATE_INPUTSET_API, description = "Sample Input Set YAML"))
+          }) @NotNull String yaml) {
     yaml = removeRuntimeInputFromYaml(yaml);
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
@@ -334,7 +345,8 @@ public class InputSetResourcePMS {
   @Path("{inputSetIdentifier}")
   @ApiOperation(value = "Update an InputSet by identifier", nickname = "updateInputSetForPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
-  @Operation(operationId = "putInputSet", summary = "Update Input Set for Pipeline",
+  @Operation(operationId = "putInputSet", description = "Updates the Input Set for a Pipeline",
+      summary = "Update an Input Set",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -363,8 +375,12 @@ public class InputSetResourcePMS {
       String pipelineRepoID, @BeanParam GitEntityUpdateInfoDTO gitEntityInfo,
       @RequestBody(required = true,
           description =
-              "Input set YAML to be updated. The query parameters should match the Account, Org, Project, and Pipeline Ids in the YAML.")
-      @NotNull String yaml) {
+              "Input set YAML to be updated. The query parameters should match the Account, Org, Project, and Pipeline Ids in the YAML.",
+          content = {
+            @Content(mediaType = "application/yaml",
+                examples = @ExampleObject(name = "Update", summary = "Sample Input Set YAML",
+                    value = PipelineAPIConstants.CREATE_INPUTSET_API, description = "Sample Input Set YAML"))
+          }) @NotNull String yaml) {
     log.info(String.format("Updating input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
     yaml = removeRuntimeInputFromYaml(yaml);
@@ -439,7 +455,8 @@ public class InputSetResourcePMS {
   @Path("{inputSetIdentifier}")
   @ApiOperation(value = "Delete an InputSet by identifier", nickname = "deleteInputSetForPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_DELETE)
-  @Operation(operationId = "deleteInputSet", summary = "Delete the Input Set by Identifier",
+  @Operation(operationId = "deleteInputSet", description = "Deletes the Input Set by Identifier",
+      summary = "Delete an Input Set",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -468,7 +485,8 @@ public class InputSetResourcePMS {
   @GET
   @ApiOperation(value = "Gets InputSets list for a pipeline", nickname = "getInputSetsListForPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
-  @Operation(operationId = "listInputSet", summary = "List all Input Sets for a pipeline",
+  @Operation(operationId = "listInputSet", description = "Lists all Input Sets for a Pipeline",
+      summary = "List Input Sets",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -526,7 +544,8 @@ public class InputSetResourcePMS {
   @Path("template")
   @ApiOperation(value = "Get template from a pipeline YAML", nickname = "getTemplateFromPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
-  @Operation(operationId = "runtimeInputTemplate", summary = "Fetch Runtime Input Template for a Pipeline",
+  @Operation(operationId = "runtimeInputTemplate", description = "Returns Runtime Input Template for a Pipeline",
+      summary = "Fetch Runtime Input Template",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -696,5 +715,34 @@ public class InputSetResourcePMS {
             .shouldDeleteInputSet(false)
             .inputSetUpdateResponse(PMSInputSetElementMapper.toInputSetResponseDTOPMS(updatedEntity))
             .build());
+  }
+
+  @POST
+  @Path("/import/{inputSetIdentifier}")
+  @Hidden
+  @ApiOperation(value = "Get Input Set YAML from Git Repository", nickname = "importInputSet")
+  @Operation(operationId = "importInputSet", summary = "Get Input Set YAML from Git Repository",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Fetches Input Set YAML from Git Repository and saves a record for it in Harness")
+      })
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  public ResponseDTO<InputSetImportResponseDTO>
+  importInputSetFromGit(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Parameter(
+                            description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier @Parameter(
+          description = PipelineResourceConstants.ORG_PARAM_MESSAGE) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier @Parameter(
+          description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier,
+      @Parameter(description = InputSetSchemaConstants.PIPELINE_ID_FOR_INPUT_SET_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier String pipelineIdentifier,
+      @PathParam(NGCommonEntityConstants.INPUT_SET_IDENTIFIER_KEY) @Parameter(
+          description = PipelineResourceConstants.INPUT_SET_ID_PARAM_MESSAGE) String inputSetIdentifier,
+      @BeanParam GitImportInfoDTO gitImportInfoDTO, InputSetImportRequestDTO inputSetImportRequestDTO) {
+    InputSetEntity inputSetEntity = pmsInputSetService.importInputSetFromRemote(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, inputSetImportRequestDTO);
+    return ResponseDTO.newResponse(
+        InputSetImportResponseDTO.builder().identifier(inputSetEntity.getIdentifier()).build());
   }
 }

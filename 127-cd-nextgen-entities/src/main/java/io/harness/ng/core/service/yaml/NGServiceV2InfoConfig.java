@@ -14,6 +14,9 @@ import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.validator.NGRegexValidatorConstants;
+import io.harness.walktree.beans.VisitableChildren;
+import io.harness.walktree.visitor.SimpleVisitorHelper;
+import io.harness.walktree.visitor.Visitable;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -38,8 +41,9 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@SimpleVisitorHelper(helperClass = NGServiceV2InfoConfigVisitorHelper.class)
 @TypeAlias("nGServiceV2InfoConfig")
-public class NGServiceV2InfoConfig {
+public class NGServiceV2InfoConfig implements Visitable {
   @JsonProperty("__uuid")
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -48,7 +52,14 @@ public class NGServiceV2InfoConfig {
   @NotNull @EntityIdentifier @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN) String identifier;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String description;
   Map<String, String> tags;
-  @Builder.Default Boolean gitOpsEnabled = false;
+  Boolean gitOpsEnabled;
 
   ServiceDefinition serviceDefinition;
+
+  @Override
+  public VisitableChildren getChildrenToWalk() {
+    VisitableChildren children = VisitableChildren.builder().build();
+    children.add("serviceDefinition", serviceDefinition);
+    return children;
+  }
 }

@@ -44,6 +44,9 @@ import io.harness.delegate.beans.serverless.ServerlessDeployResult;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.git.TaskStatus;
+import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
 import io.harness.delegate.task.serverless.response.ServerlessGitFetchResponse;
@@ -55,10 +58,12 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -91,6 +96,9 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
                                         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
                                         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
                                         .build();
+  private static final String PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY = "<+artifact.path>";
+  private static final String PRIMARY_ARTIFACT_PATH_FOR_ECR = "<+artifact.image>";
+  private static final String ARTIFACT_ACTUAL_PATH = "harnessArtifact/artifactFile";
 
   @Mock private EngineExpressionService engineExpressionService;
 
@@ -98,6 +106,7 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   @Mock private ServerlessAwsLambdaDeployStep serverlessAwsLambdaDeployStep;
   @Mock private ServerlessEntityHelper serverlessEntityHelper;
   @Mock private ServerlessStepHelper serverlessStepHelper;
+  @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Spy @InjectMocks private ServerlessStepCommonHelper serverlessStepCommonHelper;
 
@@ -239,16 +248,22 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
             .build();
     ServerlessExecutionPassThroughData serverlessExecutionPassThroughData =
         ServerlessExecutionPassThroughData.builder().build();
-    TaskChainResponse expectedTaskChainResponse =
-        TaskChainResponse.builder().chainEnd(true).passThroughData(serverlessExecutionPassThroughData).build();
+    TaskChainResponse expectedTaskChainResponse = TaskChainResponse.builder()
+                                                      .chainEnd(false)
+                                                      .passThroughData(serverlessExecutionPassThroughData)
+                                                      .taskRequest(TaskRequest.newBuilder().build())
+                                                      .build();
     Optional<Pair<String, String>> manifestFilePathContent = Optional.of(Pair.of("a", "b"));
+    doReturn(OptionalOutcome.builder().found(false).build())
+        .when(outcomeService)
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
     doReturn(manifestFilePathContent).when(serverlessStepHelper).getManifestFileContent(any(), any());
     doReturn(expectedTaskChainResponse)
         .when(serverlessAwsLambdaDeployStep)
-        .executeServerlessTask(any(), any(), any(), any(), any(), any());
+        .executeServerlessPrepareRollbackTask(any(), any(), any(), any(), any(), any());
     TaskChainResponse taskChainResponse = serverlessStepCommonHelper.executeNextLink(serverlessAwsLambdaDeployStep,
         ambiance, stepElementParameters, passThroughData, () -> responseData, serverlessStepHelper);
-    assertThat(taskChainResponse.isChainEnd()).isTrue();
+    assertThat(taskChainResponse.isChainEnd()).isFalse();
     assertThat(taskChainResponse).isEqualTo(expectedTaskChainResponse);
   }
 
@@ -393,9 +408,38 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void renderManifestContentTestWhenManifestFileContentNotEmpty() {
     String manifestFileContent = "dsfa";
+    ServerlessArtifactConfig serverlessArtifactConfig = ServerlessArtifactoryArtifactConfig.builder().build();
     doReturn(manifestFileContent).when(engineExpressionService).renderExpression(ambiance, manifestFileContent);
-    assertThat(serverlessStepCommonHelper.renderManifestContent(ambiance, manifestFileContent))
+    assertThat(
+        serverlessStepCommonHelper.renderManifestContent(ambiance, manifestFileContent, serverlessArtifactConfig))
         .isEqualTo(manifestFileContent);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void
+  renderManifestContentTestWhenManifestFileContentNotEmptyAndContainsPrimaryArtifactoryReplacementExpression() {
+    String manifestFileContent = PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY;
+    ServerlessArtifactConfig serverlessArtifactConfig = ServerlessArtifactoryArtifactConfig.builder().build();
+    doReturn(ARTIFACT_ACTUAL_PATH).when(engineExpressionService).renderExpression(ambiance, ARTIFACT_ACTUAL_PATH);
+    assertThat(
+        serverlessStepCommonHelper.renderManifestContent(ambiance, manifestFileContent, serverlessArtifactConfig))
+        .isEqualTo(ARTIFACT_ACTUAL_PATH);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void renderManifestContentTestWhenManifestFileContentNotEmptyAndContainsPrimaryEcrReplacementExpression() {
+    String manifestFileContent = PRIMARY_ARTIFACT_PATH_FOR_ECR;
+    String replacedContent = "448640225317.dkr.ecr.us-east-1.amazonaws.com/test-docker-2:latest";
+    ServerlessArtifactConfig serverlessArtifactConfig =
+        ServerlessEcrArtifactConfig.builder().image(replacedContent).build();
+    doReturn(replacedContent).when(engineExpressionService).renderExpression(ambiance, replacedContent);
+    assertThat(
+        serverlessStepCommonHelper.renderManifestContent(ambiance, manifestFileContent, serverlessArtifactConfig))
+        .isEqualTo(replacedContent);
   }
 
   @Test
@@ -403,7 +447,9 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void renderManifestContentTestWhenManifestFileContentEmpty() {
     String manifestFileContent = "";
-    assertThat(serverlessStepCommonHelper.renderManifestContent(ambiance, manifestFileContent))
+    ServerlessArtifactConfig serverlessArtifactConfig = ServerlessArtifactoryArtifactConfig.builder().build();
+    assertThat(
+        serverlessStepCommonHelper.renderManifestContent(ambiance, manifestFileContent, serverlessArtifactConfig))
         .isEqualTo(manifestFileContent);
   }
 }

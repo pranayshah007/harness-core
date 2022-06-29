@@ -14,8 +14,8 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
-import io.harness.steps.StepSpecTypeConstants;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;

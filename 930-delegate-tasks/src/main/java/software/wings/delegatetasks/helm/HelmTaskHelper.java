@@ -428,6 +428,7 @@ public class HelmTaskHelper {
     }
     OciHelmRepoConfig repoConfig = (OciHelmRepoConfig) helmChartConfigParams.getHelmRepoConfig();
     try {
+      loginOciRegistry(repoConfig, HelmVersion.V380, timeoutInMillis, chartDirectory);
       String repoName = String.format(REGISTRY_URL_PREFIX, Paths.get(repoConfig.getChartRepoUrl()).normalize());
       helmTaskHelperBase.fetchChartFromRepo(repoName, helmChartConfigParams.getRepoDisplayName(),
           helmChartConfigParams.getChartName(), helmChartConfigParams.getChartVersion(), chartDirectory,
@@ -616,7 +617,7 @@ public class HelmTaskHelper {
         command = fetchHelmChartVersionsCommandWithRepoFlags(helmChartConfigParams.getHelmVersion(),
             helmChartConfigParams.getChartName(), helmChartConfigParams.getRepoName(), destinationDirectory, tempDir);
       }
-      if (isNotEmpty(helmChartConfigParams.getChartVersion())) {
+      if (isNotEmpty(helmChartConfigParams.getChartVersion()) && !helmChartCollectionParams.isRegex()) {
         command =
             command + HELM_CHART_VERSION_FLAG.replace(CHART_VERSION, helmChartConfigParams.getChartVersion().trim());
       }
@@ -628,6 +629,7 @@ public class HelmTaskHelper {
       }
     } finally {
       // We do remove repo only when the useFlags FF is on.
+      deleteDirectoryAndItsContentIfExists(workingDirectory + "/helm");
       if (useRepoFlags) {
         deleteQuietlyWithErrorLog(tempDir);
       }
@@ -704,7 +706,7 @@ public class HelmTaskHelper {
           helmChartConfigParams.getChartName(), helmChartConfigParams.getRepoName(), chartDirectory);
 
       // fetch specific version
-      if (isNotEmpty(helmChartConfigParams.getChartVersion())) {
+      if (isNotEmpty(helmChartConfigParams.getChartVersion()) && !helmChartCollectionParams.isRegex()) {
         command =
             command + HELM_CHART_VERSION_FLAG.replace(CHART_VERSION, helmChartConfigParams.getChartVersion().trim());
       }
