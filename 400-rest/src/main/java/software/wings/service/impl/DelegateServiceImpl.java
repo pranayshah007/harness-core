@@ -1375,7 +1375,7 @@ public class DelegateServiceImpl implements DelegateService {
 
       final boolean isOnPrem = DeployMode.isOnPrem(mainConfiguration.getDeployMode().name());
       params.put("isOnPrem", String.valueOf(isOnPrem));
-      if (isOnPrem) {
+      if (!isOnPrem) {
         final String watcherVersion =
             delegateVersionService.getWatcherJarVersions(templateParameters.getAccountId()).split("\\.")[2];
         params.put("watcherJarVersion", watcherVersion);
