@@ -1,8 +1,0 @@
-load("@rules_java//java:defs.bzl", "java_library")
-
-java_library(
-    name = "capability",
-    srcs = ["CapabilityModule.java"],
-    visibility = ["//:__subpackages__"],
-    deps = ["//460-capability/src/main/java/io/harness/capability/service"],
-)

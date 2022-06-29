@@ -1,8 +1,0 @@
-load("@rules_java//java:defs.bzl", "java_library")
-
-java_library(
-    name = "morphia",
-    srcs = ["SecretManagerClientMorphiaRegistrar.java"],
-    visibility = ["//:__subpackages__"],
-    deps = ["//940-secret-manager-client/src/main/java/io/harness/secretmanagerclient/dto"],
-)

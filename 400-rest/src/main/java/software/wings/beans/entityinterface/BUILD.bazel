@@ -1,8 +1,0 @@
-load("@rules_java//java:defs.bzl", "java_library")
-
-java_library(
-    name = "entityinterface",
-    srcs = ["TagAware.java"],
-    visibility = ["//:__subpackages__"],
-    deps = ["//999-annotations/src/main/java/io/harness/annotations/dev"],
-)

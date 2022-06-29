@@ -1,8 +1,0 @@
-load("@rules_java//java:defs.bzl", "java_library")
-
-java_library(
-    name = "utils",
-    testonly = True,
-    srcs = ["InvalidResourceData.java"],
-    deps = ["@maven//:org_projectlombok_lombok"],
-)

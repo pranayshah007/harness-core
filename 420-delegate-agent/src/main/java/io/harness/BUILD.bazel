@@ -1,7 +1,0 @@
-load("@rules_java//java:defs.bzl", "java_library")
-
-java_library(
-    name = "harness",
-    srcs = ["Dummy420.java"],
-    visibility = ["//:__subpackages__"],
-)

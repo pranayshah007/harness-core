@@ -1,8 +1,0 @@
-load("@rules_java//java:defs.bzl", "java_library")
-
-java_library(
-    name = "request",
-    testonly = True,
-    srcs = ["RequestTestUtils.java"],
-    deps = ["@maven//:org_projectlombok_lombok"],
-)

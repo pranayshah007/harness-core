@@ -1,8 +1,0 @@
-load("@rules_java//java:defs.bzl", "java_library")
-
-java_library(
-    name = "governance",
-    srcs = ["PolicyEvaluationFailureException.java"],
-    visibility = ["//:__subpackages__"],
-    deps = ["//980-commons/src/main/java/io/harness/eraro"],
-)

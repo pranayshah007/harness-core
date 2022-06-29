@@ -1,8 +1,0 @@
-load("@rules_java//java:defs.bzl", "java_library")
-
-java_library(
-    name = "migrator",
-    srcs = ["Migrator.java"],
-    visibility = ["//:__subpackages__"],
-    deps = ["@maven//:org_mongodb_morphia_morphia"],
-)

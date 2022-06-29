@@ -1,8 +1,0 @@
-load("@rules_java//java:defs.bzl", "java_library")
-
-java_library(
-    name = "listener",
-    srcs = ["EventListener.java"],
-    visibility = ["//:__subpackages__"],
-    deps = ["//950-events-framework/src/main/java/io/harness/event/handler"],
-)

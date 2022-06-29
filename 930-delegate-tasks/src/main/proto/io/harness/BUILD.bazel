@@ -1,9 +1,0 @@
-load("//:tools/bazel/protos/harness_grpc_library.bzl", "harness_grpc_library")
-
-harness_grpc_library(
-    name = "930_delegate_tasks_java_proto",
-    visibility = ["//visibility:public"],
-    deps = [
-        "//930-delegate-tasks/src/main/proto/io/harness/perpetualtask:930_delegate_tasks_proto",
-    ],
-)

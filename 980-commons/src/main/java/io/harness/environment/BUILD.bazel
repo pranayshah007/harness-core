@@ -1,7 +1,0 @@
-load("@rules_java//java:defs.bzl", "java_library")
-
-java_library(
-    name = "environment",
-    srcs = ["SystemEnvironment.java"],
-    visibility = ["//:__subpackages__"],
-)

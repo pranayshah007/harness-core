@@ -1,9 +1,0 @@
-load("//:tools/bazel/protos/harness_grpc_library.bzl", "harness_grpc_library")
-
-harness_grpc_library(
-    name = "920_delegate_agent_beans_java_proto",
-    visibility = ["//visibility:public"],
-    deps = [
-        "//920-delegate-agent-beans/src/main/proto/io/harness/managerclient:920_delegate_agent_beans_proto",
-    ],
-)

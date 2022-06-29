@@ -1,8 +1,0 @@
-load("@rules_java//java:defs.bzl", "java_library")
-
-java_library(
-    name = "pcf",
-    srcs = ["PcfManifestFileData.java"],
-    visibility = ["//:__subpackages__"],
-    deps = ["@maven//:org_projectlombok_lombok"],
-)

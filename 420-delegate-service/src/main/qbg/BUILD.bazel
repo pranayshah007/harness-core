@@ -1,5 +1,0 @@
-load("//:tools/bazel/qbg.bzl", "qbg_java_files")
-
-qbg_java_files(
-    name = "queries",
-)
