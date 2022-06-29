@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "factory",
+    srcs = [
+        "ClosingFactory.java",
+        "ClosingFactoryModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//:lombok",
+        "@maven//:com_google_inject_guice",
+    ],
+)

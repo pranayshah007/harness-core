@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "scm",
+    srcs = [
+        "ScmSecret.java",
+        "SecretName.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//990-commons-test/src/main/java/io/harness/exception",
+        "//:lombok",
+        "@maven//:com_bettercloud_vault_java_driver",
+        "@maven//:commons_codec_commons_codec",
+    ],
+)

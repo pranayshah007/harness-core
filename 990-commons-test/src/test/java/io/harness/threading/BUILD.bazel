@@ -1,0 +1,15 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "threading",
+    srcs = ["ConcurrentTest.java"],
+    runner = "junit4",
+    deps = [
+        "//990-commons-test/src/main/java/io/harness",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "//990-commons-test/src/main/java/io/harness/exception",
+        "//990-commons-test/src/main/java/io/harness/rule",
+        "//990-commons-test/src/main/java/io/harness/threading",
+        "@maven//:junit_junit",
+    ],
+)

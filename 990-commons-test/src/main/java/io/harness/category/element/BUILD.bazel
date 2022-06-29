@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "element",
+    srcs = [
+        "CDFunctionalTests.java",
+        "CliFunctionalTests.java",
+        "DeprecatedIntegrationTests.java",
+        "E2ETests.java",
+        "FunctionalTests.java",
+        "IntegrationTests.java",
+        "MigrationTests.java",
+        "NonFlaky.java",
+        "StressTests.java",
+        "UnitTests.java",
+    ],
+    visibility = ["//:__subpackages__"],
+)

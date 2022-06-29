@@ -1,0 +1,15 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "time",
+    srcs = ["FakeClockTest.java"],
+    runner = "junit4",
+    deps = [
+        "//990-commons-test/src/main/java/io/harness",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "//990-commons-test/src/main/java/io/harness/rule",
+        "//990-commons-test/src/main/java/io/harness/time",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+    ],
+)

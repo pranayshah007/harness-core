@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "threading",
+    srcs = [
+        "Concurrent.java",
+        "ThreadPoolGuard.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//990-commons-test/src/main/java/io/harness/exception",
+        "//:lombok",
+    ],
+)

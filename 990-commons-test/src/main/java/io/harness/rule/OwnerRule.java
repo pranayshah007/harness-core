@@ -9,7 +9,7 @@ package io.harness.rule;
 
 import static java.lang.String.format;
 
-import io.harness.NoopStatement;
+import io.harness.statement.NoopStatement;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.CategoryConfigException;

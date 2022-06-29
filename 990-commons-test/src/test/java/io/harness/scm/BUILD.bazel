@@ -1,0 +1,23 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "scm",
+    srcs = ["ScmSecretTest.java"],
+    runner = "junit4",
+    resources = [
+        "//990-commons-test/src/main/resources:resource",
+    ],
+    deps = [
+        "//990-commons-test/src/main/java/io/harness",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "//990-commons-test/src/main/java/io/harness/resource",
+        "//990-commons-test/src/main/java/io/harness/rule",
+        "//990-commons-test/src/main/java/io/harness/scm",
+        "//:lombok",
+        "@maven//:com_bettercloud_vault_java_driver",
+        "@maven//:com_google_inject_guice",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+    ],
+)
