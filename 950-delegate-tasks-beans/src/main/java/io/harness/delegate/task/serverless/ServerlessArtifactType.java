@@ -7,4 +7,4 @@
 
 package io.harness.delegate.task.serverless;
 
-public enum ServerlessArtifactType { ARTIFACTORY, ECR }
+public enum ServerlessArtifactType { ARTIFACTORY, ECR, AMAZON_S3 }

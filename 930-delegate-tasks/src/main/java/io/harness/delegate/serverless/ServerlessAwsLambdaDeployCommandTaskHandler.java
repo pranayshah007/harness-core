@@ -134,7 +134,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
         iLogStreamingTaskClient, ServerlessCommandUnitConstants.artifact.toString(), true, commandUnitsProgress);
     try {
       serverlessTaskHelperBase.fetchArtifacts(serverlessDeployRequest.getServerlessArtifactsConfig(),
-          artifactLogCallback, serverlessDelegateTaskParams.getWorkingDirectory());
+          artifactLogCallback, serverlessDelegateTaskParams.getWorkingDirectory(), serverlessAwsLambdaInfraConfig);
       artifactLogCallback.saveExecutionLog(format("Done..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     } catch (Exception ex) {
       artifactLogCallback.saveExecutionLog(color(format("%n artifact download failed."), LogColor.Red, LogWeight.Bold),

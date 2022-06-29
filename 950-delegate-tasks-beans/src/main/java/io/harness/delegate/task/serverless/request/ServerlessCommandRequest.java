@@ -31,8 +31,10 @@ import io.harness.delegate.task.serverless.ServerlessArtifactsConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
+import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
+import io.harness.delegate.task.serverless.ServerlessS3ArtifactConfig;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -89,6 +91,11 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
         capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
             ((ServerlessArtifactoryArtifactConfig) primaryArtifact).getConnectorDTO().getConnectorConfig(),
             maskingEvaluator));
+      } else if (primaryArtifact instanceof ServerlessS3ArtifactConfig) {
+        AwsConnectorDTO connectorConfigDTO =
+            (AwsConnectorDTO) ((ServerlessS3ArtifactConfig) primaryArtifact).getConnectorDTO().getConnectorConfig();
+        capabilities.addAll(
+            AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
       }
 
       if (serverlessArtifactsConfig.getSidecars() != null) {
@@ -97,6 +104,13 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
             capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
                 ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getConnectorDTO().getConnectorConfig(),
                 maskingEvaluator));
+          } else if (serverlessArtifactConfig instanceof ServerlessS3ArtifactConfig) {
+            AwsConnectorDTO connectorConfigDTO =
+                (AwsConnectorDTO) ((ServerlessS3ArtifactConfig) serverlessArtifactConfig)
+                    .getConnectorDTO()
+                    .getConnectorConfig();
+            capabilities.addAll(
+                AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
           }
         }
       }
