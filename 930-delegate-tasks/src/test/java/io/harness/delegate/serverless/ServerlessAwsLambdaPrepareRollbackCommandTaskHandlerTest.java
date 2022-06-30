@@ -73,8 +73,6 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
   private Integer timeout = 10;
   private String accountId = "accountId";
   private String output = "output";
-  private String previousVersionTimeStamp = "123";
-  private String service = "service";
   private String region = "us-east-2";
   private String stage = "stage";
   private String manifestContent = "manifestContent";
@@ -150,8 +148,6 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
   public void executeTaskInternalCloudFormationStackNotExistsTest() throws Exception {
-    ServerlessRollbackConfig serverlessRollbackConfig =
-        ServerlessAwsLambdaRollbackConfig.builder().isFirstDeployment(true).build();
     ServerlessCommandRequest serverlessCommandRequest = ServerlessPrepareRollbackDataRequest.builder()
                                                             .timeoutIntervalInMin(timeout)
                                                             .serverlessInfraConfig(serverlessInfraConfig)
@@ -208,8 +204,6 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
   public void executeTaskInternalNoPreviousVersionTimeStampCloudFormationStackExistsTest() throws Exception {
-    ServerlessRollbackConfig serverlessRollbackConfig =
-        ServerlessAwsLambdaRollbackConfig.builder().isFirstDeployment(true).build();
     ServerlessCommandRequest serverlessCommandRequest = ServerlessPrepareRollbackDataRequest.builder()
                                                             .timeoutIntervalInMin(timeout)
                                                             .serverlessInfraConfig(serverlessInfraConfig)
@@ -255,9 +249,8 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
         .saveExecutionLog(
             color(format("%nDeploy List command executed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
     verify(executionLogCallback)
-        .saveExecutionLog(color(format("Found no active successful deployment version %n", previousVersionTimeStamp),
-                              LogColor.White, LogWeight.Bold),
-            INFO);
+        .saveExecutionLog(
+            color(format("Found no active successful deployment version %n"), LogColor.White, LogWeight.Bold), INFO);
   }
 
   @Test(expected = IOException.class)

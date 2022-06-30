@@ -44,7 +44,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.rule.Owner;
-import io.harness.serverless.ConfigCredentialCommand;
 import io.harness.serverless.PluginCommand;
 import io.harness.serverless.ServerlessCliResponse;
 import io.harness.serverless.ServerlessClient;
@@ -200,29 +199,6 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
     assertThat(
         serverlessAwsCommandTaskHelper.getLastDeployedTimestamp(null, timeStamps, serverlessPrepareRollbackDataRequest))
         .isEqualTo(Optional.of("1646988531400"));
-  }
-
-  @Test
-  @Owner(developers = ALLU_VAMSI)
-  @Category(UnitTests.class)
-  public void configCredentialFailTest() throws IOException, InterruptedException, TimeoutException {
-    ServerlessClient serverlessClient = ServerlessClient.client("");
-    ConfigCredentialCommand command = Mockito.spy(new ConfigCredentialCommand(serverlessClient));
-    doReturn("serverless deploy hi").when(command).command();
-
-    ServerlessCliResponse response =
-        ServerlessCliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).output("output").build();
-
-    String workingDir = Paths.get("workingDir").normalize().toAbsolutePath().toString();
-    FileIo.createDirectoryIfDoesNotExist(workingDir);
-    ServerlessDelegateTaskParams serverlessDelegateTaskParams =
-        ServerlessDelegateTaskParams.builder().workingDirectory(workingDir).build();
-
-    ServerlessCliResponse serverlessCliResponse = serverlessAwsCommandTaskHelper.configCredential(
-        serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams, logCallback, true, 30000);
-
-    assertThat(serverlessCliResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
-    FileIo.deleteDirectoryAndItsContentIfExists(workingDir);
   }
 
   @Test

@@ -129,7 +129,6 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
 
   @Spy @InjectMocks private ServerlessStepCommonHelper serverlessStepCommonHelper;
 
-  final TaskRequest createdTaskRequest = TaskRequest.newBuilder().build();
   final ServerlessAwsLambdaDeployStepParameters serverlessSpecParameters =
       ServerlessAwsLambdaDeployStepParameters.infoBuilder().build();
   final StepElementParameters stepElementParameters = StepElementParameters.builder()
@@ -205,8 +204,7 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
-    ServerlessStepPassThroughData passThroughData = ServerlessStepPassThroughData.builder().build();
-    TaskChainResponse taskChainResponse = serverlessStepCommonHelper.queueServerlessTask(
+    serverlessStepCommonHelper.queueServerlessTask(
         stepElementParameters, serverlessCommandRequest, ambiance, executionPassThroughData, false);
     PowerMockito.verifyStatic(StepUtils.class, times(1));
     StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());

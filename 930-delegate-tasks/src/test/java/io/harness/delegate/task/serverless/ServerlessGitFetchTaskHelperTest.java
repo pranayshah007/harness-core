@@ -18,7 +18,6 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DecryptableEntity;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.git.NGGitServiceImpl;
@@ -32,11 +31,7 @@ import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesTaskHelper;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.git.GitClientV2;
-import io.harness.git.model.AuthInfo;
-import io.harness.git.model.AuthRequest;
-import io.harness.git.model.FetchFilesResult;
 import io.harness.logging.LogCallback;
-import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
 import io.harness.shell.SshSessionConfig;
 
@@ -64,30 +59,11 @@ public class ServerlessGitFetchTaskHelperTest extends CategoryTest {
   @Mock private NGGitServiceImpl ngGitService;
   @Mock private SecretDecryptionServiceImpl secretDecryptionService;
   @Mock private GitDecryptionHelper gitDecryptionHelper;
-  @Mock private DecryptableEntity decryptableEntity;
   @Mock private LogCallback executionLogCallback;
 
   @InjectMocks private ServerlessGitFetchTaskHelper serverlessGitFetchTaskHelper;
 
   private static final String accountId = "accountId";
-  private static final String url = "url";
-  private static final String branch = "branch";
-  private static final String commitId = "commitId";
-  private static final String connectorName = "connectorName";
-  private GitConfigDTO gitConfigDTO = GitConfigDTO.builder().url(url).build();
-  private SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
-  private SshSessionConfig sshSessionConfig = SshSessionConfig.Builder.aSshSessionConfig().build();
-  private GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
-                                                              .sshKeySpecDTO(sshKeySpecDTO)
-                                                              .encryptedDataDetails(Arrays.asList())
-                                                              .optimizedFilesFetch(false)
-                                                              .branch(branch)
-                                                              .commitId(commitId)
-                                                              .connectorName(connectorName)
-                                                              .build();
-  private List<String> filePaths = Arrays.asList();
-  private AuthRequest authRequest = new AuthRequest(AuthInfo.AuthType.SSH_KEY);
-  private FetchFilesResult fetchFilesResult = FetchFilesResult.builder().build();
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
@@ -119,8 +95,7 @@ public class ServerlessGitFetchTaskHelperTest extends CategoryTest {
                                                         .optimizedFilesFetch(true)
                                                         .build();
     List<String> filePaths = new ArrayList<>(Arrays.asList("path1", "path2"));
-    FetchFilesResult fetchFilesResult =
-        serverlessGitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, "accountId", gitConfigDTO);
+    serverlessGitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, "accountId", gitConfigDTO);
     verify(scmFetchFilesHelper).fetchFilesFromRepoWithScm(gitStoreDelegateConfig, filePaths);
   }
 
