@@ -7,6 +7,11 @@
 
 package io.harness.delegate.beans.storeconfig;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY)
+@JsonSubTypes({ @JsonSubTypes.Type(value = InputStringManifestDelegateConfig.class, name = "INPUT_STRING") })
 public interface StoreDelegateConfig {
   StoreDelegateConfigType getType();
 }

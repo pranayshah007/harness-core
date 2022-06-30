@@ -85,6 +85,7 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.InputStringManifestDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.k8s.kustomize.KustomizeTaskHelper;
@@ -2414,9 +2415,33 @@ public class K8sTaskHelperBase {
         return downloadFilesFromChartRepo(
             manifestDelegateConfig, manifestFilesDirectory, executionLogCallback, timeoutInMillis);
 
+      case INPUT_STRING:
+        return writeManifestToDirectory(storeDelegateConfig, manifestFilesDirectory, executionLogCallback);
       default:
         throw new UnsupportedOperationException(
             String.format("Manifest store config type: [%s]", storeDelegateConfig.getType().name()));
+    }
+  }
+
+  private boolean writeManifestToDirectory(
+      StoreDelegateConfig storeDelegateConfig, String manifestFilesDirectory, LogCallback executionLogCallback) {
+    if (!(storeDelegateConfig instanceof InputStringManifestDelegateConfig)) {
+      throw new InvalidArgumentsException(
+          Pair.of("storeDelegateConfig", "Must be instance of InputStringManifestDelegateConfig"));
+    }
+
+    String manifestYaml = ((InputStringManifestDelegateConfig) storeDelegateConfig).getManifestYaml();
+    try {
+      FileIo.writeUtf8StringToFile(manifestFilesDirectory + "/manifest.yaml", manifestYaml);
+      return true;
+    } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Failure in writing manifest yaml content to file.", sanitizedException);
+      executionLogCallback.saveExecutionLog(
+          "Failed to write manifest yaml contents to file. " + ExceptionUtils.getMessage(sanitizedException), ERROR,
+          CommandExecutionStatus.FAILURE);
+      throw new KubernetesTaskException(
+          "Failed to write manifest yaml contents to file: " + manifestFilesDirectory + "/manifest.yaml", e);
     }
   }
 
