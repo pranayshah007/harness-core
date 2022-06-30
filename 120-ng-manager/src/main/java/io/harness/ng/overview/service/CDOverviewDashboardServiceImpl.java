@@ -1434,7 +1434,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   }
 
   public long getStartingDateEpochValue(long epochValue, long startInterval) {
-    return epochValue - epochValue % DAY_IN_MS;
+    return epochValue - (epochValue - startInterval) % DAY_IN_MS;
   }
 
   /*

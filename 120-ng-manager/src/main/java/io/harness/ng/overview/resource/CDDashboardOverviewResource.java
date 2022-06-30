@@ -79,11 +79,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CDDashboardOverviewResource {
   private final CDOverviewDashboardService cdOverviewDashboardService;
-  private final long HR_IN_MS = 60 * 60 * 1000;
+  private final long MIN_IN_MS = 60 * 1000;
+  private final long HR_IN_MS = 60 * MIN_IN_MS;
   private final long DAY_IN_MS = 24 * HR_IN_MS;
 
   private long epochShouldBeOfStartOfDay(long epoch) {
     return epoch - epoch % DAY_IN_MS;
+  }
+  private long epochShouldBeOfStartOfDay(long epoch, long timezoneOffset) {
+    return epoch - (epoch + timezoneOffset) % DAY_IN_MS;
   }
   @GET
   @Path("/deploymentHealth")
@@ -143,11 +147,12 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
-      @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
+      @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval,
+      @NotNull @QueryParam(NGResourceFilterConstants.TIMEZONE_OFFSET) long timezoneOffset) {
     log.info("Getting deployment execution");
-    startInterval = epochShouldBeOfStartOfDay(startInterval);
-    endInterval = epochShouldBeOfStartOfDay(endInterval);
-
+    timezoneOffset = timezoneOffset * MIN_IN_MS;
+    startInterval = epochShouldBeOfStartOfDay(startInterval, timezoneOffset);
+    endInterval = epochShouldBeOfStartOfDay(endInterval, timezoneOffset);
     return ResponseDTO.newResponse(cdOverviewDashboardService.getExecutionDeploymentDashboard(
         accountIdentifier, orgIdentifier, projectIdentifier, startInterval, endInterval));
   }

@@ -28,6 +28,7 @@ public class NGResourceFilterConstants {
   public static final String CASE_INSENSITIVE_MONGO_OPTIONS = "i";
   public static final String START_TIME = "startTime";
   public static final String END_TIME = "endTime";
+  public static final String TIMEZONE_OFFSET = "timezoneOffset";
   public static final String STATUS = "status";
   public static final String NAME = "name";
   public static final String IDENTIFIER = "identifier";
