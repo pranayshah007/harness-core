@@ -109,9 +109,9 @@ public class GithubServiceImpl implements GithubService {
                                       .execute();
       if (response.isSuccessful()) {
         JSONObject json = new JSONObject();
-        json.put("sha", ((LinkedHashMap)response.body()).get("sha"));
-        json.put("merged", ((LinkedHashMap)response.body()).get("merged"));
-        json.put("message", ((LinkedHashMap)response.body()).get("message"));
+        json.put("sha", ((LinkedHashMap) response.body()).get("sha"));
+        json.put("merged", ((LinkedHashMap) response.body()).get("merged"));
+        json.put("message", ((LinkedHashMap) response.body()).get("message"));
         return json;
       } else {
         return null;

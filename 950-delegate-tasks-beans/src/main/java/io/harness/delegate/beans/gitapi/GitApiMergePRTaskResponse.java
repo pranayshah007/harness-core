@@ -15,8 +15,8 @@ import lombok.experimental.FieldDefaults;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class GitApiMergePRTaskResponse implements GitApiResult{
-    String sha;
-    boolean merged;
-    String message;
+public class GitApiMergePRTaskResponse implements GitApiResult {
+  String sha;
+  boolean merged;
+  String message;
 }
