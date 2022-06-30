@@ -15,6 +15,7 @@ import io.harness.plancreator.steps.barrier.BarrierStepInfo;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.common.StepParametersUtils;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
+import io.harness.plancreator.steps.email.EmailStepInfo;
 import io.harness.plancreator.steps.http.HttpStepInfo;
 import io.harness.plancreator.steps.http.PmsAbstractStepNode;
 import io.harness.plancreator.steps.resourceconstraint.QueueStepInfo;
@@ -40,7 +41,7 @@ import io.swagger.annotations.ApiModel;
               HarnessApprovalStepInfo.class, JiraApprovalStepInfo.class, JiraCreateStepInfo.class,
               JiraUpdateStepInfo.class, ShellScriptStepInfo.class, ServiceNowApprovalStepInfo.class,
               PolicyStepInfo.class, ServiceNowCreateStepInfo.class, ServiceNowUpdateStepInfo.class, QueueStepInfo.class,
-              CustomApprovalStepInfo.class})
+              CustomApprovalStepInfo.class, EmailStepInfo.class})
 
 public interface PMSStepInfo extends StepSpecType, WithStepElementParameters {
   default StepParameters getStepParameters(

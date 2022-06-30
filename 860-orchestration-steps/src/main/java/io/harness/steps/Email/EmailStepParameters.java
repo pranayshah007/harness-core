@@ -12,10 +12,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@TypeAlias("EmailStepParameters")
 @Builder
 public class EmailStepParameters implements SpecParameters {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
