@@ -73,4 +73,8 @@ public class JenkinsRegistryService {
           "Failed to fetch build details jenkins server. Reason:" + ExceptionUtils.getMessage(ex), USER);
     }
   }
+
+  public JobDetails getJobWithParamters(JenkinsInternalConfig jenkinsInternalConfig, String jobName) {
+    return jenkinsRegistryUtils.getJobWithParamters(jobName, jenkinsInternalConfig);
+  }
 }

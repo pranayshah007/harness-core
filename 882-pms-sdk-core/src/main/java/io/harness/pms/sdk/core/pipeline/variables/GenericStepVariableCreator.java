@@ -8,6 +8,7 @@
 package io.harness.pms.sdk.core.pipeline.variables;
 
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -22,6 +23,7 @@ import io.harness.pms.sdk.core.variables.ChildrenVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
+import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -113,7 +115,18 @@ public abstract class GenericStepVariableCreator<T extends AbstractStepNode> ext
   @Override
   public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodes(
       VariableCreationContext ctx, YamlField config) {
-    return new LinkedHashMap<>();
+    LinkedHashMap<String, VariableCreationResponse> responseLinkedHashMap = new LinkedHashMap<>();
+    YamlField strategyField = config.getNode().getField(STRATEGY);
+
+    if (strategyField != null) {
+      Map<String, YamlField> strategyDependencyMap = new HashMap<>();
+      strategyDependencyMap.put(strategyField.getNode().getUuid(), strategyField);
+      responseLinkedHashMap.put(strategyField.getNode().getUuid(),
+          VariableCreationResponse.builder()
+              .dependencies(DependenciesUtils.toDependenciesProto(strategyDependencyMap))
+              .build());
+    }
+    return responseLinkedHashMap;
   }
 
   protected void addFieldToPropertiesMapUnderStep(YamlField fieldNode, Map<String, YamlProperties> yamlPropertiesMap) {
@@ -181,7 +194,7 @@ public abstract class GenericStepVariableCreator<T extends AbstractStepNode> ext
   @Override
   public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodesV2(
       VariableCreationContext ctx, T config) {
-    return new LinkedHashMap<>();
+    return createVariablesForChildrenNodes(ctx, ctx.getCurrentField());
   }
 
   @Override

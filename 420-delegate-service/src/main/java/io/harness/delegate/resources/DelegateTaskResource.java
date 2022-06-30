@@ -66,4 +66,15 @@ public class DelegateTaskResource {
       }
     }
   }
+
+  @DelegateAuth
+  @POST
+  @Path("{taskId}/delegates/{delegateId}/v2")
+  @Consumes("application/x-kryo-v2")
+  @Timed
+  @ExceptionMetered
+  public void updateTaskResponseV2(@PathParam("delegateId") String delegateId, @PathParam("taskId") String taskId,
+      @QueryParam("accountId") @NotEmpty String accountId, DelegateTaskResponse delegateTaskResponse) {
+    updateTaskResponse(delegateId, taskId, accountId, delegateTaskResponse);
+  }
 }

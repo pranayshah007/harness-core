@@ -45,17 +45,20 @@ import software.wings.beans.ApiKeyEntry;
 import software.wings.beans.ApiKeyEntry.ApiKeyEntryKeys;
 import software.wings.beans.Base;
 import software.wings.beans.Event.Type;
+import software.wings.beans.User;
 import software.wings.beans.security.UserGroup;
 import software.wings.dl.WingsPersistence;
 import software.wings.features.ApiKeysFeature;
 import software.wings.features.api.RestrictedApi;
 import software.wings.security.UserPermissionInfo;
 import software.wings.security.UserRestrictionInfo;
+import software.wings.security.UserThreadLocal;
 import software.wings.service.impl.security.auth.AuthHandler;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.ApiKeyService;
 import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.UserGroupService;
+import software.wings.service.intfc.UserService;
 import software.wings.utils.CryptoUtils;
 
 import com.google.common.base.Charsets;
@@ -94,6 +97,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   @Inject private AuthService authService;
   @Inject private ExecutorService executorService;
   @Inject private AuditServiceHelper auditServiceHelper;
+  @Inject private UserService userService;
 
   private static String DELIMITER = "::";
 
@@ -263,7 +267,10 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   private ApiKeyEntry buildApiKeyEntry(String uuid, ApiKeyEntry entry, boolean details) {
     notNullCheck("apiKeyEntry is null for id: " + uuid, entry);
     String decryptedKey = new String(getSimpleEncryption(entry.getAccountId()).decryptChars(entry.getEncryptedKey()));
-
+    User user = UserThreadLocal.get();
+    if (!userService.isUserAssignedToAccount(user, entry.getAccountId())) {
+      decryptedKey = null;
+    }
     return ApiKeyEntry.builder()
         .uuid(entry.getUuid())
         .userGroupIds(entry.getUserGroupIds())

@@ -48,7 +48,10 @@ import io.harness.security.encryption.SecretDecryptionService;
 
 import com.google.inject.Inject;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -61,7 +64,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -154,29 +156,35 @@ public class ServerlessGitFetchTaskTest extends CategoryTest {
   public void fetchManifestFileInPriorityOrderExceptionTest() throws IOException {
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder().url(url).build();
     GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
-            .branch(branch).commitId("commitId").connectorName("connector").manifestId("manifest").path(path).gitConfigDTO(gitConfigDTO)
-            .fetchType(FetchType.BRANCH).optimizedFilesFetch(false).build();
-    ServerlessGitFetchFileConfig serverlessGitFetchFileConfig =
-            ServerlessGitFetchFileConfig.builder()
-                    .identifier(identifier)
-                    .manifestType(manifestType)
-                    .gitStoreDelegateConfig(gitStoreDelegateConfig)
-                    .build();
-    FetchFilesResult fetchFilesResult = FetchFilesResult.builder()
-                          .commitResult(CommitResult.builder().commitId("commitId").accountId(accountId).build()).build();
+                                                        .branch(branch)
+                                                        .commitId("commitId")
+                                                        .connectorName("connector")
+                                                        .manifestId("manifest")
+                                                        .path(path)
+                                                        .gitConfigDTO(gitConfigDTO)
+                                                        .fetchType(FetchType.BRANCH)
+                                                        .optimizedFilesFetch(false)
+                                                        .build();
+    ServerlessGitFetchFileConfig serverlessGitFetchFileConfig = ServerlessGitFetchFileConfig.builder()
+                                                                    .identifier(identifier)
+                                                                    .manifestType(manifestType)
+                                                                    .gitStoreDelegateConfig(gitStoreDelegateConfig)
+                                                                    .build();
+    FetchFilesResult fetchFilesResult =
+        FetchFilesResult.builder()
+            .commitResult(CommitResult.builder().commitId("commitId").accountId(accountId).build())
+            .build();
     String combinedPath = path + configOverridePath;
-    List<String> filePaths = Collections.singletonList(combinedPath);
-    //doReturn(fetchFilesResult).when(serverlessGitFetchTaskHelper).fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
+    Collections.singletonList(combinedPath);
     doReturn(fetchFilesResult).when(gitClientV2).fetchFilesByPath(any());
     TaskParameters taskParameters = ServerlessGitFetchRequest.builder()
-            .activityId(activityId)
-            .accountId(accountId)
-            .serverlessGitFetchFileConfig(serverlessGitFetchFileConfig)
-            .shouldOpenLogStream(true)
-            .closeLogStream(true)
-            .build();
-    ServerlessGitFetchResponse serverlessGitFetchResponse =
-            (ServerlessGitFetchResponse) serverlessGitFetchTask.run(taskParameters);
+                                        .activityId(activityId)
+                                        .accountId(accountId)
+                                        .serverlessGitFetchFileConfig(serverlessGitFetchFileConfig)
+                                        .shouldOpenLogStream(true)
+                                        .closeLogStream(true)
+                                        .build();
+    serverlessGitFetchTask.run(taskParameters);
   }
 
   @Test

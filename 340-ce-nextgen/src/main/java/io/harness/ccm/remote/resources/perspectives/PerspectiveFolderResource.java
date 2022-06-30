@@ -9,6 +9,10 @@ package io.harness.ccm.remote.resources.perspectives;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.FOLDER_CREATED;
+import static io.harness.ccm.remote.resources.TelemetryConstants.FOLDER_ID;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
@@ -80,11 +84,6 @@ public class PerspectiveFolderResource {
   private final CEViewFolderService ceViewFolderService;
   private final CEViewService ceViewService;
   private final TelemetryReporter telemetryReporter;
-
-  private static final String FOLDER_CREATED = "Perspective Folder Created";
-  private static final String FOLDER_ID = "folder_id";
-  private static final String MODULE = "module";
-  private static final String MODULE_NAME = "CCM";
 
   @Inject
   public PerspectiveFolderResource(

@@ -64,6 +64,8 @@ import org.mockito.Spy;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ResourceRestraintInstanceServiceImplTest extends OrchestrationStepsTestBase {
+  private static final String RESOURCE_UNIT = generateUuid();
+
   @Inject private ResourceRestraintInstanceRepository restraintInstanceRepository;
 
   @Mock private PlanExecutionService planExecutionService;
@@ -281,35 +283,50 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Category(UnitTests.class)
   public void shouldGetAllCurrentlyAcquiredPermits() {
     String releaseEntityId = generateUuid();
-    ResourceRestraintInstance instance = saveInstance(releaseEntityId);
-    saveInstance(releaseEntityId);
+    ResourceRestraintInstance instance = saveInstance(releaseEntityId, RESOURCE_UNIT);
+    saveInstance(releaseEntityId, RESOURCE_UNIT);
 
     int maxOrder = resourceRestraintInstanceService.getAllCurrentlyAcquiredPermits(
-        HoldingScope.valueOf(instance.getReleaseEntityType()), instance.getReleaseEntityId());
+        HoldingScope.valueOf(instance.getReleaseEntityType()), instance.getReleaseEntityId(),
+        instance.getResourceUnit());
     assertThat(maxOrder).isEqualTo(2);
   }
 
-  private ResourceRestraintInstance saveInstance(String releaseEntityId) {
-    return saveInstance(generateUuid(), ACTIVE, HoldingScope.PIPELINE, releaseEntityId, 1);
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldGetAllCurrentlyAcquiredPermitsForDifferentKeys() {
+    String releaseEntityId = generateUuid();
+    saveInstance(releaseEntityId, "keyA");
+    saveInstance(releaseEntityId, "keyA");
+    saveInstance(releaseEntityId, "keyB");
+
+    int permits =
+        resourceRestraintInstanceService.getAllCurrentlyAcquiredPermits(HoldingScope.PIPELINE, releaseEntityId, "keyB");
+    assertThat(permits).isEqualTo(1);
+  }
+
+  private ResourceRestraintInstance saveInstance(String releaseEntityId, String resourceUnit) {
+    return saveInstance(generateUuid(), ACTIVE, HoldingScope.PIPELINE, releaseEntityId, 1, resourceUnit);
   }
 
   private ResourceRestraintInstance saveInstance(State state, HoldingScope scope) {
     return saveInstance(generateUuid(), state, scope,
-        scope == HoldingScope.PIPELINE ? generateUuid() : generateUuid() + '|' + generateUuid(), 1);
+        scope == HoldingScope.PIPELINE ? generateUuid() : generateUuid() + '|' + generateUuid(), 1, generateUuid());
   }
 
   private ResourceRestraintInstance saveInstance(
       String resourceRestraintId, State state, HoldingScope scope, int order) {
     return saveInstance(resourceRestraintId, state, scope,
-        scope == HoldingScope.PIPELINE ? generateUuid() : generateUuid() + '|' + generateUuid(), order);
+        scope == HoldingScope.PIPELINE ? generateUuid() : generateUuid() + '|' + generateUuid(), order, generateUuid());
   }
 
-  private ResourceRestraintInstance saveInstance(
-      String resourceRestraintId, State state, HoldingScope releaseEntityType, String releaseEntityId, int order) {
+  private ResourceRestraintInstance saveInstance(String resourceRestraintId, State state,
+      HoldingScope releaseEntityType, String releaseEntityId, int order, String resourceUnit) {
     ResourceRestraintInstance instance = ResourceRestraintInstance.builder()
                                              .releaseEntityId(releaseEntityId)
                                              .releaseEntityType(releaseEntityType.name())
-                                             .resourceUnit(generateUuid())
+                                             .resourceUnit(resourceUnit)
                                              .order(order)
                                              .permits(1)
                                              .resourceRestraintId(resourceRestraintId)

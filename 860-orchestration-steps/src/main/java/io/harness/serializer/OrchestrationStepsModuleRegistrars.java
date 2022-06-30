@@ -44,6 +44,7 @@ import io.harness.steps.servicenow.create.ServiceNowCreateStepNode;
 import io.harness.steps.servicenow.update.ServiceNowUpdateStepNode;
 import io.harness.steps.shellscript.ShellScriptStepNode;
 import io.harness.steps.template.TemplateStepNode;
+import io.harness.steps.template.stage.TemplateStageNode;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
 import io.harness.yaml.schema.beans.YamlGroup;
 import io.harness.yaml.schema.beans.YamlSchemaMetadata;
@@ -237,6 +238,18 @@ public class OrchestrationStepsModuleRegistrars {
                                            .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS, ModuleType.CE,
                                                ModuleType.CF, ModuleType.CI))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.TEMPLATE_STAGE)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(TemplateStageNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.PMS)
+                                           .modulesSupported(Collections.singletonList(ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STAGE.name()).build())
                                            .build())
                    .build())
           .add(YamlSchemaRootClass.builder()

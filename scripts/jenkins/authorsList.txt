@@ -286,3 +286,4 @@ Sarthak Jain sarthak.jain@harness.io
 Abhishek Abhishek abhishek.abhishek@harness.io
 Jimit Gandhi jimit.gandhi@harness.io
 Tarun Uba tarun.uba@harness.io
+Vikyath Harekal vikyath.harekal@harness.io

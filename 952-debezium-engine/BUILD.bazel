@@ -29,6 +29,7 @@ java_library(
     deps = [
         ":module",
         "//990-commons-test:module",
+        "@maven//:org_mockito_mockito_inline",
     ],
 )
 

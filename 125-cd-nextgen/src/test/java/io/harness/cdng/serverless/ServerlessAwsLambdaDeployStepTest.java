@@ -250,45 +250,49 @@ public class ServerlessAwsLambdaDeployStepTest extends AbstractServerlessStepExe
   @Test
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
-  public void executeServerlessPrepareRollbackTaskTest(){
-    ManifestOutcome manifestOutcome = ServerlessAwsLambdaManifestOutcome.builder()
-            .identifier("adsf")
-            .store(storeConfig).build();
-    ServerlessAwsLambdaPrepareRollbackDataResult serverlessRollbackDataResult = ServerlessAwsLambdaPrepareRollbackDataResult.builder()
+  public void executeServerlessPrepareRollbackTaskTest() {
+    ManifestOutcome manifestOutcome =
+        ServerlessAwsLambdaManifestOutcome.builder().identifier("adsf").store(storeConfig).build();
+    ServerlessAwsLambdaPrepareRollbackDataResult serverlessRollbackDataResult =
+        ServerlessAwsLambdaPrepareRollbackDataResult.builder()
             .isFirstDeployment(true)
-            .previousVersionTimeStamp("123").build();
-    ServerlessPrepareRollbackDataResponse responseData = ServerlessPrepareRollbackDataResponse.builder()
+            .previousVersionTimeStamp("123")
+            .build();
+    ServerlessPrepareRollbackDataResponse responseData =
+        ServerlessPrepareRollbackDataResponse.builder()
             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .errorMessage("error")
             .serverlessPrepareRollbackDataResult(serverlessRollbackDataResult)
-            .unitProgressData(UnitProgressData.builder().build()).build();
-    ServerlessAwsLambdaDeployStepParameters serverlessSpecParameters = ServerlessAwsLambdaDeployStepParameters
-            .infoBuilder().build();
-    StepElementParameters stepElementParameters = StepElementParameters.builder()
-            .spec(serverlessSpecParameters)
-            .timeout(ParameterField.createValueField("10m")).build();
-    ServerlessStepPassThroughData serverlessStepPassThroughData = ServerlessStepPassThroughData.builder()
-            .serverlessManifestOutcome(manifestOutcome)
-            .infrastructureOutcome(infrastructureOutcome)
+            .unitProgressData(UnitProgressData.builder().build())
             .build();
-    ServerlessExecutionPassThroughData serverlessExecutionPassThroughData = ServerlessExecutionPassThroughData.builder()
+    ServerlessAwsLambdaDeployStepParameters serverlessSpecParameters =
+        ServerlessAwsLambdaDeployStepParameters.infoBuilder().build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                      .spec(serverlessSpecParameters)
+                                                      .timeout(ParameterField.createValueField("10m"))
+                                                      .build();
+    ServerlessStepPassThroughData serverlessStepPassThroughData = ServerlessStepPassThroughData.builder()
+                                                                      .serverlessManifestOutcome(manifestOutcome)
+                                                                      .infrastructureOutcome(infrastructureOutcome)
+                                                                      .build();
+    ServerlessExecutionPassThroughData serverlessExecutionPassThroughData =
+        ServerlessExecutionPassThroughData.builder()
             .infrastructure(serverlessStepPassThroughData.getInfrastructureOutcome())
             .lastActiveUnitProgressData(responseData.getUnitProgressData())
             .build();
     TaskChainResponse expectedTaskChainResponse = TaskChainResponse.builder()
-            .chainEnd(false)
-            .passThroughData(serverlessExecutionPassThroughData)
-            .taskRequest(TaskRequest.newBuilder().build())
-            .build();
+                                                      .chainEnd(false)
+                                                      .passThroughData(serverlessExecutionPassThroughData)
+                                                      .taskRequest(TaskRequest.newBuilder().build())
+                                                      .build();
 
-
-    doReturn(expectedTaskChainResponse).when(serverlessStepHelper).queueServerlessTask(any(), any(), any(), any(), anyBoolean());
-    TaskChainResponse taskChainResponse = serverlessAwsLambdaDeployStep.executeServerlessPrepareRollbackTask(manifestOutcome,
-            ambiance, stepElementParameters,
-             serverlessStepPassThroughData, unitProgressData,
-            serverlessStepExecutorParams);
+    doReturn(expectedTaskChainResponse)
+        .when(serverlessStepHelper)
+        .queueServerlessTask(any(), any(), any(), any(), anyBoolean());
+    TaskChainResponse taskChainResponse =
+        serverlessAwsLambdaDeployStep.executeServerlessPrepareRollbackTask(manifestOutcome, ambiance,
+            stepElementParameters, serverlessStepPassThroughData, unitProgressData, serverlessStepExecutorParams);
     assertThat(taskChainResponse.isChainEnd()).isFalse();
     assertThat(taskChainResponse).isEqualTo(expectedTaskChainResponse);
   }
-
 }

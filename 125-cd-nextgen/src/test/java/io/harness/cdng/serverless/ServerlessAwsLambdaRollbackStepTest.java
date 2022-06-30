@@ -179,27 +179,27 @@ public class ServerlessAwsLambdaRollbackStepTest {
   @Category(UnitTests.class)
   public void obtainTaskAfterRbacIfNoServerlessRollbackDataOptionalOutputTest() {
     OptionalSweepingOutput serverlessGitFetchOptionalOutput =
-            OptionalSweepingOutput.builder().output(serverlessGitFetchOutcome).found(false).build();
+        OptionalSweepingOutput.builder().output(serverlessGitFetchOutcome).found(false).build();
     OptionalSweepingOutput serverlessRollbackDataOptionalOutput =
-            OptionalSweepingOutput.builder().output(serverlessAwsLambdaRollbackDataOutcome).found(false).build();
+        OptionalSweepingOutput.builder().output(serverlessAwsLambdaRollbackDataOutcome).found(false).build();
     doReturn(serverlessRollbackDataOptionalOutput)
-            .when(executionSweepingOutputService)
-            .resolveOptional(ambiance,
-                    RefObjectUtils.getSweepingOutputRefObject(
-                            ((ServerlessAwsLambdaRollbackStepParameters) specParameters).getServerlessAwsLambdaRollbackFnq() + "."
-                                    + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME));
+        .when(executionSweepingOutputService)
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                ((ServerlessAwsLambdaRollbackStepParameters) specParameters).getServerlessAwsLambdaRollbackFnq() + "."
+                + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME));
     doReturn(serverlessGitFetchOptionalOutput)
-            .when(executionSweepingOutputService)
-            .resolveOptional(ambiance,
-                    RefObjectUtils.getSweepingOutputRefObject(
-                            ((ServerlessAwsLambdaRollbackStepParameters) specParameters).getServerlessAwsLambdaRollbackFnq() + "."
-                                    + OutcomeExpressionConstants.SERVERLESS_GIT_FETCH_OUTCOME));
-    TaskRequest taskRequest = serverlessAwsLambdaRollbackStep.obtainTaskAfterRbac(
-            ambiance, stepElementParameters, stepInputPackage);
+        .when(executionSweepingOutputService)
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                ((ServerlessAwsLambdaRollbackStepParameters) specParameters).getServerlessAwsLambdaRollbackFnq() + "."
+                + OutcomeExpressionConstants.SERVERLESS_GIT_FETCH_OUTCOME));
+    TaskRequest taskRequest =
+        serverlessAwsLambdaRollbackStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
     SkipTaskRequest skipTaskRequest =
-            SkipTaskRequest.newBuilder()
-                    .setMessage("Serverless Aws Lambda Deploy step was not executed. Skipping rollback.")
-                    .build();
+        SkipTaskRequest.newBuilder()
+            .setMessage("Serverless Aws Lambda Deploy step was not executed. Skipping rollback.")
+            .build();
     assertThat(taskRequest.getSkipTaskRequest()).isEqualTo(skipTaskRequest);
   }
 

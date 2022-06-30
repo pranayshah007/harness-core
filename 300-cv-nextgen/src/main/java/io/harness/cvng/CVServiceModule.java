@@ -241,13 +241,11 @@ import io.harness.cvng.core.utils.monitoredService.SplunkMetricHealthSourceSpecT
 import io.harness.cvng.core.utils.monitoredService.StackdriverLogHealthSourceSpecTransformer;
 import io.harness.cvng.core.utils.monitoredService.StackdriverMetricHealthSourceSpecTransformer;
 import io.harness.cvng.dashboard.services.api.ErrorTrackingDashboardService;
-import io.harness.cvng.dashboard.services.api.HealthVerificationHeatMapService;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
 import io.harness.cvng.dashboard.services.api.LogDashboardService;
 import io.harness.cvng.dashboard.services.api.ServiceDependencyGraphService;
 import io.harness.cvng.dashboard.services.api.TimeSeriesDashboardService;
 import io.harness.cvng.dashboard.services.impl.ErrorTrackingDashboardServiceImpl;
-import io.harness.cvng.dashboard.services.impl.HealthVerificationHeatMapServiceImpl;
 import io.harness.cvng.dashboard.services.impl.HeatMapServiceImpl;
 import io.harness.cvng.dashboard.services.impl.LogDashboardServiceImpl;
 import io.harness.cvng.dashboard.services.impl.ServiceDependencyGraphServiceImpl;
@@ -582,7 +580,6 @@ public class CVServiceModule extends AbstractModule {
     bind(KubernetesActivitySourceService.class).to(KubernetesActivitySourceServiceImpl.class);
     bind(DeploymentLogAnalysisService.class).to(DeploymentLogAnalysisServiceImpl.class);
     bind(VerificationJobInstanceAnalysisService.class).to(VerificationJobInstanceAnalysisServiceImpl.class);
-    bind(HealthVerificationHeatMapService.class).to(HealthVerificationHeatMapServiceImpl.class);
     bind(OnboardingService.class).to(OnboardingServiceImpl.class);
     bind(CVNGMigrationService.class).to(CVNGMigrationServiceImpl.class).in(Singleton.class);
     bind(TimeLimiter.class).toInstance(HTimeLimiter.create());

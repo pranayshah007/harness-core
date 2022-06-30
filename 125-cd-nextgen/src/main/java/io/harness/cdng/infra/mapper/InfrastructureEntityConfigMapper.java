@@ -49,7 +49,7 @@ public class InfrastructureEntityConfigMapper {
         infrastructure = config.getInfrastructureDefinitionConfig().getSpec();
         allowSimultaneousDeployments = config.getInfrastructureDefinitionConfig().isAllowSimultaneousDeployments();
       } catch (IOException e) {
-        throw new InvalidRequestException("Cannot create service ng service config due to " + e.getMessage());
+        throw new InvalidRequestException("Cannot create infrastructure config due to " + e.getMessage());
       }
     }
     return InfrastructureConfig.builder()

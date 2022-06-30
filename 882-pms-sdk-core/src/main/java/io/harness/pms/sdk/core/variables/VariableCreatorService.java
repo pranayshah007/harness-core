@@ -11,6 +11,7 @@ import static io.harness.pms.plan.creation.PlanCreatorUtils.supportsField;
 
 import static java.lang.String.format;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -84,8 +85,10 @@ public class VariableCreatorService
         }
         Object obj =
             YamlField.class.isAssignableFrom(cls) ? yamlField : YamlUtils.read(yamlField.getNode().toString(), cls);
-        response = variableCreator.createVariablesForFieldV2(
-            VariableCreationContext.builder().currentField(yamlField).build(), obj);
+        VariableCreationContext variableCreationContext =
+            VariableCreationContext.builder().currentField(yamlField).build();
+        addAccountOrgProjectIdentifiers(request, variableCreationContext);
+        response = variableCreator.createVariablesForFieldV2(variableCreationContext, obj);
       } catch (IOException ex) {
         String message = format("Invalid yaml path [%s] during execution variable creation", yamlField.getYamlPath());
         log.error(message, ex);
@@ -96,6 +99,15 @@ public class VariableCreatorService
           VariableCreationContext.builder().currentField(yamlField).build(), yamlField);
     }
     return response;
+  }
+
+  private void addAccountOrgProjectIdentifiers(VariablesCreationBlobRequest request, VariableCreationContext context) {
+    context.put(
+        NGCommonEntityConstants.ORG_KEY, request.getMetadata().getMetadataMap().get(NGCommonEntityConstants.ORG_KEY));
+    context.put(NGCommonEntityConstants.PROJECT_KEY,
+        request.getMetadata().getMetadataMap().get(NGCommonEntityConstants.PROJECT_KEY));
+    context.put(NGCommonEntityConstants.ACCOUNT_KEY,
+        request.getMetadata().getMetadataMap().get(NGCommonEntityConstants.ACCOUNT_KEY));
   }
 
   @Override

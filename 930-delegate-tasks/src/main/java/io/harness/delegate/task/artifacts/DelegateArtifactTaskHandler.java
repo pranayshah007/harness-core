@@ -44,6 +44,10 @@ public abstract class DelegateArtifactTaskHandler<T extends ArtifactSourceDelega
     throw new InvalidRequestException("Operation not supported");
   }
 
+  public ArtifactTaskExecutionResponse getJobWithParamters(T attributesRequest) {
+    throw new InvalidRequestException("Operation not supported");
+  }
+
   public ArtifactTaskExecutionResponse getArtifactPaths(T attributesRequest) {
     throw new InvalidRequestException("Operation not supported");
   }

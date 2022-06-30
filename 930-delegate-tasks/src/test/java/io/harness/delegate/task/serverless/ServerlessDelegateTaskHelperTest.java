@@ -83,23 +83,21 @@ public class ServerlessDelegateTaskHelperTest extends CategoryTest {
         .isEqualTo(serverlessCommandResponse);
   }
 
-
   @Test(expected = TaskNGDataException.class)
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
   public void getServerlessCommandResponseExceptionTest() throws Exception {
     CommandUnitProgress commandUnitProgress =
-            CommandUnitProgress.builder().startTime(1).endTime(2).status(CommandExecutionStatus.SUCCESS).build();
+        CommandUnitProgress.builder().startTime(1).endTime(2).status(CommandExecutionStatus.SUCCESS).build();
     CommandUnitsProgress commandUnitsProgress =
-            CommandUnitsProgress.builder().commandUnitProgressMap(commandUnitProgressLinkedHashMap).build();
+        CommandUnitsProgress.builder().commandUnitProgressMap(commandUnitProgressLinkedHashMap).build();
     ServerlessCommandRequest serverlessCommandRequest =
-            ServerlessDeployRequest.builder()
-                    .serverlessInfraConfig(serverlessInfraConfig)
-                    .serverlessCommandType(ServerlessCommandType.SERVERLESS_AWS_LAMBDA_DEPLOY)
-                    .commandUnitsProgress(commandUnitsProgress)
-                    .build();
+        ServerlessDeployRequest.builder()
+            .serverlessInfraConfig(serverlessInfraConfig)
+            .serverlessCommandType(ServerlessCommandType.SERVERLESS_AWS_LAMBDA_DEPLOY)
+            .commandUnitsProgress(commandUnitsProgress)
+            .build();
     ServerlessCommandResponse serverlessCommandResponse = ServerlessDeployResponse.builder().build();
     serverlessDelegateTaskHelper.getServerlessCommandResponse(serverlessCommandRequest, iLogStreamingTaskClient);
   }
-
 }

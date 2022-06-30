@@ -7,18 +7,18 @@
 
 package io.harness.delegate.task.artifacts;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
-import java.util.Arrays;
-
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ACR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.JENKINS_NAME;
-import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.Arrays;
 
 public enum ArtifactSourceType {
   @JsonProperty(DOCKER_REGISTRY_NAME) DOCKER_REGISTRY(DOCKER_REGISTRY_NAME),

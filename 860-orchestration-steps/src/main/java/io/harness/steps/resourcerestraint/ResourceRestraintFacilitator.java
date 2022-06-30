@@ -72,7 +72,8 @@ public class ResourceRestraintFacilitator implements Facilitator {
       Ambiance ambiance, StepParameters stepParameters, byte[] parameters, StepInputPackage inputPackage) {
     StepElementParameters stepElementParameters = (StepElementParameters) stepParameters;
 
-    ResourceRestraintSpecParameters specParameters = (ResourceRestraintSpecParameters) stepElementParameters.getSpec();
+    IResourceRestraintSpecParameters specParameters =
+        (IResourceRestraintSpecParameters) stepElementParameters.getSpec();
 
     final ResourceRestraint resourceRestraint = Preconditions.checkNotNull(
         resourceRestraintService.getByNameAndAccountId(specParameters.getName(), AmbianceUtils.getAccountId(ambiance)));
@@ -94,7 +95,8 @@ public class ResourceRestraintFacilitator implements Facilitator {
 
       int permits = specParameters.getPermits();
       if (AcquireMode.ENSURE == specParameters.getAcquireMode()) {
-        permits -= resourceRestraintInstanceService.getAllCurrentlyAcquiredPermits(holdingScope, releaseEntityId);
+        permits -= resourceRestraintInstanceService.getAllCurrentlyAcquiredPermits(
+            holdingScope, releaseEntityId, renderedResourceUnit.getValue());
       }
 
       FacilitatorResponseBuilder responseBuilder = FacilitatorResponse.builder();
@@ -130,7 +132,7 @@ public class ResourceRestraintFacilitator implements Facilitator {
     }
   }
 
-  private ResourceRestraintPassThroughData buildPassThroughData(ResourceRestraintSpecParameters specParameters,
+  private ResourceRestraintPassThroughData buildPassThroughData(IResourceRestraintSpecParameters specParameters,
       ResourceRestraint resourceRestraint, String consumerId, String releaseEntityId, String unit) {
     return ResourceRestraintPassThroughData.builder()
         .consumerId(consumerId)
@@ -144,7 +146,7 @@ public class ResourceRestraintFacilitator implements Facilitator {
   }
 
   private Map<String, Object> populateConstraintContext(
-      ResourceRestraint resourceRestraint, ResourceRestraintSpecParameters stepParameters, String releaseEntityId) {
+      ResourceRestraint resourceRestraint, IResourceRestraintSpecParameters stepParameters, String releaseEntityId) {
     Map<String, Object> constraintContext = new HashMap<>();
     constraintContext.put(ResourceRestraintInstanceKeys.releaseEntityType, stepParameters.getHoldingScope().name());
     constraintContext.put(ResourceRestraintInstanceKeys.releaseEntityId, releaseEntityId);

@@ -7,6 +7,7 @@
 
 package io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.event;
 
+import static io.harness.ngtriggers.Constants.ISSUE_COMMENT_EVENT_TYPE;
 import static io.harness.ngtriggers.Constants.PULL_REQUEST_EVENT_TYPE;
 import static io.harness.ngtriggers.Constants.PUSH_EVENT_TYPE;
 
@@ -19,7 +20,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @OwnedBy(HarnessTeam.CI)
 public enum AzureRepoTriggerEvent implements GitEvent {
   @JsonProperty(PULL_REQUEST_EVENT_TYPE) PULL_REQUEST(PULL_REQUEST_EVENT_TYPE),
-  @JsonProperty(PUSH_EVENT_TYPE) PUSH(PUSH_EVENT_TYPE);
+  @JsonProperty(PUSH_EVENT_TYPE) PUSH(PUSH_EVENT_TYPE),
+  @JsonProperty(ISSUE_COMMENT_EVENT_TYPE) ISSUE_COMMENT(ISSUE_COMMENT_EVENT_TYPE);
 
   private final String value;
 

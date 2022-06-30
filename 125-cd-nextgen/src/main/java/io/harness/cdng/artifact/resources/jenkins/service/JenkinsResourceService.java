@@ -11,6 +11,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.jenkins.dtos.JenkinsJobDetailsDTO;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.helpers.ext.jenkins.JobDetails;
 
 import java.util.List;
 
@@ -21,4 +22,6 @@ public interface JenkinsResourceService {
       IdentifierRef jenkinsConnectorRef, String orgIdentifier, String projectIdentifier, String jobName);
   List<BuildDetails> getBuildForJob(IdentifierRef jenkinsConnectorRef, String orgIdentifier, String projectIdentifier,
       String jobName, List<String> artifactPath);
+  List<JobDetails> getJobParameters(
+      IdentifierRef jenkinsConnectorRef, String orgIdentifier, String projectIdentifier, String jobName);
 }

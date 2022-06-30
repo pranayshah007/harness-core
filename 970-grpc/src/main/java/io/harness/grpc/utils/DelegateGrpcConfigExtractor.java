@@ -34,9 +34,11 @@ public class DelegateGrpcConfigExtractor {
     }
   }
 
-  public static String extractAuthority(String managerUrl, String svc) {
+  public static String extractAndPrepareAuthority(
+      String managerUrl, String svc, boolean authorityModificationDisabled) {
     try {
       URI uri = new URI(managerUrl);
+
       if ("KUBERNETES_ONPREM".equals(System.getenv().get(DEPLOY_MODE))) {
         if ("https".equals(extractScheme(managerUrl))) {
           return uri.getAuthority();
@@ -44,6 +46,12 @@ public class DelegateGrpcConfigExtractor {
           return "default-authority.harness.io";
         }
       }
+
+      // For requests going via the delegate gateway we need the original authority - metadata is used for routing.
+      if (authorityModificationDisabled) {
+        return uri.getAuthority();
+      }
+
       String path = uri.getPath();
       String[] parts = path.split("/");
       String prefix = null;

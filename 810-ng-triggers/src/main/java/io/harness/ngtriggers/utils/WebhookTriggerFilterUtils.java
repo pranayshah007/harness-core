@@ -15,6 +15,8 @@ import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ngtriggers.Constants.CHANGED_FILES;
 import static io.harness.ngtriggers.Constants.ISSUE_COMMENT_EVENT_TYPE;
 import static io.harness.ngtriggers.Constants.MERGE_REQUEST_EVENT_TYPE;
+import static io.harness.ngtriggers.Constants.MR_COMMENT_EVENT_TYPE;
+import static io.harness.ngtriggers.Constants.PR_COMMENT_EVENT_TYPE;
 import static io.harness.ngtriggers.Constants.PULL_REQUEST_EVENT_TYPE;
 import static io.harness.ngtriggers.Constants.PUSH_EVENT_TYPE;
 import static io.harness.ngtriggers.beans.source.webhook.WebhookAction.BT_PULL_REQUEST_UPDATED;
@@ -74,7 +76,8 @@ public class WebhookTriggerFilterUtils {
     }
 
     if (eventTypeFromPayload.equals(io.harness.beans.WebhookEvent.Type.ISSUE_COMMENT)) {
-      return gitEvent.equals(ISSUE_COMMENT_EVENT_TYPE);
+      return gitEvent.equals(ISSUE_COMMENT_EVENT_TYPE) || gitEvent.equals(MR_COMMENT_EVENT_TYPE)
+          || gitEvent.equals(PR_COMMENT_EVENT_TYPE);
     }
     return false;
   }

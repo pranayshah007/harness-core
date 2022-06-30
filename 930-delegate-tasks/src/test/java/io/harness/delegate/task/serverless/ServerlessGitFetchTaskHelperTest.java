@@ -13,8 +13,8 @@ import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -40,11 +40,12 @@ import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
 import io.harness.shell.SshSessionConfig;
 
+import software.wings.service.impl.security.SecretDecryptionServiceImpl;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -52,7 +53,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import software.wings.service.impl.security.SecretDecryptionServiceImpl;
 
 @OwnedBy(CDP)
 public class ServerlessGitFetchTaskHelperTest extends CategoryTest {
@@ -109,11 +109,18 @@ public class ServerlessGitFetchTaskHelperTest extends CategoryTest {
   public void fetchFileFromRepoisOptimizedFilesFetchTrueTest() throws IOException {
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder().url("url").build();
     GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
-            .branch("branch").commitId("commitId").connectorName("connector").manifestId("manifest").gitConfigDTO(gitConfigDTO)
-            .fetchType(FetchType.BRANCH).paths(new ArrayList<String>(Arrays.asList("path1", "path2"))).optimizedFilesFetch(true).build();
-    List<String> filePaths = new ArrayList<String>(Arrays.asList("path1", "path2"));
-    FetchFilesResult fetchFilesResult = serverlessGitFetchTaskHelper
-            .fetchFileFromRepo(gitStoreDelegateConfig, filePaths,"accountId",gitConfigDTO);
+                                                        .branch("branch")
+                                                        .commitId("commitId")
+                                                        .connectorName("connector")
+                                                        .manifestId("manifest")
+                                                        .gitConfigDTO(gitConfigDTO)
+                                                        .fetchType(FetchType.BRANCH)
+                                                        .paths(new ArrayList<String>(Arrays.asList("path1", "path2")))
+                                                        .optimizedFilesFetch(true)
+                                                        .build();
+    List<String> filePaths = new ArrayList<>(Arrays.asList("path1", "path2"));
+    FetchFilesResult fetchFilesResult =
+        serverlessGitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, "accountId", gitConfigDTO);
     verify(scmFetchFilesHelper).fetchFilesFromRepoWithScm(gitStoreDelegateConfig, filePaths);
   }
 
@@ -123,14 +130,20 @@ public class ServerlessGitFetchTaskHelperTest extends CategoryTest {
   public void fetchFileFromRepoTestisOptimizedFilesFetchFalseTest() throws IOException {
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder().url("url").build();
     GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
-            .branch("branch").commitId("commitId").connectorName("connector").manifestId("manifest").gitConfigDTO(gitConfigDTO)
-            .fetchType(FetchType.BRANCH).paths(new ArrayList<String>(Arrays.asList("path1", "path2"))).optimizedFilesFetch(false).build();
-    List<String> filePaths = new ArrayList<String>(Arrays.asList("path1", "path2"));
+                                                        .branch("branch")
+                                                        .commitId("commitId")
+                                                        .connectorName("connector")
+                                                        .manifestId("manifest")
+                                                        .gitConfigDTO(gitConfigDTO)
+                                                        .fetchType(FetchType.BRANCH)
+                                                        .paths(new ArrayList<String>(Arrays.asList("path1", "path2")))
+                                                        .optimizedFilesFetch(false)
+                                                        .build();
+    List<String> filePaths = new ArrayList<>(Arrays.asList("path1", "path2"));
 
     SshSessionConfig sshSessionConfig = SshSessionConfig.Builder.aSshSessionConfig().withAccountId(accountId).build();
-    doReturn(sshSessionConfig).when(gitDecryptionHelper).getSSHSessionConfig(any(),any());
-    serverlessGitFetchTaskHelper
-            .fetchFileFromRepo(gitStoreDelegateConfig, filePaths,accountId,gitConfigDTO);
+    doReturn(sshSessionConfig).when(gitDecryptionHelper).getSSHSessionConfig(any(), any());
+    serverlessGitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
     verify(ngGitService).getAuthRequest(gitConfigDTO, sshSessionConfig);
   }
 
@@ -138,29 +151,30 @@ public class ServerlessGitFetchTaskHelperTest extends CategoryTest {
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
   public void printFileNamesTest() {
-    serverlessGitFetchTaskHelper.printFileNames(executionLogCallback,Arrays.asList("path1","path2"));
+    serverlessGitFetchTaskHelper.printFileNames(executionLogCallback, Arrays.asList("path1", "path2"));
     verify(executionLogCallback).saveExecutionLog("\nFetching following Files :");
   }
   @Test
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
-  public void decryptGitStoreConfigTest(){
+  public void decryptGitStoreConfigTest() {
     GithubAppSpecDTO githubApiAccessSpecDTO =
-            GithubAppSpecDTO.builder().installationId("instId").applicationId("appId").build();
-    GithubApiAccessDTO githubApiAccessDTO =
-            GithubApiAccessDTO.builder().spec(githubApiAccessSpecDTO).build();
-    GithubConnectorDTO gitConfigDTO =
-            GithubConnectorDTO.builder().apiAccess(githubApiAccessDTO).url("url").build();
-    GitStoreDelegateConfig gitStoreDelegateConfig =
-            GitStoreDelegateConfig.builder()
-              .branch("branch").commitId("commitId").connectorName("connector")
-                    .manifestId("manifest").gitConfigDTO(gitConfigDTO)
-                          .fetchType(FetchType.BRANCH).paths(new ArrayList<String>(Arrays.asList("path1", "path2")))
-                              .optimizedFilesFetch(false).build();
+        GithubAppSpecDTO.builder().installationId("instId").applicationId("appId").build();
+    GithubApiAccessDTO githubApiAccessDTO = GithubApiAccessDTO.builder().spec(githubApiAccessSpecDTO).build();
+    GithubConnectorDTO gitConfigDTO = GithubConnectorDTO.builder().apiAccess(githubApiAccessDTO).url("url").build();
+    GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
+                                                        .branch("branch")
+                                                        .commitId("commitId")
+                                                        .connectorName("connector")
+                                                        .manifestId("manifest")
+                                                        .gitConfigDTO(gitConfigDTO)
+                                                        .fetchType(FetchType.BRANCH)
+                                                        .paths(new ArrayList<String>(Arrays.asList("path1", "path2")))
+                                                        .optimizedFilesFetch(false)
+                                                        .build();
     serverlessGitFetchTaskHelper.decryptGitStoreConfig(gitStoreDelegateConfig);
     verify(secretDecryptionService)
-            .decrypt(GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
+        .decrypt(GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
             gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
   }
-
 }

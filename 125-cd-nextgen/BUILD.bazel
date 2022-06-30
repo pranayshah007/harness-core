@@ -67,6 +67,7 @@ java_library(
         "@maven//:junit_junit",
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_mockito_mockito_core",
+        "@maven//:org_mockito_mockito_inline",
         "@maven//:org_powermock_powermock_api_mockito2",
         "@maven//:org_powermock_powermock_module_junit4",
         "@maven//:pl_pragmatists_JUnitParams",

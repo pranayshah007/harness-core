@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.net.URI;
+import java.util.Map;
 import javax.ws.rs.core.UriBuilder;
 import lombok.Builder;
 import lombok.Value;
@@ -26,6 +27,7 @@ public class JenkinsInternalConfig {
   char[] password;
   char[] token;
   String authMechanism;
+  Map<String, String> jobParameter;
   boolean isCertValidationRequired;
   private boolean useConnectorUrlForJobExecution;
 
