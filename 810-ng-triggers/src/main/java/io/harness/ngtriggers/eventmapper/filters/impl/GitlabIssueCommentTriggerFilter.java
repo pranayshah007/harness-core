@@ -32,59 +32,59 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(CI)
 public class GitlabIssueCommentTriggerFilter implements TriggerFilter {
-    private PayloadConditionsTriggerFilter payloadConditionsTriggerFilter;
-    private WebhookParserSCMService webhookParserSCMService;
+  private PayloadConditionsTriggerFilter payloadConditionsTriggerFilter;
+  private WebhookParserSCMService webhookParserSCMService;
 
-    @Override
-    public WebhookEventMappingResponse applyFilter(FilterRequestData filterRequestData) {
-        WebhookEventMappingResponseBuilder mappingResponseBuilder = initWebhookEventMappingResponse(filterRequestData);
+  @Override
+  public WebhookEventMappingResponse applyFilter(FilterRequestData filterRequestData) {
+    WebhookEventMappingResponseBuilder mappingResponseBuilder = initWebhookEventMappingResponse(filterRequestData);
 
-        try {
-            filterRequestData.setWebhookPayloadData(
-                    generateUpdateWebhookPayloadDataWithPrHook(filterRequestData, mappingResponseBuilder));
-        } catch (Exception e) {
-            String errorMsg = new StringBuilder(128)
-                    .append("Failed while updating Webhook payload with PR details for IssueComment event. ")
-                    .append("Account : ")
-                    .append(filterRequestData.getAccountId())
-                    .append(", with Exception")
-                    .append(e.getMessage())
-                    .toString();
-            log.error(errorMsg);
-            return mappingResponseBuilder.failedToFindTrigger(true)
-                    .webhookEventResponse(TriggerEventResponseHelper.toResponse(EXCEPTION_WHILE_PROCESSING,
-                            filterRequestData.getWebhookPayloadData().getOriginalEvent(), null, null,
-                            "Failed to update Webhook payload with PR Details: " + e, null))
-                    .build();
-        }
-
-        return payloadConditionsTriggerFilter.applyFilter(filterRequestData);
+    try {
+      filterRequestData.setWebhookPayloadData(
+          generateUpdateWebhookPayloadDataWithPrHook(filterRequestData, mappingResponseBuilder));
+    } catch (Exception e) {
+      String errorMsg = new StringBuilder(128)
+                            .append("Failed while updating Webhook payload with PR details for IssueComment event. ")
+                            .append("Account : ")
+                            .append(filterRequestData.getAccountId())
+                            .append(", with Exception")
+                            .append(e.getMessage())
+                            .toString();
+      log.error(errorMsg);
+      return mappingResponseBuilder.failedToFindTrigger(true)
+          .webhookEventResponse(TriggerEventResponseHelper.toResponse(EXCEPTION_WHILE_PROCESSING,
+              filterRequestData.getWebhookPayloadData().getOriginalEvent(), null, null,
+              "Failed to update Webhook payload with PR Details: " + e, null))
+          .build();
     }
 
-    private WebhookPayloadData generateUpdateWebhookPayloadDataWithPrHook(FilterRequestData filterRequestData,
-                                                                          WebhookEventMappingResponseBuilder mappingResponseBuilder) throws Exception {
-        ParseWebhookResponse originalParseWebhookResponse =
-                filterRequestData.getWebhookPayloadData().getParseWebhookResponse();
+    return payloadConditionsTriggerFilter.applyFilter(filterRequestData);
+  }
 
-        PullRequest pullRequest = originalParseWebhookResponse.getComment().getIssue().getPr();
-        PullRequestHook pullRequestHook = PullRequestHook.newBuilder()
-                .setRepo(originalParseWebhookResponse.getComment().getRepo())
-                .setSender(originalParseWebhookResponse.getComment().getSender())
-                .setPr(pullRequest)
-                .build();
+  private WebhookPayloadData generateUpdateWebhookPayloadDataWithPrHook(
+      FilterRequestData filterRequestData, WebhookEventMappingResponseBuilder mappingResponseBuilder) throws Exception {
+    ParseWebhookResponse originalParseWebhookResponse =
+        filterRequestData.getWebhookPayloadData().getParseWebhookResponse();
 
-        ParseWebhookResponse newParseWebhookResponse =
-                ParseWebhookResponse.newBuilder(originalParseWebhookResponse).setPr(pullRequestHook).build();
+    PullRequest pullRequest = originalParseWebhookResponse.getComment().getIssue().getPr();
+    PullRequestHook pullRequestHook = PullRequestHook.newBuilder()
+                                          .setRepo(originalParseWebhookResponse.getComment().getRepo())
+                                          .setSender(originalParseWebhookResponse.getComment().getSender())
+                                          .setPr(pullRequest)
+                                          .build();
 
-        mappingResponseBuilder.parseWebhookResponse(newParseWebhookResponse);
-        WebhookPayloadData originalWebhookPayloadData = filterRequestData.getWebhookPayloadData();
+    ParseWebhookResponse newParseWebhookResponse =
+        ParseWebhookResponse.newBuilder(originalParseWebhookResponse).setPr(pullRequestHook).build();
 
-        return WebhookPayloadData.builder()
-                .repository(originalWebhookPayloadData.getRepository())
-                .originalEvent(originalWebhookPayloadData.getOriginalEvent())
-                .webhookGitUser(originalWebhookPayloadData.getWebhookGitUser())
-                .parseWebhookResponse(newParseWebhookResponse)
-                .webhookEvent(webhookParserSCMService.convertPRWebhookEvent(pullRequestHook))
-                .build();
-    }
+    mappingResponseBuilder.parseWebhookResponse(newParseWebhookResponse);
+    WebhookPayloadData originalWebhookPayloadData = filterRequestData.getWebhookPayloadData();
+
+    return WebhookPayloadData.builder()
+        .repository(originalWebhookPayloadData.getRepository())
+        .originalEvent(originalWebhookPayloadData.getOriginalEvent())
+        .webhookGitUser(originalWebhookPayloadData.getWebhookGitUser())
+        .parseWebhookResponse(newParseWebhookResponse)
+        .webhookEvent(webhookParserSCMService.convertPRWebhookEvent(pullRequestHook))
+        .build();
+  }
 }

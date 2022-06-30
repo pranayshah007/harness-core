@@ -27,6 +27,6 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.ci.pipeline.executions.beans.CIImageDetails")
 @OwnedBy(HarnessTeam.CI)
 public class CIImageDetails {
-    private String imageName;
-    private String imageTag;
+  private String imageName;
+  private String imageTag;
 }

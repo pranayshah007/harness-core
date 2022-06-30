@@ -101,22 +101,26 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
   @Owner(developers = RUTVIJ_MEHTA)
   @Category(UnitTests.class)
   public void testGetPipelineLevelModuleInfoWithResolvedParameters() {
-    InitializeStepInfo initializeStepInfo = InitializeStepInfo.builder()
+    InitializeStepInfo initializeStepInfo =
+        InitializeStepInfo.builder()
             .infrastructure(ciExecutionPlanTestHelper.getInfrastructureWithVolume())
             .executionElementConfig(ciExecutionPlanTestHelper.getExecutionElementConfig())
             .ciCodebase(ciExecutionPlanTestHelper.getCICodebaseWithRepoName())
             .build();
 
     OrchestrationEvent event =
-            OrchestrationEvent.builder().ambiance(ambiance).serviceName("ci").status(Status.RUNNING)
-                    .resolvedStepParameters(StepElementParameters.builder().spec(initializeStepInfo).build())
-                    .build();
+        OrchestrationEvent.builder()
+            .ambiance(ambiance)
+            .serviceName("ci")
+            .status(Status.RUNNING)
+            .resolvedStepParameters(StepElementParameters.builder().spec(initializeStepInfo).build())
+            .build();
 
     when(executionSweepingOutputService.resolveOptional(any(), any()))
-            .thenReturn(OptionalSweepingOutput.builder().build());
+        .thenReturn(OptionalSweepingOutput.builder().build());
     when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(ciExecutionPlanTestHelper.getGitConnector());
     CIPipelineModuleInfo ciPipelineModuleInfo =
-            (CIPipelineModuleInfo) ciModuleInfoProvider.getPipelineLevelModuleInfo(event);
+        (CIPipelineModuleInfo) ciModuleInfoProvider.getPipelineLevelModuleInfo(event);
 
     assertThat(ciPipelineModuleInfo.getScmDetailsList().size()).isEqualTo(1);
     assertThat(ciPipelineModuleInfo.getInfraDetailsList().size()).isEqualTo(1);

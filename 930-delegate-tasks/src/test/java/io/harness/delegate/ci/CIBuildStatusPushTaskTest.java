@@ -186,8 +186,7 @@ public class CIBuildStatusPushTaskTest extends CategoryTest {
     Call<StatusCreationResponse> statusCreationResponseCall = mock(Call.class);
     when(statusCreationResponseCall.execute())
         .thenReturn(Response.error(ResponseBody.create(MediaType.parse("text/plain"), "MSG"),
-            new okhttp3.Response
-                .Builder()
+            new okhttp3.Response.Builder()
                 .code(401)
                 .protocol(Protocol.HTTP_1_1)
                 .request(new Request.Builder().url("http://localhost/").build())

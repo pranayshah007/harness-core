@@ -27,6 +27,6 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.ci.pipeline.executions.beans.TIBuildDetails")
 @OwnedBy(HarnessTeam.CI)
 public class TIBuildDetails {
-    private String buildTool;
-    private String language;
+  private String buildTool;
+  private String language;
 }

@@ -7,7 +7,12 @@
 
 package io.harness.ci.serializer;
 
-import com.google.inject.Inject;
+import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveBooleanParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
@@ -24,18 +29,13 @@ import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.OutputNGVariable;
-import org.apache.commons.lang3.StringUtils;
 
+import com.google.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.beans.serializer.RunTimeInputHandler.resolveBooleanParameter;
-import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(CI)
 public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<RunTestsStepInfo> {

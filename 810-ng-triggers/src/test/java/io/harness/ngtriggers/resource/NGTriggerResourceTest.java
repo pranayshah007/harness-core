@@ -13,11 +13,12 @@ import static io.harness.rule.OwnerRule.MATT;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SRIDHAR;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -297,16 +298,16 @@ public class NGTriggerResourceTest extends CategoryTest {
     assertThat(response).isTrue();
   }
 
-  @Test (expected = InvalidRequestException.class)
+  @Test(expected = InvalidRequestException.class)
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testDeleteTriggerException() {
     doThrow(new InvalidRequestException(String.format("NGTrigger [%s] couldn't be deleted", IDENTIFIER)))
-            .when(ngTriggerService)
-            .delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, null);
+        .when(ngTriggerService)
+        .delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, null);
     when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntity)).thenReturn(ngTriggerResponseDTO);
     ngTriggerResource.delete(null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER)
-            .getData();
+        .getData();
   }
 
   @Test

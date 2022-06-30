@@ -39,7 +39,8 @@ public class GitFetchFilesTaskHelperTest extends CategoryTest {
 
     InvalidRequestException singleLevelException = new InvalidRequestException("exception");
     extractedMessage = gitFetchFilesTaskHelper.extractErrorMessage(singleLevelException);
-    assertThat(extractedMessage).isEqualTo("Reason: exception, \n" +
-            "Root Cause: io.harness.exception.InvalidRequestException: exception");
+    assertThat(extractedMessage)
+        .isEqualTo("Reason: exception, \n"
+            + "Root Cause: io.harness.exception.InvalidRequestException: exception");
   }
 }

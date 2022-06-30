@@ -25,7 +25,6 @@ import io.harness.telemetry.TelemetryReporter;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -118,7 +117,7 @@ public class CIPipelineEndEventHandler implements OrchestrationEventHandler {
 
     // Image details
     HashMap<String, List<String>> imagesMap = new HashMap<>();
-    for (CIImageDetails image: moduleInfo.getImageDetailsList()) {
+    for (CIImageDetails image : moduleInfo.getImageDetailsList()) {
       String imageName = image.getImageName();
       String imageTag = image.getImageTag();
       imagesMap.computeIfAbsent(imageName, k -> new ArrayList<String>());
@@ -144,7 +143,7 @@ public class CIPipelineEndEventHandler implements OrchestrationEventHandler {
       List<String> tiBuildToolList = new ArrayList<>();
       List<String> tiLanguageList = new ArrayList<>();
 
-      for (TIBuildDetails tiBuildDetails : moduleInfo.getTiBuildDetailsList()){
+      for (TIBuildDetails tiBuildDetails : moduleInfo.getTiBuildDetailsList()) {
         tiBuildToolList.add(tiBuildDetails.getBuildTool());
         tiLanguageList.add(tiBuildDetails.getLanguage());
       }

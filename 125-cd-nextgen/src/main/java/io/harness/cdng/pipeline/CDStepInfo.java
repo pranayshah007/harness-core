@@ -49,15 +49,15 @@ import io.harness.yaml.core.StepSpecType;
 import io.swagger.annotations.ApiModel;
 
 @ApiModel(
-    subTypes = {CreatePRStepInfo.class, MergePRStepInfo.class, K8sApplyStepInfo.class, K8sBlueGreenStepInfo.class, K8sCanaryStepInfo.class,
-        K8sRollingStepInfo.class, K8sRollingRollbackStepInfo.class, K8sScaleStepInfo.class, K8sDeleteStepInfo.class,
-        K8sBGSwapServicesStepInfo.class, K8sCanaryDeleteStepInfo.class, TerraformApplyStepInfo.class,
-        TerraformPlanStepInfo.class, TerraformDestroyStepInfo.class, TerraformRollbackStepInfo.class,
-        HelmDeployStepInfo.class, HelmRollbackStepInfo.class, CloudformationCreateStackStepInfo.class,
-        CloudformationDeleteStackStepInfo.class, ServerlessAwsLambdaDeployStepInfo.class,
-        ServerlessAwsLambdaRollbackStepInfo.class, CloudformationRollbackStepInfo.class, CommandStepInfo.class,
-        AzureWebAppSlotDeploymentStep.class, AzureWebAppTrafficShiftStep.class, AzureWebAppSwapSlotStep.class,
-        AzureWebAppRollbackStep.class})
+    subTypes = {CreatePRStepInfo.class, MergePRStepInfo.class, K8sApplyStepInfo.class, K8sBlueGreenStepInfo.class,
+        K8sCanaryStepInfo.class, K8sRollingStepInfo.class, K8sRollingRollbackStepInfo.class, K8sScaleStepInfo.class,
+        K8sDeleteStepInfo.class, K8sBGSwapServicesStepInfo.class, K8sCanaryDeleteStepInfo.class,
+        TerraformApplyStepInfo.class, TerraformPlanStepInfo.class, TerraformDestroyStepInfo.class,
+        TerraformRollbackStepInfo.class, HelmDeployStepInfo.class, HelmRollbackStepInfo.class,
+        CloudformationCreateStackStepInfo.class, CloudformationDeleteStackStepInfo.class,
+        ServerlessAwsLambdaDeployStepInfo.class, ServerlessAwsLambdaRollbackStepInfo.class,
+        CloudformationRollbackStepInfo.class, CommandStepInfo.class, AzureWebAppSlotDeploymentStep.class,
+        AzureWebAppTrafficShiftStep.class, AzureWebAppSwapSlotStep.class, AzureWebAppRollbackStep.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {

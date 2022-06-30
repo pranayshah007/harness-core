@@ -16,21 +16,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @OwnedBy(CI)
 public enum GitlabIssueCommentAction implements GitAction {
-    @JsonProperty("Create") CREATE("create", "Create");
+  @JsonProperty("Create") CREATE("create", "Create");
 
-    private String value;
-    private String parsedValue;
+  private String value;
+  private String parsedValue;
 
-    GitlabIssueCommentAction(String parsedValue, String value) {
-        this.parsedValue = parsedValue;
-        this.value = value;
-    }
+  GitlabIssueCommentAction(String parsedValue, String value) {
+    this.parsedValue = parsedValue;
+    this.value = value;
+  }
 
-    public String getParsedValue() {
-        return parsedValue;
-    }
+  public String getParsedValue() {
+    return parsedValue;
+  }
 
-    public String getValue() {
-        return value;
-    }
+  public String getValue() {
+    return value;
+  }
 }

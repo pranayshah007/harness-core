@@ -57,9 +57,9 @@ import io.harness.service.intfc.DelegateInsightsService;
 import software.wings.beans.DelegateConnection;
 import software.wings.beans.SelectorType;
 
-import com.google.common.collect.Sets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import io.fabric8.utils.Lists;
 import java.time.Duration;
