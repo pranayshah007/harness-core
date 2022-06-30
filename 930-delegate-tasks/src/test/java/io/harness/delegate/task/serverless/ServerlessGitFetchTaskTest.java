@@ -42,7 +42,6 @@ import io.harness.delegate.task.serverless.response.ServerlessGitFetchResponse;
 import io.harness.git.GitClientV2;
 import io.harness.git.model.CommitResult;
 import io.harness.git.model.FetchFilesResult;
-import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
 
@@ -88,7 +87,6 @@ public class ServerlessGitFetchTaskTest extends CategoryTest {
   @Mock private ScmFetchFilesHelperNG scmFetchFilesHelper;
   @Mock private NGGitService ngGitService;
   @Mock private SecretDecryptionService secretDecryptionService;
-  @Mock private LogCallback executionLogCallback;
 
   @Inject
   @InjectMocks

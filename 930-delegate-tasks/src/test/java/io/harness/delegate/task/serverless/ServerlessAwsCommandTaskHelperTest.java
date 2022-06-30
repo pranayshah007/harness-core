@@ -22,7 +22,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,7 +49,6 @@ import io.harness.serverless.PluginCommand;
 import io.harness.serverless.ServerlessCliResponse;
 import io.harness.serverless.ServerlessClient;
 import io.harness.serverless.ServerlessCommandTaskHelper;
-import io.harness.serverless.ServerlessUtils;
 import io.harness.serverless.model.ServerlessAwsLambdaConfig;
 import io.harness.serverless.model.ServerlessDelegateTaskParams;
 
@@ -83,7 +81,6 @@ import org.mockito.junit.MockitoRule;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.zeroturnaround.exec.ProcessExecutor;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ServerlessCommandTaskHelper.class})
@@ -98,7 +95,6 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   @Mock private AwsApiHelperService awsApiHelperService;
   @Mock private ServerlessCommandRequest serverlessCommandRequest;
 
-  private final long timeout = 10;
   @InjectMocks private ServerlessAwsCommandTaskHelper serverlessAwsCommandTaskHelper;
   private ServerlessAwsLambdaManifestSchema serverlessAwsLambdaManifestSchema =
       ServerlessAwsLambdaManifestSchema.builder().plugins(Arrays.asList("asfd", "asfdasdf")).build();
@@ -126,13 +122,9 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   @Mock private AwsConnectorDTO awsConnectorDTO;
   @Mock private LogCallback logCallback;
   @Mock private ServerlessClient serverlessClient;
-  @Mock private ServerlessUtils serverlessUtils;
-  @Mock private ConfigCredentialCommand command;
-  @Mock private ProcessExecutor processExecutor;
   @Mock private PluginCommand pluginCommand;
 
   private static String CLOUDFORMATION_UPDATE_FILE = "cloudformation-template-update-stack.json";
-  private static String cloudDir = "cloudDir";
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
@@ -242,7 +234,7 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
     ServerlessDelegateTaskParams serverlessDelegateTaskParams =
         ServerlessDelegateTaskParams.builder().workingDirectory("workingDir").build();
 
-    mockStatic(ServerlessCommandTaskHelper.class);
+    Mockito.mockStatic(ServerlessCommandTaskHelper.class);
     PowerMockito.when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong()))
         .thenReturn(response);
 
@@ -261,7 +253,7 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   public void deploySuccessTest() throws IOException, InterruptedException, TimeoutException {
     ServerlessClient serverlessClient = ServerlessClient.client("");
 
-    mockStatic(ServerlessCommandTaskHelper.class);
+    Mockito.mockStatic(ServerlessCommandTaskHelper.class);
     PowerMockito.when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong()))
         .thenReturn(response);
 
@@ -281,7 +273,7 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   public void deployListTest() throws IOException, InterruptedException, TimeoutException {
     ServerlessClient serverlessClient = ServerlessClient.client("");
 
-    mockStatic(ServerlessCommandTaskHelper.class);
+    Mockito.mockStatic(ServerlessCommandTaskHelper.class);
     PowerMockito.when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong()))
         .thenReturn(response);
 
@@ -301,7 +293,7 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   public void removeTest() throws IOException, InterruptedException, TimeoutException {
     ServerlessClient serverlessClient = ServerlessClient.client("");
 
-    mockStatic(ServerlessCommandTaskHelper.class);
+    Mockito.mockStatic(ServerlessCommandTaskHelper.class);
     PowerMockito.when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong()))
         .thenReturn(response);
 
@@ -323,7 +315,7 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
     ServerlessAwsLambdaRollbackConfig serverlessAwsLambdaRollbackConfig =
         ServerlessAwsLambdaRollbackConfig.builder().previousVersionTimeStamp("123").build();
 
-    mockStatic(ServerlessCommandTaskHelper.class);
+    Mockito.mockStatic(ServerlessCommandTaskHelper.class);
     PowerMockito.when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong()))
         .thenReturn(response);
 
@@ -418,7 +410,7 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   public void setUpConfigureCredentialSuccessTest() throws Exception {
     ServerlessClient serverlessClient = ServerlessClient.client("");
 
-    mockStatic(ServerlessCommandTaskHelper.class);
+    Mockito.mockStatic(ServerlessCommandTaskHelper.class);
     PowerMockito.when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong()))
         .thenReturn(response);
 
@@ -442,7 +434,7 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
     ServerlessCliResponse response =
         ServerlessCliResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).output("output").build();
 
-    mockStatic(ServerlessCommandTaskHelper.class);
+    Mockito.mockStatic(ServerlessCommandTaskHelper.class);
     PowerMockito.when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong()))
         .thenReturn(response);
 

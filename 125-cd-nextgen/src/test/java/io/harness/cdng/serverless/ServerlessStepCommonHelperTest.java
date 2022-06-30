@@ -17,7 +17,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -96,6 +95,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -119,7 +119,6 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   private static final String ARTIFACT_ACTUAL_PATH = "harnessArtifact/artifactFile";
 
   @Mock private EngineExpressionService engineExpressionService;
-
   @Mock private OutcomeService outcomeService;
   @Mock private ServerlessAwsLambdaDeployStep serverlessAwsLambdaDeployStep;
   @Mock private ServerlessEntityHelper serverlessEntityHelper;
@@ -172,7 +171,7 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
         .getGitStoreDelegateConfig(
             gitStoreConfig, connectorInfoDTO, manifestOutcome, Arrays.asList(folderPath), ambiance);
 
-    mockStatic(StepUtils.class);
+    Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
@@ -202,7 +201,7 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
                                                            .manifestContent("content")
                                                            .build();
     ServerlessExecutionPassThroughData executionPassThroughData = ServerlessExecutionPassThroughData.builder().build();
-    mockStatic(StepUtils.class);
+    Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 

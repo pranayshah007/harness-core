@@ -24,7 +24,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.beans.serverless.ServerlessAwsLambdaManifestSchema;
 import io.harness.delegate.task.serverless.ServerlessAwsCommandTaskHelper;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
@@ -53,7 +52,6 @@ import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
 import java.io.IOException;
-import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -90,8 +88,6 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
   private CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
 
   private ServerlessAwsLambdaConfig serverlessAwsLambdaConfig = ServerlessAwsLambdaConfig.builder().build();
-  private ServerlessAwsLambdaManifestSchema serverlessAwsLambdaManifestSchema =
-      ServerlessAwsLambdaManifestSchema.builder().service(service).plugins(Arrays.asList("asfd", "asfdasdf")).build();
   private ServerlessCliResponse response =
       ServerlessCliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).output(output).build();
 

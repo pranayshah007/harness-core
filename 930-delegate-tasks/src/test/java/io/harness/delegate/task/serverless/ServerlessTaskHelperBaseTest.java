@@ -87,16 +87,8 @@ import org.mockito.junit.MockitoRule;
 
 @OwnedBy(CDP)
 public class ServerlessTaskHelperBaseTest extends CategoryTest {
-  private static final String ARTIFACTORY_ARTIFACT_PATH = "artifactPath";
-  private static final String ARTIFACTORY_ARTIFACT_NAME = "artifactName";
-  private static final String ARTIFACT_FILE_NAME = "artifactFile";
-  private static final String ARTIFACT_ZIP_REGEX = ".*\\.zip";
-  private static final String ARTIFACT_JAR_REGEX = ".*\\.jar";
-  private static final String ARTIFACT_WAR_REGEX = ".*\\.war";
-  private static final String ARTIFACT_PATH_REGEX = ".*<\\+artifact\\.path>.*";
-  private static final String ARTIFACT_PATH = "<+artifact.path>";
-
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
   @Mock private ArtifactoryNgService artifactoryNgService;
   @Mock private ArtifactoryRequestMapper artifactoryRequestMapper;
   @Mock private SecretDecryptionService secretDecryptionService;
@@ -106,8 +98,10 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
   @InjectMocks @Spy private ServerlessTaskHelperBase serverlessTaskHelperBase;
 
   private static final String ARTIFACT_DIRECTORY = "./repository/serverless/";
-  private static final String ARTIFACT_DIR_NAME = "harnessArtifact";
   private static final String ARTIFACTORY_PATH = "asdffasd.zip";
+  private static final String ARTIFACTORY_ARTIFACT_PATH = "artifactPath";
+  private static final String ARTIFACTORY_ARTIFACT_NAME = "artifactName";
+
   String repositoryName = "dfsgvgasd";
 
   ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder().build();
