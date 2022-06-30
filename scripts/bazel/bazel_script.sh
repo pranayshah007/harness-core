@@ -108,6 +108,7 @@ BAZEL_MODULES="\
   //877-filestore:module \
   //878-ng-common-utilities:module \
   //879-pms-sdk:module \
+  //880-pipeline-cd-commons:module \
   //882-pms-sdk-core:module \
   //884-pms-commons:module \
   //890-sm-core:module \
@@ -131,6 +132,7 @@ BAZEL_MODULES="\
   //clients/notification:module \
   //clients/notification:module_deploy.jar \
   //940-secret-manager-client:module \
+  //941-filestore-client:module \
   //942-enforcement-sdk:module \
   //943-enforcement-beans:module \
   //945-account-mgmt:module \
@@ -320,6 +322,7 @@ build_bazel_module 874-orchestration-delay
 build_bazel_module 876-orchestration-beans
 build_bazel_module 878-ng-common-utilities
 build_bazel_module 879-pms-sdk
+build_bazel_module 880-pipeline-cd-commons
 build_bazel_module 882-pms-sdk-core
 build_bazel_module 884-pms-commons
 build_bazel_module 890-sm-core

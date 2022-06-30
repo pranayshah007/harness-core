@@ -12,21 +12,21 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import lombok.Builder;
 import lombok.Value;
-import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.CDP)
 @Value
-@SuperBuilder
+@Builder
 @JsonTypeName(InfrastructureKind.SERVERLESS_AWS_LAMBDA)
 @TypeAlias("cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome")
 @RecasterAlias("io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome")
-public class ServerlessAwsLambdaInfrastructureOutcome
-    extends InfrastructureOutcomeAbstract implements InfrastructureOutcome {
-  EnvironmentOutcome environment;
+public class ServerlessAwsLambdaInfrastructureOutcome implements InfrastructureOutcome {
+  @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
   String infrastructureKey;
   String connectorRef;
   String region;

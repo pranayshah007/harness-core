@@ -512,7 +512,7 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
                     .build());
 
     modules.add(new ValidationModule(validatorFactory));
-    modules.add(new DelegateServiceModule());
+    modules.add(new DelegateServiceModule(configuration.getDelegateMtlsSubdomain()));
     modules.add(new CapabilityModule());
     modules.add(MigrationModule.getInstance());
     registerRemoteObserverModule(configuration, modules);

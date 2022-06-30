@@ -88,6 +88,10 @@ if [[ "" != "$NG_MANAGER_SERVICE_SECRET" ]]; then
   yq write -i $CONFIG_FILE ngManagerServiceSecret $NG_MANAGER_SERVICE_SECRET
 fi
 
+if [[ "" != "$PIPELINE_SERVICE_SECRET" ]]; then
+  yq write -i $CONFIG_FILE pipelineServiceSecret "$PIPELINE_SERVICE_SECRET"
+fi
+
 if [[ "" != "$NG_MANAGER_GITSYNC_TARGET" ]]; then
   yq write -i $CONFIG_FILE gitSdkConfiguration.gitManagerGrpcClientConfig.target $NG_MANAGER_GITSYNC_TARGET
 fi
@@ -184,3 +188,4 @@ replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFOR
 
 replace_key_value pmsGrpcClientConfig.target $PMS_GRPC_TARGET
 replace_key_value pmsGrpcClientConfig.authority $PMS_GRPC_AUTHORITY
+replace_key_value pipelineServiceClientConfig.baseUrl "$PIPELINE_SERVICE_CLIENT_BASEURL"

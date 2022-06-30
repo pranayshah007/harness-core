@@ -67,6 +67,8 @@ public class AzureWebAppInfrastructure implements Infrastructure, Visitable, Wit
   @Wither
   ParameterField<String> deploymentSlot;
 
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> targetSlot;
+
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Override
@@ -77,6 +79,7 @@ public class AzureWebAppInfrastructure implements Infrastructure, Visitable, Wit
         .resourceGroup(resourceGroup.getValue())
         .webApp(webApp.getValue())
         .deploymentSlot(deploymentSlot.getValue())
+        .targetSlot(targetSlot.getValue())
         .build();
   }
 
@@ -114,6 +117,9 @@ public class AzureWebAppInfrastructure implements Infrastructure, Visitable, Wit
     }
     if (!ParameterField.isNull(config.getDeploymentSlot())) {
       resultantInfra = resultantInfra.withDeploymentSlot(config.getDeploymentSlot());
+    }
+    if (!ParameterField.isNull(config.getTargetSlot())) {
+      resultantInfra = resultantInfra.withTargetSlot(config.getTargetSlot());
     }
     return resultantInfra;
   }

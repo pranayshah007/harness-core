@@ -105,6 +105,7 @@ public class JiraStepHelperServiceImpl implements JiraStepHelperService {
   @Override
   public StepResponse prepareStepResponse(ThrowingSupplier<JiraTaskNGResponse> responseSupplier) throws Exception {
     JiraTaskNGResponse taskResponse = responseSupplier.get();
+
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
         .stepOutcome(StepResponse.StepOutcome.builder()

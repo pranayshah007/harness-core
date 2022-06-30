@@ -122,7 +122,7 @@ public class EcsSteadyStateCheck extends State {
       EcsInfrastructureMapping ecsInfrastructureMapping = (EcsInfrastructureMapping) infrastructureMapping;
       Activity activity = createActivity(context);
       AwsConfig awsConfig = getAwsConfig(ecsInfrastructureMapping.getComputeProviderSettingId());
-      AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context,awsConfig);
+      AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
       EcsSteadyStateCheckParams params =
           EcsSteadyStateCheckParams.builder()
               .appId(app.getUuid())

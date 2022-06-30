@@ -14,13 +14,27 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.Level;
 import io.harness.exception.WingsException;
 import io.harness.pms.inputset.OverlayInputSetErrorWrapperDTOPMS;
+import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InvalidOverlayInputSetException extends WingsException {
   private static final String MESSAGE_ARG = "message";
 
+  /*
+  Having this field here is helpful in the case when an already saved input set is invalid (possible for remote input
+  sets), so that when this exception is thrown, the saved input set entity is also available from the exception
+   */
+  InputSetEntity inputSetEntity;
+
   public InvalidOverlayInputSetException(String message, OverlayInputSetErrorWrapperDTOPMS errorResponse) {
     super(message, null, INVALID_OVERLAY_INPUT_SET, Level.ERROR, null, null, errorResponse);
     super.param(MESSAGE_ARG, message);
+  }
+
+  public InvalidOverlayInputSetException(
+      String message, OverlayInputSetErrorWrapperDTOPMS errorResponse, InputSetEntity entity) {
+    super(message, null, INVALID_OVERLAY_INPUT_SET, Level.ERROR, null, null, errorResponse);
+    super.param(MESSAGE_ARG, message);
+    inputSetEntity = entity;
   }
 }

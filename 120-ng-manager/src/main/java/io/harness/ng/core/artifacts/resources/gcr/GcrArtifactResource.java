@@ -8,10 +8,14 @@
 package io.harness.ng.core.artifacts.resources.gcr;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrRequestDTO;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrResponseDTO;
@@ -79,15 +83,32 @@ public class GcrArtifactResource {
   @POST
   @Path("getBuildDetailsV2")
   @ApiOperation(value = "Gets gcr build details with Yaml expression", nickname = "getBuildDetailsForGcrWithYaml")
-  public ResponseDTO<GcrResponseDTO> getBuildDetails(@NotNull @QueryParam("imagePath") String imagePath,
-      @NotNull @QueryParam("registryHostname") String registryHostname,
-      @NotNull @QueryParam("connectorRef") String gcrConnectorIdentifier,
+  public ResponseDTO<GcrResponseDTO> getBuildDetails(@QueryParam("imagePath") String imagePath,
+      @QueryParam("registryHostname") String registryHostname,
+      @QueryParam("connectorRef") String gcrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @NotNull @QueryParam("fqnPath") String fqnPath, @NotNull String runtimeInputYaml,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      GcrArtifactConfig gcrArtifactConfig = (GcrArtifactConfig) artifactSpecFromService;
+      if (isEmpty(imagePath)) {
+        imagePath = gcrArtifactConfig.getImagePath().getValue();
+      }
+      if (isEmpty(registryHostname)) {
+        registryHostname = gcrArtifactConfig.getRegistryHostname().getValue();
+      }
+
+      if (isEmpty(gcrConnectorIdentifier)) {
+        gcrConnectorIdentifier = gcrArtifactConfig.getConnectorRef().getValue();
+      }
+    }
+
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(gcrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     imagePath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,

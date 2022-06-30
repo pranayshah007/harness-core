@@ -83,8 +83,9 @@ public class PerspectiveTimeSeriesHelper {
   public PerspectiveTimeSeriesData fetch(
       TableResult result, long timePeriod, String conversionField, String businessMappingId, String accountId) {
     BusinessMapping businessMapping = businessMappingService.get(businessMappingId);
-    UnallocatedCostStrategy strategy =
-        businessMapping != null ? businessMapping.getUnallocatedCost().getStrategy() : null;
+    UnallocatedCostStrategy strategy = businessMapping != null && businessMapping.getUnallocatedCost() != null
+        ? businessMapping.getUnallocatedCost().getStrategy()
+        : null;
 
     Schema schema = result.getSchema();
     FieldList fields = schema.getFields();

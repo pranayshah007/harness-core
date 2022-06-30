@@ -60,17 +60,19 @@ public class TemplateSetupUsageHelper {
   }
 
   public void publishSetupUsageEvent(TemplateEntity templateEntity, List<EntityDetailProtoDTO> referredEntities) {
+    // Deleting all references so that any deleted entity is not still referred.
+    deleteExistingSetupUsages(templateEntity);
     if (EmptyPredicate.isEmpty(referredEntities)) {
-      deleteExistingSetupUsages(templateEntity);
       return;
     }
 
     String accountId = templateEntity.getAccountId();
     EntityDetailProtoDTO referredEntity =
         EntityDetailProtoDTO.newBuilder()
-            .setTemplateRef(TemplateReferenceProtoUtils.createTemplateReferenceProto(accountId,
-                templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
-                templateEntity.getIdentifier(), templateEntity.getTemplateScope(), templateEntity.getVersionLabel()))
+            .setTemplateRef(
+                TemplateReferenceProtoUtils.createTemplateReferenceProto(accountId, templateEntity.getOrgIdentifier(),
+                    templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(),
+                    templateEntity.getTemplateScope(), templateEntity.getVersionLabel(), null))
             .setType(EntityTypeProtoEnum.TEMPLATE)
             .setName(templateEntity.getName())
             .build();
@@ -95,7 +97,7 @@ public class TemplateSetupUsageHelper {
           Message.newBuilder()
               .putAllMetadata(ImmutableMap.of("accountId", accountId,
                   EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, entry.getKey(),
-                  EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+                  EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.CREATE_ACTION))
               .setData(entityReferenceDTO.toByteString())
               .build());
     }
@@ -105,9 +107,10 @@ public class TemplateSetupUsageHelper {
     String accountId = templateEntity.getAccountId();
     EntityDetailProtoDTO templateDetails =
         EntityDetailProtoDTO.newBuilder()
-            .setTemplateRef(TemplateReferenceProtoUtils.createTemplateReferenceProto(accountId,
-                templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
-                templateEntity.getIdentifier(), templateEntity.getTemplateScope(), templateEntity.getVersionLabel()))
+            .setTemplateRef(
+                TemplateReferenceProtoUtils.createTemplateReferenceProto(accountId, templateEntity.getOrgIdentifier(),
+                    templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(),
+                    templateEntity.getTemplateScope(), templateEntity.getVersionLabel(), null))
             .setType(EntityTypeProtoEnum.TEMPLATE)
             .build();
     EntitySetupUsageCreateV2DTO entityReferenceDTO = EntitySetupUsageCreateV2DTO.newBuilder()

@@ -18,6 +18,7 @@ import lombok.Value;
 @ApiModel("YamlSchemaErrorDTO")
 public class YamlSchemaErrorDTO {
   String message;
+  String messageWithFQN;
   NodeErrorInfo stageInfo;
   NodeErrorInfo stepInfo;
   String fqn;

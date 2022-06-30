@@ -128,7 +128,11 @@ public enum NGStepType {
   // ssh steps
   @JsonProperty(StepSpecTypeConstants.COMMAND)
   COMMAND("Command", Arrays.asList(ServiceDefinitionType.SSH, ServiceDefinitionType.WINRM), "Command",
-      StepSpecTypeConstants.COMMAND);
+      StepSpecTypeConstants.COMMAND),
+  // Jenkns Build
+  @JsonProperty(StepSpecTypeConstants.JENKINS_BUILD)
+  JENKINS_BUILD(
+      "Jenkins Build", Arrays.asList(ServiceDefinitionType.values()), "Builds", StepSpecTypeConstants.JENKINS_BUILD);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

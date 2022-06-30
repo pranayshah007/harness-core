@@ -15,6 +15,8 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.graphql.datafetcher.DataFetcherUtils.GENERIC_EXCEPTION_MSG;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -63,6 +65,7 @@ import software.wings.graphql.schema.type.artifact.QLArtifact;
 import software.wings.graphql.schema.type.artifact.QLArtifact.QLArtifactBuilder;
 import software.wings.graphql.schema.type.manifest.QLManifest;
 import software.wings.graphql.schema.type.manifest.QLManifest.QLManifestBuilder;
+import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.security.PermissionAttribute;
 import software.wings.service.impl.AppLogContext;
@@ -79,6 +82,7 @@ import software.wings.service.intfc.WorkflowService;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -88,6 +92,7 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.URIBuilder;
 
 @OwnedBy(CDC)
 @Singleton
@@ -95,6 +100,7 @@ import org.apache.commons.lang3.StringUtils;
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
 public class WorkflowExecutionController {
   @Inject private HPersistence persistence;
+  @Inject private SubdomainUrlHelperIntfc subdomainUrlHelper;
   @Inject AuthHandler authHandler;
   @Inject AuthService authService;
   @Inject WorkflowService workflowService;
@@ -103,6 +109,8 @@ public class WorkflowExecutionController {
   @Inject InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject WorkflowExecutionService workflowExecutionService;
   @Inject ExecutionController executionController;
+
+  private static final String EXECUTION_URL_TEMPLATE = "/account/%s/app/%s/env/%s/executions/%s/details";
 
   public void populateWorkflowExecution(
       @NotNull WorkflowExecution workflowExecution, QLWorkflowExecutionBuilder builder) {
@@ -180,6 +188,11 @@ public class WorkflowExecutionController {
                               .collect(Collectors.toList());
     }
 
+    final String url =
+        buildAbsoluteUrl(format(EXECUTION_URL_TEMPLATE, workflowExecution.getAccountId(), workflowExecution.getAppId(),
+                             workflowExecution.getEnvId(), workflowExecution.getUuid()),
+            workflowExecution.getAccountId());
+
     String failureDetails = null;
     if (workflowExecution.getStatus() == ExecutionStatus.FAILED) {
       failureDetails =
@@ -191,6 +204,7 @@ public class WorkflowExecutionController {
     builder.id(workflowExecution.getUuid())
         .workflowId(workflowExecution.getWorkflowId())
         .appId(workflowExecution.getAppId())
+        .executionUrl(url)
         .createdAt(workflowExecution.getCreatedAt())
         .startedAt(workflowExecution.getStartTs())
         .endedAt(workflowExecution.getEndTs())
@@ -465,6 +479,17 @@ public class WorkflowExecutionController {
             appId, workflow, variableValues, null, null, false, null, DeploymentMetadata.Include.ARTIFACT_SERVICE);
         return executionController.getRequiredServiceIds(workflowId, finalDeploymentMetadata);
       }
+    }
+  }
+
+  private String buildAbsoluteUrl(String fragment, String accountId) {
+    String baseUrl = subdomainUrlHelper.getPortalBaseUrl(accountId);
+    try {
+      URIBuilder uriBuilder = new URIBuilder(baseUrl);
+      uriBuilder.setFragment(fragment);
+      return uriBuilder.toString();
+    } catch (URISyntaxException e) {
+      return baseUrl;
     }
   }
 }

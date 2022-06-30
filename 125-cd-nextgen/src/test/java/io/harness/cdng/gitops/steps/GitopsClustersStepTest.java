@@ -30,6 +30,7 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.rule.Owner;
@@ -64,6 +65,7 @@ public class GitopsClustersStepTest extends CategoryTest {
   @Mock private ClusterService clusterService;
   @Mock private ILogStreamingStepClient logStreamingStepClient;
   @Mock private LogStreamingStepClientFactory logStreamingClientFactory;
+  @Mock private EngineExpressionService engineExpressionService;
 
   @InjectMocks private GitopsClustersStep step;
 

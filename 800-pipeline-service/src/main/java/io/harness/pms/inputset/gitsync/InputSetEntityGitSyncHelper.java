@@ -8,7 +8,6 @@
 package io.harness.pms.inputset.gitsync;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType.INPUT_SET;
 
 import static java.lang.String.format;
 
@@ -16,7 +15,6 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.InputSetReference;
 import io.harness.common.EntityReference;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.InputSetReferenceProtoDTO;
 import io.harness.exception.InvalidRequestException;
@@ -26,15 +24,15 @@ import io.harness.gitsync.FullSyncChangeSet;
 import io.harness.gitsync.ScopeDetails;
 import io.harness.gitsync.entityInfo.AbstractGitSdkEntityHandler;
 import io.harness.gitsync.entityInfo.GitSdkEntityHandlerInterface;
+import io.harness.gitsync.helpers.GitContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.EntityDetail;
-import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
-import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.ngpipeline.inputset.service.InputSetFullGitSyncHandler;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
@@ -42,7 +40,6 @@ import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
@@ -53,14 +50,12 @@ import lombok.extern.slf4j.Slf4j;
 public class InputSetEntityGitSyncHelper extends AbstractGitSdkEntityHandler<InputSetEntity, InputSetYamlDTO>
     implements GitSdkEntityHandlerInterface<InputSetEntity, InputSetYamlDTO> {
   private final PMSInputSetService pmsInputSetService;
-  private final ValidateAndMergeHelper validateAndMergeHelper;
   private final InputSetFullGitSyncHandler inputSetFullGitSyncHandler;
 
   @Inject
-  public InputSetEntityGitSyncHelper(PMSInputSetService pmsInputSetService,
-      ValidateAndMergeHelper validateAndMergeHelper, InputSetFullGitSyncHandler inputSetFullGitSyncHandler) {
+  public InputSetEntityGitSyncHelper(
+      PMSInputSetService pmsInputSetService, InputSetFullGitSyncHandler inputSetFullGitSyncHandler) {
     this.pmsInputSetService = pmsInputSetService;
-    this.validateAndMergeHelper = validateAndMergeHelper;
     this.inputSetFullGitSyncHandler = inputSetFullGitSyncHandler;
   }
 
@@ -87,47 +82,19 @@ public class InputSetEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Inp
   @Override
   public InputSetYamlDTO save(String accountIdentifier, String yaml) {
     InputSetEntity initEntity = PMSInputSetElementMapper.toInputSetEntity(accountIdentifier, yaml);
-    validateInputSetEntity(accountIdentifier, initEntity);
-    InputSetEntity savedEntity = pmsInputSetService.create(initEntity);
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    InputSetEntity savedEntity =
+        pmsInputSetService.create(initEntity, gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId());
     return InputSetYamlDTOMapper.toDTO(savedEntity);
   }
 
   @Override
   public InputSetYamlDTO update(String accountIdentifier, String yaml, ChangeType changeType) {
     InputSetEntity inputSetEntity = PMSInputSetElementMapper.toInputSetEntity(accountIdentifier, yaml);
-    validateInputSetEntity(accountIdentifier, inputSetEntity);
-    InputSetEntity updatedEntity = pmsInputSetService.update(inputSetEntity, changeType);
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    InputSetEntity updatedEntity = pmsInputSetService.update(
+        inputSetEntity, changeType, gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId());
     return InputSetYamlDTOMapper.toDTO(updatedEntity);
-  }
-
-  private void validateInputSetEntity(String accountIdentifier, InputSetEntity entity) {
-    InputSetErrorWrapperDTOPMS inputSetErrorDetails = null;
-    Map<String, String> overlaySetInputDetails = null;
-
-    if (entity.getInputSetEntityType().equals(INPUT_SET)) {
-      inputSetErrorDetails = validateAndMergeHelper.validateInputSet(accountIdentifier, entity.getOrgIdentifier(),
-          entity.getProjectIdentifier(), entity.getPipelineIdentifier(), entity.getYaml(), entity.getBranch(),
-          entity.getYamlGitConfigRef());
-    } else {
-      overlaySetInputDetails = validateAndMergeHelper.validateOverlayInputSet(accountIdentifier,
-          entity.getOrgIdentifier(), entity.getProjectIdentifier(), entity.getPipelineIdentifier(), entity.getYaml());
-    }
-
-    if (inputSetErrorDetails != null) {
-      log.error("Unable to save or update the Input Set because it is invalid. The following FQNs are invalid: "
-          + inputSetErrorDetails.getUuidToErrorResponseMap().keySet());
-      throw new InvalidRequestException(
-          "Unable to save or update the Input Set because it is invalid. The following FQNs are invalid: "
-          + inputSetErrorDetails.getUuidToErrorResponseMap().keySet());
-    }
-    if (EmptyPredicate.isNotEmpty(overlaySetInputDetails)) {
-      log.error(
-          "Unable to save or update the Overlay Set because it is invalid. The following InputSet References are invalid: "
-          + overlaySetInputDetails.keySet());
-      throw new InvalidRequestException(
-          "Unable to save or update the Overlay Set because it is invalid. The following InputSet References are invalid: "
-          + overlaySetInputDetails.keySet());
-    }
   }
 
   @Override
@@ -178,7 +145,6 @@ public class InputSetEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Inp
   @Override
   protected InputSetYamlDTO updateEntityFilePath(String accountIdentifier, String yaml, String newFilePath) {
     InputSetEntity inputSetEntity = PMSInputSetElementMapper.toInputSetEntity(accountIdentifier, yaml);
-    validateInputSetEntity(accountIdentifier, inputSetEntity);
     InputSetEntity updatedEntity = pmsInputSetService.updateGitFilePath(inputSetEntity, newFilePath);
     return InputSetYamlDTOMapper.toDTO(updatedEntity);
   }

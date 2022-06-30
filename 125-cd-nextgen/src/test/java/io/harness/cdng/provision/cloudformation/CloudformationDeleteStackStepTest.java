@@ -18,7 +18,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.EntityType;
@@ -68,12 +67,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 @PrepareForTest({StepUtils.class})
 @OwnedBy(HarnessTeam.CDP)
 public class CloudformationDeleteStackStepTest extends CategoryTest {
@@ -144,9 +143,9 @@ public class CloudformationDeleteStackStepTest extends CategoryTest {
     doReturn(connectorInfoDTO).when(cloudformationStepHelper).getConnectorDTO(any(), any());
     doReturn(ROLE_ARN).when(cloudformationStepHelper).renderValue(any(), any());
     doReturn(new ArrayList<>()).when(awsHelper).getAwsEncryptionDetails(any(), any());
-    mockStatic(StepUtils.class);
+    Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(TaskRequest.newBuilder().build());
+        .thenAnswer(invocation -> TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
     StepInputPackage stepInputPackage = StepInputPackage.builder().build();
 
@@ -188,7 +187,7 @@ public class CloudformationDeleteStackStepTest extends CategoryTest {
                  .build())
         .when(cloudformationStepHelper)
         .getSavedCloudFormationInheritOutput(any(), any());
-    mockStatic(StepUtils.class);
+    Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);

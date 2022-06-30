@@ -236,7 +236,12 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
 
     List<ViewRule> viewRuleList = new ArrayList<>();
     Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
-    List<QLCEViewFilter> idFilters = getIdFilters(filters);
+
+    // In case of AWS Account filter, we might get multiple values for QLCEViewFilter if user is filtering on AWS
+    // Account name
+    // First value is the original filter string, the others are awsAccountIds
+    List<QLCEViewFilter> idFilters =
+        awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(getIdFilters(filters), queryParams.getAccountId());
 
     List<QLCEViewRule> rules = getRuleFilters(filters);
     if (!rules.isEmpty()) {
@@ -420,7 +425,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName, ViewQueryParams queryParams) {
     boolean isClusterTableQuery = isClusterTableQuery(filters, queryParams);
     List<ViewRule> viewRuleList = new ArrayList<>();
-    List<QLCEViewFilter> idFilters = removeAccountNameFromAWSAccountIdFilter(getIdFilters(filters));
+    List<QLCEViewFilter> idFilters =
+        AwsAccountFieldHelper.removeAccountNameFromAWSAccountIdFilter(getIdFilters(filters));
     List<QLCEViewTimeFilter> timeFilters = getTimeFilters(filters);
     SelectQuery query = getTrendStatsQuery(
         filters, idFilters, timeFilters, aggregateFunction, viewRuleList, cloudProviderTableName, queryParams);
@@ -877,7 +883,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     List<QLCEViewGroupBy> modifiedGroupBy = groupBy != null ? new ArrayList<>(groupBy) : new ArrayList<>();
     Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
 
-    List<QLCEViewRule> rules = removeAccountNameFromAWSAccountRuleFilter(getRuleFilters(filters));
+    List<QLCEViewRule> rules = AwsAccountFieldHelper.removeAccountNameFromAWSAccountRuleFilter(getRuleFilters(filters));
     if (!rules.isEmpty()) {
       for (QLCEViewRule rule : rules) {
         viewRuleList.add(convertQLCEViewRuleToViewRule(rule));
@@ -902,7 +908,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         }
       }
     }
-    List<QLCEViewFilter> idFilters = removeAccountNameFromAWSAccountIdFilter(getIdFilters(filters));
+    List<QLCEViewFilter> idFilters =
+        AwsAccountFieldHelper.removeAccountNameFromAWSAccountIdFilter(getIdFilters(filters));
     List<QLCEViewTimeFilter> timeFilters = getTimeFilters(filters);
 
     // account id is not passed in current gen queries
@@ -930,54 +937,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
 
     return viewsQueryBuilder.getQuery(viewRuleList, idFilters, timeFilters, modifiedGroupBy, aggregateFunction, sort,
         cloudProviderTableName, queryParams.getTimeOffsetInDays());
-  }
-
-  private static List<QLCEViewRule> removeAccountNameFromAWSAccountRuleFilter(final List<QLCEViewRule> ruleFilters) {
-    final List<QLCEViewRule> updatedRuleFilters = new ArrayList<>();
-    ruleFilters.forEach(ruleFilter -> {
-      if (Objects.nonNull(ruleFilter.getConditions())) {
-        final List<QLCEViewFilter> updatedConditions = new ArrayList<>();
-        ruleFilter.getConditions().forEach(condition -> {
-          if (Objects.nonNull(condition.getField()) && AWS_ACCOUNT_FIELD.equals(condition.getField().getFieldName())
-              && Objects.nonNull(condition.getValues())) {
-            final String[] updatedValues = Arrays.stream(condition.getValues())
-                                               .map(AwsAccountFieldHelper::removeAwsAccountNameFromValue)
-                                               .toArray(String[] ::new);
-            updatedConditions.add(QLCEViewFilter.builder()
-                                      .field(condition.getField())
-                                      .operator(condition.getOperator())
-                                      .values(updatedValues)
-                                      .build());
-          } else {
-            updatedConditions.add(condition);
-          }
-        });
-        updatedRuleFilters.add(QLCEViewRule.builder().conditions(updatedConditions).build());
-      } else {
-        updatedRuleFilters.add(ruleFilter);
-      }
-    });
-    return updatedRuleFilters;
-  }
-
-  private static List<QLCEViewFilter> removeAccountNameFromAWSAccountIdFilter(final List<QLCEViewFilter> idFilters) {
-    final List<QLCEViewFilter> updatedIdFilters = new ArrayList<>();
-    idFilters.forEach(idFilter -> {
-      if (Objects.nonNull(idFilter.getField()) && AWS_ACCOUNT_FIELD.equals(idFilter.getField().getFieldName())
-          && Objects.nonNull(idFilter.getValues())) {
-        final String[] updatedValues = Arrays.stream(idFilter.getValues())
-                                           .map(AwsAccountFieldHelper::removeAwsAccountNameFromValue)
-                                           .toArray(String[] ::new);
-        updatedIdFilters.add(QLCEViewFilter.builder()
-                                 .field(idFilter.getField())
-                                 .operator(idFilter.getOperator())
-                                 .values(updatedValues)
-                                 .build());
-      } else {
-        updatedIdFilters.add(idFilter);
-      }
-    });
-    return updatedIdFilters;
   }
 
   public static List<ViewRule> convertQLCEViewRuleToViewRule(@NotNull List<QLCEViewRule> ruleList) {

@@ -276,10 +276,11 @@ public class GitSyncConnectorHelper {
     return getDecryptedConnector(accountIdentifier, orgIdentifier, projectIdentifier, gitConnectorConfig);
   }
 
-  public ScmConnector getScmConnectorForGivenRepo(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String connectorRef, GitRepositoryDTO gitRepositoryDTO) {
+  public ScmConnector getScmConnectorForGivenRepo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repoName) {
     ScmConnector scmConnector = getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
-    scmConnector.setGitConnectionUrl(scmConnector.getGitConnectionUrl(gitRepositoryDTO));
+    scmConnector.setGitConnectionUrl(
+        scmConnector.getGitConnectionUrl(GitRepositoryDTO.builder().name(repoName).build()));
     return scmConnector;
   }
 

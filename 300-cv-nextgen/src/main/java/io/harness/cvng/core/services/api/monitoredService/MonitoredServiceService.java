@@ -49,7 +49,7 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   boolean delete(ProjectParams projectParams, String identifier);
   List<MonitoredServiceResponse> get(ProjectParams projectParams, Set<String> identifier);
   MonitoredServiceResponse get(ProjectParams projectParams, String identifier);
-  @Deprecated MonitoredServiceResponse get(ServiceEnvironmentParams serviceEnvironmentParams);
+  MonitoredServiceResponse getApplicationMonitoredServiceResponse(ServiceEnvironmentParams serviceEnvironmentParams);
   PageResponse<MonitoredServiceResponse> getList(ProjectParams projectParams, List<String> environmentIdentifiers,
       Integer offset, Integer pageSize, String filter);
   List<MonitoredServiceWithHealthSources> getAllWithTimeSeriesHealthSources(ProjectParams projectParams);

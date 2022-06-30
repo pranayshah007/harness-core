@@ -72,11 +72,12 @@ public class CustomStagePlanCreator extends AbstractPmsStagePlanCreator<CustomSt
       throw new InvalidRequestException("Execution section is required in Custom stage");
     }
     dependenciesNodeMap.put(executionField.getNode().getUuid(), executionField);
-    addStrategyFieldDependencyIfPresent(ctx, field, dependenciesNodeMap,metadataMap);
+    addStrategyFieldDependencyIfPresent(ctx, field, dependenciesNodeMap, metadataMap);
 
     planCreationResponseMap.put(executionField.getNode().getUuid(),
         PlanCreationResponse.builder()
-            .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
+            .dependencies(
+                DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
                     .toBuilder()
                     .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
                     .build())

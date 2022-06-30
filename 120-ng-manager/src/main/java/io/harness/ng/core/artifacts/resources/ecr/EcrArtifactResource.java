@@ -8,10 +8,14 @@
 package io.harness.ng.core.artifacts.resources.ecr;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrListImagesDTO;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrRequestDTO;
@@ -79,14 +83,31 @@ public class EcrArtifactResource {
   @POST
   @Path("getBuildDetailsV2")
   @ApiOperation(value = "Gets ecr build details with yaml expression", nickname = "getBuildDetailsForEcrWithYaml")
-  public ResponseDTO<EcrResponseDTO> getBuildDetailsV2(@NotNull @QueryParam("imagePath") String imagePath,
-      @NotNull @QueryParam("region") String region, @NotNull @QueryParam("connectorRef") String ecrConnectorIdentifier,
+  public ResponseDTO<EcrResponseDTO> getBuildDetailsV2(@QueryParam("imagePath") String imagePath,
+      @QueryParam("region") String region, @QueryParam("connectorRef") String ecrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @NotNull @QueryParam("fqnPath") String fqnPath, @NotNull String runtimeInputYaml,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      EcrArtifactConfig ecrArtifactConfig = (EcrArtifactConfig) artifactSpecFromService;
+      if (isEmpty(imagePath)) {
+        imagePath = ecrArtifactConfig.getImagePath().getValue();
+      }
+      if (isEmpty(region)) {
+        region = ecrArtifactConfig.getRegion().getValue();
+      }
+
+      if (isEmpty(ecrConnectorIdentifier)) {
+        ecrConnectorIdentifier = ecrArtifactConfig.getConnectorRef().getValue();
+      }
+    }
+
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     imagePath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,

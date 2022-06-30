@@ -233,5 +233,4 @@ public class ScriptProcessExecutorTest extends WingsBaseTest {
         fileBasedProcessScriptExecutor.scpOneFile("/randomdir", fileProvider);
     assertThat(commandExecutionStatus).isEqualTo(FAILURE);
   }
-
 }

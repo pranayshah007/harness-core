@@ -15,6 +15,8 @@ import io.harness.cvng.beans.SplunkValidationResponse;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
 import io.harness.delegate.beans.ldap.NGLdapDelegateTaskParameters;
 import io.harness.delegate.beans.ldap.NGLdapDelegateTaskResponse;
+import io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskParameters;
+import io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskResponse;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTaskParameters;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTaskResponse;
 import io.harness.delegate.task.winrm.AuthenticationScheme;
@@ -586,6 +588,8 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(CleanupPowerShellCommandUnit.class, 5273);
     kryo.register(ShellCommandExecutionContext.class, 5274);
     kryo.register(ElkQueryType.class, 5275);
+    kryo.register(NGLdapGroupSearchTaskParameters.class, 5290);
+    kryo.register(NGLdapGroupSearchTaskResponse.class, 5291);
     kryo.register(PcfInstanceElement.class, 5293);
     kryo.register(PcfConfig.class, 5296);
     kryo.register(NGLdapDelegateTaskResponse.class, 5297);

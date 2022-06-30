@@ -14,15 +14,15 @@ COPY --chown=65534:65534 redislabs_ca.pem /opt/harness/
 COPY --chown=65534:65534 install_redis.sh /opt/harness/
 COPY --chown=65534:65534 protocol.info /opt/harness/
 
+COPY --chown=65534:65534 scripts /opt/harness
+
 RUN yum install -y gcc gcc-c++ openssl wget openssl-devel
 
 RUN chmod +x /opt/harness/install_redis.sh && sh /opt/harness/install_redis.sh
 
-COPY --chown=65534:65534 scripts /opt/harness
-
-RUN chmod +x /opt/harness/*.sh && chmod 700 -R /opt/harness/ && chown -R 65534:65534 /opt/harness/
-
-WORKDIR /opt/harness
+RUN curl -L https://github.com/inspectIT/inspectit-ocelot/releases/download/1.16.0/inspectit-ocelot-agent-1.16.0.jar > /opt/harness/inspectit-ocelot-agent-1.16.0.jar \
+    && chmod 755 /opt/harness/inspectit-ocelot-agent-1.16.0.jar \
+    && chown 65534:65534 /opt/harness/inspectit-ocelot-agent-1.16.0.jar
 
 CMD [ "./run.sh" ]
 

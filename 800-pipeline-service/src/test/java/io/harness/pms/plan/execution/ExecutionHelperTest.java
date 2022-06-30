@@ -614,7 +614,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(orchestrationService)
         .startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
     PlanExecution createdPlanExecution = executionHelper.startExecution(
-        accountId, orgId, projectId, executionMetadata, planExecutionMetadata, false, null, null);
+        accountId, orgId, projectId, executionMetadata, planExecutionMetadata, false, null, null, null);
     assertThat(createdPlanExecution).isEqualTo(planExecution);
     verify(planCreatorMergeService, times(1))
         .createPlan(accountId, orgId, projectId, executionMetadata, planExecutionMetadata);

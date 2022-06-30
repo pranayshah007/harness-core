@@ -12,19 +12,20 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import lombok.Builder;
 import lombok.Value;
-import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 
 @Value
-@SuperBuilder
+@Builder
 @JsonTypeName(InfrastructureKind.SSH_WINRM_AWS)
 @TypeAlias("cdng.infra.beans.SshWinRmAwsInfrastructureOutcome")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome")
-public class SshWinRmAwsInfrastructureOutcome extends InfrastructureOutcomeAbstract implements InfrastructureOutcome {
+public class SshWinRmAwsInfrastructureOutcome implements InfrastructureOutcome {
   private String connectorRef;
   private String credentialsRef;
   private String region;
@@ -34,7 +35,7 @@ public class SshWinRmAwsInfrastructureOutcome extends InfrastructureOutcomeAbstr
   private String autoScalingGroupName;
   private AwsInstanceFilter awsInstanceFilter;
 
-  private EnvironmentOutcome environment;
+  @VariableExpression(skipVariableExpression = true) private EnvironmentOutcome environment;
   private String infrastructureKey;
 
   @Override

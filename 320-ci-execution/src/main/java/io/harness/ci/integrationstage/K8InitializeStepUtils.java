@@ -12,11 +12,11 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerPara
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameterWithDefaultValue;
-import static io.harness.common.CIExecutionConstants.DEFAULT_CONTAINER_CPU_POV;
-import static io.harness.common.CIExecutionConstants.DEFAULT_CONTAINER_MEM_POV;
-import static io.harness.common.CIExecutionConstants.STEP_PREFIX;
-import static io.harness.common.CIExecutionConstants.STEP_REQUEST_MEMORY_MIB;
-import static io.harness.common.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_CPU_POV;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_MEM_POV;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MEMORY_MIB;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -41,6 +41,13 @@ import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.buildstate.PluginSettingUtils;
+import io.harness.ci.buildstate.StepContainerUtils;
+import io.harness.ci.execution.CIExecutionConfigService;
+import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.ci.utils.CIStepInfoUtils;
+import io.harness.ci.utils.PortFinder;
 import io.harness.ci.utils.QuantityUtils;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -48,8 +55,7 @@ import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
-import io.harness.execution.CIExecutionConfigService;
-import io.harness.ff.CIFeatureFlagService;
+import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
@@ -58,11 +64,6 @@ import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.stateutils.buildstate.ConnectorUtils;
-import io.harness.stateutils.buildstate.PluginSettingUtils;
-import io.harness.stateutils.buildstate.providers.StepContainerUtils;
-import io.harness.steps.CIStepInfoUtils;
-import io.harness.util.PortFinder;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.SecretNGVariable;
@@ -619,9 +620,11 @@ public class K8InitializeStepUtils {
   private Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> getStepConnectorConversionInfo(
       StepElementConfig stepElement, Ambiance ambiance) {
     Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> map = new HashMap<>();
-    if (stepElement.getStepSpecType() instanceof PluginCompatibleStep) {
+    if ((stepElement.getStepSpecType() instanceof PluginCompatibleStep)
+        && (stepElement.getStepSpecType() instanceof WithConnectorRef)) {
       map.put(stepElement.getIdentifier(), new ArrayList<>());
       PluginCompatibleStep step = (PluginCompatibleStep) stepElement.getStepSpecType();
+
       String connectorRef = PluginSettingUtils.getConnectorRef(step);
       Map<EnvVariableEnum, String> envToSecretMap =
           PluginSettingUtils.getConnectorSecretEnvMap(step.getNonYamlInfo().getStepInfoType());

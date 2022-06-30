@@ -18,6 +18,8 @@ public class NGCommonUtilPlanCreationConstants {
   public final String COMBINED_ROLLBACK_ID_SUFFIX = "_combinedRollback";
   public final String NG_FORK = "NG_FORK";
   public final String STRATEGY = "STRATEGY";
+  public final String IDENTITY_STRATEGY = "IDENTITY_STRATEGY";
+  public final String IDENTITY_STRATEGY_INTERNAL = "IDENTITY_STRATEGY_INTERNAL";
 
   public final String NG_SECTION = "NG_SECTION";
   public final String NG_SPEC_STEP = "NG_SPEC_STEP";

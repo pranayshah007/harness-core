@@ -16,6 +16,7 @@ import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.principals.PrincipalType;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
@@ -146,8 +147,8 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
       long numberOfACLsDeleted =
           aclRepository.deleteByRoleAssignmentIdAndPermissions(roleAssignmentDBO.getId(), permissionsRemovedFromRole);
 
-      Set<String> existingResourceSelectors =
-          Sets.newHashSet(aclRepository.getDistinctResourceSelectorsInACLs(roleAssignmentDBO.getId()));
+      Set<ResourceSelector> existingResourceSelectors =
+          aclRepository.getDistinctResourceSelectorsInACLs(roleAssignmentDBO.getId());
       Set<String> existingPrincipals =
           Sets.newHashSet(aclRepository.getDistinctPrincipalsInACLsForRoleAssignment(roleAssignmentDBO.getId()));
       PrincipalType principalType =

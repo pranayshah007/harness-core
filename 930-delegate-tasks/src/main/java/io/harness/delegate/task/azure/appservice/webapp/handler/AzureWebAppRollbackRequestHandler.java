@@ -51,7 +51,6 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDP)
 @Slf4j
 public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler<AzureWebAppRollbackRequest> {
-
   @Override
   protected AzureWebAppRequestResponse execute(
       AzureWebAppRollbackRequest taskRequest, AzureConfig azureConfig, AzureLogCallbackProvider logCallbackProvider) {

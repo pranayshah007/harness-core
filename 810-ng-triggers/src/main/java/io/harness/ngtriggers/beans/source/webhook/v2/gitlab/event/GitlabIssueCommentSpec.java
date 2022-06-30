@@ -33,55 +33,55 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(CI)
 public class GitlabIssueCommentSpec implements GitlabEventSpec {
-    String connectorRef;
-    String repoName;
-    List<GitlabIssueCommentAction> actions;
-    List<TriggerEventDataCondition> headerConditions;
-    List<TriggerEventDataCondition> payloadConditions;
-    String jexlCondition;
-    boolean autoAbortPreviousExecutions;
+  String connectorRef;
+  String repoName;
+  List<GitlabIssueCommentAction> actions;
+  List<TriggerEventDataCondition> headerConditions;
+  List<TriggerEventDataCondition> payloadConditions;
+  String jexlCondition;
+  boolean autoAbortPreviousExecutions;
 
-    @Override
-    public String fetchConnectorRef() {
-        return connectorRef;
+  @Override
+  public String fetchConnectorRef() {
+    return connectorRef;
+  }
+
+  @Override
+  public String fetchRepoName() {
+    return repoName;
+  }
+
+  @Override
+  public GitEvent fetchEvent() {
+    return ISSUE_COMMENT;
+  }
+
+  @Override
+  public List<GitAction> fetchActions() {
+    if (isEmpty(actions)) {
+      return emptyList();
     }
 
-    @Override
-    public String fetchRepoName() {
-        return repoName;
-    }
+    return actions.stream().collect(toList());
+  }
 
-    @Override
-    public GitEvent fetchEvent() {
-        return ISSUE_COMMENT;
-    }
+  @Override
+  public List<TriggerEventDataCondition> fetchHeaderConditions() {
+    return headerConditions;
+  }
 
-    @Override
-    public List<GitAction> fetchActions() {
-        if (isEmpty(actions)) {
-            return emptyList();
-        }
+  @Override
+  public List<TriggerEventDataCondition> fetchPayloadConditions() {
+    return payloadConditions;
+  }
 
-        return actions.stream().collect(toList());
-    }
+  @Override
+  public String fetchJexlCondition() {
+    return jexlCondition;
+  }
 
-    @Override
-    public List<TriggerEventDataCondition> fetchHeaderConditions() {
-        return headerConditions;
-    }
-
-    @Override
-    public List<TriggerEventDataCondition> fetchPayloadConditions() {
-        return payloadConditions;
-    }
-
-    @Override
-    public String fetchJexlCondition() {
-        return jexlCondition;
-    }
-
-    @Override
-    public boolean fetchAutoAbortPreviousExecutions() {
-        return autoAbortPreviousExecutions;
-    }
+  @Override
+  public boolean fetchAutoAbortPreviousExecutions() {
+    return autoAbortPreviousExecutions;
+  }
 }

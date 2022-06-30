@@ -147,7 +147,6 @@ import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsume
 import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
-import io.harness.pms.serializer.jackson.PmsBeansJacksonModule;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.polling.service.impl.PollingPerpetualTaskManager;
 import io.harness.polling.service.impl.PollingServiceImpl;
@@ -284,7 +283,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
   public static void configureObjectMapper(final ObjectMapper mapper) {
     HObjectMapper.configureObjectMapperForNG(mapper);
-    mapper.registerModule(new PmsBeansJacksonModule());
   }
 
   @Override

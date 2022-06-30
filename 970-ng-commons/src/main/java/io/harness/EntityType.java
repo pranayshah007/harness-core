@@ -264,7 +264,10 @@ public enum EntityType {
       EntityYamlRootNames.AZURE_SWAP_SLOT_STEP),
   @JsonProperty(EntityTypeConstants.AZURE_WEBAPP_ROLLBACK)
   AZURE_WEBAPP_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.AZURE_WEBAPP_ROLLBACK, IdentifierRef.class,
-      EntityYamlRootNames.AZURE_WEBAPP_ROLLBACK_STEP);
+      EntityYamlRootNames.AZURE_WEBAPP_ROLLBACK_STEP),
+  @JsonProperty(EntityTypeConstants.JENKINS_BUILD)
+  JENKINS_BUILD(
+      ModuleType.CD, EntityTypeConstants.JENKINS_BUILD, IdentifierRef.class, EntityYamlRootNames.JENKINS_BUILD);
 
   private final ModuleType moduleType;
   String yamlName;

@@ -96,6 +96,6 @@ public class TriggerFilterStore {
 
   List<TriggerFilter> getTriggerFiltersGitlabIssueCommentList() {
     return Arrays.asList(accountTriggerFilter, sourceRepoTypeTriggerFilter, eventActionTriggerFilter,
-            headerTriggerFilter, gitWebhookTriggerRepoFilter, gitlabIssueCommentTriggerFilter, filepathTriggerFilter);
+        headerTriggerFilter, gitWebhookTriggerRepoFilter, gitlabIssueCommentTriggerFilter, filepathTriggerFilter);
   }
 }

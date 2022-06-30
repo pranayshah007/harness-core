@@ -28,7 +28,7 @@ public interface VerificationTaskService {
   String createDeploymentVerificationTask(
       String accountId, String cvConfigId, String verificationJobInstanceId, Map<String, String> tags);
   String getCVConfigId(String verificationTaskId);
-  Optional<String> maybeGetCVConfigId(String verificationTaskId);
+
   String getSliId(String verificationTaskId);
   String getVerificationJobInstanceId(String verificationTaskId);
   VerificationTask get(String verificationTaskId);
@@ -47,7 +47,7 @@ public interface VerificationTaskService {
   List<String> getSLIVerificationTaskIds(String accountId, List<String> sliIds);
   VerificationTask getSLITask(String accountId, String sliId);
   List<String> getServiceGuardVerificationTaskIds(String accountId, List<String> cvConfigIds);
-  List<String> getServiceGuardVerificationTaskIds(String accountId, String cvConfigId);
+
   boolean isServiceGuardId(String verificationTaskId);
   void removeLiveMonitoringMappings(String accountId, String cvConfigId);
   Optional<String> findBaselineVerificationTaskId(

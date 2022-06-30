@@ -26,6 +26,7 @@ import software.wings.beans.User;
 import software.wings.beans.notification.NotificationSettings;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.security.UserGroup.UserGroupKeys;
+import software.wings.beans.security.UserGroupSearchTermType;
 import software.wings.beans.sso.LdapLinkGroupRequest;
 import software.wings.beans.sso.SSOType;
 import software.wings.beans.sso.SamlLinkGroupRequest;
@@ -102,8 +103,9 @@ public class UserGroupResource {
   @AuthRule(permissionType = USER_PERMISSION_READ)
   public RestResponse<PageResponse<UserGroup>> list(@BeanParam PageRequest<UserGroup> pageRequest,
       @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("searchTerm") String searchTerm,
-      @QueryParam("details") @DefaultValue("true") boolean loadUsers) {
-    if (!StringUtils.isEmpty(searchTerm)) {
+      @QueryParam("details") @DefaultValue("true") boolean loadUsers,
+      @QueryParam("searchTermType") @DefaultValue("USERGROUP_NAME") UserGroupSearchTermType searchTermType) {
+    if (UserGroupSearchTermType.USERGROUP_NAME.equals(searchTermType) && !StringUtils.isEmpty(searchTerm)) {
       SearchFilter searchFilter = SearchFilter.builder()
                                       .fieldName(UserGroupKeys.name)
                                       .op(Operator.STARTS_WITH)
@@ -111,7 +113,8 @@ public class UserGroupResource {
                                       .build();
       pageRequest.setFilters(Lists.newArrayList(searchFilter));
     }
-    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, loadUsers);
+    PageResponse<UserGroup> pageResponse =
+        userGroupService.list(accountId, pageRequest, loadUsers, searchTermType, searchTerm);
     return getPublicUserGroups(pageResponse);
   }
 
@@ -355,7 +358,7 @@ public class UserGroupResource {
                                              .addFilter("accountId", Operator.EQ, accountId)
                                              .addFieldsIncluded("_id", "name", "notificationSettings")
                                              .build();
-    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, false);
+    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, false, null, null);
     return getPublicUserGroups(pageResponse);
   }
 

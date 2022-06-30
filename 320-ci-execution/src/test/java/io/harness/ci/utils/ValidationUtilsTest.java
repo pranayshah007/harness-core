@@ -12,8 +12,8 @@ import static io.harness.rule.OwnerRule.SHUBHAM;
 import static org.assertj.core.util.Lists.newArrayList;
 
 import io.harness.category.element.UnitTests;
+import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.exception.ngexception.CIStageExecutionException;
-import io.harness.executionplan.CIExecutionTestBase;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.rule.Owner;

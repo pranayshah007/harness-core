@@ -41,6 +41,7 @@ import io.swagger.annotations.ApiModel;
               JiraUpdateStepInfo.class, ShellScriptStepInfo.class, ServiceNowApprovalStepInfo.class,
               PolicyStepInfo.class, ServiceNowCreateStepInfo.class, ServiceNowUpdateStepInfo.class, QueueStepInfo.class,
               CustomApprovalStepInfo.class})
+
 public interface PMSStepInfo extends StepSpecType, WithStepElementParameters {
   default StepParameters getStepParameters(
       PmsAbstractStepNode stepElementConfig, OnFailRollbackParameters failRollbackParameters, PlanCreationContext ctx) {

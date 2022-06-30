@@ -437,6 +437,8 @@
 5276:software.wings.beans.container.KubernetesSteadyStateCheckParams
 5277:software.wings.sm.states.KubernetesSteadyStateCheckResponse
 5279:software.wings.helpers.ext.pcf.request.CfCommandSetupRequest
+5290:io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskParameters
+5291:io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskResponse
 5293:software.wings.api.PcfInstanceElement
 5296:software.wings.beans.PcfConfig
 5297:io.harness.delegate.beans.ldap.NGLdapDelegateTaskResponse
@@ -1493,7 +1495,6 @@
 19550:io.harness.delegate.beans.executioncapability.GitInstallationCapability
 19551:io.harness.delegate.beans.connector.ConnectorValidationParameterResponse
 19552:io.harness.delegate.beans.connector.scm.github.GithubOauthDTO
-19553:io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO
 19630:io.harness.delegate.beans.connector.helm.OciHelmValidationParams
 19640:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams
 19641:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse
@@ -1607,6 +1608,7 @@
 29302:io.harness.delegate.beans.connector.jenkins.JenkinsCapabilityHelper
 29303:io.harness.delegate.beans.connector.jenkins.JenkinsValidationParams
 29304:io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest
+29305:io.harness.delegate.task.jenkins.JenkinsBuildTaskNGResponse
 29306:io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskParams
 29307:io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskResponse
 29308:io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig
@@ -1711,6 +1713,7 @@
 55331:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppTrafficShiftResponse
 55332:io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSwapSlotsRequest
 55333:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSwapSlotsResponseNG
+55334:io.harness.delegate.task.ssh.config.SecretConfigFile
 55401:io.harness.delegate.beans.SerializedResponseData
 55402:software.wings.beans.SerializationFormat
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO

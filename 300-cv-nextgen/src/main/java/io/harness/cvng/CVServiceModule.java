@@ -321,9 +321,7 @@ import io.harness.cvng.statemachine.services.impl.AnalysisStateMachineServiceImp
 import io.harness.cvng.statemachine.services.impl.OrchestrationServiceImpl;
 import io.harness.cvng.usage.impl.CVLicenseUsageImpl;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
-import io.harness.cvng.verificationjob.services.api.VerificationJobService;
 import io.harness.cvng.verificationjob.services.impl.VerificationJobInstanceServiceImpl;
-import io.harness.cvng.verificationjob.services.impl.VerificationJobServiceImpl;
 import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.govern.ProviderMethodInterceptor;
@@ -570,7 +568,6 @@ public class CVServiceModule extends AbstractModule {
 
     bind(MetricPackService.class).to(MetricPackServiceImpl.class);
     bind(AppDynamicsService.class).to(AppDynamicsServiceImpl.class).in(Singleton.class);
-    bind(VerificationJobService.class).to(VerificationJobServiceImpl.class);
     bind(LogRecordService.class).to(LogRecordServiceImpl.class);
     bind(VerificationJobInstanceService.class).to(VerificationJobInstanceServiceImpl.class);
     bind(VerificationTaskService.class).to(VerificationTaskServiceImpl.class);

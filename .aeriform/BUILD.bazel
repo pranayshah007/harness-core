@@ -232,6 +232,10 @@ aeriform("//879-pms-sdk:module")
 
 aeriform("//879-pms-sdk:tests")
 
+aeriform("//880-pipeline-cd-commons:module")
+
+aeriform("//880-pipeline-cd-commons:tests")
+
 aeriform("//882-pms-sdk-core:module")
 
 aeriform("//882-pms-sdk-core:supporter-test")

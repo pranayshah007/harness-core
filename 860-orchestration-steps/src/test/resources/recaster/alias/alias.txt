@@ -124,3 +124,4 @@ io.harness.plancreator.steps.resourceconstraint.QueueStepNode
 io.harness.steps.resourcerestraint.beans.QueueHoldingScope
 io.harness.plancreator.steps.resourceconstraint.QueueStepInfo
 io.harness.steps.policy.PolicyStepSpecParameters
+io.harness.steps.policy.step.outcome.PolicyStepOutcome

@@ -26,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonSubTypes({
   @JsonSubTypes.Type(value = GitlabPRSpec.class, name = MERGE_REQUEST_EVENT_TYPE)
   , @JsonSubTypes.Type(value = GitlabPushSpec.class, name = PUSH_EVENT_TYPE),
-        @JsonSubTypes.Type(value = GitlabIssueCommentSpec.class, name = ISSUE_COMMENT_EVENT_TYPE)
+      @JsonSubTypes.Type(value = GitlabIssueCommentSpec.class, name = ISSUE_COMMENT_EVENT_TYPE)
 })
 @OwnedBy(PIPELINE)
 public interface GitlabEventSpec extends PayloadAware, GitAware {}

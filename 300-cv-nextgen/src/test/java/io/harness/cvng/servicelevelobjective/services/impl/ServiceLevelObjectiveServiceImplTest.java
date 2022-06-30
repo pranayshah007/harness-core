@@ -106,6 +106,7 @@ import io.harness.rule.Owner;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -458,7 +459,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = DEEPAK_CHHIKARA)
   @Category(UnitTests.class)
-  public void testUpdate_SLIUpdateWithSLOTarget() {
+  public void testUpdate_SLIUpdateWithSLOTarget() throws ParseException {
     ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
     createMonitoredService();
     ServiceLevelObjectiveResponse serviceLevelObjectiveResponse =
@@ -495,6 +496,8 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
             .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
             .get();
     assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().size()).isEqualTo(14);
+    assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().get(0).getStartTime())
+        .isEqualTo(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse("2020-07-20T12:00:00").toInstant());
   }
 
   @Test
