@@ -298,7 +298,7 @@ public class RecommendationsOverviewQueryV2 {
         .eq(true)
         // based on current-gen workload recommendation dataFetcher
         .and(CE_RECOMMENDATIONS.LASTPROCESSEDAT.greaterOrEqual(
-            offsetDateTimeNow().truncatedTo(ChronoUnit.DAYS).minusDays(2)))
+            offsetDateTimeNow().truncatedTo(ChronoUnit.DAYS).minusDays(4)))
         .and(nonDelegate());
   }
 

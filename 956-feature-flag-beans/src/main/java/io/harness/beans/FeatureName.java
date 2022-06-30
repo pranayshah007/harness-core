@@ -65,6 +65,7 @@ public enum FeatureName {
   CUSTOM_DEPLOYMENT,
   NG_DEPLOYMENT_TEMPLATE,
   CUSTOM_MAX_PAGE_SIZE,
+  ENABLE_PAGINATED_CLOUD_PROVIDERS,
   CUSTOM_RESOURCEGROUP_SCOPE,
   CUSTOM_SECRETS_MANAGER,
   CVNG_ENABLED,
@@ -263,7 +264,6 @@ public enum FeatureName {
   SERVICENOW_NG_INTEGRATION,
   OPTIMIZED_TF_PLAN,
   SELF_SERVICE_ENABLED,
-  NG_NATIVE_HELM,
   CHI_CUSTOM_HEALTH,
   CHI_CUSTOM_HEALTH_LOGS,
   AZURE_SAML_150_GROUPS_SUPPORT,
@@ -290,10 +290,11 @@ public enum FeatureName {
   EXTERNAL_USERID_BASED_LOGIN,
   LDAP_SYNC_WITH_USERID,
   DISABLE_HARNESS_SM,
-  SECURITY,
-  SECURITY_STAGE,
-  STO_CI_PIPELINE_SECURITY,
-  STO_CD_PIPELINE_SECURITY,
+  SECURITY("Enable the STO module on NG", HarnessTeam.STO),
+  SECURITY_STAGE("Enable the Security Tests stage on NG", HarnessTeam.STO),
+  STO_CI_PIPELINE_SECURITY("Enable the Security Tests execution results tab for CI on NG", HarnessTeam.STO),
+  STO_CD_PIPELINE_SECURITY("Enable the Security Tests execution results tab for CD on NG", HarnessTeam.STO),
+  STO_API_V2("Enable the new STO API version on NG", HarnessTeam.STO),
   GIT_SYNC_WITH_BITBUCKET,
   REFACTOR_ARTIFACT_SELECTION,
   CCM_DEV_TEST,
@@ -360,12 +361,15 @@ public enum FeatureName {
   ENABLE_DEFAULT_TIMEFRAME_IN_DEPLOYMENTS,
   CUSTOM_SECRET_MANAGER_NG,
   EXPORT_TF_PLAN_JSON_NG,
+  ADD_MANIFEST_COLLECTION_STEP,
   JDK11_WATCHER,
+  NG_CUSTOM_APPROVAL,
   NG_FILE_STORE,
   ACCOUNT_BASIC_ROLE,
   CVNG_TEMPLATE_MONITORED_SERVICE,
   CVNG_TEMPLATE_VERIFY_STEP,
   WORKFLOW_EXECUTION_ZOMBIE_MONITOR,
+  PIPELINE_QUEUE_STEP,
   USE_PAGINATED_ENCRYPT_SERVICE, // To be only used by UI for safeguarding encrypt component changes in CG
   INFRA_MAPPING_BASED_ROLLBACK_ARTIFACT,
   DEPLOYMENT_SUBFORMIK_PIPELINE_DROPDOWN,
@@ -377,9 +381,16 @@ public enum FeatureName {
   SRM_LICENSE_ENABLED,
   AZURE_WEBAPP_NG,
   ACCOUNT_BASIC_ROLE_ONLY,
+  SEARCH_USERGROUP_BY_APPLICATION("Search in usergroup by application in CG", HarnessTeam.SPG),
   GITOPS_BYO_ARGO,
-  NG_EMAIL_STEP,
-  NG_GIT_EXPERIENCE_IMPORT_FLOW;
+  CCM_MICRO_FRONTEND,
+  NG_GIT_EXPERIENCE_IMPORT_FLOW,
+  CVNG_LICENSE_ENFORCEMENT,
+  SERVICE_DASHBOARD_V2,
+  TEMPLATE_SCHEMA_VALIDATION,
+  YAML_APIS_GRANULAR_PERMISSION,
+  JENKINS_BUILD,
+  ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM;
 
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
@@ -390,4 +401,16 @@ public enum FeatureName {
   }
 
   @Getter private FeatureFlag.Scope scope;
+
+  FeatureName(String description, HarnessTeam owner) {
+    this.description = description;
+    this.owner = owner;
+  }
+
+  @Getter private String description;
+  private HarnessTeam owner;
+
+  public String getOwner() {
+    return owner.name();
+  }
 }

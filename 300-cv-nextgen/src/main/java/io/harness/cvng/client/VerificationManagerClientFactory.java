@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.network.Http;
 import io.harness.network.NoopHostnameVerifier;
+import io.harness.security.AllTrustingX509TrustManager;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.security.VerificationAuthInterceptor;
 
@@ -33,8 +34,7 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Singleton
 @OwnedBy(HarnessTeam.CV)
 public class VerificationManagerClientFactory implements Provider<VerificationManagerClient> {
-  public static final ImmutableList<TrustManager> TRUST_ALL_CERTS =
-      ImmutableList.of(new VerificationManagerClientX509TrustManager());
+  public static final ImmutableList<TrustManager> TRUST_ALL_CERTS = ImmutableList.of(new AllTrustingX509TrustManager());
 
   private String baseUrl;
   private ServiceTokenGenerator tokenGenerator;

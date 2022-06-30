@@ -8,6 +8,7 @@
 package io.harness.grpc.utils;
 
 import static io.harness.rule.OwnerRule.AVMOHAN;
+import static io.harness.rule.OwnerRule.JOHANNES;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -41,7 +42,7 @@ public class DelegateGrpcConfigExtractorTest extends CategoryTest {
   public void shouldExtractAuthorityGivenUrlWithPrefix() throws Exception {
     // {prefix}-{svc}-{grpc}-{env}.harness.io
     String managerUrl = "https://pr.harness.io/ccm";
-    assertThat(DelegateGrpcConfigExtractor.extractAuthority(managerUrl, "events"))
+    assertThat(DelegateGrpcConfigExtractor.extractAndPrepareAuthority(managerUrl, "events", false))
         .isEqualTo("ccm-events-grpc-pr.harness.io");
   }
 
@@ -50,7 +51,16 @@ public class DelegateGrpcConfigExtractorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldExtractAuthorityGivenUrlWithoutPrefix() throws Exception {
     String managerUrl = "https://pr.harness.io";
-    assertThat(DelegateGrpcConfigExtractor.extractAuthority(managerUrl, "events"))
+    assertThat(DelegateGrpcConfigExtractor.extractAndPrepareAuthority(managerUrl, "events", false))
         .isEqualTo("events-grpc-pr.harness.io");
+  }
+
+  @Test
+  @Owner(developers = JOHANNES)
+  @Category(UnitTests.class)
+  public void shouldExtractOriginalAuthorityWhenForceFlagIsSet() throws Exception {
+    String managerUrl = "https://pr.harness.io";
+    assertThat(DelegateGrpcConfigExtractor.extractAndPrepareAuthority(managerUrl, "events", true))
+        .isEqualTo("pr.harness.io");
   }
 }

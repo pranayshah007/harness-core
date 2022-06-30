@@ -23,6 +23,8 @@ public class NGCommonEntityConstants {
   public static final String VERSION_LABEL_KEY = "versionLabel";
   public static final String SERVICE_KEY = "serviceId";
   public static final String ENVIRONMENT_KEY = "envId";
+  public static final String INFRA_DEFINITION_KEY = "infraDefinitionId";
+
   public static final String BUILDS_KEY = "buildIds";
   public static final String TIMESTAMP = "timestamp";
   public static final String IDENTIFIER_KEY = "identifier";
@@ -101,6 +103,8 @@ public class NGCommonEntityConstants {
   // Environment Group
   public static final String ENVIRONMENT_GROUP_KEY = "envGroupIdentifier";
   public static final String ENV_PARAM_MESSAGE = "Environment Identifier for the Entity.";
+
+  public static final String INFRADEF_PARAM_MESSAGE = "Infrastructure Definition Identifier for the Entity.";
   // Service Overrides
   public static final String SERVICE_IDENTIFIER_KEY = "serviceIdentifier";
   public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the Entity.";
@@ -112,4 +116,5 @@ public class NGCommonEntityConstants {
 
   public static final String INFRA = "infra";
   public static final String OVERRIDES_ONLY = "overridesOnly";
+  public static final String RUNTIME_INPUTS_TEMPLATE = "Runtime inputs template YAML";
 }

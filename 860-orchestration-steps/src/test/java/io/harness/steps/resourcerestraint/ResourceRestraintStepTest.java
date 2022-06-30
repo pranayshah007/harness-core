@@ -34,6 +34,7 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.resourcerestraint.beans.AcquireMode;
 import io.harness.steps.resourcerestraint.beans.HoldingScope;
@@ -55,7 +56,8 @@ import org.mockito.Mock;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ResourceRestraintStepTest extends OrchestrationStepsTestBase {
   private static final String RESOURCE_RESTRAINT_ID = generateUuid();
-  private static final String RESOURCE_UNIT = generateUuid();
+  private static final ParameterField<String> RESOURCE_UNIT =
+      ParameterField.<String>builder().value(generateUuid()).build();
 
   @Mock private ResourceRestraintInstanceService resourceRestraintInstanceService;
   @Mock private ResourceRestraintService resourceRestraintService;
@@ -143,7 +145,7 @@ public class ResourceRestraintStepTest extends OrchestrationStepsTestBase {
     ResourceRestraintPassThroughData passThroughData = ResourceRestraintPassThroughData.builder()
                                                            .name(specParameters.getName())
                                                            .resourceRestraintId(generateUuid())
-                                                           .resourceUnit(RESOURCE_UNIT)
+                                                           .resourceUnit(RESOURCE_UNIT.getValue())
                                                            .capacity(100)
                                                            .releaseEntityType(specParameters.getHoldingScope().name())
                                                            .releaseEntityId(planExecutionId)

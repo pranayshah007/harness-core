@@ -20,6 +20,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretText;
+import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -28,6 +29,7 @@ import io.harness.rest.RestResponse;
 import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.security.annotations.NextGenManagerAuth;
 
+import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.OauthSettings;
 import software.wings.beans.sso.SamlSettings;
 import software.wings.security.annotations.AuthRule;
@@ -44,6 +46,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import java.io.InputStream;
+import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -177,6 +180,56 @@ public class SSOResourceNG {
     } catch (Exception e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION);
     }
+  }
+
+  @GET
+  @Path("ldap/setting-with-encrypted-details")
+  @Timed
+  @ExceptionMetered
+  @Produces("application/x-kryo")
+  @Consumes("application/x-kryo")
+  public RestResponse<LdapSettingsWithEncryptedDataDetail> getLdapSetting(@QueryParam("accountId") String accountId) {
+    return new RestResponse<>(ssoService.getLdapSettingWithEncryptedDataDetail(accountId));
+  }
+
+  @POST
+  @Path("ldap/settings")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<LdapSettings> createLdapSettings(
+      @QueryParam("accountId") @NotBlank String accountId, @Valid LdapSettings settings) {
+    if (!settings.getAccountId().equals(accountId)) {
+      throw new InvalidRequestException("AccountId in the query parameter and request body don't match");
+    }
+    return new RestResponse<>(ssoService.createLdapSettings(settings));
+  }
+
+  @PUT
+  @Path("ldap/settings")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<LdapSettings> updateLdapSettings(
+      @QueryParam("accountId") @NotBlank String accountId, @Valid LdapSettings settings) {
+    if (!settings.getAccountId().equals(accountId)) {
+      throw new InvalidRequestException("AccountId in the query parameter and request body don't match");
+    }
+    return new RestResponse<>(ssoService.updateLdapSettings(settings));
+  }
+
+  @GET
+  @Path("ldap/settings")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<LdapSettings> getLdapSettings(@QueryParam("accountId") @NotBlank String accountId) {
+    return new RestResponse<>(ssoService.getLdapSettings(accountId));
+  }
+
+  @DELETE
+  @Path("ldap/settings")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<LdapSettings> deleteLdapSettings(@QueryParam("accountId") @NotBlank String accountId) {
+    return new RestResponse<>(ssoService.deleteLdapSettings(accountId));
   }
 
   @VisibleForTesting

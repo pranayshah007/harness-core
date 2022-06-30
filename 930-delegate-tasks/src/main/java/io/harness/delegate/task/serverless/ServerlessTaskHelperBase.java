@@ -246,6 +246,8 @@ public class ServerlessTaskHelperBase {
       createDirectoryIfDoesNotExist(artifactoryDirectory);
       waitForDirectoryToBeAccessibleOutOfProcess(artifactoryDirectory, 10);
       fetchArtifactoryArtifact(serverlessArtifactoryArtifactConfig, logCallback, artifactoryDirectory);
+    } else if (serverlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
+      logCallback.saveExecutionLog(color("Skipping downloading artifact step as it is not needed..", White, Bold));
     }
   }
 

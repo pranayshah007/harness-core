@@ -113,7 +113,10 @@ import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
+import io.harness.logging.AccountLogContext;
+import io.harness.logging.AutoLogContext.OverrideBehavior;
 import io.harness.logging.ExceptionLogger;
+import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 import io.harness.rest.RestResponse;
 import io.harness.rest.RestResponse.Builder;
@@ -134,6 +137,7 @@ import software.wings.dl.WingsPersistence;
 import software.wings.exception.InvalidYamlNameException;
 import software.wings.exception.YamlProcessingException;
 import software.wings.exception.YamlProcessingException.ChangeWithErrorMsg;
+import software.wings.resources.yaml.YamlAuthHandler;
 import software.wings.security.UserThreadLocal;
 import software.wings.service.impl.yaml.handler.BaseYamlHandler;
 import software.wings.service.impl.yaml.handler.YamlHandlerFactory;
@@ -159,10 +163,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.Yaml;
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.constructor.SafeConstructor;
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.error.Mark;
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.scanner.ScannerException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -179,6 +179,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -189,6 +190,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
@@ -211,6 +213,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.error.Mark;
+import org.yaml.snakeyaml.scanner.ScannerException;
 
 /**
  * @author rktummala on 10/16/17
@@ -255,7 +261,7 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
   @Inject YamlSuccessfulChangeService yamlSuccessfulChangeService;
   @Inject private AuditHelper auditHelper;
   @Inject private AuditService auditService;
-
+  @Inject YamlAuthHandler yamlAuthHandler;
   private final List<YamlType> yamlProcessingOrder = getEntityProcessingOrder();
 
   private List<YamlType> getEntityProcessingOrder() {
@@ -639,7 +645,7 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
           changeContextList.add(manifestFileChangeContext);
         } else if (yamlFilePath.endsWith(YAML_EXTENSION)) {
           validateYaml(change.getFileContent());
-          YamlType yamlType = findYamlType(yamlFilePath, change.getAccountId());
+          YamlType yamlType = findYamlType(yamlFilePath);
           String yamlSubType = getYamlSubType(change.getFileContent());
 
           if (INFRA_MAPPING == yamlType) {
@@ -665,7 +671,7 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
           changeContextList.add(changeContext);
         } else if (yamlFilePath.contains(YamlConstants.CONFIG_FILES_FOLDER)) {
           // Special handling for config files
-          YamlType yamlType = findYamlType(yamlFilePath, change.getAccountId());
+          YamlType yamlType = findYamlType(yamlFilePath);
           if (YamlType.CONFIG_FILE_CONTENT == yamlType || YamlType.CONFIG_FILE_OVERRIDE_CONTENT == yamlType) {
             ChangeContext.Builder changeContextBuilder =
                 ChangeContext.Builder.aChangeContext().withChange(change).withYamlType(yamlType);
@@ -1006,7 +1012,7 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
 
   public int findOrdinal(String yamlFilePath, String accountId) {
     AtomicInteger count = new AtomicInteger();
-    Optional<YamlType> first = getYamlProcessingOrder(accountId)
+    Optional<YamlType> first = getYamlProcessingOrder()
                                    .stream()
                                    .filter(yamlType -> {
                                      count.incrementAndGet();
@@ -1021,13 +1027,14 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
     }
   }
 
-  private List<YamlType> getYamlProcessingOrder(String accountId) {
+  private List<YamlType> getYamlProcessingOrder() {
     // If anything is to be hidden behind feature flag it cab=n bre removed from the list.
     return yamlProcessingOrder;
   }
 
-  private YamlType findYamlType(String yamlFilePath, String accountId) throws YamlException {
-    Optional<YamlType> first = getYamlProcessingOrder(accountId)
+  @Override
+  public YamlType findYamlType(String yamlFilePath) throws YamlException {
+    Optional<YamlType> first = getYamlProcessingOrder()
                                    .stream()
                                    .filter(yamlType -> Pattern.matches(yamlType.getPathExpression(), yamlFilePath))
                                    .findFirst();
@@ -1071,7 +1078,7 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
     }
     BaseYaml yamlForFilePath = null;
     try {
-      YamlType yamlType = findYamlType(yamlFilePath, accountId);
+      YamlType yamlType = findYamlType(yamlFilePath);
       BaseYamlHandler yamlHandler = yamlHandlerFactory.getYamlHandler(yamlType, yamlSubType);
       yamlForFilePath = yamlHandler.toYaml(yamlHandler.get(accountId, yamlFilePath), applicationId);
     } catch (Exception e) {
@@ -1082,7 +1089,7 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
 
   @Override
   public YamlOperationResponse upsertYAMLFilesAsZip(final String accountId, final InputStream fileInputStream) {
-    try {
+    try (AccountLogContext ignore1 = new AccountLogContext(accountId, OverrideBehavior.OVERRIDE_ERROR)) {
       final String auditHeaderIdFromGlobalContext = auditService.getAuditHeaderIdFromGlobalContext();
       if (!Strings.isNullOrEmpty(auditHeaderIdFromGlobalContext)) {
         final AuditHeader currentAuditHeader = wingsPersistence.get(AuditHeader.class, auditHeaderIdFromGlobalContext);
@@ -1090,15 +1097,40 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
           Future<YamlOperationResponse> future =
               Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("upsert-yamls-as-zip").build())
                   .submit(() -> {
+                    List unauthorizedFiles = null;
                     try {
                       auditHelper.setAuditContext(currentAuditHeader);
                       List changeList = getChangesForZipFile(accountId, fileInputStream, null);
+                      List originalChanges = new ArrayList<>(changeList);
+
+                      unauthorizedFiles = (List) io.harness.data.structure.CollectionUtils.emptyIfNull(changeList)
+                                              .stream()
+                                              .map(fileChange -> {
+                                                String filePath = ((GitFileChange) fileChange).getFilePath();
+                                                try {
+                                                  yamlAuthHandler.authorizeDelete(filePath, accountId);
+                                                } catch (Exception e) {
+                                                  return fileChange;
+                                                }
+                                                return null;
+                                              })
+                                              .filter(Objects::nonNull)
+                                              .collect(toList());
+
+                      ListUtils.removeAll(changeList, unauthorizedFiles);
+
                       List<ChangeContext> processedChangeList = processChangeSet(changeList);
-                      return prepareSuccessfulYAMLOperationResponse(processedChangeList, changeList);
+                      if (isEmpty(unauthorizedFiles)) {
+                        return prepareSuccessfulYAMLOperationResponse(processedChangeList, originalChanges);
+                      } else {
+                        return prepareFailedYAMLOperationResponse("Unable to process few files", new HashMap<>(),
+                            new ArrayList<>(), new ArrayList<>(), unauthorizedFiles);
+                      }
                     } catch (YamlProcessingException ex) {
                       log.warn(format("Unable to process uploaded zip file for account %s, error: %s", accountId, ex));
-                      return prepareFailedYAMLOperationResponse(ex.getMessage(), ex.getFailedYamlFileChangeMap(),
-                          ex.getChangeContextList(), ex.getChangeList());
+                      return prepareFailedYAMLOperationResponse(ExceptionUtils.getMessage(ex),
+                          ex.getFailedYamlFileChangeMap(), ex.getChangeContextList(), ex.getChangeList(),
+                          unauthorizedFiles);
                     }
                   });
           return future.get(30, TimeUnit.SECONDS);
@@ -1119,7 +1151,8 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
    */
   @Override
   public YamlOperationResponse deleteYAMLByPaths(final String accountId, final List<String> filePaths) {
-    try {
+    List unauthorizedFiles = null;
+    try (AccountLogContext ignore1 = new AccountLogContext(accountId, OverrideBehavior.OVERRIDE_ERROR)) {
       List changeList = filePaths.stream()
                             .map(filePath
                                 -> GitFileChange.Builder.aGitFileChange()
@@ -1129,19 +1162,37 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
                                        .withChangeType(ChangeType.DELETE)
                                        .build())
                             .collect(toList());
+      List originalChanges = new ArrayList<>(changeList);
+
+      unauthorizedFiles = (List) changeList.stream()
+                              .map(fileChange -> {
+                                String filePath = ((GitFileChange) fileChange).getFilePath();
+                                try {
+                                  yamlAuthHandler.authorizeDelete(filePath, accountId);
+                                } catch (Exception e) {
+                                  return fileChange;
+                                }
+                                return null;
+                              })
+                              .filter(Objects::nonNull)
+                              .collect(toList());
+
+      ListUtils.removeAll(changeList, unauthorizedFiles);
+
       List<ChangeContext> processedChangesWithContext = processChangeSet(changeList);
-      return prepareSuccessfulYAMLOperationResponse(processedChangesWithContext, changeList);
+      return prepareSuccessfulYAMLOperationResponse(processedChangesWithContext, originalChanges);
     } catch (YamlProcessingException ex) {
       log.warn(format("Error while deleting yaml file paths(s) for account %s, error: %s", accountId, ex));
-      return prepareFailedYAMLOperationResponse(
-          ex.getMessage(), ex.getFailedYamlFileChangeMap(), ex.getChangeContextList(), ex.getChangeList());
+      return prepareFailedYAMLOperationResponse(ex.getMessage(), ex.getFailedYamlFileChangeMap(),
+          ex.getChangeContextList(), ex.getChangeList(), unauthorizedFiles);
     }
   }
 
   @Override
   public YamlOperationResponse deleteYAMLByPathsV2(
       final String accountId, final List<EntityInformation> entityInformations) {
-    try {
+    List<Change> unauthorizedFiles = null;
+    try (AccountLogContext ignore1 = new AccountLogContext(accountId, OverrideBehavior.OVERRIDE_ERROR)) {
       List<Change> changeList = io.harness.data.structure.CollectionUtils.emptyIfNull(entityInformations)
                                     .stream()
                                     .map(entityInformation -> {
@@ -1159,12 +1210,24 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
                                           .build();
                                     })
                                     .collect(toList());
+      unauthorizedFiles = changeList.stream()
+                              .map(change -> {
+                                try {
+                                  yamlAuthHandler.authorizeDelete(change.getFilePath(), accountId);
+                                } catch (Exception e) {
+                                  return change;
+                                }
+                                return null;
+                              })
+                              .filter(Objects::nonNull)
+                              .collect(toList());
+      List<Change> changes = ListUtils.removeAll(changeList, unauthorizedFiles);
       List<ChangeContext> processedChangesWithContext = processChangeSet(changeList);
       return prepareSuccessfulYAMLOperationResponse(processedChangesWithContext, changeList);
     } catch (YamlProcessingException ex) {
       log.warn(format("Error while deleting yaml file paths(s) for account %s, error: %s", accountId, ex));
       return prepareFailedYAMLOperationResponse(ExceptionUtils.getMessage(ex), ex.getFailedYamlFileChangeMap(),
-          ex.getChangeContextList(), ex.getChangeList());
+          ex.getChangeContextList(), ex.getChangeList(), unauthorizedFiles);
     }
   }
 
@@ -1173,21 +1236,26 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
     if (yamlContent.isEmpty()) {
       throw new InvalidArgumentsException(Pair.of("Input YAML", "cannot be empty"));
     }
-    try {
+    try (AccountLogContext ignore1 = new AccountLogContext(accountId, OverrideBehavior.OVERRIDE_ERROR)) {
       List changeList = Arrays.asList(GitFileChange.Builder.aGitFileChange()
                                           .withFilePath(yamlFilePath)
                                           .withFileContent(yamlContent)
                                           .withChangeType(ChangeType.ADD)
                                           .withAccountId(accountId)
                                           .build());
+      yamlAuthHandler.authorizeUpsert(yamlFilePath, accountId);
       List<ChangeContext> processedChangeList = processChangeSet(changeList);
       if (!processedChangeList.isEmpty()) {
         final ChangeContext changeContext = processedChangeList.get(0);
+        String entityId = getEntityId(yamlFilePath, changeContext);
+        // added tracability due to many recent issues
+        doTracing(accountId, yamlFilePath, changeContext);
+
         return FileOperationStatus.builder()
             .status(FileOperationStatus.Status.SUCCESS)
             .errorMssg("")
             .yamlFilePath(changeContext.getChange().getFilePath())
-            .entityId(changeContext.getEntity() != null ? ((Base) changeContext.getEntity()).getUuid() : null)
+            .entityId(entityId)
             .build();
       }
     } catch (YamlProcessingException ex) {
@@ -1206,18 +1274,45 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
     return null;
   }
 
+  private void doTracing(String accountId, String yamlFilePath, ChangeContext changeContext) {
+    try {
+      Object o = changeContext.getYamlSyncHandler().get(accountId, yamlFilePath);
+      if (o == null) {
+        log.error("Not able to create entity due to some issue for file path {}.", yamlFilePath);
+      } else {
+        log.info("Created entity {} for filepath {}", o, yamlFilePath);
+      }
+    } catch (Exception e) {
+      log.error(String.format("Some issue while validating creation of entity with file path %s", yamlFilePath), e);
+    }
+  }
+
+  private String getEntityId(String yamlFilePath, ChangeContext changeContext) {
+    PersistentEntity entity = changeContext.getEntity();
+    String entityId = null;
+    if (entity instanceof Base) {
+      entityId = ((Base) entity).getUuid();
+    } else if (entity instanceof UuidAware) {
+      entityId = ((UuidAware) entity).getUuid();
+    } else {
+      log.info("No entity ID found for the entity {} and filepath {}", entity, yamlFilePath);
+    }
+    return entityId;
+  }
+
   private YamlOperationResponse prepareFailedYAMLOperationResponse(final String errorMessage,
       final Map<String, ChangeWithErrorMsg> processingFailures, final List<ChangeContext> processedChangesWithContext,
-      final List<Change> originalChangeList) {
+      final List<Change> originalChangeList, List<Change> unauthorizedFiles) {
     final YamlOperationResponseBuilder yamlOperationResponseBuilder =
         YamlOperationResponse.builder().errorMessage(errorMessage).responseStatus(YamlOperationResponse.Status.FAILED);
     if (processingFailures.isEmpty() || CollectionUtils.isEmpty(processedChangesWithContext)
         || CollectionUtils.isEmpty(originalChangeList)) {
       return yamlOperationResponseBuilder.build();
     }
-    final List<FileOperationStatus> fileOperationStatusList = prepareFileOperationStatusList(processingFailures);
+    final List<FileOperationStatus> fileOperationStatusList =
+        prepareFileOperationStatusList(processingFailures, unauthorizedFiles);
     final List<Change> failedChangeList =
-        new LinkedList<>(processingFailures.values()).stream().map(value -> value.getChange()).collect(toList());
+        new LinkedList<>(processingFailures.values()).stream().map(ChangeWithErrorMsg::getChange).collect(toList());
     final List<Change> successfullyProcessedChanges =
         getFilesWhichAreSuccessfullyProcessed(processedChangesWithContext, failedChangeList);
     fileOperationStatusList.addAll(prepareFileOperationStatusListFromChangeList(
@@ -1333,7 +1428,7 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
   }
 
   private List<FileOperationStatus> prepareFileOperationStatusList(
-      final Map<String, ChangeWithErrorMsg> processingFailures) {
+      final Map<String, ChangeWithErrorMsg> processingFailures, List<Change> unauthorizedFiles) {
     if (processingFailures.isEmpty()) {
       return Collections.EMPTY_LIST;
     }
@@ -1346,6 +1441,14 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
                                       .yamlFilePath(changeWithErrorMsg.getChange().getFilePath())
                                       .build());
     }
+    unauthorizedFiles.forEach(file -> {
+      fileOperationStatusList.add(
+          FileOperationStatus.builder()
+              .status(FileOperationStatus.Status.FAILED)
+              .errorMssg(String.format("User unauthorized for changing entity for file path: [%s]", file.getFilePath()))
+              .yamlFilePath(file.getFilePath())
+              .build());
+    });
     return fileOperationStatusList;
   }
 

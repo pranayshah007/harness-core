@@ -12,6 +12,7 @@ import static io.harness.filestore.FileStoreTestConstants.ACCOUNT_IDENTIFIER;
 import static io.harness.filestore.FileStoreTestConstants.ORG_IDENTIFIER;
 import static io.harness.filestore.FileStoreTestConstants.PROJECT_IDENTIFIER;
 import static io.harness.rule.OwnerRule.BOJAN;
+import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.VLAD;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,12 +25,16 @@ import io.harness.CategoryTest;
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.NGTemplateReference;
 import io.harness.beans.Scope;
 import io.harness.beans.SearchPageParams;
 import io.harness.category.element.UnitTests;
+import io.harness.common.EntityReference;
 import io.harness.exception.ReferencedEntityException;
+import io.harness.exception.UnexpectedException;
 import io.harness.filestore.entities.NGFile;
 import io.harness.filestore.service.impl.FileReferenceServiceImpl;
+import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.entity.EntitySetupUsage.EntitySetupUsageKeys;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
@@ -38,6 +43,7 @@ import io.harness.rule.Owner;
 
 import com.google.common.collect.Lists;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -80,6 +86,19 @@ public class FileReferenceServiceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void shouldVerifyThatExceptionIsThrownCountEntitiesReferencingFile() {
+    String identifier = "testFile";
+    NGFile file = NGFile.builder().identifier(identifier).accountIdentifier(ACCOUNT_IDENTIFIER).build();
+    when(entitySetupUsageService.referredByEntityCount(
+             ACCOUNT_IDENTIFIER, ACCOUNT_IDENTIFIER + "/" + identifier, EntityType.FILES))
+        .thenThrow(IllegalArgumentException.class);
+    assertThatThrownBy(() -> fileReferenceService.countEntitiesReferencingFile(file))
+        .isInstanceOf(UnexpectedException.class);
+  }
+
+  @Test
   @Owner(developers = VLAD)
   @Category(UnitTests.class)
   public void shouldFetchReferencedBy() {
@@ -115,6 +134,21 @@ public class FileReferenceServiceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void shouldValidateFileIsReferencedByOtherEntities() {
+    String identifier1 = "testFile1";
+    NGFile file1 =
+        NGFile.builder().identifier(identifier1).accountIdentifier(ACCOUNT_IDENTIFIER).type(NGFileType.FILE).build();
+
+    when(entitySetupUsageService.referredByEntityCount(any(), any(), any())).thenReturn(2L);
+
+    assertThatThrownBy(() -> fileReferenceService.validateReferenceByAndThrow(file1))
+        .isInstanceOf(ReferencedEntityException.class)
+        .hasMessage("File [testFile1] is referenced by 2 other entities and can not be deleted.");
+  }
+
+  @Test
   @Owner(developers = BOJAN)
   @Category(UnitTests.class)
   public void shouldFetchReferencedByForScope() {
@@ -137,5 +171,27 @@ public class FileReferenceServiceTest extends CategoryTest {
     List<EntitySetupUsageDTO> result = fileReferenceService.getAllReferencedByInScope(
         ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, searchPageParams, EntityType.PIPELINES, entityName);
     assertThat(result).containsExactly(entitySetupUsageDTO);
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void shouldGetAllFileIdentifiersReferencedByInScope() {
+    // Given
+    Scope scope = Scope.of("account-ident", "org-ident", "proj-ident");
+    EntityReference reference = NGTemplateReference.builder().identifier("ident").build();
+
+    EntitySetupUsageDTO entitySetupUsageDTO =
+        EntitySetupUsageDTO.builder().referredEntity(EntityDetail.builder().entityRef(reference).build()).build();
+
+    when(entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(any(), any(), any(), any(), any(), any()))
+        .thenReturn(Collections.singletonList(entitySetupUsageDTO));
+
+    // When
+    List<String> result =
+        fileReferenceService.getAllFileIdentifiersReferencedByInScope(scope, EntityType.FILES, "referredby");
+
+    // Then
+    assertThat(result).isNotNull().contains("ident");
   }
 }

@@ -39,7 +39,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -73,12 +72,9 @@ public class ClusterServiceImpl implements ClusterService {
   }
 
   @Override
-  public Page<Cluster> bulkCreate(String accountId, List<Cluster> entities) {
+  public long bulkCreate(List<Cluster> entities) {
     try {
-      List<Cluster> savedEntities = (List<Cluster>) clusterRepository.saveAll(entities);
-      return new PageImpl<>(savedEntities);
-    } catch (DuplicateKeyException ex) {
-      throw new DuplicateFieldException(getDuplicateExistsErrorMessage(accountId, ex.getMessage()), USER, ex);
+      return clusterRepository.bulkCreate(entities);
     } catch (Exception ex) {
       String clusters = entities.stream().map(Cluster::getClusterRef).collect(Collectors.joining(","));
       log.info("Encountered exception while saving the Cluster entity records of [{}], with exception", clusters, ex);

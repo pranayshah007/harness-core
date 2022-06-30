@@ -75,6 +75,7 @@ import io.harness.cvng.exception.ConstraintViolationExceptionMapper;
 import io.harness.cvng.exception.NotFoundExceptionMapper;
 import io.harness.cvng.governance.beans.ExpansionKeysConstants;
 import io.harness.cvng.governance.services.SLOPolicyExpansionHandler;
+import io.harness.cvng.licenserestriction.MaxServiceRestrictionUsageImpl;
 import io.harness.cvng.metrics.services.impl.CVNGMetricsPublisher;
 import io.harness.cvng.migration.CVNGSchemaHandler;
 import io.harness.cvng.migration.beans.CVNGSchema;
@@ -98,11 +99,22 @@ import io.harness.cvng.verificationjob.jobs.VerificationJobInstanceTimeoutHandle
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
+import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
+import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
+import io.harness.enforcement.client.custom.CustomRestrictionInterface;
+import io.harness.enforcement.client.example.ExampleCustomImpl;
+import io.harness.enforcement.client.example.ExampleRateLimitUsageImpl;
+import io.harness.enforcement.client.example.ExampleStaticLimitUsageImpl;
+import io.harness.enforcement.client.resources.EnforcementClientResource;
+import io.harness.enforcement.client.services.EnforcementSdkRegisterService;
+import io.harness.enforcement.client.usage.RestrictionUsageInterface;
+import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.UnexpectedException;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.govern.ProviderModule;
 import io.harness.health.HealthService;
 import io.harness.iterator.PersistenceIterator;
+import io.harness.licensing.usage.resources.LicenseUsageResource;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.maintenance.MaintenanceController;
@@ -444,6 +456,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     registerMonitoredServiceNotificationIterator(injector);
     scheduleSidekickProcessing(injector);
     scheduleMaintenanceActivities(injector, configuration);
+    initializeEnforcementSdk(injector);
 
     log.info("Leaving startup maintenance mode");
     MaintenanceController.forceMaintenance(false);
@@ -1018,6 +1031,8 @@ public class VerificationApplication extends Application<VerificationConfigurati
       }
     });
     environment.jersey().register(injector.getInstance(VersionInfoResource.class));
+    environment.jersey().register(injector.getInstance(LicenseUsageResource.class));
+    environment.jersey().register(injector.getInstance(EnforcementClientResource.class));
     log.info("Registered all the resources. Time taken(ms): {}", System.currentTimeMillis() - startTimeMs);
   }
 
@@ -1035,5 +1050,29 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   private void runMigrations(Injector injector) {
     injector.getInstance(CVNGMigrationService.class).runMigrations();
+  }
+
+  private void initializeEnforcementSdk(Injector injector) {
+    RestrictionUsageRegisterConfiguration restrictionUsageRegisterConfiguration =
+        RestrictionUsageRegisterConfiguration.builder()
+            .restrictionNameClassMap(
+                ImmutableMap.<FeatureRestrictionName, Class<? extends RestrictionUsageInterface>>builder()
+                    .put(FeatureRestrictionName.TEST2, ExampleStaticLimitUsageImpl.class)
+                    .put(FeatureRestrictionName.TEST3, ExampleRateLimitUsageImpl.class)
+                    .put(FeatureRestrictionName.TEST6, ExampleRateLimitUsageImpl.class)
+                    .put(FeatureRestrictionName.TEST7, ExampleStaticLimitUsageImpl.class)
+                    .put(FeatureRestrictionName.SRM_SERVICES, MaxServiceRestrictionUsageImpl.class)
+                    .build())
+            .build();
+    CustomRestrictionRegisterConfiguration customConfig =
+        CustomRestrictionRegisterConfiguration.builder()
+            .customRestrictionMap(
+                ImmutableMap.<FeatureRestrictionName, Class<? extends CustomRestrictionInterface>>builder()
+                    .put(FeatureRestrictionName.TEST4, ExampleCustomImpl.class)
+                    .build())
+            .build();
+
+    injector.getInstance(EnforcementSdkRegisterService.class)
+        .initialize(restrictionUsageRegisterConfiguration, customConfig);
   }
 }

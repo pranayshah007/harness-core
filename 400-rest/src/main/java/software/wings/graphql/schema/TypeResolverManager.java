@@ -104,6 +104,7 @@ import software.wings.graphql.schema.type.instance.QLEcsContainerInstance;
 import software.wings.graphql.schema.type.instance.QLK8SPodInstance;
 import software.wings.graphql.schema.type.instance.QLPcfInstance;
 import software.wings.graphql.schema.type.instance.QLPhysicalHostInstance;
+import software.wings.graphql.schema.type.secretManagers.QLCustomSecretManagerConfig;
 import software.wings.graphql.schema.type.secrets.QLEncryptedFile;
 import software.wings.graphql.schema.type.secrets.QLEncryptedText;
 import software.wings.graphql.schema.type.secrets.QLKerberosAuthentication;
@@ -168,6 +169,7 @@ public class TypeResolverManager {
     public static final String PipelineStageExecution = "PipelineStageExecution";
     public static final String MANIFEST_SELECTION = "ManifestSelection";
     public static final String APPROVAL_DETAILS = "ApprovalDetails";
+    public static final String SECRET_MANAGER_CONFIG = "SecretManagerConfig";
   }
 
   @UtilityClass
@@ -297,7 +299,7 @@ public class TypeResolverManager {
     public static final String JIRA_APPROVAL_DETAILS = "JiraApprovalDetails";
     public static final String SNOW_APPROVAL_DETAILS = "SNOWApprovalDetails";
     public static final String SHELL_SCRIPT_DETAILS = "ShellScriptDetails";
-
+    public static final String CUSTOM_SECRET_MANAGER = "CustomSecretManagerConfig";
     public static final String RancherCloudProvider = "RancherCloudProvider";
   }
 
@@ -512,6 +514,11 @@ public class TypeResolverManager {
                                       .put(QLSNOWApprovalDetails.class, TypeResolverManagerTypes.SNOW_APPROVAL_DETAILS)
                                       .put(QLShellScriptDetails.class, TypeResolverManagerTypes.SHELL_SCRIPT_DETAILS)
                                       .build()))
+        .put(TypeResolverManagerUnifaces.SECRET_MANAGER_CONFIG,
+            getResultTypeResolver(
+                ImmutableMap.<Class, String>builder()
+                    .put(QLCustomSecretManagerConfig.class, TypeResolverManagerTypes.CUSTOM_SECRET_MANAGER)
+                    .build()))
         .build();
   }
 

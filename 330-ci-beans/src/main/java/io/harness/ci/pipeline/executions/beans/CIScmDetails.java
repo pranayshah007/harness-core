@@ -27,8 +27,8 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.ci.pipeline.executions.beans.CIScmDetails")
 @OwnedBy(HarnessTeam.CI)
 public class CIScmDetails {
-    private String scmUrl;
-    private String scmProvider;
-    private String scmAuthType;
-    private String scmHostType;
+  private String scmUrl;
+  private String scmProvider;
+  private String scmAuthType;
+  private String scmHostType;
 }

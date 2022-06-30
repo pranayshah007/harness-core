@@ -91,6 +91,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
   @InjectMocks NGTemplateServiceImpl templateService;
 
+  @Mock NGTemplateSchemaServiceImpl templateSchemaService;
+
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
@@ -134,6 +136,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
                  .build();
 
     Call<ResponseDTO<Optional<ProjectResponse>>> projectCall = mock(Call.class);
+    doNothing().when(templateSchemaService).validateYamlSchemaInternal(entity);
     when(projectClient.getProject(anyString(), anyString(), anyString())).thenReturn(projectCall);
     when(projectCall.execute())
         .thenReturn(Response.success(ResponseDTO.newResponse(Optional.of(ProjectResponse.builder().build()))));

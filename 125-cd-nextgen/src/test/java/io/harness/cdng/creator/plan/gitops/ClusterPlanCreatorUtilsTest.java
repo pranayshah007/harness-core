@@ -46,9 +46,9 @@ public class ClusterPlanCreatorUtilsTest {
     PlanNode expected = ClusterPlanCreatorUtils.getGitopsClustersStepPlanNodeBuilder(nodeUuid, input).build();
 
     assertThat(expected.getFacilitatorObtainments()).isNotNull();
-    assertThat(expected.getIdentifier()).isEqualTo("GitopsClusters");
+    assertThat(expected.getIdentifier()).isEqualTo("Gitops Clusters");
     assertThat(expected.getUuid()).isEqualTo(nodeUuid);
-    assertThat(expected.getName()).isEqualTo("GitopsClusters");
+    assertThat(expected.getName()).isEqualTo("Gitops Clusters");
     assertThat(expected.getStepType()).isEqualTo(GitopsClustersStep.STEP_TYPE);
 
     ClusterStepParameters stepParameters = (ClusterStepParameters) expected.getStepParameters();
@@ -66,9 +66,9 @@ public class ClusterPlanCreatorUtilsTest {
     PlanNode expected = ClusterPlanCreatorUtils.getGitopsClustersStepPlanNodeBuilder(nodeUuid, input).build();
 
     assertThat(expected.getFacilitatorObtainments()).isNotNull();
-    assertThat(expected.getIdentifier()).isEqualTo("GitopsClusters");
+    assertThat(expected.getIdentifier()).isEqualTo("Gitops Clusters");
     assertThat(expected.getUuid()).isEqualTo(nodeUuid);
-    assertThat(expected.getName()).isEqualTo("GitopsClusters");
+    assertThat(expected.getName()).isEqualTo("Gitops Clusters");
     assertThat(expected.getStepType()).isEqualTo(GitopsClustersStep.STEP_TYPE);
 
     ClusterStepParameters stepParameters = (ClusterStepParameters) expected.getStepParameters();

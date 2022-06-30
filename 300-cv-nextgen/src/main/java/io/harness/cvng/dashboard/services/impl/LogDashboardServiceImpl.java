@@ -9,7 +9,6 @@ package io.harness.cvng.dashboard.services.impl;
 
 import static io.harness.cvng.beans.DataSourceType.ERROR_TRACKING;
 
-import io.harness.cvng.analysis.beans.LiveMonitoringLogAnalysisClusterDTO;
 import io.harness.cvng.analysis.beans.LiveMonitoringLogAnalysisRadarChartClusterDTO;
 import io.harness.cvng.analysis.entities.LogAnalysisCluster;
 import io.harness.cvng.analysis.entities.LogAnalysisCluster.Frequency;
@@ -110,49 +109,6 @@ public class LogDashboardServiceImpl implements LogDashboardService {
     return getRadarChartLogs(monitoredServiceParams.getAccountIdentifier(), tags, timeRangeParams.getStartTime(),
         timeRangeParams.getEndTime(), cvConfigIds, pageParams.getPage(), pageParams.getSize(),
         monitoredServiceLogAnalysisFilter);
-  }
-
-  @Override
-  @Deprecated
-  public List<LiveMonitoringLogAnalysisClusterDTO> getLogAnalysisClusters(MonitoredServiceParams monitoredServiceParams,
-      TimeRangeParams timeRangeParams, LiveMonitoringLogAnalysisFilter liveMonitoringLogAnalysisFilter) {
-    List<LiveMonitoringLogAnalysisClusterDTO> liveMonitoringLogAnalysisClusterDTOS = new ArrayList<>();
-    List<String> cvConfigIds = getCVConfigs(monitoredServiceParams, liveMonitoringLogAnalysisFilter)
-                                   .stream()
-                                   .map(CVConfig::getUuid)
-                                   .collect(Collectors.toList());
-    List<LogAnalysisTag> tags = liveMonitoringLogAnalysisFilter.filterByClusterTypes()
-        ? liveMonitoringLogAnalysisFilter.getClusterTypes()
-        : Arrays.asList(LogAnalysisTag.values());
-
-    cvConfigIds.forEach(cvConfigId -> {
-      List<AnalysisResult> logAnalysisResults =
-          getAnalysisResultForCvConfigId(cvConfigId, timeRangeParams.getStartTime(), timeRangeParams.getEndTime());
-
-      Map<Long, LogAnalysisTag> labelTagMap = new HashMap<>();
-      logAnalysisResults.forEach(result -> {
-        Long label = result.getLabel();
-        if (!labelTagMap.containsKey(label) || result.getTag().isMoreSevereThan(labelTagMap.get(label))) {
-          labelTagMap.put(label, result.getTag());
-        }
-      });
-
-      String verificationTaskId = verificationTaskService.getServiceGuardVerificationTaskId(
-          monitoredServiceParams.getAccountIdentifier(), cvConfigId);
-      List<LogAnalysisCluster> clusters =
-          logAnalysisService.getAnalysisClusters(verificationTaskId, labelTagMap.keySet());
-      clusters.forEach(logAnalysisCluster -> {
-        liveMonitoringLogAnalysisClusterDTOS.add(LiveMonitoringLogAnalysisClusterDTO.builder()
-                                                     .x(logAnalysisCluster.getX())
-                                                     .y(logAnalysisCluster.getY())
-                                                     .tag(labelTagMap.get(logAnalysisCluster.getLabel()))
-                                                     .text(logAnalysisCluster.getText())
-                                                     .build());
-      });
-    });
-    return liveMonitoringLogAnalysisClusterDTOS.stream()
-        .filter(cluster -> tags.contains(cluster.getTag()))
-        .collect(Collectors.toList());
   }
 
   @Override

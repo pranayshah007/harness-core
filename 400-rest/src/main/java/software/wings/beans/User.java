@@ -180,7 +180,6 @@ public class User extends Base implements Principal {
     // publicUser.setCompanyName(getCompanyName());
     return publicUser;
   }
-
   public boolean isAccountAdmin(String accountId) {
     return roles != null
         && roles.stream()

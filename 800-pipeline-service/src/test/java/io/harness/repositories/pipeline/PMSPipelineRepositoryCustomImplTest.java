@@ -9,6 +9,7 @@ package io.harness.repositories.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.SRIDHAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -28,7 +29,6 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.manage.GlobalContextManager;
-import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
@@ -36,9 +36,9 @@ import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.rule.Owner;
 import io.harness.springdata.TransactionHelper;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
-import lombok.Data;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -141,15 +141,8 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
         pipelineToSave.withStoreType(StoreType.INLINE).withVersion(0L);
     doReturn(pipelineToSaveWithStoreTypeWithExtraFields).when(mongoTemplate).save(pipelineToSaveWithStoreType);
 
-    DummyClassForSupplier dummy = new DummyClassForSupplier();
-    Supplier<OutboxEvent> randomSupplier = () -> {
-      dummy.setVal(10);
-      return null;
-    };
-    PipelineEntity savedPipelineEntity = pipelineRepository.savePipelineEntity(pipelineToSave, randomSupplier);
+    PipelineEntity savedPipelineEntity = pipelineRepository.savePipelineEntity(pipelineToSave);
     assertThat(savedPipelineEntity).isEqualTo(pipelineToSaveWithStoreTypeWithExtraFields);
-    // to check if the supplier is actually called
-    assertThat(dummy.getVal()).isEqualTo(10);
     verify(gitAwareEntityHelper, times(0)).createEntityOnGit(any(), any(), any());
   }
 
@@ -172,8 +165,7 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
                                         .identifier(pipelineId)
                                         .yaml(pipelineYaml)
                                         .build();
-    PipelineEntity pipelineToSaveWithStoreType = pipelineToSave.withYaml("")
-                                                     .withStoreType(StoreType.REMOTE)
+    PipelineEntity pipelineToSaveWithStoreType = pipelineToSave.withStoreType(StoreType.REMOTE)
                                                      .withConnectorRef(connectorRef)
                                                      .withRepo(repoName)
                                                      .withFilePath(filePath);
@@ -181,15 +173,9 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
         pipelineToSave.withStoreType(StoreType.INLINE).withVersion(0L);
     doReturn(pipelineToSaveWithStoreTypeWithExtraFields).when(mongoTemplate).save(pipelineToSaveWithStoreType);
 
-    DummyClassForSupplier dummy = new DummyClassForSupplier();
-    Supplier<OutboxEvent> randomSupplier = () -> {
-      dummy.setVal(10);
-      return null;
-    };
-    PipelineEntity savedPipelineEntity = pipelineRepository.savePipelineEntity(pipelineToSave, randomSupplier);
+    PipelineEntity savedPipelineEntity = pipelineRepository.savePipelineEntity(pipelineToSave);
     assertThat(savedPipelineEntity).isEqualTo(pipelineToSaveWithStoreTypeWithExtraFields);
     // to check if the supplier is actually called
-    assertThat(dummy.getVal()).isEqualTo(10);
     verify(gitAwareEntityHelper, times(1)).createEntityOnGit(pipelineToSave, pipelineYaml, scope);
   }
 
@@ -392,8 +378,24 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
     verify(outboxService, times(1)).save(any());
   }
 
-  @Data
-  public static class DummyClassForSupplier {
-    int val;
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testDeleteAllPipelineInProject() {
+    Update update = new Update();
+    update.set(PipelineEntityKeys.deleted, true);
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(pipelineId)
+                                        .yaml(pipelineYaml)
+                                        .deleted(true)
+                                        .build();
+    List<PipelineEntity> entityList = Arrays.asList(pipelineEntity);
+    doReturn(entityList).when(mongoTemplate).findAllAndRemove(any(), (Class<PipelineEntity>) any());
+    pipelineRepository.deleteAllPipelinesInAProject(accountIdentifier, orgIdentifier, projectIdentifier);
+    verify(mongoTemplate, times(1)).findAllAndRemove(any(), (Class<PipelineEntity>) any());
+    verify(outboxService, times(1)).save(any());
   }
 }

@@ -7,7 +7,6 @@
 
 package io.harness.cvng.verificationjob.entities;
 
-import static io.harness.cvng.CVConstants.RUNTIME_PARAM_STRING;
 import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
 import static io.harness.cvng.verificationjob.CVVerificationJobConstants.SENSITIVITY_KEY;
 import static io.harness.cvng.verificationjob.CVVerificationJobConstants.TRAFFIC_SPLIT_PERCENTAGE_KEY;
@@ -15,7 +14,6 @@ import static io.harness.cvng.verificationjob.CVVerificationJobConstants.TRAFFIC
 import static com.google.common.base.Preconditions.checkState;
 
 import io.harness.cvng.beans.job.Sensitivity;
-import io.harness.cvng.beans.job.VerificationJobDTO;
 import io.harness.cvng.core.beans.TimeRange;
 
 import com.google.common.base.Preconditions;
@@ -78,8 +76,6 @@ public abstract class CanaryBlueGreenVerificationJob extends VerificationJob {
         sensitivity == null ? null : RuntimeParameter.builder().isRuntimeParam(false).value(sensitivity.name()).build();
   }
 
-  public abstract VerificationJobDTO getVerificationJobDTO();
-
   @Override
   protected void validateParams() {
     Preconditions.checkNotNull(
@@ -112,8 +108,6 @@ public abstract class CanaryBlueGreenVerificationJob extends VerificationJob {
     return getTimeRangesForDuration(startTime);
   }
 
-  public abstract void fromDTO(VerificationJobDTO verificationJobDTO);
-
   @Override
   public void resolveJobParams(Map<String, String> runtimeParameters) {
     runtimeParameters.keySet().forEach(key -> {
@@ -138,14 +132,5 @@ public abstract class CanaryBlueGreenVerificationJob extends VerificationJob {
   @Override
   public boolean collectHostData() {
     return true;
-  }
-
-  public static void setCanaryBLueGreenDefaultJobParameters(
-      CanaryBlueGreenVerificationJob canaryBlueGreenVerificationJob, String accountId, String orgIdentifier,
-      String projectIdentifier) {
-    canaryBlueGreenVerificationJob.setSensitivity(RUNTIME_PARAM_STRING, true);
-    canaryBlueGreenVerificationJob.setTrafficSplitPercentageV2(RUNTIME_PARAM_STRING, true);
-    VerificationJob.setDefaultJobCommonParameters(
-        canaryBlueGreenVerificationJob, accountId, orgIdentifier, projectIdentifier);
   }
 }

@@ -15,6 +15,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.exception.WingsException;
+import io.harness.limits.lib.DeploymentErrorType;
 import io.harness.limits.lib.Limit;
 
 import java.util.EnumSet;
@@ -28,11 +29,13 @@ import lombok.Value;
 public class UsageLimitExceededException extends WingsException {
   private Limit limit;
   private String accountId;
+  private DeploymentErrorType errorType;
 
   private static final String MESSAGE_KEY = "message";
-  public UsageLimitExceededException(
-      ErrorCode code, Level level, EnumSet<ReportTarget> reportTargets, Limit limit, String accountId) {
+  public UsageLimitExceededException(ErrorCode code, Level level, EnumSet<ReportTarget> reportTargets, Limit limit,
+      String accountId, DeploymentErrorType errorType) {
     super("Usage limit reached. Limit: " + limit + " , accountId=" + accountId, null, code, level, reportTargets, null);
+    this.errorType = errorType;
     param(MESSAGE_KEY, "Usage limit reached. Limit: " + limit + " , accountId=" + accountId);
     this.limit = limit;
     this.accountId = accountId;

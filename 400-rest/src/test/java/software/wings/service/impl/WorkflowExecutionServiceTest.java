@@ -30,6 +30,7 @@ import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.POOJA;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.RAMA;
@@ -184,6 +185,8 @@ import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.applicationmanifest.HelmChartService;
 import software.wings.sm.ExecutionContextImpl;
+import software.wings.sm.ExecutionInterrupt;
+import software.wings.sm.ExecutionInterruptManager;
 import software.wings.sm.StateExecutionData;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.StateExecutionInstance.StateExecutionInstanceKeys;
@@ -243,6 +246,7 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
       spy(software.wings.service.impl.WorkflowExecutionServiceImpl.class);
 
   @Mock private WingsPersistence wingsPersistence;
+  @Mock private ExecutionInterruptManager executionInterruptManager;
   @Mock private WorkflowService workflowService;
   @Mock private PipelineService pipelineService;
   @Mock private UserGroupService userGroupService;
@@ -312,6 +316,54 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     when(wingsPersistence.createQuery(eq(StateExecutionInstance.class))).thenReturn(statequery);
     when(workflowExecutionServiceHelper.fetchFailureDetails(APP_ID, WORKFLOW_EXECUTION_ID))
         .thenReturn("failureDetails");
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testRejectWithRollback() {
+    Query mockQuery = mock(Query.class);
+    WorkflowExecution workflowExecution = WorkflowExecution.builder().uuid("executionId").build();
+    doReturn(mockQuery).when(wingsPersistence).createQuery(WorkflowExecution.class);
+    doReturn(mockQuery).when(mockQuery).filter(any(), any());
+    doReturn(mockQuery).when(mockQuery).filter(any(), any());
+    doReturn(mockQuery).when(mockQuery).project(WorkflowExecutionKeys.appId, true);
+    doReturn(mockQuery).when(mockQuery).project(WorkflowExecutionKeys.uuid, true);
+    doReturn(workflowExecution).when(mockQuery).get();
+    doReturn(workflowExecution).when(wingsPersistence).getWithAppId(eq(WorkflowExecution.class), any(), any());
+    doReturn(mock(ExecutionInterrupt.class)).when(executionInterruptManager).registerExecutionInterrupt(any());
+
+    String approvalId = generateUuid();
+    ApprovalDetails approvalDetails = new ApprovalDetails();
+    approvalDetails.setApprovalId(approvalId);
+    approvalDetails.setAction(Action.ROLLBACK);
+
+    boolean success = workflowExecutionService.approveOrRejectExecution(APP_ID, asList(), approvalDetails, "workflow");
+    assertThat(success).isEqualTo(true);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testRejectWithRollbackShouldFailWhenPipelineExecution() {
+    Query mockQuery = mock(Query.class);
+    WorkflowExecution workflowExecution =
+        WorkflowExecution.builder().workflowType(WorkflowType.PIPELINE).uuid("executionId").build();
+    doReturn(mockQuery).when(wingsPersistence).createQuery(WorkflowExecution.class);
+    doReturn(mockQuery).when(mockQuery).filter(any(), any());
+    doReturn(mockQuery).when(mockQuery).filter(any(), any());
+    doReturn(mockQuery).when(mockQuery).project(WorkflowExecutionKeys.appId, true);
+    doReturn(mockQuery).when(mockQuery).project(WorkflowExecutionKeys.uuid, true);
+    doReturn(workflowExecution).when(mockQuery).get();
+    doReturn(workflowExecution).when(wingsPersistence).getWithAppId(eq(WorkflowExecution.class), any(), any());
+    doReturn(mock(ExecutionInterrupt.class)).when(executionInterruptManager).registerExecutionInterrupt(any());
+
+    String approvalId = generateUuid();
+    ApprovalDetails approvalDetails = new ApprovalDetails();
+    approvalDetails.setApprovalId(approvalId);
+    approvalDetails.setAction(Action.ROLLBACK);
+
+    workflowExecutionService.approveOrRejectExecution(APP_ID, asList(), approvalDetails, "workflow");
   }
 
   @Test
@@ -471,8 +523,8 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
     when(userGroupService.verifyUserAuthorizedToAcceptOrRejectApproval(any(), any())).thenReturn(true);
 
-    boolean success =
-        workflowExecutionService.approveOrRejectExecution(APP_ID, asList(userGroup.getUuid()), approvalDetails);
+    boolean success = workflowExecutionService.approveOrRejectExecution(
+        APP_ID, asList(userGroup.getUuid()), approvalDetails, (String) null);
     assertThat(success).isEqualTo(true);
     UserThreadLocal.unset();
   }
@@ -495,8 +547,8 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
     when(userGroupService.verifyUserAuthorizedToAcceptOrRejectApproval(anyString(), anyList())).thenReturn(false);
 
-    boolean success =
-        workflowExecutionService.approveOrRejectExecution(APP_ID, asList(userGroup.getUuid()), approvalDetails);
+    boolean success = workflowExecutionService.approveOrRejectExecution(
+        APP_ID, asList(userGroup.getUuid()), approvalDetails, (String) null);
     assertThat(success).isEqualTo(false);
     UserThreadLocal.unset();
   }
@@ -679,8 +731,8 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
     when(userGroupService.verifyUserAuthorizedToAcceptOrRejectApproval(any(), any())).thenReturn(true);
 
-    boolean success =
-        workflowExecutionService.approveOrRejectExecution(APP_ID, asList(userGroup.getUuid()), approvalDetails);
+    boolean success = workflowExecutionService.approveOrRejectExecution(
+        APP_ID, asList(userGroup.getUuid()), approvalDetails, (String) null);
     assertThat(success).isEqualTo(true);
     UserThreadLocal.unset();
   }
@@ -703,8 +755,8 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
     when(userGroupService.verifyUserAuthorizedToAcceptOrRejectApproval(anyString(), anyList())).thenReturn(false);
 
-    boolean success =
-        workflowExecutionService.approveOrRejectExecution(APP_ID, asList(userGroup.getUuid()), approvalDetails);
+    boolean success = workflowExecutionService.approveOrRejectExecution(
+        APP_ID, asList(userGroup.getUuid()), approvalDetails, (String) null);
     assertThat(success).isEqualTo(false);
     UserThreadLocal.unset();
   }
@@ -728,7 +780,8 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     UserThreadLocal.set(user1);
     when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
 
-    workflowExecutionService.approveOrRejectExecution(APP_ID, asList(userGroup.getUuid()), approvalDetails);
+    workflowExecutionService.approveOrRejectExecution(
+        APP_ID, asList(userGroup.getUuid()), approvalDetails, (String) null);
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -750,7 +803,8 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     UserThreadLocal.set(user1);
     when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
 
-    workflowExecutionService.approveOrRejectExecution(APP_ID, asList(userGroup.getUuid()), approvalDetails);
+    workflowExecutionService.approveOrRejectExecution(
+        APP_ID, asList(userGroup.getUuid()), approvalDetails, (String) null);
   }
 
   @Test
@@ -2096,7 +2150,7 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
         Collections.singletonList(ArtifactInput.builder().buildNo("build1").artifactStreamId("id").build());
 
     OrchestrationWorkflow orchestrationWorkflow =
-        workflowExecutionServiceSpy.updateWorkflowWithArtifactCollectionSteps(workflow, artifactInputs);
+        workflowExecutionServiceSpy.updateWorkflowWithArtifactCollectionSteps(workflow, artifactInputs, null);
     assertThat(orchestrationWorkflow).isNotNull().isInstanceOf(CanaryOrchestrationWorkflow.class);
     CanaryOrchestrationWorkflow canaryOrchestrationWorkflow = (CanaryOrchestrationWorkflow) orchestrationWorkflow;
     PhaseStep preDeploymentSteps = canaryOrchestrationWorkflow.getPreDeploymentSteps();
@@ -2105,7 +2159,7 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
 
     GraphNode graphNode = preDeploymentSteps.getSteps().get(0);
     assertThat(graphNode.getType()).isEqualTo(ARTIFACT_COLLECT_LOOP_STATE.getType());
-    assertThat(graphNode.getName()).isEqualTo("Artifact Collection");
+    assertThat(graphNode.getName()).isEqualTo("Artifact/Manifest Collection");
     assertThat(graphNode.getProperties()).isNotNull().isNotEmpty();
     assertThat(graphNode.getProperties().get(ArtifactCollectLoopStateKeys.artifactInputList)).isEqualTo(artifactInputs);
   }

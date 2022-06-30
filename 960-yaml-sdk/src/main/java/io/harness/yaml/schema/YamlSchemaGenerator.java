@@ -16,6 +16,7 @@ import static io.harness.yaml.schema.beans.SchemaConstants.ARRAY_TYPE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.BOOL_TYPE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.DEFINITIONS_NAMESPACE_STRING_PATTERN;
 import static io.harness.yaml.schema.beans.SchemaConstants.ENUM_NODE;
+import static io.harness.yaml.schema.beans.SchemaConstants.EXPRESSION_PATTERN;
 import static io.harness.yaml.schema.beans.SchemaConstants.INTEGER_TYPE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.ITEMS_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.MIN_LENGTH_NODE;
@@ -568,6 +569,14 @@ public class YamlSchemaGenerator {
         return objectNode;
       case list:
         objectNode.put(TYPE_NODE, ARRAY_TYPE_NODE);
+        return objectNode;
+      case expression:
+        /*
+        added to support runtime field type, like <+input>
+         */
+        objectNode.put(TYPE_NODE, STRING_TYPE_NODE);
+        objectNode.put(PATTERN_NODE, EXPRESSION_PATTERN);
+        objectNode.put(MIN_LENGTH_NODE, 1);
         return objectNode;
       case runtime:
         /*

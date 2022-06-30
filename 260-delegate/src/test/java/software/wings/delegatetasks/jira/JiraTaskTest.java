@@ -43,6 +43,7 @@ import io.harness.exception.JiraClientException;
 import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
+import io.harness.jira.JiraInstanceData;
 import io.harness.jira.JiraIssueNG;
 import io.harness.jira.JiraUserData;
 import io.harness.rule.Owner;
@@ -178,6 +179,25 @@ public class JiraTaskTest extends CategoryTest {
     List<JiraUserData> mockUserList = new ArrayList<>(Arrays.asList(new JiraUserData("UserId", "User Name", true)));
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     doReturn(mockUserList).when(jiraNGClient).getUsers(any(), any(), any());
+    doReturn(new JiraInstanceData(JiraInstanceData.JiraDeploymentType.CLOUD)).when(jiraNGClient).getInstanceData();
+
+    JiraExecutionData jiraExecutionData =
+        JiraExecutionData.builder().executionStatus(ExecutionStatus.SUCCESS).userSearchList(mockUserList).build();
+
+    DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
+    assertThat(delegateResponseData).isEqualToComparingFieldByField(jiraExecutionData);
+    verify(jiraNGClient).getUsers(eq(taskParameters.getUserQuery()), eq(taskParameters.getAccountId()), eq(null));
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldFetchUserListInfoForJiraServer() {
+    JiraTaskParameters taskParameters = getTaskParams(JiraAction.SEARCH_USER);
+    List<JiraUserData> mockUserList = new ArrayList<>(Arrays.asList(new JiraUserData("UserId", "User Name", true)));
+    doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
+    doReturn(mockUserList).when(jiraNGClient).getUsers(any(), any(), any());
+    doReturn(new JiraInstanceData(JiraInstanceData.JiraDeploymentType.SERVER)).when(jiraNGClient).getInstanceData();
 
     JiraExecutionData jiraExecutionData =
         JiraExecutionData.builder().executionStatus(ExecutionStatus.SUCCESS).userSearchList(mockUserList).build();

@@ -11,6 +11,7 @@ shared_dependencies = [
     "//879-pms-sdk:module",
     "//890-sm-core:module",
     "//930-ng-core-clients:module",
+    "//933-scm-commons:module",
     "//942-enforcement-sdk:module",
     "//950-log-client:module",
     "//955-delegate-beans:module",

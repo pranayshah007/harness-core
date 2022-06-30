@@ -9,7 +9,6 @@ package io.harness.plancreator.stages;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import com.google.common.collect.ImmutableMap;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -18,7 +17,6 @@ import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.strategy.StageStrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
-import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.plan.PlanNode;
@@ -26,12 +24,9 @@ import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
-import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.matrix.StrategyConstants;
-import io.harness.steps.matrix.StrategyMetadata;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -85,22 +80,9 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
    */
   protected void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, AbstractStageNode field,
       Map<String, YamlField> dependenciesNodeMap, Map<String, ByteString> metadataMap) {
-    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
-    if (strategyField != null) {
-      dependenciesNodeMap.put(field.getUuid(), strategyField);
-      // This is mandatory because it is the parent's responsibility to pass the nodeId and the childNodeId to the
-      // strategy node
-      metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyField.getNode().getUuid(),
-          ByteString.copyFrom(
-              kryoSerializer.asDeflatedBytes(StrategyMetadata.builder()
-                                                 .strategyNodeId(field.getUuid())
-                                                 .adviserObtainments(StageStrategyUtils.getAdviserObtainments(
-                                                     ctx.getCurrentField(), kryoSerializer, false))
-                                                 .childNodeId(strategyField.getNode().getUuid())
-                              .strategyNodeName(field.getName())
-                              .strategyNodeIdentifier(field.getIdentifier())
-                                                 .build())));
-    }
+    StageStrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getIdentifier(),
+        field.getName(), dependenciesNodeMap, metadataMap,
+        StageStrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false));
   }
 
   @Override
@@ -123,29 +105,9 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
    * @param metadataMap
    */
   protected void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, AbstractStageNode field,
-                                                     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, Map<String, ByteString> metadataMap) {
-    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
-    if (strategyField != null) {
-      // This is mandatory because it is the parent's responsibility to pass the nodeId and the childNodeId to the
-      // strategy node
-      metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyField.getNode().getUuid(),
-              ByteString.copyFrom(
-                      kryoSerializer.asDeflatedBytes(StrategyMetadata.builder()
-                              .strategyNodeId(field.getUuid())
-                              .adviserObtainments(StageStrategyUtils.getAdviserObtainments(
-                                      ctx.getCurrentField(), kryoSerializer, false))
-                              .childNodeId(strategyField.getNode().getUuid())
-                              .strategyNodeName(field.getName())
-                              .strategyNodeIdentifier(field.getIdentifier())
-                              .build())));
-      planCreationResponseMap.put(field.getUuid(),
-              PlanCreationResponse.builder()
-                      .dependencies(DependenciesUtils.toDependenciesProto(ImmutableMap.of(field.getUuid(), strategyField))
-                              .toBuilder()
-                              .putDependencyMetadata(
-                                      field.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
-                              .build())
-                      .build());
-    }
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, Map<String, ByteString> metadataMap) {
+    StageStrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getName(),
+        field.getIdentifier(), planCreationResponseMap, metadataMap,
+        StageStrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false));
   }
 }

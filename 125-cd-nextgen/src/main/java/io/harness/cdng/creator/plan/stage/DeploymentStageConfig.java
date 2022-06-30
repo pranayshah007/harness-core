@@ -75,7 +75,7 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
   @ApiModelProperty(hidden = true)
   ServiceDefinitionType deploymentType;
 
-  public Boolean getGitOpsEnabled() {
+  public boolean getGitOpsEnabled() {
     return gitOpsEnabled == Boolean.TRUE;
   }
 
@@ -107,6 +107,9 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
     children.add(VisitableChild.builder().value(infrastructure).fieldName("infrastructure").build());
     if (environment != null) {
       children.add(VisitableChild.builder().value(environment).fieldName("environment").build());
+    }
+    if (environmentGroup != null) {
+      children.add(VisitableChild.builder().value(environmentGroup).fieldName("environmentGroup").build());
     }
     return VisitableChildren.builder().visitableChildList(children).build();
   }

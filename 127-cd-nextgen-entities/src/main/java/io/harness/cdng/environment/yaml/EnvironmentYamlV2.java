@@ -49,13 +49,18 @@ public class EnvironmentYamlV2 implements Visitable {
   @Pattern(regexp = NGRegexValidatorConstants.RUNTIME_OR_FIXED_IDENTIFIER_PATTERN)
   private ParameterField<String> environmentRef;
 
+  /*
+  Deploy to all underlying infrastructures (or gitops clusters)
+   */
+  boolean deployToAll;
+
   List<InfraStructureDefinitionYaml> infrastructureDefinitions;
 
   // environmentInputs
   @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH) Map<String, Object> environmentInputs;
 
   @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH) Map<String, Object> serviceOverrideInputs;
-  @NotNull boolean deployToAll;
+
   List<ClusterYaml> gitOpsClusters;
 
   // For Visitor Framework Impl

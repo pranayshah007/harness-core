@@ -12,6 +12,8 @@ import static io.harness.rule.OwnerRule.ROHIT;
 import static io.harness.rule.OwnerRule.SHUBHANSHU;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
@@ -57,6 +59,7 @@ import io.harness.ccm.views.graphql.QLCEViewTrendInfo;
 import io.harness.ccm.views.graphql.ViewsMetaDataFields;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
 import io.harness.ccm.views.graphql.ViewsQueryHelper;
+import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
@@ -107,9 +110,10 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   @Mock private ViewsQueryHelper viewsQueryHelper;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private CEViewService viewService;
-  @Mock BigQuery bigQuery;
-  @Mock TableResult resultSet;
-  @Mock FieldValueList row;
+  @Mock private AwsAccountFieldHelper awsAccountFieldHelper;
+  @Mock private BigQuery bigQuery;
+  @Mock private TableResult resultSet;
+  @Mock private FieldValueList row;
 
   private Schema schema;
   private List<Field> fields;
@@ -234,6 +238,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     filters.add(QLCEViewFilterWrapper.builder()
                     .idFilter(QLCEViewFilter.builder().field(clusterId).values(new String[] {""}).build())
                     .build());
+    when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), isNull()))
+        .thenReturn(ViewsBillingServiceImpl.getIdFilters(filters));
     List<String> filterValueStats =
         viewsBillingService.getFilterValueStats(bigQuery, filters, cloudProviderTable, 10, 0);
     assertThat(filterValueStats.get(0)).isEqualTo(CLUSTER);
@@ -247,6 +253,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     filters.add(QLCEViewFilterWrapper.builder()
                     .idFilter(QLCEViewFilter.builder().field(clusterId).values(new String[] {CLUSTER}).build())
                     .build());
+    when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), isNull()))
+        .thenReturn(ViewsBillingServiceImpl.getIdFilters(filters));
     List<String> filterValueStats =
         viewsBillingService.getFilterValueStats(bigQuery, filters, cloudProviderTable, 10, 0);
     assertThat(filterValueStats.get(0)).isEqualTo(CLUSTER);
@@ -260,6 +268,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     filters.add(QLCEViewFilterWrapper.builder()
                     .idFilter(QLCEViewFilter.builder().field(labelKey).values(new String[] {""}).build())
                     .build());
+    when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), isNull()))
+        .thenReturn(ViewsBillingServiceImpl.getIdFilters(filters));
     List<String> filterValueStats =
         viewsBillingService.getFilterValueStats(bigQuery, filters, cloudProviderTable, 10, 0);
     assertThat(filterValueStats.get(0)).isEqualTo(LABEL_KEY);
@@ -273,6 +283,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     filters.add(QLCEViewFilterWrapper.builder()
                     .idFilter(QLCEViewFilter.builder().field(labelValue).values(new String[] {""}).build())
                     .build());
+    when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), isNull()))
+        .thenReturn(ViewsBillingServiceImpl.getIdFilters(filters));
     List<String> filterValueStats =
         viewsBillingService.getFilterValueStats(bigQuery, filters, cloudProviderTable, 10, 0);
     assertThat(filterValueStats.get(0)).isEqualTo(LABEL_VALUE);
@@ -286,6 +298,8 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     filters.add(QLCEViewFilterWrapper.builder()
                     .idFilter(QLCEViewFilter.builder().field(clusterId).values(new String[] {CLUSTER}).build())
                     .build());
+    when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), anyString()))
+        .thenReturn(ViewsBillingServiceImpl.getIdFilters(filters));
     List<String> filterValueStats = viewsBillingService.getFilterValueStatsNg(
         bigQuery, filters, cloudProviderTable, 10, 0, getMockViewQueryParams(false));
     assertThat(filterValueStats.get(0)).isEqualTo(CLUSTER);

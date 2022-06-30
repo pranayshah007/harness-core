@@ -10,6 +10,7 @@ package software.wings.service;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.GARVIT;
+import static io.harness.rule.OwnerRule.MITISHA;
 import static io.harness.rule.OwnerRule.POOJA;
 
 import static software.wings.beans.CanaryOrchestrationWorkflow.CanaryOrchestrationWorkflowBuilder.aCanaryOrchestrationWorkflow;
@@ -61,17 +62,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 @OwnedBy(CDC)
 public class WorkflowExecutionServiceHelperTest extends WingsBaseTest {
@@ -161,6 +159,27 @@ public class WorkflowExecutionServiceHelperTest extends WingsBaseTest {
     assertThat(newWorkflowVariables.get(1).getValue()).isEqualTo("val2");
   }
 
+  @Test
+  @Owner(developers = MITISHA)
+  @Category(UnitTests.class)
+  public void shouldNotPopulateWorkflowVariablesForFalseIfCondition() {
+    List<Variable> workflowVariables = asList(prepareVariable(1), prepareVariable(2));
+    Map<String, String> workflowVariablesMap = prepareOldWorkflowVariablesMap(2);
+    Workflow workflow = prepareWorkflow(workflowVariables);
+    WorkflowExecution workflowExecution = prepareWorkflowExecution(workflowVariables, workflowVariablesMap, false);
+    when(workflowService.readWorkflowWithoutServices(APP_ID, WORKFLOW_ID)).thenReturn(workflow);
+    when(workflowExecutionService.getWorkflowExecution(APP_ID, WORKFLOW_EXECUTION_ID)).thenReturn(workflowExecution);
+    WorkflowVariablesMetadata workflowVariablesMetadata = workflowExecutionServiceHelper.fetchWorkflowVariables(
+        APP_ID, prepareExecutionArgs(null, false), WORKFLOW_EXECUTION_ID);
+    assertThat(workflowVariablesMetadata.isChanged()).isFalse();
+    List<Variable> newWorkflowVariables = workflowVariablesMetadata.getWorkflowVariables();
+    assertThat(newWorkflowVariables).isNotNull();
+    assertThat(newWorkflowVariables.size()).isEqualTo(2);
+    assertThat(newWorkflowVariables.get(0).getName()).isEqualTo("var1");
+    assertThat(newWorkflowVariables.get(0).getValue()).isEqualTo(null);
+    assertThat(newWorkflowVariables.get(1).getName()).isEqualTo("var2");
+    assertThat(newWorkflowVariables.get(1).getValue()).isEqualTo(null);
+  }
   @Test
   @Owner(developers = GARVIT)
   @Category(UnitTests.class)
@@ -568,7 +587,12 @@ public class WorkflowExecutionServiceHelperTest extends WingsBaseTest {
   }
 
   private Variable prepareVariable(int index, VariableType type, EntityType entityType) {
-    Variable variable = aVariable().name("var" + index).allowedList(Collections.singletonList("val" + index)).type(type).mandatory(true).build();
+    Variable variable = aVariable()
+                            .name("var" + index)
+                            .allowedList(Collections.singletonList("val" + index))
+                            .type(type)
+                            .mandatory(true)
+                            .build();
     if (VariableType.ENTITY == type) {
       variable.setMetadata(singletonMap(Variable.ENTITY_TYPE, entityType));
     }
@@ -587,6 +611,14 @@ public class WorkflowExecutionServiceHelperTest extends WingsBaseTest {
     Map<String, String> workflowVariablesMap = new HashMap<>();
     for (int i = 1; i <= count; i++) {
       workflowVariablesMap.put("var" + i, "val" + i);
+    }
+    return workflowVariablesMap;
+  }
+
+  private Map<String, String> prepareOldWorkflowVariablesMap(int count) {
+    Map<String, String> workflowVariablesMap = new HashMap<>();
+    for (int i = 1; i <= count; i++) {
+      workflowVariablesMap.put("var" + i, "h" + i);
     }
     return workflowVariablesMap;
   }

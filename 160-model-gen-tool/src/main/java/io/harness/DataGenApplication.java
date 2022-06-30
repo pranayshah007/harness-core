@@ -215,7 +215,7 @@ public class DataGenApplication extends Application<MainConfiguration> {
       }
     });
     modules.add(new ValidationModule(validatorFactory));
-    modules.add(new DelegateServiceModule());
+    modules.add(new DelegateServiceModule(configuration.getDelegateMtlsSubdomain()));
     modules.add(new AlertModule());
     modules.add(new CapabilityModule());
     modules.add(new WingsModule(configuration, StartupMode.MANAGER));

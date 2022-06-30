@@ -7,20 +7,15 @@
 
 package io.harness.cvng.verificationjob.entities;
 
-import static io.harness.cvng.CVConstants.DEFAULT_TEST_JOB_ID;
-import static io.harness.cvng.CVConstants.DEFAULT_TEST_JOB_NAME;
-import static io.harness.cvng.CVConstants.RUNTIME_PARAM_STRING;
 import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
 import static io.harness.cvng.verificationjob.CVVerificationJobConstants.SENSITIVITY_KEY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.job.Sensitivity;
-import io.harness.cvng.beans.job.TestVerificationJobDTO;
-import io.harness.cvng.beans.job.VerificationJobDTO;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.beans.TimeRange;
-import io.harness.cvng.verificationjob.CVVerificationJobConstants;
+import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 
 import com.google.common.base.Preconditions;
@@ -43,10 +38,7 @@ import lombok.experimental.SuperBuilder;
 public class TestVerificationJob extends VerificationJob {
   private RuntimeParameter sensitivity;
   private String baselineVerificationJobInstanceId;
-  @Override
-  public VerificationJobType getType() {
-    return VerificationJobType.TEST;
-  }
+  private final VerificationJobType type = VerificationJobType.TEST;
 
   public Sensitivity getSensitivity() {
     if (sensitivity.isRuntimeParam()) {
@@ -67,20 +59,6 @@ public class TestVerificationJob extends VerificationJob {
   }
 
   @Override
-  public VerificationJobDTO getVerificationJobDTO() {
-    TestVerificationJobDTO testVerificationJobDTO = new TestVerificationJobDTO();
-    populateCommonFields(testVerificationJobDTO);
-    testVerificationJobDTO.setSensitivity(
-        sensitivity.isRuntimeParam() ? CVVerificationJobConstants.RUNTIME_STRING : getSensitivity().name());
-    if (baselineVerificationJobInstanceId == null) {
-      testVerificationJobDTO.setBaselineVerificationJobInstanceId("LAST");
-    } else {
-      testVerificationJobDTO.setBaselineVerificationJobInstanceId(baselineVerificationJobInstanceId);
-    }
-    return testVerificationJobDTO;
-  }
-
-  @Override
   protected void validateParams() {
     Preconditions.checkNotNull(sensitivity, generateErrorMessageFromParam(TestVerificationJobKeys.sensitivity));
   }
@@ -98,17 +76,6 @@ public class TestVerificationJob extends VerificationJob {
   @Override
   public List<TimeRange> getDataCollectionTimeRanges(Instant startTime) {
     return getTimeRangesForDuration(startTime);
-  }
-
-  @Override
-  public void fromDTO(VerificationJobDTO verificationJobDTO) {
-    addCommonFileds(verificationJobDTO);
-    TestVerificationJobDTO testVerificationJobDTO = (TestVerificationJobDTO) verificationJobDTO;
-    this.setSensitivity(testVerificationJobDTO.getSensitivity(),
-        VerificationJobDTO.isRuntimeParam(testVerificationJobDTO.getSensitivity()));
-    if (!testVerificationJobDTO.getBaselineVerificationJobInstanceId().equals("LAST")) {
-      this.setBaselineVerificationJobInstanceId(testVerificationJobDTO.getBaselineVerificationJobInstanceId());
-    }
   }
 
   @Override
@@ -134,22 +101,17 @@ public class TestVerificationJob extends VerificationJob {
   @Override
   public VerificationJob resolveAdditionsFields(VerificationJobInstanceService verificationJobInstanceService) {
     if (baselineVerificationJobInstanceId == null) {
-      baselineVerificationJobInstanceId = verificationJobInstanceService
-                                              .getLastSuccessfulTestVerificationJobExecutionId(getAccountId(),
-                                                  getOrgIdentifier(), getProjectIdentifier(), getIdentifier())
-                                              .orElse(null);
+      baselineVerificationJobInstanceId =
+          verificationJobInstanceService
+              .getLastSuccessfulTestVerificationJobExecutionId(ServiceEnvironmentParams.builder()
+                                                                   .accountIdentifier(getAccountId())
+                                                                   .orgIdentifier(getOrgIdentifier())
+                                                                   .projectIdentifier(getProjectIdentifier())
+                                                                   .serviceIdentifier(getServiceIdentifier())
+                                                                   .environmentIdentifier(getEnvIdentifier())
+                                                                   .build())
+              .orElse(null);
     }
     return this;
-  }
-
-  public static TestVerificationJob createDefaultJob(String accountId, String orgIdentifier, String projectIdentifier) {
-    TestVerificationJob verificationJob =
-        TestVerificationJob.builder()
-            .jobName(DEFAULT_TEST_JOB_NAME)
-            .identifier(DEFAULT_TEST_JOB_ID)
-            .sensitivity(VerificationJob.getRunTimeParameter(RUNTIME_PARAM_STRING, true))
-            .build();
-    VerificationJob.setDefaultJobCommonParameters(verificationJob, accountId, orgIdentifier, projectIdentifier);
-    return verificationJob;
   }
 }

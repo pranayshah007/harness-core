@@ -600,7 +600,7 @@ public class PipelineResource implements YamlSchemaResource {
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
-            description = "Returns Pipeline YAML fetched from Git Repository. No Pipeline is saved")
+            description = "Fetches Pipeline YAML from Git Repository and saves a record for it in Harness")
       })
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   public ResponseDTO<PipelineSaveResponse>

@@ -2050,7 +2050,9 @@ public class StateMachineExecutor implements StateInspectionListener {
         }
         case END_EXECUTION:
         case ROLLBACK_PROVISIONER_AFTER_PHASES:
-        case ROLLBACK: {
+        case ROLLBACK:
+        case ROLLBACK_ON_APPROVAL:
+        case ROLLBACK_PROVISIONER_AFTER_PHASES_ON_APPROVAL: {
           endExecution(workflowExecutionInterrupt, workflowExecution);
           break;
         }
@@ -2131,6 +2133,12 @@ public class StateMachineExecutor implements StateInspectionListener {
       StateMachine sm = stateExecutionService.obtainStateMachine(stateExecutionInstance);
       ExecutionContextImpl context = new ExecutionContextImpl(stateExecutionInstance, sm, injector);
       injector.injectMembers(context);
+      if (workflowExecutionInterrupt.getExecutionInterruptType().equals(
+              ExecutionInterruptType.ROLLBACK_PROVISIONER_AFTER_PHASES_ON_APPROVAL)
+          || workflowExecutionInterrupt.getExecutionInterruptType().equals(
+              ExecutionInterruptType.ROLLBACK_ON_APPROVAL)) {
+        continue;
+      }
       discontinueMarkedInstance(context, stateExecutionInstance, ABORTED);
     }
   }

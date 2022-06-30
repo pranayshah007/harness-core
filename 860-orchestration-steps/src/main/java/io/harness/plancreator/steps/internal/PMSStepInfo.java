@@ -15,12 +15,13 @@ import io.harness.plancreator.steps.barrier.BarrierStepInfo;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.common.StepParametersUtils;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
-import io.harness.plancreator.steps.email.EmailStepInfo;
 import io.harness.plancreator.steps.http.HttpStepInfo;
 import io.harness.plancreator.steps.http.PmsAbstractStepNode;
+import io.harness.plancreator.steps.resourceconstraint.QueueStepInfo;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.steps.StepUtils;
+import io.harness.steps.approval.step.custom.CustomApprovalStepInfo;
 import io.harness.steps.approval.step.harness.HarnessApprovalStepInfo;
 import io.harness.steps.approval.step.jira.JiraApprovalStepInfo;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalStepInfo;
@@ -35,11 +36,12 @@ import io.harness.yaml.core.StepSpecType;
 import io.swagger.annotations.ApiModel;
 
 @OwnedBy(PIPELINE)
-@ApiModel(
-    subTypes = {BarrierStepInfo.class, HttpStepInfo.class, FlagConfigurationStepInfo.class,
-        HarnessApprovalStepInfo.class, JiraApprovalStepInfo.class, JiraCreateStepInfo.class, JiraUpdateStepInfo.class,
-        ShellScriptStepInfo.class, ServiceNowApprovalStepInfo.class, PolicyStepInfo.class,
-        ServiceNowCreateStepInfo.class, ServiceNowUpdateStepInfo.class, EmailStepInfo.class})
+@ApiModel(subTypes = {BarrierStepInfo.class, HttpStepInfo.class, FlagConfigurationStepInfo.class,
+              HarnessApprovalStepInfo.class, JiraApprovalStepInfo.class, JiraCreateStepInfo.class,
+              JiraUpdateStepInfo.class, ShellScriptStepInfo.class, ServiceNowApprovalStepInfo.class,
+              PolicyStepInfo.class, ServiceNowCreateStepInfo.class, ServiceNowUpdateStepInfo.class, QueueStepInfo.class,
+              CustomApprovalStepInfo.class})
+
 public interface PMSStepInfo extends StepSpecType, WithStepElementParameters {
   default StepParameters getStepParameters(
       PmsAbstractStepNode stepElementConfig, OnFailRollbackParameters failRollbackParameters, PlanCreationContext ctx) {

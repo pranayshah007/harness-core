@@ -1,4 +1,12 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.serverless;
+
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
@@ -58,6 +66,7 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
   private ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig;
   private long timeoutInMillis;
   private String previousDeployTimeStamp;
+  private String serverlessAwsLambdaCredentialType;
 
   @Override
   protected ServerlessCommandResponse executeTaskInternal(ServerlessCommandRequest serverlessCommandRequest,
@@ -82,6 +91,12 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
     timeoutInMillis = serverlessPrepareRollbackDataRequest.getTimeoutIntervalInMin() * 60000;
     serverlessAwsLambdaInfraConfig =
         (ServerlessAwsLambdaInfraConfig) serverlessPrepareRollbackDataRequest.getServerlessInfraConfig();
+    serverlessAwsLambdaCredentialType =
+        serverlessInfraConfigHelper.getServerlessAwsLambdaCredentialType(serverlessAwsLambdaInfraConfig);
+
+    serverlessAwsLambdaConfig = (ServerlessAwsLambdaConfig) serverlessInfraConfigHelper.createServerlessConfig(
+        serverlessPrepareRollbackDataRequest.getServerlessInfraConfig());
+
     LogCallback executionLogCallback = serverlessTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, ServerlessCommandUnitConstants.rollbackData.toString(), true, commandUnitsProgress);
     try {
@@ -91,15 +106,10 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw ex;
     }
+    serverlessClient = ServerlessClient.client(serverlessDelegateTaskParams.getServerlessClientPath());
 
-    try {
-      configureCredential(serverlessPrepareRollbackDataRequest, executionLogCallback, serverlessDelegateTaskParams);
-    } catch (Exception ex) {
-      executionLogCallback.saveExecutionLog(
-          color(format("%n configure credential failed."), LogColor.Red, LogWeight.Bold), LogLevel.ERROR,
-          CommandExecutionStatus.FAILURE);
-      throw ex;
-    }
+    serverlessAwsCommandTaskHelper.setUpConfigureCredential(serverlessAwsLambdaConfig, executionLogCallback,
+        serverlessDelegateTaskParams, serverlessAwsLambdaCredentialType, serverlessClient, timeoutInMillis);
 
     try {
       serverlessAwsCommandTaskHelper.installPlugins(serverlessManifestSchema, serverlessDelegateTaskParams,
@@ -135,26 +145,6 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
         serverlessPrepareRollbackDataRequest.getManifestContent(), serverlessManifestSchema);
   }
 
-  private void configureCredential(ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest,
-      LogCallback executionLogCallback, ServerlessDelegateTaskParams serverlessDelegateTaskParams) throws Exception {
-    serverlessAwsLambdaConfig = (ServerlessAwsLambdaConfig) serverlessInfraConfigHelper.createServerlessConfig(
-        serverlessPrepareRollbackDataRequest.getServerlessInfraConfig());
-    serverlessClient = ServerlessClient.client(serverlessDelegateTaskParams.getServerlessClientPath());
-
-    ServerlessCliResponse response = serverlessAwsCommandTaskHelper.configCredential(serverlessClient,
-        serverlessAwsLambdaConfig, serverlessDelegateTaskParams, executionLogCallback, true, timeoutInMillis);
-
-    if (response.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
-      executionLogCallback.saveExecutionLog(
-          color(format("%nConfig Credential command executed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
-    } else {
-      executionLogCallback.saveExecutionLog(
-          color(format("%nConfig Credential command failed..%n"), LogColor.Red, LogWeight.Bold), ERROR,
-          CommandExecutionStatus.FAILURE);
-      serverlessAwsCommandTaskHelper.handleCommandExecutionFailure(response, serverlessClient.configCredential());
-    }
-  }
-
   private ServerlessPrepareRollbackDataResponse prepareRollbackData(
       ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest, LogCallback executionLogCallback,
       ServerlessDelegateTaskParams serverlessDelegateTaskParams) throws Exception {
@@ -183,8 +173,8 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
       executionLogCallback.saveExecutionLog(
           color(format("%nDeploy List command executed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
       List<String> timeStamps = serverlessAwsCommandTaskHelper.getDeployListTimeStamps(response.getOutput());
-      Optional<String> previousVersionTimeStamp = serverlessAwsCommandTaskHelper.getPreviousVersionTimeStamp(
-          timeStamps, executionLogCallback, serverlessPrepareRollbackDataRequest);
+      Optional<String> previousVersionTimeStamp = serverlessAwsCommandTaskHelper.getLastDeployedTimestamp(
+          executionLogCallback, timeStamps, serverlessPrepareRollbackDataRequest);
       previousDeployTimeStamp = previousVersionTimeStamp.orElse(null);
       if (previousVersionTimeStamp.isPresent()) {
         serverlessAwsLambdaPrepareRollbackDataResultBuilder.previousVersionTimeStamp(previousDeployTimeStamp);
@@ -195,9 +185,7 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
       } else {
         serverlessAwsLambdaPrepareRollbackDataResultBuilder.previousVersionTimeStamp(null);
         executionLogCallback.saveExecutionLog(
-            color(format("Found no active successful deployment version %n", previousVersionTimeStamp), LogColor.White,
-                LogWeight.Bold),
-            INFO);
+            color(format("Found no active successful deployment version %n"), LogColor.White, LogWeight.Bold), INFO);
       }
       serverlessPrepareRollbackDataResponseBuilder.serverlessPrepareRollbackDataResult(
           serverlessAwsLambdaPrepareRollbackDataResultBuilder.build());

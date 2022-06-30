@@ -26,12 +26,13 @@ import io.harness.validation.Validator;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(HarnessTeam.CDP)
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 @PrepareForTest({Validator.class})
 public class CDStepHelperUtilityClassTest extends CategoryTest {
   @Test
@@ -47,8 +48,8 @@ public class CDStepHelperUtilityClassTest extends CategoryTest {
 
     GitStoreConfig gitStoreConfigCommit = GithubStore.builder().commitId(commit).gitFetchType(FetchType.COMMIT).build();
 
-    PowerMockito.mockStatic(Validator.class);
-    PowerMockito.doNothing().when(Validator.class);
+    Mockito.mockStatic(Validator.class);
+    Mockito.doNothing().when(Validator.class);
 
     cDStepHelper.validateGitStoreConfig(gitStoreConfigBranch);
 

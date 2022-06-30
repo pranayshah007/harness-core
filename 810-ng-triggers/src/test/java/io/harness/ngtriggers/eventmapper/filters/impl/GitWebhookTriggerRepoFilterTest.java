@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,6 +30,7 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.ngtriggers.NgTriggersTestHelper;
+import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
@@ -37,6 +39,10 @@ import io.harness.ngtriggers.beans.entity.metadata.GitMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.NGTriggerMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
 import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
+import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
+import io.harness.ngtriggers.beans.source.NGTriggerType;
+import io.harness.ngtriggers.beans.source.WebhookTriggerType;
+import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.eventmapper.TriggerGitConnectorWrapper;
 import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
 import io.harness.ngtriggers.service.NGTriggerService;
@@ -80,6 +86,18 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
                                               .link("https://github.com/owner1/repo3")
                                               .build();
 
+  private static Repository repository4 = Repository.builder()
+                                              .httpURL("https://dev.azure.com/org/test/_git/test")
+                                              .sshURL("git@ssh.dev.azure.com:v3/org/test/test")
+                                              .link("https://dev.azure.com/org/test/_git/test")
+                                              .build();
+
+  private static Repository repository5 = Repository.builder()
+                                              .httpURL("https://dev.azure.com/org/test/_git/test")
+                                              .sshURL("")
+                                              .link("https://dev.azure.com/org/test/_git/test")
+                                              .build();
+
   static {
     TriggerDetails details1 =
         TriggerDetails.builder()
@@ -94,6 +112,13 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
                                                .git(GitMetadata.builder().connectorIdentifier("account.con1").build())
                                                .build())
                                   .build())
+                    .build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(NGTriggerSourceV2.builder()
+                                .type(NGTriggerType.WEBHOOK)
+                                .spec(WebhookTriggerConfigV2.builder().type(WebhookTriggerType.GITHUB).build())
+                                .build())
                     .build())
             .build();
     ConnectorResponseDTO connectorResponseDTO1 =
@@ -124,6 +149,13 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
                                     .build())
                             .build())
                     .build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(NGTriggerSourceV2.builder()
+                                .type(NGTriggerType.WEBHOOK)
+                                .spec(WebhookTriggerConfigV2.builder().type(WebhookTriggerType.GITHUB).build())
+                                .build())
+                    .build())
             .build();
     ConnectorResponseDTO connectorResponseDTO2 =
         ConnectorResponseDTO.builder()
@@ -152,6 +184,13 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
                                     .git(GitMetadata.builder().repoName("repo3").connectorIdentifier("con1").build())
                                     .build())
                             .build())
+                    .build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(NGTriggerSourceV2.builder()
+                                .type(NGTriggerType.WEBHOOK)
+                                .spec(WebhookTriggerConfigV2.builder().type(WebhookTriggerType.GITHUB).build())
+                                .build())
                     .build())
             .build();
     ConnectorResponseDTO connectorResponseDTO3 =
@@ -373,11 +412,93 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void shouldFilterAzureRepoTriggerForHTTPConnector() {
+    List<ConnectorResponseDTO> connectors = asList(NgTriggersTestHelper.getAzureRepoAccountConnectorResponsesDTO());
+
+    doReturn(connectors).when(ngTriggerService).fetchConnectorsByFQN(eq("acc"), anyList());
+
+    List<TriggerDetails> triggerDetails = asList(NgTriggersTestHelper.getAzureRepoTriggerDetails());
+
+    FilterRequestData filterRequestData =
+        FilterRequestData.builder()
+            .accountId("acc")
+            .webhookPayloadData(WebhookPayloadData.builder()
+                                    .originalEvent(TriggerWebhookEvent.builder()
+                                                       .accountId("acc")
+                                                       .orgIdentifier("org")
+                                                       .projectIdentifier("proj")
+                                                       .sourceRepoType("AZURE_REPO")
+                                                       .build())
+                                    .webhookEvent(PRWebhookEvent.builder().repository(repository4).build())
+                                    .repository(repository4)
+                                    .build())
+            .details(triggerDetails)
+            .build();
+    WebhookEventMappingResponse webhookEventMappingResponse = filter.applyFilter(filterRequestData);
+    assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isFalse();
+    triggerDetails = webhookEventMappingResponse.getTriggers();
+    assertThat(triggerDetails.size()).isEqualTo(1);
+    assertThat(triggerDetails).containsOnly(NgTriggersTestHelper.getAzureRepoTriggerDetails());
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void shouldFilterAzureRepoTriggerForSSHConnector() {
+    List<ConnectorResponseDTO> connectors = asList(NgTriggersTestHelper.getAzureRepoSSHAccountConnectorResponsesDTO());
+
+    doReturn(connectors).when(ngTriggerService).fetchConnectorsByFQN(eq("acc"), anyList());
+
+    List<TriggerDetails> triggerDetails = asList(NgTriggersTestHelper.getAzureRepoTriggerDetails());
+
+    FilterRequestData filterRequestData =
+        FilterRequestData.builder()
+            .accountId("acc")
+            .webhookPayloadData(WebhookPayloadData.builder()
+                                    .originalEvent(TriggerWebhookEvent.builder()
+                                                       .accountId("acc")
+                                                       .orgIdentifier("org")
+                                                       .projectIdentifier("proj")
+                                                       .sourceRepoType("AZURE_REPO")
+                                                       .build())
+                                    .webhookEvent(PRWebhookEvent.builder().repository(repository5).build())
+                                    .repository(repository5)
+                                    .build())
+            .details(triggerDetails)
+            .build();
+    WebhookEventMappingResponse webhookEventMappingResponse = filter.applyFilter(filterRequestData);
+    assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isFalse();
+    triggerDetails = webhookEventMappingResponse.getTriggers();
+    assertThat(triggerDetails.size()).isEqualTo(1);
+    assertThat(triggerDetails).containsOnly(NgTriggersTestHelper.getAzureRepoTriggerDetails());
+  }
+
+  @Test
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testGetUrls() {
     HashSet<String> urls = filter.getUrls(repository1, "Github");
     assertThat(urls).containsExactlyInAnyOrder("https://github.com/owner1/repo1.git", "https://github.com/owner1/repo1",
         "git@github.com:owner1/repo1.git", "git@github.com:owner1/repo1", "https://github.com/owner1/repo1/b");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetUrlsForAzure() {
+    HashSet<String> urls = filter.getUrls(repository4, "AZURE_REPO");
+    assertThat(urls).containsExactlyInAnyOrder(
+        "https://dev.azure.com/org/test/_git/test", "git@ssh.dev.azure.com:v3/org/test/test");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetUrlsForAzureWithEmptySSHUrl() {
+    HashSet<String> urls = filter.getUrls(repository5, "AZURE_REPO");
+    assertThat(urls).containsExactlyInAnyOrder(
+        "https://dev.azure.com/org/test/_git/test", "git@ssh.dev.azure.com:v3/org/test/test");
   }
 }

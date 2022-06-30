@@ -116,6 +116,6 @@ public class ConnectorResourceImpl implements Resource {
 
   @Override
   public boolean isValidAttributeFilter(AttributeFilter attributeFilter) {
-    return attributeFilter.getAttributeName().equals("type") && !attributeFilter.getAttributeValues().isEmpty();
+    return attributeFilter.getAttributeName().equals("category") && !attributeFilter.getAttributeValues().isEmpty();
   }
 }

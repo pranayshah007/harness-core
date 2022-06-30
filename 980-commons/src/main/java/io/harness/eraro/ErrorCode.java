@@ -114,6 +114,8 @@ public enum ErrorCode {
 
   SOCKET_CONNECTION_TIMEOUT("Socket Connection timeout"),
 
+  WINRM_COMMAND_EXECUTION_TIMEOUT("WinRM Command execution timed out"),
+
   CONNECTION_TIMEOUT("Connection timeout"),
 
   SSH_CONNECTION_ERROR("Ssh Connection error"),
@@ -409,6 +411,8 @@ public enum ErrorCode {
 
   EVENT_PUBLISH_FAILED("Event published failed"),
 
+  CUSTOM_APPROVAL_ERROR,
+
   JIRA_ERROR,
 
   EXPRESSION_EVALUATION_FAILED,
@@ -616,6 +620,7 @@ public enum ErrorCode {
   SCM_INTERNAL_SERVER_ERROR_V2(INTERNAL_SERVER_ERROR),
 
   SCM_UNAUTHORIZED_ERROR_V2,
+  TOO_MANY_REQUESTS,
 
   SPOTINST_NULL_ERROR;
 

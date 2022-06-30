@@ -32,7 +32,7 @@ import org.redisson.api.RLock;
 
 @Singleton
 @Slf4j
-public class DebeziumController<T extends MongoDatabaseChangeConsumer> implements Runnable {
+public class DebeziumController<T extends MongoCollectionChangeConsumer> implements Runnable {
   private final T changeConsumer;
   private final Properties props;
   private final ExecutorService executorService;
@@ -61,13 +61,14 @@ public class DebeziumController<T extends MongoDatabaseChangeConsumer> implement
         debeziumEngine = getEngine(props);
         Future<?> future = executorService.submit(debeziumEngine);
         while (!future.isDone() && rLock.isHeldByCurrentThread()) {
+          log.info("Starting Debezium Engine for Collection {} ...", changeConsumer.getCollection());
           log.info("primary lock remaining ttl {}, isHeldByCurrentThread {}, holdCount {}, name {}",
               rLock.remainTimeToLive(), rLock.isHeldByCurrentThread(), rLock.getHoldCount(), rLock.getName());
           TimeUnit.SECONDS.sleep(30);
         }
       } catch (InterruptedException e) {
         shouldStop.set(true);
-        log.warn("Thread interrupted, stopping controller for {}", changeConsumer.getDatabase(), e);
+        log.warn("Thread interrupted, stopping controller for {}", changeConsumer.getCollection(), e);
       } catch (Exception e) {
         log.error("Primary sync stopped due to exception", e);
       } finally {
@@ -109,6 +110,7 @@ public class DebeziumController<T extends MongoDatabaseChangeConsumer> implement
   }
 
   private String getLockName() {
-    return DEBEZIUM_LOCK_PREFIX + changeConsumer.getDatabase();
+    return DEBEZIUM_LOCK_PREFIX + props.get(DebeziumConfiguration.CONNECTOR_NAME) + "-"
+        + changeConsumer.getCollection();
   }
 }

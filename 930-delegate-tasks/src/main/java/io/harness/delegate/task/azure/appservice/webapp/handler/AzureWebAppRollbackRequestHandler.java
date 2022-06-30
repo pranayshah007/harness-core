@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.task.azure.appservice.webapp.handler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
@@ -22,7 +29,6 @@ import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.AzureConstants;
 import io.harness.delegate.beans.azure.mapper.AzureAppServiceConfigurationDTOMapper;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
-import io.harness.delegate.task.azure.appservice.AzureAppServiceResourceUtilities;
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDeploymentContext;
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDockerDeploymentContext;
 import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress;
@@ -37,7 +43,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 
-import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -46,8 +51,6 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDP)
 @Slf4j
 public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler<AzureWebAppRollbackRequest> {
-  @Inject private AzureAppServiceResourceUtilities azureAppServiceResourceUtilities;
-
   @Override
   protected AzureWebAppRequestResponse execute(
       AzureWebAppRollbackRequest taskRequest, AzureConfig azureConfig, AzureLogCallbackProvider logCallbackProvider) {
@@ -251,8 +254,7 @@ public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler
     markCommandUnitAsDone(logCallbackProvider, SLOT_TRAFFIC_PERCENTAGE, message);
   }
 
-  private void markCommandUnitAsDone(
-      AzureLogCallbackProvider logCallbackProvider, String commandUnit, String message) {
+  private void markCommandUnitAsDone(AzureLogCallbackProvider logCallbackProvider, String commandUnit, String message) {
     LogCallback logCallback = logCallbackProvider.obtainLogCallback(commandUnit);
     logCallback.saveExecutionLog(
         String.format("Message - [%s]", message), LogLevel.INFO, CommandExecutionStatus.SUCCESS);

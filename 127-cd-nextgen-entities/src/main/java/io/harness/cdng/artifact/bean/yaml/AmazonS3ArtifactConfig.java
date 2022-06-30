@@ -27,6 +27,7 @@ import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,12 +61,14 @@ public class AmazonS3ArtifactConfig implements ArtifactConfig, Visitable, WithCo
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> bucketName;
 
   /**
+   * FilePath Regex
+   */
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> filePathRegex;
+
+  /**
    * Artifact FilePaths
    */
-  @NotNull
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  @Wither
-  ParameterField<List<String>> artifactPaths;
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> artifactPath;
 
   /**
    * Identifier for artifact.
@@ -84,9 +87,8 @@ public class AmazonS3ArtifactConfig implements ArtifactConfig, Visitable, WithCo
 
   @Override
   public String getUniqueHash() {
-    List<String> artifactPathsValues = artifactPaths.getValue();
-    artifactPathsValues.add(0, connectorRef.getValue());
-    return ArtifactUtils.generateUniqueHashFromStringList(artifactPathsValues);
+    List<String> valuesList = Arrays.asList(connectorRef.getValue(), artifactPath.getValue());
+    return ArtifactUtils.generateUniqueHashFromStringList(valuesList);
   }
 
   @Override
@@ -99,8 +101,11 @@ public class AmazonS3ArtifactConfig implements ArtifactConfig, Visitable, WithCo
     if (!ParameterField.isNull(amazonS3ArtifactConfig.getBucketName())) {
       resultantConfig = resultantConfig.withBucketName(amazonS3ArtifactConfig.getBucketName());
     }
-    if (!ParameterField.isNull(amazonS3ArtifactConfig.getArtifactPaths())) {
-      resultantConfig = resultantConfig.withArtifactPaths(amazonS3ArtifactConfig.getArtifactPaths());
+    if (!ParameterField.isNull(amazonS3ArtifactConfig.getArtifactPath())) {
+      resultantConfig = resultantConfig.withArtifactPath(amazonS3ArtifactConfig.getArtifactPath());
+    }
+    if (!ParameterField.isNull(amazonS3ArtifactConfig.getFilePathRegex())) {
+      resultantConfig = resultantConfig.withFilePathRegex(amazonS3ArtifactConfig.getFilePathRegex());
     }
     return resultantConfig;
   }

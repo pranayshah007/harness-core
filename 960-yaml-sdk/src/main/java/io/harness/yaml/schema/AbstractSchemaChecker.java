@@ -112,7 +112,7 @@ public class AbstractSchemaChecker {
     final String[] fields = annotation.fields();
     final Field[] declaredFieldsInClass = clazz.getDeclaredFields();
     final Set<String> decFieldSwaggerName =
-        Arrays.stream(declaredFieldsInClass).map(YamlSchemaUtils::getFieldName).collect(Collectors.toSet());
+        Arrays.stream(declaredFieldsInClass).map(Field::getName).collect(Collectors.toSet());
     for (String field : fields) {
       if (!decFieldSwaggerName.contains(field)) {
         throw new InvalidRequestException(String.format("Field %s has incorrect Name", field));

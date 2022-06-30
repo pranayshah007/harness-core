@@ -9,6 +9,8 @@ package io.harness.service.impl;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateMtlsEndpoint;
@@ -18,7 +20,6 @@ import io.harness.delegate.beans.DelegateMtlsEndpointRequest;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
-import io.harness.service.intfc.DelegateMtlsEndpointService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -35,19 +36,25 @@ import org.mongodb.morphia.query.UpdateOperations;
 @ValidateOnExecution
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
-public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointService {
-  private static final String ERROR_ENDPOINT_FOR_ACCOUNT_NOT_FOUND_FORMAT =
-      "Delegate mTLS endpoint for account '%s' was not found.";
-
+public class DelegateMtlsEndpointServiceImpl extends DelegateMtlsEndpointServiceReadOnlyImpl {
   private static final UrlValidator urlValidator = new UrlValidator(UrlValidator.ALLOW_ALL_SCHEMES);
 
-  private final HPersistence persistence;
   private final String delegateMtlsSubdomain;
 
+  /**
+   * Creates a new instance.
+   * @param persistence the object used for data peristence.
+   * @param delegateMtlsSubdomain the mTLS subdomain to use for mTLS endpoints.
+   */
   @Inject
   public DelegateMtlsEndpointServiceImpl(
       HPersistence persistence, @Named("delegateMtlsSubdomain") String delegateMtlsSubdomain) {
-    this.persistence = persistence;
+    super(persistence);
+
+    if (isBlank(delegateMtlsSubdomain)) {
+      throw new IllegalArgumentException("Non-blank 'delegateMtlsSubdomain' is required to run this service.");
+    }
+
     this.delegateMtlsSubdomain = delegateMtlsSubdomain;
   }
 
@@ -169,20 +176,6 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
   }
 
   @Override
-  public DelegateMtlsEndpointDetails getEndpointForAccount(String accountId) {
-    DelegateMtlsEndpoint endpoint = persistence.createQuery(DelegateMtlsEndpoint.class)
-                                        .field(DelegateMtlsEndpointKeys.accountId)
-                                        .equal(accountId)
-                                        .get();
-
-    if (endpoint == null) {
-      throw new EntityNotFoundException(String.format(ERROR_ENDPOINT_FOR_ACCOUNT_NOT_FOUND_FORMAT, accountId));
-    }
-
-    return this.buildEndpointDetails(endpoint);
-  }
-
-  @Override
   public boolean deleteEndpointForAccount(String accountId) {
     log.info("Delete delegate mTLS endpoint for account '{}'.", accountId);
 
@@ -201,16 +194,6 @@ public class DelegateMtlsEndpointServiceImpl implements DelegateMtlsEndpointServ
         persistence.createQuery(DelegateMtlsEndpoint.class).field(DelegateMtlsEndpointKeys.fqdn).equal(fqdn).get();
 
     return endpoint == null;
-  }
-
-  private DelegateMtlsEndpointDetails buildEndpointDetails(DelegateMtlsEndpoint endpoint) {
-    return DelegateMtlsEndpointDetails.builder()
-        .uuid(endpoint.getUuid())
-        .accountId(endpoint.getAccountId())
-        .fqdn(endpoint.getFqdn())
-        .caCertificates(endpoint.getCaCertificates())
-        .mode(endpoint.getMode())
-        .build();
   }
 
   /**

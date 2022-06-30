@@ -152,7 +152,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
     List<Point> errorBudgetBurndown = new ArrayList<>();
     double errorBudgetRemainingPercentage = 100;
     int errorBudgetRemaining = totalErrorBudgetMinutes;
-    boolean isRecalculatingSLI = false;
+    boolean isCalculatingSLI = false;
     if (!sliRecords.isEmpty()) {
       SLIValue sliValue = null;
       long beginningMinute = sliRecords.get(0).getEpochMinute();
@@ -164,8 +164,8 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         long goodCountFromStart = sliRecord.getRunningGoodCount() - prevRecordGoodCount;
         long badCountFromStart = sliRecord.getRunningBadCount() - prevRecordBadCount;
         long minutesFromStart = sliRecord.getEpochMinute() - beginningMinute + 1;
-        if (!isRecalculatingSLI && sliRecord.getSliVersion() != sliVersion) {
-          isRecalculatingSLI = true;
+        if (!isCalculatingSLI && sliRecord.getSliVersion() != sliVersion) {
+          isCalculatingSLI = true;
         }
         sliValue = sliMissingDataType.calculateSLIValue(goodCountFromStart, badCountFromStart, minutesFromStart);
         sliTread.add(
@@ -178,6 +178,8 @@ public class SLIRecordServiceImpl implements SLIRecordService {
       }
       errorBudgetRemainingPercentage = errorBudgetBurndown.get(errorBudgetBurndown.size() - 1).getValue();
       errorBudgetRemaining = totalErrorBudgetMinutes - sliValue.getBadCount();
+    } else {
+      isCalculatingSLI = true;
     }
 
     long startFilter = filter.getStartTime().toEpochMilli();
@@ -196,7 +198,8 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         .errorBudgetBurndown(errorBudgetBurndown)
         .errorBudgetRemaining(errorBudgetRemaining)
         .sloPerformanceTrend(sliTread)
-        .isRecalculatingSLI(isRecalculatingSLI)
+        .isRecalculatingSLI(isCalculatingSLI)
+        .isCalculatingSLI(isCalculatingSLI)
         .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
         .build();
   }

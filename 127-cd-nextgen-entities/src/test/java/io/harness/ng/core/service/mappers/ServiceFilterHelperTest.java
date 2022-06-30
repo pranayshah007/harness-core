@@ -9,6 +9,7 @@ package io.harness.ng.core.service.mappers;
 
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -16,6 +17,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
@@ -90,5 +92,41 @@ public class ServiceFilterHelperTest extends CategoryTest {
         assertThat(stringSet.contains(propertyDescriptor.getName())).isFalse();
       }
     }
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testCreateCriteriaForGetList1() {
+    Criteria criteria =
+        ServiceFilterHelper.createCriteriaForGetList("accId", "orgId", "projId", false, "foo", null, null);
+
+    assertThat(criteria.getCriteriaObject().toJson())
+        .isEqualTo(
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}]}");
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testCreateCriteriaForGetList2() {
+    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
+        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.KUBERNETES, Boolean.TRUE);
+
+    assertThat(criteria.getCriteriaObject().toJson())
+        .isEqualTo(
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}, {\"$or\": [{\"type\": \"Kubernetes\"}, {\"type\": null}]}], \"gitOpsEnabled\": true}");
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testCreateCriteriaForGetList3() {
+    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
+        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.NATIVE_HELM, null);
+
+    assertThat(criteria.getCriteriaObject().toJson())
+        .isEqualTo(
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}, {\"$or\": [{\"type\": \"NativeHelm\"}, {\"type\": null}]}]}");
   }
 }

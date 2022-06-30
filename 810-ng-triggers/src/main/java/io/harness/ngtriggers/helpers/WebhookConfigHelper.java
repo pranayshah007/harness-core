@@ -25,9 +25,11 @@ import io.harness.ngtriggers.beans.source.webhook.WebhookSourceRepo;
 import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.beans.source.webhook.v2.awscodecommit.event.AwsCodeCommitTriggerEvent;
+import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.action.AzureRepoIssueCommentAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.action.AzureRepoPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.event.AzureRepoTriggerEvent;
 import io.harness.ngtriggers.beans.source.webhook.v2.bitbucket.action.BitbucketPRAction;
+import io.harness.ngtriggers.beans.source.webhook.v2.bitbucket.action.BitbucketPRCommentAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.bitbucket.event.BitbucketTriggerEvent;
 import io.harness.ngtriggers.beans.source.webhook.v2.git.GitAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.git.GitAware;
@@ -36,6 +38,7 @@ import io.harness.ngtriggers.beans.source.webhook.v2.git.PayloadAware;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.action.GithubIssueCommentAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.action.GithubPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubTriggerEvent;
+import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabMRCommentAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.event.GitlabTriggerEvent;
 
@@ -64,11 +67,12 @@ public class WebhookConfigHelper {
   }
 
   public List<GitlabTriggerEvent> getGitlabTriggerEvents() {
-    return Arrays.asList(GitlabTriggerEvent.PUSH, GitlabTriggerEvent.MERGE_REQUEST);
+    return Arrays.asList(GitlabTriggerEvent.PUSH, GitlabTriggerEvent.MERGE_REQUEST, GitlabTriggerEvent.MR_COMMENT);
   }
 
   public List<BitbucketTriggerEvent> getBitbucketTriggerEvents() {
-    return Arrays.asList(BitbucketTriggerEvent.PUSH, BitbucketTriggerEvent.PULL_REQUEST);
+    return Arrays.asList(
+        BitbucketTriggerEvent.PUSH, BitbucketTriggerEvent.PULL_REQUEST, BitbucketTriggerEvent.PR_COMMENT);
   }
 
   public List<WebhookAction> getActionsList(WebhookSourceRepo sourceRepo, WebhookEvent event) {
@@ -124,12 +128,24 @@ public class WebhookConfigHelper {
     return Arrays.asList(GithubIssueCommentAction.values());
   }
 
+  public static List<AzureRepoIssueCommentAction> getAzureRepoIssueCommentAction() {
+    return Arrays.asList(AzureRepoIssueCommentAction.values());
+  }
+
   public static List<GitlabPRAction> getGitlabPRAction() {
     return Arrays.asList(GitlabPRAction.values());
   }
 
+  public static List<GitlabMRCommentAction> getGitlabMRCommentAction() {
+    return Arrays.asList(GitlabMRCommentAction.values());
+  }
+
   public static List<BitbucketPRAction> getBitbucketPRAction() {
     return Arrays.asList(BitbucketPRAction.values());
+  }
+
+  public static List<BitbucketPRCommentAction> getBitbucketPRCommentAction() {
+    return Arrays.asList(BitbucketPRCommentAction.values());
   }
 
   public static List<WebhookTriggerType> getWebhookTriggerType() {
@@ -144,7 +160,11 @@ public class WebhookConfigHelper {
     azureRepoMap.put(AzureRepoTriggerEvent.PUSH.getValue(), emptyList());
     azureRepoMap.put(AzureRepoTriggerEvent.PULL_REQUEST.getValue(),
         getAzureRepoPRAction().stream().map(azureRepoPRAction -> azureRepoPRAction.getValue()).collect(toList()));
-
+    azureRepoMap.put(AzureRepoTriggerEvent.ISSUE_COMMENT.getValue(),
+        getAzureRepoIssueCommentAction()
+            .stream()
+            .map(azureRepoIssueCommentAction -> azureRepoIssueCommentAction.getValue())
+            .collect(toList()));
 
     Map githubMap = new HashMap<GitEvent, List<GitAction>>();
     resposeMap.put(GITHUB.getValue(), githubMap);
@@ -162,12 +182,22 @@ public class WebhookConfigHelper {
     gitlabMap.put(GitlabTriggerEvent.PUSH.getValue(), emptyList());
     gitlabMap.put(GitlabTriggerEvent.MERGE_REQUEST.getValue(),
         getGitlabPRAction().stream().map(gitlabPRAction -> gitlabPRAction.getValue()).collect(toList()));
+    gitlabMap.put(GitlabTriggerEvent.MR_COMMENT.getValue(),
+        getGitlabMRCommentAction()
+            .stream()
+            .map(gitlabMRCommentAction -> gitlabMRCommentAction.getValue())
+            .collect(toList()));
 
     Map bitbucketMap = new HashMap<GitEvent, List<GitAction>>();
     resposeMap.put(BITBUCKET.getValue(), bitbucketMap);
     bitbucketMap.put(BitbucketTriggerEvent.PUSH.getValue(), emptyList());
     bitbucketMap.put(BitbucketTriggerEvent.PULL_REQUEST.getValue(),
         getBitbucketPRAction().stream().map(bitbucketPRAction -> bitbucketPRAction.getValue()).collect(toList()));
+    bitbucketMap.put(BitbucketTriggerEvent.PR_COMMENT.getValue(),
+        getBitbucketPRCommentAction()
+            .stream()
+            .map(bitbucketPRCommentAction -> bitbucketPRCommentAction.getValue())
+            .collect(toList()));
 
     Map awsCodeCommitMap = new HashMap<GitEvent, List<GitAction>>();
     resposeMap.put(AWS_CODECOMMIT.getValue(), awsCodeCommitMap);

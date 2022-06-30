@@ -64,8 +64,11 @@ public class ScmGitWebhookHelperTest extends CategoryTest {
             .build(),
         NativeEvents.newBuilder()
             .setAzure(AzureWebhookEvents.newBuilder().addEvents(AzureWebhookEvent.AZURE_PULLREQUEST_MERGED).build())
-            .build()
-    );
+            .build(),
+        NativeEvents.newBuilder()
+            .setAzure(
+                AzureWebhookEvents.newBuilder().addEvents(AzureWebhookEvent.AZURE_PULL_REQUEST_ISSUE_COMMENT).build())
+            .build());
     boolean result =
         ScmGitWebhookHelper.isIdenticalEvents(null, HookEventType.TRIGGER_EVENTS, scmConnector, allNativeEvents);
     assertThat(result).isEqualTo(true);
@@ -84,8 +87,7 @@ public class ScmGitWebhookHelperTest extends CategoryTest {
             .build(),
         NativeEvents.newBuilder()
             .setAzure(AzureWebhookEvents.newBuilder().addEvents(AzureWebhookEvent.AZURE_PULLREQUEST_UPDATED).build())
-            .build()
-    );
+            .build());
     boolean result =
         ScmGitWebhookHelper.isIdenticalEvents(null, HookEventType.TRIGGER_EVENTS, scmConnector, allNativeEvents);
     assertThat(result).isEqualTo(false);

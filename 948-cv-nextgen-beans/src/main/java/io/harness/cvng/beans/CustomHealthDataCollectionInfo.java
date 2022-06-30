@@ -68,6 +68,12 @@ public class CustomHealthDataCollectionInfo extends TimeSeriesDataCollectionInfo
     List<String> metricValueJSONPaths = new ArrayList<>();
     List<String> serviceInstanceJSONPaths = new ArrayList<>();
 
+    List<String> serviceInstanceListJsonPaths = new ArrayList<>();
+    List<String> relativeServiceInstanceValueJsonPaths = new ArrayList<>();
+    List<String> relativeMetricListJsonPaths = new ArrayList<>();
+    List<String> relativeMetricValueJsonPaths = new ArrayList<>();
+    List<String> relativeTimestampJsonPaths = new ArrayList<>();
+
     getMetricInfoList().forEach(metricInfo -> {
       metricNames.add(metricInfo.getMetricName());
       metricIdentifiers.add(metricInfo.getMetricIdentifier());
@@ -84,6 +90,12 @@ public class CustomHealthDataCollectionInfo extends TimeSeriesDataCollectionInfo
       metricValueJSONPaths.add(responseMapping.getMetricValueJsonPath());
       serviceInstanceJSONPaths.add(
           isEmpty(responseMapping.getServiceInstanceJsonPath()) ? null : responseMapping.getServiceInstanceJsonPath());
+
+      serviceInstanceListJsonPaths.add(responseMapping.getServiceInstanceListJsonPath());
+      relativeServiceInstanceValueJsonPaths.add(responseMapping.getRelativeServiceInstanceValueJsonPath());
+      relativeMetricListJsonPaths.add(responseMapping.getRelativeMetricListJsonPath());
+      relativeMetricValueJsonPaths.add(responseMapping.getRelativeMetricValueJsonPath());
+      relativeTimestampJsonPaths.add(responseMapping.getRelativeTimestampJsonPath());
     });
 
     Map<String, Object> envVars = new HashMap<>();
@@ -100,6 +112,11 @@ public class CustomHealthDataCollectionInfo extends TimeSeriesDataCollectionInfo
     envVars.put("serviceInstanceJSONPaths", serviceInstanceJSONPaths);
     envVars.put("groupName", groupName);
     envVars.put("bodies", bodies);
+    envVars.put("serviceInstanceListJsonPaths", serviceInstanceListJsonPaths);
+    envVars.put("relativeServiceInstanceValueJsonPaths", relativeServiceInstanceValueJsonPaths);
+    envVars.put("relativeMetricListJsonPaths", relativeMetricListJsonPaths);
+    envVars.put("relativeMetricValueJsonPaths", relativeMetricValueJsonPaths);
+    envVars.put("relativeTimestampJsonPaths", relativeTimestampJsonPaths);
     return envVars;
   }
 

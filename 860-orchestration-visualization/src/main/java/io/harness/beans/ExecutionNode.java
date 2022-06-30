@@ -14,6 +14,7 @@ import io.harness.dto.FailureInfoDTO;
 import io.harness.interrupts.InterruptEffectDTO;
 import io.harness.logging.UnitProgress;
 import io.harness.pms.contracts.execution.ExecutableResponse;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.execution.run.NodeRunInfo;
 import io.harness.pms.contracts.execution.skip.SkipInfo;
 import io.harness.pms.data.OrchestrationMap;
@@ -48,4 +49,5 @@ public class ExecutionNode {
   List<DelegateInfo> delegateInfoList;
   List<InterruptEffectDTO> interruptHistories;
   Map<String, OrchestrationMap> stepDetails;
+  StrategyMetadata strategyMetadata;
 }

@@ -28,6 +28,7 @@ public interface YamlTypes {
   String ENVIRONMENT_GROUP_YAML = "environmentGroup";
   String GITOPS_CLUSTERS = "gitopsClusters";
   String ENVIRONMENT_REF = "environmentRef";
+  String ENVIRONMENT_GROUP_REF = "envGroupRef";
   String INFRASTRUCTURE_DEF = "infrastructureDefinition";
   String INFRASTRUCTURE_DEFS = "infrastructureDefinitions";
   String INFRASTRUCTURE_STEP_PARAMETERS = "infrastructureStepParameters";
@@ -121,4 +122,8 @@ public interface YamlTypes {
   String SERVICE_OVERRIDE_INPUTS = "serviceOverrideInputs";
   String INPUTS = "inputs";
   String REF = "ref";
+  String JENKINS_BUILD = StepSpecTypeConstants.JENKINS_BUILD;
+  String STARTUP_SCRIPT = "startupScript";
+  String APPLICATION_SETTINGS = "applicationSettings";
+  String CONNECTION_STRINGS = "connectionStrings";
 }

@@ -7,12 +7,15 @@
 
 package io.harness.repositories.gitops.custom;
 
+import static org.springframework.data.mongodb.util.MongoDbErrorCodes.isDuplicateKeyCode;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.cdng.gitops.entity.Cluster.ClusterKeys;
 
 import com.google.inject.Inject;
+import com.mongodb.MongoBulkWriteException;
 import com.mongodb.client.result.DeleteResult;
 import java.time.Duration;
 import java.util.List;
@@ -24,6 +27,8 @@ import net.jodah.failsafe.RetryPolicy;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.BulkOperationException;
+import org.springframework.data.mongodb.core.BulkOperations;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -46,11 +51,39 @@ public class ClusterRepositoryCustomImpl implements ClusterRepositoryCustom {
         projects, pageable, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), Cluster.class));
   }
 
+  @Override
   public Cluster create(Cluster cluster) {
     // Todo(yogesh): Do we need this ?
     RetryPolicy<Object> retryPolicy = getRetryPolicy(
         "[Retrying]: Failed upserting Cluster; attempt: {}", "[Failed]: Failed upserting Cluster; attempt: {}");
     return Failsafe.with(retryPolicy).get(() -> mongoTemplate.insert(cluster));
+  }
+
+  /*
+  Ignores duplicates
+   */
+  @Override
+  public long bulkCreate(List<Cluster> clusters) {
+    try {
+      return mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, Cluster.class)
+          .insert(clusters)
+          .execute()
+          .getInsertedCount();
+    } catch (BulkOperationException ex) {
+      if (ex.getErrors().stream().allMatch(bulkWriteError -> isDuplicateKeyCode(bulkWriteError.getCode()))) {
+        return ex.getResult().getInsertedCount();
+      }
+      throw ex;
+    } catch (Exception ex) {
+      if (ex.getCause() instanceof MongoBulkWriteException) {
+        MongoBulkWriteException bulkWriteException = (MongoBulkWriteException) ex.getCause();
+        if (bulkWriteException.getWriteErrors().stream().allMatch(
+                writeError -> isDuplicateKeyCode(writeError.getCode()))) {
+          return bulkWriteException.getWriteResult().getInsertedCount();
+        }
+      }
+      throw ex;
+    }
   }
 
   @Override

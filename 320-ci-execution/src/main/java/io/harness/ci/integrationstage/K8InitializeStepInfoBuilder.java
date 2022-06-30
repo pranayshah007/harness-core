@@ -13,21 +13,22 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParamete
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameterWithDefaultValue;
-import static io.harness.common.CICommonPodConstants.POD_NAME_PREFIX;
-import static io.harness.common.CIExecutionConstants.ADDON_VOLUME;
-import static io.harness.common.CIExecutionConstants.ADDON_VOL_MOUNT_PATH;
-import static io.harness.common.CIExecutionConstants.DEFAULT_CONTAINER_CPU_POV;
-import static io.harness.common.CIExecutionConstants.DEFAULT_CONTAINER_MEM_POV;
-import static io.harness.common.CIExecutionConstants.PORT_STARTING_RANGE;
-import static io.harness.common.CIExecutionConstants.PVC_DEFAULT_STORAGE_CLASS;
-import static io.harness.common.CIExecutionConstants.SHARED_VOLUME_PREFIX;
-import static io.harness.common.CIExecutionConstants.STEP_MOUNT_PATH;
-import static io.harness.common.CIExecutionConstants.STEP_PREFIX;
-import static io.harness.common.CIExecutionConstants.STEP_REQUEST_MEMORY_MIB;
-import static io.harness.common.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
-import static io.harness.common.CIExecutionConstants.STEP_VOLUME;
-import static io.harness.common.CIExecutionConstants.STEP_WORK_DIR;
-import static io.harness.common.CIExecutionConstants.VOLUME_PREFIX;
+import static io.harness.ci.commonconstants.CICommonPodConstants.POD_NAME_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.ADDON_VOLUME;
+import static io.harness.ci.commonconstants.CIExecutionConstants.ADDON_VOL_MOUNT_PATH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_CPU_POV;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_MEM_POV;
+import static io.harness.ci.commonconstants.CIExecutionConstants.ETC_DIR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PORT_STARTING_RANGE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PVC_DEFAULT_STORAGE_CLASS;
+import static io.harness.ci.commonconstants.CIExecutionConstants.SHARED_VOLUME_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_MOUNT_PATH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MEMORY_MIB;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_VOLUME;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_WORK_DIR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.VOLUME_PREFIX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -62,6 +63,14 @@ import io.harness.beans.yaml.extended.volumes.CIVolume;
 import io.harness.beans.yaml.extended.volumes.EmptyDirYaml;
 import io.harness.beans.yaml.extended.volumes.HostPathYaml;
 import io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml;
+import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.buildstate.PluginSettingUtils;
+import io.harness.ci.buildstate.StepContainerUtils;
+import io.harness.ci.execution.CIExecutionConfigService;
+import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.ci.utils.CIStepInfoUtils;
+import io.harness.ci.utils.ExceptionUtility;
+import io.harness.ci.utils.PortFinder;
 import io.harness.ci.utils.QuantityUtils;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -75,8 +84,7 @@ import io.harness.delegate.beans.ci.pod.PVCVolume;
 import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
-import io.harness.execution.CIExecutionConfigService;
-import io.harness.ff.CIFeatureFlagService;
+import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
@@ -85,12 +93,6 @@ import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.stateutils.buildstate.ConnectorUtils;
-import io.harness.stateutils.buildstate.PluginSettingUtils;
-import io.harness.stateutils.buildstate.providers.StepContainerUtils;
-import io.harness.steps.CIStepInfoUtils;
-import io.harness.util.ExceptionUtility;
-import io.harness.util.PortFinder;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.SecretNGVariable;
@@ -260,8 +262,8 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
         }
 
         String volumeName = format("%s%d", SHARED_VOLUME_PREFIX, index);
-        if (path.equals(STEP_MOUNT_PATH) || path.equals(ADDON_VOL_MOUNT_PATH)) {
-          throw new InvalidRequestException(format("Shared path: %s is a reserved keyword ", path));
+        if (path.equals(STEP_MOUNT_PATH) || path.equals(ADDON_VOL_MOUNT_PATH) || path.equals(ETC_DIR)) {
+          throw new InvalidRequestException(format("Shared path: %s is a reserved keyword", path));
         }
         volumeToMountPath.put(volumeName, path);
         index++;
@@ -628,7 +630,8 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
   private Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> getStepConnectorConversionInfo(
       StepElementConfig stepElement, Ambiance ambiance) {
     Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> map = new HashMap<>();
-    if (stepElement.getStepSpecType() instanceof PluginCompatibleStep) {
+    if ((stepElement.getStepSpecType() instanceof PluginCompatibleStep)
+        && (stepElement.getStepSpecType() instanceof WithConnectorRef)) {
       map.put(stepElement.getIdentifier(), new ArrayList<>());
       PluginCompatibleStep step = (PluginCompatibleStep) stepElement.getStepSpecType();
       String connectorRef = PluginSettingUtils.getConnectorRef(step);
