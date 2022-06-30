@@ -13,15 +13,19 @@ import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.strategy.MatrixConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.executables.ChildrenExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -84,6 +88,17 @@ public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> 
   public StepResponse handleChildrenResponse(
       Ambiance ambiance, StrategyStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     log.info("Completed  execution for Strategy Step [{}]", stepParameters);
-    return createStepResponseFromChildResponse(responseDataMap);
+    StepResponse response = createStepResponseFromChildResponse(responseDataMap);
+    if (response.getStatus() == Status.SUCCEEDED) {
+      List<Status> childStatuses = new LinkedList<>();
+      for (ResponseData responseData : responseDataMap.values()) {
+        StepResponseNotifyData responseNotifyData = (StepResponseNotifyData) responseData;
+        childStatuses.add(responseNotifyData.getStatus());
+      }
+      if (!childStatuses.isEmpty() && childStatuses.stream().allMatch(status -> status == Status.SKIPPED)) {
+        return response.toBuilder().status(Status.SKIPPED).build();
+      }
+    }
+    return response;
   }
 }

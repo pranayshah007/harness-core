@@ -215,8 +215,6 @@ public class StatusUtils {
     if (StatusUtils.positiveStatuses().containsAll(statuses)
         && statuses.stream().anyMatch(status -> status == IGNORE_FAILED)) {
       return IGNORE_FAILED;
-    } else if (statuses.stream().allMatch(status -> status == SKIPPED)) {
-      return SKIPPED;
     } else if (StatusUtils.positiveStatuses().containsAll(statuses)) {
       return SUCCEEDED;
     } else if (statuses.stream().anyMatch(status -> status == ABORTED)) {

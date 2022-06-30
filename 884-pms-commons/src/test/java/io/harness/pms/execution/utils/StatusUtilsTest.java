@@ -359,18 +359,4 @@ public class StatusUtilsTest extends CategoryTest {
     assertThatThrownBy(() -> StatusUtils.planAllowedStartSet(Status.UNRECOGNIZED))
         .isInstanceOf(IllegalStateException.class);
   }
-
-  @Test
-  @Owner(developers = SAHIL)
-  @Category(UnitTests.class)
-  public void testCalculateStatusSkipped() {
-    List<Status> statuses = Arrays.asList(
-        Status.SKIPPED, Status.SKIPPED, Status.SKIPPED, Status.SKIPPED, Status.SKIPPED, Status.SKIPPED, Status.SKIPPED);
-
-    Status status = StatusUtils.calculateStatus(statuses, "PLAN_EXECUTION_ID");
-    assertThat(status).isEqualTo(Status.SKIPPED);
-
-    status = StatusUtils.calculateStatusForNode(statuses, "NODE_EXECUTION_ID");
-    assertThat(status).isEqualTo(Status.SKIPPED);
-  }
 }
