@@ -151,7 +151,11 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
             .buildDisplayName(jenkinsBuildTaskNGResponse.getBuildDisplayName())
             .buildFullDisplayName(jenkinsBuildTaskNGResponse.getBuildFullDisplayName())
             .buildNumber(jenkinsBuildTaskNGResponse.getBuildNumber())
-            .envVars(jenkinsBuildTaskNGResponse.getEnvVars());
+            .envVars(jenkinsBuildTaskNGResponse.getEnvVars())
+            .jobUrl(jenkinsBuildTaskNGResponse.getJobUrl())
+            .queuedBuildUrl(jenkinsBuildTaskNGResponse.getQueuedBuildUrl())
+            .executionStatus(jenkinsBuildTaskNGResponse.getExecutionStatus())
+            .description(jenkinsBuildTaskNGResponse.getDescription());
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
         .stepOutcome(
