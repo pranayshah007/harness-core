@@ -670,12 +670,16 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
               .helmChartInfo(HelmChartInfo.builder().name(CHART_NAME).repoUrl(REPO_URL).version("1").build())
               .build());
       instance.setLastWorkflowExecutionId(WORKFLOW_EXECUTION_ID);
+      instance.setLastArtifactName(ARTIFACT_NAME);
       instance.setLastArtifactBuildNum("v10");
       persistence.save(instance);
       PageResponse<WorkflowExecution> executionsPageResponse =
           aPageResponse().withResponse(asList(workflowExecution)).build();
       when(workflowExecutionService.listExecutions(any(PageRequest.class), anyBoolean()))
           .thenReturn(executionsPageResponse);
+
+      when(workflowExecutionService.getLastSuccessfulWorkflowExecution(any(), any(), any(), any(), any(), any()))
+          .thenReturn(WorkflowExecution.builder().uuid(WORKFLOW_EXECUTION_ID).startTs(1630969310005L).build());
 
       List<Service> serviceList = Lists.newArrayList();
       Service service1 = Service.builder()
@@ -766,8 +770,12 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
       assertThat(serviceInstanceDashboard.getCurrentActiveInstancesList().get(0).getInstanceCount()).isEqualTo(1);
       assertThat(serviceInstanceDashboard.getDeploymentHistoryList()).hasSize(1);
       DeploymentHistory deploymentHistory = serviceInstanceDashboard.getDeploymentHistoryList().get(0);
-      assertThat(deepEquals(serviceInstanceDashboard.getCurrentActiveInstancesList().get(0).getArtifactSummaryFromSvc(),
-          deploymentHistory.getArtifact()));
+      assertThat(serviceInstanceDashboard.getCurrentActiveInstancesList().get(0).getSideCarImageDetails().get(0).get(
+                     ARTIFACT_NAME))
+          .isEqualTo("v10");
+      assertThat(deepEquals(serviceInstanceDashboard.getCurrentActiveInstancesList().get(0).getArtifact(),
+                     deploymentHistory.getArtifact()))
+          .isTrue();
       assertThat(deepEquals(expectedDeployment.getEnvs(), deploymentHistory.getEnvs())).isTrue();
       assertThat(deepEquals(expectedDeployment.getInframappings(), deploymentHistory.getInframappings())).isTrue();
       assertThat(deepEquals(expectedDeployment.getStatus(), deploymentHistory.getStatus())).isTrue();

@@ -16,6 +16,8 @@ import software.wings.beans.instance.dashboard.ArtifactSummary;
 import software.wings.beans.instance.dashboard.EntitySummary;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
@@ -37,5 +39,6 @@ public class CurrentActiveInstances {
   private EntitySummary lastWorkflowExecution;
   private EntitySummary lastPipelineExecution;
   private ArtifactSummary artifactSummaryFromSvc;
+  private List<Map<String, String>> sideCarImageDetails;
   private boolean onDemandRollbackAvailable;
 }

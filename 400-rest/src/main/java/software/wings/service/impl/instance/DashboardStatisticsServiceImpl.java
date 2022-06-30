@@ -135,6 +135,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.ReadPreference;
 import com.mongodb.TagSet;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -855,11 +856,21 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         if (instance.getLastWorkflowExecution().getId().equals(deploymentHistory.getWorkflow().getId())
             && instance.getLastWorkflowExecutionDate().equals(deploymentHistory.getDeployedAt())
             && shouldUpdate(instance.getArtifact(), deploymentHistory.getArtifact())) {
-          instance.setArtifactSummaryFromSvc(deploymentHistory.getArtifact());
+          updateSidecarDetails(instance, deploymentHistory.getArtifact());
           break;
         }
       }
     }
+  }
+
+  public void updateSidecarDetails(CurrentActiveInstances instance, ArtifactSummary artifactSummary) {
+    ArtifactSummary sidecarArtifact = instance.getArtifact();
+    Map<String, String> sidecarDetails = new HashMap<>();
+    sidecarDetails.put(isEmpty(sidecarArtifact.getArtifactSourceName()) ? sidecarArtifact.getName()
+                                                                        : sidecarArtifact.getArtifactSourceName(),
+        sidecarArtifact.getBuildNo());
+    instance.setSideCarImageDetails(Arrays.asList(sidecarDetails));
+    instance.setArtifact(artifactSummary);
   }
 
   @VisibleForTesting
