@@ -13,7 +13,7 @@ import io.harness.network.FibonacciBackOff;
 import io.harness.network.Http;
 import io.harness.network.NoopHostnameVerifier;
 import io.harness.security.TokenGenerator;
-import io.harness.serializer.kryo.DelegateKryoConverterFactory;
+import io.harness.serializer.kryo.KryoConverterFactory;
 import io.harness.version.VersionInfoManager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,7 +52,7 @@ public class DelegateAgentManagerClientFactory
       ImmutableList.of(new io.harness.managerclient.DelegateAgentManagerClientX509TrustManager());
 
   @Inject private VersionInfoManager versionInfoManager;
-  @Inject private DelegateKryoConverterFactory kryoConverterFactory;
+  @Inject private KryoConverterFactory kryoConverterFactory;
 
   private String baseUrl;
   private TokenGenerator tokenGenerator;
@@ -103,7 +103,7 @@ public class DelegateAgentManagerClientFactory
           .addInterceptor(chain -> FibonacciBackOff.executeForEver(() -> chain.proceed(chain.request())))
           // During this call we not just query the task but we also obtain the secret on the manager side
           // we need to give enough time for the call to finish.
-          .readTimeout(2, TimeUnit.MINUTES)
+          .readTimeout(5, TimeUnit.MINUTES)
           .build();
     } catch (Exception e) {
       throw new RuntimeException(e);

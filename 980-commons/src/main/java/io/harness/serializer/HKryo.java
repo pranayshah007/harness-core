@@ -36,7 +36,6 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Registration;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
-import com.esotericsoftware.kryo.serializers.EnumNameSerializer;
 import com.esotericsoftware.kryo.serializers.FieldSerializer;
 import com.esotericsoftware.kryo.util.DefaultStreamFactory;
 import com.esotericsoftware.kryo.util.IntMap;
@@ -100,7 +99,7 @@ public class HKryo extends Kryo {
   private final boolean skipHarnessClassOriginRegistrarCheck;
 
   public HKryo(ClassResolver classResolver) {
-    this(classResolver, false, true);
+    this(classResolver, false);
   }
 
   /**
@@ -109,7 +108,7 @@ public class HKryo extends Kryo {
    * @param skipHarnessClassOriginRegistrarCheck if true, classes can be registered by registrars from other sources -
    *     only meant for UTs.
    */
-  public HKryo(ClassResolver classResolver, boolean skipHarnessClassOriginRegistrarCheck, boolean shouldSetReferences) {
+  public HKryo(ClassResolver classResolver, boolean skipHarnessClassOriginRegistrarCheck) {
     super(classResolver, new MapReferenceResolver(), new DefaultStreamFactory());
 
     this.skipHarnessClassOriginRegistrarCheck = skipHarnessClassOriginRegistrarCheck;
@@ -119,10 +118,6 @@ public class HKryo extends Kryo {
     getFieldSerializerConfig().setCachedFieldNameStrategy(FieldSerializer.CachedFieldNameStrategy.EXTENDED);
     getFieldSerializerConfig().setCopyTransient(false);
     setRegistrationRequired(true);
-    setReferences(shouldSetReferences);
-    if (!shouldSetReferences) {
-      addDefaultSerializer(Enum.class, EnumNameSerializer.class);
-    }
 
     register(byte[].class, 10);
     register(char[].class, 11);
