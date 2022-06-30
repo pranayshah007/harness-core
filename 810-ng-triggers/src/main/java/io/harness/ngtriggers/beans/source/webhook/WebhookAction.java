@@ -43,12 +43,16 @@ public enum WebhookAction {
   @JsonProperty("reopen") GITLAB_REOPEN("reopen", "reopen"),
   @JsonProperty("merge") GITLAB_MERGED("merge", "merge"),
   @JsonProperty("update") GITLAB_UPDATED("update", "update"),
+  @JsonProperty("mr comment create") GITLAB_MR_COMMENT_CREATE("create", "create"),
 
   // BitBucket
   @JsonProperty("pull request created") BT_PULL_REQUEST_CREATED("open", "pull request created"),
   @JsonProperty("pull request updated") BT_PULL_REQUEST_UPDATED("sync", "pull request updated"),
   @JsonProperty("pull request merged") BT_PULL_REQUEST_MERGED("merge", "pull request merged"),
-  @JsonProperty("pull request declined") BT_PULL_REQUEST_DECLINED("close", "pull request declined");
+  @JsonProperty("pull request declined") BT_PULL_REQUEST_DECLINED("close", "pull request declined"),
+  @JsonProperty("pr comment created") BT_PR_COMMENT_CREATED("create", "pr comment created"),
+  @JsonProperty("pr comment edited") BT_PR_COMMENT_EDITED("edit", "pr comment edited"),
+  @JsonProperty("pr comment deleted") BT_PR_COMMENT_DELETED("delete", "pr comment deleted");
 
   // TODO: Add more support for more actions we need to support
   private String value;
@@ -97,6 +101,8 @@ public enum WebhookAction {
             BT_PULL_REQUEST_CREATED, BT_PULL_REQUEST_UPDATED, BT_PULL_REQUEST_MERGED, BT_PULL_REQUEST_DECLINED);
       case PUSH:
         return emptySet();
+      case PR_COMMENT:
+        return EnumSet.of(BT_PR_COMMENT_CREATED, BT_PR_COMMENT_EDITED, BT_PR_COMMENT_DELETED);
       default:
         throw new InvalidRequestException("Event " + event.name() + " not a bitbucket event");
     }
@@ -109,6 +115,8 @@ public enum WebhookAction {
       case PUSH:
       case DELETE:
         return emptySet();
+      case MR_COMMENT:
+        return EnumSet.of(GITLAB_MR_COMMENT_CREATE);
       default:
         throw new InvalidRequestException("Event " + event.name() + " not a gitlab event");
     }

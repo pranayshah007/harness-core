@@ -9,6 +9,7 @@ package io.harness.app;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.app.CIManagerConfiguration.HARNESS_RESOURCE_CLASSES;
+import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.pms.contracts.plan.ExpansionRequestType.KEY;
@@ -92,6 +93,7 @@ import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
+import io.harness.telemetry.CiTelemetryRecordsJob;
 import io.harness.token.remote.TokenClient;
 import io.harness.waiter.NotifierScheduledExecutorService;
 import io.harness.waiter.NotifyEvent;
@@ -280,6 +282,8 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     registerQueueListener(injector);
     registerPmsSdkEvents(injector);
     initializeEnforcementFramework(injector);
+    log.info("CIManagerApplication DEPLOY_VERSION = " + System.getenv().get(DEPLOY_VERSION));
+    initializeCiManagerMonitoring(injector);
     registerOasResource(configuration, environment, injector);
     log.info("Starting app done");
     MaintenanceController.forceMaintenance(false);
@@ -500,5 +504,10 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
             .build();
     injector.getInstance(EnforcementSdkRegisterService.class)
         .initialize(restrictionUsageRegisterConfiguration, customConfig);
+  }
+
+  private void initializeCiManagerMonitoring(Injector injector) {
+    log.info("Initializing CI Manager Monitoring");
+    injector.getInstance(CiTelemetryRecordsJob.class).scheduleTasks();
   }
 }

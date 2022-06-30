@@ -297,8 +297,9 @@ public class RetryExecutionHelper {
         }
       } else {
         // parallel group
-        // TODO(BRIJESH): handle paralle after strategy
-        if (!isRetryStagesInParallelStages(stage.get("parallel"), retryStages, identifierOfSkipStages)) {
+        if (!isRetryStagesInParallelStages(
+                stage.get("parallel"), retryStages, identifierOfSkipStages, isStrategyNodeProcessed)
+            && !isStrategyNodeProcessed) {
           // if the parallel group does not contain the retry stages, copy the whole parallel node
           ((ArrayNode) currentRootJsonNode.get("pipeline").get("stages")).set(stageCounter, stage);
           stageCounter = stageCounter + 1;
@@ -307,7 +308,8 @@ public class RetryExecutionHelper {
           ((ArrayNode) currentRootJsonNode.get("pipeline").get("stages"))
               .set(stageCounter,
                   replaceStagesInParallelGroup(stage.get("parallel"), retryStages,
-                      currentRootJsonNode.get("pipeline").get("stages").get(stageCounter), identifierOfSkipStages));
+                      currentRootJsonNode.get("pipeline").get("stages").get(stageCounter), identifierOfSkipStages,
+                      isStrategyNodeProcessed));
 
           // replacing uuid for parallel node
           ((ObjectNode) ((ArrayNode) currentRootJsonNode.get("pipeline").get("stages")).get(stageCounter))
@@ -321,11 +323,11 @@ public class RetryExecutionHelper {
   }
 
   private JsonNode replaceStagesInParallelGroup(JsonNode parallelStage, List<String> retryStages,
-      JsonNode currentParallelStageNode, List<String> identifierOfSkipStages) {
+      JsonNode currentParallelStageNode, List<String> identifierOfSkipStages, boolean isStrategyNodeProcessed) {
     int stageCounter = 0;
     for (JsonNode stageNode : parallelStage) {
       String stageIdentifier = stageNode.get("stage").get("identifier").textValue();
-      if (!retryStages.contains(stageIdentifier)) {
+      if (!retryStages.contains(stageIdentifier) && !isStrategyNodeProcessed) {
         identifierOfSkipStages.add(stageIdentifier);
         ((ArrayNode) currentParallelStageNode.get("parallel")).set(stageCounter, stageNode);
       } else {
@@ -340,8 +342,8 @@ public class RetryExecutionHelper {
     return currentParallelStageNode;
   }
 
-  private boolean isRetryStagesInParallelStages(
-      JsonNode parallelStage, List<String> retryStages, List<String> identifierOfSkipStages) {
+  private boolean isRetryStagesInParallelStages(JsonNode parallelStage, List<String> retryStages,
+      List<String> identifierOfSkipStages, boolean isStrategyNodeProcessed) {
     List<String> stagesIdentifierInParallelNode = new ArrayList<>();
     for (JsonNode stageNode : parallelStage) {
       String stageIdentifier = stageNode.get("stage").get("identifier").textValue();
@@ -353,7 +355,9 @@ public class RetryExecutionHelper {
     /*
     This whole parallel node will get copied. We need to copy the stage identifier in identifierForSkipStages
      */
-    identifierOfSkipStages.addAll(stagesIdentifierInParallelNode);
+    if (!isStrategyNodeProcessed) {
+      identifierOfSkipStages.addAll(stagesIdentifierInParallelNode);
+    }
     return false;
   }
 

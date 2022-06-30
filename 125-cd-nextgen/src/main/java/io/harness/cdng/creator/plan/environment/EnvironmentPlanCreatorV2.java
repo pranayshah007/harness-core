@@ -14,6 +14,8 @@ import io.harness.cdng.creator.plan.environment.steps.EnvironmentStepV2;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.environment.steps.EnvironmentStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
+import io.harness.cdng.infra.InfrastructurePlanCreatorHelper;
+import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.ng.core.environment.beans.EnvironmentType;
@@ -79,8 +81,10 @@ public class EnvironmentPlanCreatorV2 extends ChildrenPlanCreator<EnvironmentPla
                                            .get(0)
                                            .getField(YamlTypes.INFRASTRUCTURE_DEF);
 
-      PlanNode infraSpecNode =
-          InfrastructurePmsPlanCreator.getInfraStepPlanNode(infrastructureDefinitionConfig.getSpec());
+      Infrastructure spec = infrastructureDefinitionConfig.getSpec();
+      InfrastructurePlanCreatorHelper.setInfraIdentifierAndName(
+          spec, infrastructureDefinitionConfig.getIdentifier(), infrastructureDefinitionConfig.getName());
+      PlanNode infraSpecNode = InfrastructurePmsPlanCreator.getInfraStepPlanNode(spec);
       planCreationResponseMap.put(
           infraSpecNode.getUuid(), PlanCreationResponse.builder().node(infraSpecNode.getUuid(), infraSpecNode).build());
       String infraSectionNodeChildId = infraSpecNode.getUuid();

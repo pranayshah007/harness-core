@@ -7,6 +7,8 @@
 
 package io.harness.cdng.creator.variables;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
@@ -112,6 +114,17 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
               .build());
     }
 
+    YamlField strategyField = config.getNode().getField(STRATEGY);
+
+    if (strategyField != null) {
+      Map<String, YamlField> strategyDependencyMap = new HashMap<>();
+      strategyDependencyMap.put(strategyField.getNode().getUuid(), strategyField);
+      responseMap.put(strategyField.getNode().getUuid(),
+          VariableCreationResponse.builder()
+              .dependencies(DependenciesUtils.toDependenciesProto(strategyDependencyMap))
+              .build());
+    }
+
     return responseMap;
   }
 
@@ -156,6 +169,16 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       responseMap.put(executionField.getNode().getUuid(),
           VariableCreationResponse.builder()
               .dependencies(DependenciesUtils.toDependenciesProto(executionDependencyMap))
+              .build());
+    }
+    YamlField strategyField = currentField.getNode().getField(STRATEGY);
+
+    if (strategyField != null) {
+      Map<String, YamlField> strategyDependencyMap = new HashMap<>();
+      strategyDependencyMap.put(strategyField.getNode().getUuid(), strategyField);
+      responseMap.put(strategyField.getNode().getUuid(),
+          VariableCreationResponse.builder()
+              .dependencies(DependenciesUtils.toDependenciesProto(strategyDependencyMap))
               .build());
     }
     return responseMap;

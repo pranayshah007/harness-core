@@ -17,6 +17,7 @@ import io.harness.artifacts.jenkins.beans.JenkinsInternalConfig;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
@@ -38,17 +39,23 @@ public class JenkinsRegistryService {
   public boolean validateCredentials(JenkinsInternalConfig jenkinsInternalConfig) {
     if (JenkinsRegistryUtils.TOKEN_FIELD.equals(jenkinsInternalConfig.getAuthMechanism())) {
       if (isEmpty(new String(jenkinsInternalConfig.getToken()))) {
-        throw new ArtifactServerException("Token should be not empty", USER);
+        throw NestedExceptionUtils.hintWithExplanationException("Token should not be empty",
+            "Check if the token is provided", new ArtifactServerException("Token should not be empty", USER));
       }
     } else {
       if (isEmpty(jenkinsInternalConfig.getUsername()) || isEmpty(new String(jenkinsInternalConfig.getPassword()))) {
-        throw new ArtifactServerException("UserName/Password should be not empty", USER);
+        throw NestedExceptionUtils.hintWithExplanationException("UserName/Password should be not empty",
+            "Check if the UserName/Password is provided",
+            new ArtifactServerException("Token should not be empty", USER));
       }
     }
 
     if (!connectableJenkinsHttpUrl(jenkinsInternalConfig.getJenkinsUrl())) {
-      throw new ArtifactServerException(
-          "Could not reach Jenkins Server at : " + jenkinsInternalConfig.getJenkinsUrl(), USER);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          String.format(JenkinsRegistryUtils.ERROR_MESSAGE, jenkinsInternalConfig.getJenkinsUrl()),
+          JenkinsRegistryUtils.ERROR_HINT,
+          new ArtifactServerException(
+              String.format(JenkinsRegistryUtils.ERROR_MESSAGE, jenkinsInternalConfig.getJenkinsUrl()), USER));
     }
 
     return jenkinsRegistryUtils.isRunning(jenkinsInternalConfig);
@@ -69,8 +76,10 @@ public class JenkinsRegistryService {
     } catch (WingsException e) {
       throw e;
     } catch (IOException ex) {
-      throw new InvalidRequestException(
-          "Failed to fetch build details jenkins server. Reason:" + ExceptionUtils.getMessage(ex), USER);
+      throw NestedExceptionUtils.hintWithExplanationException("Failed to fetch build details jenkins server ",
+          "Check if the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Jobs.",
+          new InvalidRequestException(
+              "Failed to fetch build details jenkins server " + ExceptionUtils.getMessage(ex), USER));
     }
   }
 

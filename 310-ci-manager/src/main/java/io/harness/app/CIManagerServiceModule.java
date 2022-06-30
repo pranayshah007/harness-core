@@ -188,6 +188,13 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(BitbucketService.class).to(BitbucketServiceImpl.class);
     bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
     bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("ciTelemetryPublisherExecutor"))
+        .toInstance(new ScheduledThreadPoolExecutor(1,
+            new ThreadFactoryBuilder()
+                .setNameFormat("ci-telemetry-publisher-Thread-%d")
+                .setPriority(Thread.NORM_PRIORITY)
+                .build()));
 
     try {
       bind(TimeScaleDBService.class)

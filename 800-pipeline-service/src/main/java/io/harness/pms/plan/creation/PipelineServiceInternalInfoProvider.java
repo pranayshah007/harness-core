@@ -43,6 +43,7 @@ import io.harness.pms.sdk.core.pipeline.variables.PipelineVariableCreator;
 import io.harness.pms.sdk.core.pipeline.variables.StepGroupVariableCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
+import io.harness.pms.sdk.core.variables.StrategyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
 import io.harness.steps.StepSpecTypeConstants;
@@ -154,6 +155,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new CustomStageVariableCreator());
     variableCreators.add(new QueueStepVariableCreator());
     variableCreators.add(new CustomApprovalStepVariableCreator());
+    variableCreators.add(new StrategyVariableCreator());
     injectorUtils.injectMembers(variableCreators);
     return variableCreators;
   }

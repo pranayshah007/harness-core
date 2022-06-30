@@ -8,7 +8,6 @@
 package io.harness.steps.resourcerestraint.beans;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
@@ -40,12 +39,8 @@ public class QueueHoldingScopeTest {
   @Owner(developers = OwnerRule.FERNANDOD)
   @Category(UnitTests.class)
   public void shouldNotGetHoldingScope() {
-    assertThatCode(() -> QueueHoldingScope.getQueueHoldingScope("N/A"))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Invalid value: N/A");
-    assertThatCode(() -> QueueHoldingScope.getQueueHoldingScope("Pipeline "))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Invalid value: Pipeline ");
+    assertThat(QueueHoldingScope.getQueueHoldingScope("N/A")).isNull();
+    assertThat(QueueHoldingScope.getQueueHoldingScope("Pipeline ")).isNull();
   }
 
   @Test

@@ -417,3 +417,4 @@ io.harness.cdng.azure.config.ApplicationSettingsOutcome
 io.harness.cdng.azure.config.ConnectionStringsOutcome
 io.harness.cdng.azure.config.StartupScriptOutcome
 io.harness.cdng.service.beans.AzureWebAppServiceSpec
+io.harness.steps.resourcerestraint.QueueSpecParameters

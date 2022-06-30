@@ -35,7 +35,7 @@ public class NgAzureLogCallbackProvider implements AzureLogCallbackProvider {
 
   private boolean shouldOpenStream(String commandUnitName) {
     if (commandUnitsProgress.getCommandUnitProgressMap() == null) {
-      return false;
+      return true;
     }
 
     CommandUnitProgress unitProgress = commandUnitsProgress.getCommandUnitProgressMap().get(commandUnitName);
@@ -43,6 +43,6 @@ public class NgAzureLogCallbackProvider implements AzureLogCallbackProvider {
       return CommandExecutionStatus.RUNNING == unitProgress.getStatus();
     }
 
-    return false;
+    return true;
   }
 }

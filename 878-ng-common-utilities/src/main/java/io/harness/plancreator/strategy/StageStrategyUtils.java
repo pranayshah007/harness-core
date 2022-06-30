@@ -7,11 +7,17 @@
 
 package io.harness.plancreator.strategy;
 
+import static io.harness.expression.EngineExpressionEvaluator.EXPR_END;
+import static io.harness.expression.EngineExpressionEvaluator.EXPR_END_ESC;
+import static io.harness.expression.EngineExpressionEvaluator.EXPR_START_ESC;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.IDENTIFIER;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.NAME;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.exception.InvalidYamlException;
+import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.plan.Dependency;
@@ -29,10 +35,13 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.matrix.StrategyConstants;
 import io.harness.steps.matrix.StrategyMetadata;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -127,8 +136,14 @@ public class StageStrategyUtils {
   public void validateStrategyNode(StrategyConfig config) {
     if (config.getMatrixConfig() != null) {
       Map<String, AxisConfig> axisConfig = ((MatrixConfig) config.getMatrixConfig()).getAxes();
-      if (axisConfig.size() == 0) {
+      if (axisConfig == null || axisConfig.size() == 0) {
         throw new InvalidYamlException("No Axes defined in matrix. Please define at least one axis");
+      }
+      for (Map.Entry<String, AxisConfig> entry : axisConfig.entrySet()) {
+        if (!entry.getValue().getAxisValue().isExpression() && entry.getValue().getAxisValue().getValue().isEmpty()) {
+          throw new InvalidYamlException(String.format(
+              "Axis is empty for key [%s]. Please provide at least one value in the axis.", entry.getKey()));
+        }
       }
       if (!ParameterField.isBlank(((MatrixConfig) config.getMatrixConfig()).getExclude())
           && ((MatrixConfig) config.getMatrixConfig()).getExclude().getValue() != null) {
@@ -220,5 +235,38 @@ public class StageStrategyUtils {
                                                                  .strategyNodeName(fieldName)
                                                                  .build())));
     }
+  }
+
+  public void modifyJsonNode(JsonNode jsonNode, List<String> combinations) {
+    String newIdentifier = jsonNode.get(IDENTIFIER).asText() + "_" + String.join("_", combinations);
+    String newName = jsonNode.get(NAME).asText() + "_" + String.join("_", combinations);
+    JsonNodeUtils.updatePropertyInObjectNode(jsonNode, IDENTIFIER, newIdentifier);
+    JsonNodeUtils.updatePropertyInObjectNode(jsonNode, NAME, newName);
+    // Remove strategy node so that we don't calculate strategy on it again in the future.
+    JsonNodeUtils.deletePropertiesInJsonNode((ObjectNode) jsonNode, "strategy");
+  }
+
+  public String replaceExpressions(
+      String jsonString, Map<String, String> combinations, int currentIteration, int totalIteration) {
+    Map<String, String> expressions = createExpressions(combinations, currentIteration, totalIteration);
+    String result = jsonString;
+    for (Map.Entry<String, String> expression : expressions.entrySet()) {
+      result = result.replaceAll(expression.getKey(), expression.getValue());
+    }
+    return result;
+  }
+  public Map<String, String> createExpressions(
+      Map<String, String> combinations, int currentIteration, int totalIteration) {
+    Map<String, String> expressionsMap = new HashMap<>();
+    String matrixExpression = EXPR_START_ESC + "matrix.%s" + EXPR_END_ESC;
+    String strategyMatrixExpression = EXPR_START_ESC + "strategy.matrix.%s" + EXPR_END_ESC;
+
+    for (Map.Entry<String, String> entry : combinations.entrySet()) {
+      expressionsMap.put(String.format(matrixExpression, entry.getKey()), entry.getValue());
+      expressionsMap.put(String.format(strategyMatrixExpression, entry.getKey()), entry.getValue());
+    }
+    expressionsMap.put(EXPR_START_ESC + "strategy.currentIteration" + EXPR_END_ESC, String.valueOf(currentIteration));
+    expressionsMap.put(EXPR_START_ESC + "strategy.totalIterations" + EXPR_END, String.valueOf(totalIteration));
+    return expressionsMap;
   }
 }

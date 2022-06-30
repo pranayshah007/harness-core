@@ -25,7 +25,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("cdng.infra.beans.K8sGcpInfrastructureOutcome")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome")
-public class K8sGcpInfrastructureOutcome implements InfrastructureOutcome {
+public class K8sGcpInfrastructureOutcome extends InfrastructureDetailsAbstract implements InfrastructureOutcome {
   String connectorRef;
   String namespace;
   String cluster;

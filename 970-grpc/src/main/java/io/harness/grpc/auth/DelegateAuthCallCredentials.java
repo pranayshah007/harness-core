@@ -19,7 +19,7 @@ import java.util.concurrent.Executor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link CallCredentials} that adds delegate token to the request before calling the manager.
+ * {@link CallCredentials} that adds delegate token to the gRPC calls before calling the manager.
  */
 @Slf4j
 @Singleton
@@ -27,8 +27,9 @@ public class DelegateAuthCallCredentials extends CallCredentials {
   static final Metadata.Key<String> TOKEN_METADATA_KEY = Metadata.Key.of("token", Metadata.ASCII_STRING_MARSHALLER);
   static final Metadata.Key<String> ACCOUNT_ID_METADATA_KEY =
       Metadata.Key.of("accountId", Metadata.ASCII_STRING_MARSHALLER);
-  static final Metadata.Key<String> DELEGATE_ID = Metadata.Key.of("delegateId", Metadata.ASCII_STRING_MARSHALLER);
-  static final Metadata.Key<String> DELEGATE_TOKEN_NAME =
+  static final Metadata.Key<String> DELEGATE_ID_METADATA_KEY =
+      Metadata.Key.of("delegateId", Metadata.ASCII_STRING_MARSHALLER);
+  static final Metadata.Key<String> DELEGATE_TOKEN_NAME_METADATA_KEY =
       Metadata.Key.of("delegateTokenName", Metadata.ASCII_STRING_MARSHALLER);
 
   private final TokenGenerator tokenGenerator;
@@ -56,8 +57,8 @@ public class DelegateAuthCallCredentials extends CallCredentials {
       Metadata headers = new Metadata();
       headers.put(ACCOUNT_ID_METADATA_KEY, accountId);
       headers.put(TOKEN_METADATA_KEY, token);
-      headers.put(DELEGATE_ID, DelegateAgentCommonVariables.getDelegateId());
-      headers.put(DELEGATE_TOKEN_NAME, DelegateAgentCommonVariables.getDelegateTokenName());
+      headers.put(DELEGATE_ID_METADATA_KEY, DelegateAgentCommonVariables.getDelegateId());
+      headers.put(DELEGATE_TOKEN_NAME_METADATA_KEY, DelegateAgentCommonVariables.getDelegateTokenName());
       applier.apply(headers);
     }
   }

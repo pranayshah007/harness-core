@@ -9,7 +9,6 @@ package io.harness.cvng.analysis.services.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import io.harness.cvng.activity.beans.ActivityVerificationResultDTO;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.beans.BlueGreenAdditionalInfo;
 import io.harness.cvng.analysis.beans.CanaryAdditionalInfo;
@@ -18,12 +17,10 @@ import io.harness.cvng.analysis.beans.CanaryBlueGreenAdditionalInfo.HostSummaryI
 import io.harness.cvng.analysis.beans.CanaryBlueGreenAdditionalInfo.TrafficSplitPercentage;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.HostSummary;
 import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO.HostInfo;
-import io.harness.cvng.analysis.beans.HealthAdditionalInfo;
 import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.analysis.beans.TransactionMetricInfo;
 import io.harness.cvng.analysis.entities.DeploymentLogAnalysis;
 import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis;
-import io.harness.cvng.analysis.entities.HealthVerificationPeriod;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.analysis.services.api.VerificationJobInstanceAnalysisService;
@@ -40,7 +37,6 @@ import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.HostRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.CVNGObjectUtils;
-import io.harness.cvng.dashboard.services.api.HealthVerificationHeatMapService;
 import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
@@ -69,7 +65,6 @@ public class VerificationJobInstanceAnalysisServiceImpl implements VerificationJ
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private HostRecordService hostRecordService;
   @Inject private ActivityService activityService;
-  @Inject private HealthVerificationHeatMapService healthVerificationHeatMapService;
 
   @Override
   public Optional<Risk> getLatestRiskScore(String accountId, String verificationJobInstanceId) {
@@ -145,21 +140,6 @@ public class VerificationJobInstanceAnalysisServiceImpl implements VerificationJ
     canaryBlueGreenAdditionalInfo.setFieldNames();
 
     return canaryBlueGreenAdditionalInfo;
-  }
-  @Override
-  public HealthAdditionalInfo getHealthAdditionInfo(String accountId, VerificationJobInstance verificationJobInstance) {
-    Set<ActivityVerificationResultDTO.CategoryRisk> preActivityRisks =
-        healthVerificationHeatMapService.getVerificationJobInstanceAggregatedRisk(
-            verificationJobInstance.getAccountId(), verificationJobInstance.getUuid(),
-            HealthVerificationPeriod.PRE_ACTIVITY);
-    Set<ActivityVerificationResultDTO.CategoryRisk> postActivityRisks =
-        healthVerificationHeatMapService.getVerificationJobInstanceAggregatedRisk(
-            verificationJobInstance.getAccountId(), verificationJobInstance.getUuid(),
-            HealthVerificationPeriod.POST_ACTIVITY);
-    return HealthAdditionalInfo.builder()
-        .preActivityRisks(preActivityRisks)
-        .postActivityRisks(postActivityRisks)
-        .build();
   }
 
   @Override

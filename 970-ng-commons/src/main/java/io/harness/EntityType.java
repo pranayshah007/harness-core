@@ -170,6 +170,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.TEMPLATE)
   TEMPLATE(ModuleType.TEMPLATESERVICE, EntityTypeConstants.TEMPLATE, NGTemplateReference.class,
       EntityYamlRootNames.TEMPLATE),
+  @JsonProperty(EntityTypeConstants.TEMPLATE_STAGE)
+  TEMPLATE_STAGE(ModuleType.TEMPLATESERVICE, EntityTypeConstants.TEMPLATE_STAGE, NGTemplateReference.class,
+      EntityYamlRootNames.TEMPLATE),
   @JsonProperty(EntityTypeConstants.TRIGGERS)
   TRIGGERS(ModuleType.CD, EntityTypeConstants.TRIGGERS, TriggerReference.class, EntityYamlRootNames.TRIGGERS),
   @JsonProperty(EntityTypeConstants.MONITORED_SERVICE)

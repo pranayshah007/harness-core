@@ -36,4 +36,8 @@ public class DelegateAgentConfig extends Configuration {
   @JsonProperty private final boolean clientToolsDownloadDisabled;
   @JsonProperty private final boolean installClientToolsInBackground;
   @JsonProperty private final int maxCachedArtifacts;
+  @JsonProperty private final String clientCertificateFilePath;
+  @JsonProperty private final String clientCertificateKeyFilePath;
+  @JsonProperty private final boolean trustAllCertificates;
+  @JsonProperty private final boolean grpcAuthorityModificationDisabled;
 }

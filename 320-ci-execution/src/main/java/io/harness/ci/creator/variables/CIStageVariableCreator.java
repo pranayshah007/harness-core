@@ -7,6 +7,8 @@
 
 package io.harness.ci.creator.variables;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.IntegrationStageNode;
@@ -51,6 +53,17 @@ public class CIStageVariableCreator extends AbstractStageVariableCreator<Integra
       VariableCreationResponse variablesResponse =
           VariableCreatorHelper.createVariableResponseForVariables(variablesField, YAMLFieldNameConstants.STAGE);
       responseMap.put(variablesField.getNode().getUuid(), variablesResponse);
+    }
+
+    YamlField strategyField = config.getNode().getField(STRATEGY);
+
+    if (strategyField != null) {
+      Map<String, YamlField> strategyDependencyMap = new HashMap<>();
+      strategyDependencyMap.put(strategyField.getNode().getUuid(), strategyField);
+      responseMap.put(strategyField.getNode().getUuid(),
+          VariableCreationResponse.builder()
+              .dependencies(DependenciesUtils.toDependenciesProto(strategyDependencyMap))
+              .build());
     }
 
     return responseMap;

@@ -28,11 +28,13 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperD
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
+import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.inputset.gitsync.InputSetYamlDTOMapper;
@@ -124,6 +126,22 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       log.error(String.format("Error while retrieving input set [%s]", identifier), e);
       throw new InvalidRequestException(
           String.format("Error while retrieving input set [%s]: %s", identifier, e.getMessage()));
+    }
+    if (!optionalInputSetEntity.isPresent()) {
+      throw new InvalidRequestException(
+          String.format("InputSet with the given ID: %s does not exist or has been deleted", identifier));
+    }
+    InputSetEntity inputSetEntity = optionalInputSetEntity.get();
+    if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
+      ScmGitMetaData inputSetScmGitMetaData = GitAwareContextHelper.getScmGitMetaData();
+      try {
+        InputSetValidationHelper.validateInputSet(this, pmsPipelineService, inputSetEntity, false);
+      } finally {
+        // input set validation involves fetching the pipeline, which can change the global scm metadata to that of the
+        // pipeline. Hence, it needs to be changed back to that of the input set once validation is complete,
+        // irrespective of whether the validation throws an exception or not
+        GitAwareContextHelper.updateScmGitMetaData(inputSetScmGitMetaData);
+      }
     }
     return optionalInputSetEntity;
   }

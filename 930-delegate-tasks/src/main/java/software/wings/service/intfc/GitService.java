@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.logging.LogCallback;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
@@ -30,6 +31,9 @@ public interface GitService {
   GitFetchFilesResult fetchFilesByPath(GitConfig gitConfig, String connectorId, String commitId, String branch,
       List<String> filePaths, boolean useBranch, boolean shouldExportCommitSha);
 
+  GitFetchFilesResult fetchFilesByPath(GitConfig gitConfig, String connectorId, String commitId, String branch,
+      List<String> filePaths, boolean useBranch, boolean shouldExportCommitSha, LogCallback logCallback);
+
   GitFetchFilesResult fetchFilesBetweenCommits(
       GitConfig gitConfig, String newCommitId, String oldCommitId, String connectorId);
 
@@ -38,6 +42,9 @@ public interface GitService {
 
   String downloadFiles(
       GitConfig gitConfig, GitFileConfig gitFileConfig, String destinationDirectory, boolean shouldExportCommitSha);
+
+  String downloadFiles(GitConfig gitConfig, GitFileConfig gitFileConfig, String destinationDirectory,
+      boolean shouldExportCommitSha, LogCallback executionLogCallback);
 
   GitCommitAndPushResult commitAndPush(GitOperationContext gitOperationContext);
 }

@@ -40,7 +40,7 @@ public enum QueueHoldingScope {
     return Arrays.stream(QueueHoldingScope.values())
         .filter(hs -> hs.yamlName.equalsIgnoreCase(yamlName))
         .findFirst()
-        .orElseThrow(() -> new IllegalArgumentException("Invalid value: " + yamlName));
+        .orElse(null);
   }
 
   QueueHoldingScope(String yamlName, HoldingScope holdingScope) {
