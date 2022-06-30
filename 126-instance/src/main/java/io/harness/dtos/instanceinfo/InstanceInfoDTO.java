@@ -12,13 +12,15 @@ import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.harness.dtos.gitops.GitOpsInstanceRequestDTO;
 
 @OwnedBy(HarnessTeam.DX)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = K8sInstanceInfoDTO.class, name = "K8s")
   , @JsonSubTypes.Type(value = NativeHelmInstanceInfoDTO.class, name = "NativeHelm"),
-      @JsonSubTypes.Type(value = ReferenceInstanceInfoDTO.class, name = "Reference"),
+       @JsonSubTypes.Type(value = GitOpsInstanceRequestDTO.class, name = "GitOps"),
+        @JsonSubTypes.Type(value = ReferenceInstanceInfoDTO.class, name = "Reference"),
       @JsonSubTypes.Type(value = ServerlessAwsLambdaInstanceInfoDTO.class, name = "ServerlessAwsLambda")
 })
 public abstract class InstanceInfoDTO {

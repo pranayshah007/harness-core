@@ -24,7 +24,7 @@ public class GitOpsRequestDTOMapper {
       GitOpsInstanceRequestDTO gitOpsInstanceRequestDTO, String accountId, K8sInstanceBasicInfoDTO k8sInstanceInfoDTO) {
     String orgId = gitOpsInstanceRequestDTO.getOrgIdentifier();
     String projId = gitOpsInstanceRequestDTO.getProjectIdentifier();
-    String envId = gitOpsInstanceRequestDTO.getEnvIdentifier();
+    String envId = gitOpsInstanceRequestDTO.getEnvIdentifierServiceIdentifier();
     String svcId = gitOpsInstanceRequestDTO.getServiceIdentifier();
 
     Environment env =
@@ -42,7 +42,7 @@ public class GitOpsRequestDTOMapper {
         .envType(env.getType())
         .serviceIdentifier(gitOpsInstanceRequestDTO.getServiceIdentifier())
         .serviceName(service.getName())
-        .instanceKey(gitOpsInstanceRequestDTO.getInstanceKey())
+        .instanceKey(gitOpsInstanceRequestDTO.prepareInstanceKey())
         .instanceType(InstanceType.K8S_INSTANCE)
         .lastDeployedById(gitOpsInstanceRequestDTO.getLastDeployedById())
         .lastDeployedByName(gitOpsInstanceRequestDTO.getLastDeployedByName())

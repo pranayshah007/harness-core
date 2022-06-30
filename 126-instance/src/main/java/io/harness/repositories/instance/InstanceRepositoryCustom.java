@@ -54,6 +54,8 @@ public interface InstanceRepositoryCustom {
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
       long timestampInMs, int limit);
 
+  List<Instance> getActiveInstancesByServiceIdEnvId(String accountIdentifier, String serviceId, String envId);
+
   AggregationResults<CountByServiceIdAndEnvType> getActiveServiceInstanceCountBreakdown(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs);
 

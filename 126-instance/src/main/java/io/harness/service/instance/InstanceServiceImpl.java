@@ -195,6 +195,15 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   /*
+    Returns aggregated result containing total {limit} instances for given buildIds
+   */
+  @Override
+  public List<InstanceDTO> getActiveInstancesByServiceIdEnvId(String accountIdentifier, String serviceId, String envId) {
+      return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByServiceIdEnvId(
+              accountIdentifier, serviceId, envId));
+  }
+
+  /*
     Returns breakup of active instances by envType at a given timestamp for specified accountIdentifier,
     projectIdentifier, orgIdentifier and serviceIds
   */

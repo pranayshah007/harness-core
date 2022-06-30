@@ -12,6 +12,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.service.instance.InstanceService;
+import io.harness.service.instancesync.InstanceSyncService;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -55,13 +56,17 @@ public class GitOpsInstanceSyncResource {
   @ApiOperation(value = "Create instances and save in DB", nickname = "createGitOpsInstances")
   public ResponseDTO<PageResponse<InstanceDTO>> createGitOpsInstances(
       @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotEmpty @QueryParam("envId") String envId,
+      @NotEmpty @QueryParam("servId") String servId,
       @NotNull @Valid List<GitOpsInstanceRequestDTO> gitOpsInstanceRequestDTOList) {
+
     List<InstanceDTO> instanceDTOList =
-        instanceService.saveAll(gitOpsRequestDTOMapper.instanceDTOList(gitOpsInstanceRequestDTOList, accountId));
+            instanceService.getActiveInstancesByServiceIdEnvId(accountId, envId, servId);
     PageResponse<InstanceDTO> pageResponse =
         PageResponse.<InstanceDTO>builder().content(new ArrayList<>(instanceDTOList)).empty(false).build();
     return ResponseDTO.newResponse(pageResponse);
   }
+
   @DELETE
   @Path("/delete")
   @ApiOperation(value = "Delete instances", nickname = "deleteGitOpsInstances")

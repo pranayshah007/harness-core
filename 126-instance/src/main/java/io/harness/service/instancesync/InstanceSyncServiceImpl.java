@@ -19,6 +19,7 @@ import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
+import io.harness.entities.Instance;
 import io.harness.exception.InvalidRequestException;
 import io.harness.helper.InstanceSyncHelper;
 import io.harness.helper.InstanceSyncLocalCacheManager;
@@ -73,6 +74,62 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
   private static final long TWO_WEEKS_IN_MILLIS = (long) 14 * 24 * 60 * 60 * 1000;
 
   enum OperationsOnInstances { ADD, DELETE, UPDATE }
+
+  @Override
+  public void processInstanceSyncForGitops(String accountIdentifier, String perpetualTaskId,
+                                           InstanceSyncPerpetualTaskResponse instanceSyncPerpetualTaskResponse) {
+
+    try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OverrideBehavior.OVERRIDE_ERROR);
+         AutoLogContext ignore2 = InstanceSyncLogContext.builder()
+                 .instanceSyncFlow(InstanceSyncFlow.PERPETUAL_TASK_FLOW.name())
+                 .perpetualTaskId(perpetualTaskId)
+                 .build(OverrideBehavior.OVERRIDE_ERROR)) {
+      if (instanceSyncPerpetualTaskResponse.getServerInstanceDetails() == null) {
+        log.error("server instances details cannot be null");
+        return;
+      }
+
+      logServerInstances(instanceSyncPerpetualTaskResponse.getServerInstanceDetails());
+      Optional<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOOptional =
+              instanceSyncPerpetualTaskInfoService.findByPerpetualTaskId(accountIdentifier, perpetualTaskId);
+      if (!instanceSyncPerpetualTaskInfoDTOOptional.isPresent()) {
+        log.error("No instance sync perpetual task info record found for perpetual task id : {}", perpetualTaskId);
+        instanceSyncPerpetualTaskService.deletePerpetualTask(accountIdentifier, perpetualTaskId);
+        return;
+      }
+
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO =
+              instanceSyncPerpetualTaskInfoDTOOptional.get();
+      try (AutoLogContext ignore3 =
+                   InstanceSyncLogContext.builder()
+                           .infrastructureMappingId(instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId())
+                           .build(OverrideBehavior.OVERRIDE_ERROR);) {
+        Optional<InfrastructureMappingDTO> infrastructureMappingDTO =
+                infrastructureMappingService.getByInfrastructureMappingId(
+                        instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId());
+        if (!infrastructureMappingDTO.isPresent()) {
+          log.error("No infrastructure mapping found for infrastructure mapping id : {}",
+                  instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId());
+          // delete perpetual task as well as instance sync perpetual task info record
+          instanceSyncHelper.cleanUpInstanceSyncPerpetualTaskInfo(instanceSyncPerpetualTaskInfoDTO);
+          return;
+        }
+
+        try (
+                AcquiredLock<?> acquiredLock = persistentLocker.waitToAcquireLock(InstanceSyncConstants.INSTANCE_SYNC_PREFIX
+                                + instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId(),
+                        InstanceSyncConstants.INSTANCE_SYNC_LOCK_TIMEOUT, InstanceSyncConstants.INSTANCE_SYNC_WAIT_TIMEOUT)) {
+          AbstractInstanceSyncHandler instanceSyncHandler = instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+                  instanceSyncPerpetualTaskResponse.getDeploymentType());
+          performInstanceSync(instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO.get(),
+                  instanceSyncPerpetualTaskResponse.getServerInstanceDetails(), instanceSyncHandler, false);
+          log.info("Instance Sync completed");
+        } catch (Exception exception) {
+          log.error("Exception occured during instance sync", exception);
+        }
+      }
+    }
+  }
 
   @Override
   public void processInstanceSyncForNewDeployment(DeploymentEvent deploymentEvent) {
@@ -213,6 +270,18 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     processInstances(instancesToBeModified);
   }
 
+  /**
+   * @param performGitopsInstanceSync details of all instances present in current state of server
+   */
+  private void performGitopsInstanceSync(List<Instance> instanceList,
+                                   AbstractInstanceSyncHandler instanceSyncHandler, boolean isNewDeploymentSync) {
+    // Prepare final list of instances to be added / deleted / updated
+    Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified =
+            handleGitopsInstanceSync(instanceList,
+                    instanceSyncHandler, isNewDeploymentSync);
+    processInstances(instancesToBeModified);
+  }
+
   private void processInstances(Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified) {
     deleteInstances(instancesToBeModified.get(OperationsOnInstances.DELETE));
     // ** check if saveAll method can be used safely to update multiple records together
@@ -251,6 +320,42 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
           getSyncKeysNotFromServerInstances(
               syncKeyToInstancesInDBMap.keySet(), syncKeyToInstanceInfoFromServerMap.keySet()),
           syncKeyToInstancesInDBMap, instancesToBeModified);
+    }
+
+    return instancesToBeModified;
+  }
+
+  /**
+   * This method will process instances from DB and instances from server and return final list of
+   * instances to be added / deleted / updated
+   * Also, update deployment info status in instance sync perpetual task info based on instances from server
+   */
+  Map<OperationsOnInstances, List<InstanceDTO>> handleGitopsInstanceSync(
+          list<InstanceDTO> instanceDtoList,
+          AbstractInstanceSyncHandler instanceSyncHandler, boolean isNewDeploymentSync) {
+
+    List<InstanceDTO> instancesInDB = instanceService.getActiveInstancesByServiceIdEnvId(
+            infrastructureMappingDTO.getAccountIdentifier(),
+            infrastructureMappingDTO.getProjectIdentifier(), infrastructureMappingDTO.getId());
+]
+    // map all instances and server instances infos to instance sync handler key (corresponding to deployment info)
+    // basically trying to group instances corresponding to a "cluster" together
+    Map<String, List<InstanceDTO>> syncKeyToInstancesInDBMap =
+            getSyncKeyToInstancesInDBMap(instanceSyncHandler, instancesInDB);
+
+    Map<String, List<InstanceInfoDTO>> syncKeyToInstanceInfoFromServerMap =
+            getSyncKeyToInstancesFromServerMap(instanceSyncHandler, instanceDtoList);
+
+    Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified = initMapForTrackingFinalListOfInstances();
+
+    processInstanceSyncForSyncKeysFromServerInstances(instanceSyncHandler, syncKeyToInstancesInDBMap, syncKeyToInstanceInfoFromServerMap,
+            instancesToBeModified, isNewDeploymentSync);
+
+    if (!isNewDeploymentSync) {
+      processInstanceSyncForSyncKeysNotFromServerInstances(
+              getSyncKeysNotFromServerInstances(
+                      syncKeyToInstancesInDBMap.keySet(), syncKeyToInstanceInfoFromServerMap.keySet()),
+              syncKeyToInstancesInDBMap, instancesToBeModified);
     }
 
     return instancesToBeModified;

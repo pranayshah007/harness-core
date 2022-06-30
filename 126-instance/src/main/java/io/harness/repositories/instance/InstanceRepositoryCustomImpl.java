@@ -135,7 +135,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   }
 
   /*
-    Returns instances that are active at a given timestamp for specified accountIdentifier, projectIdentifier,
+    Return instances that are active at a given timestamp for specified accountIdentifier, projectIdentifier,
     orgIdentifier and serviceId
   */
   @Override
@@ -148,6 +148,21 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     Query query = new Query().addCriteria(criteria);
     return mongoTemplate.find(query, Instance.class);
   }
+
+//  /*
+//  Return instances that are active for specified accountIdentifier, projectIdentifier,
+//  orgIdentifier and serviceId
+//*/
+//  @Override
+//  public List<Instance> getActiveInstancesByServiceId(
+//          String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+//    Criteria criteria =
+//            getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier)
+//                    .and(InstanceKeys.serviceIdentifier)
+//                    .is(serviceId);
+//    Query query = new Query().addCriteria(criteria);
+//    return mongoTemplate.find(query, Instance.class);
+//  }
 
   /*
     Return instances that are active currently for specified accountIdentifier, projectIdentifier,
@@ -222,6 +237,23 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   }
 
   /*
+  Returns instances that are active at a given timestamp for specified accountIdentifier, projectIdentifier,
+  orgIdentifier, serviceId, envId and list of buildIds
+*/
+  @Override
+  public List<Instance> getActiveInstancesByServiceIdEnvId(String accountIdentifier, String serviceId, String envId) {
+    Criteria criteria =
+            getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, )
+                    .and(InstanceKeys.envIdentifier)
+                    .is(envId)
+                    .and(InstanceKeys.serviceIdentifier)
+                    .is(serviceId);
+
+    Query query = new Query().addCriteria(criteria);
+    return mongoTemplate.find(query, Instance.class);
+  }
+
+  /*
     Returns breakup of active instances by envType at a given timestamp for specified accountIdentifier,
     projectIdentifier, orgIdentifier and serviceId
   */
@@ -251,7 +283,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   }
 
   /*
-    Create criteria to query for all active service instances for given accountIdentifier, orgIdentifier,
+    Create criteria to query for all active service instances at a given timestamp for given accountIdentifier, orgIdentifier,
     projectIdentifier
   */
   private Criteria getCriteriaForActiveInstances(
@@ -268,6 +300,20 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     Criteria filterNotDeleted = Criteria.where(InstanceKeys.isDeleted).is(false);
 
     return baseCriteria.andOperator(filterCreatedAt.orOperator(filterNotDeleted, filterDeletedAt));
+  }
+
+  /*
+  Create criteria to query for all active service instances for given accountIdentifier, orgIdentifier,
+  projectIdentifier
+*/
+  private Criteria getCriteriaForActiveInstances(
+          String accountIdentifier) {
+    Criteria baseCriteria = Criteria.where(InstanceKeys.accountIdentifier)
+            .is(accountIdentifier);
+
+    Criteria filterNotDeleted = Criteria.where(InstanceKeys.isDeleted).is(false);
+
+    return baseCriteria.andOperator(filterNotDeleted);
   }
 
   @Override

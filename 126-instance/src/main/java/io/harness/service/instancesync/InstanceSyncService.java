@@ -14,6 +14,9 @@ import io.harness.models.DeploymentEvent;
 
 @OwnedBy(HarnessTeam.DX)
 public interface InstanceSyncService {
+  void processInstanceSyncForGitops(String accountIdentifier, String perpetualTaskId,
+                                    InstanceSyncPerpetualTaskResponse instanceSyncPerpetualTaskResponse);
+
   void processInstanceSyncForNewDeployment(DeploymentEvent deploymentEvent);
 
   void processInstanceSyncByPerpetualTask(String accountIdentifier, String perpetualTaskId,

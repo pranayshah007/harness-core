@@ -48,6 +48,8 @@ public interface InstanceService {
   List<InstanceDTO> getActiveInstances(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, long timestampInMs);
 
+  List<InstanceDTO> getActiveInstancesByServiceIdEnvId(String accountIdentifier, String serviceId, String envId);
+
   List<InstanceDTO> getActiveInstancesByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
 
@@ -63,6 +65,7 @@ public interface InstanceService {
   AggregationResults<InstancesByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
       long timestampInMs, int limit);
+
 
   AggregationResults<CountByServiceIdAndEnvType> getActiveServiceInstanceCountBreakdown(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs);
