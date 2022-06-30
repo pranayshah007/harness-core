@@ -9,7 +9,6 @@ package io.harness.steps.matrix;
 
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
-import io.harness.jackson.JsonNodeUtils;
 import io.harness.plancreator.strategy.AxisConfig;
 import io.harness.plancreator.strategy.ExcludeConfig;
 import io.harness.plancreator.strategy.MatrixConfig;

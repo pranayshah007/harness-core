@@ -28,7 +28,7 @@ public class StrategyHelper {
 
   public List<JsonNode> expandJsonNodes(JsonNode nodeWithStrategy) throws IOException {
     JsonNode node = nodeWithStrategy.get("strategy");
-    if (node == null) {
+    if (node == null || node.isNull()) {
       return Collections.singletonList(nodeWithStrategy);
     }
     StrategyConfig strategyConfig = JsonPipelineUtils.read(node.toString(), StrategyConfig.class);
