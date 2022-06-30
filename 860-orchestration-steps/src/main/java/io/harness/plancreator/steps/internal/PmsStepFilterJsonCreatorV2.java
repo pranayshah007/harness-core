@@ -20,7 +20,7 @@ import java.util.Set;
 public class PmsStepFilterJsonCreatorV2 extends GenericStepPMSFilterJsonCreatorV2 {
   @Override
   public Set<String> getSupportedStepTypes() {
-    return Sets.newHashSet(StepSpecTypeConstants.HTTP, StepSpecTypeConstants.JIRA_CREATE,
+    return Sets.newHashSet(StepSpecTypeConstants.HTTP, StepSpecTypeConstants.EMAIL, StepSpecTypeConstants.JIRA_CREATE,
         StepSpecTypeConstants.JIRA_UPDATE, StepSpecTypeConstants.JIRA_APPROVAL, StepSpecTypeConstants.HARNESS_APPROVAL,
         StepSpecTypeConstants.SERVICENOW_APPROVAL, StepSpecTypeConstants.BARRIER, StepSpecTypeConstants.POLICY_STEP,
         StepSpecTypeConstants.SERVICENOW_CREATE, StepSpecTypeConstants.SERVICENOW_UPDATE);

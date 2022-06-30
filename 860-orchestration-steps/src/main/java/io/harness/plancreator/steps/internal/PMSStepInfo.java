@@ -15,11 +15,11 @@ import io.harness.plancreator.steps.barrier.BarrierStepInfo;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.common.StepParametersUtils;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
+import io.harness.plancreator.steps.email.EmailStepInfo;
 import io.harness.plancreator.steps.http.HttpStepInfo;
 import io.harness.plancreator.steps.http.PmsAbstractStepNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.steps.Email.EmailBaseStepInfo;
 import io.harness.steps.StepUtils;
 import io.harness.steps.approval.step.harness.HarnessApprovalStepInfo;
 import io.harness.steps.approval.step.jira.JiraApprovalStepInfo;
@@ -39,7 +39,7 @@ import io.swagger.annotations.ApiModel;
     subTypes = {BarrierStepInfo.class, HttpStepInfo.class, FlagConfigurationStepInfo.class,
         HarnessApprovalStepInfo.class, JiraApprovalStepInfo.class, JiraCreateStepInfo.class, JiraUpdateStepInfo.class,
         ShellScriptStepInfo.class, ServiceNowApprovalStepInfo.class, PolicyStepInfo.class,
-        ServiceNowCreateStepInfo.class, ServiceNowUpdateStepInfo.class, EmailBaseStepInfo.class})
+        ServiceNowCreateStepInfo.class, ServiceNowUpdateStepInfo.class, EmailStepInfo.class})
 public interface PMSStepInfo extends StepSpecType, WithStepElementParameters {
   default StepParameters getStepParameters(
       PmsAbstractStepNode stepElementConfig, OnFailRollbackParameters failRollbackParameters, PlanCreationContext ctx) {

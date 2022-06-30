@@ -1,33 +1,34 @@
 package io.harness.plancreator.steps.email;
 
+import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
-import io.harness.advisers.rollback.OnFailRollbackParameters;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
+import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.WithDelegateSelector;
-import io.harness.plancreator.steps.http.PmsAbstractStepNode;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
-import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
-import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.steps.Email.EmailBaseStepInfo;
+import io.harness.steps.Email.EmailStep;
+import io.harness.steps.Email.EmailStepParameters;
 import io.harness.walktree.beans.VisitableChildren;
+import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 
 import java.util.List;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public class EmailStepInfo extends EmailBaseStepInfo implements PMSStepInfo, Visitable, WithDelegateSelector {
+@Data
+@NoArgsConstructor
+@OwnedBy(CDC)
+public class EmailStepInfo implements PMSStepInfo, Visitable, WithDelegateSelector {
   @YamlSchemaTypes(value = {runtime}) ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @Override
   public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
     return getDelegateSelectors();
-  }
-
-  @Override
-  public void setDelegateSelectors(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    this.delegateSelectors = delegateSelectors;
   }
 
   @Override
@@ -37,7 +38,7 @@ public class EmailStepInfo extends EmailBaseStepInfo implements PMSStepInfo, Vis
 
   @Override
   public StepType getStepType() {
-    return null;
+    return EmailStep.STEP_TYPE;
   }
 
   @Override
@@ -46,8 +47,12 @@ public class EmailStepInfo extends EmailBaseStepInfo implements PMSStepInfo, Vis
   }
 
   @Override
-  public StepParameters getStepParameters(
-      PmsAbstractStepNode stepElementConfig, OnFailRollbackParameters failRollbackParameters, PlanCreationContext ctx) {
-    return PMSStepInfo.super.getStepParameters(stepElementConfig, failRollbackParameters, ctx);
+  public SpecParameters getSpecParameters() {
+    return EmailStepParameters.builder()
+        .body(body)
+        .cc(getCc())
+        .delegateSelectors(getDelegateSelectors())
+        .to(getTo())
+        .build();
   }
 }

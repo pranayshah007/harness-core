@@ -1,20 +1,27 @@
 package io.harness.steps.Email;
 
+import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 
+import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public class EmailStepParameters extends EmailBaseStepInfo implements SpecParameters {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class EmailStepParameters implements SpecParameters {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  @Builder(builderMethodName = "infoBuilder")
-  public EmailStepParameters(ParameterField<List<String>> To_Mail_IDs, ParameterField<List<String>> CC_Mail_IDs,
-      ParameterField<String> subject, ParameterField<String> body,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(To_Mail_IDs, CC_Mail_IDs, subject, body);
-    this.delegateSelectors = delegateSelectors;
-  }
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> to;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> cc;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> subject;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> body;
 }

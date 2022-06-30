@@ -42,6 +42,7 @@ public interface EntityTypeConstants {
   String GIT_REPOSITORIES = "GitRepositories";
   String FEATURE_FLAGS = "FeatureFlags";
   String HTTP = "Http";
+  String EMAIL = "Email";
   String JIRA_CREATE = "JiraCreate";
   String JIRA_UPDATE = "JiraUpdate";
   String SHELL_SCRIPT = "ShellScript";
