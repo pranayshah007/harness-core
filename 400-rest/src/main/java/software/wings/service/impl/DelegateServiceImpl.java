@@ -1377,7 +1377,7 @@ public class DelegateServiceImpl implements DelegateService {
       params.put("isOnPrem", String.valueOf(isOnPrem));
       if (!isOnPrem) {
         final String watcherVersion =
-            delegateVersionService.getWatcherJarVersions(templateParameters.getAccountId()).split("\\.")[2];
+            substringBefore(delegateVersionService.getWatcherJarVersions(templateParameters.getAccountId()), "-").trim().split("\\.")[2];
         params.put("watcherJarVersion", watcherVersion);
       }
 
