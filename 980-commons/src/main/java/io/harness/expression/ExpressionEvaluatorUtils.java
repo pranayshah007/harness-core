@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.lang.String.format;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.algorithm.IdentifierName;
 import io.harness.exception.CriticalExpressionEvaluationException;
@@ -19,11 +20,11 @@ import com.google.common.collect.ImmutableSet;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -109,27 +110,43 @@ public class ExpressionEvaluatorUtils {
       // Now we replace each pattern of type ABCD[0-9]+WXYZ in result string with its correct value.
       for (;;) {
         final Matcher matcher = pattern.matcher(result);
-        // If we don't find ABCD[0-9]+WXYZ pattern in string, it means there is nothing left to replace and we exit the
+        // If we don't find ABCD[0-9]+WXYZ pattern in string it means there is nothing left to replace, and we exit the
         // outer loop
         if (!matcher.find()) {
           break;
         }
 
-        StringBuffer sb = new StringBuffer();
-        // We iterate till all the matched patterns are replaced.
-        do {
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2,
+            new ThreadFactoryBuilder().setNameFormat("expression-evaluator-%d").build());
+        List<String> names = new ArrayList<>();
+        Map<String, Future<Object>> futureValues = new HashMap<>();
+        for (int g = 0; g < matcher.groupCount(); g++) {
           // Extract the current matched entry with pattern. After this step: name - ABCD1WXYZ
-          String name = matcher.group(0);
-          // Get the value from ctx map. After this step: value - example
-          String value = String.valueOf(ctx.get(name));
-          // '\' and '$' are escaped in the value. The matched entry with pattern is replaced with value.
-          // This appends the string to sb till the replaced matched entry.
-          // After this step: sb - echo "example
-          matcher.appendReplacement(sb, value.replace("\\", "\\\\").replace("$", "\\$"));
-        } while (matcher.find());
-        // This appends the left over string to sb. After this step: sb - echo "example" && echo "1234"
-        matcher.appendTail(sb);
-        result = sb.toString();
+          String name = matcher.group(g);
+          names.add(name);
+          // Get the value from ctx map in a background thread so that secret functors execute in parallel
+          futureValues.put(name, executorService.submit(() -> ctx.get(name)));
+        }
+
+        try {
+          StringBuffer sb = new StringBuffer();
+          // We iterate till all the matched patterns are replaced.
+          for (String name : names) {
+            // Get the value from future result (from ctx map). After this step: value - example
+            String value = String.valueOf(futureValues.get(name).get());
+            // '\' and '$' are escaped in the value. The matched entry with pattern is replaced with value.
+            // This appends the string to sb till the replaced matched entry.
+            // After this step: sb - echo "example
+            matcher.appendReplacement(sb, value.replace("\\", "\\\\").replace("$", "\\$"));
+          }
+          // This appends the leftover string to sb. After this step: sb - echo "example" && echo "1234"
+          matcher.appendTail(sb);
+          result = sb.toString();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        } catch (ExecutionException e) {
+          log.error("Error during expression evaluation", e);
+        }
       }
       if (result.length() > DEBUG_LENGTH_LIMIT) {
         log.info("The expression length: {} has exceeded {} limit.", result.length(), DEBUG_LENGTH_LIMIT);
