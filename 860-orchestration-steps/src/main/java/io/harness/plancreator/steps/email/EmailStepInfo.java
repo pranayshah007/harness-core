@@ -4,6 +4,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.WithDelegateSelector;
@@ -17,7 +18,9 @@ import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 
+import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -25,6 +28,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @OwnedBy(CDC)
 public class EmailStepInfo implements PMSStepInfo, Visitable, WithDelegateSelector {
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> to;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> cc;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> subject;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> body;
   @YamlSchemaTypes(value = {runtime}) ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @Override
   public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
@@ -48,11 +55,6 @@ public class EmailStepInfo implements PMSStepInfo, Visitable, WithDelegateSelect
 
   @Override
   public SpecParameters getSpecParameters() {
-    return EmailStepParameters.builder()
-        .body(body)
-        .cc(getCc())
-        .delegateSelectors(getDelegateSelectors())
-        .to(getTo())
-        .build();
+    return EmailStepParameters.builder().body(body).cc(cc).delegateSelectors(delegateSelectors).to(to).build();
   }
 }
