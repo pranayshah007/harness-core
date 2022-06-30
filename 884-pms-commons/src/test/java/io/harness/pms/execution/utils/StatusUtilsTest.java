@@ -25,6 +25,7 @@ import static io.harness.pms.contracts.execution.Status.TIMED_WAITING;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.PRASHANT;
+import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -357,5 +358,19 @@ public class StatusUtilsTest extends CategoryTest {
         .containsExactlyInAnyOrder(EXPIRED, FAILED, INTERVENTION_WAITING, RUNNING, APPROVAL_REJECTED);
     assertThatThrownBy(() -> StatusUtils.planAllowedStartSet(Status.UNRECOGNIZED))
         .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testCalculateStatusSkipped() {
+    List<Status> statuses = Arrays.asList(
+        Status.SKIPPED, Status.SKIPPED, Status.SKIPPED, Status.SKIPPED, Status.SKIPPED, Status.SKIPPED, Status.SKIPPED);
+
+    Status status = StatusUtils.calculateStatus(statuses, "PLAN_EXECUTION_ID");
+    assertThat(status).isEqualTo(Status.SKIPPED);
+
+    status = StatusUtils.calculateStatusForNode(statuses, "NODE_EXECUTION_ID");
+    assertThat(status).isEqualTo(Status.SKIPPED);
   }
 }
