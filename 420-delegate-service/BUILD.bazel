@@ -16,6 +16,7 @@ java_library(
         "//955-outbox-sdk:module",
         "//clients/audit:module",
         "@maven//:ru_vyarus_guice_validator",
+        "@maven//:io_dropwizard_modules_dropwizard_protobuf"
     ],
 )
 

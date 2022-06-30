@@ -34,6 +34,7 @@ import static java.time.Duration.ofHours;
 import static java.time.Duration.ofSeconds;
 import static java.util.Arrays.asList;
 
+import io.dropwizard.jersey.protobuf.InvalidProtocolBufferExceptionMapper;
 import io.dropwizard.jersey.protobuf.ProtobufBundle;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.GraphQLModule;
@@ -1521,7 +1522,8 @@ public class WingsApplication extends Application<MainConfiguration> {
 
   private void registerJerseyProviders(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(KryoFeature.class));
-    //environment.jersey().register(injector.getInstance(ProtocolBufferMessageBodyProvider.class));
+    environment.jersey().register(injector.getInstance(ProtocolBufferMessageBodyProvider.class));
+    environment.jersey().register(InvalidProtocolBufferExceptionMapper.class);
     environment.jersey().register(EarlyEofExceptionMapper.class);
     environment.jersey().register(JsonProcessingExceptionMapper.class);
     environment.jersey().register(ConstraintViolationExceptionMapper.class);

@@ -176,7 +176,7 @@ public interface DelegateAgentManagerClient {
       @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId,
       @Body List<DelegateConnectionResultDetail> results);
 
-  @Consumes(ProtocolBufferMediaType.APPLICATION_PROTOBUF)
+  @Consumes({"application/x-protobuf", "application/x-protobuf-text-format", "application/x-protobuf-json-format"})
   @GET("agent/delegates/perpetual-task/list")
   Call<RestResponse<PerpetualTaskListResponse>> perpetualTaskList(
           @Query("perpetualTaskListRequest") PerpetualTaskListRequest perpetualTaskListRequest,

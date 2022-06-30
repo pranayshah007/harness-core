@@ -41,17 +41,12 @@ public class PerpetualTaskServiceAgentClient {
 
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
 
- /* @Inject
-  public PerpetualTaskServiceAgentClient(PerpetualTaskServiceGrpc.PerpetualTaskServiceBlockingStub perpetualTaskServiceBlockingStub) {
-    serviceBlockingStub = perpetualTaskServiceBlockingStub;
-  }*/
-
   public List<PerpetualTaskAssignDetails> perpetualTaskList(String delegateId) {
     PerpetualTaskListRequest request = PerpetualTaskListRequest.newBuilder()
             .setDelegateId(DelegateId.newBuilder().setId(delegateId).build())
             .build();
     try {
-      RestResponse<PerpetualTaskListResponse> restResponse = executeRestCall(delegateAgentManagerClient.perpetualTaskList(request, ""));
+      RestResponse<PerpetualTaskListResponse> restResponse = executeRestCall(delegateAgentManagerClient.perpetualTaskList(request, "kmpySmUISimoRrJL6NL73w"));
       return restResponse.getResource().getPerpetualTaskAssignDetailsList();
     } catch (IOException e) {
       e.printStackTrace();
@@ -62,7 +57,7 @@ public class PerpetualTaskServiceAgentClient {
   public PerpetualTaskExecutionContext perpetualTaskContext(PerpetualTaskId taskId) {
     PerpetualTaskContextRequest perpetualTaskContextRequest = PerpetualTaskContextRequest.newBuilder().setPerpetualTaskId(taskId).build();
     try {
-      RestResponse<PerpetualTaskExecutionContext> restResponse = executeRestCall(delegateAgentManagerClient.perpetualTaskContext(perpetualTaskContextRequest, ""));
+      RestResponse<PerpetualTaskExecutionContext> restResponse = executeRestCall(delegateAgentManagerClient.perpetualTaskContext(perpetualTaskContextRequest, "kmpySmUISimoRrJL6NL73w"));
       return restResponse.getResource();
     } catch (IOException e) {
       e.printStackTrace();
@@ -165,4 +160,5 @@ public class PerpetualTaskServiceAgentClient {
       }
     }
   }
+
 }

@@ -2,6 +2,7 @@ package io.harness.delegate.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
+import io.dropwizard.jersey.protobuf.ProtocolBufferMediaType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.perpetualtask.HeartbeatRequest;
@@ -18,6 +19,7 @@ import io.harness.rest.RestResponse;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import io.harness.security.annotations.DelegateAuth;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import java.util.List;
@@ -28,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Api("/agent/delegates/perpetual-task")
 @Path("/agent/delegates/perpetual-task")
-@Produces("application/x-protobuf")
+@Produces({"application/x-protobuf", "application/x-protobuf-text-format", "application/x-protobuf-json-format"})
 @Slf4j
 @OwnedBy(DEL)
 public class PerpetualTaskResource {
@@ -38,6 +40,7 @@ public class PerpetualTaskResource {
   @Path("/list")
   @Timed
   @ExceptionMetered
+  @DelegateAuth
   @ApiOperation(value = "Get list of perpetual task assigned to delegate", nickname = "perpetualTaskList")
   public RestResponse<PerpetualTaskListResponse> perpetualTaskList(PerpetualTaskListRequest perpetualTaskListRequest) {
     List<PerpetualTaskAssignDetails> perpetualTaskAssignDetails =
@@ -50,6 +53,7 @@ public class PerpetualTaskResource {
   @GET
   @Path("/context")
   @Timed
+  @DelegateAuth
   @ExceptionMetered
   @ApiOperation(value = "Get perpetual task context for given perpetual task", nickname = "perpetualTaskContext")
   public RestResponse<PerpetualTaskContextResponse> perpetualTaskContext(
@@ -65,6 +69,7 @@ public class PerpetualTaskResource {
   @Path("/heartbeat")
   @Timed
   @ExceptionMetered
+  @DelegateAuth
   @ApiOperation(value = "Heartbeat recording", nickname = "heartbeat")
   public RestResponse<HeartbeatResponse> heartbeat(HeartbeatRequest heartbeatRequest) {
     PerpetualTaskResponse perpetualTaskResponse = PerpetualTaskResponse.builder()
