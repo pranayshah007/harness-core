@@ -9,11 +9,13 @@ package io.harness.ci.integrationstage;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.ff.CIFeatureFlagService;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
@@ -32,14 +34,19 @@ public class InitializeStepGenerator {
   @Inject private BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
 
   @Inject private StrategyHelper strategyHelper;
+  @Inject private CIFeatureFlagService ciFeatureFlagService;
+
   InitializeStepInfo createInitializeStepInfo(ExecutionElementConfig executionElement, CodeBase ciCodebase,
       StageElementConfig stageElementConfig, CIExecutionArgs ciExecutionArgs, Infrastructure infrastructure,
       String accountId) {
     IntegrationStageConfig integrationStageConfig = IntegrationStageUtils.getIntegrationStageConfig(stageElementConfig);
 
-    List<ExecutionWrapperConfig> openedExecutionElement = new ArrayList<>();
-    for (ExecutionWrapperConfig config : executionElement.getSteps()) {
-      openedExecutionElement.addAll(strategyHelper.expandExecutionWrapperConfig(config));
+    List<ExecutionWrapperConfig> expandedExecutionElement = new ArrayList<>();
+    boolean pipelineMatrixEnabled = ciFeatureFlagService.isEnabled(FeatureName.PIPELINE_MATRIX, accountId);
+    if (pipelineMatrixEnabled) {
+      for (ExecutionWrapperConfig config : executionElement.getSteps()) {
+        expandedExecutionElement.addAll(strategyHelper.expandExecutionWrapperConfig(config));
+      }
     }
 
     boolean gitClone = RunTimeInputHandler.resolveGitClone(integrationStageConfig.getCloneCodebase());
@@ -53,7 +60,9 @@ public class InitializeStepGenerator {
         .executionSource(ciExecutionArgs.getExecutionSource())
         .ciCodebase(ciCodebase)
         .skipGitClone(!gitClone)
-        .executionElementConfig(ExecutionElementConfig.builder().steps(openedExecutionElement).build())
+        .executionElementConfig(pipelineMatrixEnabled
+                ? ExecutionElementConfig.builder().steps(expandedExecutionElement).build()
+                : executionElement)
         .timeout(buildJobEnvInfoBuilder.getTimeout(infrastructure))
         .build();
   }
