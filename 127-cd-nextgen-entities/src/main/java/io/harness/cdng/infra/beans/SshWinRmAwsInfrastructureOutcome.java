@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
@@ -34,7 +35,7 @@ public class SshWinRmAwsInfrastructureOutcome implements InfrastructureOutcome {
   private String autoScalingGroupName;
   private AwsInstanceFilter awsInstanceFilter;
 
-  private EnvironmentOutcome environment;
+  @VariableExpression(skipVariableExpression = true) private EnvironmentOutcome environment;
   private String infrastructureKey;
 
   @Override

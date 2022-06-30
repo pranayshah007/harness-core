@@ -9,12 +9,12 @@ package io.harness.ci.integrationstage;
 
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment.CI_MANAGER;
-import static io.harness.ci.common.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
-import static io.harness.ci.common.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
-import static io.harness.ci.common.CIExecutionConstants.GIT_CLONE_STEP_ID;
-import static io.harness.ci.common.CIExecutionConstants.GIT_CLONE_STEP_NAME;
-import static io.harness.ci.common.CIExecutionConstants.GIT_SSL_NO_VERIFY;
-import static io.harness.ci.common.CIExecutionConstants.PR_CLONE_STRATEGY_ATTRIBUTE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_NAME;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_SSL_NO_VERIFY;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PR_CLONE_STRATEGY_ATTRIBUTE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;

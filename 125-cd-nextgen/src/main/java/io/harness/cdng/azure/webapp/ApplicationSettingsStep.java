@@ -66,5 +66,4 @@ public class ApplicationSettingsStep implements SyncExecutable<ApplicationSettin
                          .build())
         .build();
   }
-
 }

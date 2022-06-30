@@ -7,8 +7,8 @@
 
 package io.harness.ci.integrationstage;
 
-import static io.harness.ci.common.CIExecutionConstants.OSX_STEP_MOUNT_PATH;
-import static io.harness.ci.common.CIExecutionConstants.STEP_WORK_DIR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.OSX_STEP_MOUNT_PATH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_WORK_DIR;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 
@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 import io.harness.beans.FeatureName;
 import io.harness.beans.environment.BuildJobEnvInfo;
 import io.harness.beans.environment.VmBuildJobInfo;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
@@ -46,6 +47,14 @@ public class BuildJobEnvInfoBuilderTest extends CIExecutionTestBase {
   @Inject VmBuildJobTestHelper vmBuildJobTestHelper;
   @Spy @InjectMocks private VmInitializeStepUtils vmInitializeStepUtils;
   @InjectMocks BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
+
+  @Test
+  @Owner(developers = SHUBHAM)
+  @Category(UnitTests.class)
+  public void getVmTimeout() {
+    int response = buildJobEnvInfoBuilder.getTimeout(VmInfraYaml.builder().type(Infrastructure.Type.VM).build());
+    assertThat(response).isEqualTo(900 * 1000L);
+  }
 
   @Test
   @Owner(developers = ALEKSANDAR)

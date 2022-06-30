@@ -12,11 +12,11 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerPara
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameterWithDefaultValue;
-import static io.harness.ci.common.CIExecutionConstants.DEFAULT_CONTAINER_CPU_POV;
-import static io.harness.ci.common.CIExecutionConstants.DEFAULT_CONTAINER_MEM_POV;
-import static io.harness.ci.common.CIExecutionConstants.STEP_PREFIX;
-import static io.harness.ci.common.CIExecutionConstants.STEP_REQUEST_MEMORY_MIB;
-import static io.harness.ci.common.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_CPU_POV;
+import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_MEM_POV;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MEMORY_MIB;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -43,7 +43,7 @@ import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.PluginSettingUtils;
-import io.harness.ci.buildstate.providers.StepContainerUtils;
+import io.harness.ci.buildstate.StepContainerUtils;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.utils.CIStepInfoUtils;

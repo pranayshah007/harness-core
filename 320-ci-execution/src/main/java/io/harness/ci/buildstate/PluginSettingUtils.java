@@ -14,15 +14,15 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMap
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveListParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
-import static io.harness.ci.common.CIExecutionConstants.AWS_ROLE_ARN;
-import static io.harness.ci.common.CIExecutionConstants.PLUGIN_ACCESS_KEY;
-import static io.harness.ci.common.CIExecutionConstants.PLUGIN_ARTIFACT_FILE_VALUE;
-import static io.harness.ci.common.CIExecutionConstants.PLUGIN_ASSUME_ROLE;
-import static io.harness.ci.common.CIExecutionConstants.PLUGIN_JSON_KEY;
-import static io.harness.ci.common.CIExecutionConstants.PLUGIN_PASSW;
-import static io.harness.ci.common.CIExecutionConstants.PLUGIN_SECRET_KEY;
-import static io.harness.ci.common.CIExecutionConstants.PLUGIN_URL;
-import static io.harness.ci.common.CIExecutionConstants.PLUGIN_USERNAME;
+import static io.harness.ci.commonconstants.CIExecutionConstants.AWS_ROLE_ARN;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ACCESS_KEY;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ARTIFACT_FILE_VALUE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ASSUME_ROLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_JSON_KEY;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_PASSW;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_SECRET_KEY;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_URL;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_USERNAME;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 

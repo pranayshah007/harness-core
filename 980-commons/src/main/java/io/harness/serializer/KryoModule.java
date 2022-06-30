@@ -14,8 +14,11 @@ import io.harness.testing.TestExecution;
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.Provider;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
+import com.google.inject.name.Named;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
@@ -55,5 +58,12 @@ public class KryoModule extends AbstractModule {
           MapBinder.newMapBinder(binder(), String.class, TestExecution.class);
       testExecutionMapBinder.addBinding("Kryo test registration").toInstance(() -> testAutomaticSearch(provider));
     }
+  }
+
+  @Provides
+  @Named("referenceFalseKryoSerializer")
+  @Singleton
+  public KryoSerializer getKryoSerializer(Provider<Set<Class<? extends KryoRegistrar>>> provider) {
+    return new KryoSerializer(provider.get(), false, false);
   }
 }

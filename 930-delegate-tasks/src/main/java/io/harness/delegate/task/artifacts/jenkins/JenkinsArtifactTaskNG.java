@@ -12,11 +12,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
+import io.harness.logging.LogCallback;
 
 import com.google.inject.Inject;
 import java.util.function.BooleanSupplier;
@@ -47,6 +50,13 @@ public class JenkinsArtifactTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public ArtifactTaskResponse run(TaskParameters parameters) {
     ArtifactTaskParameters taskParameters = (ArtifactTaskParameters) parameters;
-    return jenkinsArtifactTaskHelper.getArtifactCollectResponse(taskParameters);
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    if (getLogStreamingTaskClient() != null) {
+      LogCallback executionLogCallback =
+          new NGDelegateLogCallback(getLogStreamingTaskClient(), "Execute", false, commandUnitsProgress);
+      return jenkinsArtifactTaskHelper.getArtifactCollectResponse(taskParameters, executionLogCallback);
+    } else {
+      return jenkinsArtifactTaskHelper.getArtifactCollectResponse(taskParameters);
+    }
   }
 }

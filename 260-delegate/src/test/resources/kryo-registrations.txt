@@ -1608,6 +1608,7 @@
 29302:io.harness.delegate.beans.connector.jenkins.JenkinsCapabilityHelper
 29303:io.harness.delegate.beans.connector.jenkins.JenkinsValidationParams
 29304:io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest
+29305:io.harness.delegate.task.jenkins.JenkinsBuildTaskNGResponse
 29306:io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskParams
 29307:io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskResponse
 29308:io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig

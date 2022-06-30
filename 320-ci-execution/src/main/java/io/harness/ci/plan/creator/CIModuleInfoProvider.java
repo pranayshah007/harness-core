@@ -10,7 +10,7 @@ package io.harness.ci.plan.creator;
 import static io.harness.beans.execution.WebhookEvent.Type.BRANCH;
 import static io.harness.beans.execution.WebhookEvent.Type.PR;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
-import static io.harness.ci.common.CIExecutionConstants.AZURE_REPO_BASE_URL;
+import static io.harness.ci.commonconstants.CIExecutionConstants.AZURE_REPO_BASE_URL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.git.GitClientHelper.getGitRepo;

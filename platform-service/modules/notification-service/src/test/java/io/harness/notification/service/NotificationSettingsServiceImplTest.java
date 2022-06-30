@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ADITHYA;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -48,12 +49,25 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
   private static final String SLACK_ORG_SECRET = "<+secrets.getValue('org.SlackWebhookUrlSecret')>";
   private static final String SLACK_ACCOUNT_SECRET = "<+secrets.getValue('account.SlackWebhookUrlSecret')>";
   private static final String PAGERDUTY_SECRET = "<+secrets.getValue('PagerDutyWebhookUrlSecret')>";
-  private long expressionFunctorToken;
+  private static final long EXPRESSION_FUNCTOR_TOKEN_1 = HashGenerator.generateIntegerHash();
+  private static final String RESOLVED_SLACK_SECRET_1 =
+      String.format("${ngSecretManager.obtain(\"SlackWebhookUrlSecret1\", %d)}", EXPRESSION_FUNCTOR_TOKEN_1);
+  private static final String RESOLVED_SLACK_SECRET_2 =
+      String.format("${ngSecretManager.obtain(\"SlackWebhookUrlSecret2\", %d)}", EXPRESSION_FUNCTOR_TOKEN_1);
+  private static final String RESOLVED_SLACK_SECRET_3 =
+      String.format("${ngSecretManager.obtain(\"SlackWebhookUrlSecret3\", %d)}", EXPRESSION_FUNCTOR_TOKEN_1);
+  private static final String RESOLVED_PAGER_DUTY_SECRET =
+      String.format("${ngSecretManager.obtain(\"PagerDutyWebhookUrlSecret\", %d)}", EXPRESSION_FUNCTOR_TOKEN_1);
+  private static final String RESOLVED_SLACK_ORG_SECRET =
+      String.format("${ngSecretManager.obtain(\"org.SlackWebhookUrlSecret\", %d)}", EXPRESSION_FUNCTOR_TOKEN_1);
+  private static final String RESOLVED_SLACK_ACCOUNT_SECRET =
+      String.format("${ngSecretManager.obtain(\"account.SlackWebhookUrlSecret\", %d)}", EXPRESSION_FUNCTOR_TOKEN_1);
+  private static final String RESOLVED_SLACK_SECRET_WITH_FUNCTOR_ZERO =
+      "${ngSecretManager.obtain(\"SlackWebhookUrlSecret1\", 0)}";
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    expressionFunctorToken = HashGenerator.generateIntegerHash();
     notificationSettingsService = new NotificationSettingsServiceImpl(
         userGroupClient, userClient, notificationSettingRepository, smtpConfigClient);
   }
@@ -66,13 +80,9 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
     notificationSettings.add(SLACK_SECRET_1);
     notificationSettings.add(SLACK_SECRET_2);
     List<String> resolvedUserGroups = notificationSettingsService.resolveUserGroups(
-        NotificationChannelType.SLACK, notificationSettings, expressionFunctorToken);
-    String expectedUserGroup1 =
-        String.format("${ngSecretManager.obtain(\"SlackWebhookUrlSecret1\", %d)}", expressionFunctorToken);
-    String expectedUserGroup2 =
-        String.format("${ngSecretManager.obtain(\"SlackWebhookUrlSecret2\", %d)}", expressionFunctorToken);
-    assertEquals(expectedUserGroup1, resolvedUserGroups.get(0));
-    assertEquals(expectedUserGroup2, resolvedUserGroups.get(1));
+        NotificationChannelType.SLACK, notificationSettings, EXPRESSION_FUNCTOR_TOKEN_1);
+    assertEquals(RESOLVED_SLACK_SECRET_1, resolvedUserGroups.get(0));
+    assertEquals(RESOLVED_SLACK_SECRET_2, resolvedUserGroups.get(1));
   }
 
   @Test
@@ -83,13 +93,9 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
     notificationSettings.add(SLACK_ORG_SECRET);
     notificationSettings.add(SLACK_ACCOUNT_SECRET);
     List<String> resolvedUserGroups = notificationSettingsService.resolveUserGroups(
-        NotificationChannelType.SLACK, notificationSettings, expressionFunctorToken);
-    String expectedUserGroup1 =
-        String.format("${ngSecretManager.obtain(\"org.SlackWebhookUrlSecret\", %d)}", expressionFunctorToken);
-    String expectedUserGroup2 =
-        String.format("${ngSecretManager.obtain(\"account.SlackWebhookUrlSecret\", %d)}", expressionFunctorToken);
-    assertEquals(expectedUserGroup1, resolvedUserGroups.get(0));
-    assertEquals(expectedUserGroup2, resolvedUserGroups.get(1));
+        NotificationChannelType.SLACK, notificationSettings, EXPRESSION_FUNCTOR_TOKEN_1);
+    assertEquals(RESOLVED_SLACK_ORG_SECRET, resolvedUserGroups.get(0));
+    assertEquals(RESOLVED_SLACK_ACCOUNT_SECRET, resolvedUserGroups.get(1));
   }
 
   @Test
@@ -100,7 +106,7 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
     notificationSettings.add("<+adbc>");
     assertThatThrownBy(()
                            -> notificationSettingsService.resolveUserGroups(
-                               NotificationChannelType.SLACK, notificationSettings, expressionFunctorToken))
+                               NotificationChannelType.SLACK, notificationSettings, EXPRESSION_FUNCTOR_TOKEN_1))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Expression provided is not valid");
   }
@@ -112,7 +118,7 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
     List<String> notificationSettings = new ArrayList<>();
     notificationSettings.add(SLACK_WEBHOOK_URL);
     List<String> resolvedUserGroups = notificationSettingsService.resolveUserGroups(
-        NotificationChannelType.SLACK, notificationSettings, expressionFunctorToken);
+        NotificationChannelType.SLACK, notificationSettings, EXPRESSION_FUNCTOR_TOKEN_1);
     assertEquals(SLACK_WEBHOOK_URL, resolvedUserGroups.get(0));
   }
 
@@ -123,10 +129,8 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
     List<String> notificationSettings = new ArrayList<>();
     notificationSettings.add(PAGERDUTY_SECRET);
     List<String> resolvedUserGroups = notificationSettingsService.resolveUserGroups(
-        NotificationChannelType.SLACK, notificationSettings, expressionFunctorToken);
-    String expectedUserGroup =
-        String.format("${ngSecretManager.obtain(\"PagerDutyWebhookUrlSecret\", %d)}", expressionFunctorToken);
-    assertEquals(expectedUserGroup, resolvedUserGroups.get(0));
+        NotificationChannelType.SLACK, notificationSettings, EXPRESSION_FUNCTOR_TOKEN_1);
+    assertEquals(RESOLVED_PAGER_DUTY_SECRET, resolvedUserGroups.get(0));
   }
 
   @Test
@@ -134,7 +138,7 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetNotificationRequestForEmptyUserGroups() {
     List<String> resolvedUserGroups = notificationSettingsService.resolveUserGroups(
-        NotificationChannelType.SLACK, new ArrayList<>(), expressionFunctorToken);
+        NotificationChannelType.SLACK, new ArrayList<>(), EXPRESSION_FUNCTOR_TOKEN_1);
     assertTrue(resolvedUserGroups.isEmpty());
   }
 
@@ -145,9 +149,40 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
     List<String> notificationSettings = new ArrayList<>();
     notificationSettings.add(SLACK_SECRET_3);
     List<String> resolvedUserGroups = notificationSettingsService.resolveUserGroups(
-        NotificationChannelType.SLACK, notificationSettings, expressionFunctorToken);
-    String expectedUserGroup1 =
-        String.format("${ngSecretManager.obtain(\"SlackWebhookUrlSecret3\", %d)}", expressionFunctorToken);
-    assertEquals(expectedUserGroup1, resolvedUserGroups.get(0));
+        NotificationChannelType.SLACK, notificationSettings, EXPRESSION_FUNCTOR_TOKEN_1);
+    assertEquals(RESOLVED_SLACK_SECRET_3, resolvedUserGroups.get(0));
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testSlackWebhookSecret() {
+    List<String> notificationSettings = new ArrayList<>();
+    notificationSettings.add(RESOLVED_SLACK_SECRET_1);
+    notificationSettings.add(RESOLVED_SLACK_SECRET_2);
+    notificationSettings.add(RESOLVED_SLACK_SECRET_WITH_FUNCTOR_ZERO);
+    boolean isSecret = notificationSettingsService.checkIfWebhookIsSecret(notificationSettings);
+    assertTrue(isSecret);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testSlackWebhookNonSecret() {
+    List<String> notificationSettings = new ArrayList<>();
+    notificationSettings.add(SLACK_WEBHOOK_URL);
+    boolean isSecret = notificationSettingsService.checkIfWebhookIsSecret(notificationSettings);
+    assertFalse(isSecret);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testSlackWebhookSecretAndNonSecret() {
+    List<String> notificationSettings = new ArrayList<>();
+    notificationSettings.add(SLACK_WEBHOOK_URL);
+    notificationSettings.add(RESOLVED_SLACK_SECRET_1);
+    boolean isSecret = notificationSettingsService.checkIfWebhookIsSecret(notificationSettings);
+    assertTrue(isSecret);
   }
 }

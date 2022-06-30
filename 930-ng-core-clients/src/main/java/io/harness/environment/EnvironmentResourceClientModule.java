@@ -50,8 +50,8 @@ public class EnvironmentResourceClientModule extends AbstractModule {
   @Provides
   private EnvironmentResourceClientHttpFactory secretManagerHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
-    return new EnvironmentResourceClientHttpFactory(
-        this.ngManagerClientConfig, this.serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId, clientMode);
+    return new EnvironmentResourceClientHttpFactory(this.ngManagerClientConfig, this.serviceSecret,
+        new ServiceTokenGenerator(), kryoConverterFactory, clientId, clientMode);
   }
 
   @Override

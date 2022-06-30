@@ -495,9 +495,9 @@ public class OwnerRule implements TestRule {
           .put(ERSHAD_MOHAMMAD, defaultUserInfo(ERSHAD_MOHAMMAD).slack("U03GCSW6TC2").team(SPG).build())
           .put(RUTVIJ_MEHTA, defaultUserInfo(RUTVIJ_MEHTA).slack("U03A7L7C4DC").team(CI).build())
           .put(YUVRAJ, defaultUserInfo(YUVRAJ).slack("U03G68G3K3Q").team(SPG).build())
-              .put(MITISHA, defaultUserInfo(MITISHA).slack("U03GA0CRAUV").team(SPG).build())
-              .put(VIVEK_DIXIT, defaultUserInfo(VIVEK_DIXIT).slack("U03JU7GQ464").team(CDC).build())
-              .build();
+          .put(MITISHA, defaultUserInfo(MITISHA).slack("U03GA0CRAUV").team(SPG).build())
+          .put(VIVEK_DIXIT, defaultUserInfo(VIVEK_DIXIT).slack("U03JU7GQ464").team(CDC).build())
+          .build();
 
   private static String prDeveloperId = findDeveloperId(System.getenv(GHPRB_PULL_AUTHOR_EMAIL));
 

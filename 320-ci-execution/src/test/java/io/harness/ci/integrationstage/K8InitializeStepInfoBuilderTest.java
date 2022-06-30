@@ -7,9 +7,9 @@
 
 package io.harness.ci.integrationstage;
 
-import static io.harness.ci.common.CIExecutionConstants.ADDON_VOL_MOUNT_PATH;
-import static io.harness.ci.common.CIExecutionConstants.ETC_DIR;
-import static io.harness.ci.common.CIExecutionConstants.STEP_MOUNT_PATH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.ADDON_VOL_MOUNT_PATH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.ETC_DIR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_MOUNT_PATH;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,7 +27,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.common.CIExecutionConstants;
+import io.harness.ci.commonconstants.CIExecutionConstants;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.ci.ff.CIFeatureFlagService;

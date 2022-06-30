@@ -100,7 +100,8 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
     when(executionSweepingOutputService.listOutputsWithGivenNameAndSetupIds(
              any(), eq(FAILED_CHILDREN_OUTPUT), anyList()))
         .thenReturn(Collections.emptyList());
-    when(fileStoreService.getByPath(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_PATH, false))
+    when(fileStoreService.getWithChildrenByPath(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_PATH, false))
         .thenReturn(Optional.of(getFileStoreNode()));
 
     ConfigFileStepParameters stepParameters =
@@ -143,7 +144,8 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
     when(executionSweepingOutputService.listOutputsWithGivenNameAndSetupIds(
              any(), eq(FAILED_CHILDREN_OUTPUT), anyList()))
         .thenReturn(Collections.emptyList());
-    when(fileStoreService.getByPath(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_PATH_OVERRIDE, false))
+    when(fileStoreService.getWithChildrenByPath(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_PATH_OVERRIDE, false))
         .thenReturn(Optional.of(getFileStoreNode()));
 
     ConfigFileAttributes spec = getConfigFileAttributes();

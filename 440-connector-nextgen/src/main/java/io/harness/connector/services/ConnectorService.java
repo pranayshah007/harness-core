@@ -18,7 +18,6 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.DX)
@@ -44,5 +43,6 @@ public interface ConnectorService extends ConnectorCrudService, ConnectorValidat
 
   ConnectorResponseDTO updateGitFilePath(ConnectorDTO connectorDTO, String accountIdentifier, String newFilePath);
 
-  List<Map<String, String>> getAttributes(String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers);
+  List<Map<String, String>> getAttributes(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers);
 }

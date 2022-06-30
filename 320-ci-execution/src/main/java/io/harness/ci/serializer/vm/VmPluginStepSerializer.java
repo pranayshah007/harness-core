@@ -8,8 +8,8 @@
 package io.harness.ci.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMapParameter;
-import static io.harness.ci.common.CIExecutionConstants.GIT_CLONE_STEP_ID;
-import static io.harness.ci.common.CIExecutionConstants.PLUGIN_ENV_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ENV_PREFIX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.beans.serializer.RunTimeInputHandler;

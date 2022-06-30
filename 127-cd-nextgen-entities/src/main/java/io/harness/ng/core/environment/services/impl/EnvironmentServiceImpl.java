@@ -374,8 +374,12 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   }
 
   @Override
-  public List<Map<String, String>> getAttributes(String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers) {
-    Map<String, List<Environment>> environments = fetchesNonDeletedEnvironmentFromListOfIdentifiers(accountId, orgIdentifier, projectIdentifier, envIdentifiers).stream().collect(groupingBy(Environment::getIdentifier));
+  public List<Map<String, String>> getAttributes(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers) {
+    Map<String, List<Environment>> environments =
+        fetchesNonDeletedEnvironmentFromListOfIdentifiers(accountId, orgIdentifier, projectIdentifier, envIdentifiers)
+            .stream()
+            .collect(groupingBy(Environment::getIdentifier));
 
     List<Map<String, String>> attributes = new ArrayList<>();
     for (String envId : envIdentifiers) {

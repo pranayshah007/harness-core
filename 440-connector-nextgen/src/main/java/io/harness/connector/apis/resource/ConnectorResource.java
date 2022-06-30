@@ -575,7 +575,7 @@ public class ConnectorResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam("connectorIdentifiers") List<String> connectorIdentifiers) {
-    return ResponseDTO.newResponse(connectorService.getAttributes(
-        accountId, orgIdentifier, projectIdentifier, connectorIdentifiers));
+    return ResponseDTO.newResponse(
+        connectorService.getAttributes(accountId, orgIdentifier, projectIdentifier, connectorIdentifiers));
   }
 }

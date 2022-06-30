@@ -350,7 +350,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testCreateInputSet() {
-    doReturn(inputSetEntity).when(pmsInputSetService).create(any());
+    doReturn(inputSetEntity).when(pmsInputSetService).create(any(), any(), any());
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMS.createInputSet(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYaml);
     assertEquals(responseDTO.getData().getInputSetYaml(), inputSetYaml);
@@ -364,7 +364,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testCreateOverlayInputSet() {
-    doReturn(inputSetEntity).when(pmsInputSetService).create(any());
+    doReturn(inputSetEntity).when(pmsInputSetService).create(any(), any(), any());
     ResponseDTO<OverlayInputSetResponseDTOPMS> responseDTO = inputSetResourcePMS.createOverlayInputSet(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, overlayInputSetYaml);
     assertEquals(responseDTO.getData().getAccountId(), inputSetEntity.getAccountIdentifier());
@@ -377,7 +377,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testUpdateInputSet() {
-    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any());
+    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), any(), any());
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMS.updateInputSet(null, INPUT_SET_ID, ACCOUNT_ID,
         ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYaml);
     assertEquals(responseDTO.getData().getInputSetYaml(), inputSetYaml);
@@ -391,7 +391,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testUpdateOverlayInputSet() {
-    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any());
+    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), any(), any());
     ResponseDTO<OverlayInputSetResponseDTOPMS> responseDTO = inputSetResourcePMS.updateOverlayInputSet(null,
         INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, overlayInputSetYaml);
     assertEquals(responseDTO.getData().getAccountId(), inputSetEntity.getAccountIdentifier());

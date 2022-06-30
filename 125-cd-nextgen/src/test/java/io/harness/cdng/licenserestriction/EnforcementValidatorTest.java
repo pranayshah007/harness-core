@@ -62,12 +62,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import retrofit2.Call;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 @Slf4j
 @PrepareForTest({NGRestUtils.class, PipelineSetupUsageUtils.class})
 @OwnedBy(CDP)
@@ -175,7 +174,7 @@ public class EnforcementValidatorTest extends CategoryTest {
         .getLicenseUsage(eq(ACCOUNT_ID), eq(ModuleType.CD), anyLong(),
             eq(CDUsageRequestParams.builder().cdLicenseType(SERVICES).build()));
 
-    PowerMockito.mockStatic(NGRestUtils.class);
+    Mockito.mockStatic(NGRestUtils.class);
     List<EntitySetupUsageDTO> allReferredUsages = getReferredUsages("S3", "S4");
     Call<ResponseDTO<List<EntitySetupUsageDTO>>> responseDTOCallMock = Mockito.mock(Call.class);
     doReturn(responseDTOCallMock)
@@ -184,7 +183,7 @@ public class EnforcementValidatorTest extends CategoryTest {
             eq(FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID)),
             eq(EntityType.SERVICE), eq(null));
     when(NGRestUtils.getResponseWithRetry(any(), any())).thenReturn(allReferredUsages);
-    PowerMockito.mockStatic(PipelineSetupUsageUtils.class);
+    Mockito.mockStatic(PipelineSetupUsageUtils.class);
     when(PipelineSetupUsageUtils.extractInputReferredEntityFromYaml(
              eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(YAML), eq(allReferredUsages)))
         .thenReturn(

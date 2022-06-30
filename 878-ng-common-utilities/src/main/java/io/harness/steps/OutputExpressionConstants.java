@@ -18,4 +18,5 @@ public interface OutputExpressionConstants {
   String ENVIRONMENT = "env";
   String ENVIRONMENT_GROUP = "envgroup";
   String OUTPUT = "output";
+  String INFRA = "infra";
 }

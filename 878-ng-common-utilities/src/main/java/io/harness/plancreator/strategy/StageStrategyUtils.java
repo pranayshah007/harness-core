@@ -88,7 +88,7 @@ public class StageStrategyUtils {
     EdgeLayoutList edgeLayoutList;
     String planNodeId = yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY).getNode().getUuid();
     if (siblingField == null) {
-      edgeLayoutList = EdgeLayoutList.newBuilder().build();
+      edgeLayoutList = EdgeLayoutList.newBuilder().addCurrentNodeChildren(planNodeId).build();
     } else {
       edgeLayoutList = EdgeLayoutList.newBuilder()
                            .addNextIds(siblingField.getNode().getUuid())

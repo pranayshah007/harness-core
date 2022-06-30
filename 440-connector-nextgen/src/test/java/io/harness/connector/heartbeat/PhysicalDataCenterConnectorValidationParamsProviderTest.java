@@ -17,7 +17,6 @@ import static io.harness.connector.ConnectorTestConstants.PROJECT_IDENTIFIER;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.collect.Sets;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -33,6 +32,7 @@ import io.harness.delegate.task.utils.PhysicalDataCenterUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import com.google.common.collect.Sets;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;

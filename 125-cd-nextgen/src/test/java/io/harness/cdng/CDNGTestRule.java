@@ -231,8 +231,7 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         bind(SecretNGManagerClient.class)
             .annotatedWith(Names.named(ClientMode.PRIVILEGED.name()))
             .toInstance(mock(SecretNGManagerClient.class));
-        bind(FileStoreService.class)
-                .toInstance(mock(FileStoreService.class));
+        bind(FileStoreService.class).toInstance(mock(FileStoreService.class));
       }
     });
     modules.add(TimeModule.getInstance());

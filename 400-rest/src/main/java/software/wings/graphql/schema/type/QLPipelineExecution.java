@@ -31,6 +31,7 @@ import lombok.experimental.FieldNameConstants;
 public class QLPipelineExecution implements QLExecution, QLCause {
   private String id;
   private String pipelineId;
+  private String executionUrl;
   private Long createdAt;
   private Long startedAt;
   private Long endedAt;

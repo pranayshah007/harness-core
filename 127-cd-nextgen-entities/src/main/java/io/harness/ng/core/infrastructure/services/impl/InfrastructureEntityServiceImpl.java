@@ -331,7 +331,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
           YamlUtils.readTree(infraDefinitionInputs).getNode().getField(YamlTypes.INFRASTRUCTURE_DEF);
       ObjectNode infraDefinitionNode = (ObjectNode) infrastructureDefinitionYamlField.getNode().getCurrJsonNode();
       ObjectNode infraNode = mapper.createObjectNode();
-      infraNode.set(YamlTypes.REF, infraDefinitionNode.get(IDENTIFIER));
+      infraNode.set(IDENTIFIER, infraDefinitionNode.get(IDENTIFIER));
       infraNode.set(YamlTypes.INPUTS, infraDefinitionNode);
 
       infraDefinitionInputList.add(infraNode);

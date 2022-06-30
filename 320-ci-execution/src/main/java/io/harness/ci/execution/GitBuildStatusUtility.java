@@ -8,7 +8,7 @@
 package io.harness.ci.execution;
 
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
-import static io.harness.ci.common.CIExecutionConstants.PATH_SEPARATOR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;

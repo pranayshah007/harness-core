@@ -8,7 +8,7 @@
 package io.harness.ci.serializer;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.ci.common.CIExecutionConstants.PLUGIN_ARTIFACT_FILE_VALUE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ARTIFACT_FILE_VALUE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;

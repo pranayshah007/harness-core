@@ -643,8 +643,8 @@ public class EnvironmentResourceV2 {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam("envIdentifiers") List<String> envIdentifiers) {
-    return ResponseDTO.newResponse(environmentService.getAttributes(
-        accountId, orgIdentifier, projectIdentifier, envIdentifiers));
+    return ResponseDTO.newResponse(
+        environmentService.getAttributes(accountId, orgIdentifier, projectIdentifier, envIdentifiers));
   }
 
   private void checkForServiceOverrideUpdateAccess(

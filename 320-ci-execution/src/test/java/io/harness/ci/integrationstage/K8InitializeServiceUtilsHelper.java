@@ -8,11 +8,11 @@
 package io.harness.ci.integrationstage;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.ci.common.CIExecutionConstants.ID_PREFIX;
-import static io.harness.ci.common.CIExecutionConstants.IMAGE_PREFIX;
-import static io.harness.ci.common.CIExecutionConstants.PORT_PREFIX;
-import static io.harness.ci.common.CIExecutionConstants.SERVICE_ARG_COMMAND;
-import static io.harness.ci.common.CIExecutionConstants.UNIX_STEP_COMMAND;
+import static io.harness.ci.commonconstants.CIExecutionConstants.ID_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.IMAGE_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PORT_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.SERVICE_ARG_COMMAND;
+import static io.harness.ci.commonconstants.CIExecutionConstants.UNIX_STEP_COMMAND;
 import static io.harness.delegate.beans.ci.pod.CIContainerType.SERVICE;
 import static io.harness.pms.yaml.ParameterField.createValueField;
 

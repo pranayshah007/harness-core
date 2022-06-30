@@ -104,6 +104,7 @@ import io.harness.delegate.beans.DelegateGroup.DelegateGroupKeys;
 import io.harness.delegate.beans.DelegateGroupStatus;
 import io.harness.delegate.beans.DelegateInitializationDetails;
 import io.harness.delegate.beans.DelegateInstanceStatus;
+import io.harness.delegate.beans.DelegateMtlsEndpointDetails;
 import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfileParams;
@@ -168,6 +169,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateInsightsService;
+import io.harness.service.intfc.DelegateMtlsEndpointService;
 import io.harness.service.intfc.DelegateProfileObserver;
 import io.harness.service.intfc.DelegateSetupService;
 import io.harness.service.intfc.DelegateSyncService;
@@ -205,6 +207,7 @@ import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.jre.JreConfig;
 import software.wings.licensing.LicenseService;
 import software.wings.service.impl.EventEmitter.Channel;
+import software.wings.service.impl.TemplateParameters.TemplateParametersBuilder;
 import software.wings.service.impl.infra.InfraDownloadService;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AlertService;
@@ -249,6 +252,7 @@ import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
@@ -409,6 +413,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private DelegateVersionService delegateVersionService;
+  @Inject private DelegateMtlsEndpointService delegateMtlsEndpointService;
 
   private final LoadingCache<String, String> delegateVersionCache =
       CacheBuilder.newBuilder()
@@ -1498,9 +1503,85 @@ public class DelegateServiceImpl implements DelegateService {
       params.put("isImmutable",
           String.valueOf(isImmutableDelegate(templateParameters.getAccountId(), templateParameters.getDelegateType())));
 
+      params.put("mtlsEnabled", String.valueOf(templateParameters.isMtlsEnabled()));
+
       return params.build();
     }
     throw new IllegalStateException("delegate.jar can't be downloaded from " + delegateJarDownloadUrl);
+  }
+
+  @VisibleForTesting
+  public TemplateParameters finalizeTemplateParametersWithMtlsIfRequired(TemplateParametersBuilder originalBuilder) {
+    // build to retrieve current state of builder (as lombok builder doesn't expose getters)
+    TemplateParameters original = originalBuilder.build();
+
+    // mTLS is only supported for immutable delegates
+    if (!isImmutableDelegate(original.getAccountId(), original.getDelegateType())) {
+      return original;
+    }
+
+    DelegateMtlsEndpointDetails delegateMtlsEndpoint =
+        this.delegateMtlsEndpointService.getEndpointForAccountOrNull(original.getAccountId());
+    if (delegateMtlsEndpoint == null) {
+      return original;
+    }
+
+    // create a new builder out of the original object to avoid potential idempotency issues
+    TemplateParametersBuilder updatedBuilder = original.toBuilder();
+
+    // immutable delegate with mTLS enabled on account - update template parameters accordingly
+    updatedBuilder.mtlsEnabled(true);
+
+    /*
+     * Update all URIs that are used by the immutable delegate yaml files (manager & log-service)
+     * Assumption: managerHost is the base URI of the harness cluster (e.g. "https://app.harness.io")
+     */
+    String baseUri = original.getManagerHost();
+
+    updatedBuilder.managerHost(
+        this.updateUriToTargetMtlsEndpoint(original.getManagerHost(), baseUri, delegateMtlsEndpoint.getFqdn()));
+    updatedBuilder.logStreamingServiceBaseUrl(this.updateUriToTargetMtlsEndpoint(
+        original.getLogStreamingServiceBaseUrl(), baseUri, delegateMtlsEndpoint.getFqdn()));
+
+    return updatedBuilder.build();
+  }
+
+  /**
+   * Updates an external Harness URI to point to the mTLS endpoint instead.
+   *
+   * Assumption:
+   *    - Delegate Gateway is always receiving traffic on port 443 (and doesn't require a base path)
+   *    - All external Harness URIs are under the same base uri of the cluster
+   *      (e.g. "https://app.harness.io", "https://pr.harness.io/del-42")
+   *
+   * @param originalUri the URI to update
+   * @param baseUri the base URI of the harness cluster
+   * @param mtlsEndpointFqdn the fqdn of the mTLS endpoint
+   * @return the updated URI
+   */
+  @VisibleForTesting
+  public String updateUriToTargetMtlsEndpoint(String originalUri, String baseUri, String mtlsEndpointFqdn) {
+    // In case anything is missing - log an error and continue.
+    // Worst case it has to be changed in artifacts manually, better than failing the download completely.
+    if (isBlank(originalUri) || isBlank(baseUri) || isBlank(mtlsEndpointFqdn)) {
+      log.error("Unexpected blank input when updating URI: originalUri '{}', baseUri '{}', mtlsEndpointFqdn '{}'",
+          originalUri, baseUri, mtlsEndpointFqdn);
+      return originalUri;
+    }
+
+    try {
+      String originalPath = new URI(originalUri).getPath();
+      String basePath = new URI(baseUri).getPath();
+
+      String newPath =
+          isNotBlank(basePath) && isNotBlank(originalPath) ? originalPath.replace(basePath, "") : originalPath;
+
+      return new URI("https", mtlsEndpointFqdn, newPath, null, null).toString();
+    } catch (Exception ex) {
+      log.error("Failed to update URL '{}' with FQDN of mTLS endpoint '{}' using base '{}': {}", originalUri,
+          mtlsEndpointFqdn, baseUri, ex);
+      throw new UnexpectedException("Failed to update the URL to target the mTLS endpoint.", ex);
+    }
   }
 
   private String getDelegateNamespace(final String delegateNamespace, final boolean isNgDelegate) {
@@ -1846,22 +1927,22 @@ public class DelegateServiceImpl implements DelegateService {
       int delegateRam = featureFlagService.isEnabled(REDUCE_DELEGATE_MEMORY_SIZE, accountId) ? 4 : 8;
 
       ImmutableMap<String, String> scriptParams = getJarAndScriptRunTimeParamMap(
-          TemplateParameters.builder()
-              .accountId(accountId)
-              .version(version)
-              .managerHost(managerHost)
-              .verificationHost(verificationUrl)
-              .delegateName(delegateName)
-              .delegateGroupName(delegateName)
-              .delegateNamespace(HARNESS_DELEGATE)
-              .delegateProfile(delegateProfile == null ? "" : delegateProfile)
-              .delegateType(KUBERNETES)
-              .ciEnabled(isCiEnabled)
-              .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
-              .delegateTokenName(tokenName)
-              .delegateCpu(1)
-              .delegateRam(delegateRam)
-              .build(),
+          this.finalizeTemplateParametersWithMtlsIfRequired(
+              TemplateParameters.builder()
+                  .accountId(accountId)
+                  .version(version)
+                  .managerHost(managerHost)
+                  .verificationHost(verificationUrl)
+                  .delegateName(delegateName)
+                  .delegateGroupName(delegateName)
+                  .delegateNamespace(HARNESS_DELEGATE)
+                  .delegateProfile(delegateProfile == null ? "" : delegateProfile)
+                  .delegateType(KUBERNETES)
+                  .ciEnabled(isCiEnabled)
+                  .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+                  .delegateTokenName(tokenName)
+                  .delegateCpu(1)
+                  .delegateRam(delegateRam)),
           false);
 
       File yaml = File.createTempFile(HARNESS_DELEGATE, YAML);
@@ -1899,22 +1980,22 @@ public class DelegateServiceImpl implements DelegateService {
       version = EMPTY_VERSION;
     }
     ImmutableMap<String, String> scriptParams = getJarAndScriptRunTimeParamMap(
-        TemplateParameters.builder()
-            .accountId(accountId)
-            .version(version)
-            .managerHost(managerHost)
-            .verificationHost(verificationUrl)
-            .delegateName(delegateName)
-            .delegateNamespace(HARNESS_DELEGATE)
-            .delegateProfile(delegateProfile == null ? "" : delegateProfile)
-            .delegateType(CE_KUBERNETES)
-            .ceEnabled(true)
-            .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
-            .delegateTokenName(tokenName)
-            .ciEnabled(false)
-            .delegateCpu(1)
-            .delegateRam(4)
-            .build(),
+        this.finalizeTemplateParametersWithMtlsIfRequired(
+            TemplateParameters.builder()
+                .accountId(accountId)
+                .version(version)
+                .managerHost(managerHost)
+                .verificationHost(verificationUrl)
+                .delegateName(delegateName)
+                .delegateNamespace(HARNESS_DELEGATE)
+                .delegateProfile(delegateProfile == null ? "" : delegateProfile)
+                .delegateType(CE_KUBERNETES)
+                .ceEnabled(true)
+                .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+                .delegateTokenName(tokenName)
+                .ciEnabled(false)
+                .delegateCpu(1)
+                .delegateRam(4)),
         false);
 
     File yaml = File.createTempFile(HARNESS_DELEGATE, YAML);
@@ -3947,28 +4028,29 @@ public class DelegateServiceImpl implements DelegateService {
       upsertDelegateGroup(delegateSetupDetails.getName(), accountId, delegateSetupDetails);
 
       ImmutableMap<String, String> scriptParams = getJarAndScriptRunTimeParamMap(
-          TemplateParameters.builder()
-              .accountId(accountId)
-              .version(version)
-              .managerHost(managerHost)
-              .verificationHost(verificationServiceUrl)
-              .delegateName(delegateSetupDetails.getName())
-              .delegateType(KUBERNETES)
-              .ciEnabled(isCiEnabled)
-              .delegateDescription(delegateSetupDetails.getDescription())
-              .delegateSize(sizeDetails.getSize().name())
-              .delegateReplicas(sizeDetails.getReplicas())
-              .delegateRam(sizeDetails.getRam() / sizeDetails.getReplicas())
-              .delegateCpu(sizeDetails.getCpu() / sizeDetails.getReplicas())
-              .delegateRequestsRam(sizeDetails.getRam() / sizeDetails.getReplicas())
-              .delegateRequestsCpu(sizeDetails.getCpu() / sizeDetails.getReplicas())
-              .delegateTags(
-                  isNotEmpty(delegateSetupDetails.getTags()) ? String.join(",", delegateSetupDetails.getTags()) : "")
-              .delegateNamespace(delegateSetupDetails.getK8sConfigDetails().getNamespace())
-              .k8sPermissionsType(delegateSetupDetails.getK8sConfigDetails().getK8sPermissionType())
-              .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
-              .delegateTokenName(delegateSetupDetails.getTokenName())
-              .build(),
+          this.finalizeTemplateParametersWithMtlsIfRequired(
+              TemplateParameters.builder()
+                  .accountId(accountId)
+                  .version(version)
+                  .managerHost(managerHost)
+                  .verificationHost(verificationServiceUrl)
+                  .delegateName(delegateSetupDetails.getName())
+                  .delegateType(KUBERNETES)
+                  .ciEnabled(isCiEnabled)
+                  .delegateDescription(delegateSetupDetails.getDescription())
+                  .delegateSize(sizeDetails.getSize().name())
+                  .delegateReplicas(sizeDetails.getReplicas())
+                  .delegateRam(sizeDetails.getRam() / sizeDetails.getReplicas())
+                  .delegateCpu(sizeDetails.getCpu() / sizeDetails.getReplicas())
+                  .delegateRequestsRam(sizeDetails.getRam() / sizeDetails.getReplicas())
+                  .delegateRequestsCpu(sizeDetails.getCpu() / sizeDetails.getReplicas())
+                  .delegateTags(isNotEmpty(delegateSetupDetails.getTags())
+                          ? String.join(",", delegateSetupDetails.getTags())
+                          : "")
+                  .delegateNamespace(delegateSetupDetails.getK8sConfigDetails().getNamespace())
+                  .k8sPermissionsType(delegateSetupDetails.getK8sConfigDetails().getK8sPermissionType())
+                  .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+                  .delegateTokenName(delegateSetupDetails.getTokenName())),
           true);
 
       File yaml = File.createTempFile(HARNESS_DELEGATE, YAML);

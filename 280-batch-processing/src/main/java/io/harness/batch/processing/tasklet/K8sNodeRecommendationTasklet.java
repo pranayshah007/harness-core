@@ -146,7 +146,8 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
         ErrorResponse errorResponse = gson.fromJson(response.errorBody().charStream(), ErrorResponse.class);
         exMessage = errorResponse.getDetail();
 
-        if ("could not recommend cluster with the requested resources".equals(errorResponse.getDetail())) {
+        if ("No node pool could be recommended with the specified tuning parameters".equals(
+                errorResponse.getDetail())) {
           throw new InvalidRequestException(errorResponse.getDetail());
         }
         if ("400 Bad Request".equals(errorResponse.getDetail())) {

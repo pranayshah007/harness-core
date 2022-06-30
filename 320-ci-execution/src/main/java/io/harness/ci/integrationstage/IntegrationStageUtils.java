@@ -14,10 +14,10 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParam
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_DIRECT;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_HOSTED;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.VM;
-import static io.harness.ci.common.CIExecutionConstants.AZURE_REPO_BASE_URL;
-import static io.harness.ci.common.CIExecutionConstants.GIT_URL_SUFFIX;
-import static io.harness.ci.common.CIExecutionConstants.IMAGE_PATH_SPLIT_REGEX;
-import static io.harness.ci.common.CIExecutionConstants.PATH_SEPARATOR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.AZURE_REPO_BASE_URL;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_URL_SUFFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.IMAGE_PATH_SPLIT_REGEX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;

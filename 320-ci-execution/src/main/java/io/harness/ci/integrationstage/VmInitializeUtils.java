@@ -8,10 +8,10 @@
 package io.harness.ci.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
-import static io.harness.ci.common.CIExecutionConstants.OSX_STEP_MOUNT_PATH;
-import static io.harness.ci.common.CIExecutionConstants.SHARED_VOLUME_PREFIX;
-import static io.harness.ci.common.CIExecutionConstants.STEP_MOUNT_PATH;
-import static io.harness.ci.common.CIExecutionConstants.STEP_VOLUME;
+import static io.harness.ci.commonconstants.CIExecutionConstants.OSX_STEP_MOUNT_PATH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.SHARED_VOLUME_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_MOUNT_PATH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_VOLUME;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 

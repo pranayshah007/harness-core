@@ -13,9 +13,9 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParam
 import static io.harness.beans.sweepingoutputs.ContainerPortDetails.PORT_DETAILS;
 import static io.harness.beans.sweepingoutputs.PodCleanupDetails.CLEANUP_DETAILS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
-import static io.harness.ci.common.CIExecutionConstants.HARNESS_SERVICE_LOG_KEY_VARIABLE;
-import static io.harness.ci.common.CIExecutionConstants.POD_MAX_WAIT_UNTIL_READY_SECS;
-import static io.harness.ci.common.CIExecutionConstants.PORT_STARTING_RANGE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_SERVICE_LOG_KEY_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.POD_MAX_WAIT_UNTIL_READY_SECS;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PORT_STARTING_RANGE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.KubernetesConvention.getAccountIdentifier;
 

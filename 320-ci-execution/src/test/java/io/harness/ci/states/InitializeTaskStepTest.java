@@ -20,7 +20,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.environment.ServiceDefinitionInfo;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
-import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.BuildSetupUtils;
 import io.harness.ci.executionplan.CIExecutionPlanTestHelper;
@@ -109,18 +108,8 @@ public class InitializeTaskStepTest extends CIExecutionTestBase {
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
   public void shouldHandleBufferTime() {
-    TaskData taskData =
-        initializeTaskStep.getTaskData(stepElementParameters, null, Infrastructure.Type.KUBERNETES_DIRECT);
+    TaskData taskData = initializeTaskStep.getTaskData(stepElementParameters, null);
     assertThat(taskData.getTimeout()).isEqualTo(630 * 1000L);
-  }
-
-  @SneakyThrows
-  @Test
-  @Owner(developers = HARSH)
-  @Category(UnitTests.class)
-  public void shouldHandleVMBufferTime() {
-    TaskData taskData = initializeTaskStep.getTaskData(stepElementParameters, null, Infrastructure.Type.VM);
-    assertThat(taskData.getTimeout()).isEqualTo(930 * 1000L);
   }
 
   @SneakyThrows

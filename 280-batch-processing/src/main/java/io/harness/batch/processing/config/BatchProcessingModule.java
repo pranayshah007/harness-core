@@ -79,10 +79,12 @@ import io.harness.time.TimeModule;
 
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.dl.WingsPersistence;
+import software.wings.service.impl.SlackMessageSenderImpl;
 import software.wings.service.impl.ce.CeAccountExpirationCheckerImpl;
 import software.wings.service.impl.instance.CloudToHarnessMappingServiceImpl;
 import software.wings.service.impl.instance.DeploymentServiceImpl;
 import software.wings.service.impl.security.NoOpSecretManagerImpl;
+import software.wings.service.intfc.SlackMessageSender;
 import software.wings.service.intfc.ce.CeAccountExpirationChecker;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 import software.wings.service.intfc.instance.DeploymentService;
@@ -127,6 +129,7 @@ public class BatchProcessingModule extends AbstractModule {
     bind(CloudToHarnessMappingService.class).to(CloudToHarnessMappingServiceImpl.class);
     bind(ProductMetricsService.class).to(ProductMetricsServiceImpl.class);
     bind(CESlackWebhookService.class).to(CESlackWebhookServiceImpl.class);
+    bind(SlackMessageSender.class).to(SlackMessageSenderImpl.class);
     bind(BigQueryService.class).to(BigQueryServiceImpl.class);
     bind(CeCloudMetricsService.class).to(CeCloudMetricsServiceImpl.class);
     bind(CENGTelemetryService.class).to(CENGTelemetryServiceImpl.class);

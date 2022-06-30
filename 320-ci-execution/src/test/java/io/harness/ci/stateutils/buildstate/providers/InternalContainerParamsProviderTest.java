@@ -7,14 +7,14 @@
 
 package io.harness.ci.stateutils.buildstate.providers;
 
-import static io.harness.ci.common.CIExecutionConstants.HARNESS_CI_INDIRECT_LOG_UPLOAD_FF;
-import static io.harness.ci.common.CIExecutionConstants.LITE_ENGINE_CONTAINER_NAME;
-import static io.harness.ci.common.CIExecutionConstants.LOG_SERVICE_ENDPOINT_VARIABLE;
-import static io.harness.ci.common.CIExecutionConstants.LOG_SERVICE_TOKEN_VARIABLE;
-import static io.harness.ci.common.CIExecutionConstants.SETUP_ADDON_CONTAINER_NAME;
-import static io.harness.ci.common.CIExecutionConstants.TI_SERVICE_ENDPOINT_VARIABLE;
-import static io.harness.ci.common.CIExecutionConstants.TI_SERVICE_TOKEN_VARIABLE;
-import static io.harness.ci.common.CIExecutionConstants.UNIX_SETUP_ADDON_ARGS;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_CI_INDIRECT_LOG_UPLOAD_FF;
+import static io.harness.ci.commonconstants.CIExecutionConstants.LITE_ENGINE_CONTAINER_NAME;
+import static io.harness.ci.commonconstants.CIExecutionConstants.LOG_SERVICE_ENDPOINT_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.LOG_SERVICE_TOKEN_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.SETUP_ADDON_CONTAINER_NAME;
+import static io.harness.ci.commonconstants.CIExecutionConstants.TI_SERVICE_ENDPOINT_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.TI_SERVICE_TOKEN_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.UNIX_SETUP_ADDON_ARGS;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_ENDPOINT_VARIABLE;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_TOKEN_VARIABLE;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;

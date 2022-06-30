@@ -85,7 +85,6 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   public static final String TASK_TYPE_INITIALIZATION_PHASE = "INITIALIZATION_PHASE";
   public static final String LE_STATUS_TASK_TYPE = "CI_LE_STATUS";
   public static final Long TASK_BUFFER_TIMEOUT_MILLIS = 30 * 1000L;
-  public static final Long VM_INIT_TIMEOUT_MILLIS = 900 * 1000L;
 
   @Inject private BuildSetupUtils buildSetupUtils;
   @Inject private K8InitializeServiceUtils k8InitializeServiceUtils;
@@ -134,9 +133,8 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
         buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, logPrefix);
     log.info("Created params for build task: {}", buildSetupTaskParams);
 
-    return StepUtils.prepareTaskRequest(ambiance,
-        getTaskData(stepElementParameters, buildSetupTaskParams, initializeStepInfo.getInfrastructure().getType()),
-        kryoSerializer);
+    return StepUtils.prepareTaskRequest(
+        ambiance, getTaskData(stepElementParameters, buildSetupTaskParams), kryoSerializer);
   }
 
   @Override
@@ -154,13 +152,10 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     }
   }
 
-  public TaskData getTaskData(StepElementParameters stepElementParameters, CIInitializeTaskParams buildSetupTaskParams,
-      Infrastructure.Type infraType) {
+  public TaskData getTaskData(
+      StepElementParameters stepElementParameters, CIInitializeTaskParams buildSetupTaskParams) {
     long timeout =
         Timeout.fromString((String) stepElementParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis();
-    if (infraType == Infrastructure.Type.VM) {
-      timeout = VM_INIT_TIMEOUT_MILLIS;
-    }
 
     return TaskData.builder()
         .async(true)

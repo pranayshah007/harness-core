@@ -107,8 +107,10 @@ public class ProvisionService {
       + "\"account_id\":\"%s\",\"account_id_short\":\"%s\",\"account_secret\":\"%s\"}}'";
 
   private static final String SAMPLE_DELEGATE_STATUS_ENDPOINT_FORMAT_STRING = "http://%s/account-%s.txt";
-  private static final String PROVISION_STARTED = "provision_started";
-  private static final String PROVISION_COMPLETED = "provision_completed";
+  private static final String PROVISION_STARTED = "Provision Started";
+  private static final String PROVISION_COMPLETED = "Provision Completed";
+  private static final String MODULE = "module";
+  private static final String CI_MODULE = "CI";
 
   public ProvisionResponse.SetupStatus provisionCIResources(String accountId) {
     if (!licenceValid(accountId)) {
@@ -197,6 +199,7 @@ public class ProvisionService {
       }
 
       HashMap<String, Object> provisionMap = new HashMap<>();
+      provisionMap.put(MODULE, CI_MODULE);
       telemetryReporter.sendTrackEvent(PROVISION_STARTED, null, accountId, provisionMap,
           Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
 
@@ -287,6 +290,7 @@ public class ProvisionService {
         }
         if (steps.size() > 0 && steps.get(0).isDone()) {
           HashMap<String, Object> provisionMap = new HashMap<>();
+          provisionMap.put(MODULE, CI_MODULE);
           telemetryReporter.sendTrackEvent(PROVISION_COMPLETED, null, accountId, provisionMap,
               Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
           return DelegateStatus.SUCCESS;

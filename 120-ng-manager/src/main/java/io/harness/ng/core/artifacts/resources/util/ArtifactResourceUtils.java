@@ -105,7 +105,7 @@ public class ArtifactResourceUtils {
    */
   @NotNull
   public ArtifactConfig locateArtifactInService(
-          String accountId, String orgId, String projectId, String serviceRef, String imageTagFqn) {
+      String accountId, String orgId, String projectId, String serviceRef, String imageTagFqn) {
     YamlNode artifactTagLeafNode =
         serviceEntityService.getYamlNodeForFqn(accountId, orgId, projectId, serviceRef, imageTagFqn);
 

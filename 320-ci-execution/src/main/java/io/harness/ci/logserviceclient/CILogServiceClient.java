@@ -7,7 +7,7 @@
 
 package io.harness.ci.logserviceclient;
 
-import io.harness.ci.common.CICommonEndpointConstants;
+import io.harness.ci.commonconstants.CICommonEndpointConstants;
 
 import retrofit2.Call;
 import retrofit2.http.DELETE;

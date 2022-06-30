@@ -98,7 +98,8 @@ public class StartupScriptStepTest extends CDNGTestBase {
     HarnessStoreFile harnessStoreFile = store.getFiles().getValue().get(0);
 
     assertThat(harnessStoreFile.getPath().getValue()).isEqualTo(FILE_PATH);
-    verify(azureHelperService).validateSettingsStoreReferences(storeConfigWrapper, ambiance, StartupScriptStep.ENTITY_TYPE);
+    verify(azureHelperService)
+        .validateSettingsStoreReferences(storeConfigWrapper, ambiance, StartupScriptStep.ENTITY_TYPE);
   }
 
   @Test
@@ -128,7 +129,8 @@ public class StartupScriptStepTest extends CDNGTestBase {
     assertThat(store.getConnectorRef().getValue()).isEqualTo(CONNECTOR_REF);
     assertThat(store.getRepoName().getValue()).isEqualTo(REPO_NAME);
 
-    verify(azureHelperService).validateSettingsStoreReferences(storeConfigWrapper, ambiance, StartupScriptStep.ENTITY_TYPE);
+    verify(azureHelperService)
+        .validateSettingsStoreReferences(storeConfigWrapper, ambiance, StartupScriptStep.ENTITY_TYPE);
   }
 
   private Ambiance getAmbiance() {
@@ -159,9 +161,7 @@ public class StartupScriptStepTest extends CDNGTestBase {
   }
 
   private HarnessStoreFile getHarnessFile() {
-    return HarnessStoreFile.builder()
-        .path(ParameterField.createValueField(FILE_PATH))
-        .build();
+    return HarnessStoreFile.builder().path(ParameterField.createValueField(FILE_PATH)).build();
   }
 
   private StoreConfigWrapper getStoreConfigWrapperWithGitStore() {

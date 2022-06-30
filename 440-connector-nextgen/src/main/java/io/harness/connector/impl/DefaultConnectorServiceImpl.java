@@ -117,7 +117,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -593,12 +592,17 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
-  public List<Map<String, String>> getAttributes(String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers) {
-    Map<String, List<Connector>> connectors = getConnectors(accountId, orgIdentifier, projectIdentifier, connectorIdentifiers).stream().collect(groupingBy(Connector::getIdentifier));
+  public List<Map<String, String>> getAttributes(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers) {
+    Map<String, List<Connector>> connectors =
+        getConnectors(accountId, orgIdentifier, projectIdentifier, connectorIdentifiers)
+            .stream()
+            .collect(groupingBy(Connector::getIdentifier));
     List<Map<String, String>> attributes = new ArrayList<>();
     for (String connectorId : connectorIdentifiers) {
       if (connectors.containsKey(connectorId)) {
-        attributes.add(ImmutableMap.of("category", ConnectorRegistryFactory.getConnectorCategory(connectors.get(connectorId).get(0).getType()).name()));
+        attributes.add(ImmutableMap.of("category",
+            ConnectorRegistryFactory.getConnectorCategory(connectors.get(connectorId).get(0).getType()).name()));
       } else {
         attributes.add(Collections.emptyMap());
       }

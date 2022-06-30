@@ -13,6 +13,7 @@ import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldVal
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.filestore.utils.FileStoreNodeUtils.mapFileNodes;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -46,13 +47,11 @@ import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
-import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
-import io.harness.ng.core.filestore.NGFileType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
@@ -123,7 +122,7 @@ public class SshCommandStepHelper extends CDStepHelper {
     List<HarnessStoreFile> files = ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles());
     List<String> secretFiles = ParameterFieldHelper.getParameterFieldValue(harnessStore.getSecretFiles());
 
-    List<ConfigFileParameters> configFileParameters = new ArrayList<>(files.size());
+    List<ConfigFileParameters> configFileParameters = new ArrayList<>();
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
 
     if (isNotEmpty(files)) {
@@ -134,7 +133,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         io.harness.beans.Scope scope = io.harness.beans.Scope.of(
             ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), fileScope);
 
-        configFileParameters.add(fetchConfigFileFromFileStore(scope, harnessStoreFile));
+        configFileParameters.addAll(fetchConfigFileFromFileStore(scope, harnessStoreFile));
       });
     }
 
@@ -150,12 +149,12 @@ public class SshCommandStepHelper extends CDStepHelper {
     return HarnessStoreDelegateConfig.builder().configFiles(configFileParameters).build();
   }
 
-  private ConfigFileParameters fetchConfigFileFromFileStore(
+  private List<ConfigFileParameters> fetchConfigFileFromFileStore(
       io.harness.beans.Scope scope, @NotNull HarnessStoreFile file) {
     String filePathValue =
         ParameterFieldHelper.getParameterFieldFinalValue(file.getPath())
             .orElseThrow(() -> new InvalidRequestException("Config file path cannot be null or empty"));
-    Optional<FileStoreNodeDTO> configFile = fileStoreService.getByPath(
+    Optional<FileStoreNodeDTO> configFile = fileStoreService.getWithChildrenByPath(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), filePathValue, true);
 
     if (!configFile.isPresent()) {
@@ -163,17 +162,13 @@ public class SshCommandStepHelper extends CDStepHelper {
           filePathValue, ParameterRuntimeFiledHelper.getScopeParameterFieldFinalValue(file.getScope()).orElse(null)));
     }
 
-    FileStoreNodeDTO fileStoreNodeDTO = configFile.get();
-    if (NGFileType.FOLDER.equals(fileStoreNodeDTO.getType()) || !(fileStoreNodeDTO instanceof FileNodeDTO)) {
-      throw new InvalidRequestException("Copy config can only accept file types, but provided folder");
-    }
-
-    FileNodeDTO fileNodeDTO = (FileNodeDTO) fileStoreNodeDTO;
-    return ConfigFileParameters.builder()
-        .fileContent(fileNodeDTO.getContent())
-        .fileName(fileNodeDTO.getName())
-        .fileSize(fileNodeDTO.getSize())
-        .build();
+    return mapFileNodes(configFile.get(),
+        fileNode
+        -> ConfigFileParameters.builder()
+               .fileContent(fileNode.getContent())
+               .fileName(fileNode.getName())
+               .fileSize(fileNode.getSize())
+               .build());
   }
 
   private ConfigFileParameters fetchSecretConfigFile(IdentifierRef fileRef) {

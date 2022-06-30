@@ -12,6 +12,7 @@ import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNES
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -60,8 +61,8 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
-
 import io.harness.utils.IdentifierRefHelper;
+
 import software.wings.beans.TaskType;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -217,7 +218,8 @@ public class AzureHelperService {
     return AcrResourceMapper.toAcrResponse(acrArtifactDelegateResponses);
   }
 
-  public void validateSettingsStoreReferences(StoreConfigWrapper storeConfigWrapper, Ambiance ambiance, String entityType) {
+  public void validateSettingsStoreReferences(
+      StoreConfigWrapper storeConfigWrapper, Ambiance ambiance, String entityType) {
     StoreConfig storeConfig = storeConfigWrapper.getSpec();
     String storeKind = storeConfig.getKind();
     if (HARNESS_STORE_TYPE.equals(storeKind)) {
@@ -252,20 +254,21 @@ public class AzureHelperService {
     List<HarnessStoreFile> fileReferences = harnessStore.getFiles().getValue();
     if (isEmpty(fileReferences)) {
       throw new InvalidRequestException(
-              format("Cannot find any file for %s, store kind: %s", entityType, harnessStore.getKind()));
+          format("Cannot find any file for %s, store kind: %s", entityType, harnessStore.getKind()));
     }
     if (fileReferences.size() > 1) {
       throw new InvalidRequestException(
-              format("Only one file should be provided for %s, store kind: %s", entityType, harnessStore.getKind()));
+          format("Only one file should be provided for %s, store kind: %s", entityType, harnessStore.getKind()));
     }
 
     validateSettingsFileByPath(harnessStore, ambiance, harnessStore.getFiles().getValue().get(0), entityType);
   }
 
-  private void validateSettingsFileByPath(HarnessStore harnessStore, Ambiance ambiance, HarnessStoreFile file, String entityType) {
+  private void validateSettingsFileByPath(
+      HarnessStore harnessStore, Ambiance ambiance, HarnessStoreFile file, String entityType) {
     if (ParameterField.isNull(file.getPath())) {
       throw new InvalidRequestException(
-              format("File path not found for one for %s, store kind: %s", entityType, harnessStore.getKind()));
+          format("File path not found for one for %s, store kind: %s", entityType, harnessStore.getKind()));
     }
 
     if (file.getPath().isExpression()) {
@@ -273,25 +276,24 @@ public class AzureHelperService {
     }
 
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    Scope scope =
-            ParameterRuntimeFiledHelper.getScopeParameterFieldFinalValue(file.getScope())
-                    .orElseThrow(() -> new InvalidRequestException("Config file scope cannot be null or empty"));
+    Scope scope = ParameterRuntimeFiledHelper.getScopeParameterFieldFinalValue(file.getScope())
+                      .orElseThrow(() -> new InvalidRequestException("Config file scope cannot be null or empty"));
     io.harness.beans.Scope fileScope = io.harness.beans.Scope.of(
-            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), scope);
+        ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), scope);
 
-    Optional<FileStoreNodeDTO> fileNode = fileStoreService.getByPath(fileScope.getAccountIdentifier(),
-            fileScope.getOrgIdentifier(), fileScope.getProjectIdentifier(), file.getPath().getValue(), false);
+    Optional<FileStoreNodeDTO> fileNode = fileStoreService.getWithChildrenByPath(fileScope.getAccountIdentifier(),
+        fileScope.getOrgIdentifier(), fileScope.getProjectIdentifier(), file.getPath().getValue(), false);
 
     if (!fileNode.isPresent()) {
       throw new InvalidRequestException(
-              format("%s file not found in File Store with ref : [%s]", entityType, file.getPath().getValue()));
+          format("%s file not found in File Store with ref : [%s]", entityType, file.getPath().getValue()));
     }
   }
 
   private void validateSettingsConnectorByRef(StoreConfig storeConfig, Ambiance ambiance, String entityType) {
     if (ParameterField.isNull(storeConfig.getConnectorReference())) {
       throw new InvalidRequestException(
-              format("Connector ref field not present in %S, store kind: %s ", entityType, storeConfig.getKind()));
+          format("Connector ref field not present in %S, store kind: %s ", entityType, storeConfig.getKind()));
     }
 
     if (storeConfig.getConnectorReference().isExpression()) {
@@ -301,10 +303,10 @@ public class AzureHelperService {
     String connectorIdentifierRef = storeConfig.getConnectorReference().getValue();
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(connectorIdentifierRef,
-            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+        ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
     Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(connectorRef.getAccountIdentifier(),
-            connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier(), connectorRef.getIdentifier());
+        connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier(), connectorRef.getIdentifier());
     if (!connectorDTO.isPresent()) {
       throw new InvalidRequestException(format("Connector not found with identifier: [%s]", connectorIdentifierRef));
     }

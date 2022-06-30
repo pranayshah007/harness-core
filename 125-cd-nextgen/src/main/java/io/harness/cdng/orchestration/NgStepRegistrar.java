@@ -32,6 +32,7 @@ import io.harness.cdng.helm.HelmRollbackStep;
 import io.harness.cdng.infra.steps.EnvironmentStep;
 import io.harness.cdng.infra.steps.InfrastructureSectionStep;
 import io.harness.cdng.infra.steps.InfrastructureStep;
+import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStep;
 import io.harness.cdng.k8s.K8sApplyStep;
 import io.harness.cdng.k8s.K8sBGSwapServicesStep;
 import io.harness.cdng.k8s.K8sBlueGreenStep;
@@ -138,6 +139,7 @@ public class NgStepRegistrar {
     engineSteps.put(ConnectionStringsStep.STEP_TYPE, ConnectionStringsStep.class);
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     engineSteps.put(GitopsClustersStep.STEP_TYPE, GitopsClustersStep.class);
+    engineSteps.put(JenkinsBuildStep.STEP_TYPE, JenkinsBuildStep.class);
     return engineSteps;
   }
 }

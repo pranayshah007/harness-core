@@ -406,6 +406,10 @@ io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepInfo
 io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepNode
 io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepParameters
 io.harness.cdng.service.steps.ServiceSectionStepOutcome
+io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepInfo
+io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildOutcome
+io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepNode
+io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildSpecParameters
 io.harness.cdng.azure.webapp.ApplicationSettingsParameters
 io.harness.cdng.azure.webapp.ConnectionStringsParameters
 io.harness.cdng.azure.webapp.StartupScriptParameters

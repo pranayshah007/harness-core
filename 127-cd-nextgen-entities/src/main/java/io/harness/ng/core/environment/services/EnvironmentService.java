@@ -47,5 +47,6 @@ public interface EnvironmentService {
   String createEnvironmentInputsYaml(
       String accountId, String projectIdentifier, String orgIdentifier, String envIdentifier);
 
-  List<Map<String, String>> getAttributes(String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers);
+  List<Map<String, String>> getAttributes(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers);
 }

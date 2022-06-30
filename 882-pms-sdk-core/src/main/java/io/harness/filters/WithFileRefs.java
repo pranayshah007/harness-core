@@ -11,13 +11,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 
+import java.util.List;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDP)
-public interface WithFileRef {
+public interface WithFileRefs {
   /**
    *
-   * @return a map of relative fqn from step to the file ref parameter field value
+   * @return a map of relative fqn from step to the file ref list parameter field value
    */
-  Map<String, ParameterField<String>> extractFileRefs();
+  Map<String, ParameterField<List<String>>> extractFileRefs();
 }

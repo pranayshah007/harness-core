@@ -301,7 +301,7 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
       }
     });
     modules.add(new ValidationModule(validatorFactory));
-    modules.add(new DelegateServiceModule());
+    modules.add(new DelegateServiceModule("delegate.ut.harness.io"));
     modules.add(new CapabilityModule());
     modules.add(new WingsModule((MainConfiguration) configuration, StartupMode.MANAGER));
     modules.add(new TestTotpModule());

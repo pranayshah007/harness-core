@@ -113,7 +113,10 @@ import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
+import io.harness.logging.AccountLogContext;
+import io.harness.logging.AutoLogContext.OverrideBehavior;
 import io.harness.logging.ExceptionLogger;
+import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 import io.harness.rest.RestResponse;
 import io.harness.rest.RestResponse.Builder;
@@ -1086,7 +1089,7 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
 
   @Override
   public YamlOperationResponse upsertYAMLFilesAsZip(final String accountId, final InputStream fileInputStream) {
-    try {
+    try (AccountLogContext ignore1 = new AccountLogContext(accountId, OverrideBehavior.OVERRIDE_ERROR)) {
       final String auditHeaderIdFromGlobalContext = auditService.getAuditHeaderIdFromGlobalContext();
       if (!Strings.isNullOrEmpty(auditHeaderIdFromGlobalContext)) {
         final AuditHeader currentAuditHeader = wingsPersistence.get(AuditHeader.class, auditHeaderIdFromGlobalContext);
@@ -1149,7 +1152,7 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
   @Override
   public YamlOperationResponse deleteYAMLByPaths(final String accountId, final List<String> filePaths) {
     List unauthorizedFiles = null;
-    try {
+    try (AccountLogContext ignore1 = new AccountLogContext(accountId, OverrideBehavior.OVERRIDE_ERROR)) {
       List changeList = filePaths.stream()
                             .map(filePath
                                 -> GitFileChange.Builder.aGitFileChange()
@@ -1189,7 +1192,7 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
   public YamlOperationResponse deleteYAMLByPathsV2(
       final String accountId, final List<EntityInformation> entityInformations) {
     List<Change> unauthorizedFiles = null;
-    try {
+    try (AccountLogContext ignore1 = new AccountLogContext(accountId, OverrideBehavior.OVERRIDE_ERROR)) {
       List<Change> changeList = io.harness.data.structure.CollectionUtils.emptyIfNull(entityInformations)
                                     .stream()
                                     .map(entityInformation -> {
@@ -1233,7 +1236,7 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
     if (yamlContent.isEmpty()) {
       throw new InvalidArgumentsException(Pair.of("Input YAML", "cannot be empty"));
     }
-    try {
+    try (AccountLogContext ignore1 = new AccountLogContext(accountId, OverrideBehavior.OVERRIDE_ERROR)) {
       List changeList = Arrays.asList(GitFileChange.Builder.aGitFileChange()
                                           .withFilePath(yamlFilePath)
                                           .withFileContent(yamlContent)
@@ -1244,11 +1247,15 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
       List<ChangeContext> processedChangeList = processChangeSet(changeList);
       if (!processedChangeList.isEmpty()) {
         final ChangeContext changeContext = processedChangeList.get(0);
+        String entityId = getEntityId(yamlFilePath, changeContext);
+        // added tracability due to many recent issues
+        doTracing(accountId, yamlFilePath, changeContext);
+
         return FileOperationStatus.builder()
             .status(FileOperationStatus.Status.SUCCESS)
             .errorMssg("")
             .yamlFilePath(changeContext.getChange().getFilePath())
-            .entityId(changeContext.getEntity() != null ? ((Base) changeContext.getEntity()).getUuid() : null)
+            .entityId(entityId)
             .build();
       }
     } catch (YamlProcessingException ex) {
@@ -1265,6 +1272,32 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
       }
     }
     return null;
+  }
+
+  private void doTracing(String accountId, String yamlFilePath, ChangeContext changeContext) {
+    try {
+      Object o = changeContext.getYamlSyncHandler().get(accountId, yamlFilePath);
+      if (o == null) {
+        log.error("Not able to create entity due to some issue for file path {}.", yamlFilePath);
+      } else {
+        log.info("Created entity {} for filepath {}", o, yamlFilePath);
+      }
+    } catch (Exception e) {
+      log.error(String.format("Some issue while validating creation of entity with file path %s", yamlFilePath), e);
+    }
+  }
+
+  private String getEntityId(String yamlFilePath, ChangeContext changeContext) {
+    PersistentEntity entity = changeContext.getEntity();
+    String entityId = null;
+    if (entity instanceof Base) {
+      entityId = ((Base) entity).getUuid();
+    } else if (entity instanceof UuidAware) {
+      entityId = ((UuidAware) entity).getUuid();
+    } else {
+      log.info("No entity ID found for the entity {} and filepath {}", entity, yamlFilePath);
+    }
+    return entityId;
   }
 
   private YamlOperationResponse prepareFailedYAMLOperationResponse(final String errorMessage,
