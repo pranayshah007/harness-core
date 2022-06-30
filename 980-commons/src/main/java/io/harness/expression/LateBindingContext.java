@@ -12,6 +12,7 @@ import java.util.Map;
 import lombok.Builder;
 import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlException;
+import org.jetbrains.annotations.Nullable;
 
 @Builder
 public class LateBindingContext implements JexlContext {
@@ -28,8 +29,34 @@ public class LateBindingContext implements JexlContext {
 
   @Override
   public synchronized Object get(String key) {
-    Object object;
-    object = map.get(key);
+    Object object = getMapValue(key);
+
+    if (object instanceof LateBindingValue) {
+      map.remove(key);
+      object = ((LateBindingValue) object).bind();
+      map.put(key, object);
+    }
+
+    return object;
+  }
+
+  @Override
+  public synchronized void set(String name, Object value) {
+    map.put(name, value);
+  }
+
+  public synchronized Class<?> getValueClass(String key) {
+    Object object = getMapValue(key);
+    return object != null ? object.getClass() : null;
+  }
+
+  public synchronized void clear() {
+    map.clear();
+  }
+
+  @Nullable
+  private Object getMapValue(String key) {
+    Object object = map.get(key);
     if (object == null && !recursive) {
       for (String prefix : prefixes) {
         if (prefix == null) {
@@ -48,22 +75,6 @@ public class LateBindingContext implements JexlContext {
         }
       }
     }
-
-    if (object instanceof LateBindingValue) {
-      map.remove((String) key);
-      object = ((LateBindingValue) object).bind();
-      map.put((String) key, object);
-    }
-
     return object;
-  }
-
-  @Override
-  public synchronized void set(String name, Object value) {
-    map.put(name, value);
-  }
-
-  public synchronized void clear() {
-    map.clear();
   }
 }

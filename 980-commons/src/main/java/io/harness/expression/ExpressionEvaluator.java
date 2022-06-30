@@ -118,8 +118,7 @@ public class ExpressionEvaluator {
       return null;
     }
 
-    JexlContext jc = prepareContext(context, defaultObjectPrefix);
-    return ExpressionEvaluatorUtils.substitute(this, expression, jc, tracker);
+    return ExpressionEvaluatorUtils.substitute(this, expression, prepareContext(context, defaultObjectPrefix), tracker);
   }
 
   public String substituteSecured(
@@ -128,8 +127,7 @@ public class ExpressionEvaluator {
       return null;
     }
 
-    JexlContext jc = prepareContext(context, defaultObjectPrefix);
-    return ExpressionEvaluatorUtils.substituteSecured(this, expression, jc, tracker);
+    return ExpressionEvaluatorUtils.substituteSecured(this, expression, prepareContext(context, defaultObjectPrefix), tracker);
   }
 
   public static void isValidVariableName(String name) {
@@ -204,8 +202,8 @@ public class ExpressionEvaluator {
     }
   }
 
-  private JexlContext prepareContext(Map<String, Object> context, String defaultObjectPrefix) {
-    final Map<String, Object> map = new HashMap(context);
+  private LateBindingContext prepareContext(Map<String, Object> context, String defaultObjectPrefix) {
+    final Map<String, Object> map = new HashMap<>(context);
     map.putAll(expressionFunctorMap);
     return LateBindingContext.builder()
         .prefixes(generatePrefixList(defaultObjectPrefix))

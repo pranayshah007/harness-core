@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.lang.String.format;
 
+import com.google.common.util.concurrent.FluentFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.algorithm.IdentifierName;
@@ -21,10 +22,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -39,6 +37,7 @@ import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.logging.impl.NoOpLog;
 import org.apache.commons.text.StrLookup;
 import org.apache.commons.text.StrSubstitutor;
+import software.wings.expression.SecretFunctor;
 
 @OwnedBy(CDC)
 @UtilityClass
@@ -53,7 +52,7 @@ public class ExpressionEvaluatorUtils {
   private static final String REGEX = "[0-9]+";
 
   public static String substitute(
-      ExpressionEvaluator expressionEvaluator, String expression, JexlContext ctx, VariableResolverTracker tracker) {
+      ExpressionEvaluator expressionEvaluator, String expression, LateBindingContext ctx, VariableResolverTracker tracker) {
     if (expression == null) {
       return null;
     }
@@ -72,7 +71,7 @@ public class ExpressionEvaluatorUtils {
   }
 
   public static String substituteSecured(
-      ExpressionEvaluator expressionEvaluator, String expression, JexlContext ctx, VariableResolverTracker tracker) {
+      ExpressionEvaluator expressionEvaluator, String expression, LateBindingContext ctx, VariableResolverTracker tracker) {
     if (expression == null) {
       return null;
     }
@@ -90,7 +89,7 @@ public class ExpressionEvaluatorUtils {
     return substituteSecretsSecured(expression, ctx, variableResolver, pattern);
   }
 
-  public static String substitute(@NotNull String expression, JexlContext ctx, StrLookup<Object> variableResolver,
+  public static String substitute(@NotNull String expression, LateBindingContext ctx, StrLookup<Object> variableResolver,
       Pattern pattern, boolean newDelimiters) {
     StrSubstitutor substitutor = getSubstitutor(variableResolver, newDelimiters);
 
@@ -124,8 +123,13 @@ public class ExpressionEvaluatorUtils {
           // Extract the current matched entry with pattern. After this step: name - ABCD1WXYZ
           String name = matcher.group(g);
           names.add(name);
-          // Get the value from ctx map in a background thread so that secret functors execute in parallel
-          futureValues.put(name, executorService.submit(() -> ctx.get(name)));
+          if (SecretFunctor.class.equals(ctx.getValueClass(name))) {
+            // Get the value from ctx map in a background thread so that secret functors execute in parallel
+            futureValues.put(name, executorService.submit(() -> ctx.get(name)));
+          } else {
+            // Get the value now from ctx map
+            futureValues.put(name, new FutureTask<>(() -> {}, ctx.get(name)));
+          }
         }
 
         try {
