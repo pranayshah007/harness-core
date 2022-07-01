@@ -20,6 +20,7 @@ Alexandru Bosii alexandru.bosii@harness.io
 Alexandru Casian alexandru.casian@harness.io
 Alexei Stirbul alexei.stirbul@harness.io
 Allen Thomas allen.thomas@harness.io
+Allu Vamsi allu.vamsi@harness.io
 Aman Singh aman.singh@harness.io
 aman-harness aman.singh@harness.io
 aman-iitj aman.singh@harness.io
