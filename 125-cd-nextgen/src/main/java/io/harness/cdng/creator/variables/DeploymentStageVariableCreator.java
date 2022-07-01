@@ -390,7 +390,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     EnvironmentYamlV2 environmentYamlV2 = stageNode.getDeploymentStageConfig().getEnvironment();
     if (environmentYamlV2 != null) {
       List<InfraStructureDefinitionYaml> infraStructureDefinitionYamls =
-          environmentYamlV2.getInfrastructureDefinitions();
+          environmentYamlV2.getInfrastructureDefinitions().getValue();
       if (EmptyPredicate.isNotEmpty(infraStructureDefinitionYamls)) {
         return infraStructureDefinitionYamls.stream()
             .map(InfraStructureDefinitionYaml::getIdentifier)

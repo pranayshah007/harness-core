@@ -177,7 +177,7 @@ public class EnvironmentPlanCreatorHelper {
     if (!environmentV2.isDeployToAll()) {
       List<String> infraIdentifierList = new ArrayList<>();
 
-      for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions()) {
+      for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions().getValue()) {
         String ref = infraYaml.getIdentifier().getValue();
         infraIdentifierList.add(ref);
         if (isNotEmpty(infraYaml.getInputs())) {
@@ -188,9 +188,9 @@ public class EnvironmentPlanCreatorHelper {
           accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifierList);
 
     } else {
-      if (isNotEmpty(environmentV2.getInfrastructureDefinitions())) {
+      if (isNotEmpty(environmentV2.getInfrastructureDefinitions().getValue())) {
         throw new InvalidRequestException(String.format("DeployToAll is enabled along with specific Infrastructures %s",
-            environmentV2.getInfrastructureDefinitions()));
+            environmentV2.getInfrastructureDefinitions().getValue()));
       }
       infrastructureEntityList = infrastructure.getAllInfrastructureFromEnvIdentifier(
           accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier);

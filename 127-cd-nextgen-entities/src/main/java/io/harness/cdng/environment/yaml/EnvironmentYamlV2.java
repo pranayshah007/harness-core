@@ -8,6 +8,8 @@
 package io.harness.cdng.environment.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -22,6 +24,7 @@ import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.harness.yaml.YamlSchemaTypes;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import java.util.Map;
@@ -54,12 +57,12 @@ public class EnvironmentYamlV2 implements Visitable {
    */
   boolean deployToAll;
 
-  List<InfraStructureDefinitionYaml> infrastructureDefinitions;
+  @ApiModelProperty(dataType = "[Lio.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;") @YamlSchemaTypes({runtime}) ParameterField<List<InfraStructureDefinitionYaml>> infrastructureDefinitions;
 
   // environmentInputs
-  @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH) Map<String, Object> environmentInputs;
+  @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH) @YamlSchemaTypes(runtime) Map<String, Object> environmentInputs;
 
-  @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH) Map<String, Object> serviceOverrideInputs;
+  @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH) @YamlSchemaTypes(runtime) Map<String, Object> serviceOverrideInputs;
 
   List<ClusterYaml> gitOpsClusters;
 

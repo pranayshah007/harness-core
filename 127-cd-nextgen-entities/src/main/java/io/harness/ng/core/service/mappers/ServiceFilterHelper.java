@@ -44,7 +44,7 @@ public class ServiceFilterHelper {
 
     if (type != null) {
       final Criteria typeCriteria = new Criteria().orOperator(
-          where(ServiceEntityKeys.type).is(type.getYamlName()), where(ServiceEntityKeys.type).is(null));
+          where(ServiceEntityKeys.type).is(type.name()), where(ServiceEntityKeys.type).is(null));
       andCriterias.add(typeCriteria);
     }
 

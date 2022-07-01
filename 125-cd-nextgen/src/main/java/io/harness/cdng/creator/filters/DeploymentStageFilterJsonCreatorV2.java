@@ -135,7 +135,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
         final Environment entity = environmentEntityOptional.get();
         filterBuilder.environmentName(entity.getName());
 
-        List<InfraStructureDefinitionYaml> infraList = env.getInfrastructureDefinitions();
+        List<InfraStructureDefinitionYaml> infraList = env.getInfrastructureDefinitions().getValue();
         if (isNotEmpty(infraList)) {
           if (infraList.size() > 1) {
             throw new InvalidYamlRuntimeException(format(
