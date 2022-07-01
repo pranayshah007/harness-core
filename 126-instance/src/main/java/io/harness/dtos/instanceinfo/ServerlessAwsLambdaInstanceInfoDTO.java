@@ -56,10 +56,8 @@ public class ServerlessAwsLambdaInstanceInfoDTO extends InstanceInfoDTO {
     return functionName;
   }
 
-
   @Override
   public String getType() {
     return "ServerlessAwsLambda";
   }
-
 }

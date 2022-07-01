@@ -308,17 +308,17 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
         .build();
   }
 
-  private BuildStatusUpdateParameter getBuildStatusUpdateParameter(String identifier, String name, String projectName,
-                                                                   String repo) {
+  private BuildStatusUpdateParameter getBuildStatusUpdateParameter(
+      String identifier, String name, String projectName, String repo) {
     return BuildStatusUpdateParameter.builder()
-            .connectorIdentifier("testConnector")
-            .projectName(projectName)
-            .repoName(repo)
-            .identifier(identifier)
-            .buildNumber("0")
-            .desc("desc")
-            .name(name)
-            .build();
+        .connectorIdentifier("testConnector")
+        .projectName(projectName)
+        .repoName(repo)
+        .identifier(identifier)
+        .buildNumber("0")
+        .desc("desc")
+        .name(name)
+        .build();
   }
 
   private void prepareAccountLevelConnector(String url, String vanityUrl) throws IOException {

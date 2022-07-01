@@ -1104,47 +1104,47 @@ public class CIExecutionPlanTestHelper {
 
   public ConnectorDTO getGitLabConnectorDTO() {
     return ConnectorDTO.builder()
-        .connectorInfo(ConnectorInfoDTO.builder()
-                           .name("gitLabConnector")
-                           .identifier("gitLabConnector")
-                           .connectorType(ConnectorType.GITLAB)
-                           .connectorConfig(GitlabConnectorDTO.builder()
-                                   .connectionType(GitConnectionType.REPO)
-                                   .authentication(
-                                           GitlabAuthenticationDTO.builder()
-                                                   .authType(GitAuthType.HTTP)
-                                                   .credentials(GitlabHttpCredentialsDTO.builder()
-                                                           .type(GitlabHttpAuthenticationType.USERNAME_AND_PASSWORD)
-                                                           .httpCredentialsSpec(GitlabUsernamePasswordDTO.builder()
-                                                                   .build())
-                                                           .build())
-                                                   .build()
-                                   )
-                                   .build())
-                           .build())
+        .connectorInfo(
+            ConnectorInfoDTO.builder()
+                .name("gitLabConnector")
+                .identifier("gitLabConnector")
+                .connectorType(ConnectorType.GITLAB)
+                .connectorConfig(
+                    GitlabConnectorDTO.builder()
+                        .connectionType(GitConnectionType.REPO)
+                        .authentication(
+                            GitlabAuthenticationDTO.builder()
+                                .authType(GitAuthType.HTTP)
+                                .credentials(GitlabHttpCredentialsDTO.builder()
+                                                 .type(GitlabHttpAuthenticationType.USERNAME_AND_PASSWORD)
+                                                 .httpCredentialsSpec(GitlabUsernamePasswordDTO.builder().build())
+                                                 .build())
+                                .build())
+                        .build())
+                .build())
         .build();
   }
 
   public ConnectorDTO getBitbucketConnectorDTO() {
     return ConnectorDTO.builder()
-        .connectorInfo(ConnectorInfoDTO.builder()
-                           .name("bitBucketConnector")
-                           .identifier("bitBucketConnector")
-                           .connectorType(ConnectorType.BITBUCKET)
-                           .connectorConfig(BitbucketConnectorDTO.builder()
-                                   .connectionType(GitConnectionType.REPO)
-                                   .authentication(
-                                           BitbucketAuthenticationDTO.builder()
-                                                   .authType(GitAuthType.HTTP)
-                                                   .credentials(BitbucketHttpCredentialsDTO.builder()
-                                                           .type(BitbucketHttpAuthenticationType.USERNAME_AND_PASSWORD)
-                                                           .httpCredentialsSpec(BitbucketUsernamePasswordDTO.builder()
-                                                                   .build())
-                                                           .build())
-                                                   .build()
-                                   )
-                                   .build())
-                           .build())
+        .connectorInfo(
+            ConnectorInfoDTO.builder()
+                .name("bitBucketConnector")
+                .identifier("bitBucketConnector")
+                .connectorType(ConnectorType.BITBUCKET)
+                .connectorConfig(
+                    BitbucketConnectorDTO.builder()
+                        .connectionType(GitConnectionType.REPO)
+                        .authentication(
+                            BitbucketAuthenticationDTO.builder()
+                                .authType(GitAuthType.HTTP)
+                                .credentials(BitbucketHttpCredentialsDTO.builder()
+                                                 .type(BitbucketHttpAuthenticationType.USERNAME_AND_PASSWORD)
+                                                 .httpCredentialsSpec(BitbucketUsernamePasswordDTO.builder().build())
+                                                 .build())
+                                .build())
+                        .build())
+                .build())
         .build();
   }
 

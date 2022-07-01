@@ -31,7 +31,6 @@ import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.entity.metadata.GitMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.NGTriggerMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
-
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.beans.source.WebhookTriggerType;
@@ -39,6 +38,7 @@ import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.AzureRepoSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.event.AzureRepoPushSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.event.AzureRepoTriggerEvent;
+
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -226,18 +226,19 @@ public class NgTriggersTestHelper {
                                      .build())
                         .build())
                 .build())
-        .ngTriggerConfigV2(NGTriggerConfigV2.builder()
-             .source(NGTriggerSourceV2.builder()
-                         .type(NGTriggerType.WEBHOOK)
-                         .spec(WebhookTriggerConfigV2.builder()
-                                   .type(WebhookTriggerType.AZURE)
-                                   .spec(AzureRepoSpec.builder()
-                                             .type(AzureRepoTriggerEvent.PUSH)
-                                             .spec(AzureRepoPushSpec.builder().projectName("test").build())
-                                             .build())
-                                   .build())
-                         .build())
-             .build())
+        .ngTriggerConfigV2(
+            NGTriggerConfigV2.builder()
+                .source(NGTriggerSourceV2.builder()
+                            .type(NGTriggerType.WEBHOOK)
+                            .spec(WebhookTriggerConfigV2.builder()
+                                      .type(WebhookTriggerType.AZURE)
+                                      .spec(AzureRepoSpec.builder()
+                                                .type(AzureRepoTriggerEvent.PUSH)
+                                                .spec(AzureRepoPushSpec.builder().projectName("test").build())
+                                                .build())
+                                      .build())
+                            .build())
+                .build())
         .build();
   }
 

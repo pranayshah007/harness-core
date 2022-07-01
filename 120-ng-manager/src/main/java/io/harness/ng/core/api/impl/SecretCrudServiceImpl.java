@@ -187,15 +187,18 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     return Boolean.TRUE.equals(isHarnessManaged);
   }
 
-  private boolean isOpaPoliciesSatisfied(String accountIdentifier, SecretDTOV2 dto, SecretResponseWrapper secretResponseWrapper){
-    GovernanceMetadata governanceMetadata = opaSecretService.evaluatePoliciesWithEntity(accountIdentifier, dto, dto.getOrgIdentifier(), dto.getProjectIdentifier(),OpaConstants.OPA_EVALUATION_ACTION_CONNECTOR_SAVE,dto.getIdentifier());
+  private boolean isOpaPoliciesSatisfied(
+      String accountIdentifier, SecretDTOV2 dto, SecretResponseWrapper secretResponseWrapper) {
+    GovernanceMetadata governanceMetadata =
+        opaSecretService.evaluatePoliciesWithEntity(accountIdentifier, dto, dto.getOrgIdentifier(),
+            dto.getProjectIdentifier(), OpaConstants.OPA_EVALUATION_ACTION_CONNECTOR_SAVE, dto.getIdentifier());
     secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
     return governanceMetadata == null || !OpaConstants.OPA_STATUS_ERROR.equals(governanceMetadata.getStatus());
   }
 
   private SecretResponseWrapper createSecretInternal(String accountIdentifier, SecretDTOV2 dto, boolean draft) {
     SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
-    if(!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)){
+    if (!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)) {
       return secretResponseWrapper;
     }
     GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
@@ -401,7 +404,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     boolean remoteUpdateSuccess = true;
 
     SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
-    if(!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)){
+    if (!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)) {
       return secretResponseWrapper;
     }
     GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
@@ -416,7 +419,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     if (remoteUpdateSuccess) {
       updatedSecret = ngSecretService.update(accountIdentifier, dto, false);
     }
-    secretResponseWrapper= processAndGetSecret(remoteUpdateSuccess, updatedSecret);
+    secretResponseWrapper = processAndGetSecret(remoteUpdateSuccess, updatedSecret);
     secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
     return secretResponseWrapper;
   }
@@ -429,7 +432,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     }
 
     SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
-    if(!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)){
+    if (!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)) {
       return secretResponseWrapper;
     }
     GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
@@ -486,7 +489,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   public SecretResponseWrapper createFile(
       @NotNull String accountIdentifier, @NotNull SecretDTOV2 dto, @NotNull InputStream inputStream) {
     SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
-    if(!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)){
+    if (!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)) {
       return secretResponseWrapper;
     }
     GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
@@ -526,7 +529,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   public SecretResponseWrapper updateFile(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String identifier, @Valid SecretDTOV2 dto, @NotNull InputStream inputStream) {
     SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
-    if(!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)){
+    if (!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)) {
       return secretResponseWrapper;
     }
     GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();

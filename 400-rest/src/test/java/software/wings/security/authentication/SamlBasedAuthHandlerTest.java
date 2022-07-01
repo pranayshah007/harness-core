@@ -7,11 +7,21 @@
 
 package software.wings.security.authentication;
 
-import com.amazonaws.util.StringInputStream;
-import com.coveo.saml.SamlClient;
-import com.coveo.saml.SamlException;
-import com.coveo.saml.SamlResponse;
-import com.google.inject.Inject;
+import static io.harness.rule.OwnerRule.BOOPESH;
+import static io.harness.rule.OwnerRule.PRATEEK;
+import static io.harness.rule.OwnerRule.RUSHABH;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -23,6 +33,27 @@ import io.harness.exception.WingsException;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
+
+import software.wings.WingsBaseTest;
+import software.wings.beans.Account;
+import software.wings.beans.User;
+import software.wings.beans.sso.SamlSettings;
+import software.wings.security.saml.SamlClientService;
+import software.wings.security.saml.SamlUserGroupSync;
+import software.wings.service.intfc.SSOSettingService;
+import software.wings.service.intfc.security.EncryptionService;
+import software.wings.service.intfc.security.SecretManager;
+
+import com.amazonaws.util.StringInputStream;
+import com.coveo.saml.SamlClient;
+import com.coveo.saml.SamlException;
+import com.coveo.saml.SamlResponse;
+import com.google.inject.Inject;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
 import net.shibboleth.utilities.java.support.xml.XMLParserException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
@@ -43,35 +74,6 @@ import org.opensaml.core.xml.util.XMLObjectSupport;
 import org.opensaml.saml.config.impl.SAMLConfigurationInitializer;
 import org.opensaml.saml.saml2.core.Assertion;
 import org.opensaml.saml.saml2.core.Response;
-import software.wings.WingsBaseTest;
-import software.wings.beans.Account;
-import software.wings.beans.User;
-import software.wings.beans.sso.SamlSettings;
-import software.wings.security.saml.SamlClientService;
-import software.wings.security.saml.SamlUserGroupSync;
-import software.wings.service.intfc.SSOSettingService;
-import software.wings.service.intfc.security.EncryptionService;
-import software.wings.service.intfc.security.SecretManager;
-
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
-
-import static io.harness.rule.OwnerRule.BOOPESH;
-import static io.harness.rule.OwnerRule.PRATEEK;
-import static io.harness.rule.OwnerRule.RUSHABH;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
-import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 @OwnedBy(HarnessTeam.PL)
 @TargetModule(HarnessModule._950_NG_AUTHENTICATION_SERVICE)

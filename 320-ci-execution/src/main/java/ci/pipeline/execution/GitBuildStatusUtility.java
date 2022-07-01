@@ -155,9 +155,10 @@ public class GitBuildStatusUtility {
       if (ciBuildStatusPushParameters.getState() != UNSUPPORTED) {
         ConnectorDetails connectorDetails = ciBuildStatusPushParameters.getConnectorDetails();
         boolean executeOnDelegate =
-                connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
+            connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
         if (executeOnDelegate) {
-          sendStatusViaDelegate(ambiance, ciBuildStatusPushParameters, accountId, buildStatusUpdateParameter.getIdentifier());
+          sendStatusViaDelegate(
+              ambiance, ciBuildStatusPushParameters, accountId, buildStatusUpdateParameter.getIdentifier());
         } else {
           sendStatus(ambiance, ciBuildStatusPushParameters, accountId, buildStatusUpdateParameter.getIdentifier());
         }
@@ -172,45 +173,45 @@ public class GitBuildStatusUtility {
   private void sendStatus(
       Ambiance ambiance, CIBuildStatusPushParameters ciBuildStatusPushParameters, String accountId, String stageId) {
     GitStatusCheckParams gitStatusCheckParams = convertParams(ciBuildStatusPushParameters);
-    log.info("Sending git status update request for stage {}, planId {}, commitId {}, status {}",
-            stageId, ambiance.getPlanExecutionId(), ciBuildStatusPushParameters.getSha(),
-            ciBuildStatusPushParameters.getState());
+    log.info("Sending git status update request for stage {}, planId {}, commitId {}, status {}", stageId,
+        ambiance.getPlanExecutionId(), ciBuildStatusPushParameters.getSha(), ciBuildStatusPushParameters.getState());
     gitStatusCheckHelper.sendStatus(gitStatusCheckParams, accountId);
   }
 
-  private void sendStatusViaDelegate(Ambiance ambiance, CIBuildStatusPushParameters ciBuildStatusPushParameters, String accountId, String stageId) {
+  private void sendStatusViaDelegate(
+      Ambiance ambiance, CIBuildStatusPushParameters ciBuildStatusPushParameters, String accountId, String stageId) {
     Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
     DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
-            .accountId(accountId)
-            .taskSetupAbstractions(abstractions)
-            .executionTimeout(java.time.Duration.ofSeconds(60))
-            .taskType("BUILD_STATUS")
-            .taskParameters(ciBuildStatusPushParameters)
-            .taskDescription("CI git build status task")
-            .build();
+                                                  .accountId(accountId)
+                                                  .taskSetupAbstractions(abstractions)
+                                                  .executionTimeout(java.time.Duration.ofSeconds(60))
+                                                  .taskType("BUILD_STATUS")
+                                                  .taskParameters(ciBuildStatusPushParameters)
+                                                  .taskDescription("CI git build status task")
+                                                  .build();
 
     String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
     log.info("Submitted git status update request for stage {}, planId {}, commitId {}, status {} with taskId {}",
-            stageId, ambiance.getPlanExecutionId(), ciBuildStatusPushParameters.getSha(),
-            ciBuildStatusPushParameters.getState(), taskId);
+        stageId, ambiance.getPlanExecutionId(), ciBuildStatusPushParameters.getSha(),
+        ciBuildStatusPushParameters.getState(), taskId);
   }
 
   private GitStatusCheckParams convertParams(CIBuildStatusPushParameters params) {
     return GitStatusCheckParams.builder()
-            .title(params.getTitle())
-            .desc(params.getDesc())
-            .state(params.getState())
-            .buildNumber(params.getBuildNumber())
-            .detailsUrl(params.getDetailsUrl())
-            .repo(params.getRepo())
-            .owner(params.getOwner())
-            .sha(params.getSha())
-            .identifier(params.getIdentifier())
-            .target_url(params.getTarget_url())
-            .userName(params.getUserName())
-            .connectorDetails(params.getConnectorDetails())
-            .gitSCMType(params.getGitSCMType())
-            .build();
+        .title(params.getTitle())
+        .desc(params.getDesc())
+        .state(params.getState())
+        .buildNumber(params.getBuildNumber())
+        .detailsUrl(params.getDetailsUrl())
+        .repo(params.getRepo())
+        .owner(params.getOwner())
+        .sha(params.getSha())
+        .identifier(params.getIdentifier())
+        .target_url(params.getTarget_url())
+        .userName(params.getUserName())
+        .connectorDetails(params.getConnectorDetails())
+        .gitSCMType(params.getGitSCMType())
+        .build();
   }
 
   public CIBuildStatusPushParameters getCIBuildStatusPushParams(

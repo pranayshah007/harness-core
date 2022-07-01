@@ -185,7 +185,7 @@ public class ShellScriptParameters implements TaskParameters, ActivityAccess, Ex
     if (isGcpDeployment(containerServiceParams)) {
       GcpConfig gcpConfig = (GcpConfig) containerServiceParams.getSettingAttribute().getValue();
       List<EncryptedDataDetail> encryptionDetails = containerServiceParams.getEncryptionDetails();
-      encryptionService.decrypt(gcpConfig, encryptionDetails,false);
+      encryptionService.decrypt(gcpConfig, encryptionDetails, false);
       serviceAccountKeyFileContent = gcpConfig.getServiceAccountKeyFileContent();
     }
     return ShellExecutorConfig.builder()
@@ -203,7 +203,7 @@ public class ShellScriptParameters implements TaskParameters, ActivityAccess, Ex
 
   private boolean isGcpDeployment(ContainerServiceParams containerServiceParams) {
     return containerServiceParams != null && containerServiceParams.getSettingAttribute() != null
-      && (containerServiceParams.getSettingAttribute().getValue() instanceof GcpConfig);
+        && (containerServiceParams.getSettingAttribute().getValue() instanceof GcpConfig);
   }
 
   @Override

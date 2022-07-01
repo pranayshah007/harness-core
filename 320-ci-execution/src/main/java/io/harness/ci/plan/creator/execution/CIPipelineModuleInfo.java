@@ -16,10 +16,9 @@ import io.harness.ci.pipeline.executions.beans.CIWebhookInfoDTO;
 import io.harness.ci.pipeline.executions.beans.TIBuildDetails;
 import io.harness.pms.sdk.execution.beans.PipelineModuleInfo;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
-
-import java.util.List;
 
 @Data
 @Builder

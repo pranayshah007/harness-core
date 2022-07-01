@@ -300,8 +300,8 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
       ProcessResult processResult = processExecutor.execute();
       commandExecutionStatus = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
       if (commandExecutionStatus == SUCCESS && envVariablesOutputFile != null) {
-        try (BufferedReader br =
-                 new BufferedReader(new InputStreamReader(new FileInputStream(envVariablesOutputFile), StandardCharsets.UTF_8))) {
+        try (BufferedReader br = new BufferedReader(
+                 new InputStreamReader(new FileInputStream(envVariablesOutputFile), StandardCharsets.UTF_8))) {
           processScriptOutputFile(envVariablesMap, br, secretVariablesToCollect);
         } catch (IOException e) {
           saveExecutionLog("IOException:" + e, ERROR);

@@ -27,7 +27,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.inject.Inject;
 import java.io.IOException;
-
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,9 +38,7 @@ public class OpaConnectorServiceImpl implements OpaConnectorService {
   private AccountClient accountClient;
 
   public ConnectorOpaEvaluationContext createEvaluationContext(String yaml, String key) throws IOException {
-    return ConnectorOpaEvaluationContext.builder()
-            .entity(OpaUtils.extractObjectFromYamlString(yaml, key))
-            .build();
+    return ConnectorOpaEvaluationContext.builder().entity(OpaUtils.extractObjectFromYamlString(yaml, key)).build();
   }
 
   public GovernanceMetadata evaluatePoliciesWithEntity(String accountId, ConnectorDTO connectorDTO,
