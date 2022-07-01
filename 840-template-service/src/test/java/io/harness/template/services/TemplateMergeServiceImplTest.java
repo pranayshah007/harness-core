@@ -37,6 +37,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -168,6 +169,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .scope(Scope.ORG)
                                          .fqn("pipeline.stages.qaStage.spec.execution.steps.shellScriptStep11")
                                          .stableTemplate(false)
+                                         .moduleInfo(new HashSet<>())
                                          .build());
     templateReferenceSummaryList.add(TemplateReferenceSummary.builder()
                                          .templateIdentifier("template1")
@@ -175,6 +177,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .scope(Scope.PROJECT)
                                          .fqn("pipeline.stages.qaStage.spec.execution.steps.shellScriptStep12")
                                          .stableTemplate(true)
+                                         .moduleInfo(new HashSet<>())
                                          .build());
     templateReferenceSummaryList.add(TemplateReferenceSummary.builder()
                                          .templateIdentifier("template2")
@@ -182,6 +185,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .scope(Scope.ACCOUNT)
                                          .fqn("pipeline.stages.qaStage.spec.execution.steps.approval")
                                          .stableTemplate(false)
+                                         .moduleInfo(new HashSet<>())
                                          .build());
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).hasSize(3);
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).containsAll(templateReferenceSummaryList);
@@ -239,6 +243,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .scope(Scope.PROJECT)
                                          .fqn("pipeline.stages.qaStage.spec.execution.steps.shellScriptStep11")
                                          .stableTemplate(false)
+                                         .moduleInfo(new HashSet<>())
                                          .build());
     templateReferenceSummaryList.add(TemplateReferenceSummary.builder()
                                          .templateIdentifier("template1")
@@ -246,6 +251,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .scope(Scope.PROJECT)
                                          .fqn("pipeline.stages.qaStage.spec.execution.steps.shellScriptStep12")
                                          .stableTemplate(true)
+                                         .moduleInfo(new HashSet<>())
                                          .build());
     templateReferenceSummaryList.add(TemplateReferenceSummary.builder()
                                          .templateIdentifier("template2")
@@ -253,6 +259,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .scope(Scope.PROJECT)
                                          .fqn("pipeline.stages.qaStage.spec.execution.steps.approval")
                                          .stableTemplate(false)
+                                         .moduleInfo(new HashSet<>())
                                          .build());
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).hasSize(3);
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).containsAll(templateReferenceSummaryList);
@@ -316,6 +323,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                       .versionLabel("1")
                       .scope(Scope.PROJECT)
                       .fqn("pipeline.stages.qaStage")
+                      .moduleInfo(new HashSet<>())
                       .build());
 
     String resFile = "pipeline-with-stage-template-replaced.yaml";
@@ -418,6 +426,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .versionLabel("1")
                                          .scope(Scope.PROJECT)
                                          .fqn("pipeline.stages.ci.spec.execution.steps.http")
+                                         .moduleInfo(new HashSet<>())
                                          .build());
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).hasSize(1);
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).containsAll(templateReferenceSummaryList);
@@ -472,6 +481,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .versionLabel("1")
                                          .scope(Scope.PROJECT)
                                          .fqn("pipeline")
+                                         .moduleInfo(new HashSet<>())
                                          .build());
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).hasSize(1);
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).containsAll(templateReferenceSummaryList);
