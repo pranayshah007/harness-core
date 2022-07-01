@@ -43,12 +43,10 @@ public class EntityReferenceService {
       FilterCreationBlobResponse response = filterCreatorMergeService.obtainFiltersRecursively(
           filterCreatorMergeService.getServices(), dependencies, filters, setupMetadataBuilder.build());
       filterCreatorMergeService.validateFilterCreationBlobResponse(response);
-      EntityReferenceResponse entityReferenceResponse =
-              EntityReferenceResponse.newBuilder()
-                      .addAllReferredEntities(response.getReferredEntitiesList())
-                      .addAllModuleInfo(new ArrayList(filters.keySet()))
-                      .build();
-      return entityReferenceResponse;
+      return EntityReferenceResponse.newBuilder()
+          .addAllReferredEntities(response.getReferredEntitiesList())
+          .addAllModuleInfo(new ArrayList(filters.keySet()))
+          .build();
     } catch (IOException e) {
       log.error("Error while getting references for template ", e);
       throw new InvalidRequestException(

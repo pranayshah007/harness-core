@@ -41,7 +41,6 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateEntityType;
-import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.pms.contracts.service.EntityReferenceServiceGrpc;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.preflight.PreFlightCheckMetadata;

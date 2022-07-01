@@ -26,7 +26,6 @@ import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateEntityType;
-import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.pms.contracts.service.EntityReferenceRequest;
 import io.harness.pms.contracts.service.EntityReferenceResponse;
 import io.harness.pms.contracts.service.EntityReferenceServiceGrpc.EntityReferenceServiceBlockingStub;
