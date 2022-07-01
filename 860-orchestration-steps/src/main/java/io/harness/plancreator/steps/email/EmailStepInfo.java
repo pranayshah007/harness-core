@@ -3,6 +3,7 @@ package io.harness.plancreator.steps.email;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -12,28 +13,55 @@ import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.Email.EmailStep;
 import io.harness.steps.Email.EmailStepParameters;
+import io.harness.steps.StepSpecTypeConstants;
 import io.harness.walktree.beans.VisitableChildren;
+import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import javax.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @NoArgsConstructor
+@JsonTypeName(StepSpecTypeConstants.EMAIL)
+@SimpleVisitorHelper(helperClass = EmailStepInfoVisitorHelper.class)
+@TypeAlias("emailStepInfo")
+@RecasterAlias("io.harness.plancreator.steps.email.EmailStepInfo")
 @OwnedBy(CDC)
 public class EmailStepInfo implements PMSStepInfo, Visitable, WithDelegateSelector {
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  String uuid;
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> to;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> cc;
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> subject;
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> subject;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> body;
-  @YamlSchemaTypes(value = {runtime}) ParameterField<List<TaskSelectorYaml>> delegateSelectors;
-  @Override
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  @YamlSchemaTypes(value = {runtime})
+  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+
+  @Builder(builderMethodName = "infoBuilder")
+  public EmailStepInfo(ParameterField<String> to, ParameterField<String> cc, ParameterField<String> subject,
+      ParameterField<String> body, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+    this.body = body;
+    this.to = to;
+    this.cc = cc;
+    this.subject = subject;
+  }
   public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
     return getDelegateSelectors();
   }
@@ -44,11 +72,13 @@ public class EmailStepInfo implements PMSStepInfo, Visitable, WithDelegateSelect
   }
 
   @Override
+  @JsonIgnore
   public StepType getStepType() {
     return EmailStep.STEP_TYPE;
   }
 
   @Override
+  @JsonIgnore
   public String getFacilitatorType() {
     return OrchestrationFacilitatorType.TASK;
   }
