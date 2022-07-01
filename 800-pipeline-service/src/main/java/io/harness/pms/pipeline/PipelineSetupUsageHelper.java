@@ -185,15 +185,9 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
 
   private EntityReferredByPipelineDetailProtoDTO getSetupDetailProtoDTO(String fqn, String pipelineIdentifier) {
     String stageIdentifier = YamlUtils.getStageIdentifierFromFqn(fqn);
-    String pipelineIdentifier = YamlUtils.getPipelineTemplateNameFromFqn(fqn);
     if (stageIdentifier != null) {
       return EntityReferredByPipelineDetailProtoDTO.newBuilder()
           .setIdentifier(stageIdentifier)
-          .setType(PipelineDetailType.STAGE_IDENTIFIER)
-          .build();
-    } else if (pipelineIdentifier != null) {
-      return EntityReferredByPipelineDetailProtoDTO.newBuilder()
-          .setIdentifier(pipelineIdentifier)
           .setType(PipelineDetailType.STAGE_IDENTIFIER)
           .build();
     } else {
