@@ -8,10 +8,10 @@
 package io.harness.ci.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
-import static io.harness.common.CIExecutionConstants.OSX_STEP_MOUNT_PATH;
-import static io.harness.common.CIExecutionConstants.SHARED_VOLUME_PREFIX;
-import static io.harness.common.CIExecutionConstants.STEP_MOUNT_PATH;
-import static io.harness.common.CIExecutionConstants.STEP_VOLUME;
+import static io.harness.ci.commonconstants.CIExecutionConstants.OSX_STEP_MOUNT_PATH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.SHARED_VOLUME_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_MOUNT_PATH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_VOLUME;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -30,14 +30,14 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
+import io.harness.ci.buildstate.PluginSettingUtils;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
-import io.harness.ff.CIFeatureFlagService;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.stateutils.buildstate.PluginSettingUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

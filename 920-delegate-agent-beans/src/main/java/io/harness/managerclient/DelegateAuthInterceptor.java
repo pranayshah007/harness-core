@@ -32,11 +32,12 @@ public class DelegateAuthInterceptor implements Interceptor {
     String host = chain.request().url().host();
     int port = chain.request().url().port();
 
-    String token = tokenGenerator.getToken(scheme, host, port, HOST_NAME);
+    String token = this.tokenGenerator.getToken(scheme, host, port, HOST_NAME);
 
     Request request = chain.request();
     return chain.proceed(request.newBuilder()
                              .header("Authorization", "Delegate " + token)
+                             .addHeader("accountId", this.tokenGenerator.getAccountId())
                              .addHeader("delegateId", DelegateAgentCommonVariables.getDelegateId())
                              .addHeader("delegateTokenName", DelegateAgentCommonVariables.getDelegateTokenName())
                              .build());

@@ -1544,8 +1544,10 @@ public class WatcherServiceImpl implements WatcherService {
     formattedManagerUrl = formattedManagerUrl.replace("/api", "");
 
     String newTargetUrl = DelegateGrpcConfigExtractor.extractTarget(formattedManagerUrl);
-    String managerAuthority = DelegateGrpcConfigExtractor.extractAuthority(formattedManagerUrl, "manager");
-    String publishAuthority = DelegateGrpcConfigExtractor.extractAuthority(formattedManagerUrl, "events");
+    String managerAuthority =
+        DelegateGrpcConfigExtractor.extractAndPrepareAuthority(formattedManagerUrl, "manager", false);
+    String publishAuthority =
+        DelegateGrpcConfigExtractor.extractAndPrepareAuthority(formattedManagerUrl, "events", false);
 
     boolean foundPublishAuthority = false;
     boolean foundPublishTarget = false;

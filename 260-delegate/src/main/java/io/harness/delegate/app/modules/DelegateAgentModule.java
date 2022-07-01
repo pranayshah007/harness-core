@@ -10,7 +10,7 @@ package io.harness.delegate.app.modules;
 import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployMode.isOnPrem;
 import static io.harness.delegate.service.DelegateAgentServiceImpl.getDelegateId;
-import static io.harness.grpc.utils.DelegateGrpcConfigExtractor.extractAuthority;
+import static io.harness.grpc.utils.DelegateGrpcConfigExtractor.extractAndPrepareAuthority;
 import static io.harness.grpc.utils.DelegateGrpcConfigExtractor.extractTarget;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -35,6 +35,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.inject.AbstractModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -46,16 +47,25 @@ public class DelegateAgentModule extends AbstractModule {
   protected void configure() {
     super.configure();
 
+    if (StringUtils.isNotEmpty(configuration.getClientCertificateFilePath())
+        && StringUtils.isNotEmpty(configuration.getClientCertificateKeyFilePath())) {
+      log.info("Delegate is running with mTLS enabled.");
+    }
+
     install(new DelegateHealthModule());
     install(KryoModule.getInstance());
     install(new DelegateKryoModule());
     install(new MetricRegistryModule(new MetricRegistry()));
 
     install(new DelegateManagerClientModule(configuration.getManagerUrl(), configuration.getVerificationServiceUrl(),
-        configuration.getCvNextGenUrl(), configuration.getAccountId(), configuration.getDelegateToken()));
+        configuration.getCvNextGenUrl(), configuration.getAccountId(), configuration.getDelegateToken(),
+        configuration.getClientCertificateFilePath(), configuration.getClientCertificateKeyFilePath(),
+        configuration.isTrustAllCertificates()));
 
-    install(new LogStreamingModule(configuration.getLogStreamingServiceBaseUrl()));
-    install(new DelegateGrpcClientModule(configuration));
+    install(new LogStreamingModule(configuration.getLogStreamingServiceBaseUrl(),
+        configuration.getClientCertificateFilePath(), configuration.getClientCertificateKeyFilePath(),
+        configuration.isTrustAllCertificates()));
+    install(new DelegateManagerGrpcClientModule(configuration));
 
     configureCcmEventPublishing();
     install(new PerpetualTaskWorkerModule());
@@ -82,11 +92,13 @@ public class DelegateAgentModule extends AbstractModule {
         log.info("Running immutable delegate, starting CCM event tailer");
         final DelegateTailerModule.Config tailerConfig =
             DelegateTailerModule.Config.builder()
-                .accountId(configuration.getAccountId())
-                .accountSecret(configuration.getDelegateToken())
                 .queueFilePath(configuration.getQueueFilePath())
                 .publishTarget(extractTarget(managerHostAndPort))
-                .publishAuthority(extractAuthority(managerHostAndPort, "events"))
+                .publishAuthority(extractAndPrepareAuthority(
+                    managerHostAndPort, "events", configuration.isGrpcAuthorityModificationDisabled()))
+                .clientCertificateFilePath(configuration.getClientCertificateFilePath())
+                .clientCertificateKeyFilePath(configuration.getClientCertificateKeyFilePath())
+                .trustAllCertificates(configuration.isTrustAllCertificates())
                 .build();
         install(new DelegateTailerModule(tailerConfig));
       } else {

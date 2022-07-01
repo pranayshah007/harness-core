@@ -141,7 +141,7 @@ public class ResourceRestraintFacilitatorTest extends OrchestrationStepsTestBase
     doReturn(Collections.emptyList())
         .when(resourceRestraintInstanceService)
         .getAllByRestraintIdAndResourceUnitAndStates(any(), any(), any());
-    doReturn(0).when(resourceRestraintInstanceService).getAllCurrentlyAcquiredPermits(any(), any());
+    doReturn(0).when(resourceRestraintInstanceService).getAllCurrentlyAcquiredPermits(any(), any(), any());
     FacilitatorResponse response =
         resourceRestraintFacilitator.facilitate(ambiance, stepElementParameters, parameters, null);
     assertThat(response).isNotNull();

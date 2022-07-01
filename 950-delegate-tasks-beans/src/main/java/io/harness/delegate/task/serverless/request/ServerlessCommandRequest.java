@@ -14,8 +14,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
+import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.ServerlessInstallationCapability;
@@ -62,6 +64,10 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
     if (serverlessInfraConfig instanceof ServerlessAwsLambdaInfraConfig) {
       AwsConnectorDTO awsConnectorDTO = ((ServerlessAwsLambdaInfraConfig) serverlessInfraConfig).getAwsConnectorDTO();
       capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(awsConnectorDTO, maskingEvaluator));
+      CrossAccountAccessDTO crossAccountAccess = awsConnectorDTO.getCredential().getCrossAccountAccess();
+      if (crossAccountAccess != null && crossAccountAccess.getCrossAccountRoleArn() != null) {
+        capabilities.add(AwsCliInstallationCapability.builder().criteria("AWS Cli Installed").build());
+      }
     }
     if (getServerlessManifestConfig() != null) {
       if (serverlessManifestConfig instanceof ServerlessAwsLambdaManifestConfig) {

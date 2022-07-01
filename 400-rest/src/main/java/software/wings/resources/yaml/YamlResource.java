@@ -163,8 +163,8 @@ public class YamlResource {
     this.yamlArtifactStreamService = yamlArtifactStreamService;
     this.yamlService = yamlService;
     this.yamlGitService = yamlGitSyncService;
-    this.authService = authService;
     this.harnessUserGroupService = harnessUserGroupService;
+    this.authService = authService;
   }
 
   /**
@@ -1296,8 +1296,6 @@ public class YamlResource {
   @Consumes(MULTIPART_FORM_DATA)
   @Timed
   @ExceptionMetered
-  @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
-  @ApiKeyAuthorized(permissionType = ACCOUNT_MANAGEMENT)
   public RestResponse<YamlOperationResponse> upsertYAMLEntities(@QueryParam("accountId") @NotEmpty String accountId,
       @FormDataParam("file") InputStream uploadedInputStream) throws IOException {
     return new RestResponse<>(yamlService.upsertYAMLFilesAsZip(accountId,
@@ -1309,8 +1307,6 @@ public class YamlResource {
   @Consumes(MULTIPART_FORM_DATA)
   @Timed
   @ExceptionMetered
-  @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
-  @ApiKeyAuthorized(permissionType = ACCOUNT_MANAGEMENT)
   public RestResponse<FileOperationStatus> upsertYAMLEntity(@QueryParam("accountId") @NotEmpty String accountId,
       @QueryParam("yamlFilePath") @NotEmpty String yamlFilePath, @FormDataParam("yamlContent") String yamlContent) {
     return new RestResponse<>(yamlService.upsertYAMLFile(accountId, yamlFilePath, yamlContent));
@@ -1320,8 +1316,6 @@ public class YamlResource {
   @Path("delete-entities")
   @Timed
   @ExceptionMetered
-  @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
-  @ApiKeyAuthorized(permissionType = ACCOUNT_MANAGEMENT)
   public RestResponse<YamlOperationResponse> deleteYAMLEntities(
       @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("filePaths") @NotEmpty List<String> filePaths) {
     return new RestResponse<>(yamlService.deleteYAMLByPaths(accountId, filePaths));
@@ -1331,8 +1325,6 @@ public class YamlResource {
   @Path("delete-entities-v2")
   @Timed
   @ExceptionMetered
-  @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
-  @ApiKeyAuthorized(permissionType = ACCOUNT_MANAGEMENT)
   public RestResponse<YamlOperationResponse> deleteYAMLEntitiesV2(
       @QueryParam("accountId") @NotEmpty String accountId, @NotEmpty List<EntityInformation> entityInformations) {
     return new RestResponse<>(yamlService.deleteYAMLByPathsV2(accountId, entityInformations));

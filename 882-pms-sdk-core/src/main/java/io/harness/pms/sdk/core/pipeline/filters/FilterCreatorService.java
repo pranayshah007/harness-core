@@ -102,7 +102,7 @@ public class FilterCreatorService
         // YamlUtils.getErrorNodePartialFQN() uses exception path to build FQN
         if (e.getCause() instanceof InvalidYamlException) {
           log.error(e.getMessage());
-          throw new InvalidYamlException(e.getMessage());
+          throw new InvalidYamlException(e.getCause().getMessage());
         }
         log.error(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(yamlField.getNode(), e)), e);
         throw new InvalidYamlRuntimeException("Invalid yaml in node [%s]", e, yamlField.getNode());

@@ -164,7 +164,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
 
     doReturn(Optional.of(FileNodeDTO.builder().content("Hello World").name("test.txt").size(11L).build()))
         .when(fileStoreService)
-        .getByPath(any(), any(), any(), any(), anyBoolean());
+        .getWithChildrenByPath(any(), any(), any(), any(), anyBoolean());
     doReturn(workingDir).when(helper).getWorkingDirectory(eq(workingDirParam), any(ScriptType.class), anyBoolean());
     doReturn(Arrays.asList(encryptedDataDetail)).when(ngEncryptedDataService).getEncryptionDetails(any(), any());
   }

@@ -380,6 +380,8 @@ func convertAzureEnumToStrings(enums *pb.AzureWebhookEvents) (strings []string) 
 			strings = append(strings, "git.pullrequest.updated")
 		case pb.AzureWebhookEvent_AZURE_PULLREQUEST_MERGED:
 			strings = append(strings, "git.pullrequest.merged")
+		case pb.AzureWebhookEvent_AZURE_PULL_REQUEST_ISSUE_COMMENT:
+			strings = append(strings, "ms.vss-code.git-pullrequest-comment-event")
 		}
 	}
 	return strings
@@ -397,6 +399,8 @@ func convertStringsToAzureEnum(strings []string) (enums pb.NativeEvents_Azure) {
 			array = append(array, pb.AzureWebhookEvent_AZURE_PULLREQUEST_UPDATED)
 		case "git.pullrequest.merged":
 			array = append(array, pb.AzureWebhookEvent_AZURE_PULLREQUEST_MERGED)
+		case "ms.vss-code.git-pullrequest-comment-event": 
+			array = append(array, pb.AzureWebhookEvent_AZURE_PULL_REQUEST_ISSUE_COMMENT)
 		}
 	}
 

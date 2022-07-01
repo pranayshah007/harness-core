@@ -34,6 +34,7 @@ import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.factory.ClosingFactory;
+import io.harness.filestore.service.FileStoreService;
 import io.harness.gitsync.persistance.testing.GitSyncablePersistenceTestModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
@@ -230,6 +231,7 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         bind(SecretNGManagerClient.class)
             .annotatedWith(Names.named(ClientMode.PRIVILEGED.name()))
             .toInstance(mock(SecretNGManagerClient.class));
+        bind(FileStoreService.class).toInstance(mock(FileStoreService.class));
       }
     });
     modules.add(TimeModule.getInstance());

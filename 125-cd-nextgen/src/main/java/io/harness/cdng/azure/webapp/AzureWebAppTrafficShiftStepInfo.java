@@ -7,10 +7,12 @@
 
 package io.harness.cdng.azure.webapp;
 
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.number;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.AzureWebAppTrafficShiftStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -22,11 +24,13 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -51,7 +55,7 @@ public class AzureWebAppTrafficShiftStepInfo
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> traffic;
+  @NotNull @YamlSchemaTypes(value = {string, number}) ParameterField<String> traffic;
 
   @Builder(builderMethodName = "infoBuilder")
   public AzureWebAppTrafficShiftStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
@@ -70,7 +74,10 @@ public class AzureWebAppTrafficShiftStepInfo
 
   @Override
   public SpecParameters getSpecParameters() {
-    return AzureWebAppTrafficShiftStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
+    return AzureWebAppTrafficShiftStepParameters.infoBuilder()
+        .traffic(this.traffic)
+        .delegateSelectors(this.getDelegateSelectors())
+        .build();
   }
 
   @Override

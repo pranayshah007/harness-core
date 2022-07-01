@@ -62,11 +62,11 @@ public class EventsFrameworkChangeConsumer implements MongoCollectionChangeConsu
         .flatMap(x -> OpType.fromString((String) x.value()));
   }
 
-  private String getKeyOrDefault(ChangeEvent<String, String> record) {
+  String getKeyOrDefault(ChangeEvent<String, String> record) {
     return (record.key() != null) ? (record.key()) : DEFAULT_STRING;
   }
 
-  private String getValueOrDefault(ChangeEvent<String, String> record) {
+  String getValueOrDefault(ChangeEvent<String, String> record) {
     return (record.value() != null) ? (record.value()) : DEFAULT_STRING;
   }
 

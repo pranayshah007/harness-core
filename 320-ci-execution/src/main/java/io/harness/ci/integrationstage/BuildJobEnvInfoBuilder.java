@@ -7,6 +7,7 @@
 
 package io.harness.ci.integrationstage;
 
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -17,6 +18,7 @@ import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
@@ -35,6 +37,8 @@ import lombok.extern.slf4j.Slf4j;
 public class BuildJobEnvInfoBuilder {
   @Inject private InitializeStepInfoBuilder initializeStepInfoBuilder;
   @Inject private VmInitializeStepUtils vmInitializeStepUtils;
+  private static final int VM_INIT_TIMEOUT_MILLIS = 900 * 1000;
+  private static final int K8_WIN_INIT_TIMEOUT_MILLIS = 900 * 1000;
 
   public BuildJobEnvInfo getCIBuildJobEnvInfo(StageElementConfig stageElementConfig, Infrastructure infrastructure,
       CIExecutionArgs ciExecutionArgs, List<ExecutionWrapperConfig> steps, Ambiance ambiance) {
@@ -61,6 +65,8 @@ public class BuildJobEnvInfoBuilder {
 
     if (infrastructure.getType() == Type.KUBERNETES_DIRECT) {
       return getK8Timeout((K8sDirectInfraYaml) infrastructure);
+    } else if (infrastructure.getType() == Type.VM) {
+      return VM_INIT_TIMEOUT_MILLIS;
     }
 
     return InitializeStepInfo.DEFAULT_TIMEOUT;
@@ -74,6 +80,11 @@ public class BuildJobEnvInfoBuilder {
     ParameterField<String> timeout = k8sDirectInfraYaml.getSpec().getInitTimeout();
 
     int timeoutInMillis = InitializeStepInfo.DEFAULT_TIMEOUT;
+    OSType os = resolveOSType(k8sDirectInfraYaml.getSpec().getOs());
+    if (os == OSType.Windows) {
+      timeoutInMillis = K8_WIN_INIT_TIMEOUT_MILLIS;
+    }
+
     if (timeout != null && timeout.fetchFinalValue() != null && isNotEmpty((String) timeout.fetchFinalValue())) {
       timeoutInMillis = (int) Timeout.fromString((String) timeout.fetchFinalValue()).getTimeoutInMillis();
     }

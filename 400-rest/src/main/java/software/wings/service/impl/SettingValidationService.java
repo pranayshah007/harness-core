@@ -512,7 +512,8 @@ public class SettingValidationService {
       rancherHelperService.validateRancherConfig(rancherConfig);
     } catch (Exception e) {
       log.error("Exception while validating RancherConfig", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), USER);
+      throw new InvalidRequestException(
+          "Please provide the valid Rancher URL and Bearer Token. " + ExceptionUtils.getMessage(e), USER);
     }
     return true;
   }

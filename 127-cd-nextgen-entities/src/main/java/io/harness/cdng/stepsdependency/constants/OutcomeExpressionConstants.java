@@ -28,6 +28,7 @@ public class OutcomeExpressionConstants {
   public final String K8S_CANARY_OUTCOME = "k8sCanaryOutcome";
   public final String K8S_CANARY_DELETE_OUTCOME = "k8sCanaryDeleteOutcome";
   public final String K8S_BG_SWAP_SERVICES_OUTCOME = "k8sBGSwapServicesOutcome";
+  public final String AZURE_WEBAPP_SWAP_SLOTS_OUTCOME = "azureWebAppSwapSlotsOutcome";
   public final String OUTPUT = "output";
   public final String TERRAFORM_CONFIG = "terraformConfig";
   public final String DEPLOYMENT_INFO_OUTCOME = "deploymentInfoOutcome";
@@ -37,4 +38,7 @@ public class OutcomeExpressionConstants {
   public final String SERVERLESS_GIT_FETCH_OUTCOME = "serverlessGitFetchOutcome";
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_OUTCOME = "serverlessAwsLambdaRollbackOutcome";
   public final String CONFIG_FILES = "configFiles";
+  public final String STARTUP_SCRIPT = "startupScript";
+  public final String APPLICATION_SETTINGS = "applicationSettings";
+  public final String CONNECTION_STRINGS = "connectionStrings";
 }

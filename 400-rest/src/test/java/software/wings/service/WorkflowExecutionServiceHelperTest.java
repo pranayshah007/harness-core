@@ -8,11 +8,11 @@
 package software.wings.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-
-import static io.harness.rule.OwnerRule.GARVIT;
-import static io.harness.rule.OwnerRule.POOJA;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
+import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.MITISHA;
+import static io.harness.rule.OwnerRule.POOJA;
+
 import static software.wings.beans.CanaryOrchestrationWorkflow.CanaryOrchestrationWorkflowBuilder.aCanaryOrchestrationWorkflow;
 import static software.wings.beans.EntityType.ENVIRONMENT;
 import static software.wings.beans.EntityType.INFRASTRUCTURE_DEFINITION;
@@ -62,17 +62,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 @OwnedBy(CDC)
 public class WorkflowExecutionServiceHelperTest extends WingsBaseTest {
@@ -173,7 +170,7 @@ public class WorkflowExecutionServiceHelperTest extends WingsBaseTest {
     when(workflowService.readWorkflowWithoutServices(APP_ID, WORKFLOW_ID)).thenReturn(workflow);
     when(workflowExecutionService.getWorkflowExecution(APP_ID, WORKFLOW_EXECUTION_ID)).thenReturn(workflowExecution);
     WorkflowVariablesMetadata workflowVariablesMetadata = workflowExecutionServiceHelper.fetchWorkflowVariables(
-            APP_ID, prepareExecutionArgs(null, false), WORKFLOW_EXECUTION_ID);
+        APP_ID, prepareExecutionArgs(null, false), WORKFLOW_EXECUTION_ID);
     assertThat(workflowVariablesMetadata.isChanged()).isFalse();
     List<Variable> newWorkflowVariables = workflowVariablesMetadata.getWorkflowVariables();
     assertThat(newWorkflowVariables).isNotNull();
@@ -590,7 +587,12 @@ public class WorkflowExecutionServiceHelperTest extends WingsBaseTest {
   }
 
   private Variable prepareVariable(int index, VariableType type, EntityType entityType) {
-    Variable variable = aVariable().name("var" + index).allowedList(Collections.singletonList("val" + index)).type(type).mandatory(true).build();
+    Variable variable = aVariable()
+                            .name("var" + index)
+                            .allowedList(Collections.singletonList("val" + index))
+                            .type(type)
+                            .mandatory(true)
+                            .build();
     if (VariableType.ENTITY == type) {
       variable.setMetadata(singletonMap(Variable.ENTITY_TYPE, entityType));
     }

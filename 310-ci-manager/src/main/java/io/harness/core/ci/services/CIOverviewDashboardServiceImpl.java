@@ -195,6 +195,31 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     return totalBuildSqlBuilder.toString();
   }
 
+  public long getActiveCommitterCount(String accountId) {
+    long timestamp = System.currentTimeMillis();
+    long totalTries = 0;
+    String query = "select count(distinct moduleinfo_author_id) from " + tableName
+        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and startts<=? and startts>=?;";
+
+    while (totalTries <= MAX_RETRY_COUNT) {
+      ResultSet resultSet = null;
+      try (Connection connection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = connection.prepareStatement(query)) {
+        statement.setString(1, accountId);
+        statement.setLong(2, timestamp);
+        statement.setLong(3, timestamp - 30 * DAY_IN_MS);
+        resultSet = statement.executeQuery();
+        return resultSet.next() ? resultSet.getLong(1) : 0L;
+      } catch (SQLException ex) {
+        log.error(ex.getMessage());
+        totalTries++;
+      } finally {
+        DBUtils.close(resultSet);
+      }
+    }
+    return -1L;
+  }
+
   @Override
   public UsageDataDTO getActiveCommitter(String accountId, long timestamp) {
     long totalTries = 0;

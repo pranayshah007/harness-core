@@ -28,6 +28,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
+import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.USE_NATIVE_TYPE_ID;
 import static java.util.Arrays.asList;
@@ -74,10 +75,12 @@ import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.beans.source.webhook.v2.awscodecommit.AwsCodeCommitSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.awscodecommit.event.AwsCodeCommitTriggerEvent;
 import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.AzureRepoSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.action.AzureRepoIssueCommentAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.action.AzureRepoPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.event.AzureRepoTriggerEvent;
 import io.harness.ngtriggers.beans.source.webhook.v2.bitbucket.BitbucketSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.bitbucket.action.BitbucketPRAction;
+import io.harness.ngtriggers.beans.source.webhook.v2.bitbucket.action.BitbucketPRCommentAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.bitbucket.event.BitbucketTriggerEvent;
 import io.harness.ngtriggers.beans.source.webhook.v2.custom.CustomTriggerSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.GithubSpec;
@@ -85,6 +88,7 @@ import io.harness.ngtriggers.beans.source.webhook.v2.github.action.GithubIssueCo
 import io.harness.ngtriggers.beans.source.webhook.v2.github.action.GithubPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubTriggerEvent;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.GitlabSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabMRCommentAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.event.GitlabTriggerEvent;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
@@ -118,12 +122,15 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
 
   private String ngTriggerYaml_gitlab_pr;
   private String ngTriggerYaml_gitlab_push;
+  private String ngTriggerYaml_gitlab_mr_comment;
 
   private String ngTriggerYaml_bitbucket_pr;
   private String ngTriggerYaml_bitbucket_push;
+  private String ngTriggerYaml_bitbucket_pr_comment;
 
   private String ngTriggerYaml_azurerepo_pr;
   private String ngTriggerYaml_azurerepo_push;
+  private String ngTriggerYaml_azurerepo_issue_comment;
 
   private String ngTriggerYaml_awscodecommit_push;
   private String ngTriggerYaml_custom;
@@ -174,14 +181,23 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
         Objects.requireNonNull(classLoader.getResource("ng-trigger-gitlab-pr-v2.yaml")), StandardCharsets.UTF_8);
     ngTriggerYaml_gitlab_push = Resources.toString(
         Objects.requireNonNull(classLoader.getResource("ng-trigger-gitlab-push-v2.yaml")), StandardCharsets.UTF_8);
+    ngTriggerYaml_gitlab_mr_comment =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-gitlab-mr-comment-v2.yaml")),
+            StandardCharsets.UTF_8);
     ngTriggerYaml_bitbucket_pr = Resources.toString(
         Objects.requireNonNull(classLoader.getResource("ng-trigger-bitbucket-pr-v2.yaml")), StandardCharsets.UTF_8);
     ngTriggerYaml_bitbucket_push = Resources.toString(
         Objects.requireNonNull(classLoader.getResource("ng-trigger-bitbucket-push-v2.yaml")), StandardCharsets.UTF_8);
+    ngTriggerYaml_bitbucket_pr_comment =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-bitbucket-pr-comment-v2.yaml")),
+            StandardCharsets.UTF_8);
     ngTriggerYaml_azurerepo_pr = Resources.toString(
         Objects.requireNonNull(classLoader.getResource("ng-trigger-azurerepo-pr-v2.yaml")), StandardCharsets.UTF_8);
     ngTriggerYaml_azurerepo_push = Resources.toString(
         Objects.requireNonNull(classLoader.getResource("ng-trigger-azurerepo-push-v2.yaml")), StandardCharsets.UTF_8);
+    ngTriggerYaml_azurerepo_issue_comment = Resources.toString(
+        Objects.requireNonNull(classLoader.getResource("ng-trigger-azurerepo-issue-comment-v2.yaml")),
+        StandardCharsets.UTF_8);
     ngTriggerYaml_awscodecommit_push =
         Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-awscodecommit-push-v2.yaml")),
             StandardCharsets.UTF_8);
@@ -323,7 +339,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   @Test
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
-  public void testGilabPR() throws Exception {
+  public void testGitlabPR() throws Exception {
     NGTriggerConfigV2 ngTriggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerYaml_gitlab_pr);
 
     assertRootLevelProperties(ngTriggerConfigV2);
@@ -351,7 +367,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   @Test
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
-  public void testGilabPush() throws Exception {
+  public void testGitlabPush() throws Exception {
     NGTriggerConfigV2 ngTriggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerYaml_gitlab_push);
 
     assertRootLevelProperties(ngTriggerConfigV2);
@@ -374,6 +390,34 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     assertThat(spec.fetchGitAware().fetchAutoAbortPreviousExecutions()).isTrue();
     assertThat(spec.fetchGitAware().fetchEvent()).isEqualTo(GitlabTriggerEvent.PUSH);
     assertThat(spec.fetchGitAware().fetchActions()).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testGitlabMRComment() throws Exception {
+    NGTriggerConfigV2 ngTriggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerYaml_gitlab_mr_comment);
+
+    assertRootLevelProperties(ngTriggerConfigV2);
+
+    NGTriggerSourceV2 ngTriggerSourceV2 = ngTriggerConfigV2.getSource();
+    assertThat(ngTriggerSourceV2).isNotNull();
+    assertThat(ngTriggerSourceV2.getType()).isEqualTo(WEBHOOK);
+    NGTriggerSpecV2 ngTriggerSpecV2 = ngTriggerSourceV2.getSpec();
+    assertThat(WebhookTriggerConfigV2.class.isAssignableFrom(ngTriggerSpecV2.getClass())).isTrue();
+    WebhookTriggerConfigV2 webhookTriggerConfigV2 = (WebhookTriggerConfigV2) ngTriggerSpecV2;
+    assertThat(webhookTriggerConfigV2.getType()).isEqualTo(WebhookTriggerType.GITLAB);
+    assertThat(GitlabSpec.class.isAssignableFrom(webhookTriggerConfigV2.getSpec().getClass())).isTrue();
+    GitlabSpec gitlabSpec = (GitlabSpec) webhookTriggerConfigV2.getSpec();
+    assertThat(gitlabSpec.getType()).isEqualTo(GitlabTriggerEvent.MR_COMMENT);
+    assertThat(gitlabSpec.fetchPayloadAware().fetchPayloadConditions()).containsAll(payloadConditions);
+    assertThat(gitlabSpec.fetchPayloadAware().fetchHeaderConditions()).containsAll(headerConditions);
+    assertThat(gitlabSpec.fetchPayloadAware().fetchJexlCondition()).isEqualTo(JEXL);
+    assertThat(gitlabSpec.fetchGitAware().fetchRepoName()).isEqualTo(REPO);
+    assertThat(gitlabSpec.fetchGitAware().fetchConnectorRef()).isEqualTo(CONN);
+    assertThat(gitlabSpec.fetchGitAware().fetchAutoAbortPreviousExecutions()).isTrue();
+    assertThat(gitlabSpec.fetchGitAware().fetchEvent()).isEqualTo(GitlabTriggerEvent.MR_COMMENT);
+    assertThat(gitlabSpec.fetchGitAware().fetchActions()).containsAll(asList(GitlabMRCommentAction.CREATE));
   }
 
   @Test
@@ -434,6 +478,36 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testBitbucketPRComment() throws Exception {
+    NGTriggerConfigV2 ngTriggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerYaml_bitbucket_pr_comment);
+
+    assertRootLevelProperties(ngTriggerConfigV2);
+
+    NGTriggerSourceV2 ngTriggerSourceV2 = ngTriggerConfigV2.getSource();
+    assertThat(ngTriggerSourceV2).isNotNull();
+    assertThat(ngTriggerSourceV2.getType()).isEqualTo(WEBHOOK);
+    NGTriggerSpecV2 ngTriggerSpecV2 = ngTriggerSourceV2.getSpec();
+    assertThat(WebhookTriggerConfigV2.class.isAssignableFrom(ngTriggerSpecV2.getClass())).isTrue();
+    WebhookTriggerConfigV2 webhookTriggerConfigV2 = (WebhookTriggerConfigV2) ngTriggerSpecV2;
+    assertThat(webhookTriggerConfigV2.getType()).isEqualTo(WebhookTriggerType.BITBUCKET);
+    assertThat(BitbucketSpec.class.isAssignableFrom(webhookTriggerConfigV2.getSpec().getClass())).isTrue();
+    BitbucketSpec bitbucketSpec = (BitbucketSpec) webhookTriggerConfigV2.getSpec();
+    assertThat(bitbucketSpec.getType()).isEqualTo(BitbucketTriggerEvent.PR_COMMENT);
+    assertThat(bitbucketSpec.fetchPayloadAware().fetchPayloadConditions()).containsAll(payloadConditions);
+    assertThat(bitbucketSpec.fetchPayloadAware().fetchHeaderConditions()).containsAll(headerConditions);
+    assertThat(bitbucketSpec.fetchPayloadAware().fetchJexlCondition()).isEqualTo(JEXL);
+    assertThat(bitbucketSpec.fetchGitAware().fetchRepoName()).isEqualTo(REPO);
+    assertThat(bitbucketSpec.fetchGitAware().fetchConnectorRef()).isEqualTo(CONN);
+    assertThat(bitbucketSpec.fetchGitAware().fetchAutoAbortPreviousExecutions()).isTrue();
+    assertThat(bitbucketSpec.fetchGitAware().fetchEvent()).isEqualTo(BitbucketTriggerEvent.PR_COMMENT);
+    assertThat(bitbucketSpec.fetchGitAware().fetchActions())
+        .containsAll(
+            asList(BitbucketPRCommentAction.CREATE, BitbucketPRCommentAction.EDIT, BitbucketPRCommentAction.DELETE));
+  }
+
+  @Test
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
   public void testAzureRepoPR() throws Exception {
@@ -489,6 +563,37 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     assertThat(spec.fetchGitAware().fetchAutoAbortPreviousExecutions()).isTrue();
     assertThat(spec.fetchGitAware().fetchEvent()).isEqualTo(AzureRepoTriggerEvent.PUSH);
     assertThat(spec.fetchGitAware().fetchActions()).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGAzureRepoIssueComment() throws Exception {
+    NGTriggerConfigV2 ngTriggerConfigV2 =
+        ngTriggerElementMapper.toTriggerConfigV2(ngTriggerYaml_azurerepo_issue_comment);
+
+    assertRootLevelProperties(ngTriggerConfigV2);
+
+    NGTriggerSourceV2 ngTriggerSourceV2 = ngTriggerConfigV2.getSource();
+    assertThat(ngTriggerSourceV2).isNotNull();
+    assertThat(ngTriggerSourceV2.getType()).isEqualTo(WEBHOOK);
+    NGTriggerSpecV2 ngTriggerSpecV2 = ngTriggerSourceV2.getSpec();
+    assertThat(WebhookTriggerConfigV2.class.isAssignableFrom(ngTriggerSpecV2.getClass())).isTrue();
+    WebhookTriggerConfigV2 webhookTriggerConfigV2 = (WebhookTriggerConfigV2) ngTriggerSpecV2;
+    assertThat(webhookTriggerConfigV2.getType()).isEqualTo(WebhookTriggerType.AZURE);
+    assertThat(AzureRepoSpec.class.isAssignableFrom(webhookTriggerConfigV2.getSpec().getClass())).isTrue();
+    AzureRepoSpec azureRepoSpec = (AzureRepoSpec) webhookTriggerConfigV2.getSpec();
+    assertThat(azureRepoSpec.getType()).isEqualTo(AzureRepoTriggerEvent.ISSUE_COMMENT);
+    assertThat(azureRepoSpec.fetchPayloadAware().fetchPayloadConditions()).containsAll(payloadConditions);
+    assertThat(azureRepoSpec.fetchPayloadAware().fetchHeaderConditions()).containsAll(headerConditions);
+    assertThat(azureRepoSpec.fetchPayloadAware().fetchJexlCondition()).isEqualTo(JEXL);
+    assertThat(azureRepoSpec.fetchGitAware().fetchRepoName()).isEqualTo(REPO);
+    assertThat(azureRepoSpec.fetchGitAware().fetchConnectorRef()).isEqualTo(CONN);
+    assertThat(azureRepoSpec.fetchGitAware().fetchAutoAbortPreviousExecutions()).isTrue();
+    assertThat(azureRepoSpec.fetchGitAware().fetchEvent()).isEqualTo(AzureRepoTriggerEvent.ISSUE_COMMENT);
+    assertThat(azureRepoSpec.fetchGitAware().fetchActions())
+        .containsAll(asList(
+            AzureRepoIssueCommentAction.CREATE, AzureRepoIssueCommentAction.EDIT, AzureRepoIssueCommentAction.DELETE));
   }
 
   @Test

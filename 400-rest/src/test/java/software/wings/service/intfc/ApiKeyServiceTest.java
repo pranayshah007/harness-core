@@ -32,6 +32,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageRequest.PageRequestBuilder;
@@ -67,16 +68,19 @@ import org.mockito.Mock;
 @Slf4j
 public class ApiKeyServiceTest extends WingsBaseTest {
   @Mock private AccountService accountService;
+  @Mock private UserService userService;
   @Mock private UserGroupService userGroupService;
   @Mock private AuditServiceHelper auditServiceHelper;
   @Mock private Cache<String, ApiKeyEntry> apiKeyCache;
   @Mock private Cache<String, UserPermissionInfo> apiKeyPermissionInfoCache;
   @Mock private Cache<String, UserRestrictionInfo> apiKeyRestrictionInfoCache;
+
   @Inject @InjectMocks private ApiKeyService apiKeyService;
 
   @Before
   public void init() {
     setUserRequestContext();
+    when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
   }
 
   private void setUserRequestContext() {

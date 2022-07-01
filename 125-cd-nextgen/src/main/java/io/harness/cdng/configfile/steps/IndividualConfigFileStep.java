@@ -157,7 +157,7 @@ public class IndividualConfigFileStep implements SyncExecutable<ConfigFileStepPa
     io.harness.beans.Scope scope = io.harness.beans.Scope.of(
         ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), fileScopeValue);
 
-    Optional<FileStoreNodeDTO> configFile = fileStoreService.getByPath(
+    Optional<FileStoreNodeDTO> configFile = fileStoreService.getWithChildrenByPath(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), filePathValue, false);
 
     if (!configFile.isPresent()) {

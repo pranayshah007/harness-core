@@ -13,6 +13,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 import org.zeroturnaround.exec.ProcessResult;
@@ -20,12 +21,14 @@ import org.zeroturnaround.exec.ProcessResult;
 public abstract class AbstractExecutable implements Executable {
   @Override
   public ServerlessCliResponse execute(String directory, OutputStream output, OutputStream error, boolean printCommand,
-      long timeoutInMillis) throws IOException, TimeoutException, InterruptedException {
+      long timeoutInMillis, Map<String, String> envVariables)
+      throws IOException, TimeoutException, InterruptedException {
     String command = this.command();
     if (printCommand) {
       writeCommandToOutput(command, output);
     }
-    ProcessResult processResult = ServerlessUtils.executeScript(directory, command, output, error, timeoutInMillis);
+    ProcessResult processResult =
+        ServerlessUtils.executeScript(directory, command, output, error, timeoutInMillis, envVariables);
     return ServerlessCliResponse.builder()
         .commandExecutionStatus(processResult.getExitValue() == 0 ? SUCCESS : FAILURE)
         .output(processResult.outputUTF8())

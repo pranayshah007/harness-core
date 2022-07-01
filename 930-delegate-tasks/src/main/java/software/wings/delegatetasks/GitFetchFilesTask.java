@@ -112,9 +112,9 @@ public class GitFetchFilesTask extends AbstractDelegateRunnableTask {
       GitFetchFilesResult gitFetchFilesResult;
 
       try {
-        gitFetchFilesResult = fetchFilesFromRepo(gitFetchFileConfig.getGitFileConfig(),
-            gitFetchFileConfig.getGitConfig(), gitFetchFileConfig.getEncryptedDataDetails(), executionLogCallback,
-            taskParams.isOptimizedFilesFetch(), taskParams.isShouldInheritGitFetchFilesConfigMap());
+        gitFetchFilesResult =
+            fetchFilesFromRepo(gitFetchFileConfig.getGitFileConfig(), gitFetchFileConfig.getGitConfig(),
+                gitFetchFileConfig.getEncryptedDataDetails(), executionLogCallback, taskParams.isOptimizedFilesFetch());
       } catch (Exception ex) {
         String exceptionMsg = gitFetchFilesTaskHelper.extractErrorMessage(ex);
 
@@ -174,7 +174,7 @@ public class GitFetchFilesTask extends AbstractDelegateRunnableTask {
 
   private GitFetchFilesResult fetchFilesFromRepo(GitFileConfig gitFileConfig, GitConfig gitConfig,
       List<EncryptedDataDetail> encryptedDataDetails, ExecutionLogCallback executionLogCallback,
-      boolean optimizedFilesFetch, boolean shouldExportCommitSha) {
+      boolean optimizedFilesFetch) {
     executionLogCallback.saveExecutionLog("Git connector Url: " + gitConfig.getRepoUrl());
     if (gitFileConfig.isUseBranch()) {
       executionLogCallback.saveExecutionLog("Branch: " + gitFileConfig.getBranch());
@@ -206,8 +206,9 @@ public class GitFetchFilesTask extends AbstractDelegateRunnableTask {
     if (scmFetchFilesHelper.shouldUseScm(optimizedFilesFetch, gitConfig)) {
       gitFetchFilesResult = scmFetchFilesHelper.fetchFilesFromRepoWithScm(gitFileConfig, gitConfig, filePathsToFetch);
     } else {
-      gitFetchFilesResult = gitService.fetchFilesByPath(gitConfig, gitFileConfig.getConnectorId(),
-          gitFileConfig.getCommitId(), gitFileConfig.getBranch(), filePathsToFetch, gitFileConfig.isUseBranch(), true);
+      gitFetchFilesResult =
+          gitService.fetchFilesByPath(gitConfig, gitFileConfig.getConnectorId(), gitFileConfig.getCommitId(),
+              gitFileConfig.getBranch(), filePathsToFetch, gitFileConfig.isUseBranch(), true, executionLogCallback);
       if (gitFileConfig.isUseBranch()) {
         executionLogCallback.saveExecutionLog("\nFetched files for Branch: " + gitFileConfig.getBranch()
             + " with CommitId: " + gitFetchFilesResult.getLatestCommitSHA());

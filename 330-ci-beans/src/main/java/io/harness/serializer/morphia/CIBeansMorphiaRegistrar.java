@@ -21,6 +21,7 @@ import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.ci.beans.entities.BuildNumberDetails;
 import io.harness.ci.beans.entities.CIBuild;
 import io.harness.ci.beans.entities.CIExecutionConfig;
+import io.harness.ci.beans.entities.CITelemetrySentStatus;
 import io.harness.ci.stdvars.BuildStandardVariables;
 import io.harness.ci.stdvars.GitVariables;
 import io.harness.morphia.MorphiaRegistrar;
@@ -46,6 +47,7 @@ public class CIBeansMorphiaRegistrar implements MorphiaRegistrar {
     set.add(LiteEnginePodDetailsOutcome.class);
     set.add(VmDetailsOutcome.class);
     set.add(StageInfraDetails.class);
+    set.add(CITelemetrySentStatus.class);
   }
 
   @Override

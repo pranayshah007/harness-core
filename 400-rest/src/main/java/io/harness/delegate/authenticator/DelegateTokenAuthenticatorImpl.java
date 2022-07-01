@@ -103,10 +103,10 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       boolean shouldSetTokenNameInGlobalContext) {
     final String tokenHash = DigestUtils.md5Hex(tokenString);
     // first validate it from DelegateJWTCache
-    if (isEmpty(delegateTokenName)) {
-      log.warn("Delegate token name is empty.");
-    } else if (validateDelegateJWTFromCache(accountId, tokenHash)) {
+    if (validateDelegateJWTFromCache(accountId, tokenHash, shouldSetTokenNameInGlobalContext)) {
       return;
+    } else if (isEmpty(delegateTokenName)) {
+      log.warn("Delegate token name is empty.");
     }
 
     EncryptedJWT encryptedJWT;
@@ -142,7 +142,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       } catch (ParseException e) {
         log.warn("Couldn't parse token", e);
       }
-      delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L));
+      delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L, null));
       log.error("Delegate {} is using REVOKED delegate token. DelegateId: {}", delegateHostName, delegateId);
       throw new RevokedTokenException("Invalid delegate token. Delegate is using revoked token", USER_ADMIN);
     }
@@ -156,14 +156,14 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       final long expiryInMillis = jwtClaimsSet.getExpirationTime().getTime();
       if (System.currentTimeMillis() > expiryInMillis) {
         log.error("Delegate {} is using EXPIRED delegate token. DelegateId: {}", jwtClaimsSet.getIssuer(), delegateId);
-        delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L));
+        delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L, null));
         throw new InvalidRequestException("Unauthorized", EXPIRED_TOKEN, null);
       } else {
-        delegateJWTCache.setDelegateJWTCache(
-            tokenHash, delegateTokenName, new DelegateJWTCacheValue(true, expiryInMillis));
+        delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName,
+            new DelegateJWTCacheValue(true, expiryInMillis, getDelegateTokenNameFromGlobalContext().orElse(null)));
       }
     } catch (Exception ex) {
-      delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L));
+      delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L, null));
       throw new InvalidRequestException("Unauthorized", ex, EXPIRED_TOKEN, null);
     }
   }
@@ -278,7 +278,9 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
           } else {
             decryptDelegateToken(encryptedJWT, delegateToken.getValue());
           }
-          setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateToken);
+          if (DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())) {
+            setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateToken.getName());
+          }
           delegateTokenCacheHelper.setDelegateToken(delegateId, delegateToken);
           return true;
         } catch (Exception e) {
@@ -304,7 +306,9 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       } else {
         decryptDelegateToken(encryptedJWT, delegateToken.getValue());
       }
-      setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateToken);
+      if (DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())) {
+        setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateToken.getName());
+      }
     } catch (Exception e) {
       log.debug("Fail to decrypt Delegate JWT using delegate token {} for the account {}", delegateToken.getName(),
           delegateToken.getAccountId());
@@ -335,7 +339,8 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
     }
   }
 
-  private boolean validateDelegateJWTFromCache(String accountId, String tokenHash) {
+  private boolean validateDelegateJWTFromCache(
+      String accountId, String tokenHash, boolean shouldSetTokenNameInGlobalContext) {
     DelegateJWTCacheValue delegateJWTCacheValue = delegateJWTCache.getDelegateJWTCache(tokenHash);
 
     // cache miss
@@ -352,16 +357,25 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
     } else if (delegateJWTCacheValue.getExpiryInMillis() < System.currentTimeMillis()) {
       throw new InvalidRequestException("Unauthorized", EXPIRED_TOKEN, null);
     }
-
+    setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateJWTCacheValue.getDelegateTokenName());
     return true;
   }
 
-  private void setTokenNameInGlobalContext(boolean shouldSetTokenNameInGlobalContext, DelegateToken delegateToken) {
-    if (shouldSetTokenNameInGlobalContext && DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())) {
+  private void setTokenNameInGlobalContext(boolean shouldSetTokenNameInGlobalContext, String delegateTokenName) {
+    if (shouldSetTokenNameInGlobalContext && delegateTokenName != null) {
       if (!GlobalContextManager.isAvailable()) {
         initGlobalContextGuard(new GlobalContext());
       }
-      upsertGlobalContextRecord(DelegateTokenGlobalContextData.builder().tokenName(delegateToken.getName()).build());
+      upsertGlobalContextRecord(DelegateTokenGlobalContextData.builder().tokenName(delegateTokenName).build());
     }
+  }
+
+  private Optional<String> getDelegateTokenNameFromGlobalContext() {
+    DelegateTokenGlobalContextData delegateTokenGlobalContextData =
+        GlobalContextManager.get(DelegateTokenGlobalContextData.TOKEN_NAME);
+    if (delegateTokenGlobalContextData != null) {
+      return Optional.ofNullable(delegateTokenGlobalContextData.getTokenName());
+    }
+    return Optional.empty();
   }
 }

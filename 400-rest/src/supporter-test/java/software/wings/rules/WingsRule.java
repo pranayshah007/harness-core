@@ -472,7 +472,7 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
     modules.add(new ValidationModule(validatorFactory));
     modules.add(TestMongoModule.getInstance());
     modules.add(new SpringPersistenceTestModule());
-    modules.add(new DelegateServiceModule());
+    modules.add(new DelegateServiceModule("delegate.ut.harness.io"));
     modules.add(new CapabilityModule());
     modules.add(new WingsModule((MainConfiguration) configuration, StartupMode.MANAGER));
     modules.add(new SimpleTotpModule());

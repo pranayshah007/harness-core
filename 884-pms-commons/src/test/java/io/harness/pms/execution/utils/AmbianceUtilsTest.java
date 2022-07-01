@@ -12,6 +12,8 @@ import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.SAHIL;
 
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -318,5 +320,51 @@ public class AmbianceUtilsTest extends CategoryTest {
     Ambiance ambiance = buildAmbianceUsingStrategyMetadata();
     String strategyPostfix = AmbianceUtils.getStrategyPostfix(ambiance);
     assertThat(strategyPostfix).isEqualTo("_1");
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testIsCurrentStrategyLevelAtStage() {
+    Ambiance ambiance = Ambiance.newBuilder().addLevels(Level.newBuilder().buildPartial()).build();
+    assertFalse(AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance));
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder().setGroup("STEPS").buildPartial())
+                   .addLevels(Level.newBuilder().buildPartial())
+                   .build();
+    assertFalse(AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance));
+
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder().setGroup("STAGES").buildPartial())
+                   .addLevels(Level.newBuilder().buildPartial())
+                   .build();
+    assertTrue(AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance));
+
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder().setGroup("STEPS").buildPartial())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.FORK).build())
+                                  .buildPartial())
+                   .addLevels(Level.newBuilder().buildPartial())
+                   .build();
+    assertFalse(AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance));
+
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder().setGroup("STAGES").buildPartial())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                                  .buildPartial())
+                   .addLevels(Level.newBuilder().buildPartial())
+                   .build();
+    assertFalse(AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance));
+
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder().setGroup("STAGES").buildPartial())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.FORK).build())
+                                  .buildPartial())
+                   .addLevels(Level.newBuilder().buildPartial())
+                   .build();
+    assertTrue(AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance));
   }
 }

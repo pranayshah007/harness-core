@@ -95,7 +95,7 @@ public class GcrArtifactResource {
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
-          accountId, orgIdentifier, projectIdentifier, fqnPath, serviceRef);
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
       GcrArtifactConfig gcrArtifactConfig = (GcrArtifactConfig) artifactSpecFromService;
       if (isEmpty(imagePath)) {
         imagePath = gcrArtifactConfig.getImagePath().getValue();

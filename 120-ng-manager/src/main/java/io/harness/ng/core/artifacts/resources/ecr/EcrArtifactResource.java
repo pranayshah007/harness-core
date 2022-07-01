@@ -94,7 +94,7 @@ public class EcrArtifactResource {
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
-          accountId, orgIdentifier, projectIdentifier, fqnPath, serviceRef);
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
       EcrArtifactConfig ecrArtifactConfig = (EcrArtifactConfig) artifactSpecFromService;
       if (isEmpty(imagePath)) {
         imagePath = ecrArtifactConfig.getImagePath().getValue();

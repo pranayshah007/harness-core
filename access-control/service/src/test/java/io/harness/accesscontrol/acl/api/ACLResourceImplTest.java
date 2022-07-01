@@ -14,6 +14,7 @@ import static org.mockito.Mockito.mock;
 
 import io.harness.accesscontrol.AccessControlTestBase;
 import io.harness.accesscontrol.acl.ACLService;
+import io.harness.accesscontrol.acl.ResourceAttributeProvider;
 import io.harness.accesscontrol.preference.services.AccessControlPreferenceService;
 import io.harness.accesscontrol.roleassignments.privileged.PrivilegedRoleAssignmentService;
 import io.harness.annotations.dev.HarnessTeam;
@@ -35,7 +36,9 @@ public class ACLResourceImplTest extends AccessControlTestBase {
     ACLService aclService = mock(ACLService.class);
     AccessControlPreferenceService accessControlPreferenceService = mock(AccessControlPreferenceService.class);
     PrivilegedRoleAssignmentService privilegedRoleAssignmentService = mock(PrivilegedRoleAssignmentService.class);
-    aclResource = new ACLResourceImpl(aclService, accessControlPreferenceService, privilegedRoleAssignmentService);
+    ResourceAttributeProvider resourceAttributeProvider = mock(ResourceAttributeProvider.class);
+    aclResource = new ACLResourceImpl(
+        aclService, accessControlPreferenceService, privilegedRoleAssignmentService, resourceAttributeProvider);
   }
 
   @Test

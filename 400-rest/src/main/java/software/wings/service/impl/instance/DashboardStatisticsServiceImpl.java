@@ -605,6 +605,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
   private List<InstanceStatsByEnvironment> constructInstanceStatsForService(
       String serviceId, List<ServiceAggregationInfo> serviceAggregationInfoList) {
+    log.info("serviceAggregation size :{}", serviceAggregationInfoList.size());
     if (isEmpty(serviceAggregationInfoList)) {
       return Lists.newArrayList();
     }
@@ -620,6 +621,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     for (ServiceAggregationInfo serviceAggregationInfo : serviceAggregationInfoList) {
       int size = serviceAggregationInfo.getInstanceInfoList().size();
       List<EntitySummary> instanceList = Lists.newArrayListWithExpectedSize(size);
+
       for (EntitySummary instanceSummary : serviceAggregationInfo.getInstanceInfoList()) {
         // We have to clone the entity summary because type is not present in database.
         EntitySummary newInstanceSummary = EntitySummary.builder()
@@ -636,6 +638,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                         .build();
 
       if (currentEnv == null || !compareEnvironment(currentEnv, serviceAggregationInfo.getEnvInfo())) {
+        log.info("ServiceAggregation ID :{}", serviceAggregationInfo.getEnvInfo().getId());
         currentArtifactList = Lists.newArrayList();
         currentEnv =
             getInstanceStatsByEnvironment(appId, serviceId, serviceAggregationInfo.getEnvInfo(), currentArtifactList);

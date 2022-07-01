@@ -93,6 +93,7 @@ public class AccessControlConfiguration extends Configuration {
   @JsonProperty("userGroupClient") private UserGroupClientConfiguration userGroupClientConfiguration;
   @JsonProperty("projectClient") private ProjectClientConfiguration projectClientConfiguration;
   @JsonProperty("organizationClient") private OrganizationClientConfiguration organizationClientConfiguration;
+  @JsonProperty("ngManagerServiceConfiguration") private NgManagerServiceConfiguration ngManagerServiceConfiguration;
   @JsonProperty("accountClient") private AccountClientConfiguration accountClientConfiguration;
   @JsonProperty("notificationConfig") private NotificationConfig notificationConfig;
   @JsonProperty("aggregatorModuleConfig") private AggregatorConfiguration aggregatorConfiguration;

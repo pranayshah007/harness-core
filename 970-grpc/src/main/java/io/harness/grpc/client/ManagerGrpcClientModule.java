@@ -7,9 +7,13 @@
 
 package io.harness.grpc.client;
 
+import io.harness.exception.KeyManagerBuilderException;
+import io.harness.exception.TrustManagerBuilderException;
 import io.harness.govern.ProviderModule;
 import io.harness.grpc.auth.DelegateAuthCallCredentials;
 import io.harness.security.TokenGenerator;
+import io.harness.security.X509KeyManagerBuilder;
+import io.harness.security.X509TrustManagerBuilder;
 import io.harness.version.VersionInfo;
 import io.harness.version.VersionInfoManager;
 
@@ -22,12 +26,15 @@ import io.grpc.internal.GrpcUtil;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
-import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import io.grpc.netty.shaded.io.netty.handler.ssl.SslContextBuilder;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
 import lombok.Builder;
 import lombok.ToString;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Defines plumbing to connect to manager via grpc.
@@ -58,8 +65,9 @@ public class ManagerGrpcClientModule extends ProviderModule {
   @Named("manager-channel")
   @Singleton
   @Provides
-  public Channel managerChannel(Config config, @Named("Application") String application,
-      VersionInfoManager versionInfoManager) throws SSLException {
+  public Channel managerChannel(
+      Config config, @Named("Application") String application, VersionInfoManager versionInfoManager)
+      throws SSLException, TrustManagerBuilderException, KeyManagerBuilderException {
     String authorityToUse = computeAuthority(config, versionInfoManager.getVersionInfo());
     boolean isSsl = isSsl(config, application);
 
@@ -67,10 +75,23 @@ public class ManagerGrpcClientModule extends ProviderModule {
       return NettyChannelBuilder.forTarget(config.target).overrideAuthority(authorityToUse).usePlaintext().build();
     }
 
-    SslContext sslContext = GrpcSslContexts.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
+    X509TrustManager trustManager = new X509TrustManagerBuilder().trustAllCertificates().build();
+    SslContextBuilder sslContextBuilder = GrpcSslContexts.forClient().trustManager(trustManager);
+
+    if (StringUtils.isNotEmpty(config.clientCertificateFilePath)
+        && StringUtils.isNotEmpty(config.clientCertificateKeyFilePath)) {
+      X509KeyManager keyManager =
+          new X509KeyManagerBuilder()
+              .withClientCertificateFromFile(config.clientCertificateFilePath, config.clientCertificateKeyFilePath)
+              .build();
+      sslContextBuilder.keyManager(keyManager);
+    }
+
+    SslContext sslContext = sslContextBuilder.build();
     return NettyChannelBuilder.forTarget(config.target)
         .overrideAuthority(authorityToUse)
         .sslContext(sslContext)
+        .intercept(HarnessRoutingGrpcInterceptor.MANAGER)
         .build();
   }
 
@@ -113,5 +134,10 @@ public class ManagerGrpcClientModule extends ProviderModule {
     String accountId;
     @ToString.Exclude String accountSecret;
     String scheme;
+    String clientCertificateFilePath;
+    String clientCertificateKeyFilePath;
+
+    // As of now ignored (always trusts all certs)
+    boolean trustAllCertificates;
   }
 }

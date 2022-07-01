@@ -257,3 +257,5 @@ io.harness.steps.approval.step.custom.CustomApprovalStepNode
 io.harness.steps.approval.step.custom.CustomApprovalOutcome
 io.harness.steps.approval.step.custom.CustomApprovalStepInfo
 io.harness.steps.policy.step.outcome.PolicyStepOutcome
+io.harness.ci.beans.entities.CITelemetrySentStatus
+io.harness.steps.resourcerestraint.QueueSpecParameters

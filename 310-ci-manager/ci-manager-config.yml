@@ -60,7 +60,7 @@ cimanager-mongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
-  aliasDBName: ci-manager
+  aliasDBName: harnessci
 pmsMongo:
   uri: mongodb://localhost:27017/pms-harness
   connectTimeout: 30000

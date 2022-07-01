@@ -1,5 +1,5 @@
 infrastructureDefinitions:
-- ref: "IDENTIFIER"
+- identifier: "IDENTIFIER"
   inputs:
     identifier: "IDENTIFIER"
     type: "KubernetesDirect"

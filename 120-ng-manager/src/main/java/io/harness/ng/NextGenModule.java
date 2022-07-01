@@ -58,6 +58,8 @@ import io.harness.ccm.license.remote.CeLicenseClientModule;
 import io.harness.cdng.NGModule;
 import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
+import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperService;
+import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperServiceImpl;
 import io.harness.connector.ConnectorModule;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.connector.events.ConnectorEventHandler;
@@ -221,6 +223,8 @@ import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.persistence.UserProvider;
 import io.harness.pipeline.remote.PipelineRemoteClientModule;
+import io.harness.pms.expression.EngineExpressionService;
+import io.harness.pms.expression.NoopEngineExpressionServiceImpl;
 import io.harness.polling.service.impl.PollingPerpetualTaskServiceImpl;
 import io.harness.polling.service.impl.PollingServiceImpl;
 import io.harness.polling.service.intfc.PollingPerpetualTaskService;
@@ -705,6 +709,10 @@ public class NextGenModule extends AbstractModule {
     bind(FeedbackService.class).to(FeedbackServiceImpl.class);
     bind(PollingService.class).to(PollingServiceImpl.class);
     bind(PollingPerpetualTaskService.class).to(PollingPerpetualTaskServiceImpl.class);
+    bind(JenkinsBuildStepHelperService.class).to(JenkinsBuildStepHelperServiceImpl.class);
+    if (!appConfig.getShouldConfigureWithPMS().equals(TRUE)) {
+      bind(EngineExpressionService.class).to(NoopEngineExpressionServiceImpl.class);
+    }
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("ngTelemetryPublisherExecutor"))
         .toInstance(new ScheduledThreadPoolExecutor(1,

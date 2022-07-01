@@ -71,7 +71,7 @@ public class EnvironmentPlanCreatorConfigMapper {
     if (!environmentV2.isDeployToAll()) {
       return environmentV2.getGitOpsClusters()
           .stream()
-          .map(ClusterYaml::getRef)
+          .map(ClusterYaml::getIdentifier)
           .map(ParameterField::getValue)
           .collect(Collectors.toList());
     }

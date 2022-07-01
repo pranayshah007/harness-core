@@ -25,6 +25,7 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.cdng.gitops.beans.ClusterBatchRequest;
+import io.harness.cdng.gitops.beans.ClusterBatchResponse;
 import io.harness.cdng.gitops.beans.ClusterRequest;
 import io.harness.cdng.gitops.beans.ClusterResponse;
 import io.harness.cdng.gitops.entity.Cluster;
@@ -74,7 +75,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import retrofit2.Response;
 
 @NextGenManagerAuth
@@ -183,7 +183,7 @@ public class ClusterResource {
   @Operation(operationId = "linkClusters", summary = "Link Clusters",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the linked Clusters") },
       hidden = true)
-  public ResponseDTO<PageResponse<ClusterResponse>>
+  public ResponseDTO<ClusterBatchResponse>
   linkBatch(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                 NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Parameter(description = "Details of the createCluster to be created") @Valid ClusterBatchRequest request) {
@@ -225,9 +225,8 @@ public class ClusterResource {
             "failed to fetch cluster list from gitops. Cannot proceed with linking to the environment", io);
       }
     }
-    Page<Cluster> created =
-        isNotEmpty(entities) ? clusterService.bulkCreate(accountId, entities) : new PageImpl<>(new ArrayList<>());
-    return ResponseDTO.newResponse(getNGPageResponse(created.map(ClusterEntityMapper::writeDTO)));
+    long linked = isNotEmpty(entities) ? clusterService.bulkCreate(entities) : 0;
+    return ResponseDTO.newResponse(ClusterBatchResponse.builder().linked(linked).build());
   }
 
   @DELETE

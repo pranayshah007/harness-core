@@ -77,7 +77,6 @@ import io.harness.cvng.core.entities.changeSource.KubernetesChangeSource;
 import io.harness.cvng.core.entities.changeSource.PagerDutyChangeSource;
 import io.harness.cvng.core.entities.demo.CVNGDemoDataIndex;
 import io.harness.cvng.core.entities.demo.CVNGDemoPerpetualTask;
-import io.harness.cvng.dashboard.entities.HealthVerificationHeatMap;
 import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.migration.beans.CVNGSchema;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
@@ -124,7 +123,6 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(StackdriverCVConfig.class);
     set.add(LogCVConfig.class);
     set.add(MetricCVConfig.class);
-    set.add(HealthVerificationHeatMap.class);
     set.add(HeatMap.class);
     set.add(LearningEngineTask.class);
     set.add(LogRecord.class);

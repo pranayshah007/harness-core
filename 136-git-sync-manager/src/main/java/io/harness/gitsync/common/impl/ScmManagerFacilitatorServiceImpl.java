@@ -113,18 +113,18 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
 
   @Override
   public FileContent getFile(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      ScmConnector scmConnector, String repoName, String branchName, String filePath, String commitId) {
-    ScmConnector connector =
-        gitSyncConnectorHelper.getDecryptedConnector(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
+      String connectorRef, String repoName, String branchName, String filePath, String commitId) {
+    ScmConnector connector = gitSyncConnectorHelper.getDecryptedConnectorForGivenRepo(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName);
     final GitFilePathDetails gitFilePathDetails = getGitFilePathDetails(filePath, branchName, commitId);
     return scmClient.getFileContent(connector, gitFilePathDetails);
   }
 
   @Override
   public CreatePRResponse createPullRequest(
-      Scope scope, ScmConnector scmConnector, String repoName, String sourceBranch, String targetBranch, String title) {
-    final ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnector(
-        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
+      Scope scope, String connectorRef, String repoName, String sourceBranch, String targetBranch, String title) {
+    ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnectorForGivenRepo(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, repoName);
     return scmClient.createPullRequestV2(decryptedConnector, sourceBranch, targetBranch, title);
   }
 

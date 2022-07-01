@@ -31,7 +31,8 @@ import lombok.experimental.FieldDefaults;
 public class JiraCreateIssueRequestNG {
   @NotNull Map<String, Object> fields = new HashMap<>();
 
-  public JiraCreateIssueRequestNG(JiraProjectNG project, JiraIssueTypeNG issueType, Map<String, String> fields) {
+  public JiraCreateIssueRequestNG(
+      JiraProjectNG project, JiraIssueTypeNG issueType, Map<String, String> fields, boolean checkRequiredFields) {
     // Add project and issue type fields which are required and are not part of fields. We don't need special handling
     // for status field as we manually remove status field from issueType.fields before calling this method.
     this.fields.put(JiraConstantsNG.PROJECT_KEY, singletonMap("key", project.getKey()));
@@ -41,6 +42,6 @@ public class JiraCreateIssueRequestNG {
     }
 
     fields = new HashMap<>(fields);
-    JiraIssueUtilsNG.updateFieldValues(this.fields, issueType.getFields(), fields, true);
+    JiraIssueUtilsNG.updateFieldValues(this.fields, issueType.getFields(), fields, checkRequiredFields);
   }
 }

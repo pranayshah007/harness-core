@@ -9,10 +9,7 @@ package io.harness.gitsync.common.dtos;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.gitsync.beans.GitRepoScopeParams;
-import io.harness.gitsync.sdk.GitSyncApiConstants;
 
-import io.swagger.v3.oas.annotations.Parameter;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -31,5 +28,4 @@ public class CreatePRRequest {
   @NotBlank String targetBranchName;
   @NotBlank String connectorRef;
   String title;
-  @Parameter(description = GitSyncApiConstants.GIT_REPO_SCOPE_PARAM_MESSAGE) GitRepoScopeParams gitRepoScopeParams;
 }

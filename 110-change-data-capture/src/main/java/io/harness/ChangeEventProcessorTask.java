@@ -87,9 +87,13 @@ public class ChangeEventProcessorTask implements Runnable {
       if (cdcEntity.getSubscriptionEntity().equals(clazz)) {
         for (ChangeDataCapture changeDataCapture : dataCaptures) {
           ChangeHandler changeHandler = cdcEntity.getChangeHandler(changeDataCapture.handler());
-          Callable<Boolean> processChangeEventTask =
-              getProcessChangeEventTask(changeHandler, changeEvent, changeDataCapture);
-          processChangeEventTaskFutures.add(executorService.submit(processChangeEventTask));
+          if (changeHandler != null) {
+            Callable<Boolean> processChangeEventTask =
+                getProcessChangeEventTask(changeHandler, changeEvent, changeDataCapture);
+            processChangeEventTaskFutures.add(executorService.submit(processChangeEventTask));
+          } else {
+            log.info("ChangeHandler for {} is null.", changeDataCapture.handler());
+          }
         }
       }
     }
