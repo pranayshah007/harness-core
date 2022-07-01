@@ -74,6 +74,17 @@ public class InterruptServiceImpl implements InterruptService {
   @Override
   public ExecutionCheck checkInterruptsPreInvocation(String planExecutionId, String nodeExecutionId) {
     List<Interrupt> interrupts = fetchActivePlanLevelInterrupts(planExecutionId);
+    return checkInterruptsPreInvocationInternal(interrupts, planExecutionId, nodeExecutionId);
+  }
+
+  public ExecutionCheck checkInterruptsPreInvocation(
+      boolean isMatrixFeatureEnabled, String planExecutionId, String nodeExecutionId) {
+    List<Interrupt> interrupts = fetchActivePlanLevelInterrupts(isMatrixFeatureEnabled, planExecutionId);
+    return checkInterruptsPreInvocationInternal(interrupts, planExecutionId, nodeExecutionId);
+  }
+
+  public ExecutionCheck checkInterruptsPreInvocationInternal(
+      List<Interrupt> interrupts, String planExecutionId, String nodeExecutionId) {
     if (isEmpty(interrupts)) {
       return ExecutionCheck.builder().proceed(true).reason("[InterruptCheck] No Interrupts Found").build();
     }
@@ -166,6 +177,22 @@ public class InterruptServiceImpl implements InterruptService {
         EnumSet.of(REGISTERED, PROCESSING),
         EnumSet.of(
             InterruptType.PAUSE_ALL, InterruptType.RESUME_ALL, InterruptType.ABORT_ALL, InterruptType.EXPIRE_ALL));
+  }
+
+  @Override
+  public List<Interrupt> fetchActivePlanLevelInterrupts(boolean isMatrixFeatureEnabled, String planExecutionId) {
+    if (!isMatrixFeatureEnabled) {
+      return fetchActivePlanLevelInterrupts(planExecutionId);
+    }
+    return interruptRepository
+        .findByPlanExecutionIdAndStateInAndTypeInOrderByCreatedAtDesc(planExecutionId,
+            EnumSet.of(REGISTERED, PROCESSING, PROCESSED_SUCCESSFULLY),
+            EnumSet.of(
+                InterruptType.PAUSE_ALL, InterruptType.RESUME_ALL, InterruptType.ABORT_ALL, InterruptType.EXPIRE_ALL))
+        .stream()
+        .filter(interrupt
+            -> interrupt.getState() != PROCESSED_SUCCESSFULLY || interrupt.getType() == InterruptType.ABORT_ALL)
+        .collect(Collectors.toList());
   }
 
   @Override

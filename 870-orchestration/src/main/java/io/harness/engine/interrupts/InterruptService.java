@@ -37,7 +37,12 @@ public interface InterruptService {
 
   List<Interrupt> fetchActivePlanLevelInterrupts(String planExecutionId);
 
+  List<Interrupt> fetchActivePlanLevelInterrupts(boolean isMatrixFeatureEnabled, String planExecutionId);
+
   ExecutionCheck checkInterruptsPreInvocation(String planExecutionId, String nodeExecutionId);
+
+  ExecutionCheck checkInterruptsPreInvocation(
+      boolean isMatrixFeatureEnabled, String planExecutionId, String nodeExecutionId);
 
   Interrupt save(@Valid Interrupt interrupt);
 

@@ -13,6 +13,7 @@ import static io.harness.pms.contracts.execution.Status.RUNNING;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.engine.ExecutionCheck;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
@@ -37,6 +38,7 @@ import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.NodeExecutionMetadata;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.PlanNode;
+import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -92,6 +94,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Inject private OrchestrationEngine orchestrationEngine;
   @Inject private PmsOutcomeService outcomeService;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject private PmsFeatureFlagService pmsFeatureFlagService;
 
   @Override
   public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull PlanNode node,
@@ -169,6 +172,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       nodeExecutionService.updateV2(
           nodeExecutionId, ops -> ops.set(NodeExecutionKeys.mode, facilitatorResponse.getExecutionMode()));
       ExecutionCheck check = interruptService.checkInterruptsPreInvocation(
+          pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIPELINE_MATRIX),
           ambiance.getPlanExecutionId(), AmbianceUtils.obtainCurrentRuntimeId(ambiance));
       if (!check.isProceed()) {
         log.info("Not Proceeding with Execution : {}", check.getReason());
