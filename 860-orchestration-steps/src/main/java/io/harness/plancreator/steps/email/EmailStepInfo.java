@@ -14,9 +14,9 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.steps.Email.EmailStep;
-import io.harness.steps.Email.EmailStepParameters;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.email.EmailStep;
+import io.harness.steps.email.EmailStepParameters;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
@@ -57,9 +57,10 @@ public class EmailStepInfo implements PMSStepInfo, Visitable, WithDelegateSelect
   @Builder(builderMethodName = "infoBuilder")
   public EmailStepInfo(ParameterField<String> to, ParameterField<String> cc, ParameterField<String> subject,
       ParameterField<String> body, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    this.body = body;
     this.to = to;
     this.cc = cc;
+    this.body = body;
+    this.delegateSelectors = delegateSelectors;
     this.subject = subject;
   }
   public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {

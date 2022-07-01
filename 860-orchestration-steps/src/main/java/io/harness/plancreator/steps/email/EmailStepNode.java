@@ -27,7 +27,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.EMAIL)
 @TypeAlias("EmailStepNode")
 @OwnedBy(CDC)
-@RecasterAlias("io.harness.steps.email.EmailStepNode")
+@RecasterAlias("io.harness.plancreator.steps.email.EmailStepNode")
 public class EmailStepNode extends PmsAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.Email;
   @NotNull

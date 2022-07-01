@@ -71,8 +71,5 @@ public class OrchestrationStepsKryoRegistrar implements KryoRegistrar {
     kryo.register(HttpStepInfo.class, 8048);
     kryo.register(HttpOutcome.class, 12501);
     kryo.register(ShellScriptStepInfo.class, 8055);
-
-    //    kryo.register(EmailStepInfo.class, 13001);
-    //    kryo.register(EmailOutcome.class, 13002);
   }
 }

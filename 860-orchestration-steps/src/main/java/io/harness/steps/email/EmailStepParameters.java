@@ -1,5 +1,7 @@
-package io.harness.steps.Email;
+package io.harness.steps.email;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -15,10 +17,12 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@OwnedBy(HarnessTeam.CDC)
 @TypeAlias("EmailStepParameters")
-@Builder
+
 public class EmailStepParameters implements SpecParameters {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 

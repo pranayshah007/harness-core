@@ -1,4 +1,4 @@
-package io.harness.steps.Email;
+package io.harness.steps.email;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
@@ -12,5 +12,5 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(CDC)
-@RecasterAlias("io.harness.steps.Email.EmailOutcome")
+@RecasterAlias("io.harness.steps.email.EmailOutcome")
 public class EmailOutcome implements Outcome {}
