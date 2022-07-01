@@ -27,7 +27,6 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO.GraphLayoutNodeDTOKeys;
 import io.harness.repositories.executions.PmsExecutionSummaryRespository;
-import io.harness.steps.matrix.StrategyStepParameters;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -199,7 +198,11 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
         pmsGraphStepDetailsService.fetchConcurrentChildInstance(nodeExecution.getUuid());
     if (concurrentChildInstance != null) {
       if (!nodeExecution.getExecutableResponses().isEmpty()) {
-        if (!nodeExecution.getNode().getStepParameters().get("strategyType").equals(StrategyType.PARALLELISM.name())) {
+        if (nodeExecution.getNode().getStepParameters().containsKey("strategyType")
+            && !nodeExecution.getNode()
+                    .getStepParameters()
+                    .get("strategyType")
+                    .equals(StrategyType.PARALLELISM.name())) {
           update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "."
                   + nodeExecution.getNodeId() + ".moduleInfo.maxConcurrency.value",
               nodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency());
