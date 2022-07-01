@@ -139,6 +139,12 @@ public class StageStrategyUtils {
       if (axisConfig == null || axisConfig.size() == 0) {
         throw new InvalidYamlException("No Axes defined in matrix. Please define at least one axis");
       }
+      for (Map.Entry<String, AxisConfig> entry : axisConfig.entrySet()) {
+        if (!entry.getValue().getAxisValue().isExpression() && entry.getValue().getAxisValue().getValue().isEmpty()) {
+          throw new InvalidYamlException(String.format(
+              "Axis is empty for key [%s]. Please provide at least one value in the axis.", entry.getKey()));
+        }
+      }
       if (!ParameterField.isBlank(((MatrixConfig) config.getMatrixConfig()).getExclude())
           && ((MatrixConfig) config.getMatrixConfig()).getExclude().getValue() != null) {
         List<ExcludeConfig> excludeConfigs = ((MatrixConfig) config.getMatrixConfig()).getExclude().getValue();

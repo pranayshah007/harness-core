@@ -83,5 +83,6 @@ public enum FeatureRestrictionName {
   // FF Features
   DEVELOPERS,
   MONTHLY_ACTIVE_USERS,
-  JENKINS_ARTIFACT;
+  JENKINS_ARTIFACT,
+  STRATEGY_MAX_CONCURRENT;
 }

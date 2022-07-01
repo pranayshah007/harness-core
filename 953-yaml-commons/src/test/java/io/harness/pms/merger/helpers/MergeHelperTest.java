@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.merger.helpers.MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -181,5 +182,37 @@ public class MergeHelperTest extends CategoryTest {
     List<String> toBeRemoved = Arrays.asList(fqn1, fqn2);
     String removedFQNs = MergeHelper.removeFQNs(expandedPipelineExpected, toBeRemoved);
     assertThat(removedFQNs).isEqualTo(readFile("opa-pipeline-with-expansions-and-removals.json"));
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testMergeServiceYamlV2() {
+    String serviceYaml = "service:\n"
+        + "    serviceRef: <+input>\n"
+        + "    serviceInputs: <+input>\n";
+
+    String runtimeServiceYaml = "service:\n"
+        + "    serviceRef: service1";
+
+    String expectedMergeServiceYaml = "service:\n"
+        + "  serviceRef: service1\n"
+        + "  serviceInputs: <+input>\n";
+    String res = mergeRuntimeInputValuesIntoOriginalYaml(serviceYaml, runtimeServiceYaml, false);
+    String resYaml = res.replace("\"", "");
+
+    assertThat(resYaml).isEqualTo(expectedMergeServiceYaml);
+
+    // case2: non-null value of serviceInputs
+
+    runtimeServiceYaml = "service:\n"
+        + "  serviceRef: service1\n"
+        + "  serviceInputs:\n"
+        + "    serviceDefinition:\n"
+        + "      type: Kubernetes\n";
+    res = mergeRuntimeInputValuesIntoOriginalYaml(serviceYaml, runtimeServiceYaml, false);
+    resYaml = res.replace("\"", "");
+
+    assertThat(resYaml).isEqualTo(runtimeServiceYaml);
   }
 }

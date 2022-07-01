@@ -83,7 +83,7 @@ public class CIExecutionConfigResource {
   @Inject CIExecutionConfigService configService;
 
   @POST
-  @Path("/updateConfig")
+  @Path("/update-config")
   @ApiOperation(value = "Update execution config", nickname = "updateExecutionConfig")
   @io.swagger.v3.oas.annotations.
   Operation(operationId = "updateExecutionConfig", summary = "Override execution Config for CI builds",
@@ -98,7 +98,7 @@ public class CIExecutionConfigResource {
   }
 
   @POST
-  @Path("/resetConfig")
+  @Path("/reset-config")
   @ApiOperation(value = "Reset execution config", nickname = "resetExecutionConfig")
   @io.swagger.v3.oas.annotations.
   Operation(operationId = "resetExecutionConfig", summary = "Reset execution Config for CI builds",

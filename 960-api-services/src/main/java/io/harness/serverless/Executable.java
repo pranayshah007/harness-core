@@ -9,11 +9,13 @@ package io.harness.serverless;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 public interface Executable {
   String command();
 
   ServerlessCliResponse execute(String directory, OutputStream output, OutputStream error, boolean printCommand,
-      long timeoutInMillis) throws IOException, TimeoutException, InterruptedException;
+      long timeoutInMillis, Map<String, String> envVariables)
+      throws IOException, TimeoutException, InterruptedException;
 }

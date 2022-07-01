@@ -12,7 +12,10 @@ java_library(
     ] + [
         "//:lombok",
         "//953-events-api:module",
+        "//956-feature-flag-beans:module",
         "//959-debezium-beans:module",
+        "//960-continuous-features:module",
+        "@maven//:io_harness_ff_java_server_sdk",
         "@maven_debezium//:io_debezium_debezium_api",
         "@maven_debezium//:io_debezium_debezium_connector_mongodb",
         "@maven_debezium//:io_debezium_debezium_core",

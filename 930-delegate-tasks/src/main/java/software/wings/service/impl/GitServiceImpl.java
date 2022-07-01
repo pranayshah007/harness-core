@@ -30,6 +30,7 @@ import io.harness.git.model.GitBaseRequest.GitBaseRequestBuilder;
 import io.harness.git.model.GitFileChange;
 import io.harness.git.model.JgitSshAuthRequest;
 import io.harness.git.model.PushResultGit;
+import io.harness.logging.LogCallback;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
 
@@ -150,6 +151,13 @@ public class GitServiceImpl implements GitService {
   @Override
   public GitFetchFilesResult fetchFilesByPath(GitConfig gitConfig, String connectorId, String commitId, String branch,
       List<String> filePaths, boolean useBranch, boolean shouldExportCommitSha) {
+    return fetchFilesByPath(
+        gitConfig, connectorId, commitId, branch, filePaths, useBranch, shouldExportCommitSha, null);
+  }
+
+  @Override
+  public GitFetchFilesResult fetchFilesByPath(GitConfig gitConfig, String connectorId, String commitId, String branch,
+      List<String> filePaths, boolean useBranch, boolean shouldExportCommitSha, LogCallback logCallback) {
     return gitClient.fetchFilesByPath(gitConfig,
         GitFetchFilesRequest.builder()
             .commitId(commitId)
@@ -159,12 +167,18 @@ public class GitServiceImpl implements GitService {
             .useBranch(useBranch)
             .recursive(true)
             .build(),
-        shouldExportCommitSha);
+        shouldExportCommitSha, logCallback);
   }
 
   @Override
   public String downloadFiles(
       GitConfig gitConfig, GitFileConfig gitFileConfig, String destinationDirectory, boolean shouldExportCommitSha) {
+    return downloadFiles(gitConfig, gitFileConfig, destinationDirectory, shouldExportCommitSha, null);
+  }
+
+  @Override
+  public String downloadFiles(GitConfig gitConfig, GitFileConfig gitFileConfig, String destinationDirectory,
+      boolean shouldExportCommitSha, LogCallback logCallback) {
     return gitClient.downloadFiles(gitConfig,
         GitFetchFilesRequest.builder()
             .commitId(gitFileConfig.getCommitId())
@@ -174,7 +188,7 @@ public class GitServiceImpl implements GitService {
             .useBranch(gitFileConfig.isUseBranch())
             .recursive(true)
             .build(),
-        destinationDirectory, shouldExportCommitSha);
+        destinationDirectory, shouldExportCommitSha, logCallback);
   }
 
   @Override

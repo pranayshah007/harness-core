@@ -46,8 +46,8 @@ public class DebeziumEngineModule extends AbstractModule {
   @Singleton
   @Named("DebeziumExecutorService")
   public ExecutorService executorService() {
-    return ThreadPool.create(
-        1, 200, 120, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("debezium-thread-%d").build());
+    return ThreadPool.create(1, 200, 120, TimeUnit.SECONDS,
+        new ThreadFactoryBuilder().setNameFormat("debezium-controller-thread-%d").build());
   }
 
   @Provides

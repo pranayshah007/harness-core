@@ -20,7 +20,6 @@ import io.harness.serializer.DelegateTasksBeansRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.NGCommonModuleRegistrars;
 import io.harness.serializer.NGCoreRegistrars;
-import io.harness.serializer.OrchestrationRegistrars;
 import io.harness.serializer.PersistenceRegistrars;
 import io.harness.serializer.SMCoreRegistrars;
 
@@ -65,7 +64,6 @@ public class CiExecutionRegistrars {
 
   public static final ImmutableList<Class<? extends Converter<?, ?>>> springConverters =
       ImmutableList.<Class<? extends Converter<?, ?>>>builder()
-          .addAll(OrchestrationRegistrars.springConverters)
           .addAll(NGCommonModuleRegistrars.springConverters)
           .build();
 }

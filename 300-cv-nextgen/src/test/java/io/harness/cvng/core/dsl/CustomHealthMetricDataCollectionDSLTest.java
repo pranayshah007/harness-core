@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -96,8 +97,18 @@ public class CustomHealthMetricDataCollectionDSLTest extends HoverflyCVNextGenTe
     RuntimeParameters runtimeParameters = getAppdRuntimeParams(instant);
     List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
         code, runtimeParameters, callDetails -> { System.out.println(callDetails); });
-    // TODO: Modify the test to check for correct service-instance names once DSL is fixed.
-    assertThat(true).isTrue();
+    Map<String, List<TimeSeriesRecord>> resultMap =
+        timeSeriesRecords.stream().collect(Collectors.groupingBy(TimeSeriesRecord::getHostname));
+    assertThat(resultMap.keySet().size()).isEqualTo(3);
+    assertThat(resultMap.get("Overall Application Performance|docker-tier|Individual Nodes|cdng--246|Errors per Minute")
+                   .size())
+        .isEqualTo(2);
+    assertThat(resultMap.get("Overall Application Performance|docker-tier|Individual Nodes|cdng--244|Errors per Minute")
+                   .size())
+        .isEqualTo(11);
+    assertThat(resultMap.get("Overall Application Performance|docker-tier|Individual Nodes|cdng--245|Errors per Minute")
+                   .size())
+        .isEqualTo(10);
   }
 
   private String readDSL(String fileName) throws IOException {

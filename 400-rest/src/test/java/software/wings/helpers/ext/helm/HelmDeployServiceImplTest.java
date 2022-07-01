@@ -196,7 +196,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     executionLogCallback = mock(ExecutionLogCallback.class);
     doNothing().when(executionLogCallback).saveExecutionLog(anyString());
     when(encryptionService.decrypt(any(), any(), eq(false))).thenReturn(null);
-    when(gitService.fetchFilesByPath(any(), any(), any(), any(), any(), anyBoolean(), eq(false)))
+    when(gitService.fetchFilesByPath(any(), any(), any(), any(), any(), anyBoolean(), eq(false), any()))
         .thenReturn(GitFetchFilesResult.builder()
                         .files(asList(GitFile.builder().fileContent(HelmTestConstants.GIT_FILE_CONTENT_1_KEY).build(),
                             GitFile.builder().fileContent(HelmTestConstants.GIT_FILE_CONTENT_2_KEY).build()))
@@ -471,7 +471,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
 
     when(helmClient.releaseHistory(any(), eq(false))).thenReturn(helmCliReleaseHistoryResponse);
     when(helmClient.install(any(), eq(false))).thenReturn(helmCliResponse);
-    when(gitService.fetchFilesByPath(any(), any(), any(), any(), any(), anyBoolean(), eq(false)))
+    when(gitService.fetchFilesByPath(any(), any(), any(), any(), any(), anyBoolean(), eq(false), any()))
         .thenThrow(new InvalidRequestException("WingsException", USER));
     when(helmClient.listReleases(any(), eq(false))).thenReturn(helmCliListReleasesResponse);
 
@@ -882,7 +882,8 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     helmDeployService.fetchSourceRepo(request);
 
     verify(encryptionService, times(1)).decrypt(argumentCaptor.capture(), any(), eq(false));
-    verify(gitService, times(1)).downloadFiles(any(GitConfig.class), any(GitFileConfig.class), anyString(), eq(false));
+    verify(gitService, times(1))
+        .downloadFiles(any(GitConfig.class), any(GitFileConfig.class), anyString(), eq(false), any());
 
     GitConfig gitConfig = argumentCaptor.getValue();
     assertThat(gitConfig.getBranch()).isNotEmpty();
@@ -909,7 +910,8 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
 
     verify(encryptionService, times(1)).decrypt(argumentCaptor.capture(), any(), eq(false));
     verify(scmFetchFilesHelper, times(1)).downloadFilesUsingScm(any(), any(), any(), any());
-    verify(gitService, times(0)).downloadFiles(any(GitConfig.class), any(GitFileConfig.class), anyString(), eq(false));
+    verify(gitService, times(0))
+        .downloadFiles(any(GitConfig.class), any(GitFileConfig.class), anyString(), eq(false), any());
 
     GitConfig gitConfig = argumentCaptor.getValue();
     assertThat(gitConfig.getBranch()).isNotEmpty();
@@ -1463,7 +1465,8 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
         .releaseHistory(HelmCommandDataMapper.getHelmCommandData(helmInstallCommandRequest), false);
     doReturn(gitFiles)
         .when(gitService)
-        .fetchFilesByPath(gitConfig, SETTING_ID, COMMIT_REFERENCE, BRANCH_NAME, singletonList(FILE_PATH), true, false);
+        .fetchFilesByPath(
+            gitConfig, SETTING_ID, COMMIT_REFERENCE, BRANCH_NAME, singletonList(FILE_PATH), true, false, logCallback);
     doReturn(Optional.empty()).when(helmCommandHelper).generateHelmDeployChartSpecFromYaml("values");
     doReturn(Optional.of(HarnessHelmDeployConfig.builder().helmDeployChartSpec(chartSpec).build()))
         .when(helmCommandHelper)
@@ -1501,7 +1504,8 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
         .releaseHistory(HelmCommandDataMapper.getHelmCommandData(helmInstallCommandRequest), false);
     doReturn(gitFiles)
         .when(gitService)
-        .fetchFilesByPath(gitConfig, SETTING_ID, COMMIT_REFERENCE, BRANCH_NAME, singletonList(FILE_PATH), true, false);
+        .fetchFilesByPath(
+            gitConfig, SETTING_ID, COMMIT_REFERENCE, BRANCH_NAME, singletonList(FILE_PATH), true, false, logCallback);
     doReturn(Optional.of(HarnessHelmDeployConfig.builder().helmDeployChartSpec(chartSpec).build()))
         .when(helmCommandHelper)
         .generateHelmDeployChartSpecFromYaml("chartSpec");

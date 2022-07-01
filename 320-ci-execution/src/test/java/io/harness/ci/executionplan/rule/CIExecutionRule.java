@@ -44,7 +44,6 @@ import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
 import io.harness.cistatus.service.gitlab.GitlabService;
 import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
 import io.harness.delegate.DelegateServiceGrpc;
-import io.harness.engine.pms.tasks.NgDelegate2TaskExecutor;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.exception.exceptionmanager.exceptionhandler.CILiteEngineExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
@@ -262,12 +261,6 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
     });
 
     modules.add(new ProviderModule() {
-      @Provides
-      @Singleton
-      protected NgDelegate2TaskExecutor ngDelegate2TaskExecutor() {
-        return mock(NgDelegate2TaskExecutor.class);
-      }
-
       @Provides
       @Named("disableDeserialization")
       @Singleton

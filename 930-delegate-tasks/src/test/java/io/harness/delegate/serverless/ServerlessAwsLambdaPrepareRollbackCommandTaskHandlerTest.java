@@ -52,6 +52,7 @@ import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
 import java.io.IOException;
+import java.util.HashMap;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -116,7 +117,7 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
     doReturn(response)
         .when(serverlessAwsCommandTaskHelper)
         .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams,
-            executionLogCallback, true, (long) timeout * 60000);
+            executionLogCallback, true, (long) timeout * 60000, new HashMap<>());
 
     ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest =
         (ServerlessPrepareRollbackDataRequest) serverlessCommandRequest;
@@ -132,7 +133,7 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
     doReturn(response)
         .when(serverlessAwsCommandTaskHelper)
         .deployList(serverlessClient, serverlessDelegateTaskParams, executionLogCallback,
-            serverlessAwsLambdaInfraConfig, (long) timeout * 60000, serverlessAwsLambdaManifestConfig);
+            serverlessAwsLambdaInfraConfig, (long) timeout * 60000, serverlessAwsLambdaManifestConfig, new HashMap<>());
 
     ServerlessCommandResponse serverlessCommandResponse =
         serverlessAwsLambdaPrepareRollbackCommandTaskHandler.executeTaskInternal(
@@ -166,7 +167,7 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
     doReturn(response)
         .when(serverlessAwsCommandTaskHelper)
         .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams,
-            executionLogCallback, true, (long) timeout * 60000);
+            executionLogCallback, true, (long) timeout * 60000, new HashMap<>());
 
     ServerlessCommandResponse serverlessCommandResponse =
         serverlessAwsLambdaPrepareRollbackCommandTaskHandler.executeTaskInternal(
@@ -222,7 +223,7 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
     doReturn(response)
         .when(serverlessAwsCommandTaskHelper)
         .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams,
-            executionLogCallback, true, (long) timeout * 60000);
+            executionLogCallback, true, (long) timeout * 60000, new HashMap<>());
 
     ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest =
         (ServerlessPrepareRollbackDataRequest) serverlessCommandRequest;
@@ -238,7 +239,7 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
     doReturn(response)
         .when(serverlessAwsCommandTaskHelper)
         .deployList(serverlessClient, serverlessDelegateTaskParams, executionLogCallback,
-            serverlessAwsLambdaInfraConfig, (long) timeout * 60000, serverlessAwsLambdaManifestConfig);
+            serverlessAwsLambdaInfraConfig, (long) timeout * 60000, serverlessAwsLambdaManifestConfig, new HashMap<>());
 
     ServerlessCommandResponse serverlessCommandResponse =
         serverlessAwsLambdaPrepareRollbackCommandTaskHandler.executeTaskInternal(
@@ -277,7 +278,7 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
     doReturn(response)
         .when(serverlessAwsCommandTaskHelper)
         .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams,
-            executionLogCallback, true, (long) timeout * 60000);
+            executionLogCallback, true, (long) timeout * 60000, new HashMap<>());
 
     ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest =
         (ServerlessPrepareRollbackDataRequest) serverlessCommandRequest;
@@ -293,7 +294,7 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
     doThrow(IOException.class)
         .when(serverlessAwsCommandTaskHelper)
         .deployList(serverlessClient, serverlessDelegateTaskParams, executionLogCallback,
-            serverlessAwsLambdaInfraConfig, (long) timeout * 60000, serverlessAwsLambdaManifestConfig);
+            serverlessAwsLambdaInfraConfig, (long) timeout * 60000, serverlessAwsLambdaManifestConfig, new HashMap<>());
 
     serverlessAwsLambdaPrepareRollbackCommandTaskHandler.executeTaskInternal(
         serverlessCommandRequest, serverlessDelegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
@@ -324,7 +325,7 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
     doReturn(response)
         .when(serverlessAwsCommandTaskHelper)
         .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams,
-            executionLogCallback, true, (long) timeout * 60000);
+            executionLogCallback, true, (long) timeout * 60000, new HashMap<>());
 
     ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest =
         (ServerlessPrepareRollbackDataRequest) serverlessCommandRequest;
@@ -340,7 +341,7 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandlerTest {
     doReturn(response)
         .when(serverlessAwsCommandTaskHelper)
         .deployList(serverlessClient, serverlessDelegateTaskParams, executionLogCallback,
-            serverlessAwsLambdaInfraConfig, (long) timeout * 60000, serverlessAwsLambdaManifestConfig);
+            serverlessAwsLambdaInfraConfig, (long) timeout * 60000, serverlessAwsLambdaManifestConfig, new HashMap<>());
 
     ServerlessCommandResponse serverlessCommandResponse =
         serverlessAwsLambdaPrepareRollbackCommandTaskHandler.executeTaskInternal(
