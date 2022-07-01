@@ -38,7 +38,6 @@ public class CurrentActiveInstances {
   private Date deployedAt;
   private EntitySummary lastWorkflowExecution;
   private EntitySummary lastPipelineExecution;
-  private ArtifactSummary artifactSummaryFromSvc;
   private List<Map<String, String>> sideCarImageDetails;
   private boolean onDemandRollbackAvailable;
 }
