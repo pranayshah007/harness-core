@@ -123,17 +123,6 @@ public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> 
   public StepResponse handleChildrenResponse(
       Ambiance ambiance, StrategyStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     log.info("Completed  execution for Strategy Step [{}]", stepParameters);
-    StepResponse response = createStepResponseFromChildResponse(responseDataMap);
-    if (response.getStatus() == Status.SUCCEEDED) {
-      List<Status> childStatuses = new LinkedList<>();
-      for (ResponseData responseData : responseDataMap.values()) {
-        StepResponseNotifyData responseNotifyData = (StepResponseNotifyData) responseData;
-        childStatuses.add(responseNotifyData.getStatus());
-      }
-      if (!childStatuses.isEmpty() && childStatuses.stream().allMatch(status -> status == Status.SKIPPED)) {
-        return response.toBuilder().status(Status.SKIPPED).build();
-      }
-    }
-    return response;
+    return createStepResponseFromChildResponse(responseDataMap);
   }
 }
