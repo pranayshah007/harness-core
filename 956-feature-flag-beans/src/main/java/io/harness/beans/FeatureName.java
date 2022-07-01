@@ -19,7 +19,6 @@ import lombok.Getter;
  */
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
-
   ARTIFACT_FROM_DEPLOYMENT_HIST,
   NG_GITOPS,
   APPD_CV_TASK,
