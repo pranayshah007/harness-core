@@ -681,6 +681,8 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
       when(workflowExecutionService.getLastSuccessfulWorkflowExecution(any(), any(), any(), any(), any(), any()))
           .thenReturn(WorkflowExecution.builder().uuid(WORKFLOW_EXECUTION_ID).startTs(1630969310005L).build());
 
+      when(featureFlagService.isEnabled(eq(FeatureName.ARTIFACT_FROM_DEPLOYMENT_HIST), any())).thenReturn(true);
+
       List<Service> serviceList = Lists.newArrayList();
       Service service1 = Service.builder()
                              .uuid(SERVICE_1_ID)
