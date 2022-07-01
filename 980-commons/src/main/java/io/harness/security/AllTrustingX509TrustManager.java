@@ -5,12 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.managerclient;
+package io.harness.security;
 
 import java.security.cert.X509Certificate;
 import javax.net.ssl.X509TrustManager;
 
-class VerificationManagerClientX509TrustManager implements X509TrustManager {
+/**
+ * A TrustManager that trusts all certificates.
+ */
+public class AllTrustingX509TrustManager implements X509TrustManager {
   @Override
   public X509Certificate[] getAcceptedIssuers() {
     return new X509Certificate[] {};

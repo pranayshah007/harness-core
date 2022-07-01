@@ -11,9 +11,11 @@ import static io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
+import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.plan.NodeType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -40,6 +42,7 @@ import org.springframework.data.mongodb.core.query.Update;
 public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryService {
   @Inject NodeExecutionService nodeExecutionService;
   @Inject private PmsExecutionSummaryRespository pmsExecutionSummaryRepository;
+  @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
 
   /**
    * Updates all the fields in the stage graph from nodeExecutions.
@@ -51,6 +54,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = null;
 
     // This is done inorder to reduce the load while updating stageInfo. Here we will update only the status.
+    // Todo: Refactor this piece of code
     for (NodeExecution nodeExecution : nodeExecutions) {
       if (nodeExecution.getStepType().getStepCategory() != StepCategory.STRATEGY) {
         String graphNodeId = AmbianceUtils.obtainCurrentSetupId(nodeExecution.getAmbiance());
@@ -86,6 +90,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
         List<NodeExecution> childrenNodeExecution = nodeExecutions.stream()
                                                         .filter(o -> o.getParentId().equals(nodeExecution.getUuid()))
                                                         .collect(Collectors.toList());
+        updateStrategyNodeFields(nodeExecution, update);
 
         String stageSetupId = getStageSetupId(childrenNodeExecution, graphLayoutNode, nodeExecution);
 
@@ -177,6 +182,28 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       update(planExecutionId, update);
     }
   }
+
+  @Override
+  public void updateStrategyNode(String planExecutionId, NodeExecution nodeExecution, Update update) {
+    if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY
+        && AmbianceUtils.isCurrentStrategyLevelAtStage(nodeExecution.getAmbiance())
+        && nodeExecution.getNode().getNodeType() != NodeType.IDENTITY_PLAN_NODE) {
+      updateStrategyNodeFields(nodeExecution, update);
+    }
+  }
+
+  private void updateStrategyNodeFields(NodeExecution nodeExecution, Update update) {
+    ConcurrentChildInstance concurrentChildInstance =
+        pmsGraphStepDetailsService.fetchConcurrentChildInstance(nodeExecution.getUuid());
+    if (concurrentChildInstance != null) {
+      if (!nodeExecution.getExecutableResponses().isEmpty()) {
+        update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "."
+                + nodeExecution.getNodeId() + ".moduleInfo.maxConcurrency.value",
+            nodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency());
+      }
+    }
+  }
+
   @Override
   public Optional<PipelineExecutionSummaryEntity> getPipelineExecutionSummary(
       String accountId, String orgId, String projectId, String planExecutionId) {

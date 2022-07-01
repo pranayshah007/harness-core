@@ -35,6 +35,7 @@ import io.harness.artifacts.jenkins.service.JenkinsRegistryUtils;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
 import io.harness.exception.ArtifactServerException;
+import io.harness.exception.HintException;
 import io.harness.logging.LoggingInitializer;
 import io.harness.rule.Owner;
 import io.harness.scm.ScmSecret;
@@ -429,13 +430,13 @@ public class JenkinsRegistryUtilsTest extends WingsBaseTest {
 
     when(jenkinsHttpClient.get(eq("/"))).thenThrow(new HttpResponseException(401, "Unauthorized"));
     assertThatThrownBy(() -> jenkinsRegistryUtils.isRunning(jenkinsInternalConfig))
-        .isInstanceOf(ArtifactServerException.class)
+        .isInstanceOf(HintException.class)
         .extracting("message")
         .isEqualTo("Invalid Jenkins credentials");
 
     when(jenkinsHttpClient.get(eq("/"))).thenThrow(new HttpResponseException(403, "Forbidden"));
     assertThatThrownBy(() -> jenkinsRegistryUtils.isRunning(jenkinsInternalConfig))
-        .isInstanceOf(ArtifactServerException.class)
+        .isInstanceOf(HintException.class)
         .extracting("message")
         .isEqualTo("User not authorized to access jenkins");
 
@@ -495,10 +496,8 @@ public class JenkinsRegistryUtilsTest extends WingsBaseTest {
         .thenThrow(new HttpResponseException(401, "Unauthorized"));
 
     assertThatThrownBy(() -> jenkinsRegistryUtils.getEnvVars("job/test/2", jenkinsInternalConfig))
-        .isInstanceOf(ArtifactServerException.class)
+        .isInstanceOf(HintException.class)
         .extracting("message")
-        .isEqualTo(
-            "Failure in fetching environment variables for job: Invalid request: Failed to collect environment variables from Jenkins: job/test/2/injectedEnvVars/api/json."
-            + "\nThis might be because 'Capture environment variables' is enabled in Jenkins step but EnvInject plugin is not installed in the Jenkins instance.");
+        .isEqualTo("Failure in fetching environment variables for job ");
   }
 }

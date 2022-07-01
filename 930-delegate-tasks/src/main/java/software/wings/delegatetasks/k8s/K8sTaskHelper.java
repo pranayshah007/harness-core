@@ -316,8 +316,8 @@ public class K8sTaskHelper {
         scmFetchFilesHelper.downloadFilesUsingScm(
             manifestFilesDirectory, gitFileConfig, gitConfig, executionLogCallback);
       } else {
-        latestCommitSha = gitService.downloadFiles(
-            gitConfig, gitFileConfig, manifestFilesDirectory, delegateManifestConfig.isShouldSaveManifest());
+        latestCommitSha = gitService.downloadFiles(gitConfig, gitFileConfig, manifestFilesDirectory,
+            delegateManifestConfig.isShouldSaveManifest(), executionLogCallback);
         if (delegateManifestConfig.isShouldSaveManifest()) {
           delegateManifestConfig.getGitFileConfig().setUseBranch(false);
           delegateManifestConfig.getGitFileConfig().setCommitId(latestCommitSha);

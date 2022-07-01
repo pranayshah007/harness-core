@@ -53,6 +53,11 @@ echo "grpcServiceConnectorPort: ${GRPC_SERVICE_CONNECTOR_PORT:-8080}" >> config.
 echo "doUpgrade: false" >> config.yml
 
 append_config "clientToolsDownloadDisabled" $CLIENT_TOOLS_DOWNLOAD_DISABLED
+append_config "clientCertificateFilePath" $DELEGATE_CLIENT_CERTIFICATE_PATH
+append_config "clientCertificateKeyFilePath" $DELEGATE_CLIENT_CERTIFICATE_KEY_PATH
+append_config "grpcAuthorityModificationDisabled" ${GRPC_AUTHORITY_MODIFICATION_DISABLED:-false}
+# Intended for debugging, has to be set explicitly as its never set in generated yaml.
+append_config "trustAllCertificates" ${TRUST_ALL_CERTIFICATES:-false}
 
 # 3. Start the delegate
 JAVA_OPTS=${JAVA_OPTS//UseCGroupMemoryLimitForHeap/UseContainerSupport}

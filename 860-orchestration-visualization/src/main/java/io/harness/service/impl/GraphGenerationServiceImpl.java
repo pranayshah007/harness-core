@@ -180,6 +180,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
                   AmbianceUtils.getAccountId(nodeExecution.getAmbiance()), FeatureName.PIPELINE_MATRIX)) {
             pmsExecutionSummaryService.addStageNodeInGraphIfUnderStrategy(
                 planExecutionId, nodeExecution, executionSummaryUpdate);
+            pmsExecutionSummaryService.updateStrategyNode(planExecutionId, nodeExecution, executionSummaryUpdate);
           }
           if (OrchestrationUtils.isStageNode(nodeExecution)
               && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE

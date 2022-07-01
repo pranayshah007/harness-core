@@ -108,6 +108,9 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
     if (environment != null) {
       children.add(VisitableChild.builder().value(environment).fieldName("environment").build());
     }
+    if (environmentGroup != null) {
+      children.add(VisitableChild.builder().value(environmentGroup).fieldName("environmentGroup").build());
+    }
     return VisitableChildren.builder().visitableChildList(children).build();
   }
 }

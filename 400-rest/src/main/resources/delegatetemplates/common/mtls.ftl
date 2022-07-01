@@ -1,7 +1,7 @@
 <#macro delegateEnv>
-        - name: CLIENT_CERTIFICATE_PATH
+        - name: DELEGATE_CLIENT_CERTIFICATE_PATH
           value: "/etc/mtls/client.crt"
-        - name: CLIENT_CERTIFICATE_KEY_PATH
+        - name: DELEGATE_CLIENT_CERTIFICATE_KEY_PATH
           value: "/etc/mtls/client.key"
         - name: GRPC_AUTHORITY_MODIFICATION_DISABLED
           value: "true"

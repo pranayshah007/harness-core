@@ -20,6 +20,8 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
@@ -28,24 +30,29 @@ import org.springframework.data.mongodb.core.query.Update;
 @UtilityClass
 public class ServiceFilterHelper {
   public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
-      boolean deleted, String searchTerm, ServiceDefinitionType type) {
+      boolean deleted, String searchTerm, ServiceDefinitionType type, Boolean gitOpsEnabled) {
     Criteria criteria =
         CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, deleted);
+    final List<Criteria> andCriterias = new ArrayList<>();
     if (isNotEmpty(searchTerm)) {
       Criteria searchCriteria = new Criteria().orOperator(
           where(ServiceEntityKeys.name).regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
           where(ServiceEntityKeys.identifier)
               .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
-      criteria.andOperator(searchCriteria);
+      andCriterias.add(searchCriteria);
     }
 
     if (type != null) {
-      final Criteria typeCriteria =
-          new Criteria().orOperator(where(ServiceEntityKeys.type).is(type), where(ServiceEntityKeys.type).is(null));
-      criteria.andOperator(typeCriteria);
+      final Criteria typeCriteria = new Criteria().orOperator(
+          where(ServiceEntityKeys.type).is(type.getYamlName()), where(ServiceEntityKeys.type).is(null));
+      andCriterias.add(typeCriteria);
     }
 
-    return criteria;
+    if (isNotEmpty(andCriterias)) {
+      criteria = criteria.andOperator(andCriterias.toArray(Criteria[] ::new));
+    }
+
+    return applyBooleanFilter(criteria, gitOpsEnabled, ServiceEntityKeys.gitOpsEnabled);
   }
 
   public Update getUpdateOperations(ServiceEntity serviceEntity) {
@@ -71,5 +78,14 @@ public class ServiceFilterHelper {
     update.set(ServiceEntityKeys.deleted, true);
     update.set(ServiceEntityKeys.deletedAt, currentTimeMillis());
     return update;
+  }
+
+  private Criteria applyBooleanFilter(Criteria criteria, Boolean aBoolean, String key) {
+    if (aBoolean == Boolean.TRUE) {
+      criteria.and(key).is(true);
+    } else if (aBoolean == Boolean.FALSE) {
+      criteria.and(key).is(false);
+    }
+    return criteria;
   }
 }

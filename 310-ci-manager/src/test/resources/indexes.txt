@@ -32,6 +32,7 @@ capabilityTaskSelectionDetails {"name": "accountId_1", "background": true} {"acc
 capabilityTaskSelectionDetails {"name": "blocked_1", "background": true} {"blocked": 1}
 capabilityTaskSelectionDetails {"name": "capabilityId_1", "background": true} {"capabilityId": 1}
 capabilityTaskSelectionDetails {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
+ciTelemetrySentStatus {"name": "no_dup", "unique": true} {"accountId": 1}
 cibuild {"name": "createdAt_1", "background": true} {"createdAt": 1}
 commandLogs {"name": "accountId_1", "background": true} {"accountId": 1}
 commandLogs {"name": "activityIdCreatedAt", "background": true} {"activityId": 1, "createdAt": 1}

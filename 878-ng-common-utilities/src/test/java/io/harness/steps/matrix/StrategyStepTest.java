@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.NGCommonUtilitiesTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -49,6 +50,7 @@ public class StrategyStepTest extends NGCommonUtilitiesTestBase {
   @Mock MatrixConfigService matrixConfigService;
   @Mock ForLoopStrategyConfigService forLoopStrategyConfigService;
   @Mock ParallelismStrategyConfigService parallelismStrategyConfigService;
+  @Mock EnforcementClientService enforcementClient;
 
   @InjectMocks StrategyStep strategyStep;
 

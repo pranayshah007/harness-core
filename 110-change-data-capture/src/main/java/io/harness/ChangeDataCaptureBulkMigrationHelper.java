@@ -68,9 +68,13 @@ public class ChangeDataCaptureBulkMigrationHelper {
             cdcEntity.getSubscriptionEntity().getAnnotationsByType(ChangeDataCapture.class);
         for (ChangeDataCapture changeDataCapture : dataCaptures) {
           ChangeHandler changeHandler = cdcEntity.getChangeHandler(changeDataCapture.handler());
-          CDCEntityBulkMigrationTask<T> cdcEntityBulkMigrationTask = new CDCEntityBulkMigrationTask<>(
-              changeHandler, subscriptionEntity, document, changeDataCapture.table(), changeDataCapture.fields());
-          taskFutures.add(boundedExecutorService.submit(cdcEntityBulkMigrationTask));
+          if (changeHandler != null) {
+            CDCEntityBulkMigrationTask<T> cdcEntityBulkMigrationTask = new CDCEntityBulkMigrationTask<>(
+                changeHandler, subscriptionEntity, document, changeDataCapture.table(), changeDataCapture.fields());
+            taskFutures.add(boundedExecutorService.submit(cdcEntityBulkMigrationTask));
+          } else {
+            log.info("ChangeHandler for {} is null", changeDataCapture.handler());
+          }
         }
       }
       for (Future<Boolean> taskFuture : taskFutures) {

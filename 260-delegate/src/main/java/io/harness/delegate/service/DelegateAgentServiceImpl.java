@@ -756,6 +756,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             }
           })
           .transport(TRANSPORT.WEBSOCKET);
+
+      // send accountId + delegateId as header for delegate gateway to log websocket connection with account.
+      requestBuilder.header("accountId", this.delegateConfiguration.getAccountId());
+      requestBuilder.header("delegateId", DelegateAgentCommonVariables.getDelegateId());
+
       return requestBuilder;
     } catch (URISyntaxException e) {
       throw new UnexpectedException("Unable to prepare uri", e);

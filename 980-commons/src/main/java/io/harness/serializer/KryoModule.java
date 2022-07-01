@@ -37,7 +37,7 @@ public class KryoModule extends AbstractModule {
   public void testAutomaticSearch(Provider<Set<Class<? extends KryoRegistrar>>> registrarsProvider) {
     Reflections reflections = new Reflections("io.harness.serializer.kryo");
 
-    // Reflections have race issue and rarely but form time to time returns less.
+    // Reflections have race issue and rarely but from time to time returns less.
     // We are checking here only if we missed something, not exact match on purpose
     Set<Class<? extends KryoRegistrar>> reflectionRegistrars = reflections.getSubTypesOf(KryoRegistrar.class);
 
