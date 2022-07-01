@@ -8,9 +8,6 @@
 package io.harness.ci;
 
 import io.harness.CIBeansModule;
-import io.harness.OrchestrationModule;
-import io.harness.OrchestrationModuleConfig;
-import io.harness.OrchestrationStepsModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
@@ -39,9 +36,9 @@ import io.harness.ci.serializer.PluginStepProtobufSerializer;
 import io.harness.ci.serializer.ProtobufStepSerializer;
 import io.harness.ci.serializer.RunStepProtobufSerializer;
 import io.harness.ci.serializer.RunTestsStepProtobufSerializer;
-import io.harness.engine.expressions.AmbianceExpressionEvaluatorProvider;
-import io.harness.pms.listener.NgOrchestrationNotifyEventListener;
 import io.harness.threading.ThreadPool;
+import io.harness.waiter.AbstractWaiterModule;
+import io.harness.waiter.WaiterConfiguration;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
@@ -49,7 +46,6 @@ import com.google.inject.Inject;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -86,13 +82,6 @@ public class CIExecutionServiceModule extends AbstractModule {
   @Override
   protected void configure() {
     install(CIBeansModule.getInstance());
-    install(OrchestrationStepsModule.getInstance(null));
-    install(OrchestrationModule.getInstance(OrchestrationModuleConfig.builder()
-                                                .serviceName("CI")
-                                                .withPMS(Optional.ofNullable(withPMS).orElse(false))
-                                                .expressionEvaluatorProvider(new AmbianceExpressionEvaluatorProvider())
-                                                .publisherName(NgOrchestrationNotifyEventListener.NG_ORCHESTRATION)
-                                                .build()));
     bind(ExecutorService.class)
         .annotatedWith(Names.named("ciEventHandlerExecutor"))
         .toInstance(ThreadPool.create(
@@ -105,5 +94,11 @@ public class CIExecutionServiceModule extends AbstractModule {
     }).toInstance(new RunTestsStepProtobufSerializer());
     bind(new TypeLiteral<ProtobufStepSerializer<PluginCompatibleStep>>() {
     }).toInstance(new PluginCompatibleStepSerializer());
+    install(new AbstractWaiterModule() {
+      @Override
+      public WaiterConfiguration waiterConfiguration() {
+        return WaiterConfiguration.builder().persistenceLayer(WaiterConfiguration.PersistenceLayer.SPRING).build();
+      }
+    });
   }
 }

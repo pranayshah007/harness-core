@@ -28,6 +28,8 @@ import io.harness.aws.AWSCloudformationClient;
 import io.harness.aws.AWSCloudformationClientImpl;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
+import io.harness.awscli.AwsCliClient;
+import io.harness.awscli.AwsCliClientImpl;
 import io.harness.azure.client.AzureAuthorizationClient;
 import io.harness.azure.client.AzureAutoScaleSettingsClient;
 import io.harness.azure.client.AzureBlueprintClient;
@@ -1052,6 +1054,7 @@ public class DelegateModule extends AbstractModule {
     bind(TerraformClient.class).to(TerraformClientImpl.class);
     bind(CloudformationBaseHelper.class).to(CloudformationBaseHelperImpl.class);
     bind(HelmDeployServiceNG.class).to(HelmDeployServiceImplNG.class);
+    bind(AwsCliClient.class).to(AwsCliClientImpl.class);
 
     MapBinder<String, CommandUnitExecutorService> serviceCommandExecutorServiceMapBinder =
         MapBinder.newMapBinder(binder(), String.class, CommandUnitExecutorService.class);

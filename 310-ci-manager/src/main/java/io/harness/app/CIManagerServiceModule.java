@@ -9,6 +9,7 @@ package io.harness.app;
 
 import static io.harness.AuthorizationServiceHeader.CI_MANAGER;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
 import io.harness.AccessControlClientModule;
 import io.harness.account.AccountClientModule;
@@ -52,6 +53,7 @@ import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
 import io.harness.opaclient.OpaClientModule;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ClientMode;
@@ -68,6 +70,8 @@ import io.harness.timescaledb.TimeScaleDBService;
 import io.harness.timescaledb.TimeScaleDBServiceImpl;
 import io.harness.token.TokenClientModule;
 import io.harness.user.UserClientModule;
+import io.harness.waiter.AsyncWaitEngineImpl;
+import io.harness.waiter.WaitNotifyEngine;
 import io.harness.yaml.core.StepSpecType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -152,6 +156,12 @@ public class CIManagerServiceModule extends AbstractModule {
     Set<Class<?>> set = new HashSet<>(subTypesOfStepSpecType);
 
     return ImmutableMap.of(StepSpecType.class, set);
+  }
+
+  @Provides
+  @Singleton
+  public AsyncWaitEngine asyncWaitEngine(WaitNotifyEngine waitNotifyEngine) {
+    return new AsyncWaitEngineImpl(waitNotifyEngine, NG_ORCHESTRATION);
   }
 
   @Provides

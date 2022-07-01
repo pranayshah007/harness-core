@@ -41,7 +41,6 @@ import io.harness.rule.InjectorRuleMixin;
 import io.harness.serializer.CiBeansRegistrars;
 import io.harness.serializer.ConnectorNextGenRegistrars;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.OrchestrationBeansRegistrars;
 import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.sto.beans.entities.STOServiceConfig;
@@ -107,9 +106,7 @@ public class STOManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleM
       @Provides
       @Singleton
       Set<Class<? extends TypeConverter>> morphiaConverters() {
-        return ImmutableSet.<Class<? extends TypeConverter>>builder()
-            .addAll(OrchestrationBeansRegistrars.morphiaConverters)
-            .build();
+        return ImmutableSet.<Class<? extends TypeConverter>>builder().build();
       }
 
       @Provides

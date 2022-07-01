@@ -219,7 +219,7 @@ public class K8sStepHelper extends CDStepHelper {
     K8sSpecParameters k8SSpecParameters = (K8sSpecParameters) stepElementParameters.getSpec();
     final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
         k8SSpecParameters.getCommandUnits(cdFeatureFlagHelper.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.PRUNE_KUBERNETES_RESOURCES)),
+            AmbianceUtils.getAccountId(ambiance), FeatureName.PRUNE_KUBERNETES_RESOURCES_NG)),
         taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(k8SSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
@@ -554,7 +554,7 @@ public class K8sStepHelper extends CDStepHelper {
     K8sSpecParameters k8SSpecParameters = (K8sSpecParameters) stepElementParameters.getSpec();
     final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
         k8SSpecParameters.getCommandUnits(cdFeatureFlagHelper.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.PRUNE_KUBERNETES_RESOURCES)),
+            AmbianceUtils.getAccountId(ambiance), FeatureName.PRUNE_KUBERNETES_RESOURCES_NG)),
         taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(k8SSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
@@ -593,7 +593,7 @@ public class K8sStepHelper extends CDStepHelper {
     K8sSpecParameters k8SSpecParameters = (K8sSpecParameters) stepElementParameters.getSpec();
     final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
         k8SSpecParameters.getCommandUnits(cdFeatureFlagHelper.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.PRUNE_KUBERNETES_RESOURCES)),
+            AmbianceUtils.getAccountId(ambiance), FeatureName.PRUNE_KUBERNETES_RESOURCES_NG)),
         taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(k8SSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));

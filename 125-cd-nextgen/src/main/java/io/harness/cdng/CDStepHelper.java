@@ -709,7 +709,7 @@ public class CDStepHelper {
   }
 
   public boolean isPruningEnabled(String accountId) {
-    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.PRUNE_KUBERNETES_RESOURCES);
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.PRUNE_KUBERNETES_RESOURCES_NG);
   }
 
   public List<String> getValuesFileContents(Ambiance ambiance, List<String> valuesFileContents) {

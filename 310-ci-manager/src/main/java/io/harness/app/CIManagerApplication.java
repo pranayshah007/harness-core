@@ -75,7 +75,6 @@ import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsume
 import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
-import io.harness.pms.serializer.jackson.PmsBeansJacksonModule;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
@@ -86,7 +85,6 @@ import io.harness.serializer.CiBeansRegistrars;
 import io.harness.serializer.ConnectorNextGenRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.OrchestrationRegistrars;
 import io.harness.serializer.PersistenceRegistrars;
 import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.serializer.YamlBeansModuleRegistrars;
@@ -171,7 +169,6 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
 
   public static void configureObjectMapper(final ObjectMapper mapper) {
     HObjectMapper.configureObjectMapperForNG(mapper);
-    mapper.registerModule(new PmsBeansJacksonModule());
   }
 
   @Override
@@ -222,16 +219,13 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
       Set<Class<? extends TypeConverter>> morphiaConverters() {
         return ImmutableSet.<Class<? extends TypeConverter>>builder()
             .addAll(PersistenceRegistrars.morphiaConverters)
-            .addAll(OrchestrationRegistrars.morphiaConverters)
             .build();
       }
 
       @Provides
       @Singleton
       List<Class<? extends Converter<?, ?>>> springConverters() {
-        return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
-            .addAll(OrchestrationRegistrars.springConverters)
-            .build();
+        return ImmutableList.<Class<? extends Converter<?, ?>>>builder().build();
       }
       @Provides
       @Singleton

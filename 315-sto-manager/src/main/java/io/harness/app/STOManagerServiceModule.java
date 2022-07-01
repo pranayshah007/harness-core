@@ -9,6 +9,7 @@ package io.harness.app;
 
 import static io.harness.AuthorizationServiceHeader.STO_MANAGER;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
 import io.harness.AccessControlClientModule;
 import io.harness.account.AccountClientModule;
@@ -48,6 +49,7 @@ import io.harness.mongo.MongoPersistence;
 import io.harness.opaclient.OpaClientModule;
 import io.harness.packages.HarnessPackages;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ClientMode;
 import io.harness.secrets.SecretDecryptor;
@@ -61,6 +63,8 @@ import io.harness.threading.ThreadPool;
 import io.harness.token.TokenClientModule;
 import io.harness.user.UserClientModule;
 import io.harness.version.VersionModule;
+import io.harness.waiter.AsyncWaitEngineImpl;
+import io.harness.waiter.WaitNotifyEngine;
 import io.harness.yaml.core.StepSpecType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -126,6 +130,12 @@ public class STOManagerServiceModule extends AbstractModule {
             .build());
     log.info("Delegate callback token generated =[{}]", delegateCallbackToken.getToken());
     return delegateCallbackToken;
+  }
+
+  @Provides
+  @Singleton
+  public AsyncWaitEngine asyncWaitEngine(WaitNotifyEngine waitNotifyEngine) {
+    return new AsyncWaitEngineImpl(waitNotifyEngine, NG_ORCHESTRATION);
   }
 
   @Provides

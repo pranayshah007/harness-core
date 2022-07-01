@@ -45,8 +45,6 @@ cvActivityLogs {"name": "dataCollectionMinute_1", "background": true} {"dataColl
 cvActivityLogs {"name": "service_guard_idx", "background": true} {"cvConfigId": 1, "dataCollectionMinute": -1, "createdAt": 1}
 cvActivityLogs {"name": "stateExecutionId_1", "background": true} {"stateExecutionId": 1}
 cvActivityLogs {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-delayQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
-delayQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 delegateCallbacks {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 delegateConnectionResults {"name": "criteria_1", "background": true} {"criteria": 1}
 delegateConnectionResults {"name": "delegateConnectionResultsIdx", "unique": true} {"accountId": 1, "delegateId": 1, "criteria": 1}

@@ -16,6 +16,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.awscli.AwsCliClient;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaManifestSchema;
@@ -46,6 +47,7 @@ import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,6 +60,7 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
   @Inject private ServerlessTaskHelperBase serverlessTaskHelperBase;
   @Inject private ServerlessInfraConfigHelper serverlessInfraConfigHelper;
   @Inject private ServerlessAwsCommandTaskHelper serverlessAwsCommandTaskHelper;
+  @Inject private AwsCliClient awsCliClient;
 
   private ServerlessAwsLambdaConfig serverlessAwsLambdaConfig;
   private ServerlessClient serverlessClient;
@@ -67,6 +70,8 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
   private long timeoutInMillis;
   private String previousDeployTimeStamp;
   private String serverlessAwsLambdaCredentialType;
+  private boolean crossAccountAccessFlag;
+  private Map<String, String> environmentVariables;
 
   @Override
   protected ServerlessCommandResponse executeTaskInternal(ServerlessCommandRequest serverlessCommandRequest,
@@ -94,6 +99,11 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
     serverlessAwsLambdaCredentialType =
         serverlessInfraConfigHelper.getServerlessAwsLambdaCredentialType(serverlessAwsLambdaInfraConfig);
 
+    crossAccountAccessFlag = serverlessInfraConfigHelper.getAwsCrossAccountFlag(serverlessAwsLambdaInfraConfig);
+
+    environmentVariables =
+        serverlessAwsCommandTaskHelper.getAwsCredentialsEnvironmentVariables(serverlessDelegateTaskParams);
+
     serverlessAwsLambdaConfig = (ServerlessAwsLambdaConfig) serverlessInfraConfigHelper.createServerlessConfig(
         serverlessPrepareRollbackDataRequest.getServerlessInfraConfig());
 
@@ -108,8 +118,16 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
     }
     serverlessClient = ServerlessClient.client(serverlessDelegateTaskParams.getServerlessClientPath());
 
-    serverlessAwsCommandTaskHelper.setUpConfigureCredential(serverlessAwsLambdaConfig, executionLogCallback,
-        serverlessDelegateTaskParams, serverlessAwsLambdaCredentialType, serverlessClient, timeoutInMillis);
+    try {
+      serverlessAwsCommandTaskHelper.setUpConfigureCredential(serverlessAwsLambdaConfig, executionLogCallback,
+          serverlessDelegateTaskParams, serverlessAwsLambdaCredentialType, serverlessClient, timeoutInMillis,
+          crossAccountAccessFlag, environmentVariables, awsCliClient, serverlessAwsLambdaInfraConfig);
+    } catch (Exception ex) {
+      executionLogCallback.saveExecutionLog(
+          color(format("%n configure credentials failed."), LogColor.Red, LogWeight.Bold), LogLevel.ERROR,
+          CommandExecutionStatus.FAILURE);
+      throw ex;
+    }
 
     try {
       serverlessAwsCommandTaskHelper.installPlugins(serverlessManifestSchema, serverlessDelegateTaskParams,
@@ -168,7 +186,7 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
     }
     ServerlessCliResponse response =
         serverlessAwsCommandTaskHelper.deployList(serverlessClient, serverlessDelegateTaskParams, executionLogCallback,
-            serverlessAwsLambdaInfraConfig, timeoutInMillis, serverlessManifestConfig);
+            serverlessAwsLambdaInfraConfig, timeoutInMillis, serverlessManifestConfig, environmentVariables);
     if (response.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
       executionLogCallback.saveExecutionLog(
           color(format("%nDeploy List command executed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);

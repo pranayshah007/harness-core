@@ -1,0 +1,22 @@
+---
+pipeline:
+  identifier: "normalcdpipeline2"
+  stages:
+    - stage:
+        identifier: "normaldeploystage"
+        type: "Deployment"
+        spec:
+          execution:
+            steps:
+              - step:
+                  identifier: "normalverify"
+                  type: "Verify"
+              - step:
+                  template:
+                    templateInputs:
+                      type: "Verify"
+                      spec:
+                        type: "Rolling"
+                        spec:
+                          sensitivity: "<+input>"
+                  identifier: "verifytemp"

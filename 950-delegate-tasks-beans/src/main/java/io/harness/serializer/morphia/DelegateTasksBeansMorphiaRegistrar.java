@@ -15,6 +15,7 @@ import io.harness.capability.CapabilitySubjectPermission;
 import io.harness.capability.CapabilityTaskSelectionDetails;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.executioncapability.AlwaysFalseValidationCapability;
+import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
 import io.harness.delegate.beans.executioncapability.AwsRegionCapability;
 import io.harness.delegate.beans.executioncapability.ChartMuseumCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -142,6 +143,7 @@ public class DelegateTasksBeansMorphiaRegistrar implements MorphiaRegistrar {
         SocketConnectivityBulkOrExecutionCapability.class);
     h.put(
         "delegate.beans.executioncapability.ServerlessInstallationCapability", ServerlessInstallationCapability.class);
+    h.put("delegate.beans.executioncapability.AwsCliInstallationCapability", AwsCliInstallationCapability.class);
     h.put("delegate.beans.executioncapability.SystemEnvCheckerCapability", SystemEnvCheckerCapability.class);
     h.put("delegate.beans.executioncapability.SelectorCapability", SelectorCapability.class);
     h.put("delegate.command.CommandExecutionResult", CommandExecutionResult.class);
