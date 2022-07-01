@@ -13,8 +13,6 @@ import io.harness.ng.core.accountsetting.entities.AccountSettings;
 import io.harness.ng.core.activityhistory.entity.ConnectivityCheckDetail;
 import io.harness.ng.core.activityhistory.entity.EntityUsageActivityDetail;
 import io.harness.ng.core.activityhistory.entity.NGActivity;
-import io.harness.ng.core.variable.entity.StringVariable;
-import io.harness.ng.core.variable.entity.Variable;
 
 import java.util.Set;
 
@@ -25,8 +23,6 @@ public class NGCoreMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(AccountSettings.class);
     set.add(ConnectivityCheckDetail.class);
     set.add(EntityUsageActivityDetail.class);
-    set.add(Variable.class);
-    set.add(StringVariable.class);
   }
 
   @Override
