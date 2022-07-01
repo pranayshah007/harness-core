@@ -100,4 +100,5 @@ enum EntityTypeProtoEnum {
   CUSTOM_APPROVAL_STEP = 87;
   JENKINS_BUILD = 88;
   TEMPLATE_STAGE = 89;
+  EMAIL_STEP = 90;
 }
