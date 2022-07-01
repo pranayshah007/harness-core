@@ -126,3 +126,6 @@ io.harness.plancreator.steps.resourceconstraint.QueueStepInfo
 io.harness.steps.policy.PolicyStepSpecParameters
 io.harness.steps.policy.step.outcome.PolicyStepOutcome
 io.harness.steps.resourcerestraint.QueueSpecParameters
+io.harness.plancreator.steps.email.EmailStepInfo
+io.harness.plancreator.steps.email.EmailStepNode
+io.harness.steps.email.EmailOutcome

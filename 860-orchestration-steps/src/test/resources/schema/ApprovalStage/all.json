@@ -740,6 +740,53 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "EmailStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "subject",
+            "to"
+          ],
+          "properties": {
+            "body": {
+              "type": "string"
+            },
+            "cc": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "subject": {
+              "type": "string"
+            },
+            "to": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ExcludeConfig": {
       "type": "object",
       "properties": {
@@ -2643,6 +2690,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/CustomApprovalStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Email"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/EmailStepInfo"
               }
             }
           }
