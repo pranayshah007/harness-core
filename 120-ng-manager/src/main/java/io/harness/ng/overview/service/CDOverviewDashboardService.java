@@ -14,18 +14,7 @@ import io.harness.ng.core.activityhistory.dto.TimeGroupType;
 import io.harness.ng.core.dashboard.DashboardExecutionStatusInfo;
 import io.harness.ng.core.dashboard.DeploymentsInfo;
 import io.harness.ng.core.environment.beans.EnvironmentType;
-import io.harness.ng.overview.dto.ActiveServiceInstanceSummary;
-import io.harness.ng.overview.dto.DashboardWorkloadDeployment;
-import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfoList;
-import io.harness.ng.overview.dto.EnvIdCountPair;
-import io.harness.ng.overview.dto.ExecutionDeploymentInfo;
-import io.harness.ng.overview.dto.HealthDeploymentDashboard;
-import io.harness.ng.overview.dto.InstancesByBuildIdList;
-import io.harness.ng.overview.dto.ServiceDeploymentInfoDTO;
-import io.harness.ng.overview.dto.ServiceDeploymentListInfo;
-import io.harness.ng.overview.dto.ServiceDetailsInfoDTO;
-import io.harness.ng.overview.dto.ServiceHeaderInfo;
-import io.harness.ng.overview.dto.TimeValuePairListDTO;
+import io.harness.ng.overview.dto.*;
 
 import java.util.List;
 
@@ -64,7 +53,7 @@ public interface CDOverviewDashboardService {
   ActiveServiceInstanceSummary getActiveServiceInstanceSummary(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
 
-  EnvBuildIdAndInstanceCountInfoList getEnvBuildInstanceCountByServiceId(
+  BuildIdEnvInfraInstanceCountInfoList getEnvBuildInstanceCountByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
   io.harness.ng.overview.dto.EnvironmentDeploymentInfo getEnvironmentDeploymentDetailsByServiceId(

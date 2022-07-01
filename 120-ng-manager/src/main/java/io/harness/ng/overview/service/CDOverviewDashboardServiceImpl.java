@@ -41,42 +41,8 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
-import io.harness.ng.overview.dto.ActiveServiceInstanceSummary;
-import io.harness.ng.overview.dto.BuildIdAndInstanceCount;
-import io.harness.ng.overview.dto.DashboardWorkloadDeployment;
-import io.harness.ng.overview.dto.Deployment;
-import io.harness.ng.overview.dto.DeploymentChangeRates;
-import io.harness.ng.overview.dto.DeploymentCount;
-import io.harness.ng.overview.dto.DeploymentDateAndCount;
-import io.harness.ng.overview.dto.DeploymentInfo;
-import io.harness.ng.overview.dto.DeploymentStatusInfoList;
-import io.harness.ng.overview.dto.EntityStatusDetails;
-import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfo;
-import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfoList;
-import io.harness.ng.overview.dto.EnvIdCountPair;
-import io.harness.ng.overview.dto.EnvironmentDeploymentInfo;
-import io.harness.ng.overview.dto.EnvironmentInfoByServiceId;
-import io.harness.ng.overview.dto.ExecutionDeployment;
-import io.harness.ng.overview.dto.ExecutionDeploymentInfo;
-import io.harness.ng.overview.dto.HealthDeploymentDashboard;
-import io.harness.ng.overview.dto.HealthDeploymentInfo;
-import io.harness.ng.overview.dto.InstancesByBuildIdList;
-import io.harness.ng.overview.dto.LastWorkloadInfo;
-import io.harness.ng.overview.dto.ServiceDeployment;
-import io.harness.ng.overview.dto.ServiceDeploymentInfoDTO;
-import io.harness.ng.overview.dto.ServiceDeploymentListInfo;
-import io.harness.ng.overview.dto.ServiceDetailsDTO;
+import io.harness.ng.overview.dto.*;
 import io.harness.ng.overview.dto.ServiceDetailsDTO.ServiceDetailsDTOBuilder;
-import io.harness.ng.overview.dto.ServiceDetailsInfoDTO;
-import io.harness.ng.overview.dto.ServiceHeaderInfo;
-import io.harness.ng.overview.dto.ServicePipelineInfo;
-import io.harness.ng.overview.dto.TimeAndStatusDeployment;
-import io.harness.ng.overview.dto.TimeValuePair;
-import io.harness.ng.overview.dto.TimeValuePairListDTO;
-import io.harness.ng.overview.dto.TotalDeploymentInfo;
-import io.harness.ng.overview.dto.WorkloadCountInfo;
-import io.harness.ng.overview.dto.WorkloadDateCountInfo;
-import io.harness.ng.overview.dto.WorkloadDeploymentInfo;
 import io.harness.ng.overview.util.GrowthTrendEvaluator;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.service.instancedashboardservice.InstanceDashboardService;
@@ -1451,42 +1417,106 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Returns a list of buildId and instance counts for various environments for given account+org+project+service
   */
   @Override
-  public io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfoList getEnvBuildInstanceCountByServiceId(
+  public BuildIdEnvInfraInstanceCountInfoList getEnvBuildInstanceCountByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
-    Map<String, List<BuildIdAndInstanceCount>> envIdToBuildMap = new HashMap<>();
+    Map<String, Map<String, Map<String, List<InfraInstanceCount>>>> buildPipelineEnvInfraMap = new HashMap<>();
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
+    Map<String, String> pipelineIdToNameMap = new HashMap<>();
 
     List<EnvBuildInstanceCount> envBuildInstanceCounts = instanceDashboardService.getEnvBuildInstanceCountByServiceId(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, getCurrentTime());
 
     envBuildInstanceCounts.forEach(envBuildInstanceCount -> {
+      final String infraIdentifier = envBuildInstanceCount.getInfraIdentifier();
+      final String infraName = envBuildInstanceCount.getInfraName();
+      final String lastPipelineExecutionId = envBuildInstanceCount.getLastPipelineExecutionId();
+      final String lastPipelineExecutionName = envBuildInstanceCount.getLastPipelineExecutionName();
       final String envId = envBuildInstanceCount.getEnvIdentifier();
       final String envName = envBuildInstanceCount.getEnvName();
       final String buildId = envBuildInstanceCount.getTag();
       final int count = envBuildInstanceCount.getCount();
-      envIdToBuildMap.putIfAbsent(envId, new ArrayList<>());
 
-      BuildIdAndInstanceCount buildIdAndInstanceCount =
-          BuildIdAndInstanceCount.builder().buildId(buildId).count(count).build();
-      envIdToBuildMap.get(envId).add(buildIdAndInstanceCount);
+      buildPipelineEnvInfraMap.putIfAbsent(buildId, new HashMap<>());
+      buildPipelineEnvInfraMap.get(buildId).putIfAbsent(lastPipelineExecutionId, new HashMap<>());
+      buildPipelineEnvInfraMap.get(buildId).get(lastPipelineExecutionId).putIfAbsent(envId, new ArrayList<>());
+
+      buildPipelineEnvInfraMap.get(buildId)
+          .get(lastPipelineExecutionId)
+          .get(envId)
+          .add(InfraInstanceCount.builder().infraIdentifier(infraIdentifier).infraName(infraName).count(count).build());
 
       envIdToEnvNameMap.putIfAbsent(envId, envName);
+
+      pipelineIdToNameMap.putIfAbsent(lastPipelineExecutionId, lastPipelineExecutionName);
     });
 
-    List<EnvBuildIdAndInstanceCountInfo> envBuildIdAndInstanceCountInfoList = new ArrayList<>();
-    envIdToBuildMap.forEach((envId, buildIdAndInstanceCountList) -> {
-      EnvBuildIdAndInstanceCountInfo envBuildIdAndInstanceCountInfo =
-          EnvBuildIdAndInstanceCountInfo.builder()
-              .envId(envId)
-              .envName(envIdToEnvNameMap.getOrDefault(envId, ""))
-              .buildIdAndInstanceCountList(buildIdAndInstanceCountList)
-              .build();
-      envBuildIdAndInstanceCountInfoList.add(envBuildIdAndInstanceCountInfo);
-    });
+    List<BuildIdEnvInfraInstanceCountInfo> buildIdEnvInfraInstanceCountInfoList =
+        getBuildIdEnvInfraInstanceCountInfoList(buildPipelineEnvInfraMap, envIdToEnvNameMap, pipelineIdToNameMap);
 
-    return EnvBuildIdAndInstanceCountInfoList.builder()
-        .envBuildIdAndInstanceCountInfoList(envBuildIdAndInstanceCountInfoList)
-        .build();
+    BuildIdEnvInfraInstanceCountInfoList result =
+        BuildIdEnvInfraInstanceCountInfoList.builder()
+            .buildIdEnvInfraInstanceCountInfoList(buildIdEnvInfraInstanceCountInfoList)
+            .build();
+    BuildIdEnvInfraInstanceCountInfoList result1 = BuildIdEnvInfraInstanceCountInfoList.builder().build();
+    return result;
+  }
+
+  private List<BuildIdEnvInfraInstanceCountInfo> getBuildIdEnvInfraInstanceCountInfoList(
+      Map<String, Map<String, Map<String, List<InfraInstanceCount>>>> buildPipelineEnvInfraMap,
+      Map<String, String> envIdToEnvNameMap, Map<String, String> pipelineIdToNameMap) {
+    List<BuildIdEnvInfraInstanceCountInfo> buildIdEnvInfraInstanceCountInfoList = new ArrayList<>();
+
+    for (Map.Entry<String, Map<String, Map<String, List<InfraInstanceCount>>>> entry :
+        buildPipelineEnvInfraMap.entrySet()) {
+      String buildId = entry.getKey();
+      List<PipelineEnvInfraInstanceCountInfo> pipelineEnvInfraInstanceCountInfoList =
+          getPipelineEnvInfraInstanceCountInfoList(entry.getValue(), envIdToEnvNameMap, pipelineIdToNameMap);
+      buildIdEnvInfraInstanceCountInfoList.add(
+          BuildIdEnvInfraInstanceCountInfo.builder()
+              .BuildId(buildId)
+              .pipelineEnvInfraInstanceCountInfoList(pipelineEnvInfraInstanceCountInfoList)
+              .build());
+    }
+
+    return buildIdEnvInfraInstanceCountInfoList;
+  }
+
+  private List<PipelineEnvInfraInstanceCountInfo> getPipelineEnvInfraInstanceCountInfoList(
+      Map<String, Map<String, List<InfraInstanceCount>>> pipelineEnvInfraMap, Map<String, String> envIdToEnvNameMap,
+      Map<String, String> pipelineIdToNameMap) {
+    List<PipelineEnvInfraInstanceCountInfo> pipelineEnvInfraInstanceCountInfoList = new ArrayList<>();
+
+    for (Map.Entry<String, Map<String, List<InfraInstanceCount>>> entry : pipelineEnvInfraMap.entrySet()) {
+      String pipelineExecutionId = entry.getKey();
+      String pipelineExecutionName = pipelineIdToNameMap.get(pipelineExecutionId);
+      List<EnvInfraInstanceCountInfo> envInfraInstanceCountInfoList =
+          getEnvInfraInstanceCountInfoList(entry.getValue(), envIdToEnvNameMap);
+      pipelineEnvInfraInstanceCountInfoList.add(PipelineEnvInfraInstanceCountInfo.builder()
+                                                    .lastPipelineExecutionId(pipelineExecutionId)
+                                                    .lastPipelineExecutionName(pipelineExecutionName)
+                                                    .envInfraInstanceCountInfoList(envInfraInstanceCountInfoList)
+                                                    .build());
+    }
+
+    return pipelineEnvInfraInstanceCountInfoList;
+  }
+
+  private List<EnvInfraInstanceCountInfo> getEnvInfraInstanceCountInfoList(
+      Map<String, List<InfraInstanceCount>> envInfraMap, Map<String, String> envIdToEnvNameMap) {
+    List<EnvInfraInstanceCountInfo> envInfraInstanceCountInfoList = new ArrayList<>();
+
+    for (Map.Entry<String, List<InfraInstanceCount>> entry : envInfraMap.entrySet()) {
+      String envId = entry.getKey();
+      String envName = envIdToEnvNameMap.get(envId);
+      List<InfraInstanceCount> infraInstanceCountList = entry.getValue();
+      envInfraInstanceCountInfoList.add(EnvInfraInstanceCountInfo.builder()
+                                            .envId(envId)
+                                            .envName(envName)
+                                            .infraInstanceCountList(infraInstanceCountList)
+                                            .build());
+    }
+
+    return envInfraInstanceCountInfoList;
   }
 
   /*

@@ -119,11 +119,16 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
     List<EnvBuildInstanceCount> envBuildInstanceCounts = new ArrayList<>();
 
     envBuildInstanceCountAggregationResults.getMappedResults().forEach(envBuildInstanceCount -> {
+      final String infraIdentifier = envBuildInstanceCount.getInfraIdentifier();
+      final String infraName = envBuildInstanceCount.getInfraName();
+      final String lastPipelineExecutionId = envBuildInstanceCount.getLastPipelineExecutionId();
+      final String lastPipelineExecutionName = envBuildInstanceCount.getLastPipelineExecutionName();
       final String envId = envBuildInstanceCount.getEnvIdentifier();
       final String envName = envBuildInstanceCount.getEnvName();
       final String buildId = envBuildInstanceCount.getTag();
       final Integer count = envBuildInstanceCount.getCount();
-      envBuildInstanceCounts.add(new EnvBuildInstanceCount(envId, envName, buildId, count));
+      envBuildInstanceCounts.add(new EnvBuildInstanceCount(infraIdentifier, infraName, lastPipelineExecutionId,
+          lastPipelineExecutionName, envId, envName, buildId, count));
     });
 
     return envBuildInstanceCounts;

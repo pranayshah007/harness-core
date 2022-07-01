@@ -32,19 +32,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.EnvironmentType;
-import io.harness.ng.overview.dto.ActiveServiceInstanceSummary;
-import io.harness.ng.overview.dto.DashboardWorkloadDeployment;
-import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfoList;
-import io.harness.ng.overview.dto.EnvIdCountPair;
-import io.harness.ng.overview.dto.EnvironmentDeploymentInfo;
-import io.harness.ng.overview.dto.ExecutionDeploymentInfo;
-import io.harness.ng.overview.dto.HealthDeploymentDashboard;
-import io.harness.ng.overview.dto.InstancesByBuildIdList;
-import io.harness.ng.overview.dto.ServiceDeploymentInfoDTO;
-import io.harness.ng.overview.dto.ServiceDeploymentListInfo;
-import io.harness.ng.overview.dto.ServiceDetailsInfoDTO;
-import io.harness.ng.overview.dto.ServiceHeaderInfo;
-import io.harness.ng.overview.dto.TimeValuePairListDTO;
+import io.harness.ng.overview.dto.*;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
 import io.harness.security.annotations.NextGenManagerAuth;
 
@@ -247,7 +235,7 @@ public class CDDashboardOverviewResource {
   @Path("/getEnvBuildInstanceCountByService")
   @ApiOperation(
       value = "Get list of unique environment and build ids with instance count", nickname = "getEnvBuildInstanceCount")
-  public ResponseDTO<EnvBuildIdAndInstanceCountInfoList>
+  public ResponseDTO<BuildIdEnvInfraInstanceCountInfoList>
   getEnvBuildInstanceCount(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,

@@ -179,10 +179,11 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
             .is(serviceId);
 
     MatchOperation matchStage = Aggregation.match(criteria);
-    GroupOperation groupEnvId =
-        group(InstanceKeys.envIdentifier, InstanceKeys.envName, InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
-            .count()
-            .as(InstanceSyncConstants.COUNT);
+    GroupOperation groupEnvId = group(InstanceKeys.infraIdentifier, InstanceKeys.infraName,
+        InstanceKeys.lastPipelineExecutionId, InstanceKeys.lastPipelineExecutionName, InstanceKeys.envIdentifier,
+        InstanceKeys.envName, InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
+                                    .count()
+                                    .as(InstanceSyncConstants.COUNT);
     return mongoTemplate.aggregate(newAggregation(matchStage, groupEnvId), Instance.class, EnvBuildInstanceCount.class);
   }
 
