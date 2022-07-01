@@ -8,6 +8,7 @@
 package io.harness.delegate.task.serverless;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,6 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.serverless.ServerlessAwsLambdaDeployCommandTaskHandler;
 import io.harness.delegate.serverless.ServerlessCommandTaskHandler;
 import io.harness.delegate.task.serverless.request.ServerlessCommandRequest;
@@ -79,5 +81,23 @@ public class ServerlessDelegateTaskHelperTest extends CategoryTest {
     assertThat(
         serverlessDelegateTaskHelper.getServerlessCommandResponse(serverlessCommandRequest, iLogStreamingTaskClient))
         .isEqualTo(serverlessCommandResponse);
+  }
+
+  @Test(expected = TaskNGDataException.class)
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void getServerlessCommandResponseExceptionTest() throws Exception {
+    CommandUnitProgress commandUnitProgress =
+        CommandUnitProgress.builder().startTime(1).endTime(2).status(CommandExecutionStatus.SUCCESS).build();
+    CommandUnitsProgress commandUnitsProgress =
+        CommandUnitsProgress.builder().commandUnitProgressMap(commandUnitProgressLinkedHashMap).build();
+    ServerlessCommandRequest serverlessCommandRequest =
+        ServerlessDeployRequest.builder()
+            .serverlessInfraConfig(serverlessInfraConfig)
+            .serverlessCommandType(ServerlessCommandType.SERVERLESS_AWS_LAMBDA_DEPLOY)
+            .commandUnitsProgress(commandUnitsProgress)
+            .build();
+    ServerlessCommandResponse serverlessCommandResponse = ServerlessDeployResponse.builder().build();
+    serverlessDelegateTaskHelper.getServerlessCommandResponse(serverlessCommandRequest, iLogStreamingTaskClient);
   }
 }
