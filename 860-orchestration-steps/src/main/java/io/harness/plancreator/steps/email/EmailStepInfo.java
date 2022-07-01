@@ -59,9 +59,9 @@ public class EmailStepInfo implements PMSStepInfo, Visitable, WithDelegateSelect
       ParameterField<String> body, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     this.to = to;
     this.cc = cc;
+    this.subject = subject;
     this.body = body;
     this.delegateSelectors = delegateSelectors;
-    this.subject = subject;
   }
   public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
     return getDelegateSelectors();
