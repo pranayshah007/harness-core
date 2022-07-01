@@ -8,6 +8,7 @@
 package software.wings.service.impl.instance;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.beans.FeatureName.ARTIFACT_FROM_DEPLOYMENT_HIST;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -823,7 +824,9 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
       String accountId, String appId, String serviceId, PageRequest<WorkflowExecution> pageRequest) {
     List<CurrentActiveInstances> currentActiveInstances = getCurrentActiveInstances(accountId, appId, serviceId);
     List<DeploymentHistory> deploymentHistoryList = getDeploymentHistory(accountId, appId, serviceId, pageRequest);
-    updateActiveInstanceArtifactDetails(currentActiveInstances, deploymentHistoryList);
+    if (featureFlagService.isEnabled(ARTIFACT_FROM_DEPLOYMENT_HIST, accountId)) {
+      updateActiveInstanceArtifactDetails(currentActiveInstances, deploymentHistoryList);
+    }
     Service service = serviceResourceService.getWithDetails(appId, serviceId);
     notNullCheck("Service not found", service, USER);
     EntitySummary serviceSummary = getEntitySummary(service.getName(), serviceId, EntityType.SERVICE.name());
