@@ -17,10 +17,15 @@ import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.secretmanagerclient.SecretType.SecretFile;
 import static io.harness.secretmanagerclient.SecretType.SecretText;
+import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
+import static io.harness.secrets.SecretPermissions.SECRET_VIEW_PERMISSION;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.NGResourceFilterConstants;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.services.NGConnectorSecretManagerService;
@@ -85,13 +90,15 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   private final NGEncryptedDataService encryptedDataService;
   private final NGAccountSettingService accountSettingService;
   private final NGConnectorSecretManagerService ngConnectorSecretManagerService;
+  private final AccessControlClient accessControlClient;
   private final OpaSecretService opaSecretService;
 
   @Inject
   public SecretCrudServiceImpl(SecretEntityReferenceHelper secretEntityReferenceHelper, FileUploadLimit fileUploadLimit,
       NGSecretServiceV2 ngSecretService, @Named(ENTITY_CRUD) Producer eventProducer,
       NGEncryptedDataService encryptedDataService, NGAccountSettingService accountSettingService,
-      NGConnectorSecretManagerService ngConnectorSecretManagerService, OpaSecretService opaSecretService) {
+      NGConnectorSecretManagerService ngConnectorSecretManagerService, AccessControlClient accessControlClient,
+      OpaSecretService opaSecretService) {
     this.fileUploadLimit = fileUploadLimit;
     this.secretEntityReferenceHelper = secretEntityReferenceHelper;
     this.ngSecretService = ngSecretService;
@@ -99,6 +106,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     this.encryptedDataService = encryptedDataService;
     this.accountSettingService = accountSettingService;
     this.ngConnectorSecretManagerService = ngConnectorSecretManagerService;
+    this.accessControlClient = accessControlClient;
     this.opaSecretService = opaSecretService;
   }
 
@@ -282,12 +290,17 @@ public class SecretCrudServiceImpl implements SecretCrudService {
           Criteria.where(SecretKeys.tags + "." + NGTagKeys.value)
               .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
     }
+
     if (Objects.nonNull(identifiers) && !identifiers.isEmpty()) {
       criteria.and(SecretKeys.identifier).in(identifiers);
     }
 
-    Page<Secret> secrets = ngSecretService.list(criteria, page, size);
-    return secrets.map(this::getResponseWrapper);
+    List<Secret> allMatchingSecrets = ngSecretService.list(criteria).getContent();
+    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(SECRET_RESOURCE_TYPE, null), SECRET_VIEW_PERMISSION)) {
+      allMatchingSecrets = ngSecretService.getPermitted(allMatchingSecrets);
+    }
+    return ngSecretService.list(allMatchingSecrets, page, size).map(this::getResponseWrapper);
   }
 
   @Override

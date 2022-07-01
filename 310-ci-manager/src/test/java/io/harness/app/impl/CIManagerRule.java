@@ -44,7 +44,6 @@ import io.harness.rule.InjectorRuleMixin;
 import io.harness.serializer.CiBeansRegistrars;
 import io.harness.serializer.ConnectorNextGenRegistrars;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.OrchestrationBeansRegistrars;
 import io.harness.serializer.PersistenceRegistrars;
 import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.serializer.YamlBeansModuleRegistrars;
@@ -119,7 +118,6 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       Set<Class<? extends TypeConverter>> morphiaConverters() {
         return ImmutableSet.<Class<? extends TypeConverter>>builder()
             .addAll(PersistenceRegistrars.morphiaConverters)
-            .addAll(OrchestrationBeansRegistrars.morphiaConverters)
             .build();
       }
 

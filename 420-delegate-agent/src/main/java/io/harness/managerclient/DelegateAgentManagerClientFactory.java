@@ -128,7 +128,7 @@ public class DelegateAgentManagerClientFactory
         .addInterceptor(chain -> FibonacciBackOff.executeForEver(() -> chain.proceed(chain.request())))
         // During this call we not just query the task but we also obtain the secret on the manager side
         // we need to give enough time for the call to finish.
-        .readTimeout(2, TimeUnit.MINUTES)
+        .readTimeout(5, TimeUnit.MINUTES)
         .build();
   }
 }

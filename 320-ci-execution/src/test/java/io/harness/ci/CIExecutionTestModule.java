@@ -25,8 +25,6 @@ import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.OrchestrationBeansRegistrars;
-import io.harness.serializer.OrchestrationRegistrars;
 import io.harness.serializer.PersistenceRegistrars;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
@@ -66,16 +64,13 @@ public class CIExecutionTestModule extends AbstractModule {
   Set<Class<? extends TypeConverter>> morphiaConverters() {
     return ImmutableSet.<Class<? extends TypeConverter>>builder()
         .addAll(PersistenceRegistrars.morphiaConverters)
-        .addAll(OrchestrationBeansRegistrars.morphiaConverters)
         .build();
   }
 
   @Provides
   @Singleton
   List<Class<? extends Converter<?, ?>>> springConverters() {
-    return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
-        .addAll(OrchestrationRegistrars.springConverters)
-        .build();
+    return ImmutableList.<Class<? extends Converter<?, ?>>>builder().build();
   }
 
   @Provides

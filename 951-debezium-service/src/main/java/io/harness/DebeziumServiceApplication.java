@@ -9,22 +9,29 @@ package io.harness;
 
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
+import io.harness.cf.AbstractCfModule;
+import io.harness.cf.CfClientConfig;
+import io.harness.cf.CfMigrationConfig;
 import io.harness.debezium.ChangeConsumerConfig;
 import io.harness.debezium.ConsumerType;
 import io.harness.debezium.DebeziumConfig;
 import io.harness.debezium.DebeziumControllerStarter;
+import io.harness.ff.FeatureFlagConfig;
 import io.harness.lock.PersistentLocker;
 import io.harness.maintenance.MaintenanceController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Module;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.serializer.HObjectMapper;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -54,14 +61,32 @@ public class DebeziumServiceApplication extends Application<DebeziumServiceConfi
   @Override
   public void run(DebeziumServiceConfiguration appConfig, Environment environment) throws Exception {
     log.info("Starting Debezium Service Application ...");
+    List<Module> modules = new ArrayList<>();
+    modules.add(new AbstractCfModule() {
+      @Override
+      public CfClientConfig cfClientConfig() {
+        return appConfig.getCfClientConfig();
+      }
+
+      @Override
+      public CfMigrationConfig cfMigrationConfig() {
+        return CfMigrationConfig.builder().build();
+      }
+
+      @Override
+      public FeatureFlagConfig featureFlagConfig() {
+        return appConfig.getFeatureFlagConfig();
+      }
+    });
     DebeziumServiceModuleConfig moduleConfig =
         DebeziumServiceModuleConfig.builder()
             .lockImplementation(appConfig.getDistributedLockImplementation())
             .redisLockConfig(appConfig.getRedisLockConfig())
             .eventsFrameworkConfiguration(appConfig.getEventsFrameworkConfiguration())
             .build();
+    modules.add(DebeziumServiceModule.getInstance(moduleConfig));
 
-    Injector injector = Guice.createInjector(DebeziumServiceModule.getInstance(moduleConfig));
+    Injector injector = Guice.createInjector(modules);
     PersistentLocker locker = injector.getInstance(PersistentLocker.class);
     DebeziumControllerStarter starter = injector.getInstance(DebeziumControllerStarter.class);
 

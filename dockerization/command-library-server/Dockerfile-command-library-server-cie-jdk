@@ -5,7 +5,7 @@
 
 # To be used when building in CIE
 
-FROM us.gcr.io/platform-205701/ubi/ubi-java:latest
+FROM us.gcr.io/platform-205701/ubi/ubi-java:latest as base
 
 # Add the capsule JAR and config.yml
 COPY --chown=65534:65534 command-library-app-capsule.jar /opt/harness/
@@ -15,8 +15,18 @@ COPY --chown=65534:65534 protocol.info /opt/harness/
 
 COPY --chown=65534:65534 scripts /opt/harness
 
-RUN curl -L https://github.com/inspectIT/inspectit-ocelot/releases/download/1.16.0/inspectit-ocelot-agent-1.16.0.jar > /opt/harness/inspectit-ocelot-agent-1.16.0.jar \
-    && chmod 755 /opt/harness/inspectit-ocelot-agent-1.16.0.jar \
-    && chown 65534:65534 /opt/harness/inspectit-ocelot-agent-1.16.0.jar
-
 CMD [ "./run.sh" ]
+
+
+############################ON PREM#########################
+FROM base as onprem
+
+COPY --chown=65534:65534 inject-onprem-apm-bins-into-dockerimage.sh /opt/harness
+RUN /opt/harness/inject-onprem-apm-bins-into-dockerimage.sh && rm /opt/harness/inject-onprem-apm-bins-into-dockerimage.sh
+
+
+############################SAAS#########################
+FROM base as saas
+
+COPY --chown=65534:65534 inject-saas-apm-bins-into-dockerimage.sh /opt/harness
+RUN /opt/harness/inject-saas-apm-bins-into-dockerimage.sh && rm -rf /opt/harness/inject-saas-apm-bins-into-dockerimage.sh

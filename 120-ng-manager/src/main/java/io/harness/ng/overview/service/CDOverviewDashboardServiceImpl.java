@@ -103,6 +103,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -783,6 +784,42 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     return pipelineExecutionDetailsMap;
   }
 
+  public Map<String, Pair<String, AuthorInfo>> getPipelineExecutionIdToTriggerTypeAndAuthorInfoMapping(
+      List<String> pipelineExecutionIdList) {
+    Map<String, Pair<String, AuthorInfo>> triggerAndAuthorInfoMap = new HashMap<>();
+
+    int totalTries = 0;
+    boolean successfulOperation = false;
+    String sql =
+        "select id, moduleinfo_author_id, author_avatar, trigger_type from " + tableNameCD + " where id = any (?);";
+    while (!successfulOperation && totalTries <= MAX_RETRY_COUNT) {
+      ResultSet resultSet = null;
+      try (Connection connection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = connection.prepareStatement(sql)) {
+        final Array array = connection.createArrayOf("VARCHAR", pipelineExecutionIdList.toArray());
+        statement.setArray(1, array);
+        resultSet = statement.executeQuery();
+        while (resultSet != null && resultSet.next()) {
+          String pipelineExecutionId = resultSet.getString(NGPipelineSummaryCDConstants.ID);
+          String authorId = resultSet.getString(NGPipelineSummaryCDConstants.AUTHOR_ID);
+          String authorAvatar = resultSet.getString(NGPipelineSummaryCDConstants.AUTHOR_AVATAR);
+          String triggerType = resultSet.getString(NGPipelineSummaryCDConstants.TRIGGER_TYPE);
+          if (!triggerAndAuthorInfoMap.containsKey(pipelineExecutionId)) {
+            triggerAndAuthorInfoMap.put(pipelineExecutionId,
+                new MutablePair<>(triggerType, AuthorInfo.builder().name(authorId).url(authorAvatar).build()));
+          }
+        }
+        successfulOperation = true;
+      } catch (SQLException ex) {
+        log.error("%s after total tries = %s", ex, totalTries);
+        totalTries++;
+      } finally {
+        DBUtils.close(resultSet);
+      }
+    }
+    return triggerAndAuthorInfoMap;
+  }
+
   @Override
   public ServiceDeploymentInfoDTO getServiceDeployments(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, long startTime, long endTime, String serviceIdentifier, long bucketSizeInDays) {
@@ -1270,6 +1307,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       List<Pair<Long, Long>> timeInterval, List<String> deploymentTypeList,
       HashMap<String, String> uniqueWorkloadNameAndId, long startDate, long endDate,
       List<String> pipelineExecutionIdList) {
+    Map<String, Pair<String, AuthorInfo>> pipelineExecutionIdToTriggerAndAuthorInfoMap =
+        getPipelineExecutionIdToTriggerTypeAndAuthorInfoMapping(pipelineExecutionIdList);
     List<WorkloadDeploymentInfo> workloadDeploymentInfoList = new ArrayList<>();
     long numberOfDays = NGDateUtils.getNumberOfDays(startDate, endDate);
     for (String workloadId : uniqueWorkloadNameAndId.keySet()) {
@@ -1348,12 +1387,19 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
                             .build());
           startDateCopy = startDateCopy + DAY_IN_MS;
         }
-        LastWorkloadInfo lastWorkloadInfo = LastWorkloadInfo.builder()
-                                                .startTime(lastExecutedStartTs)
-                                                .endTime(lastExecutedEndTs == -1L ? null : lastExecutedEndTs)
-                                                .status(lastStatus)
-                                                .deploymentType(deploymentType)
-                                                .build();
+        LastWorkloadInfo lastWorkloadInfo =
+            LastWorkloadInfo.builder()
+                .startTime(lastExecutedStartTs)
+                .endTime(lastExecutedEndTs == -1L ? null : lastExecutedEndTs)
+                .status(lastStatus)
+                .triggerType(pipelineExecutionIdToTriggerAndAuthorInfoMap.get(pipelineExecutionId) == null
+                        ? null
+                        : pipelineExecutionIdToTriggerAndAuthorInfoMap.get(pipelineExecutionId).getKey())
+                .authorInfo(pipelineExecutionIdToTriggerAndAuthorInfoMap.get(pipelineExecutionId) == null
+                        ? null
+                        : pipelineExecutionIdToTriggerAndAuthorInfoMap.get(pipelineExecutionId).getValue())
+                .deploymentType(deploymentType)
+                .build();
         WorkloadDeploymentInfo workloadDeploymentInfo =
             WorkloadDeploymentInfo.builder()
                 .serviceName(uniqueWorkloadNameAndId.get(workloadId))

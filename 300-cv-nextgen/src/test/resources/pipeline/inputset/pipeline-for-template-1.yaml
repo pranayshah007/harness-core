@@ -1,0 +1,155 @@
+pipeline:
+  name: stage template with normal verify
+  identifier: stage_template_with_normal_verify
+  projectIdentifier: verifystepchanges
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: dep2
+        identifier: dep2
+        type: Deployment
+        spec:
+          serviceConfig:
+            serviceRef: dummyservice1
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                variables: []
+                manifests:
+                  - manifest:
+                      identifier: values_yaml
+                      type: Values
+                      spec:
+                        store:
+                          type: Github
+                          spec:
+                            connectorRef: org.k8smanifest
+                            gitFetchType: Branch
+                            paths:
+                              - ng-automation/k8s/valuesCVNG.yaml
+                            branch: master
+                  - manifest:
+                      identifier: manifest_template
+                      type: K8sManifest
+                      spec:
+                        store:
+                          type: Github
+                          spec:
+                            connectorRef: org.k8smanifest
+                            gitFetchType: Branch
+                            paths:
+                              - ng-automation/k8s/templates-cvng/deployment.yaml
+                              - ng-automation/k8s/templates-cvng/namespace.yaml
+                              - ng-automation/k8s/templates-cvng/service.yaml
+                            branch: master
+                        skipResourceVersioning: false
+                artifacts:
+                  primary:
+                    type: DockerRegistry
+                    spec:
+                      connectorRef: dockertodolist
+                      imagePath: harness/todolist
+                      tag: praveen-cv-test
+          infrastructure:
+            environmentRef: localenv1
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: org.k8schiplay
+                namespace: dhruv1
+                releaseName: release-<+INFRA_KEY>
+            allowSimultaneousDeployments: false
+          execution:
+            steps:
+              - step:
+                  identifier: depl
+                  type: K8sRollingDeploy
+                  name: depl
+                  spec:
+                    skipDryRun: false
+                  timeout: 10m
+              - step:
+                  identifier: verify
+                  name: verify
+                  type: Verify
+                  timeout: 2h
+                  spec:
+                    type: Rolling
+                    spec:
+                      deploymentTag: <+serviceConfig.artifacts.primary.tag>
+                      sensitivity: <+input>
+                      duration: 5m
+                    monitoredService:
+                      type: Default
+                      spec: {}
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - Verification
+                        action:
+                          type: ManualIntervention
+                          spec:
+                            timeout: 2h
+                            onTimeout:
+                              action:
+                                type: StageRollback
+                    - onFailure:
+                        errors:
+                          - Unknown
+                        action:
+                          type: ManualIntervention
+                          spec:
+                            timeout: 2h
+                            onTimeout:
+                              action:
+                                type: Ignore
+              - step:
+                  identifier: normal_verify
+                  type: Verify
+                  name: normal verify
+                  spec:
+                    type: Rolling
+                    monitoredService:
+                      type: Default
+                      spec: {}
+                    spec:
+                      sensitivity: MEDIUM
+                      duration: 5m
+                      deploymentTag: <+serviceConfig.artifacts.primary.tag>
+                  timeout: 2h
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - Verification
+                        action:
+                          type: ManualIntervention
+                          spec:
+                            timeout: 2h
+                            onTimeout:
+                              action:
+                                type: StageRollback
+                    - onFailure:
+                        errors:
+                          - Unknown
+                        action:
+                          type: ManualIntervention
+                          spec:
+                            timeout: 2h
+                            onTimeout:
+                              action:
+                                type: Ignore
+            rollbackSteps: []
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
+        variables:
+          - name: APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY
+            type: Secret
+            value: appdaccesskey
+          - name: resourceNamePrefix
+            type: String
+            value: qa-multiple
