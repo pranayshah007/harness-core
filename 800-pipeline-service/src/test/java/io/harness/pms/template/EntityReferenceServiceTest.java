@@ -83,6 +83,7 @@ public class EntityReferenceServiceTest extends PipelineServiceTestBase {
                                                         .build();
 
     EntityReferenceResponse response = entityReferenceService.getReferences(entityReferenceRequest);
+    assertThat(response.getReferredEntitiesList().size() > 0);
 
     ArgumentCaptor<Map> servicesCaptor = ArgumentCaptor.forClass(Map.class);
     ArgumentCaptor<Dependencies> dependenciesCaptor = ArgumentCaptor.forClass(Dependencies.class);
