@@ -135,7 +135,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
         final Environment entity = environmentEntityOptional.get();
         filterBuilder.environmentName(entity.getName());
 
-        List<InfraStructureDefinitionYaml> infraList = env.getInfrastructureDefinitions();
+        List<InfraStructureDefinitionYaml> infraList = env.getInfrastructureDefinitions().getValue();
         if (isNotEmpty(infraList)) {
           if (infraList.size() > 1) {
             throw new InvalidYamlRuntimeException(format(
@@ -146,7 +146,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
               infraService.get(filterCreationContext.getSetupMetadata().getAccountId(),
                   filterCreationContext.getSetupMetadata().getOrgId(),
                   filterCreationContext.getSetupMetadata().getProjectId(), entity.getIdentifier(),
-                  infraList.get(0).getIdentifier().getValue());
+                  infraList.get(0).getIdentifier());
           infrastructureEntity.ifPresent(
               ie -> filterBuilder.infrastructureType(infrastructureEntity.get().getType().getDisplayName()));
         }
@@ -154,12 +154,12 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     }
 
     if (gitOpsEnabled) {
-      if (env.isDeployToAll() && isNotEmpty(env.getGitOpsClusters())) {
+      if (env.isDeployToAll() && isNotEmpty(env.getGitOpsClusters().getValue())) {
         throw new InvalidYamlRuntimeException(format(
             "When deploying to all, individual gitops clusters must not be provided in stage [%s]. Please remove the gitOpsClusters property and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
       }
-      if (!env.isDeployToAll() && isEmpty(env.getGitOpsClusters())) {
+      if (!env.isDeployToAll() && isEmpty(env.getGitOpsClusters().getValue())) {
         throw new InvalidYamlRuntimeException(format(
             "When deploy to all is false, list of gitops clusters must be provided  in stage [%s].  Please specify the gitOpsClusters property and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));

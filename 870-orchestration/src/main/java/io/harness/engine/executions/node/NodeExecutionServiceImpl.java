@@ -743,7 +743,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         .include(NodeExecutionKeys.nodeId)
         .include(NodeExecutionKeys.parentId)
         .include(NodeExecutionKeys.oldRetry)
-        .include(NodeExecutionKeys.ambiance);
+        .include(NodeExecutionKeys.ambiance)
+        .include(NodeExecutionKeys.executableResponses);
 
     query.with(by(NodeExecutionKeys.createdAt));
     return mongoTemplate.find(query, NodeExecution.class);

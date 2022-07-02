@@ -1716,6 +1716,7 @@
 55334:io.harness.delegate.task.ssh.config.SecretConfigFile
 55401:io.harness.delegate.beans.SerializedResponseData
 55402:software.wings.beans.SerializationFormat
+55403:io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
 70003:io.harness.accesscontrol.acl.api.ResourceScope

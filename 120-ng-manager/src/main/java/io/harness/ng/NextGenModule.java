@@ -181,8 +181,6 @@ import io.harness.ng.core.user.service.NgUserService;
 import io.harness.ng.core.user.service.impl.LastAdminCheckServiceImpl;
 import io.harness.ng.core.user.service.impl.NgUserServiceImpl;
 import io.harness.ng.core.user.service.impl.UserEntityCrudStreamListener;
-import io.harness.ng.core.variable.services.VariableService;
-import io.harness.ng.core.variable.services.impl.VariableServiceImpl;
 import io.harness.ng.eventsframework.EventsFrameworkModule;
 import io.harness.ng.feedback.services.FeedbackService;
 import io.harness.ng.feedback.services.impls.FeedbackServiceImpl;
@@ -637,6 +635,7 @@ public class NextGenModule extends AbstractModule {
       }
     });
     install(new NGLdapModule(appConfig));
+    install(new NgVariableModule(appConfig));
     install(EntitySetupUsageModule.getInstance());
     install(PersistentLockModule.getInstance());
     install(new TransactionOutboxModule(
@@ -742,7 +741,6 @@ public class NextGenModule extends AbstractModule {
     registerEventsFrameworkMessageListeners();
     registerEncryptors();
 
-    bind(VariableService.class).to(VariableServiceImpl.class);
     bindExceptionHandlers();
   }
 

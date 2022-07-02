@@ -17,6 +17,7 @@ import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.plan.NodeType;
+import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.ExecutionStatus;
@@ -197,9 +198,15 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
         pmsGraphStepDetailsService.fetchConcurrentChildInstance(nodeExecution.getUuid());
     if (concurrentChildInstance != null) {
       if (!nodeExecution.getExecutableResponses().isEmpty()) {
-        update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "."
-                + nodeExecution.getNodeId() + ".moduleInfo.maxConcurrency.value",
-            nodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency());
+        if (nodeExecution.getNode().getStepParameters().containsKey("strategyType")
+            && !nodeExecution.getNode()
+                    .getStepParameters()
+                    .get("strategyType")
+                    .equals(StrategyType.PARALLELISM.name())) {
+          update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "."
+                  + nodeExecution.getNodeId() + ".moduleInfo.maxConcurrency.value",
+              nodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency());
+        }
       }
     }
   }

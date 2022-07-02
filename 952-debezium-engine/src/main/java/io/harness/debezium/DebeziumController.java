@@ -129,7 +129,7 @@ public class DebeziumController<T extends MongoCollectionChangeConsumer> impleme
     return aggregatorLock;
   }
 
-  private String getLockName() {
+  String getLockName() {
     return DEBEZIUM_LOCK_PREFIX + props.get(DebeziumConfiguration.CONNECTOR_NAME) + "-"
         + changeConsumer.getCollection();
   }

@@ -373,16 +373,17 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
         throw new YamlException("Yaml provided is not a service yaml.");
       }
       ObjectNode serviceNode = (ObjectNode) serviceYamlField.getNode().getCurrJsonNode();
-      String serviceDefinition = serviceNode.retain(YamlTypes.SERVICE_DEFINITION).toString();
-      if (isEmpty(serviceDefinition)) {
-        throw new YamlException("Service yaml provided does not have service definition in it.");
+      ObjectNode serviceDefinitionNode = serviceNode.retain(YamlTypes.SERVICE_DEFINITION);
+      if (EmptyPredicate.isEmpty(serviceDefinitionNode)) {
+        return null;
       }
+      String serviceDefinition = serviceDefinitionNode.toString();
       String serviceDefinitionInputs = RuntimeInputFormHelper.createTemplateFromYaml(serviceDefinition);
       if (isEmpty(serviceDefinitionInputs)) {
         return serviceDefinitionInputs;
       }
-      JsonNode serviceDefinitionNode = YamlUtils.readTree(serviceDefinitionInputs).getNode().getCurrJsonNode();
-      serviceInputs.put(YamlTypes.SERVICE_INPUTS, serviceDefinitionNode);
+      JsonNode serviceDefinitionInputNode = YamlUtils.readTree(serviceDefinitionInputs).getNode().getCurrJsonNode();
+      serviceInputs.put(YamlTypes.SERVICE_INPUTS, serviceDefinitionInputNode);
       return YamlPipelineUtils.writeYamlString(serviceInputs);
     } catch (IOException e) {
       throw new InvalidRequestException("Error occurred while creating service inputs ", e);

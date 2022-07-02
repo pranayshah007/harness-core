@@ -10,9 +10,11 @@ package io.harness.steps.matrix;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.NGCommonUtilitiesTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -514,5 +516,35 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
         strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig);
     String yaml = YamlUtils.write(executionWrapperConfigs);
     assertThat(yaml).isEqualTo(EXPECTED_JSON_FOR_PARALLEL);
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testForExecutionElementConfigExpansionParallelWrongParallelism() throws IOException {
+    MockitoAnnotations.initMocks(this);
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("strategy-with-wrong-axis.yaml");
+    assertThat(testFile).isNotNull();
+    String stepYaml = Resources.toString(testFile, Charsets.UTF_8);
+    ExecutionWrapperConfig executionWrapperConfig = YamlUtils.read(stepYaml, ExecutionWrapperConfig.class);
+    assertThatThrownBy(() -> strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig))
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessage("Cannot deserialize value of type `int` from String \"as\": not a valid `int` value");
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testForExecutionElementConfigExpansionParallelWrongAxis() throws IOException {
+    MockitoAnnotations.initMocks(this);
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("strategy-with-wrong-axis1.yaml");
+    assertThat(testFile).isNotNull();
+    String stepYaml = Resources.toString(testFile, Charsets.UTF_8);
+    ExecutionWrapperConfig executionWrapperConfig = YamlUtils.read(stepYaml, ExecutionWrapperConfig.class);
+    assertThatThrownBy(() -> strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig))
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessage("Value provided for axes [b] is string. It should either be a List or an Expression.");
   }
 }

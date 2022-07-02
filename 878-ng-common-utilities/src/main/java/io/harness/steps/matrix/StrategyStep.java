@@ -19,6 +19,7 @@ import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.strategy.MatrixConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
+import io.harness.pms.contracts.execution.ChildrenExecutableResponse.Child;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -29,6 +30,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -48,14 +50,16 @@ public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> 
   @Override
   public ChildrenExecutableResponse obtainChildren(
       Ambiance ambiance, StrategyStepParameters stepParameters, StepInputPackage inputPackage) {
-    int maxConcurrencyLimitBasedOnPlan = 100;
+    int maxConcurrencyLimitBasedOnPlan = 10000;
     try {
-      Optional<RestrictionMetadataDTO> restrictionMetadataDTO = enforcementClientService.getRestrictionMetadata(
-          FeatureRestrictionName.STRATEGY_MAX_CONCURRENT, AmbianceUtils.getAccountId(ambiance));
-      if (restrictionMetadataDTO.isPresent()) {
-        StaticLimitRestrictionMetadataDTO staticLimitRestrictionDTO =
-            (StaticLimitRestrictionMetadataDTO) restrictionMetadataDTO.get();
-        maxConcurrencyLimitBasedOnPlan = staticLimitRestrictionDTO.getLimit().intValue();
+      if (enforcementClientService.isEnforcementEnabled()) {
+        Optional<RestrictionMetadataDTO> restrictionMetadataDTO = enforcementClientService.getRestrictionMetadata(
+            FeatureRestrictionName.STRATEGY_MAX_CONCURRENT, AmbianceUtils.getAccountId(ambiance));
+        if (restrictionMetadataDTO.isPresent()) {
+          StaticLimitRestrictionMetadataDTO staticLimitRestrictionDTO =
+              (StaticLimitRestrictionMetadataDTO) restrictionMetadataDTO.get();
+          maxConcurrencyLimitBasedOnPlan = staticLimitRestrictionDTO.getLimit().intValue();
+        }
       }
     } catch (EnforcementServiceConnectionException | WrongFeatureStateException e) {
       log.warn("Got exception while taking to enforcement service, taking default limit of 100 for maxConcurrency");
@@ -67,35 +71,39 @@ public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> 
         maxConcurrency =
             ((MatrixConfig) stepParameters.getStrategyConfig().getMatrixConfig()).getMaxConcurrency().getValue();
       }
-      if (maxConcurrency == 0 || maxConcurrency > maxConcurrencyLimitBasedOnPlan) {
+      List<Child> children =
+          matrixConfigService.fetchChildren(stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());
+      if (maxConcurrency == 0) {
+        maxConcurrency = children.size();
+      }
+      if (maxConcurrency > maxConcurrencyLimitBasedOnPlan) {
         maxConcurrency = maxConcurrencyLimitBasedOnPlan;
       }
-      return ChildrenExecutableResponse.newBuilder()
-          .addAllChildren(
-              matrixConfigService.fetchChildren(stepParameters.getStrategyConfig(), stepParameters.getChildNodeId()))
-          .setMaxConcurrency(maxConcurrency)
-          .build();
+      return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
     }
     if (stepParameters.getStrategyConfig().getForConfig() != null) {
       int maxConcurrency = 0;
       if (!ParameterField.isBlank(stepParameters.getStrategyConfig().getForConfig().getMaxConcurrency())) {
         maxConcurrency = stepParameters.getStrategyConfig().getForConfig().getMaxConcurrency().getValue();
       }
-      if (maxConcurrency == 0 || maxConcurrency > maxConcurrencyLimitBasedOnPlan) {
+      List<Child> children = forLoopStrategyConfigService.fetchChildren(
+          stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());
+      if (maxConcurrency == 0) {
+        maxConcurrency = children.size();
+      }
+      if (maxConcurrency > maxConcurrencyLimitBasedOnPlan) {
         maxConcurrency = maxConcurrencyLimitBasedOnPlan;
       }
-      return ChildrenExecutableResponse.newBuilder()
-          .addAllChildren(forLoopStrategyConfigService.fetchChildren(
-              stepParameters.getStrategyConfig(), stepParameters.getChildNodeId()))
-          .setMaxConcurrency(maxConcurrency)
-          .build();
+      return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
     }
     if (stepParameters.getStrategyConfig().getParallelism() != null) {
-      return ChildrenExecutableResponse.newBuilder()
-          .addAllChildren(parallelismStrategyConfigService.fetchChildren(
-              stepParameters.getStrategyConfig(), stepParameters.getChildNodeId()))
-          .setMaxConcurrency(maxConcurrencyLimitBasedOnPlan)
-          .build();
+      List<Child> children = parallelismStrategyConfigService.fetchChildren(
+          stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());
+      int maxConcurrency = stepParameters.getStrategyConfig().getParallelism().getValue();
+      if (maxConcurrency > maxConcurrencyLimitBasedOnPlan) {
+        maxConcurrency = maxConcurrencyLimitBasedOnPlan;
+      }
+      return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
     }
     return ChildrenExecutableResponse.newBuilder()
         .addChildren(

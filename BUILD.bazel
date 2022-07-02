@@ -73,6 +73,7 @@ go_path(
         # Note: If any library is not referenced by below ones, then add them in this list.
         "//product/ci/engine:engine_lib",
         "//product/ci/addon:addon_lib",
+        "//product/ci/split_tests:split_tests_lib",
         "//product/ci/scm:scm_lib",
         "//product/log-service:log-service_lib",
     ],

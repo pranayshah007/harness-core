@@ -340,12 +340,12 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   PreviousApprovalDetails getPreviousApprovalDetails(
       String appId, String workflowExecutionId, String pipelineId, String approvalId);
+
   Boolean approveAndRejectPreviousExecutions(String accountId, String appId, String workflowExecutionId,
       String stateExecutionId, ApprovalDetails approvalDetails, PreviousApprovalDetails previousApprovalIds);
 
   void rejectPreviousDeployments(String appId, String workflowExecutionId, ApprovalDetails approvalDetails);
+
   WorkflowExecution getLastSuccessfulWorkflowExecution(
       String accountId, String appId, String workflowId, String envId, String serviceId, String infraMappingId);
-
-  WorkflowExecutionInfo getWorkflowExecutionInfo(String appId, String workflowExecutionId);
 }

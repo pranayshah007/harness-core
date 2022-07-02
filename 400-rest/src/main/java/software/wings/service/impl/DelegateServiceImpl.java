@@ -1348,11 +1348,14 @@ public class DelegateServiceImpl implements DelegateService {
       final boolean isCiEnabled = isCiEnabled(templateParameters);
       final String accountSecret = getAccountSecret(templateParameters, isNgDelegate);
       final String base64Secret = Base64.getEncoder().encodeToString(accountSecret.getBytes());
+      // Ng helm delegates always use immutable image irrespective of FF
+      final String delegateDockerImage = (isNgDelegate && templateParameters.getDelegateType().equals(HELM_DELEGATE))
+          ? delegateVersionService.getDelegateImageTagForNgHelmDelegates(templateParameters.getAccountId())
+          : delegateVersionService.getDelegateImageTag(
+              templateParameters.getAccountId(), templateParameters.getDelegateType());
       ImmutableMap.Builder<String, String> params =
           ImmutableMap.<String, String>builder()
-              .put("delegateDockerImage",
-                  delegateVersionService.getDelegateImageTag(
-                      templateParameters.getAccountId(), templateParameters.getDelegateType()))
+              .put("delegateDockerImage", delegateDockerImage)
               .put("upgraderDockerImage",
                   delegateVersionService.getUpgraderImageTag(
                       templateParameters.getAccountId(), templateParameters.getDelegateType()))

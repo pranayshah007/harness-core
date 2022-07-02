@@ -1012,7 +1012,9 @@ public class StateMachineExecutor implements StateInspectionListener {
       }
       case NEXT_STEP:
       case ROLLBACK_PROVISIONER_AFTER_PHASES:
-      case ROLLBACK: {
+      case ROLLBACK:
+      case ROLLBACK_ON_APPROVAL:
+      case ROLLBACK_PROVISIONER_AFTER_PHASES_ON_APPROVAL: {
         if (executionEventAdvice.getNextChildStateMachineId() != null
             || executionEventAdvice.getNextStateName() != null) {
           executionEventAdviceTransition(context, executionEventAdvice);
@@ -1592,7 +1594,7 @@ public class StateMachineExecutor implements StateInspectionListener {
         MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
       }
       currentState.handleAbortEvent(context);
-      if (!(StateType.SHELL_SCRIPT.name().equals(stateExecutionInstance.getStateType())
+      if (!(isStepSupportingTimeout(stateExecutionInstance)
               && featureFlagService.isEnabled(TIMEOUT_FAILURE_SUPPORT, context.getAccountId())
               && finalStatus == EXPIRED)) {
         updated = terminateAndTransition(context, stateExecutionInstance, finalStatus, errorMessage);
@@ -1610,6 +1612,11 @@ public class StateMachineExecutor implements StateInspectionListener {
       throw new WingsException(ErrorCode.STATE_DISCONTINUE_FAILED)
           .addParam("displayName", stateExecutionInstance.getDisplayName());
     }
+  }
+
+  private boolean isStepSupportingTimeout(StateExecutionInstance stateExecutionInstance) {
+    return StateType.SHELL_SCRIPT.name().equals(stateExecutionInstance.getStateType())
+        || StateType.HTTP.name().equals(stateExecutionInstance.getStateType());
   }
 
   private boolean terminateAndTransition(ExecutionContextImpl context, StateExecutionInstance stateExecutionInstance,

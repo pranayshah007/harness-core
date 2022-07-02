@@ -190,7 +190,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     try {
       final ParameterField<String> serviceRef = getServiceRef(config);
       final ParameterField<String> environmentRef = getEnvironmentRef(config);
-      final List<ParameterField<String>> infraDefinitionRefs = getInfraDefinitionRefs(config);
+      final List<String> infraDefinitionRefs = getInfraDefinitionRefs(config);
       // for collecting service variables from service/env/service overrides
       Set<String> serviceVariables = new HashSet<>();
 
@@ -250,15 +250,15 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
   }
 
   private void createVariablesForInfraDefinitions(VariableCreationContext ctx, ParameterField<String> environmentRef,
-      List<ParameterField<String>> infraDefinitionRefs, LinkedHashMap<String, VariableCreationResponse> responseMap) {
-    ParameterField<String> infraRef = infraDefinitionRefs.get(0);
+      List<String> infraDefinitionRefs, LinkedHashMap<String, VariableCreationResponse> responseMap) {
+    String infraRef = infraDefinitionRefs.get(0);
     final String accountIdentifier = ctx.get(NGCommonEntityConstants.ACCOUNT_KEY);
     final String orgIdentifier = ctx.get(NGCommonEntityConstants.ORG_KEY);
     final String projectIdentifier = ctx.get(NGCommonEntityConstants.PROJECT_KEY);
 
-    if (infraRef != null && !infraRef.isExpression()) {
+    if (infraRef != null) {
       Optional<InfrastructureEntity> infrastructureEntity = infrastructureEntityService.get(
-          accountIdentifier, orgIdentifier, projectIdentifier, environmentRef.getValue(), infraRef.getValue());
+          accountIdentifier, orgIdentifier, projectIdentifier, environmentRef.getValue(), infraRef);
 
       infrastructureEntity.ifPresent(entity -> handleInfrastructureOutcome(entity, ctx, responseMap));
     }
@@ -386,11 +386,11 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     return null;
   }
 
-  private List<ParameterField<String>> getInfraDefinitionRefs(DeploymentStageNode stageNode) {
+  private List<String> getInfraDefinitionRefs(DeploymentStageNode stageNode) {
     EnvironmentYamlV2 environmentYamlV2 = stageNode.getDeploymentStageConfig().getEnvironment();
     if (environmentYamlV2 != null) {
       List<InfraStructureDefinitionYaml> infraStructureDefinitionYamls =
-          environmentYamlV2.getInfrastructureDefinitions();
+          environmentYamlV2.getInfrastructureDefinitions().getValue();
       if (EmptyPredicate.isNotEmpty(infraStructureDefinitionYamls)) {
         return infraStructureDefinitionYamls.stream()
             .map(InfraStructureDefinitionYaml::getIdentifier)

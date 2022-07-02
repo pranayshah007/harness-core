@@ -42,7 +42,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.redisson.api.RedissonClient;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-
 @RunWith(MockitoJUnitRunner.class)
 public class DebeziumProducerFactoryTest extends CategoryTest {
   @Mock RedisProducerFactory redisProducerFactory;

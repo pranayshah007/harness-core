@@ -69,7 +69,7 @@ public class PMSResourceConstraintServiceImpl implements PMSResourceConstraintSe
     // WE NEED TO KEEP THE RELATION BETWEEN releaseEntityId AND planExecutionId TO USE
     // AFTER GET ALL CURRENT EXECUTIONS
     Map<String, String> rrInstanceMap = instances.stream().collect(
-        Collectors.toMap(ResourceRestraintInstance::getReleaseEntityId, this::getPlanExecutionId));
+        Collectors.toMap(ResourceRestraintInstance::getReleaseEntityId, this::getPlanExecutionId, (m1, m2) -> m1));
 
     Map<String, PlanExecution> planExecutionMap =
         planExecutionService.findAllByPlanExecutionIdIn(new ArrayList<>(rrInstanceMap.values()))

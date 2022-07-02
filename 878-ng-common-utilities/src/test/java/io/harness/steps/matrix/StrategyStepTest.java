@@ -58,6 +58,7 @@ public class StrategyStepTest extends NGCommonUtilitiesTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testObtainChildrenForLoop() throws IOException {
+    when(enforcementClient.isEnforcementEnabled()).thenReturn(false);
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource("pipeline-with-strategy.yaml");
     assertThat(testFile).isNotNull();
@@ -95,6 +96,8 @@ public class StrategyStepTest extends NGCommonUtilitiesTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testObtainChildrenParallelism() throws IOException {
+    when(enforcementClient.isEnforcementEnabled()).thenReturn(false);
+
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource("pipeline-with-strategy.yaml");
     assertThat(testFile).isNotNull();
@@ -124,6 +127,7 @@ public class StrategyStepTest extends NGCommonUtilitiesTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testObtainChildrenMatrix() throws IOException {
+    when(enforcementClient.isEnforcementEnabled()).thenReturn(false);
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource("pipeline-with-strategy.yaml");
     assertThat(testFile).isNotNull();

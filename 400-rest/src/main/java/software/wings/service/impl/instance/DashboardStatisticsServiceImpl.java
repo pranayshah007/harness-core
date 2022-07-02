@@ -32,6 +32,7 @@ import static software.wings.features.DeploymentHistoryFeature.FEATURE_NAME;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.mongodb.morphia.aggregation.Accumulator.accumulator;
 import static org.mongodb.morphia.aggregation.Group.first;
 import static org.mongodb.morphia.aggregation.Group.grouping;
@@ -58,7 +59,6 @@ import io.harness.exception.WingsException;
 import io.harness.exception.WingsException.ReportTarget;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.ExceptionLogger;
-import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.time.EpochUtils;
 
@@ -76,7 +76,6 @@ import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.ManifestSummary;
 import software.wings.beans.artifact.Artifact;
-import software.wings.beans.execution.WorkflowExecutionInfo;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.SyncStatus;
 import software.wings.beans.instance.dashboard.ArtifactSummary;
@@ -393,31 +392,28 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
   }
 
   private List<Instance> getInstancesForAccount(String accountId, long timestamp, Query<Instance> query) {
-    List<Instance> instanceList = new ArrayList<>();
+    Set<Instance> instanceSet = new HashSet<>();
     query.field("accountId").equal(accountId);
     if (timestamp > 0) {
       query.field(Instance.CREATED_AT_KEY).lessThanOrEq(timestamp);
-      query.and(
-          query.or(query.criteria("isDeleted").equal(false), query.criteria("deletedAt").greaterThanOrEq(timestamp)));
+      Query<Instance> clonedQuery_1 = query.cloneQuery();
+      Query<Instance> clonedQuery_2 = query.cloneQuery();
+      clonedQuery_1.field("isDeleted").equal(false);
+      clonedQuery_2.field("deletedAt").greaterThanOrEq(timestamp);
+      instanceSet.addAll(clonedQuery_1.asList());
+      instanceSet.addAll(clonedQuery_2.asList());
     } else {
-      query.filter("isDeleted", false);
+      instanceSet.addAll(query.filter("isDeleted", false).asList());
     }
 
-    int counter = 0;
-    try (HIterator<Instance> iterator = new HIterator<>(query.fetch())) {
-      for (Instance instance : iterator) {
-        counter++;
-        instanceList.add(instance);
-      }
-    }
+    int counter = instanceSet.size();
 
-    if (isNotEmpty(instanceList)) {
-      HashSet<Instance> instanceSet = new HashSet<>(instanceList);
+    if (isNotEmpty(instanceSet)) {
       log.info("Instances reported {}, set count {}", counter, instanceSet.size());
     } else {
       log.info("Instances reported {}", counter);
     }
-    return instanceList;
+    return new ArrayList<>(instanceSet);
   }
 
   private long getCreatedTimeOfInstanceAtTimestamp(
@@ -935,25 +931,32 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
       }
 
       String lastWorkflowExecutionId = aggregationInfo.getArtifactInfo().getLastWorkflowExecutionId();
-      WorkflowExecutionInfo workflowExecutionInfo =
-          workflowExecutionService.getWorkflowExecutionInfo(appId, lastWorkflowExecutionId);
 
-      // To fetch last successful execution
-      WorkflowExecution lastSuccessfulWE = workflowExecutionService.getLastSuccessfulWorkflowExecution(accountId, appId,
-          workflowExecutionInfo.getWorkflowId(), envInfo.getId(), serviceId, infraMappingInfo.getId());
+      WorkflowExecution workflowExecution =
+          wingsPersistence.getWithAppId(WorkflowExecution.class, appId, lastWorkflowExecutionId);
+      WorkflowExecution lastSuccessfulWE = null;
+      if (workflowExecution != null) {
+        // To fetch last successful execution
+        lastSuccessfulWE = workflowExecutionService.getLastSuccessfulWorkflowExecution(
+            accountId, appId, workflowExecution.getWorkflowId(), envInfo.getId(), serviceId, infraMappingInfo.getId());
+      } else {
+        log.warn("workflow execution with id {} has been deleted due to retention policy", lastWorkflowExecutionId);
+      }
 
       CurrentActiveInstances currentActiveInstances;
       if (lastSuccessfulWE == null) {
-        log.info("Last successful workflow execution is null. "
+        log.info("Last successful workflow execution couldn't be found. "
                 + "WFExecutionId {}, AccountId {}, AppId {}, WorkflowId {}, EnvId {}, ServiceId {}, InfraId {}",
-            lastWorkflowExecutionId, accountId, appId, workflowExecutionInfo.getWorkflowId(), envInfo.getId(),
-            serviceId, infraMappingInfo.getId());
+            lastWorkflowExecutionId, accountId, appId,
+            workflowExecution == null ? EMPTY : workflowExecution.getWorkflowId(), envInfo.getId(), serviceId,
+            infraMappingInfo.getId());
         long deployedAt = aggregationInfo.getArtifactInfo().getDeployedAt();
         currentActiveInstances = CurrentActiveInstances.builder()
                                      .artifact(artifactSummary)
                                      .manifest(manifestSummary)
-                                     .lastWorkflowExecutionDate(new Date(deployedAt))
-                                     .deployedAt(new Date(deployedAt))
+                                     // handling case where Workflow Execution has been deleted due to retention policy
+                                     .lastWorkflowExecutionDate(workflowExecution == null ? null : new Date(deployedAt))
+                                     .deployedAt(workflowExecution == null ? null : new Date(deployedAt))
                                      .environment(environmentSummary)
                                      .instanceCount(count)
                                      .serviceInfra(serviceInfraSummary)

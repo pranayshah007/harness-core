@@ -121,8 +121,8 @@ public class EnvironmentPlanCreatorHelper {
     }
 
     String mergedEnvYaml = originalEnvYaml;
-    if (isNotEmpty(environmentV2.getEnvironmentInputs())) {
-      mergedEnvYaml = mergeEnvironmentInputs(originalEnvYaml, environmentV2.getEnvironmentInputs());
+    if (isNotEmpty(environmentV2.getEnvironmentInputs().getValue())) {
+      mergedEnvYaml = mergeEnvironmentInputs(originalEnvYaml, environmentV2.getEnvironmentInputs().getValue());
     }
 
     if (!gitOpsEnabled) {
@@ -143,9 +143,9 @@ public class EnvironmentPlanCreatorHelper {
     if (serviceOverridesOptional.isPresent()) {
       NGServiceOverridesEntity serviceOverridesEntity = serviceOverridesOptional.get();
       String mergedYaml = serviceOverridesEntity.getYaml();
-      if (isNotEmpty(environmentV2.getServiceOverrideInputs())) {
-        mergedYaml =
-            resolveServiceOverrideInputs(serviceOverridesEntity.getYaml(), environmentV2.getServiceOverrideInputs());
+      if (isNotEmpty(environmentV2.getServiceOverrideInputs().getValue())) {
+        mergedYaml = resolveServiceOverrideInputs(
+            serviceOverridesEntity.getYaml(), environmentV2.getServiceOverrideInputs().getValue());
       }
       if (mergedYaml != null) {
         serviceOverride = ServiceOverridesMapper.toServiceOverrides(mergedYaml);
@@ -177,8 +177,8 @@ public class EnvironmentPlanCreatorHelper {
     if (!environmentV2.isDeployToAll()) {
       List<String> infraIdentifierList = new ArrayList<>();
 
-      for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions()) {
-        String ref = infraYaml.getIdentifier().getValue();
+      for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions().getValue()) {
+        String ref = infraYaml.getIdentifier();
         infraIdentifierList.add(ref);
         if (isNotEmpty(infraYaml.getInputs())) {
           refToInputMap.put(ref, infraYaml.getInputs());
@@ -188,9 +188,9 @@ public class EnvironmentPlanCreatorHelper {
           accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifierList);
 
     } else {
-      if (isNotEmpty(environmentV2.getInfrastructureDefinitions())) {
+      if (isNotEmpty(environmentV2.getInfrastructureDefinitions().getValue())) {
         throw new InvalidRequestException(String.format("DeployToAll is enabled along with specific Infrastructures %s",
-            environmentV2.getInfrastructureDefinitions()));
+            environmentV2.getInfrastructureDefinitions().getValue()));
       }
       infrastructureEntityList = infrastructure.getAllInfrastructureFromEnvIdentifier(
           accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier);

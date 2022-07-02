@@ -115,7 +115,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}, {\"$or\": [{\"type\": \"Kubernetes\"}, {\"type\": null}]}], \"gitOpsEnabled\": true}");
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}, {\"$or\": [{\"type\": \"KUBERNETES\"}, {\"type\": null}]}], \"gitOpsEnabled\": true}");
   }
 
   @Test
@@ -127,6 +127,6 @@ public class ServiceFilterHelperTest extends CategoryTest {
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}, {\"$or\": [{\"type\": \"NativeHelm\"}, {\"type\": null}]}]}");
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"$and\": [{\"$or\": [{\"name\": {\"$regex\": \"foo\", \"$options\": \"i\"}}, {\"identifier\": {\"$regex\": \"foo\", \"$options\": \"i\"}}]}, {\"$or\": [{\"type\": \"NATIVE_HELM\"}, {\"type\": null}]}]}");
   }
 }

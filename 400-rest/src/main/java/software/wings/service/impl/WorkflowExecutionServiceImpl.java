@@ -64,7 +64,6 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.ApprovalDetails.Action.APPROVE;
 import static software.wings.beans.ApprovalDetails.Action.REJECT;
-import static software.wings.beans.ApprovalDetails.Action.ROLLBACK_PROVISIONER_AFTER_PHASES;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.ElementExecutionSummary.ElementExecutionSummaryBuilder.anElementExecutionSummary;
 import static software.wings.beans.EntityType.DEPLOYMENT;
@@ -6627,6 +6626,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   public WorkflowExecution getLastSuccessfulWorkflowExecution(
       String accountId, String appId, String workflowId, String envId, String serviceId, String infraMappingId) {
+    if (isEmpty(workflowId)) {
+      return null;
+    }
     return wingsPersistence.createQuery(WorkflowExecution.class)
         .filter(WorkflowExecutionKeys.accountId, accountId)
         .filter(WorkflowExecutionKeys.appId, appId)
@@ -6637,23 +6639,5 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         .filter(WorkflowExecutionKeys.status, SUCCESS)
         .order(Sort.descending(WorkflowExecutionKeys.createdAt))
         .get();
-  }
-
-  @Override
-  public WorkflowExecutionInfo getWorkflowExecutionInfo(String appId, String workflowExecutionId) {
-    WorkflowExecution workflowExecution =
-        wingsPersistence.getWithAppId(WorkflowExecution.class, appId, workflowExecutionId);
-    if (workflowExecution == null) {
-      throw new InvalidRequestException("Couldn't find a workflow Execution with Id: " + workflowExecutionId, USER);
-    }
-
-    return WorkflowExecutionInfo.builder()
-        .accountId(workflowExecution.getAccountId())
-        .name(workflowExecution.getName())
-        .appId(workflowExecution.getAppId())
-        .executionId(workflowExecutionId)
-        .workflowId(workflowExecution.getWorkflowId())
-        .startTs(workflowExecution.getStartTs())
-        .build();
   }
 }
