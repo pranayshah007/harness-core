@@ -280,8 +280,10 @@ public class K8sNodeRecommendationTaskletTest extends BaseTaskletTest {
   @Owner(developers = UTSAV)
   @Category(UnitTests.class)
   public void testJobSuccessOnBadResourceConstraint() throws Exception {
-    ErrorResponse errorResponse =
-        ErrorResponse.builder().status(400).detail("could not recommend cluster with the requested resources").build();
+    ErrorResponse errorResponse = ErrorResponse.builder()
+                                      .status(400)
+                                      .detail("No node pool could be recommended with the specified tuning parameters")
+                                      .build();
     okhttp3.Response rawResponse = (new okhttp3.Response.Builder())
                                        .code(400)
                                        .protocol(Protocol.HTTP_1_1)

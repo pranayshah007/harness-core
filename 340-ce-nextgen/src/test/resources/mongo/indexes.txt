@@ -32,11 +32,11 @@ ecsServiceRecommendation {"name": "ttl_1", "background": true, "expireAfterSecon
 ecsServiceRecommendation {"name": "unique_accountId_clusterId_serviceArn", "unique": true} {"accountId": 1, "clusterId": 1, "serviceArn": 1}
 gcpServiceAccount {"name": "account_id_service_account_email", "background": true} {"accountId": 1, "email": 1}
 gitProcessRequestSdk {"name": "accountId_repo_branch_commit_index", "background": true} {"accountId": 1, "repoUrl": 1, "branch": 1, "commitId": 1}
+instanceData {"name": "accountId_activeInstanceIterator_usageStartTime_instanceType", "background": true} {"accountId": 1, "activeInstanceIterator": 1, "usageStartTime": 1, "instanceType": 1}
 instanceData {"name": "accountId_clusterId_instanceId_instanceState", "background": true} {"accountId": 1, "clusterId": 1, "instanceId": 1, "instanceState": 1}
 instanceData {"name": "accountId_clusterId_instanceName_usageStartTime", "background": true} {"accountId": 1, "clusterId": 1, "instanceName": 1, "usageStartTime": -1}
 instanceData {"name": "accountId_clusterId_instanceState_usageStartTime", "background": true} {"accountId": 1, "clusterId": 1, "instanceState": 1, "usageStartTime": 1}
 instanceData {"name": "accountId_clusterId_instanceType_nodePoolName", "background": true} {"accountId": 1, "clusterId": 1, "instanceType": 1, "metaData.node_pool_name": 1}
-instanceData {"name": "accountId_instanceType_activeInstanceIterator_usageStartTime", "background": true} {"accountId": 1, "instanceType": 1, "activeInstanceIterator": 1, "usageStartTime": 1}
 instanceData {"name": "accountId_instancetype_usageStartTime_usageStopTime", "background": true} {"accountId": 1, "instanceType": 1, "usageStartTime": 1, "usageStopTime": 1}
 instanceData {"name": "accountId_usageStartTime_usageStopTime", "background": true} {"accountId": 1, "usageStartTime": 1, "usageStopTime": 1}
 instanceData {"name": "instanceId_1", "background": true} {"instanceId": 1}

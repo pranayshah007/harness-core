@@ -17,7 +17,7 @@ timescaledb:
   timescaledbUsername: "postgres"
   timescaledbPassword: ""
   connectTimeout: 300
-  socketTimeout: 300
+  socketTimeout: 900
   logUnclosedConnections: false
   loggerLevel: OFF
   isHealthCheckNeeded: false
