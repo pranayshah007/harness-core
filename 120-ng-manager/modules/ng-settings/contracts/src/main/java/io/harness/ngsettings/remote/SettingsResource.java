@@ -19,6 +19,7 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.SettingCategory;
 import io.harness.ngsettings.SettingConstants;
+import io.harness.ngsettings.dto.SettingBatchResponseDTO;
 import io.harness.ngsettings.dto.SettingRequestDTO;
 import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
@@ -112,7 +113,7 @@ public interface SettingsResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "This updates the settings")
       })
-  ResponseDTO<List<SettingResponseDTO>>
+  ResponseDTO<List<SettingBatchResponseDTO>>
   update(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,

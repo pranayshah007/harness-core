@@ -7,10 +7,16 @@
 
 package io.harness.ngsettings.dto;
 
+import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
+import static io.harness.ngsettings.SettingConstants.ALLOW_OVERRIDES;
+import static io.harness.ngsettings.SettingConstants.IDENTIFIER;
+import static io.harness.ngsettings.SettingConstants.UPDATE_TYPE;
+import static io.harness.ngsettings.SettingConstants.VALUE;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
-import io.harness.ngsettings.SettingConstants;
 import io.harness.ngsettings.SettingUpdateType;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -21,15 +27,10 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.PL)
 @Data
 public class SettingRequestDTO {
-  @Schema(description = io.harness.ngsettings.SettingConstants.IDENTIFIER)
-  @NotNull
-  @NotBlank
-  @EntityIdentifier
-  String identifier;
-  @NotNull
-  @NotBlank
-  @Schema(description = io.harness.ngsettings.SettingConstants.ALLOW_OVERRIDES)
-  Boolean allowOverrides;
-  @Schema(description = io.harness.ngsettings.SettingConstants.VALUE) String value;
-  @NotNull @NotBlank @Schema(description = SettingConstants.UPDATE_TYPE) SettingUpdateType updateType;
+  @Schema(description = IDENTIFIER) @NotBlank @EntityIdentifier String identifier;
+  @Schema(description = ORG_PARAM_MESSAGE) String orgIdentifier;
+  @Schema(description = PROJECT_PARAM_MESSAGE) String projectIdentifier;
+  @Schema(description = VALUE) String value;
+  @NotNull @NotBlank @Schema(description = ALLOW_OVERRIDES) Boolean allowOverrides;
+  @NotNull @NotBlank @Schema(description = UPDATE_TYPE) SettingUpdateType updateType;
 }

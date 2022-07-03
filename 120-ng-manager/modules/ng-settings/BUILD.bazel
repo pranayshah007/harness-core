@@ -15,6 +15,7 @@ java_library(
         "//:lombok",
         "//120-ng-manager/modules/ng-settings/contracts:module",
         "//940-feature-flag:module",
+        "//945-account-mgmt:module",
         "//955-outbox-sdk:module",
         "//960-persistence:module",
         "//970-ng-commons:module",

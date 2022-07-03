@@ -9,13 +9,14 @@ package io.harness.ngsettings.remote;
 
 import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.SettingCategory;
+import io.harness.ngsettings.dto.SettingBatchResponseDTO;
 import io.harness.ngsettings.dto.SettingRequestDTO;
 import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.ngsettings.services.SettingsService;
+import io.harness.ngsettings.utils.FeatureFlagHelper;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -23,13 +24,14 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class SettingsResourceImpl implements SettingsResource {
+  public static final String FEATURE_NOT_AVAILABLE = "Feature not available for your account- %s";
   SettingsService settingsService;
-  FeatureFlagService featureFlagService;
+  FeatureFlagHelper featureFlagHelper;
   @Override
   public ResponseDTO<SettingValueResponseDTO> get(
       String identifier, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     if (!isSettingsFeatureEnabled(accountIdentifier)) {
-      throw new InvalidRequestException(String.format("Feature not available for your account- %s", accountIdentifier));
+      throw new InvalidRequestException(String.format(FEATURE_NOT_AVAILABLE, accountIdentifier));
     }
     return ResponseDTO.newResponse(
         settingsService.get(identifier, accountIdentifier, orgIdentifier, projectIdentifier));
@@ -39,22 +41,21 @@ public class SettingsResourceImpl implements SettingsResource {
   public ResponseDTO<List<SettingResponseDTO>> list(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category) {
     if (!isSettingsFeatureEnabled(accountIdentifier)) {
-      throw new InvalidRequestException(String.format("Feature not available for your account- %s", accountIdentifier));
+      throw new InvalidRequestException(String.format(FEATURE_NOT_AVAILABLE, accountIdentifier));
     }
     return ResponseDTO.newResponse(settingsService.list(accountIdentifier, orgIdentifier, projectIdentifier, category));
   }
 
   @Override
-  public ResponseDTO<List<SettingResponseDTO>> update(String accountIdentifier, String orgIdentifier,
+  public ResponseDTO<List<SettingBatchResponseDTO>> update(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, List<SettingRequestDTO> settingRequestDTOList) {
     if (!isSettingsFeatureEnabled(accountIdentifier)) {
-      throw new InvalidRequestException(String.format("Feature not available for your account- %s", accountIdentifier));
+      throw new InvalidRequestException(String.format(FEATURE_NOT_AVAILABLE, accountIdentifier));
     }
-    return ResponseDTO.newResponse(
-        settingsService.update(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTOList));
+    return ResponseDTO.newResponse(settingsService.update(accountIdentifier, settingRequestDTOList));
   }
 
   private boolean isSettingsFeatureEnabled(String accountIdentifier) {
-    return featureFlagService.isEnabled(FeatureName.NG_SETTINGS, accountIdentifier);
+    return featureFlagHelper.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS);
   }
 }

@@ -2,13 +2,30 @@
 name : settingsConfiguration
 version : 1
 settings :
+  - identifier : disable_built_in_secret_manager
+    name: Disable Harness Secret Manager
+    category: CORE
+    defaultValue: false
+    valueType: BOOLEAN
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: default_secret_manager
+      name: Default Secret Manager
+      category: CORE
+      valueType: STRING
+      allowedScopes:
+        - ACCOUNT
+        - ORGANIZATION
+        - PROJECT
   - identifier: test_setting_CD_1
     name: Test CD setting 1
     category : CD
     defaultValue: 8
     valueType : NUMBER
     allowedValues : ~
-    allowOverrides : true
+    allowOverrides : false
     allowedScopes :
       - ACCOUNT
       - ORGANIZATION
@@ -73,7 +90,7 @@ settings :
     valueType : BOOLEAN
     allowedValues :
       - true
-      - -false
+      - false
     allowOverrides : true
     allowedScopes :
       - ACCOUNT

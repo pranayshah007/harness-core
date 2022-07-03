@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ngsettings;
 
 public final class SettingConstants {
@@ -13,6 +20,9 @@ public final class SettingConstants {
   public static final String ALLOWED_VALUES = "Set of Values allowed for the Setting.";
   public static final String SOURCE = "Source of the setting value";
   public static final String VALUE = "Value of the setting";
-  public static final String UPDATE_TYPE = "Type of the update operation";
+  public static final String UPDATE_TYPE =
+      "Type of the update operation. When update type is RESTORE, field [value] is ignored";
   public static final String SETTING_UPDATE_REQUEST_LIST = "List of update requests for settings";
+  public static final String BATCH_ITEM_RESPONSE_STATUS = "Request status for the corresponding item in batch request";
+  public static final String BATCH_ITEM_ERROR_MESSAGE = "Error message";
 }

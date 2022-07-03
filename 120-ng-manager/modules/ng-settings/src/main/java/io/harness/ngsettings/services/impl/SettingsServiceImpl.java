@@ -8,17 +8,15 @@
 package io.harness.ngsettings.services.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
-import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.encryption.Scope;
+import io.harness.beans.Scope;
+import io.harness.beans.ScopeLevel;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngsettings.SettingCategory;
-import io.harness.ngsettings.SettingSource;
 import io.harness.ngsettings.SettingUpdateType;
-import io.harness.ngsettings.SettingValueType;
+import io.harness.ngsettings.dto.SettingBatchResponseDTO;
 import io.harness.ngsettings.dto.SettingDTO;
 import io.harness.ngsettings.dto.SettingRequestDTO;
 import io.harness.ngsettings.dto.SettingResponseDTO;
@@ -27,183 +25,92 @@ import io.harness.ngsettings.entities.Setting;
 import io.harness.ngsettings.entities.SettingConfiguration;
 import io.harness.ngsettings.mapper.SettingsMapper;
 import io.harness.ngsettings.services.SettingsService;
+import io.harness.ngsettings.utils.SettingUtils;
 import io.harness.outbox.api.OutboxService;
-import io.harness.repositories.SettingConfigurationRepository;
-import io.harness.repositories.SettingsRepository;
+import io.harness.repositories.ngsettings.spring.SettingConfigurationRepository;
+import io.harness.repositories.ngsettings.spring.SettingRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import net.jodah.failsafe.Failsafe;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
 @Slf4j
 public class SettingsServiceImpl implements SettingsService {
   private final SettingConfigurationRepository settingConfigurationRepository;
-  private final SettingsRepository settingsRepository;
+  private final SettingRepository settingRepository;
   private final SettingsMapper settingsMapper;
   private final TransactionTemplate transactionTemplate;
   private final OutboxService outboxService;
-  private final String SETTING_NOT_FOUND_MESSAGE = "Setting with identifier- [%s] does not exist";
 
   @Inject
   public SettingsServiceImpl(SettingConfigurationRepository settingConfigurationRepository,
-      SettingsRepository settingsRepository, SettingsMapper settingsMapper,
+      SettingRepository settingRepository, SettingsMapper settingsMapper,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService) {
     this.settingConfigurationRepository = settingConfigurationRepository;
-    this.settingsRepository = settingsRepository;
+    this.settingRepository = settingRepository;
     this.settingsMapper = settingsMapper;
     this.transactionTemplate = transactionTemplate;
     this.outboxService = outboxService;
   }
 
-  public static SettingSource getSettingSource(String orgIdentifier, String projectIdentifier) {
-    if (isNotEmpty(orgIdentifier)) {
-      if (isNotEmpty(projectIdentifier)) {
-        return SettingSource.PROJECT;
-      }
-      return SettingSource.ORG;
-    }
-    return SettingSource.ACCOUNT;
-  }
-
   @Override
   public List<SettingResponseDTO> list(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category) {
-    List<SettingConfiguration> defaultSettings = settingConfigurationRepository.findByCategoryAndAllowedScopesIn(
-        category, Collections.singletonList(getScope(orgIdentifier, projectIdentifier)));
-
-    List<Setting> settings = settingsRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndCategory(
-        accountIdentifier, orgIdentifier, projectIdentifier, category);
-    Map<String, Setting> settingsMap = settings.stream().collect(
-        Collectors.toMap(Setting::getIdentifier, Function.identity(), (o, n) -> o, HashMap::new));
-
-    ListIterator<SettingConfiguration> settingsConfigurationIterator = defaultSettings.listIterator();
+    Map<String, SettingConfiguration> settingConfigurations =
+        getSettingConfigurations(accountIdentifier, orgIdentifier, projectIdentifier, category);
+    Map<String, Setting> settings = getSettings(accountIdentifier, orgIdentifier, projectIdentifier, category);
     List<SettingResponseDTO> settingResponseDTOList = new ArrayList<>();
-    while (settingsConfigurationIterator.hasNext()) {
-      SettingConfiguration settingConfiguration = settingsConfigurationIterator.next();
-      String identifier = settingConfiguration.getIdentifier();
-      SettingDTO settingsDTO;
-      SettingSource settingSource = null;
-      if (settingsMap.containsKey(identifier)) {
-        Setting setting = settingsMap.get(identifier);
-        settingsDTO = settingsMapper.getSettingDTO(settingConfiguration, setting);
-        settingSource = getSettingSource(orgIdentifier, projectIdentifier);
+    settingConfigurations.forEach((identifier, settingConfiguration) -> {
+      if (settings.containsKey(identifier)) {
+        settingResponseDTOList.add(
+            settingsMapper.writeSettingResponseDTO(settings.get(identifier), settingConfiguration));
       } else {
-        settingsDTO = settingsMapper.getSettingDTO(settingConfiguration, orgIdentifier, projectIdentifier);
+        settingResponseDTOList.add(settingsMapper.writeSettingResponseDTO(settingConfiguration));
       }
-      SettingResponseDTO settingResponseDTO = SettingResponseDTO.builder()
-                                                  .setting(settingsDTO)
-                                                  .name(settingConfiguration.getName())
-                                                  .settingSource(settingSource)
-                                                  .build();
-      settingResponseDTOList.add(settingResponseDTO);
-    }
+    });
     return settingResponseDTOList;
   }
 
   @Override
-  public List<SettingResponseDTO> update(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      List<SettingRequestDTO> settingRequestDTOList) {
-    ListIterator<SettingRequestDTO> settingRequestDTOListIterator = settingRequestDTOList.listIterator();
-    return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
-      List<Setting> updatedSettingsList = new ArrayList<>();
-      while (settingRequestDTOListIterator.hasNext()) {
-        SettingRequestDTO settingRequestDTO = settingRequestDTOListIterator.next();
-        Optional<Setting> existingSettingOptional =
-            settingsRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
-                accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO.getIdentifier());
-        Setting existingSetting = null;
-        if (existingSettingOptional.isPresent()) {
-          existingSetting = existingSettingOptional.get();
-        }
+  public List<SettingBatchResponseDTO> update(String accountIdentifier, List<SettingRequestDTO> settingRequestDTOList) {
+    List<SettingBatchResponseDTO> settingResponses = new ArrayList<>();
+    settingRequestDTOList.forEach(settingRequestDTO -> {
+      try {
+        SettingResponseDTO settingResponseDTO;
         if (settingRequestDTO.getUpdateType() == SettingUpdateType.RESTORE) {
-          updatedSettingsList.add(
-              restoreSetting(existingSetting, settingRequestDTO, accountIdentifier, orgIdentifier, projectIdentifier));
+          SettingConfiguration settingConfiguration = restoreSetting(accountIdentifier, settingRequestDTO);
+          settingResponseDTO = settingsMapper.writeSettingResponseDTO(settingConfiguration);
         } else {
-          updatedSettingsList.add(
-              updateSetting(existingSetting, settingRequestDTO, accountIdentifier, orgIdentifier, projectIdentifier));
+          settingResponseDTO = updateSetting(accountIdentifier, settingRequestDTO);
         }
+        settingResponses.add(settingsMapper.writeBatchResponseDTO(settingResponseDTO));
+      } catch (Exception exception) {
+        log.error("Error when updating setting:", exception);
+        settingResponses.add(settingsMapper.writeBatchResponseDTO(settingRequestDTO.getIdentifier(), exception));
       }
-      return updatedSettingsList.stream().map(settingsMapper::settingtoSettingResponseDTO).collect(Collectors.toList());
-    }));
-  }
-
-  private Setting updateSetting(Setting existingSetting, SettingRequestDTO settingRequestDTO, String accountIdentifier,
-      String orgIdentifier, String projectIdentifier) {
-    if (existingSetting != null) {
-      Optional<SettingConfiguration> settingConfigurationOptional =
-          settingConfigurationRepository.findByIdentifier(existingSetting.getIdentifier());
-      if (!settingConfigurationOptional.isPresent()) {
-        throw new InvalidRequestException(String.format(SETTING_NOT_FOUND_MESSAGE, settingRequestDTO.getIdentifier()));
-      }
-      SettingConfiguration settingConfiguration = settingConfigurationOptional.get();
-      SettingValueType valueType = settingConfiguration.getValueType();
-      Set<String> allowedValues = settingConfiguration.getAllowedValues();
-      checkValueCanBeParsed(settingRequestDTO.getIdentifier(), valueType, settingRequestDTO.getValue());
-      checkValueIsAllowed(settingRequestDTO.getIdentifier(), allowedValues, settingRequestDTO.getValue());
-      existingSetting.setValue(settingRequestDTO.getValue());
-      existingSetting.setAllowOverrides(settingRequestDTO.getAllowOverrides());
-      existingSetting.setLastModifiedAt(System.currentTimeMillis());
-      return settingsRepository.save(existingSetting);
-    } else {
-      Optional<SettingConfiguration> defaultSetting =
-          settingConfigurationRepository.findByIdentifier(settingRequestDTO.getIdentifier());
-      if (!defaultSetting.isPresent()) {
-        throw new InvalidRequestException(String.format(SETTING_NOT_FOUND_MESSAGE, settingRequestDTO.getIdentifier()));
-      }
-      SettingConfiguration settingConfiguration = defaultSetting.get();
-      checkValueCanBeParsed(
-          settingRequestDTO.getIdentifier(), settingConfiguration.getValueType(), settingRequestDTO.getValue());
-      checkValueIsAllowed(
-          settingRequestDTO.getIdentifier(), settingConfiguration.getAllowedValues(), settingRequestDTO.getValue());
-      SettingDTO settingDTO = settingsMapper.getSettingDTO(settingConfiguration, orgIdentifier, projectIdentifier);
-      settingDTO.setValue(settingRequestDTO.getValue());
-      settingDTO.setAllowOverrides(settingRequestDTO.getAllowOverrides());
-      SettingResponseDTO settingResponseDTO = SettingResponseDTO.builder()
-                                                  .setting(settingDTO)
-                                                  .name(settingConfiguration.getName())
-                                                  .settingSource(getSettingSource(orgIdentifier, projectIdentifier))
-                                                  .build();
-      Setting newSetting = settingsMapper.getSetting(settingResponseDTO, accountIdentifier);
-      return settingsRepository.save(newSetting);
-    }
-  }
-
-  private Setting restoreSetting(Setting existingSetting, SettingRequestDTO settingRequestDTO, String accountIdentifier,
-      String orgIdentifier, String projectIdentifier) {
-    if (existingSetting != null) {
-      settingsRepository.delete(existingSetting);
-    }
-    Optional<SettingConfiguration> defaultSetting =
-        settingConfigurationRepository.findByIdentifier(settingRequestDTO.getIdentifier());
-    if (!defaultSetting.isPresent()) {
-      throw new InvalidRequestException(String.format(SETTING_NOT_FOUND_MESSAGE, settingRequestDTO.getIdentifier()));
-    }
-    return settingsMapper.settingConfigurationToSetting(
-        defaultSetting.get(), accountIdentifier, orgIdentifier, projectIdentifier);
+    });
+    return settingResponses;
   }
 
   @Override
   public SettingValueResponseDTO get(
       String identifier, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     Optional<Setting> existingSetting =
-        settingsRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+        settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     Optional<SettingConfiguration> settingConfiguration = settingConfigurationRepository.findByIdentifier(identifier);
-    if (!settingConfiguration.isPresent()) {
-      throw new InvalidRequestException(String.format(SETTING_NOT_FOUND_MESSAGE, identifier));
+    if (settingConfiguration.isEmpty()) {
+      throw new InvalidRequestException(String.format("Setting with identifier- [%s] does not exist", identifier));
     }
     String value;
     if (existingSetting.isPresent()) {
@@ -227,60 +134,74 @@ public class SettingsServiceImpl implements SettingsService {
   public void deleteConfig(String identifier) {
     Optional<SettingConfiguration> exisingSettingConfig = settingConfigurationRepository.findByIdentifier(identifier);
     exisingSettingConfig.ifPresent(settingConfigurationRepository::delete);
-    List<Setting> existingSettings = settingsRepository.findByIdentifier(identifier);
-    existingSettings.forEach(settingsRepository::delete);
+    List<Setting> existingSettings = settingRepository.findByIdentifier(identifier);
+    settingRepository.deleteAll(existingSettings);
   }
 
   @Override
   public SettingConfiguration upsertConfig(SettingConfiguration settingConfiguration) {
-    try {
-      checkValueCanBeParsed(settingConfiguration.getIdentifier(), settingConfiguration.getValueType(),
-          settingConfiguration.getDefaultValue());
-      checkValueIsAllowed(settingConfiguration.getIdentifier(), settingConfiguration.getAllowedValues(),
-          settingConfiguration.getDefaultValue());
-      return settingConfigurationRepository.save(settingConfiguration);
-    } catch (Exception e) {
-      log.error(e.getMessage());
-    }
-    return null;
+    SettingUtils.validate(settingConfiguration);
+    return settingConfigurationRepository.save(settingConfiguration);
   }
 
-  private void checkValueCanBeParsed(String identifier, SettingValueType valueType, String value) {
-    switch (valueType) {
-      case BOOLEAN:
-        if (!(value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false"))) {
-          throw new InvalidRequestException(
-              String.format("For setting with identifier- %s, only boolean values are allowed. Recieved input- %s",
-                  identifier, value));
-        }
-        break;
-      case NUMBER:
-        try {
-          Double.parseDouble(value);
-        } catch (Exception e) {
-          throw new InvalidRequestException(
-              String.format("For setting with identifier- %s, only numbered values are allowed. Recieved input- %s",
-                  identifier, value));
-        }
-        break;
-      default:
-    }
+  private Map<String, Setting> getSettings(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category) {
+    List<Setting> settings = settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndCategory(
+        accountIdentifier, orgIdentifier, projectIdentifier, category);
+    return settings.stream().collect(Collectors.toMap(Setting::getIdentifier, Function.identity()));
   }
 
-  private void checkValueIsAllowed(String identifier, Set<String> allowedValues, String value) {
-    if (allowedValues != null && !allowedValues.contains(value)) {
-      throw new InvalidRequestException(
-          String.format("The value- \"%s\" is not allowed for the setting with id- %s", value, identifier));
-    }
+  private Map<String, SettingConfiguration> getSettingConfigurations(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category) {
+    Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
+    List<ScopeLevel> scopes = Collections.singletonList(ScopeLevel.of(scope));
+    List<SettingConfiguration> defaultSettingConfigurations =
+        settingConfigurationRepository.findByCategoryAndAllowedScopesIn(category, scopes);
+    return defaultSettingConfigurations.stream().collect(
+        Collectors.toMap(SettingConfiguration::getIdentifier, Function.identity()));
   }
 
-  public String getScope(String orgIdentifier, String projectIdentifier) {
-    if (orgIdentifier != null) {
-      if (projectIdentifier != null) {
-        return Scope.PROJECT.toString();
-      }
-      return Scope.ORG.toString();
+  private SettingResponseDTO updateSetting(String accountIdentifier, SettingRequestDTO settingRequestDTO) {
+    SettingConfiguration settingConfiguration =
+        getSettingConfiguration(accountIdentifier, settingRequestDTO.getOrgIdentifier(),
+            settingRequestDTO.getProjectIdentifier(), settingRequestDTO.getIdentifier());
+
+    Optional<Setting> settingOptional =
+        settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(accountIdentifier,
+            settingRequestDTO.getOrgIdentifier(), settingRequestDTO.getProjectIdentifier(),
+            settingRequestDTO.getIdentifier());
+
+    SettingDTO newSettingDTO;
+    if (settingOptional.isPresent()) {
+      newSettingDTO = settingsMapper.writeNewDTO(settingOptional.get(), settingRequestDTO, settingConfiguration);
+    } else {
+      newSettingDTO = settingsMapper.writeNewDTO(settingRequestDTO, settingConfiguration);
     }
-    return Scope.ACCOUNT.toString();
+    SettingUtils.validate(newSettingDTO);
+    Setting setting = settingRepository.upsert(settingsMapper.toSetting(accountIdentifier, newSettingDTO));
+    return settingsMapper.writeSettingResponseDTO(setting, settingConfiguration);
+  }
+
+  private SettingConfiguration getSettingConfiguration(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
+    Optional<SettingConfiguration> settingConfigurationOptional =
+        settingConfigurationRepository.findByIdentifierAndAllowedScopesIn(
+            identifier, Collections.singletonList(ScopeLevel.of(scope)));
+    if (settingConfigurationOptional.isEmpty()) {
+      throw new NotFoundException(String.format(
+          "Setting [%s] is either invalid or is not applicable in scope [%s]", identifier, ScopeLevel.of(scope)));
+    }
+    return settingConfigurationOptional.get();
+  }
+
+  private SettingConfiguration restoreSetting(String accountIdentifier, SettingRequestDTO settingRequestDTO) {
+    Optional<Setting> setting =
+        settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(accountIdentifier,
+            settingRequestDTO.getOrgIdentifier(), settingRequestDTO.getProjectIdentifier(),
+            settingRequestDTO.getIdentifier());
+    setting.ifPresent(settingRepository::delete);
+    return getSettingConfiguration(accountIdentifier, settingRequestDTO.getOrgIdentifier(),
+        settingRequestDTO.getProjectIdentifier(), settingRequestDTO.getIdentifier());
   }
 }

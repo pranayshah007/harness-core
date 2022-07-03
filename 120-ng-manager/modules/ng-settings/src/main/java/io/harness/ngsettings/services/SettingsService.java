@@ -8,6 +8,7 @@
 package io.harness.ngsettings.services;
 
 import io.harness.ngsettings.SettingCategory;
+import io.harness.ngsettings.dto.SettingBatchResponseDTO;
 import io.harness.ngsettings.dto.SettingRequestDTO;
 import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
@@ -18,8 +19,7 @@ import java.util.List;
 public interface SettingsService {
   List<SettingResponseDTO> list(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category);
-  List<SettingResponseDTO> update(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      List<SettingRequestDTO> settingRequestDTO);
+  List<SettingBatchResponseDTO> update(String accountIdentifier, List<SettingRequestDTO> settingRequestDTO);
   SettingValueResponseDTO get(
       String identifier, String accountIdentifier, String orgIdentifier, String projectIdentifier);
   List<SettingConfiguration> listDefaultSettings();

@@ -7,10 +7,10 @@
 
 package io.harness.ngsettings.dto;
 
+import static io.harness.ngsettings.SettingConstants.LAST_MODIFIED_AT;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ngsettings.SettingConstants;
-import io.harness.ngsettings.SettingSource;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.NotNull;
@@ -22,7 +22,5 @@ import lombok.Data;
 @Builder
 public class SettingResponseDTO {
   @NotNull SettingDTO setting;
-  @NotNull @Schema(description = io.harness.ngsettings.SettingConstants.NAME) String name;
-  @Schema(description = io.harness.ngsettings.SettingConstants.SOURCE) SettingSource settingSource;
-  @Schema(description = SettingConstants.LAST_MODIFIED_AT) Long lastModifiedAt;
+  @Schema(description = LAST_MODIFIED_AT) Long lastModifiedAt;
 }

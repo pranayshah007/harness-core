@@ -17,6 +17,7 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.NGAccountAccess;
 import io.harness.ngsettings.SettingCategory;
+import io.harness.ngsettings.SettingValueType;
 import io.harness.persistence.PersistentEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -52,6 +53,7 @@ public class Setting implements PersistentEntity, NGAccountAccess {
   @Trimmed String projectIdentifier;
   @NotNull SettingCategory category;
   @NotNull Boolean allowOverrides;
+  @NotNull SettingValueType valueType;
   @NotNull String value;
   @LastModifiedDate Long lastModifiedAt;
 

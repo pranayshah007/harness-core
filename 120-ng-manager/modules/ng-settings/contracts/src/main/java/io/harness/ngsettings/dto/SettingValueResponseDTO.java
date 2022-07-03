@@ -7,9 +7,11 @@
 
 package io.harness.ngsettings.dto;
 
+import static io.harness.ngsettings.SettingConstants.VALUE;
+import static io.harness.ngsettings.SettingConstants.VALUE_TYPE;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ngsettings.SettingConstants;
 import io.harness.ngsettings.SettingValueType;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -22,9 +24,6 @@ import lombok.Data;
 @Data
 @Builder
 public class SettingValueResponseDTO {
-  @NotNull
-  @NotBlank
-  @Schema(description = io.harness.ngsettings.SettingConstants.VALUE_TYPE)
-  SettingValueType valueType;
-  @NotNull @NotBlank @Schema(description = SettingConstants.VALUE) String value;
+  @NotNull @NotBlank @Schema(description = VALUE_TYPE) SettingValueType valueType;
+  @NotNull @NotBlank @Schema(description = VALUE) String value;
 }

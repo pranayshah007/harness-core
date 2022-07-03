@@ -13,7 +13,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ngsettings.entities.NGSettingsConfigurationState;
 import io.harness.ngsettings.entities.SettingConfiguration;
 import io.harness.ngsettings.services.SettingsService;
-import io.harness.repositories.ConfigurationStateRepository;
+import io.harness.repositories.ngsettings.custom.ConfigurationStateRepository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -23,10 +23,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -75,9 +73,8 @@ public class SettingsCreationJob {
     Set<String> removedIdentifiers = Sets.difference(currentIdentifiers, latestIdentifiers);
 
     if (latestIdentifiers.size() < latestSettings.size()) {
-      for (Iterator<SettingConfiguration> settingConfigurationIterator = latestSettings.iterator();
-           settingConfigurationIterator.hasNext();) {
-        String identifier = settingConfigurationIterator.next().getIdentifier();
+      for (SettingConfiguration latestSetting : latestSettings) {
+        String identifier = latestSetting.getIdentifier();
         if (latestIdentifiers.contains(identifier)) {
           latestIdentifiers.remove(identifier);
         } else {
@@ -93,11 +90,16 @@ public class SettingsCreationJob {
       settingConfiguration.setId(null);
     });
     Set<SettingConfiguration> upsertedSettings = new HashSet<>(latestSettings);
-    upsertedSettings.removeAll(Arrays.asList(currentSettings.toArray()));
+    upsertedSettings.removeAll(currentSettings);
 
     upsertedSettings.forEach(setting -> {
       setting.setId(settingIdMap.get(setting.getIdentifier()));
-      settingsService.upsertConfig(setting);
+      try {
+        settingsService.upsertConfig(setting);
+      } catch (Exception exception) {
+        log.error(String.format("Error while updating setting [%s]", setting.getIdentifier()), exception);
+        throw exception;
+      }
     });
     removedIdentifiers.forEach(settingsService::deleteConfig);
     log.info("Updated the settings in the database");
