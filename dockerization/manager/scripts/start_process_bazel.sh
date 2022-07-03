@@ -57,10 +57,10 @@ if [[ "${ENABLE_APPDYNAMICS}" == "true" ]] && [[ "${DISABLE_NEW_RELIC}" == "true
     echo "Using Appdynamics java agent"
 fi
 
-if [[ "${ENABLE_OVEROPS}" == "true" ]] ; then
-    echo "OverOps is enabled"
+if [[ "${ENABLE_ET}" == "true" ]] ; then
+    echo "Error Tracking is enabled"
     JAVA_OPTS=$JAVA_OPTS" -agentpath:/opt/harness/takipi/lib/libTakipiAgent.so -Dtakipi.etl -Dtakipi.application.name=${OVEROPS_APPLICATION_NAME} -Dtakipi.deployment.name=${OVEROPS_DEPLOYMENT_NAME}"
-    echo "Using Overops Java Agent"
+    echo "Using Error Tracking V4 Java Agent"
 fi
 
 if [[ "${ENABLE_MONITORING}" == "true" ]] ; then

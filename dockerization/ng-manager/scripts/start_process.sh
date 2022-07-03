@@ -38,10 +38,10 @@ if [[ "${ENABLE_APPDYNAMICS}" == "true" ]]; then
     echo "Using Appdynamics java agent"
 fi
 
-if [[ "${ENABLE_OVEROPS}" == "true" ]] ; then
-    echo "OverOps is enabled"
+if [[ "${ENABLE_ET}" == "true" ]] ; then
+    echo "Error Tracking is enabled"
     JAVA_OPTS=$JAVA_OPTS" -Xshare:off -XX:-UseTypeSpeculation -XX:ReservedCodeCacheSize=512m -agentpath:/opt/harness/harness/lib/libETAgent.so"
-    echo "Using Overops Java Agent"
+    echo "Using Error Tracking Java Agent"
 fi
 
 if [[ "${ENABLE_MONITORING}" == "true" ]] ; then
