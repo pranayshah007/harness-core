@@ -23,6 +23,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.google.protobuf.ExtensionRegistryLite;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
@@ -43,6 +44,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request.Builder;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
+import retrofit2.converter.protobuf.ProtoConverterFactory;
 
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
@@ -68,10 +70,12 @@ public class DelegateAgentManagerClientFactory
     objectMapper.registerModule(new Jdk8Module());
     objectMapper.registerModule(new GuavaModule());
     objectMapper.registerModule(new JavaTimeModule());
+    ExtensionRegistryLite registryLite = ExtensionRegistryLite.newInstance();
     Retrofit retrofit = new Retrofit.Builder()
                             .baseUrl(baseUrl)
                             .client(getSafeOkHttpClient())
                             .addConverterFactory(kryoConverterFactory)
+                            .addConverterFactory(ProtoConverterFactory.createWithRegistry(registryLite))
                             .addConverterFactory(JacksonConverterFactory.create(objectMapper))
                             .build();
     return retrofit.create(io.harness.managerclient.DelegateAgentManagerClient.class);

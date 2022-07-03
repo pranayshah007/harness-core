@@ -8,7 +8,6 @@
 package io.harness.grpc;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.MARKO;
 import static io.harness.rule.OwnerRule.SANJA;
 
@@ -36,8 +35,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.AccountId;
 import io.harness.delegate.Capability;
 import io.harness.delegate.DelegateServiceGrpc;
-import io.harness.delegate.ExecuteParkedTaskResponse;
-import io.harness.delegate.FetchParkedTaskStatusResponse;
 import io.harness.delegate.TaskDetails;
 import io.harness.delegate.TaskExecutionStage;
 import io.harness.delegate.TaskId;
@@ -49,7 +46,6 @@ import io.harness.delegate.beans.DelegateStringProgressData;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.beans.executioncapability.SystemEnvCheckerCapability;
 import io.harness.exception.DelegateServiceDriverException;
-import io.harness.exception.DelegateServiceLiteException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskClientContextDetails;
@@ -302,62 +298,6 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                                TaskId.newBuilder().setId(taskId).build()))
         .isInstanceOf(DelegateServiceDriverException.class)
         .hasMessage("Unexpected error occurred while checking task progress.");
-  }
-
-  @Test
-  @Owner(developers = ALEKSANDAR)
-  @Category(UnitTests.class)
-  public void testExecuteParkedTask() {
-    String accountId = generateUuid();
-    String taskId = generateUuid();
-    when(delegateTaskServiceClassic.queueParkedTask(accountId, taskId)).thenReturn(taskId);
-
-    ExecuteParkedTaskResponse executeParkedTaskResponse = delegateServiceGrpcAgentClient.executeParkedTask(
-        AccountId.newBuilder().setId(accountId).build(), TaskId.newBuilder().setId(taskId).build());
-    assertThat(executeParkedTaskResponse).isNotNull();
-    assertThat(executeParkedTaskResponse)
-        .isEqualTo(ExecuteParkedTaskResponse.newBuilder().setTaskId(TaskId.newBuilder().setId(taskId).build()).build());
-
-    doThrow(InvalidRequestException.class).when(delegateTaskServiceClassic).queueParkedTask(accountId, taskId);
-    assertThatThrownBy(
-        ()
-            -> delegateServiceGrpcAgentClient.executeParkedTask(
-                AccountId.newBuilder().setId(accountId).build(), TaskId.newBuilder().setId(taskId).build()))
-        .isInstanceOf(DelegateServiceLiteException.class)
-        .hasMessage("Unexpected error occurred while executing parked task.");
-  }
-
-  @Test
-  @Owner(developers = ALEKSANDAR)
-  @Category(UnitTests.class)
-  public void getParkedTaskResults() {
-    String accountId = generateUuid();
-    String taskId = generateUuid();
-    String driverId = generateUuid();
-    byte[] bytes = {69, 121, 101, 45, 62, 118, 101, 114, 61, 101, 98};
-    when(delegateTaskServiceClassic.getParkedTaskResults(accountId, taskId, driverId)).thenReturn(bytes);
-
-    FetchParkedTaskStatusResponse fetchParkedTaskStatusResponse =
-        delegateServiceGrpcAgentClient.fetchParkedTaskStatus(AccountId.newBuilder().setId(accountId).build(),
-            TaskId.newBuilder().setId(taskId).build(), DelegateCallbackToken.newBuilder().setToken(driverId).build());
-
-    assertThat(fetchParkedTaskStatusResponse).isNotNull();
-    assertThat(fetchParkedTaskStatusResponse)
-        .isEqualTo(FetchParkedTaskStatusResponse.newBuilder()
-                       .setFetchResults(true)
-                       .setSerializedTaskResults(ByteString.copyFrom(bytes))
-                       .build());
-
-    doThrow(InvalidRequestException.class)
-        .when(delegateTaskServiceClassic)
-        .getParkedTaskResults(accountId, taskId, driverId);
-    assertThatThrownBy(
-        ()
-            -> delegateServiceGrpcAgentClient.fetchParkedTaskStatus(AccountId.newBuilder().setId(accountId).build(),
-                TaskId.newBuilder().setId(taskId).build(),
-                DelegateCallbackToken.newBuilder().setToken(driverId).build()))
-        .isInstanceOf(DelegateServiceLiteException.class)
-        .hasMessage("Unexpected error occurred fetching parked task results.");
   }
 
   @Test

@@ -4540,6 +4540,7 @@ plain_artifacts = [
     "com.squareup.retrofit2:converter-gson:2.3.0",
     "com.squareup.retrofit2:converter-jackson:2.6.0",
     "com.squareup.retrofit2:converter-simplexml:2.6.0",
+    "com.squareup.retrofit2:converter-protobuf:2.6.0",
     "com.squareup.retrofit2:retrofit:2.6.0",
     "com.squareup.wire:wire-runtime:2.2.0",
     "com.squareup.wire:wire-schema:3.2.2",

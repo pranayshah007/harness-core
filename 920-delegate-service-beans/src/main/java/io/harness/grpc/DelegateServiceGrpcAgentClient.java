@@ -12,10 +12,6 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.delegate.AccountId;
 import io.harness.delegate.DelegateServiceGrpc.DelegateServiceBlockingStub;
-import io.harness.delegate.ExecuteParkedTaskRequest;
-import io.harness.delegate.ExecuteParkedTaskResponse;
-import io.harness.delegate.FetchParkedTaskStatusRequest;
-import io.harness.delegate.FetchParkedTaskStatusResponse;
 import io.harness.delegate.SendTaskProgressRequest;
 import io.harness.delegate.SendTaskProgressResponse;
 import io.harness.delegate.SendTaskStatusRequest;
@@ -62,29 +58,6 @@ public class DelegateServiceGrpcAgentClient {
       return response.getSuccess();
     } catch (StatusRuntimeException ex) {
       throw new DelegateServiceGrpcClientException("Unexpected error occurred while sending task progress update.", ex);
-    }
-  }
-
-  public ExecuteParkedTaskResponse executeParkedTask(AccountId accountId, TaskId taskId) {
-    try {
-      return delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
-          .executeParkedTask(ExecuteParkedTaskRequest.newBuilder().setTaskId(taskId).setAccountId(accountId).build());
-    } catch (StatusRuntimeException ex) {
-      throw new DelegateServiceLiteException("Unexpected error occurred while executing parked task.", ex);
-    }
-  }
-
-  public FetchParkedTaskStatusResponse fetchParkedTaskStatus(
-      AccountId accountId, TaskId taskId, DelegateCallbackToken delegateCallbackToken) {
-    try {
-      return delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
-          .fetchParkedTaskStatus(FetchParkedTaskStatusRequest.newBuilder()
-                                     .setAccountId(accountId)
-                                     .setTaskId(taskId)
-                                     .setCallbackToken(delegateCallbackToken)
-                                     .build());
-    } catch (StatusRuntimeException ex) {
-      throw new DelegateServiceLiteException("Unexpected error occurred fetching parked task results.", ex);
     }
   }
 

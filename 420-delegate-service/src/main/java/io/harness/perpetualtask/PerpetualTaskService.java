@@ -29,6 +29,8 @@ public interface PerpetualTaskService {
 
   List<PerpetualTaskAssignDetails> listAssignedTasks(String delegateId);
 
+  List<PerpetualTaskAssignDetails> listAssignedTasks(String delegateId, String accountId);
+
   List<PerpetualTaskRecord> listAllTasksForAccount(String accountId);
 
   PerpetualTaskRecord getTaskRecord(String taskId);

@@ -9,8 +9,6 @@ package software.wings.jersey;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.dropwizard.jersey.protobuf.ProtocolBufferMessageBodyProvider;
-
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
@@ -24,9 +22,7 @@ public class KryoFeature implements Feature {
     Configuration config = context.getConfiguration();
     if (kryoMessageBodyProvider != null && !config.isRegistered(kryoMessageBodyProvider)) {
       context.register(kryoMessageBodyProvider);
-      context.register(new ProtocolBufferMessageBodyProvider());
     }
-
 
     return true;
   }
