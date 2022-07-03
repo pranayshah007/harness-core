@@ -39,7 +39,7 @@ import io.harness.cvng.notification.entities.SLONotificationRule;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetBurnRateCondition;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLONotificationRuleCondition;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
-import io.harness.cvng.notification.utils.NotificationRuleCommonUtils;
+import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
 import io.harness.cvng.notification.utils.NotificationRuleCommonUtils.NotificationMessage;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse.RiskCount;
@@ -116,7 +116,9 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   @Inject private CVNGLogService cvngLogService;
   @Inject private NotificationRuleService notificationRuleService;
   @Inject private NotificationClient notificationClient;
-  @Inject private NotificationRuleCommonUtils notificationRuleCommonUtils;
+  @Inject
+  private Map<NotificationRuleConditionType, NotificationRuleTemplateDataGenerator>
+      notificationRuleConditionTypeTemplateDataGeneratorMap;
 
   @Inject private OutboxService outboxService;
 
@@ -463,8 +465,18 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
         if (notificationMessage.isShouldSendNotification()) {
           CVNGNotificationChannel notificationChannel = notificationRule.getNotificationMethod();
           String templateId = getNotificationTemplateId(notificationRule.getType(), notificationChannel.getType());
-          Map<String, String> templateData = notificationRuleCommonUtils.getNotificationTemplateDataForSLO(
-              serviceLevelObjective, condition, notificationMessage, clock.instant());
+          MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
+              MonitoredServiceParams.builder()
+                  .accountIdentifier(serviceLevelObjective.getAccountId())
+                  .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                  .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                  .monitoredServiceIdentifier(serviceLevelObjective.getMonitoredServiceIdentifier())
+                  .build());
+          Map<String, String> templateData =
+              notificationRuleConditionTypeTemplateDataGeneratorMap.get(condition.getType())
+                  .getTemplateData(projectParams, serviceLevelObjective.getName(),
+                      serviceLevelObjective.getIdentifier(), monitoredService.getServiceIdentifier(), condition,
+                      notificationMessage);
           try {
             NotificationResult notificationResult =
                 notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(

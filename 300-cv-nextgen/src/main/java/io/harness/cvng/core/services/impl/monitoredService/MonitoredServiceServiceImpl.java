@@ -83,6 +83,7 @@ import io.harness.cvng.events.monitoredservice.MonitoredServiceCreateEvent;
 import io.harness.cvng.events.monitoredservice.MonitoredServiceDeleteEvent;
 import io.harness.cvng.events.monitoredservice.MonitoredServiceToggleEvent;
 import io.harness.cvng.events.monitoredservice.MonitoredServiceUpdateEvent;
+import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
@@ -95,7 +96,7 @@ import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.Mo
 import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.entities.NotificationRule.CVNGNotificationChannel;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
-import io.harness.cvng.notification.utils.NotificationRuleCommonUtils;
+import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
 import io.harness.cvng.notification.utils.NotificationRuleCommonUtils.NotificationMessage;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
@@ -202,10 +203,12 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Inject private NotificationClient notificationClient;
   @Inject private ActivityService activityService;
   @Inject private OutboxService outboxService;
-  @Inject private NotificationRuleCommonUtils notificationRuleCommonUtils;
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject private EnforcementClientService enforcementClientService;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject
+  private Map<NotificationRuleConditionType, NotificationRuleTemplateDataGenerator>
+      notificationRuleConditionTypeTemplateDataGeneratorMap;
 
   private static final String templateIdentifierName = "monitoredServiceName";
 
@@ -1606,8 +1609,10 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         if (notificationMessage.isShouldSendNotification()) {
           CVNGNotificationChannel notificationChannel = notificationRule.getNotificationMethod();
           String templateId = getNotificationTemplateId(notificationRule.getType(), notificationChannel.getType());
-          Map<String, String> templateData = notificationRuleCommonUtils.getNotificationTemplateDataForMonitoredService(
-              monitoredService, condition, notificationMessage, clock.instant());
+          Map<String, String> templateData =
+              notificationRuleConditionTypeTemplateDataGeneratorMap.get(condition.getType())
+                  .getTemplateData(projectParams, monitoredService.getName(), monitoredService.getIdentifier(),
+                      monitoredService.getServiceIdentifier(), condition, notificationMessage);
           try {
             NotificationResult notificationResult =
                 notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(

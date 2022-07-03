@@ -9,43 +9,17 @@ package io.harness.cvng.notification.utils;
 
 import io.harness.account.AccountClient;
 import io.harness.cvng.client.NextGenService;
-import io.harness.cvng.core.beans.params.MonitoredServiceParams;
-import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
-import io.harness.cvng.notification.beans.MonitoredServiceChangeEventType;
-import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
-import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeImpactCondition;
-import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeObservedCondition;
-import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceHealthScoreCondition;
-import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceNotificationRuleCondition;
-import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetBurnRateCondition;
-import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetRemainingMinutesCondition;
-import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetRemainingPercentageCondition;
-import io.harness.cvng.notification.entities.SLONotificationRule.SLONotificationRuleCondition;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
-import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.InvalidArgumentsException;
-import io.harness.ng.core.dto.AccountDTO;
-import io.harness.ng.core.dto.OrganizationDTO;
-import io.harness.ng.core.dto.ProjectDTO;
-import io.harness.ng.core.service.dto.ServiceResponseDTO;
-import io.harness.remote.client.RestClientUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import java.net.URL;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -58,7 +32,7 @@ public class NotificationRuleCommonUtils {
   @Inject @Named("portalUrl") String portalUrl;
   @Inject private MonitoredServiceService monitoredServiceService;
 
-  public static final Duration COOL_OFF_DURATION = Duration.ofHours(1);
+  public static final Duration COOL_OFF_DURATION = Duration.ofSeconds(1);
   public static final String CURRENT_HEALTH_SCORE = "CURRENT_HEALTH_SCORE";
   public static final String CHANGE_EVENT_TYPE = "CHANGE_EVENT_TYPE";
   public static final String REMAINING_PERCENTAGE = "REMAINING_PERCENTAGE";
@@ -102,7 +76,7 @@ public class NotificationRuleCommonUtils {
         notificationChannelType.getTemplateSuffixIdentifier().toLowerCase());
   }
 
-  public Map<String, String> getNotificationTemplateDataForSLO(ServiceLevelObjective serviceLevelObjective,
+  /*public Map<String, String> getNotificationTemplateDataForSLO(ServiceLevelObjective serviceLevelObjective,
       SLONotificationRuleCondition condition, NotificationMessage notificationMessage, Instant currentInstant) {
     long startTime = currentInstant.getEpochSecond();
     String startDate = new Date(startTime * 1000).toString();
@@ -301,7 +275,7 @@ public class NotificationRuleCommonUtils {
       default:
         throw new InvalidArgumentsException("Not a valid Notification Rule Condition " + condition.getType());
     }
-  }
+  }*/
 
   @Value
   @Builder
