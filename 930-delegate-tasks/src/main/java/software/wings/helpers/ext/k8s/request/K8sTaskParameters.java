@@ -27,6 +27,9 @@ import io.harness.k8s.model.HelmVersion;
 
 import software.wings.helpers.ext.kustomize.KustomizeConfig;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -38,6 +41,9 @@ import org.hibernate.validator.constraints.NotEmpty;
 @AllArgsConstructor
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._950_DELEGATE_TASKS_BEANS)
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "commandType", include = JsonTypeInfo.As.EXISTING_PROPERTY)
+@JsonSubTypes({ @JsonSubTypes.Type(value = K8sApplyTaskParameters.class, name = "APPLY") })
 public class K8sTaskParameters implements TaskParameters, ActivityAccess, ExecutionCapabilityDemander {
   private String accountId;
   private String appId;

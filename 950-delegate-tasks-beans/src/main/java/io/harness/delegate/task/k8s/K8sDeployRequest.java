@@ -39,14 +39,11 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.ArrayList;
 import java.util.List;
 
 @OwnedBy(CDP)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "taskType", include = JsonTypeInfo.As.EXISTING_PROPERTY)
-@JsonSubTypes({ @JsonSubTypes.Type(value = K8sApplyRequest.class, name = "APPLY") })
+
 public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDemander {
   K8sTaskType getTaskType();
   String getCommandName();

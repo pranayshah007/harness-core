@@ -13,6 +13,8 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
+import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -38,6 +40,6 @@ public class K8sDeployRequestTest extends CategoryTest {
   public void testChaosDeserialization() throws IOException {
     String stream = IOUtils.resourceToString("k8s/chaos-json.json", Charsets.UTF_8, this.getClass().getClassLoader());
 
-    K8sDeployRequest k8sDeployRequest = objectMapper.readValue(stream, K8sDeployRequest.class);
+    K8sTaskParameters k8sDeployRequest = objectMapper.readValue(stream, K8sTaskParameters.class);
   }
 }

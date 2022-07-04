@@ -22,17 +22,21 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.KubernetesResource;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TargetModule(HarnessModule._950_DELEGATE_TASKS_BEANS)
 @OwnedBy(CDP)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class K8sApplyTaskParameters extends K8sTaskParameters implements ManifestAwareTaskParams {
   @Expression(ALLOW_SECRETS) private K8sDelegateManifestConfig k8sDelegateManifestConfig;
   @Expression(ALLOW_SECRETS) private List<String> valuesYamlList;
@@ -66,6 +70,30 @@ public class K8sApplyTaskParameters extends K8sTaskParameters implements Manifes
     this.exportManifests = exportManifests;
     this.inheritManifests = inheritManifests;
     this.kubernetesResources = kubernetesResources;
+  }
+
+  @JsonCreator
+  public K8sApplyTaskParameters(@JsonProperty("commandType") K8sTaskType k8sTaskType,
+      @JsonProperty("releaseName") String releaseName,
+      @JsonProperty("timeoutIntervalInMin") Integer timeoutIntervalInMin,
+      @JsonProperty("k8sDelegateManifestConfig") K8sDelegateManifestConfig k8sDelegateManifestConfig,
+      @JsonProperty("skipSteadyStateCheck") boolean skipSteadyStateCheck,
+      @JsonProperty("skipDryRun") boolean skipDryRun, @JsonProperty("commandName") String commandName,
+      @JsonProperty("useLatestChartMuseumVersion") boolean useLatestChartMuseumVersion,
+      @JsonProperty("useLatestKustomizeVersion") boolean useLatestKustomizeVersion,
+      @JsonProperty("useNewKubectlVersion") boolean useNewKubectlVersion, @JsonProperty("accountId") String accountId) {
+    super(accountId, null, commandName, null, null, null, releaseName, timeoutIntervalInMin, k8sTaskType,
+        HelmVersion.V2, null, useLatestChartMuseumVersion, useLatestKustomizeVersion, useNewKubectlVersion);
+
+    this.k8sDelegateManifestConfig = k8sDelegateManifestConfig;
+    this.valuesYamlList = null;
+    this.filePaths = null;
+    this.skipSteadyStateCheck = skipSteadyStateCheck;
+    this.skipDryRun = skipDryRun;
+    this.skipRendering = false;
+    this.exportManifests = false;
+    this.inheritManifests = false;
+    this.kubernetesResources = null;
   }
 
   @Override
