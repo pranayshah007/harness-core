@@ -123,6 +123,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final List<String> TERRAFORM_CATEGORY = Arrays.asList("Kubernetes", "Provisioner", "Helm");
 
   @Inject InjectorUtils injectorUtils;
+  @Inject DeploymentStageVariableCreator deploymentStageVariableCreator;
 
   @Override
   public List<PartialPlanCreator<?>> getPlanCreators() {
@@ -199,7 +200,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     List<VariableCreator> variableCreators = new ArrayList<>();
     variableCreators.add(new GitOpsCreatePRStepVariableCreator());
     variableCreators.add(new GitOpsMergePRStepVariableCreator());
-    variableCreators.add(new DeploymentStageVariableCreator());
+    variableCreators.add(deploymentStageVariableCreator);
     variableCreators.add(new ExecutionVariableCreator());
     variableCreators.add(new K8sApplyStepVariableCreator());
     variableCreators.add(new K8sBGSwapServicesVariableCreator());

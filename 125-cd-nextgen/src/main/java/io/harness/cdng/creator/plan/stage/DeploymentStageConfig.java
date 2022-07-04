@@ -63,15 +63,18 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
   ServiceConfig serviceConfig;
 
   // For new service yaml
-  ServiceYamlV2 service;
+  // skipping variable creation from framework since these are supported through outcomes
+  @VariableExpression(skipVariableExpression = true) ServiceYamlV2 service;
   ServiceDefinitionType deploymentType;
   Boolean gitOpsEnabled;
 
   // New Environment Yaml
-  EnvironmentYamlV2 environment;
+  // skipping variable creation from framework since these are supported through outcomes
+  @VariableExpression(skipVariableExpression = true) EnvironmentYamlV2 environment;
 
   // Environment Group yaml
-  EnvironmentGroupYaml environmentGroup;
+  // todo: add expressions from env group outcomes
+  @VariableExpression(skipVariableExpression = true) EnvironmentGroupYaml environmentGroup;
 
   PipelineInfrastructure infrastructure;
   @NotNull @VariableExpression(skipVariableExpression = true) ExecutionElementConfig execution;
