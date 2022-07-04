@@ -112,7 +112,7 @@ public class GcrArtifactResource {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(gcrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     imagePath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo);
+        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
     GcrResponseDTO buildDetails =
         gcrResourceService.getBuildDetails(connectorRef, imagePath, registryHostname, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);

@@ -32,7 +32,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @OwnedBy(CDC)
-public class YamlExpressionFunctorTest extends CategoryTest {
+public class CDYamlExpressionFunctorTest extends CategoryTest {
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
@@ -42,7 +42,7 @@ public class YamlExpressionFunctorTest extends CategoryTest {
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
     YamlField yamlField = YamlUtils.readTree(yamlContent);
 
-    YamlExpressionFunctor functor = YamlExpressionFunctor.builder().build();
+    CDYamlExpressionFunctor functor = CDYamlExpressionFunctor.builder().build();
     List<String> fqnList = new LinkedList<>();
     Map<String, Map<String, Object>> fqnToValueMap = new HashMap<>();
     Map<String, Object> contextMap =
@@ -70,13 +70,13 @@ public class YamlExpressionFunctorTest extends CategoryTest {
     final URL testFile = classLoader.getResource("inputset/pipeline.yaml");
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
     YamlField yamlField = YamlUtils.readTree(yamlContent);
-    YamlExpressionFunctor yamlExpressionFunctor =
-        YamlExpressionFunctor.builder()
+    CDYamlExpressionFunctor CDYamlExpressionFunctor =
+        io.harness.evaluators.CDYamlExpressionFunctor.builder()
             .rootYamlField(yamlField.getNode().getField(YAMLFieldNameConstants.PIPELINE))
             .fqnPathToElement(
                 "pipeline.stages.stage1.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.imagePath")
             .build();
-    Object object = yamlExpressionFunctor.get("serviceConfig");
+    Object object = CDYamlExpressionFunctor.get("serviceConfig");
     assertThat(object).isNotNull();
     assertThat(object).isInstanceOf(HashMap.class);
     Map<String, Object> serviceMap = (Map<String, Object>) object;

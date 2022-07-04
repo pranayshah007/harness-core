@@ -51,6 +51,7 @@ import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultRequest;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
+import io.harness.product.ci.scm.proto.PageResponse;
 import io.harness.product.ci.scm.proto.Provider;
 import io.harness.product.ci.scm.proto.Repository;
 import io.harness.product.ci.scm.proto.SCMGrpc;
@@ -132,19 +133,24 @@ public class ScmServiceClientImplTest extends CategoryTest {
   @Owner(developers = DEEPAK)
   @Category(UnitTests.class)
   public void testListBranchesWithDefault() {
-    ListBranchesWithDefaultResponse listBranchesWithDefaultResponse = ListBranchesWithDefaultResponse.newBuilder()
-                                                                          .addAllBranches(Arrays.asList("abc", "def"))
-                                                                          .setDefaultBranch("main")
-                                                                          .build();
+    ListBranchesWithDefaultResponse listBranchesWithDefaultResponse =
+        ListBranchesWithDefaultResponse.newBuilder()
+            .addAllBranches(Arrays.asList("abc", "def"))
+            .setDefaultBranch("main")
+            .setPagination(PageResponse.newBuilder().setNext(0).build())
+            .setStatus(200)
+            .build();
     when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
     when(scmGitProviderMapper.mapToSCMGitProvider(any())).thenReturn(gitProvider);
     when(scmBlockingStub.listBranchesWithDefault(any())).thenReturn(listBranchesWithDefaultResponse);
     ArgumentCaptor<ListBranchesWithDefaultRequest> listBranchesRequestCaptor =
         ArgumentCaptor.forClass(ListBranchesWithDefaultRequest.class);
     ListBranchesWithDefaultResponse responseFromService = scmServiceClient.listBranchesWithDefault(
-        scmConnector, PageRequestDTO.builder().pageIndex(0).build(), scmBlockingStub);
+        scmConnector, PageRequestDTO.builder().pageSize(5).build(), scmBlockingStub);
     verify(scmBlockingStub, times(1)).listBranchesWithDefault(listBranchesRequestCaptor.capture());
-    assertThat(responseFromService).isEqualTo(listBranchesWithDefaultResponse);
+    assertThat(responseFromService.getStatus()).isEqualTo(200);
+    assertThat(responseFromService.getBranchesList()).isEqualTo(listBranchesWithDefaultResponse.getBranchesList());
+    assertThat(responseFromService.getDefaultBranch()).isEqualTo(listBranchesWithDefaultResponse.getDefaultBranch());
     ListBranchesWithDefaultRequest listBranchRequest = listBranchesRequestCaptor.getValue();
     assertThat(listBranchRequest.getSlug()).isEqualTo("slug");
     assertThat(listBranchRequest.getPagination().getPage()).isEqualTo(1);

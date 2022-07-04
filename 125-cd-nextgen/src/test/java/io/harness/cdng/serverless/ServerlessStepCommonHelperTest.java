@@ -99,6 +99,8 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   private static final String PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY = "<+artifact.path>";
   private static final String PRIMARY_ARTIFACT_PATH_FOR_ECR = "<+artifact.image>";
   private static final String ARTIFACT_ACTUAL_PATH = "harnessArtifact/artifactFile";
+  private static final String SIDECAR_ARTIFACT_PATH_PREFIX = "<+sidecar.artifact.";
+  private static final String SIDECAR_ARTIFACT_FILE_NAME_PREFIX = "sidecar-artifact-";
 
   @Mock private EngineExpressionService engineExpressionService;
 
@@ -409,9 +411,12 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   public void renderManifestContentTestWhenManifestFileContentNotEmpty() {
     String manifestFileContent = "dsfa";
     ServerlessArtifactConfig serverlessArtifactConfig = ServerlessArtifactoryArtifactConfig.builder().build();
+    Map<String, ServerlessArtifactConfig> sidecarArtifactMap = new HashMap<>();
+    sidecarArtifactMap.put("sidecar1", serverlessArtifactConfig);
+    sidecarArtifactMap.put("sidecar2", serverlessArtifactConfig);
     doReturn(manifestFileContent).when(engineExpressionService).renderExpression(ambiance, manifestFileContent);
-    assertThat(
-        serverlessStepCommonHelper.renderManifestContent(ambiance, manifestFileContent, serverlessArtifactConfig))
+    assertThat(serverlessStepCommonHelper.renderManifestContent(
+                   ambiance, manifestFileContent, serverlessArtifactConfig, sidecarArtifactMap))
         .isEqualTo(manifestFileContent);
   }
 
@@ -422,9 +427,12 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   renderManifestContentTestWhenManifestFileContentNotEmptyAndContainsPrimaryArtifactoryReplacementExpression() {
     String manifestFileContent = PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY;
     ServerlessArtifactConfig serverlessArtifactConfig = ServerlessArtifactoryArtifactConfig.builder().build();
+    Map<String, ServerlessArtifactConfig> sidecarArtifactMap = new HashMap<>();
+    sidecarArtifactMap.put("sidecar1", serverlessArtifactConfig);
+    sidecarArtifactMap.put("sidecar2", serverlessArtifactConfig);
     doReturn(ARTIFACT_ACTUAL_PATH).when(engineExpressionService).renderExpression(ambiance, ARTIFACT_ACTUAL_PATH);
-    assertThat(
-        serverlessStepCommonHelper.renderManifestContent(ambiance, manifestFileContent, serverlessArtifactConfig))
+    assertThat(serverlessStepCommonHelper.renderManifestContent(
+                   ambiance, manifestFileContent, serverlessArtifactConfig, sidecarArtifactMap))
         .isEqualTo(ARTIFACT_ACTUAL_PATH);
   }
 
@@ -436,10 +444,36 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
     String replacedContent = "448640225317.dkr.ecr.us-east-1.amazonaws.com/test-docker-2:latest";
     ServerlessArtifactConfig serverlessArtifactConfig =
         ServerlessEcrArtifactConfig.builder().image(replacedContent).build();
+    Map<String, ServerlessArtifactConfig> sidecarArtifactMap = new HashMap<>();
+    sidecarArtifactMap.put("sidecar1", serverlessArtifactConfig);
+    sidecarArtifactMap.put("sidecar2", serverlessArtifactConfig);
     doReturn(replacedContent).when(engineExpressionService).renderExpression(ambiance, replacedContent);
-    assertThat(
-        serverlessStepCommonHelper.renderManifestContent(ambiance, manifestFileContent, serverlessArtifactConfig))
+    assertThat(serverlessStepCommonHelper.renderManifestContent(
+                   ambiance, manifestFileContent, serverlessArtifactConfig, sidecarArtifactMap))
         .isEqualTo(replacedContent);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void
+  renderManifestContentTestWhenManifestFileContentNotEmptyAndContainsPrimaryAndSecondaryReplacementExpression() {
+    String manifestFileContent = "image: " + PRIMARY_ARTIFACT_PATH_FOR_ECR + "\nimage: " + SIDECAR_ARTIFACT_PATH_PREFIX
+        + "sidecar1>\n path: " + SIDECAR_ARTIFACT_PATH_PREFIX + "sidecar2>";
+    String image = "448640225317.dkr.ecr.us-east-1.amazonaws.com/test-docker-2:latest";
+    String image1 = "443440225317.dkr.ecr.us-east-1.amazonaws.com/test-docker:latest";
+    ServerlessArtifactConfig serverlessArtifactConfig = ServerlessEcrArtifactConfig.builder().image(image).build();
+    ServerlessArtifactConfig serverlessArtifactConfig1 = ServerlessEcrArtifactConfig.builder().image(image1).build();
+    String replacedManifestContent =
+        "image: " + image + "\nimage: " + image1 + "\n path: " + SIDECAR_ARTIFACT_FILE_NAME_PREFIX + "sidecar2";
+    ServerlessArtifactConfig serverlessArtifactConfig2 = ServerlessArtifactoryArtifactConfig.builder().build();
+    Map<String, ServerlessArtifactConfig> sidecarArtifactMap = new HashMap<>();
+    sidecarArtifactMap.put("sidecar1", serverlessArtifactConfig1);
+    sidecarArtifactMap.put("sidecar2", serverlessArtifactConfig2);
+    doReturn(replacedManifestContent).when(engineExpressionService).renderExpression(ambiance, replacedManifestContent);
+    assertThat(serverlessStepCommonHelper.renderManifestContent(
+                   ambiance, manifestFileContent, serverlessArtifactConfig, sidecarArtifactMap))
+        .isEqualTo(replacedManifestContent);
   }
 
   @Test
@@ -448,8 +482,11 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   public void renderManifestContentTestWhenManifestFileContentEmpty() {
     String manifestFileContent = "";
     ServerlessArtifactConfig serverlessArtifactConfig = ServerlessArtifactoryArtifactConfig.builder().build();
-    assertThat(
-        serverlessStepCommonHelper.renderManifestContent(ambiance, manifestFileContent, serverlessArtifactConfig))
+    Map<String, ServerlessArtifactConfig> sidecarArtifactMap = new HashMap<>();
+    sidecarArtifactMap.put("sidecar1", serverlessArtifactConfig);
+    sidecarArtifactMap.put("sidecar2", serverlessArtifactConfig);
+    assertThat(serverlessStepCommonHelper.renderManifestContent(
+                   ambiance, manifestFileContent, serverlessArtifactConfig, sidecarArtifactMap))
         .isEqualTo(manifestFileContent);
   }
 }

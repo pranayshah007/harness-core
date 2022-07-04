@@ -27,6 +27,7 @@ import org.zeroturnaround.exec.StartedProcess;
 @OwnedBy(HarnessTeam.DX)
 public abstract class ScmUnixManager implements AutoCloseable {
   abstract ManagedChannel getChannel();
+  abstract void shutdownEventLoopGroup();
 
   private final String PATH_TO_SCM_BUILD =
       Paths.get(InstallUtils.getPath(SCM, ScmVersion.DEFAULT)).getParent().toString();
@@ -43,6 +44,7 @@ public abstract class ScmUnixManager implements AutoCloseable {
 
   public void close() throws IOException {
     server.getProcess().destroy();
+    shutdownEventLoopGroup();
     processBuilder.command("rm", "-rf", socketAddress);
     final StartedProcess process = processBuilder.start();
     process.getProcess().destroy();

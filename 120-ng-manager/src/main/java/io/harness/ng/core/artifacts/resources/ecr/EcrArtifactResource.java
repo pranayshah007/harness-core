@@ -111,7 +111,7 @@ public class EcrArtifactResource {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     imagePath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo);
+        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
     EcrResponseDTO buildDetails =
         ecrResourceService.getBuildDetails(connectorRef, imagePath, region, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);

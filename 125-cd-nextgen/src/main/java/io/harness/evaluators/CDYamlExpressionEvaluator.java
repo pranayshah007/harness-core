@@ -20,23 +20,26 @@ import java.io.IOException;
 import java.util.List;
 
 @OwnedBy(HarnessTeam.CDC)
-public class YamlExpressionEvaluator extends EngineExpressionEvaluator {
+public class CDYamlExpressionEvaluator extends EngineExpressionEvaluator {
   private final String yaml;
   private final String fqnPathToElement;
+  private final List<YamlField> aliasYamlFields;
 
-  public YamlExpressionEvaluator(String yaml, String fqnPathToElement) {
+  public CDYamlExpressionEvaluator(String yaml, String fqnPathToElement, List<YamlField> aliasYamlFields) {
     super(null);
     this.yaml = yaml;
     this.fqnPathToElement = fqnPathToElement;
+    this.aliasYamlFields = aliasYamlFields;
   }
 
   @Override
   protected void initialize() {
     super.initialize();
     addToContext("__yamlExpression",
-        YamlExpressionFunctor.builder()
+        CDYamlExpressionFunctor.builder()
             .rootYamlField(getPipelineYamlField())
             .fqnPathToElement(fqnPathToElement)
+            .aliasYamlFields(aliasYamlFields)
             .build());
   }
 
