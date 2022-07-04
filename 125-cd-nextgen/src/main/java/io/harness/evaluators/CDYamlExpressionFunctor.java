@@ -8,14 +8,17 @@
 package io.harness.evaluators;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.ENVIRONMENT;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.PIPELINE;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.SERVICE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.steps.OutputExpressionConstants;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
@@ -30,11 +33,12 @@ import lombok.Value;
 @OwnedBy(CDC)
 @Value
 @Builder
-public class YamlExpressionFunctor {
+public class CDYamlExpressionFunctor {
   // Root yaml map
   YamlField rootYamlField;
   // Given element to start the expression search from.
   String fqnPathToElement;
+  List<YamlField> aliasYamlFields;
 
   public Object get(String expression) {
     if (EmptyPredicate.isEmpty(fqnPathToElement)) {
@@ -45,6 +49,9 @@ public class YamlExpressionFunctor {
 
     // Traverse the yaml.
     getYamlMap(rootYamlField, fqnToValueMap, new LinkedList<>());
+    if (EmptyPredicate.isNotEmpty(aliasYamlFields)) {
+      aliasYamlFields.forEach(field -> getYamlMap(field, fqnToValueMap, new LinkedList<>()));
+    }
     List<String> givenFqnList = new ArrayList(Arrays.asList(fqnPathToElement.split("\\.")));
 
     // Get the current element
@@ -68,8 +75,14 @@ public class YamlExpressionFunctor {
     }
     // Check current and parent match
     else {
-      if (expression.equals(YAMLFieldNameConstants.PIPELINE)) {
-        return fqnToValueMap.get(YAMLFieldNameConstants.PIPELINE);
+      if (expression.equals(PIPELINE)) {
+        return fqnToValueMap.get(PIPELINE);
+      }
+      if (expression.equals(SERVICE)) {
+        return fqnToValueMap.get(SERVICE);
+      }
+      if (expression.equals(OutputExpressionConstants.ENVIRONMENT)) {
+        return fqnToValueMap.get(ENVIRONMENT);
       }
       givenFqnList.remove(givenFqnList.size() - 1);
       while (EmptyPredicate.isNotEmpty(givenFqnList)) {

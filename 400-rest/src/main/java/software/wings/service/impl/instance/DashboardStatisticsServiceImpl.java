@@ -601,7 +601,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
   private List<InstanceStatsByEnvironment> constructInstanceStatsForService(
       String serviceId, List<ServiceAggregationInfo> serviceAggregationInfoList) {
-    log.info("serviceAggregation size :{}", serviceAggregationInfoList.size());
+    log.info("serviceAggregationInfoList size :{}", serviceAggregationInfoList.size());
     if (isEmpty(serviceAggregationInfoList)) {
       return Lists.newArrayList();
     }
@@ -634,7 +634,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                         .build();
 
       if (currentEnv == null || !compareEnvironment(currentEnv, serviceAggregationInfo.getEnvInfo())) {
-        log.info("ServiceAggregation ID :{}", serviceAggregationInfo.getEnvInfo().getId());
+        log.info("ServiceAggregation ID inside loop :{}", serviceAggregationInfo.getEnvInfo().getId());
         currentArtifactList = Lists.newArrayList();
         currentEnv =
             getInstanceStatsByEnvironment(appId, serviceId, serviceAggregationInfo.getEnvInfo(), currentArtifactList);
@@ -732,6 +732,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
   private InstanceStatsByEnvironment getInstanceStatsByEnvironment(
       String appId, String serviceId, EnvInfo envInfo, List<InstanceStatsByArtifact> currentArtifactList) {
     EnvironmentSummaryBuilder builder = EnvironmentSummary.builder();
+    log.info("Details related to instance, appid:{}, serviceId:{}, envInfo:{}", appId, serviceId, envInfo.getId());
     builder.prod("PROD".equals(envInfo.getType()))
         .id(envInfo.getId())
         .type(EntityType.ENVIRONMENT.name())
@@ -743,6 +744,10 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
             .instanceStatsByArtifactList(currentArtifactList);
     if (isNotEmpty(syncStatusList)) {
       boolean hasSyncIssues = hasSyncIssues(syncStatusList);
+      for (SyncStatus syncStatus : syncStatusList) {
+        log.info("details of syncstatus inframap id:{}, service ID: {}", syncStatus.getInfraMappingId(),
+            syncStatus.getServiceId());
+      }
       instanceStatsByEnvironmentBuilder.infraMappingSyncStatusList(syncStatusList);
       instanceStatsByEnvironmentBuilder.hasSyncIssues(hasSyncIssues);
     }
