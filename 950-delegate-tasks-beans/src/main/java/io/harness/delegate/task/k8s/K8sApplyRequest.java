@@ -19,10 +19,12 @@ import java.util.Collections;
 import java.util.List;
 import lombok.Builder;
 import lombok.Value;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 @Value
 @Builder
 @OwnedBy(CDP)
+@JsonIgnoreProperties
 public class K8sApplyRequest implements K8sDeployRequest {
   boolean skipDryRun;
   @Expression(DISALLOW_SECRETS) String releaseName;

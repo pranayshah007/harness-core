@@ -16,8 +16,9 @@ import io.harness.rule.Owner;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.api.client.util.Charsets;
 import java.io.IOException;
-import java.io.InputStream;
+import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -35,7 +36,8 @@ public class K8sDeployRequestTest extends CategoryTest {
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
   public void testChaosDeserialization() throws IOException {
-    InputStream stream = this.getClass().getClassLoader().getResourceAsStream("k8s/chaos-json.json");
+    String stream = IOUtils.resourceToString("k8s/chaos-json.json", Charsets.UTF_8, this.getClass().getClassLoader());
+
     K8sDeployRequest k8sDeployRequest = objectMapper.readValue(stream, K8sDeployRequest.class);
   }
 }

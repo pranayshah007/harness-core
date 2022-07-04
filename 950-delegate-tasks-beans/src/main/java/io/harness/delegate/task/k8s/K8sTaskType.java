@@ -11,6 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import software.wings.utils.Utils;
+
+import com.fasterxml.jackson.annotation.JsonValue;
+
 @OwnedBy(CDP)
 public enum K8sTaskType {
   DEPLOYMENT_ROLLING,
@@ -27,5 +31,10 @@ public enum K8sTaskType {
   CANARY_DELETE,
 
   // RANCHER
-  RANCHER_RESOLVE_CLUSTERS
+  RANCHER_RESOLVE_CLUSTERS;
+
+  @JsonValue
+  public K8sTaskType fromString(String taskType) {
+    return Utils.getEnumFromString(K8sTaskType.class, taskType);
+  }
 }

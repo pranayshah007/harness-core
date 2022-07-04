@@ -13,13 +13,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 
 import java.util.List;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
-import lombok.experimental.SuperBuilder;
 
 @Value
-@SuperBuilder(toBuilder = true)
 @EqualsAndHashCode()
+@Builder
 @OwnedBy(CDP)
 public class HarnessStoreDelegateConfig implements StoreDelegateConfig {
   List<ConfigFileParameters> configFiles;

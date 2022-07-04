@@ -9,6 +9,11 @@ package io.harness.delegate.task.k8s;
 
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "manifestType", include = JsonTypeInfo.As.EXISTING_PROPERTY)
+@JsonSubTypes({ @JsonSubTypes.Type(value = K8sManifestDelegateConfig.class, name = "K8S_MANIFEST") })
 public interface ManifestDelegateConfig {
   ManifestType getManifestType();
   StoreDelegateConfig getStoreDelegateConfig();
