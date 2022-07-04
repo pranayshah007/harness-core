@@ -395,10 +395,12 @@ public enum FeatureName {
   NG_EMAIL_STEP,
   PRUNE_KUBERNETES_RESOURCES_NG;
 
+  @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
   }
 
+  @Deprecated
   FeatureName(Scope scope) {
     this.scope = scope;
   }
@@ -408,6 +410,7 @@ public enum FeatureName {
   FeatureName(String description, HarnessTeam owner) {
     this.description = description;
     this.owner = owner;
+    this.scope = Scope.PER_ACCOUNT;
   }
 
   @Getter private String description;
