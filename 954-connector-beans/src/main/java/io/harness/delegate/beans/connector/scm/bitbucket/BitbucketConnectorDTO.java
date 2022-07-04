@@ -119,9 +119,9 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
             String.format("Provided repoName [%s] does not match with the repoName [%s] provided in connector.",
                 gitRepositoryDTO.getName(), linkedRepo));
       }
-      return getUrl();
+      return url;
     }
-    return FilePathUtils.addEndingSlashIfMissing(getUrl()) + gitRepositoryDTO.getName();
+    return FilePathUtils.addEndingSlashIfMissing(url) + gitRepositoryDTO.getName();
   }
 
   @Override
@@ -144,7 +144,8 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
     String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
     filePath = removeStartingAndEndingSlash(filePath);
     if (GitClientHelper.isBitBucketSAAS(repoUrl)) {
-      return String.format("%s/src/%s/%s", repoUrl, branchName, filePath);
+      String httpRepoUrl = GitClientHelper.getCompleteHTTPUrlFromOtherUrlForBitbucketSaas(repoUrl);
+      return String.format("%s/src/%s/%s", httpRepoUrl, branchName, filePath);
     }
     return getFileUrlForBitbucketServer(repoUrl, branchName, filePath);
   }
@@ -175,15 +176,16 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
   }
 
   private String getFileUrlForBitbucketServer(String repoUrl, String branchName, String filePath) {
+    String httpRepoUrl = GitClientHelper.getCompleteHTTPUrlFromOtherUrlForBitbucketServer(repoUrl);
     String hostUrl = "";
     try {
-      URL url1 = new URL(repoUrl);
+      URL url1 = new URL(httpRepoUrl);
       hostUrl = url1.getProtocol() + "://" + url1.getHost();
     } catch (Exception ex) {
       log.error("Exception occurred while parsing bitbucket server url.", ex);
       throw new InvalidRequestException("Exception occurred while parsing bitbucket server url.");
     }
-    return String.format("%s/projects/%s/repos/%s/browse/%s?at=refs/heads/%s", hostUrl,
+    return String.format("%s/projects/%s/repos/%s/browse/%s?at=refs/heads/%s", httpRepoUrl,
         getGitRepositoryDetails().getOrg(), getGitRepositoryDetails().getName(), filePath, branchName);
   }
 }

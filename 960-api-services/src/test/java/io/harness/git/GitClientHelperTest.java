@@ -17,16 +17,7 @@ import static io.harness.git.model.GitRepositoryType.HELM;
 import static io.harness.git.model.GitRepositoryType.TERRAFORM;
 import static io.harness.git.model.GitRepositoryType.TRIGGER;
 import static io.harness.git.model.GitRepositoryType.YAML;
-import static io.harness.rule.OwnerRule.ABOSII;
-import static io.harness.rule.OwnerRule.ARVIND;
-import static io.harness.rule.OwnerRule.DEEPAK;
-import static io.harness.rule.OwnerRule.DEV_MITTAL;
-import static io.harness.rule.OwnerRule.HARSH;
-import static io.harness.rule.OwnerRule.JAMIE;
-import static io.harness.rule.OwnerRule.JELENA;
-import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
-import static io.harness.rule.OwnerRule.SOUMYAJIT;
-import static io.harness.rule.OwnerRule.YOGESH;
+import static io.harness.rule.OwnerRule.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -641,5 +632,39 @@ public class GitClientHelperTest extends CategoryTest {
   public void testGetCompleteSSHUrlFromHttpUrlForAzure() {
     assertThat(GitClientHelper.getCompleteSSHUrlFromHttpUrlForAzure("https://dev.azure.com/org/test/_git/test"))
         .isEqualTo("git@ssh.dev.azure.com:v3/org/test/test");
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetCompleteHTTPUrlFromSSHUrlForGithub() {
+    assertThat(GitClientHelper.getCompleteHTTPUrlFromOtherUrlForGithub("git@github.com:repoOrg/repo.git"))
+        .isEqualTo("https://github.com/repoOrg/repo");
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetCompleteHTTPUrlFromSSHUrlForBitbucket() {
+    assertThat(GitClientHelper.getCompleteHTTPUrlFromOtherUrlForBitbucketSaas("git@bitbucket.org:repoOrg/repo.git"))
+        .isEqualTo("https://bitbucket.org/repoOrg/repo");
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetCompleteHTTPUrlFromSSHUrlForBitbucketClone() {
+    assertThat(GitClientHelper.getCompleteHTTPUrlFromOtherUrlForBitbucketSaas(
+                   "https://bhavya181@bitbucket.org/repoOrg/repo.git"))
+        .isEqualTo("https://bitbucket.org/repoOrg/repo");
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetCompleteHTTPUrlFromSSHUrlForBitbucketServer() {
+    assertThat(GitClientHelper.getCompleteHTTPUrlFromOtherUrlForBitbucketServer(
+                   "ssh://git@bitbucket.dev.harness.io:7999/repoOrg/repo.git"))
+        .isEqualTo("https://bitbucket.dev.harness.io/scm/repoOrg/repo");
   }
 }
