@@ -78,7 +78,7 @@ public class DelegateAgentModule extends AbstractModule {
     if (configuration.isGrpcServiceEnabled()) {
       install(DelegateServiceGrpcAgentClientModule.getInstance());
       install(
-          new DelegateGrpcServiceModule(configuration.getGrpcServiceConnectorPort(), configuration.getDelegateToken()));
+          new DelegateGrpcServiceModule(0, configuration.getDelegateToken()));
     }
 
     install(new DelegateTokensModule(configuration));

@@ -937,15 +937,15 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void stopGrpcService() {
-    if (delegateConfiguration.isGrpcServiceEnabled() && restartableServiceManager.isRunning()) {
+   /* if (delegateConfiguration.isGrpcServiceEnabled() && restartableServiceManager.isRunning()) {
       grpcServiceExecutor.submit(() -> restartableServiceManager.stop());
-    }
+    }*/
   }
 
   private void startGrpcService() {
-    if (delegateConfiguration.isGrpcServiceEnabled() && acquireTasks.get() && !restartableServiceManager.isRunning()) {
+   /* if (delegateConfiguration.isGrpcServiceEnabled() && acquireTasks.get() && !restartableServiceManager.isRunning()) {
       grpcServiceExecutor.submit(() -> { restartableServiceManager.start(); });
-    }
+    }*/
   }
 
   private void updateTasks() {
