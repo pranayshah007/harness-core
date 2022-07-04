@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -22,10 +23,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
 import io.harness.cdng.configfile.steps.IndividualConfigFileStep;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.harness.HarnessStoreFile;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
@@ -60,12 +61,8 @@ import org.mockito.Mock;
 @OwnedBy(CDP)
 public class IndividualConfigFileStepTest extends CDNGTestBase {
   private static final String IDENTIFIER = "identifier";
-  private static final String FILE_PATH = "file/path";
-  private static final String FILE_REFERENCE_WITH_ACCOUNT_SCOPE = "account.fileReference";
-  private static final String FILE_REFERENCE = "fileReference";
-  private static final String FILE_PATH_OVERRIDE = "file/path/override";
-  private static final String FILE_REFERENCE_OVERRIDE_WITH_ACCOUNT_SCOPE = "account.fileReferenceOverride";
-  private static final String FILE_REFERENCE_OVERRIDE = "fileReferenceOverride";
+  private static final String FILE_PATH = "/file/path";
+  private static final String FILE_PATH_OVERRIDE = "/file/path/override";
   private static final String MASTER = "master";
   private static final String COMMIT_ID = "commitId";
   private static final String CONNECTOR_REF = "connectorRef";
@@ -82,6 +79,7 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private ConnectorService connectorService;
   @Mock private FileStoreService fileStoreService;
+  @Mock private CDExpressionResolver cdExpressionResolver;
 
   @InjectMocks private IndividualConfigFileStep individualConfigFileStep;
 
@@ -103,8 +101,10 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
     when(executionSweepingOutputService.listOutputsWithGivenNameAndSetupIds(
              any(), eq(FAILED_CHILDREN_OUTPUT), anyList()))
         .thenReturn(Collections.emptyList());
-    when(fileStoreService.get(ACCOUNT_IDENTIFIER, null, null, FILE_REFERENCE, false))
+    when(fileStoreService.getWithChildrenByPath(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_PATH, false))
         .thenReturn(Optional.of(getFileStoreNode()));
+    doNothing().when(cdExpressionResolver).updateStoreConfigExpressions(any(), any());
 
     ConfigFileStepParameters stepParameters =
         ConfigFileStepParameters.builder().identifier(IDENTIFIER).order(0).spec(getConfigFileAttributes()).build();
@@ -120,11 +120,9 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
 
     assertThat(configFileOutcome.getStore().getKind()).isEqualTo(StoreConfigType.HARNESS.getDisplayName());
     HarnessStore store = (HarnessStore) configFileOutcome.getStore();
-    HarnessStoreFile harnessStoreFile = store.getFiles().getValue().get(0);
+    String harnessStoreFile = store.getFiles().getValue().get(0);
 
-    assertThat(harnessStoreFile.getPath().getValue()).isEqualTo(FILE_PATH);
-    assertThat(harnessStoreFile.getRef().getValue()).isEqualTo(FILE_REFERENCE_WITH_ACCOUNT_SCOPE);
-    assertThat(harnessStoreFile.getIsEncrypted().getValue()).isEqualTo(Boolean.FALSE);
+    assertThat(harnessStoreFile).isEqualTo(FILE_PATH);
   }
 
   private FileStoreNodeDTO getFileStoreNode() {
@@ -147,8 +145,10 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
     when(executionSweepingOutputService.listOutputsWithGivenNameAndSetupIds(
              any(), eq(FAILED_CHILDREN_OUTPUT), anyList()))
         .thenReturn(Collections.emptyList());
-    when(fileStoreService.get(ACCOUNT_IDENTIFIER, null, null, FILE_REFERENCE_OVERRIDE, false))
+    when(fileStoreService.getWithChildrenByPath(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_PATH_OVERRIDE, false))
         .thenReturn(Optional.of(getFileStoreNode()));
+    doNothing().when(cdExpressionResolver).updateStoreConfigExpressions(any(), any());
 
     ConfigFileAttributes spec = getConfigFileAttributes();
     ConfigFileStepParameters stepParameters = ConfigFileStepParameters.builder()
@@ -172,11 +172,9 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
 
     assertThat(configFileOutcome.getStore().getKind()).isEqualTo(StoreConfigType.HARNESS.getDisplayName());
     HarnessStore store = (HarnessStore) configFileOutcome.getStore();
-    HarnessStoreFile harnessStoreFile = store.getFiles().getValue().get(0);
+    String harnessStoreFile = store.getFiles().getValue().get(0);
 
-    assertThat(harnessStoreFile.getPath().getValue()).isEqualTo(FILE_PATH_OVERRIDE);
-    assertThat(harnessStoreFile.getRef().getValue()).isEqualTo(FILE_REFERENCE_OVERRIDE_WITH_ACCOUNT_SCOPE);
-    assertThat(harnessStoreFile.getIsEncrypted().getValue()).isEqualTo(Boolean.FALSE);
+    assertThat(harnessStoreFile).isEqualTo(FILE_PATH_OVERRIDE);
   }
 
   @Test
@@ -197,6 +195,7 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
                 .connector(ConnectorInfoDTO.builder().identifier(CONNECTOR_REF).name(CONNECTOR_NAME).build())
                 .entityValidityDetails(EntityValidityDetails.builder().valid(true).build())
                 .build()));
+    doNothing().when(cdExpressionResolver).updateStoreConfigExpressions(any(), any());
 
     ConfigFileAttributes spec = getConfigFileAttributesWithGitStore();
     ConfigFileStepParameters stepParameters =
@@ -245,13 +244,8 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
         .build();
   }
 
-  private ParameterField<List<HarnessStoreFile>> getFiles() {
-    return ParameterField.createValueField(
-        Collections.singletonList(HarnessStoreFile.builder()
-                                      .path(ParameterField.createValueField(FILE_PATH))
-                                      .ref(ParameterField.createValueField(FILE_REFERENCE_WITH_ACCOUNT_SCOPE))
-                                      .isEncrypted(ParameterField.createValueField(Boolean.FALSE))
-                                      .build()));
+  private ParameterField<List<String>> getFiles() {
+    return ParameterField.createValueField(Collections.singletonList(FILE_PATH));
   }
 
   private ConfigFileAttributes getConfigFileAttributesOverride() {
@@ -263,13 +257,8 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
         .build();
   }
 
-  private ParameterField<List<HarnessStoreFile>> getFilesOverride() {
-    return ParameterField.createValueField(
-        Collections.singletonList(HarnessStoreFile.builder()
-                                      .path(ParameterField.createValueField(FILE_PATH_OVERRIDE))
-                                      .ref(ParameterField.createValueField(FILE_REFERENCE_OVERRIDE_WITH_ACCOUNT_SCOPE))
-                                      .isEncrypted(ParameterField.createValueField(Boolean.FALSE))
-                                      .build()));
+  private ParameterField<List<String>> getFilesOverride() {
+    return ParameterField.createValueField(Collections.singletonList(FILE_PATH_OVERRIDE));
   }
 
   private ConfigFileAttributes getConfigFileAttributesWithGitStore() {

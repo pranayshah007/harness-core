@@ -30,7 +30,7 @@ import lombok.experimental.SuperBuilder;
 @FieldNameConstants(innerTypeName = "SplunkMetricSampleDataCollectionRequestKeys")
 @OwnedBy(CV)
 public class SplunkMetricSampleDataCollectionRequest extends SplunkDataCollectionRequest {
-  private static int DATA_COLLECTION_DURATION_IN_DAYS = 7;
+  private static int DATA_COLLECTION_DURATION_IN_DAYS = 1;
 
   @NotNull private String query;
 

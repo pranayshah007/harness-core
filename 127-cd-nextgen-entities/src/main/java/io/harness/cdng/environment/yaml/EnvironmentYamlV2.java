@@ -8,6 +8,7 @@
 package io.harness.cdng.environment.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -20,6 +21,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
@@ -49,13 +51,27 @@ public class EnvironmentYamlV2 implements Visitable {
   @Pattern(regexp = NGRegexValidatorConstants.RUNTIME_OR_FIXED_IDENTIFIER_PATTERN)
   private ParameterField<String> environmentRef;
 
-  List<InfraStructureDefinitionYaml> infrastructureDefinitions;
+  /*
+  Deploy to all underlying infrastructures (or gitops clusters)
+   */
+  boolean deployToAll;
+
+  @ApiModelProperty(dataType = SwaggerConstants.INFRASTRUCTURE_DEFINITION_YAML_NODE_LIST_CLASSPATH)
+  @YamlSchemaTypes({runtime})
+  ParameterField<List<InfraStructureDefinitionYaml>> infrastructureDefinitions;
 
   // environmentInputs
-  Map<String, Object> environmentInputs;
-  Map<String, Object> serviceOverrideInputs;
-  @NotNull boolean deployToAll;
-  List<ClusterYaml> gitOpsClusters;
+  @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)
+  @YamlSchemaTypes(runtime)
+  ParameterField<Map<String, Object>> environmentInputs;
+
+  @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)
+  @YamlSchemaTypes(runtime)
+  ParameterField<Map<String, Object>> serviceOverrideInputs;
+
+  @ApiModelProperty(dataType = SwaggerConstants.CLUSTER_YAML_NODE_LIST_CLASSPATH)
+  @YamlSchemaTypes({runtime})
+  ParameterField<List<ClusterYaml>> gitOpsClusters;
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;

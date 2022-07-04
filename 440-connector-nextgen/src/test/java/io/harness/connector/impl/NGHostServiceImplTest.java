@@ -48,6 +48,7 @@ public class NGHostServiceImplTest extends ConnectorsTestBase {
   private static final String VM = "VM";
   private static final String accountIdentifier = "accountIdentifier";
   private static final String identifier = "identifier";
+  private static final String scopedIdentifier = "account.identifier";
   private static final String name = "name";
   @Inject @InjectMocks private NGHostServiceImpl hostService;
   @Inject @InjectMocks private DefaultConnectorServiceImpl connectorService;
@@ -59,7 +60,7 @@ public class NGHostServiceImplTest extends ConnectorsTestBase {
     createConnectorWithHosts();
     PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(2).build();
     Page<HostDTO> pageResponse =
-        hostService.filterHostsByConnector(accountIdentifier, null, null, identifier, null, pageRequest);
+        hostService.filterHostsByConnector(accountIdentifier, null, null, scopedIdentifier, null, pageRequest);
 
     assertThat(pageResponse.getTotalElements()).isEqualTo(8);
     assertThat(pageResponse.getTotalPages()).isEqualTo(4);
@@ -76,7 +77,7 @@ public class NGHostServiceImplTest extends ConnectorsTestBase {
     filter.setType(HostFilterType.HOST_NAMES);
     filter.setFilter("host1, host2,host3\nhost4\nhost5");
     Page<HostDTO> pageResponse =
-        hostService.filterHostsByConnector(accountIdentifier, null, null, identifier, filter, pageRequest);
+        hostService.filterHostsByConnector(accountIdentifier, null, null, scopedIdentifier, filter, pageRequest);
 
     assertThat(pageResponse.getTotalElements()).isEqualTo(5);
     assertThat(pageResponse.getTotalPages()).isEqualTo(3);
@@ -93,7 +94,7 @@ public class NGHostServiceImplTest extends ConnectorsTestBase {
     filter.setType(HostFilterType.HOST_ATTRIBUTES);
     filter.setFilter("region:west, hostType:DB\n hostType:VM");
     Page<HostDTO> pageResponse =
-        hostService.filterHostsByConnector(accountIdentifier, null, null, identifier, filter, pageRequest);
+        hostService.filterHostsByConnector(accountIdentifier, null, null, scopedIdentifier, filter, pageRequest);
 
     assertThat(pageResponse.getTotalElements()).isEqualTo(8);
     assertThat(pageResponse.getTotalPages()).isEqualTo(4);
@@ -110,7 +111,7 @@ public class NGHostServiceImplTest extends ConnectorsTestBase {
     filter.setType(HostFilterType.HOST_ATTRIBUTES);
     filter.setFilter("region:west\nhostType:DB");
     Page<HostDTO> pageResponse =
-        hostService.filterHostsByConnector(accountIdentifier, null, null, identifier, filter, pageRequest);
+        hostService.filterHostsByConnector(accountIdentifier, null, null, scopedIdentifier, filter, pageRequest);
 
     assertThat(pageResponse.getTotalElements()).isEqualTo(6);
     assertThat(pageResponse.getTotalPages()).isEqualTo(3);
@@ -125,8 +126,8 @@ public class NGHostServiceImplTest extends ConnectorsTestBase {
   private ConnectorDTO createPdcConnectorRequestDTO() {
     PhysicalDataCenterConnectorDTO connectorDTO = PhysicalDataCenterConnectorDTO.builder().hosts(createHosts()).build();
     ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder()
-                                         .name(NGHostServiceImplTest.name)
-                                         .identifier(NGHostServiceImplTest.identifier)
+                                         .name(name)
+                                         .identifier(identifier)
                                          .connectorType(ConnectorType.PDC)
                                          .connectorConfig(connectorDTO)
                                          .build();

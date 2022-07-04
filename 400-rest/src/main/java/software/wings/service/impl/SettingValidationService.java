@@ -512,7 +512,8 @@ public class SettingValidationService {
       rancherHelperService.validateRancherConfig(rancherConfig);
     } catch (Exception e) {
       log.error("Exception while validating RancherConfig", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), USER);
+      throw new InvalidRequestException(
+          "Please provide the valid Rancher URL and Bearer Token. " + ExceptionUtils.getMessage(e), USER);
     }
     return true;
   }
@@ -653,6 +654,8 @@ public class SettingValidationService {
             .useLatestChartMuseumVersion(
                 featureFlagService.isEnabled(USE_LATEST_CHARTMUSEUM_VERSION, settingAttribute.getAccountId()))
             .useOCIHelmRepo(featureFlagService.isEnabled(FeatureName.HELM_OCI_SUPPORT, settingAttribute.getAccountId()))
+            .useNewHelmBinary(
+                featureFlagService.isEnabled(FeatureName.HELM_VERSION_3_8_0, settingAttribute.getAccountId()))
             .build();
 
     String connectorId = ((HelmRepoConfig) settingAttribute.getValue()).getConnectorId();

@@ -28,6 +28,8 @@ import io.harness.aws.AWSCloudformationClient;
 import io.harness.aws.AWSCloudformationClientImpl;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
+import io.harness.awscli.AwsCliClient;
+import io.harness.awscli.AwsCliClientImpl;
 import io.harness.azure.client.AzureAuthorizationClient;
 import io.harness.azure.client.AzureAutoScaleSettingsClient;
 import io.harness.azure.client.AzureBlueprintClient;
@@ -53,6 +55,8 @@ import io.harness.cdng.secrets.tasks.SSHConfigValidationDelegateTask;
 import io.harness.cdng.secrets.tasks.WinRmConfigValidationDelegateTask;
 import io.harness.cistatus.service.GithubService;
 import io.harness.cistatus.service.GithubServiceImpl;
+import io.harness.cistatus.service.azurerepo.AzureRepoService;
+import io.harness.cistatus.service.azurerepo.AzureRepoServiceImpl;
 import io.harness.cistatus.service.bitbucket.BitbucketService;
 import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
 import io.harness.cistatus.service.gitlab.GitlabService;
@@ -115,6 +119,7 @@ import io.harness.delegate.message.MessengerType;
 import io.harness.delegate.provider.DelegateConfigurationServiceProviderImpl;
 import io.harness.delegate.provider.DelegatePropertiesServiceProviderImpl;
 import io.harness.delegate.serverless.ServerlessAwsLambdaDeployCommandTaskHandler;
+import io.harness.delegate.serverless.ServerlessAwsLambdaPrepareRollbackCommandTaskHandler;
 import io.harness.delegate.serverless.ServerlessAwsLambdaRollbackCommandTaskHandler;
 import io.harness.delegate.serverless.ServerlessCommandTaskHandler;
 import io.harness.delegate.service.DelegateAgentService;
@@ -164,9 +169,14 @@ import io.harness.delegate.task.aws.S3FetchFilesTaskNG;
 import io.harness.delegate.task.azure.AzureValidationHandler;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
 import io.harness.delegate.task.azure.appservice.webapp.AzureWebAppTaskNG;
+import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppFetchPreDeploymentDataRequestHandler;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppRequestHandler;
+import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppRollbackRequestHandler;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppSlotDeploymentRequestHandler;
+import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppSlotSwapRequestHandler;
+import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppTrafficShiftRequestHandler;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType;
+import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppTaskRequest;
 import io.harness.delegate.task.azure.arm.AzureARMTaskParameters;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceProvider;
 import io.harness.delegate.task.cek8s.CEKubernetesTestConnectionDelegateTask;
@@ -220,6 +230,8 @@ import io.harness.delegate.task.k8s.KubernetesValidationHandler;
 import io.harness.delegate.task.k8s.exception.KubernetesApiClientRuntimeExceptionHandler;
 import io.harness.delegate.task.k8s.exception.KubernetesApiExceptionHandler;
 import io.harness.delegate.task.k8s.exception.KubernetesCliRuntimeExceptionHandler;
+import io.harness.delegate.task.ldap.NGLdapGroupSearchTask;
+import io.harness.delegate.task.ldap.NGLdapValidateConnectionSettingTask;
 import io.harness.delegate.task.manifests.CustomManifestFetchTask;
 import io.harness.delegate.task.manifests.CustomManifestValuesFetchTask;
 import io.harness.delegate.task.nexus.NexusDelegateTask;
@@ -287,6 +299,8 @@ import io.harness.encryptors.clients.HashicorpVaultEncryptor;
 import io.harness.encryptors.clients.LocalEncryptor;
 import io.harness.exception.DelegateServiceDriverExceptionHandler;
 import io.harness.exception.ExplanationException;
+import io.harness.exception.KeyManagerBuilderException;
+import io.harness.exception.TrustManagerBuilderException;
 import io.harness.exception.exceptionmanager.ExceptionModule;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.gcp.client.GcpClient;
@@ -323,10 +337,13 @@ import io.harness.perpetualtask.manifest.ManifestRepositoryService;
 import io.harness.perpetualtask.polling.manifest.HelmChartCollectionService;
 import io.harness.perpetualtask.polling.manifest.ManifestCollectionService;
 import io.harness.secretmanagerclient.EncryptDecryptHelper;
+import io.harness.secrets.SecretDecryptor;
 import io.harness.secrets.SecretsDelegateCacheHelperService;
 import io.harness.secrets.SecretsDelegateCacheHelperServiceImpl;
 import io.harness.secrets.SecretsDelegateCacheService;
 import io.harness.secrets.SecretsDelegateCacheServiceImpl;
+import io.harness.security.X509KeyManagerBuilder;
+import io.harness.security.X509TrustManagerBuilder;
 import io.harness.security.encryption.DelegateDecryptionService;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.service.ScmServiceClient;
@@ -578,6 +595,7 @@ import software.wings.service.impl.newrelic.NewRelicDelgateServiceImpl;
 import software.wings.service.impl.security.DelegateDecryptionServiceImpl;
 import software.wings.service.impl.security.EncryptionServiceImpl;
 import software.wings.service.impl.security.SecretDecryptionServiceImpl;
+import software.wings.service.impl.security.SecretDecryptorImpl;
 import software.wings.service.impl.security.SecretManagementDelegateServiceImpl;
 import software.wings.service.impl.servicenow.ServiceNowDelegateServiceImpl;
 import software.wings.service.impl.splunk.SplunkDelegateServiceImpl;
@@ -656,6 +674,8 @@ import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 import java.io.IOException;
 import java.time.Clock;
 import java.util.concurrent.ExecutorService;
@@ -664,8 +684,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.TrustManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
@@ -870,6 +894,28 @@ public class DelegateModule extends AbstractModule {
                                                 .build());
   }
 
+  @Provides
+  @Singleton
+  public DefaultAsyncHttpClient defaultAsyncHttpClient()
+      throws TrustManagerBuilderException, KeyManagerBuilderException, SSLException {
+    TrustManager trustManager = new X509TrustManagerBuilder().trustAllCertificates().build();
+    SslContextBuilder sslContextBuilder = SslContextBuilder.forClient().trustManager(trustManager);
+
+    if (StringUtils.isNotEmpty(this.configuration.getClientCertificateFilePath())
+        && StringUtils.isNotEmpty(this.configuration.getClientCertificateKeyFilePath())) {
+      KeyManager keyManager = new X509KeyManagerBuilder()
+                                  .withClientCertificateFromFile(this.configuration.getClientCertificateFilePath(),
+                                      this.configuration.getClientCertificateKeyFilePath())
+                                  .build();
+      sslContextBuilder.keyManager(keyManager);
+    }
+
+    SslContext sslContext = sslContextBuilder.build();
+
+    return new DefaultAsyncHttpClient(
+        new DefaultAsyncHttpClientConfig.Builder().setUseProxyProperties(true).setSslContext(sslContext).build());
+  }
+
   @Override
   protected void configure() {
     bindDelegateTasks();
@@ -902,12 +948,8 @@ public class DelegateModule extends AbstractModule {
     bind(BambooBuildService.class).to(BambooBuildServiceImpl.class);
     bind(DockerBuildService.class).to(DockerBuildServiceImpl.class);
     bind(BambooService.class).to(BambooServiceImpl.class);
+    // DefaultAsyncHttpClient is being bound using a separate function (as this function can't throw)
     bind(AsyncHttpClient.class).to(DefaultAsyncHttpClient.class);
-    bind(DefaultAsyncHttpClient.class)
-        .toInstance(new DefaultAsyncHttpClient(new DefaultAsyncHttpClientConfig.Builder()
-                                                   .setUseProxyProperties(true)
-                                                   .setUseInsecureTrustManager(true)
-                                                   .build()));
     bind(AwsClusterService.class).to(AwsClusterServiceImpl.class);
     bind(EcsContainerService.class).to(EcsContainerServiceImpl.class);
     bind(GkeClusterService.class).to(GkeClusterServiceImpl.class);
@@ -1012,6 +1054,7 @@ public class DelegateModule extends AbstractModule {
     bind(TerraformClient.class).to(TerraformClientImpl.class);
     bind(CloudformationBaseHelper.class).to(CloudformationBaseHelperImpl.class);
     bind(HelmDeployServiceNG.class).to(HelmDeployServiceImplNG.class);
+    bind(AwsCliClient.class).to(AwsCliClientImpl.class);
 
     MapBinder<String, CommandUnitExecutorService> serviceCommandExecutorServiceMapBinder =
         MapBinder.newMapBinder(binder(), String.class, CommandUnitExecutorService.class);
@@ -1165,6 +1208,7 @@ public class DelegateModule extends AbstractModule {
     bind(GithubService.class).to(GithubServiceImpl.class);
     bind(GitlabService.class).to(GitlabServiceImpl.class);
     bind(BitbucketService.class).to(BitbucketServiceImpl.class);
+    bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
     bind(DockerRestClientFactory.class).to(DockerRestClientFactoryImpl.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
@@ -1269,12 +1313,23 @@ public class DelegateModule extends AbstractModule {
         .to(ServerlessAwsLambdaDeployCommandTaskHandler.class);
     serverlessTaskTypeToTaskHandlerMap.addBinding(ServerlessCommandType.SERVERLESS_AWS_LAMBDA_ROLLBACK.name())
         .to(ServerlessAwsLambdaRollbackCommandTaskHandler.class);
+    serverlessTaskTypeToTaskHandlerMap.addBinding(ServerlessCommandType.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK.name())
+        .to(ServerlessAwsLambdaPrepareRollbackCommandTaskHandler.class);
 
     // Azure Web App NG
-    MapBinder<String, AzureWebAppRequestHandler> azureWebAppRequestTypeToRequestHandlerMap =
-        MapBinder.newMapBinder(binder(), String.class, AzureWebAppRequestHandler.class);
+    MapBinder<String, AzureWebAppRequestHandler<? extends AzureWebAppTaskRequest>>
+        azureWebAppRequestTypeToRequestHandlerMap = MapBinder.newMapBinder(binder(), new TypeLiteral<String>() {},
+            new TypeLiteral<AzureWebAppRequestHandler<? extends AzureWebAppTaskRequest>>() {});
     azureWebAppRequestTypeToRequestHandlerMap.addBinding(AzureWebAppRequestType.SLOT_DEPLOYMENT.name())
         .to(AzureWebAppSlotDeploymentRequestHandler.class);
+    azureWebAppRequestTypeToRequestHandlerMap.addBinding(AzureWebAppRequestType.ROLLBACK.name())
+        .to(AzureWebAppRollbackRequestHandler.class);
+    azureWebAppRequestTypeToRequestHandlerMap.addBinding(AzureWebAppRequestType.FETCH_PRE_DEPLOYMENT_DATA.name())
+        .to(AzureWebAppFetchPreDeploymentDataRequestHandler.class);
+    azureWebAppRequestTypeToRequestHandlerMap.addBinding(AzureWebAppRequestType.SLOT_TRAFFIC_SHIFT.name())
+        .to(AzureWebAppTrafficShiftRequestHandler.class);
+    azureWebAppRequestTypeToRequestHandlerMap.addBinding(AzureWebAppRequestType.SWAP_SLOTS.name())
+        .to(AzureWebAppSlotSwapRequestHandler.class);
 
     // Ssh and WinRM task handlers
     MapBinder<String, CommandHandler> commandUnitHandlers =
@@ -1394,6 +1449,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.LDAP_AUTHENTICATION).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.LDAP_SEARCH_GROUPS).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.LDAP_FETCH_GROUP).toInstance(ServiceImplDelegateTask.class);
+    mapBinder.addBinding(TaskType.NG_LDAP_TEST_CONN_SETTINGS).toInstance(NGLdapValidateConnectionSettingTask.class);
     mapBinder.addBinding(TaskType.APM_VALIDATE_CONNECTOR_TASK).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.CUSTOM_LOG_VALIDATE_CONNECTOR_TASK).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.APM_GET_TASK).toInstance(ServiceImplDelegateTask.class);
@@ -1491,6 +1547,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.NG_VAULT_RENEW_TOKEN).toInstance(NGVaultRenewalTask.class);
     mapBinder.addBinding(TaskType.NG_VAULT_RENEW_APP_ROLE_TOKEN).toInstance(NGVaultRenewalAppRoleTask.class);
     mapBinder.addBinding(TaskType.NG_VAULT_FETCHING_TASK).toInstance(NGVaultFetchEngineTask.class);
+    mapBinder.addBinding(TaskType.NG_LDAP_SEARCH_GROUPS).toInstance(NGLdapGroupSearchTask.class);
     mapBinder.addBinding(TaskType.NG_AZURE_VAULT_FETCH_ENGINES).toInstance(NGAzureKeyVaultFetchEngineTask.class);
     mapBinder.addBinding(TaskType.VALIDATE_SECRET_MANAGER_CONFIGURATION)
         .toInstance(ValidateSecretManagerConfigurationTask.class);
@@ -1652,6 +1709,7 @@ public class DelegateModule extends AbstractModule {
     bind(SecretDecryptionService.class).to(SecretDecryptionServiceImpl.class);
     bind(DelegateDecryptionService.class).to(DelegateDecryptionServiceImpl.class);
     bind(EncryptDecryptHelper.class).to(EncryptDecryptHelperImpl.class);
+    bind(SecretDecryptor.class).to(SecretDecryptorImpl.class);
 
     binder()
         .bind(VaultEncryptor.class)

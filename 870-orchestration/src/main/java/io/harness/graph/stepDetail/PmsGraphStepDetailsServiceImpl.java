@@ -132,4 +132,14 @@ public class PmsGraphStepDetailsServiceImpl implements PmsGraphStepDetailsServic
     }
     return nodeExecutionsInfo.getConcurrentChildInstance();
   }
+
+  @Override
+  public ConcurrentChildInstance fetchConcurrentChildInstance(String nodeExecutionId) {
+    Criteria criteria = Criteria.where(NodeExecutionsInfoKeys.nodeExecutionId).is(nodeExecutionId);
+    NodeExecutionsInfo nodeExecutionsInfo = mongoTemplate.findOne(new Query(criteria), NodeExecutionsInfo.class);
+    if (nodeExecutionsInfo == null) {
+      return null;
+    }
+    return nodeExecutionsInfo.getConcurrentChildInstance();
+  }
 }

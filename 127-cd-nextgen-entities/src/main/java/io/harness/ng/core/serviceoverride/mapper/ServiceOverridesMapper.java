@@ -35,9 +35,8 @@ public class ServiceOverridesMapper {
             .yaml(serviceOverrideRequestDTO.getYaml())
             .build();
 
-    NGServiceOverrideConfig serviceOverrideConfig =
-        NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(serviceOverridesEntity);
-    serviceOverridesEntity.setYaml(NGServiceOverrideEntityConfigMapper.toYaml(serviceOverrideConfig));
+    // validating the yaml
+    NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(serviceOverridesEntity);
     return serviceOverridesEntity;
   }
 

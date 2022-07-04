@@ -16,6 +16,8 @@ func convertAction(a scm.Action) pb.Action {
 	switch a {
 	case scm.ActionCreate:
 		return pb.Action_CREATE
+	case scm.ActionEdit:
+		return pb.Action_EDIT
 	case scm.ActionUpdate:
 		return pb.Action_UPDATE
 	case scm.ActionDelete:
@@ -34,7 +36,7 @@ func convertAction(a scm.Action) pb.Action {
 		return pb.Action_SYNC
 	case scm.ActionMerge:
 		return pb.Action_MERGE
-	case scm.ActionEdit, scm.ActionUnknown:
+	case scm.ActionUnknown:
 		return pb.Action_UNKNOWN
 	default:
 		return pb.Action_UNKNOWN

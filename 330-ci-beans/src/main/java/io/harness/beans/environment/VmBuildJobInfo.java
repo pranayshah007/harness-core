@@ -7,6 +7,7 @@
 
 package io.harness.beans.environment;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.yaml.core.variables.NGVariable;
@@ -28,6 +29,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Value
 @Builder
 @TypeAlias("vmBuildJobInfo")
+@RecasterAlias("io.harness.beans.environment.VmBuildJobInfo")
 public class VmBuildJobInfo implements BuildJobEnvInfo {
   @NotEmpty String workDir;
   CIExecutionArgs ciExecutionArgs;

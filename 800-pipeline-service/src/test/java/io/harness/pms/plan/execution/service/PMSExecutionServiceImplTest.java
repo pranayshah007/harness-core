@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAMARTH;
+import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -23,12 +24,15 @@ import io.harness.ModuleType;
 import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
 import io.harness.repositories.executions.PmsExecutionSummaryRespository;
 import io.harness.rule.Owner;
 
@@ -55,6 +59,7 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
   @InjectMocks private PMSExecutionServiceImpl pmsExecutionService;
   @Mock private PmsGitSyncHelper pmsGitSyncHelper;
   @Mock private ValidateAndMergeHelper validateAndMergeHelper;
+  @Mock private PlanExecutionMetadataService planExecutionMetadataService;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -65,6 +70,7 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
   private final Boolean PIPELINE_DELETED = Boolean.FALSE;
   private String inputSetYaml;
   private String template;
+  private String executionYaml;
 
   PipelineExecutionSummaryEntity executionSummaryEntity;
   PipelineEntity pipelineEntity;
@@ -75,6 +81,10 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
     String inputSetFilename = "inputSet1.yml";
     inputSetYaml =
         Resources.toString(Objects.requireNonNull(classLoader.getResource(inputSetFilename)), StandardCharsets.UTF_8);
+
+    String executionYamlFilename = "execution-yaml.yaml";
+    executionYaml = Resources.toString(
+        Objects.requireNonNull(classLoader.getResource(executionYamlFilename)), StandardCharsets.UTF_8);
 
     String templateFilename = "pipeline-extensive-template.yml";
     template =
@@ -284,5 +294,35 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID);
 
     assertThat(pipelineExecutionSummaryEntity).isEqualTo(executionSummaryEntity);
+  }
+
+  @Test
+  @Owner(developers = SOUMYAJIT)
+  @Category(UnitTests.class)
+  public void testGetExecutionMetadata() {
+    String planExecutionID = "tempID";
+
+    PlanExecutionMetadata planExecutionMetadata =
+        PlanExecutionMetadata.builder().yaml(executionYaml).planExecutionId(planExecutionID).build();
+
+    doReturn(Optional.of(planExecutionMetadata))
+        .when(planExecutionMetadataService)
+        .findByPlanExecutionId(planExecutionID);
+
+    ExecutionDataResponseDTO executionData = pmsExecutionService.getExecutionData(planExecutionID);
+
+    assertThat(executionData.getExecutionYaml()).isEqualTo(planExecutionMetadata.getYaml());
+    verify(planExecutionMetadataService, times(1)).findByPlanExecutionId(planExecutionID);
+  }
+
+  @Test
+  @Owner(developers = SOUMYAJIT)
+  @Category(UnitTests.class)
+  public void testGetExecutionMetadataFailure() {
+    String planExecutionID = "tempID";
+
+    assertThatThrownBy(() -> pmsExecutionService.getExecutionData(planExecutionID))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format("Execution with id [%s] is not present or deleted", planExecutionID));
   }
 }

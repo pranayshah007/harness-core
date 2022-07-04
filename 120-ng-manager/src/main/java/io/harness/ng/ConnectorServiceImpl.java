@@ -80,6 +80,7 @@ import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import javax.validation.constraints.NotNull;
@@ -760,5 +761,11 @@ public class ConnectorServiceImpl implements ConnectorService {
   public ConnectorResponseDTO updateGitFilePath(
       ConnectorDTO connectorDTO, String accountIdentifier, String newFilePath) {
     return defaultConnectorService.updateGitFilePath(connectorDTO, accountIdentifier, newFilePath);
+  }
+
+  @Override
+  public List<Map<String, String>> getAttributes(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers) {
+    return defaultConnectorService.getAttributes(accountId, orgIdentifier, projectIdentifier, connectorIdentifiers);
   }
 }

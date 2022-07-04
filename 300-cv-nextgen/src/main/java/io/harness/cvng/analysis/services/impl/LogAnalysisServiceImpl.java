@@ -212,7 +212,6 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
         .project(LogAnalysisClusterKeys.analysisMinute, true)
         .project(LogAnalysisClusterKeys.label, true)
         .project(LogAnalysisClusterKeys.text, true)
-        .project(LogAnalysisClusterKeys.compressedText, true)
         .project(LogAnalysisClusterKeys.frequencyTrend, true)
         .project(LogAnalysisClusterKeys.firstSeenTime, true)
         .asList(new FindOptions().maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS));
@@ -409,18 +408,5 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
         .field(LogAnalysisResultKeys.analysisEndTime)
         .lessThanOrEq(endTime)
         .asList(new FindOptions().maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS));
-  }
-
-  @Override
-  public LogAnalysisResult getLatestAnalysisForVerificationTaskId(
-      String verificationTaskId, Instant startTime, Instant endTime) {
-    return hPersistence.createQuery(LogAnalysisResult.class, excludeAuthority)
-        .filter(LogAnalysisResultKeys.verificationTaskId, verificationTaskId)
-        .field(LogAnalysisResultKeys.analysisEndTime)
-        .greaterThanOrEq(startTime)
-        .field(LogAnalysisResultKeys.analysisEndTime)
-        .lessThanOrEq(endTime)
-        .order(Sort.descending(LogAnalysisResultKeys.analysisEndTime))
-        .get();
   }
 }

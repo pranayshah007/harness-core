@@ -641,4 +641,28 @@ public class CIDashboardsApisTest extends CategoryTest {
         UsageDataDTO.builder().count(1).displayName("Last 30 Days").references(usageReferences).build();
     assertThat(usage).isEqualTo(ciOverviewDashboardServiceImpl.getActiveCommitter("accountId", 0L));
   }
+
+  @Test
+  @Owner(developers = JAMIE)
+  @Category(UnitTests.class)
+  public void testGetActiveCommittersCount() throws SQLException {
+    final long expectedResult = 100L;
+    ResultSet resultSet = mock(ResultSet.class);
+    Connection connection = mock(Connection.class);
+    PreparedStatement statement = mock(PreparedStatement.class);
+    when(statement.executeQuery()).thenReturn(resultSet);
+    when(connection.prepareStatement(any())).thenReturn(statement);
+    when(timeScaleDBService.getDBConnection()).thenReturn(connection);
+    final int[] count = {0};
+    when(resultSet.next()).then((Answer<Boolean>) invocation -> {
+      if (count[0] <= 1) {
+        count[0]++;
+        return true;
+      }
+      return false;
+    });
+    when(resultSet.getLong(1)).then((Answer<Long>) invocation -> expectedResult);
+
+    assertThat(expectedResult).isEqualTo(ciOverviewDashboardServiceImpl.getActiveCommitterCount("accountId"));
+  }
 }

@@ -268,7 +268,7 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
         .filter(YamlChangeSetKeys.queueKey, queueKey)
         .filter(YamlChangeSetKeys.status, Status.QUEUED)
         .project(YamlChangeSetKeys.gitFileChanges, false)
-        .order(YamlChangeSet.CREATED_AT_KEY)
+        .order(YamlChangeSetKeys.queuedOn)
         .get();
   }
 

@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
+import io.harness.beans.SortOrder;
 import io.harness.beans.SortOrder.OrderType;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.eraro.ErrorCode;
@@ -438,12 +439,14 @@ public class InstanceServiceImpl implements InstanceService {
 
   @Override
   public List<SyncStatus> getSyncStatus(String appId, String serviceId, String envId) {
+    log.info("get sync status params APPID :{}, ServiceId:{}, EnvId:{}", appId, serviceId, envId);
     PageRequest<SyncStatus> pageRequest = aPageRequest()
                                               .addFilter("appId", EQ, appId)
                                               .addFilter("serviceId", EQ, serviceId)
                                               .addFilter("envId", EQ, envId)
                                               .build();
     PageResponse<SyncStatus> response = wingsPersistence.query(SyncStatus.class, pageRequest);
+    log.info("InfraMappingId from SyncStatus: {}", response.getResponse());
     return response.getResponse();
   }
 
@@ -482,5 +485,16 @@ public class InstanceServiceImpl implements InstanceService {
         .filter(InstanceKeys.infraMappingId, infraMappingId)
         .filter(InstanceKeys.isDeleted, Boolean.FALSE)
         .count();
+  }
+
+  @Override
+  public Instance getLastDiscoveredInstance(String appId, String infrastructureDefinitionId) {
+    PageRequest<Instance> pageRequest = new PageRequest<>();
+    pageRequest.addFilter(InstanceKeys.infraMappingId, Operator.EQ, infrastructureDefinitionId);
+    pageRequest.addFilter(InstanceKeys.appId, Operator.EQ, appId);
+    pageRequest.addFilter(InstanceKeys.lastWorkflowExecutionId, Operator.EXISTS);
+    pageRequest.addOrder(SortOrder.Builder.aSortOrder().withField(InstanceKeys.lastUpdatedAt, OrderType.DESC).build());
+    pageRequest.setLimit("1");
+    return wingsPersistence.convertToQuery(Instance.class, pageRequest).get();
   }
 }

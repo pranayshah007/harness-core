@@ -24,20 +24,20 @@ import io.harness.rule.Owner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(CDP)
 public class NgAzureLogCallbackProviderTest extends CategoryTest {
   @Mock private ILogStreamingTaskClient logStreamingTaskClient;
-  private final CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
 
-  @InjectMocks private NgAzureLogCallbackProvider logCallbackProvider;
+  private NgAzureLogCallbackProvider logCallbackProvider;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+    logCallbackProvider =
+        new NgAzureLogCallbackProvider(logStreamingTaskClient, CommandUnitsProgress.builder().build());
   }
 
   @Test

@@ -118,7 +118,7 @@ public class WinRMCommandUnitExecutorServiceImpl implements CommandUnitExecutorS
               .commandUnitName(commandUnit.getName())
               .executionResult(commandExecutionStatus)
               .build());
-      throw new WingsException(ErrorCode.SOCKET_CONNECTION_TIMEOUT);
+      throw new WingsException(ErrorCode.WINRM_COMMAND_EXECUTION_TIMEOUT);
     } catch (ExecutionException e) {
       if (e.getCause() instanceof WingsException) {
         WingsException ex = (WingsException) e.getCause();

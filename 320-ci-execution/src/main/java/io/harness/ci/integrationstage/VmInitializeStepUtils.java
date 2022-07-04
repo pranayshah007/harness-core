@@ -9,10 +9,10 @@ package io.harness.ci.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
-import static io.harness.common.CIExecutionConstants.OSX_STEP_MOUNT_PATH;
-import static io.harness.common.CIExecutionConstants.SHARED_VOLUME_PREFIX;
-import static io.harness.common.CIExecutionConstants.STEP_MOUNT_PATH;
-import static io.harness.common.CIExecutionConstants.STEP_VOLUME;
+import static io.harness.ci.commonconstants.CIExecutionConstants.OSX_STEP_MOUNT_PATH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.SHARED_VOLUME_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_MOUNT_PATH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_VOLUME;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -36,10 +36,11 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
+import io.harness.ci.buildstate.PluginSettingUtils;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.utils.ValidationUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
-import io.harness.ff.CIFeatureFlagService;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
@@ -47,7 +48,6 @@ import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.stateutils.buildstate.PluginSettingUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -64,6 +64,7 @@ import org.apache.commons.lang3.StringUtils;
 @Deprecated
 public class VmInitializeStepUtils {
   @Inject CIFeatureFlagService featureFlagService;
+  @Inject ValidationUtils validationUtils;
 
   public BuildJobEnvInfo getInitializeStepInfoBuilder(StageElementConfig stageElementConfig,
       Infrastructure infrastructure, CIExecutionArgs ciExecutionArgs, List<ExecutionWrapperConfig> steps,
@@ -102,10 +103,10 @@ public class VmInitializeStepUtils {
     if (integrationStageConfig.getServiceDependencies() != null
         && integrationStageConfig.getServiceDependencies().getValue() != null) {
       serviceDependencies = integrationStageConfig.getServiceDependencies().getValue();
-      ValidationUtils.validateVmInfraDependencies(serviceDependencies);
+      validationUtils.validateVmInfraDependencies(serviceDependencies);
     }
 
-    OSType os = getOS(infrastructure);
+    OSType os = getVmOS(infrastructure);
     Map<String, String> volumeToMountPath = getVolumeToMountPath(integrationStageConfig.getSharedPaths(), os);
     return VmBuildJobInfo.builder()
         .ciExecutionArgs(ciExecutionArgs)
@@ -124,7 +125,7 @@ public class VmInitializeStepUtils {
     return STEP_MOUNT_PATH;
   }
 
-  private OSType getOS(Infrastructure infrastructure) {
+  public static OSType getVmOS(Infrastructure infrastructure) {
     if (infrastructure.getType() != Infrastructure.Type.VM) {
       throw new CIStageExecutionException(format("Invalid infrastructure type: %s", infrastructure.getType()));
     }

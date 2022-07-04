@@ -7,8 +7,10 @@
 
 package software.wings.service.impl;
 
+import static io.harness.beans.FeatureName.USE_IMMUTABLE_DELEGATE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.delegate.beans.DelegateType.KUBERNETES;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANUPAM;
@@ -16,9 +18,11 @@ import static io.harness.rule.OwnerRule.ARPIT;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.GAURAV;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.JENNY;
+import static io.harness.rule.OwnerRule.JOHANNES;
 import static io.harness.rule.OwnerRule.MARKO;
 import static io.harness.rule.OwnerRule.NICOLAS;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
@@ -57,6 +61,7 @@ import io.harness.audit.ResourceTypeConstants;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureFlag;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.Delegate;
@@ -67,6 +72,7 @@ import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateInitializationDetails;
 import io.harness.delegate.beans.DelegateInstanceStatus;
+import io.harness.delegate.beans.DelegateMtlsEndpoint;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateSetupDetails;
@@ -85,6 +91,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.events.DelegateGroupDeleteEvent;
 import io.harness.delegate.events.DelegateGroupUpsertEvent;
 import io.harness.delegate.events.DelegateUnregisterEvent;
+import io.harness.delegate.service.DelegateVersionService;
 import io.harness.delegate.task.http.HttpTaskParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.response.CEK8sDelegatePrerequisite;
@@ -119,6 +126,7 @@ import software.wings.beans.VaultConfig;
 import software.wings.expression.ManagerPreviewExpressionEvaluator;
 import software.wings.features.api.UsageLimitedFeature;
 import software.wings.helpers.ext.mail.EmailData;
+import software.wings.service.impl.TemplateParameters.TemplateParametersBuilder;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AssignDelegateService;
 import software.wings.service.intfc.DelegateProfileService;
@@ -181,6 +189,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Mock private DelegateCallbackRegistry delegateCallbackRegistry;
   @Mock private EmailNotificationService emailNotificationService;
   @Mock private AccountService accountService;
+  @Mock private DelegateVersionService delegateVersionService;
   @Mock private Account account;
   @Mock private DelegateProfileService delegateProfileService;
   @Mock private DelegateCache delegateCache;
@@ -1367,7 +1376,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
         DelegateConfiguration.builder().delegateVersions(singletonList(VERSION)).build();
     when(accountService.getDelegateConfiguration(ACCOUNT_ID)).thenReturn(delegateConfiguration);
 
-    Double ratio = delegateService.getConnectedRatioWithPrimary(VERSION, ACCOUNT_ID);
+    Double ratio = delegateService.getConnectedRatioWithPrimary(VERSION, ACCOUNT_ID, null);
     assertThat(ratio).isEqualTo(1.0);
   }
 
@@ -1391,7 +1400,34 @@ public class DelegateServiceImplTest extends WingsBaseTest {
         DelegateConfiguration.builder().delegateVersions(singletonList(VERSION)).build();
     when(accountService.getDelegateConfiguration(Account.GLOBAL_ACCOUNT_ID)).thenReturn(delegateConfiguration);
 
-    Double ratio = delegateService.getConnectedRatioWithPrimary(VERSION, null);
+    Double ratio = delegateService.getConnectedRatioWithPrimary(VERSION, null, null);
+    assertThat(ratio).isEqualTo(1.0);
+  }
+
+  @Test
+  @Owner(developers = GAURAV)
+  @Category(UnitTests.class)
+  public void testGetConnectedRatioWithPrimaryWithRing() {
+    String delegateId = generateUuid();
+
+    DelegateConnection delegateConnection = DelegateConnection.builder()
+                                                .accountId(ACCOUNT_ID)
+                                                .delegateId(delegateId)
+                                                .version(VERSION)
+                                                .disconnected(false)
+                                                .lastHeartbeat(System.currentTimeMillis())
+                                                .build();
+
+    persistence.save(delegateConnection);
+
+    DelegateConfiguration delegateConfiguration =
+        DelegateConfiguration.builder().delegateVersions(singletonList(VERSION)).build();
+    when(accountService.getDelegateConfiguration(ACCOUNT_ID)).thenReturn(delegateConfiguration);
+
+    final String ringName = "ring3";
+    when(delegateVersionService.getDelegateJarVersions(ringName, ACCOUNT_ID))
+        .thenReturn(Collections.singletonList(VERSION));
+    Double ratio = delegateService.getConnectedRatioWithPrimary(VERSION, ACCOUNT_ID, ringName);
     assertThat(ratio).isEqualTo(1.0);
   }
 
@@ -1420,6 +1456,190 @@ public class DelegateServiceImplTest extends WingsBaseTest {
 
     Double ratio = delegateService.getConnectedDelegatesRatio(VERSION, ACCOUNT_ID);
     assertThat(ratio).isEqualTo(0.5);
+  }
+
+  @Test
+  @Owner(developers = JOHANNES)
+  @Category(UnitTests.class)
+  public void testFinalizeTemplateParametersWithMtlsIfRequiredSmokeTest() {
+    this.persistence.save(
+        FeatureFlag.builder().uuid("21").name(USE_IMMUTABLE_DELEGATE.name()).enabled(true).obsolete(false).build());
+
+    final String accountId = "abc21";
+    this.persistence.save(
+        DelegateMtlsEndpoint.builder().accountId(accountId).fqdn("customer.delegate.ut.harness.io").build());
+
+    // test some arbitrary values that shouldn't get modified by the function
+    String delegateType = KUBERNETES;
+    double delegateCpu = 4.2d;
+    String version = "someVersion";
+    boolean ciEnabled = true;
+    TemplateParametersBuilder builder = TemplateParameters.builder()
+                                            .accountId(accountId)
+                                            .managerHost("https://app.harness.io")
+                                            .logStreamingServiceBaseUrl("https://app.harness.io/log-service")
+                                            .delegateType(delegateType)
+                                            .delegateCpu(delegateCpu)
+                                            .ciEnabled(ciEnabled)
+                                            .version(version);
+    TemplateParameters updatedParameters = delegateService.finalizeTemplateParametersWithMtlsIfRequired(builder);
+
+    // ensure returned parameters are updated correctly
+    assertThat(updatedParameters.isMtlsEnabled()).isTrue();
+    assertThat(updatedParameters.getManagerHost()).isEqualTo("https://customer.delegate.ut.harness.io");
+    assertThat(updatedParameters.getLogStreamingServiceBaseUrl())
+        .isEqualTo("https://customer.delegate.ut.harness.io/log-service");
+
+    // ensure returned parameters contain mtls unrelated fields
+    assertThat(updatedParameters.getAccountId()).isEqualTo(accountId);
+    assertThat(updatedParameters.getDelegateType()).isEqualTo(delegateType);
+    assertThat(updatedParameters.getDelegateCpu()).isEqualTo(delegateCpu);
+    assertThat(updatedParameters.getVersion()).isEqualTo(version);
+    assertThat(updatedParameters.isCiEnabled()).isEqualTo(ciEnabled);
+
+    // ensure original builder wasn't modified (assumes builder is idempotent)
+    TemplateParameters originalParameters = builder.build();
+    assertThat(originalParameters.isMtlsEnabled()).isFalse();
+    assertThat(originalParameters.getManagerHost()).isEqualTo("https://app.harness.io");
+    assertThat(originalParameters.getLogStreamingServiceBaseUrl()).isEqualTo("https://app.harness.io/log-service");
+  }
+
+  @Test
+  @Owner(developers = JOHANNES)
+  @Category(UnitTests.class)
+  public void testFinalizeTemplateParametersWithMtlsIfRequiredForNonImmutable() {
+    final String accountId = "abc21";
+    this.persistence.save(
+        DelegateMtlsEndpoint.builder().accountId(accountId).fqdn("customer.delegate.ut.harness.io").build());
+
+    TemplateParameters templateParameters =
+        delegateService.finalizeTemplateParametersWithMtlsIfRequired(TemplateParameters.builder().accountId(accountId));
+
+    assertThat(templateParameters.isMtlsEnabled()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = JOHANNES)
+  @Category(UnitTests.class)
+  public void testFinalizeTemplateParametersWithMtlsIfRequiredForNonMtls() {
+    this.persistence.save(
+        FeatureFlag.builder().uuid("21").name(USE_IMMUTABLE_DELEGATE.name()).enabled(true).obsolete(false).build());
+
+    final String accountId = "abc21";
+    TemplateParameters templateParameters =
+        delegateService.finalizeTemplateParametersWithMtlsIfRequired(TemplateParameters.builder().accountId(accountId));
+
+    assertThat(templateParameters.isMtlsEnabled()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = JOHANNES)
+  @Category(UnitTests.class)
+  public void testUpdateUriToTargetMtlsEndpointForProd() {
+    String managerUri = this.delegateService.updateUriToTargetMtlsEndpoint(
+        "https://app.harness.io", "https://app.harness.io", "customer.delegate.harness.io");
+
+    assertThat(managerUri).isEqualTo("https://customer.delegate.harness.io");
+
+    String logServiceUri = this.delegateService.updateUriToTargetMtlsEndpoint(
+        "https://app.harness.io/log-service", "https://app.harness.io", "customer.delegate.harness.io");
+
+    assertThat(logServiceUri).isEqualTo("https://customer.delegate.harness.io/log-service");
+  }
+
+  @Test
+  @Owner(developers = JOHANNES)
+  @Category(UnitTests.class)
+  public void testUpdateUriToTargetMtlsEndpointForGratis() {
+    String managerUri = this.delegateService.updateUriToTargetMtlsEndpoint(
+        "https://app.harness.io/gratis", "https://app.harness.io/gratis", "customer.delegate.harness.io");
+
+    assertThat(managerUri).isEqualTo("https://customer.delegate.harness.io");
+
+    String logServiceUri = this.delegateService.updateUriToTargetMtlsEndpoint(
+        "https://app.harness.io/gratis/log-service", "https://app.harness.io/gratis", "customer.delegate.harness.io");
+
+    assertThat(logServiceUri).isEqualTo("https://customer.delegate.harness.io/log-service");
+  }
+
+  @Test
+  @Owner(developers = JOHANNES)
+  @Category(UnitTests.class)
+  public void testUpdateUriToTargetMtlsEndpointForCompliance() {
+    String managerUri = this.delegateService.updateUriToTargetMtlsEndpoint(
+        "https://app3.harness.io", "https://app3.harness.io", "customer.delegate.harness.io");
+
+    assertThat(managerUri).isEqualTo("https://customer.delegate.harness.io");
+
+    String logServiceUri = this.delegateService.updateUriToTargetMtlsEndpoint(
+        "https://app3.harness.io/log-service", "https://app3.harness.io", "customer.delegate.harness.io");
+
+    assertThat(logServiceUri).isEqualTo("https://customer.delegate.harness.io/log-service");
+  }
+
+  @Test
+  @Owner(developers = JOHANNES)
+  @Category(UnitTests.class)
+  public void testUpdateUriToTargetMtlsEndpointForVanity() {
+    String managerUri = this.delegateService.updateUriToTargetMtlsEndpoint(
+        "https://vanityapp.harness.io", "https://vanityapp.harness.io", "customer.delegate.harness.io");
+
+    assertThat(managerUri).isEqualTo("https://customer.delegate.harness.io");
+
+    String logServiceUri = this.delegateService.updateUriToTargetMtlsEndpoint(
+        "https://vanityapp.harness.io/log-service", "https://vanityapp.harness.io", "customer.delegate.harness.io");
+
+    assertThat(logServiceUri).isEqualTo("https://customer.delegate.harness.io/log-service");
+  }
+
+  @Test
+  @Owner(developers = JOHANNES)
+  @Category(UnitTests.class)
+  public void testUpdateUriToTargetMtlsEndpointForQa() {
+    String managerUri = this.delegateService.updateUriToTargetMtlsEndpoint(
+        "https://qa.harness.io", "https://qa.harness.io", "customer.delegate.qa.harness.io");
+
+    assertThat(managerUri).isEqualTo("https://customer.delegate.qa.harness.io");
+
+    String logServiceUri = this.delegateService.updateUriToTargetMtlsEndpoint(
+        "https://qa.harness.io/log-service", "https://qa.harness.io", "customer.delegate.qa.harness.io");
+
+    assertThat(logServiceUri).isEqualTo("https://customer.delegate.qa.harness.io/log-service");
+  }
+
+  @Test
+  @Owner(developers = JOHANNES)
+  @Category(UnitTests.class)
+  public void testUpdateUriToTargetMtlsEndpointForPr() {
+    String managerUri = this.delegateService.updateUriToTargetMtlsEndpoint(
+        "https://pr.harness.io/del-42", "https://pr.harness.io/del-42", "customer.delegate.pr.harness.io");
+
+    assertThat(managerUri).isEqualTo("https://customer.delegate.pr.harness.io");
+
+    String logServiceUri = this.delegateService.updateUriToTargetMtlsEndpoint(
+        "https://pr.harness.io/del-42/log-service", "https://pr.harness.io/del-42", "customer.delegate.pr.harness.io");
+
+    assertThat(logServiceUri).isEqualTo("https://customer.delegate.pr.harness.io/log-service");
+  }
+
+  @Test
+  @Owner(developers = JOHANNES)
+  @Category(UnitTests.class)
+  public void testUpdateUriToTargetMtlsEndpointIgnoresProtocol() {
+    String output = this.delegateService.updateUriToTargetMtlsEndpoint(
+        "sftp://app.harness.io", "http://app.harness.io", "customer.delegate.harness.io");
+
+    assertThat(output).isEqualTo("https://customer.delegate.harness.io");
+  }
+
+  @Test
+  @Owner(developers = JOHANNES)
+  @Category(UnitTests.class)
+  public void testUpdateUriToTargetMtlsEndpointIgnoresPort() {
+    String output = this.delegateService.updateUriToTargetMtlsEndpoint(
+        "http://app.harness.io:9876", "https://app.harness.io:9090", "customer.delegate.harness.io");
+
+    assertThat(output).isEqualTo("https://customer.delegate.harness.io");
   }
 
   private List<String> setUpDelegatesForInitializationTest() {

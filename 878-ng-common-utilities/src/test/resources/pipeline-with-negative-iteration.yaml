@@ -1,0 +1,65 @@
+pipeline:
+  name: plan creator
+  identifier: plan_creator
+  projectIdentifier: LocalDev
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: a1-1
+        identifier: a11
+        description: ""
+        strategy:
+          for:
+            iteration: 0
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - stepGroup:
+                  name: searching
+                  identifier: searching
+                  steps:
+                    - step:
+                        type: Http
+                        name: google
+                        identifier: google
+                        spec:
+                          url: https://www.google.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 1m
+                    - step:
+                        type: Http
+                        name: bing
+                        identifier: bing
+                        spec:
+                          url: https://www.bing.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 10s
+              - parallel:
+                  - step:
+                      type: Http
+                      name: google again
+                      identifier: google_again
+                      spec:
+                        url: https://www.google.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+                  - step:
+                      type: Http
+                      name: bing in parallel
+                      identifier: bing_in_parallel
+                      spec:
+                        url: https://www.bing.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+          serviceDependencies: []
+        tags: {}

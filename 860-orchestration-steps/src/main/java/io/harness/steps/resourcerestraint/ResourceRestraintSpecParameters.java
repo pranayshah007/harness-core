@@ -10,7 +10,7 @@ package io.harness.steps.resourcerestraint;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.plancreator.steps.common.SpecParameters;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.resourcerestraint.beans.AcquireMode;
 import io.harness.steps.resourcerestraint.beans.HoldingScope;
 
@@ -24,9 +24,9 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @TypeAlias("resourceRestraintSpecParameters")
 @RecasterAlias("io.harness.steps.resourcerestraint.ResourceRestraintSpecParameters")
-public class ResourceRestraintSpecParameters implements SpecParameters {
+public class ResourceRestraintSpecParameters implements IResourceRestraintSpecParameters {
   String name;
-  @NotNull String resourceUnit;
+  @NotNull ParameterField<String> resourceUnit;
   @NotNull AcquireMode acquireMode;
   @NotNull int permits;
   @NotNull HoldingScope holdingScope;

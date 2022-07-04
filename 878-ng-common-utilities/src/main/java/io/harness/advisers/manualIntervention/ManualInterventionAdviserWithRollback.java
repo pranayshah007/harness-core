@@ -62,7 +62,7 @@ public class ManualInterventionAdviserWithRollback implements Adviser {
 
   @Override
   public boolean canAdvise(AdvisingEvent advisingEvent) {
-    if (advisingEvent.isPreviousAdviserExpired()) {
+    if (advisingEvent.isPreviousAdviserExpired() && advisingEvent.getFromStatus() == INTERVENTION_WAITING) {
       return false;
     }
     boolean canAdvise = StatusUtils.brokeStatuses().contains(advisingEvent.getToStatus())

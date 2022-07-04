@@ -97,4 +97,20 @@ public class IdentityPlanNode implements Node {
         .originalNodeExecutionId(originalNodeExecutionUuid)
         .build();
   }
+  public static IdentityPlanNode mapPlanNodeToIdentityNode(String newUuid, Node node, String nodeIdentifier,
+      String nodeName, StepType stepType, String originalNodeExecutionUuid) {
+    return IdentityPlanNode.builder()
+        .uuid(newUuid != null ? newUuid : node.getUuid())
+        .name(nodeName)
+        .identifier(nodeIdentifier)
+        .group(node.getGroup())
+        .skipGraphType(node.getSkipGraphType())
+        .stepType(stepType)
+        .isSkipExpressionChain(node.isSkipExpressionChain())
+        .serviceName(node.getServiceName())
+        .stageFqn(node.getStageFqn())
+        .whenCondition(node.getWhenCondition())
+        .originalNodeExecutionId(originalNodeExecutionUuid)
+        .build();
+  }
 }

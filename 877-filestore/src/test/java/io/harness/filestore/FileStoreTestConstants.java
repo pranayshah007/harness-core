@@ -27,4 +27,6 @@ public class FileStoreTestConstants {
   public static final String YML_MIME_TYPE = "yml";
   public static final String ADMIN_USER_NAME = "admin";
   public static final String ADMIN_USER_EMAIL = "admin@harness.io";
+  public static final String FOLDER_NAME = "folderName";
+  public static final String FOLDER_IDENTIFIER = "identifier";
 }

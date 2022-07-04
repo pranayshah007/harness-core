@@ -47,8 +47,6 @@ import io.harness.yaml.YamlUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.Yaml;
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.constructor.SafeConstructor;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -116,6 +114,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 @Singleton
 @Slf4j
@@ -246,8 +246,14 @@ public class KubernetesHelperService {
     }
 
     Config config = configBuilder.build();
+
     if (KubernetesClusterAuthType.OIDC == kubernetesConfig.getAuthType()) {
       config.setOauthToken(oidcTokenRetriever.getOidcIdToken(kubernetesConfig));
+    }
+
+    if (KubernetesClusterAuthType.AZURE_OAUTH == kubernetesConfig.getAuthType()
+        && kubernetesConfig.getAzureConfig() != null) {
+      config.setOauthToken(kubernetesConfig.getAzureConfig().getAadIdToken());
     }
 
     return config;

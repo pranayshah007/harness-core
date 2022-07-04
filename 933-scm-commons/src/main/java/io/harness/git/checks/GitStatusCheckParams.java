@@ -1,0 +1,32 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
+package io.harness.git.checks;
+
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.task.ci.GitSCMType;
+
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
+public class GitStatusCheckParams {
+  String title;
+  String desc;
+  String state;
+  String buildNumber;
+  String detailsUrl;
+  String repo;
+  String owner;
+  String sha;
+  String identifier;
+  String target_url;
+  String userName;
+  ConnectorDetails connectorDetails; // Use connectorDetails to retrieve all information
+  GitSCMType gitSCMType;
+}

@@ -62,6 +62,8 @@ import io.harness.template.migration.TemplateMigrationProvider;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
+import io.harness.yaml.YamlSdkConfiguration;
+import io.harness.yaml.YamlSdkInitHelper;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -216,6 +218,7 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
       registerGitSyncSdk(templateServiceConfiguration, injector, environment);
     }
     registerMigrations(injector);
+    registerYamlSdk(injector);
 
     injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
     MaintenanceController.forceMaintenance(false);
@@ -346,5 +349,14 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
     } catch (Exception ex) {
       throw new GeneralException("Failed to start template service because git sync registration failed", ex);
     }
+  }
+
+  private void registerYamlSdk(Injector injector) {
+    YamlSdkConfiguration yamlSdkConfiguration = YamlSdkConfiguration.builder()
+                                                    .requireSchemaInit(true)
+                                                    .requireSnippetInit(true)
+                                                    .requireValidatorInit(false)
+                                                    .build();
+    YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
   }
 }

@@ -9,7 +9,10 @@ package io.harness;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cf.CfClientConfig;
+import io.harness.ff.FeatureFlagConfig;
 import io.harness.mongo.MongoConfig;
+import io.harness.secret.ConfigSecret;
 import io.harness.timescaledb.TimeScaleDBConfig;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -36,6 +39,8 @@ public class ChangeDataCaptureServiceConfig extends Configuration {
   @JsonProperty("timescaledb") private TimeScaleDBConfig timeScaleDBConfig;
   @JsonProperty("mongotags") private MongoTagsConfig mongoTagsConfig = MongoTagsConfig.builder().build();
   @JsonProperty("gcp-project-id") private String gcpProjectId;
+  @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
+  @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
 
   public static Collection<Class<?>> getResourceClasses() {
     Reflections reflections = new Reflections(RESOURCE_PACKAGE);

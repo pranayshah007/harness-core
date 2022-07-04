@@ -14,7 +14,6 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.pcf.ResizeStrategy.RESIZE_NEW_FIRST;
 import static io.harness.delegate.task.cloudformation.CloudformationBaseHelperImpl.CLOUDFORMATION_STACK_CREATE_BODY;
 import static io.harness.rule.OwnerRule.ADWAIT;
-import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
@@ -27,10 +26,6 @@ import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.command.Command.Builder.aCommand;
 import static software.wings.beans.command.ServiceCommand.Builder.aServiceCommand;
-import static software.wings.service.impl.aws.model.AwsConstants.BASE_DELAY_ACCOUNT_VARIABLE;
-import static software.wings.service.impl.aws.model.AwsConstants.MAX_BACKOFF_ACCOUNT_VARIABLE;
-import static software.wings.service.impl.aws.model.AwsConstants.MAX_ERROR_RETRY_ACCOUNT_VARIABLE;
-import static software.wings.service.impl.aws.model.AwsConstants.THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 import static software.wings.sm.WorkflowStandardParams.Builder.aWorkflowStandardParams;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
@@ -88,7 +83,6 @@ import software.wings.api.WorkflowElement;
 import software.wings.app.MainConfiguration;
 import software.wings.app.PortalConfig;
 import software.wings.beans.Activity;
-import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
 import software.wings.beans.Application;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.AwsInfrastructureMapping;
@@ -551,42 +545,5 @@ public class CloudFormationStateTest extends WingsBaseTest {
     assertThat(cloudFormationDeleteStackState.validateFields().size()).isEqualTo(1);
     cloudFormationDeleteStackState.setProvisionerId("test provisioner");
     assertThat(cloudFormationDeleteStackState.validateFields().size()).isEqualTo(0);
-  }
-
-  @Test
-  @Owner(developers = IVAN)
-  @Category(UnitTests.class)
-  public void testSetAmazonClientSDKDefaultBackoffStrategyIfExists() {
-    when(executionContext.renderExpression(BASE_DELAY_ACCOUNT_VARIABLE)).thenReturn("100");
-    when(executionContext.renderExpression(THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE)).thenReturn("500");
-    when(executionContext.renderExpression(MAX_BACKOFF_ACCOUNT_VARIABLE)).thenReturn("20000");
-    when(executionContext.renderExpression(MAX_ERROR_RETRY_ACCOUNT_VARIABLE)).thenReturn("5");
-
-    AwsConfig awsConfig = AwsConfig.builder().build();
-    cloudFormationCreateStackState.setAmazonClientSDKDefaultBackoffStrategyIfExists(executionContext, awsConfig);
-
-    AmazonClientSDKDefaultBackoffStrategy amazonClientSDKDefaultBackoffStrategy =
-        awsConfig.getAmazonClientSDKDefaultBackoffStrategy();
-    assertThat(amazonClientSDKDefaultBackoffStrategy.getBaseDelayInMs()).isEqualTo(100);
-    assertThat(amazonClientSDKDefaultBackoffStrategy.getThrottledBaseDelayInMs()).isEqualTo(500);
-    assertThat(amazonClientSDKDefaultBackoffStrategy.getMaxBackoffInMs()).isEqualTo(20000);
-    assertThat(amazonClientSDKDefaultBackoffStrategy.getMaxErrorRetry()).isEqualTo(5);
-  }
-
-  @Test
-  @Owner(developers = IVAN)
-  @Category(UnitTests.class)
-  public void testSetAmazonClientSDKDefaultBackoffStrategyIfExistsWithInvalidValues() {
-    when(executionContext.renderExpression(BASE_DELAY_ACCOUNT_VARIABLE)).thenReturn("not_valid");
-    when(executionContext.renderExpression(THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE)).thenReturn("not_valid");
-    when(executionContext.renderExpression(MAX_BACKOFF_ACCOUNT_VARIABLE)).thenReturn("not_valid");
-    when(executionContext.renderExpression(MAX_ERROR_RETRY_ACCOUNT_VARIABLE)).thenReturn("not_valid");
-
-    AwsConfig awsConfig = AwsConfig.builder().build();
-    cloudFormationCreateStackState.setAmazonClientSDKDefaultBackoffStrategyIfExists(executionContext, awsConfig);
-
-    AmazonClientSDKDefaultBackoffStrategy amazonClientSDKDefaultBackoffStrategy =
-        awsConfig.getAmazonClientSDKDefaultBackoffStrategy();
-    assertThat(amazonClientSDKDefaultBackoffStrategy).isNull();
   }
 }

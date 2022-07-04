@@ -10,27 +10,18 @@ package io.harness.cvng.activity.services.api;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.activity.entities.Activity;
-import io.harness.cvng.analysis.beans.LogAnalysisClusterChartDTO;
-import io.harness.cvng.analysis.beans.LogAnalysisClusterDTO;
-import io.harness.cvng.beans.activity.ActivityStatusDTO;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
-import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDTO;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
-import io.harness.cvng.core.beans.params.PageParams;
-import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilter;
-import io.harness.ng.beans.PageResponse;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @OwnedBy(HarnessTeam.CV)
 public interface ActivityService {
   Activity get(String activityId);
   Activity getByVerificationJobInstanceId(String verificationJobInstanceId);
-  @Deprecated String register(Activity activity);
 
   void updateActivityStatus(Activity activity);
 
@@ -45,19 +36,7 @@ public interface ActivityService {
 
   String createActivity(Activity activity);
 
-  ActivityStatusDTO getActivityStatus(String accountId, String activityId);
-
-  @Deprecated
-  List<LogAnalysisClusterChartDTO> getDeploymentActivityLogAnalysisClusters(
-      String accountId, String activityId, DeploymentLogAnalysisFilter deploymentLogAnalysisFilter);
-
-  @Deprecated
-  PageResponse<LogAnalysisClusterDTO> getDeploymentActivityLogAnalysisResult(String accountId, String activityId,
-      Integer label, DeploymentLogAnalysisFilter deploymentLogAnalysisFilter, PageParams pageParams);
-
   void abort(String activityId);
-
-  @Deprecated Set<HealthSourceDTO> healthSources(String accountId, String activityId);
 
   String upsert(Activity activity);
 }

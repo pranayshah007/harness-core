@@ -8,6 +8,7 @@
 package io.harness.pms.helpers;
 
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.anyString;
@@ -82,5 +83,13 @@ public class PmsFeatureFlagHelperTest extends OrchestrationTestBase {
 
     pmsFeatureFlagHelper.updateCache(accountId, true, FeatureName.RESOURCE_CONSTRAINT_MAX_QUEUE.name());
     assertThat(pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.RESOURCE_CONSTRAINT_MAX_QUEUE.name())).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SOUMYAJIT)
+  @Category(UnitTests.class)
+  public void validateRefreshCacheForGivenAccountId() throws ExecutionException {
+    Boolean flag = pmsFeatureFlagHelper.refreshCacheForGivenAccountId(accountId);
+    assertThat(flag).isEqualTo(true);
   }
 }

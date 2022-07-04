@@ -7,9 +7,14 @@
 
 package io.harness.beans.sweepingoutputs;
 
+import io.harness.annotation.RecasterAlias;
+
 import lombok.Value;
+import org.springframework.data.annotation.TypeAlias;
 
 @Value
+@TypeAlias("build")
+@RecasterAlias("io.harness.beans.sweepingoutputs.Build")
 public class Build {
   String type;
   public Build(String type) {

@@ -57,11 +57,16 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
       }
       ConcurrentChildInstance childInstance = nodeExecutionInfoService.incrementCursor(parentNodeExecutionId);
       if (childInstance == null) {
+        log.error("[MaxConcurrentCallback]: ChildInstance found null for parentId: " + parentNodeExecutionId);
         nodeExecutionService.errorOutActiveNodes(ambiance.getPlanExecutionId());
         return;
       }
+      log.info("[MaxConcurrentCallback]: MaxConcurrentCallback called for parentId: " + parentNodeExecutionId);
       // We have reached the last child already so ignore this callback as there is no new child to run.
-      if (childInstance.getCursor() == childInstance.getChildrenNodeExecutionIds().size()) {
+      if (childInstance.getCursor() >= childInstance.getChildrenNodeExecutionIds().size()) {
+        log.info(
+            "[MaxConcurrentCallback]: Ignoring the callback as we have traversed all the children for parentExecutionId: "
+            + parentNodeExecutionId);
         return;
       }
       int cursor = childInstance.getCursor();
@@ -73,6 +78,7 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
   private void getAmbianceAndStartExecution(String nodeExecutionToStart) {
     NodeExecution nodeExecution =
         nodeExecutionService.getWithFieldsIncluded(nodeExecutionToStart, NodeProjectionUtils.withAmbianceAndStatus);
+    log.info("[MaxConcurrentCallback]: Starting the execution with id: " + nodeExecutionToStart);
     engine.startNodeExecution(nodeExecution.getAmbiance());
   }
 

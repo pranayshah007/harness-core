@@ -54,4 +54,6 @@ public interface ServiceLevelObjectiveService {
   PageResponse<NotificationRuleResponse> getNotificationRules(
       ProjectParams projectParams, String sloIdentifier, PageParams pageParams);
   void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);
+  void setMonitoredServiceSLOsEnableFlag(
+      ProjectParams projectParams, String monitoreServiceIdentifier, boolean isEnabled);
 }

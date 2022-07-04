@@ -46,6 +46,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.helpers.ext.jenkins.JobDetails;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -141,9 +142,32 @@ public class JenkinsResourceServiceImpl implements JenkinsResourceService {
     }
   }
 
-  private ArtifactTaskExecutionResponse executeSyncTask(JenkinsArtifactDelegateRequest dockerRequest,
+  public List<JobDetails> getJobParameters(
+      IdentifierRef jenkinsConnectorRef, String orgIdentifier, String projectIdentifier, String jobName) {
+    JenkinsConnectorDTO connector = getConnector(jenkinsConnectorRef);
+    BaseNGAccess baseNGAccess =
+        getBaseNGAccess(jenkinsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+    List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
+    JenkinsArtifactDelegateRequest jenkinsRequest =
+        ArtifactDelegateRequestUtils.getJenkinsDelegateRequest(jenkinsConnectorRef.getIdentifier(), connector,
+            encryptionDetails, ArtifactSourceType.JENKINS, null, null, jobName, null);
+    try {
+      ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(jenkinsRequest,
+          ArtifactTaskType.GET_JOB_PARAMETERS, baseNGAccess, "Jenkins Get Job task failure due to error");
+      return artifactTaskExecutionResponse.getJobDetails();
+    } catch (DelegateServiceDriverException ex) {
+      throw new HintException(
+          String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
+          new DelegateNotAvailableException(ex.getCause().getMessage(), USER));
+    } catch (ExplanationException e) {
+      throw new HintException(
+          HintException.HINT_DOCKER_HUB_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
+    }
+  }
+
+  private ArtifactTaskExecutionResponse executeSyncTask(JenkinsArtifactDelegateRequest jenkinsRequest,
       ArtifactTaskType taskType, BaseNGAccess ngAccess, String ifFailedMessage) {
-    DelegateResponseData responseData = getResponseData(ngAccess, dockerRequest, taskType);
+    DelegateResponseData responseData = getResponseData(ngAccess, jenkinsRequest, taskType);
     return getTaskExecutionResponse(responseData, ifFailedMessage);
   }
 

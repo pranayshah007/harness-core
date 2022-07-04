@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.entitysetupusage;
 
+import static io.harness.NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -59,7 +60,7 @@ public class EntitySetupUsageQueryFilterHelper {
     }
     if (isNotBlank(searchTerm)) {
       criteria.orOperator(Criteria.where(EntitySetupUsageKeys.referredEntityName).regex(searchTerm),
-          Criteria.where(EntitySetupUsageKeys.referredByEntityName).regex(searchTerm));
+          Criteria.where(EntitySetupUsageKeys.referredByEntityName).regex(searchTerm, CASE_INSENSITIVE_MONGO_OPTIONS));
     }
     populateGitCriteriaForReferredEntity(criteria);
     return criteria;

@@ -10,10 +10,13 @@ package io.harness.ng.core.service.services;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.UpsertOptions;
 
 import java.util.List;
 import java.util.Optional;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -48,10 +51,21 @@ public interface ServiceEntityService {
   Integer findActiveServicesCountAtGivenTimestamp(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, long timestampInMs);
 
-  ServiceEntity find(String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
-      boolean deleted);
-
   String createServiceInputsYaml(String yaml);
 
   boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier);
+
+  /**
+   *
+   * Locates the leaf node in a service entity for a given FQN of type
+   * pipeline.stages.s1.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag
+   * pipeline.stages.s1.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars[0].sidecar.spec.tag
+   * service.serviceInputs.serviceDefinition.spec.artifacts.sidecars[0].sidecar.spec.tag
+   *
+   * @param fqn must contain serviceDefinition. FQN represents usage of a service within a pipeline
+   * @return YamlNode
+   */
+  @NotNull
+  YamlNode getYamlNodeForFqn(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
+      @NotEmpty String projectIdentifier, @NotEmpty String serviceIdentifier, @NotEmpty String fqn);
 }

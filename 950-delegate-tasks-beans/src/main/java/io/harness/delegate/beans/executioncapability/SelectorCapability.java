@@ -20,7 +20,7 @@ import lombok.Value;
 @TargetModule(HarnessModule._957_CG_BEANS)
 public class SelectorCapability implements ExecutionCapability {
   private Set<String> selectors;
-  private String selectorOrigin;
+  @Builder.Default private String selectorOrigin = "default";
 
   @Builder.Default private final CapabilityType capabilityType = CapabilityType.SELECTORS;
 

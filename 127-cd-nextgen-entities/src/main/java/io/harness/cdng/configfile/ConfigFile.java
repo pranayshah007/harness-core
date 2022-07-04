@@ -15,7 +15,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.WithIdentifier;
 import io.harness.cdng.visitor.helpers.configfile.ConfigFileVisitorHelper;
 import io.harness.data.validator.EntityIdentifier;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.intfc.OverridesApplier;
@@ -80,5 +82,12 @@ public class ConfigFile implements OverridesApplier<ConfigFile>, WithIdentifier,
       return new ConfigFileStepParameters(
           configFile.getIdentifier(), configFile.getSpec().getConfigFileAttributeStepParameters());
     }
+  }
+
+  @Override
+  public VisitableChildren getChildrenToWalk() {
+    VisitableChildren children = VisitableChildren.builder().build();
+    children.add(YAMLFieldNameConstants.SPEC, spec);
+    return children;
   }
 }

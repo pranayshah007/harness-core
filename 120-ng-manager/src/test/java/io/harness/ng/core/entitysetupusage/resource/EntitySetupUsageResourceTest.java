@@ -71,6 +71,20 @@ public class EntitySetupUsageResourceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = OwnerRule.UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void isEntityReferencedV2() {
+    String accountIdentifier = "accountIdentifier";
+    String referredEntityFQN = "referredEntityFQN";
+    String searchTerm = "searchTerm";
+    entitySetupUsageResource.listAllEntityUsageV2(
+        100, 100, accountIdentifier, referredEntityFQN, EntityType.CONNECTORS, searchTerm);
+    Mockito.verify(entitySetupUsageService, times(1))
+        .listAllEntityUsage(
+            eq(100), eq(100), eq(accountIdentifier), eq(referredEntityFQN), eq(EntityType.CONNECTORS), eq(searchTerm));
+  }
+
+  @Test
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
   public void saveTest() {

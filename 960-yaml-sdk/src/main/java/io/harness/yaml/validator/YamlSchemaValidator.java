@@ -9,8 +9,6 @@ package io.harness.yaml.validator;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.yaml.schema.beans.SchemaConstants.PARALLEL_NODE;
-import static io.harness.yaml.schema.beans.SchemaConstants.PIPELINE_NODE;
-import static io.harness.yaml.schema.beans.SchemaConstants.STAGES_NODE;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -85,9 +83,9 @@ public class YamlSchemaValidator {
   }
 
   public Set<String> validate(String yaml, String stringSchema, boolean shouldValidateParallelStageCount,
-      int allowedParallelStages) throws IOException {
+      int allowedParallelStages, String pathToJsonNode) throws IOException {
     JsonNode jsonNode = mapper.readTree(yaml);
-    validateParallelStagesCount(jsonNode, shouldValidateParallelStageCount, allowedParallelStages);
+    validateParallelStagesCount(jsonNode, shouldValidateParallelStageCount, allowedParallelStages, pathToJsonNode);
     JsonSchemaFactory factory =
         JsonSchemaFactory.builder(JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V7)).build();
     JsonSchema schema = factory.getSchema(stringSchema);
@@ -101,6 +99,7 @@ public class YamlSchemaValidator {
       List<YamlSchemaErrorDTO> errorDTOS = new ArrayList<>();
       for (ValidationMessage validationMessage : processValidationMessages) {
         errorDTOS.add(YamlSchemaErrorDTO.builder()
+                          .messageWithFQN(validationMessage.getMessage())
                           .message(removeFqnFromErrorMessage(validationMessage.getMessage()))
                           .stageInfo(SchemaValidationUtils.getStageErrorInfo(validationMessage.getPath(), jsonNode))
                           .stepInfo(SchemaValidationUtils.getStepErrorInfo(validationMessage.getPath(), jsonNode))
@@ -121,11 +120,20 @@ public class YamlSchemaValidator {
   }
 
   protected void validateParallelStagesCount(
-      JsonNode yaml, boolean shouldValidateParallelStageCount, int allowedParallelStages) {
+      JsonNode yaml, boolean shouldValidateParallelStageCount, int allowedParallelStages, String pathToJsonNode) {
     if (shouldValidateParallelStageCount) {
       return;
     }
-    ArrayNode stages = (ArrayNode) yaml.get(PIPELINE_NODE).get(STAGES_NODE);
+    String[] pathToStageNode = pathToJsonNode.split("/");
+    JsonNode stagesNode = yaml;
+    for (String s : pathToStageNode) {
+      if (stagesNode == null) {
+        return;
+      } else {
+        stagesNode = stagesNode.get(s);
+      }
+    }
+    ArrayNode stages = (ArrayNode) stagesNode;
     if (stages == null) {
       return;
     }

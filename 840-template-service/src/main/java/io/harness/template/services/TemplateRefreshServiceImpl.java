@@ -8,13 +8,18 @@
 package io.harness.template.services;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.template.resources.NGTemplateResource.TEMPLATE;
 
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
+import io.harness.template.beans.PermissionTypes;
+import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.beans.refresh.ErrorNodeSummary;
-import io.harness.template.beans.refresh.TemplateInfo;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.template.beans.refresh.YamlDiffResponseDTO;
 import io.harness.template.beans.refresh.YamlFullRefreshResponseDTO;
@@ -41,6 +46,8 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
   private TemplateInputsRefreshHelper templateInputsRefreshHelper;
   private NGTemplateService templateService;
   private TemplateInputsValidator templateInputsValidator;
+
+  private AccessControlClient accessControlClient;
 
   @Override
   public void refreshAndUpdateTemplate(
@@ -138,18 +145,22 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
     }
 
     Stack<ErrorNodeSummary> orderedStack = getProcessingOrderOfErrorNodes(errorNodeSummary);
-    Set<TemplateInfo> visitedTemplateSet = new HashSet<>();
+    Set<TemplateResponseDTO> visitedTemplateSet = new HashSet<>();
     while (!orderedStack.isEmpty()) {
       ErrorNodeSummary top = orderedStack.pop();
       if (top.getTemplateInfo() == null) {
         continue;
       }
 
-      TemplateInfo templateInfo = top.getTemplateInfo();
-      if (!visitedTemplateSet.contains(templateInfo)) {
-        refreshAndUpdateTemplate(
-            accountId, orgId, projectId, templateInfo.getTemplateIdentifier(), templateInfo.getVersionLabel());
-        visitedTemplateSet.add(templateInfo);
+      TemplateResponseDTO templateResponse = top.getTemplateResponse();
+      if (!visitedTemplateSet.contains(templateResponse)) {
+        accessControlClient.checkForAccessOrThrow(
+            ResourceScope.of(accountId, templateResponse.getOrgIdentifier(), templateResponse.getProjectIdentifier()),
+            Resource.of(TEMPLATE, templateResponse.getIdentifier()), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+        refreshAndUpdateTemplate(accountId, templateResponse.getOrgIdentifier(),
+            templateResponse.getProjectIdentifier(), templateResponse.getIdentifier(),
+            templateResponse.getVersionLabel());
+        visitedTemplateSet.add(templateResponse);
       }
     }
   }

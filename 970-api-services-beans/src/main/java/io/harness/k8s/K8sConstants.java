@@ -110,6 +110,35 @@ public interface K8sConstants {
       + "  user:\n"
       + "    auth-provider:\n"
       + "      name: gcp\n";
+
+  String AZURE_KUBE_CONFIG_TEMPLATE = "apiVersion: v1\n"
+      + "clusters:\n"
+      + "- cluster:\n"
+      + "    server: ${MASTER_URL}\n"
+      + "    ${INSECURE_SKIP_TLS_VERIFY}\n"
+      + "    ${CERTIFICATE_AUTHORITY_DATA}\n"
+      + "  name: ${CLUSTER_NAME}\n"
+      + "contexts:\n"
+      + "- context:\n"
+      + "    cluster: ${CLUSTER_NAME}\n"
+      + "    user: ${CLUSTER_USER}\n"
+      + "    ${NAMESPACE}\n"
+      + "  name: ${CURRENT_CONTEXT}\n"
+      + "current-context: ${CURRENT_CONTEXT}\n"
+      + "kind: Config\n"
+      + "preferences: {}\n"
+      + "users:\n"
+      + "- name: ${CLUSTER_USER}\n"
+      + "  user:\n"
+      + "    token: ${TOKEN}\n"
+      + "    auth-provider:\n"
+      + "      name: azure\n"
+      + "      config:\n"
+      + "        apiserver-id: ${APISERVER_ID}\n"
+      + "        client-id: ${CLIENT_ID}\n"
+      + "        config-mode: \"${CONFIG_MODE}\"\n"
+      + "        environment: ${ENVIRONMENT}\n"
+      + "        tenant-id: ${TENANT_ID}\n";
   String eventOutputFormat =
       "custom-columns=KIND:involvedObject.kind,NAME:.involvedObject.name,MESSAGE:.message,REASON:.reason";
   int FETCH_FILES_DISPLAY_LIMIT = 100;

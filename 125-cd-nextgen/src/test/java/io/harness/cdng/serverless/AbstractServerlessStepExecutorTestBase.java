@@ -17,6 +17,8 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
@@ -24,6 +26,8 @@ import io.harness.cdng.serverless.beans.ServerlessAwsLambdaStepExecutorParams;
 import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
@@ -64,10 +68,13 @@ public abstract class AbstractServerlessStepExecutorTestBase extends CategoryTes
   protected final ServerlessDeployConfig serverlessDeployConfig = ServerlessAwsLambdaDeployConfig.builder().build();
   protected final ServerlessManifestConfig serverlessManifestConfig =
       ServerlessAwsLambdaManifestConfig.builder().build();
+  protected final String manifestFileOverrideContent = "adsf";
   protected final ServerlessInfraConfig serverlessInfraConfig = ServerlessAwsLambdaInfraConfig.builder().build();
   protected final ServerlessStepExecutorParams serverlessStepExecutorParams =
-      ServerlessAwsLambdaStepExecutorParams.builder().manifestFilePathContent(Pair.of("a", "b")).build();
-  protected final String manifestFileOverrideContent = "adsf";
+      ServerlessAwsLambdaStepExecutorParams.builder()
+          .manifestFilePathContent(Pair.of("a", "b"))
+          .manifestFileOverrideContent(manifestFileOverrideContent)
+          .build();
   protected final String SERVERLESS_AWS_LAMBDA_DEPLOY_COMMAND_NAME = "ServerlessAwsLambdaDeploy";
 
   @Before
@@ -90,7 +97,10 @@ public abstract class AbstractServerlessStepExecutorTestBase extends CategoryTes
     ServerlessExecutionPassThroughData passThroughData =
         ServerlessExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build();
 
-    doReturn(manifestFileOverrideContent).when(serverlessStepHelper).renderManifestContent(ambiance, "b");
+    ServerlessArtifactConfig serverlessArtifactConfig = ServerlessArtifactoryArtifactConfig.builder().build();
+    ArtifactOutcome artifactOutcome = ArtifactoryArtifactOutcome.builder().build();
+    doReturn(Optional.of(artifactOutcome)).when(serverlessStepHelper).resolveArtifactsOutcome(eq(ambiance));
+    doReturn(serverlessArtifactConfig).when(serverlessStepHelper).getArtifactConfig(eq(artifactOutcome), eq(ambiance));
     doReturn(serverlessDeployConfig)
         .when(serverlessStepHelper)
         .getServerlessDeployConfig(
@@ -109,7 +119,8 @@ public abstract class AbstractServerlessStepExecutorTestBase extends CategoryTes
         passThroughData, unitProgressData, serverlessStepExecutorParams);
     ArgumentCaptor<T> requestCaptor = ArgumentCaptor.forClass(requestType);
     verify(serverlessStepHelper, times(1))
-        .queueServerlessTask(eq(stepElementParameters), requestCaptor.capture(), eq(ambiance), eq(passThroughData));
+        .queueServerlessTask(
+            eq(stepElementParameters), requestCaptor.capture(), eq(ambiance), eq(passThroughData), eq(true));
     return requestCaptor.getValue();
   }
 

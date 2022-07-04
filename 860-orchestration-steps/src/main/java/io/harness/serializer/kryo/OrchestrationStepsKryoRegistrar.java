@@ -12,6 +12,10 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.http.HttpStepInfo;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.steps.approval.step.custom.CustomApprovalOutcome;
+import io.harness.steps.approval.step.custom.CustomApprovalStepInfo;
+import io.harness.steps.approval.step.custom.beans.CustomApprovalResponseData;
+import io.harness.steps.approval.step.custom.beans.CustomApprovalTicketNG;
 import io.harness.steps.approval.step.harness.HarnessApprovalOutcome;
 import io.harness.steps.approval.step.harness.HarnessApprovalResponseData;
 import io.harness.steps.approval.step.jira.JiraApprovalOutcome;
@@ -58,6 +62,10 @@ public class OrchestrationStepsKryoRegistrar implements KryoRegistrar {
     kryo.register(FlagConfigurationStepParameters.class, 3226);
     kryo.register(BarrierError.class, 3227);
     kryo.register(ServiceNowApprovalResponseData.class, 3228);
+    kryo.register(CustomApprovalStepInfo.class, 3229);
+    kryo.register(CustomApprovalResponseData.class, 3230);
+    kryo.register(CustomApprovalOutcome.class, 3231);
+    kryo.register(CustomApprovalTicketNG.class, 3232);
 
     // made it same as which was in CD
     kryo.register(HttpStepInfo.class, 8048);

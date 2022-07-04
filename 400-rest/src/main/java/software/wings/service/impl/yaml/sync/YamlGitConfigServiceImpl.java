@@ -22,6 +22,7 @@ import software.wings.beans.Application;
 import software.wings.beans.Application.ApplicationKeys;
 import software.wings.beans.EntityType;
 import software.wings.beans.User;
+import software.wings.dl.WingsMongoPersistence;
 import software.wings.dl.WingsPersistence;
 import software.wings.security.UserPermissionInfo;
 import software.wings.security.UserThreadLocal;
@@ -48,6 +49,7 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
   @Inject private AppService appService;
   @Inject private AccountService accountService;
   @Inject private AuthService authService;
+  @Inject private WingsMongoPersistence wingsMongoPersistence;
 
   @Override
   public List<YamlGitConfig> getYamlGitConfigAccessibleToUserWithEntityName(String accountId) {
@@ -62,9 +64,7 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
         .filter(YamlGitConfigKeys.enabled, Boolean.TRUE)
         .field(YamlGitConfig.ENTITY_TYPE_KEY)
         .in(supportedEntityTypes)
-        .asList()
-        .stream()
-        .collect(Collectors.toList());
+        .asList();
   }
 
   private List<YamlGitConfig> filterYamlGitConfigWithAccessibleEntityAndAddEntityName(
@@ -106,7 +106,7 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
       return Collections.emptyList();
     }
     List<String> filteredAppIds =
-        applicationIds.stream().filter(appId -> allAppsAllowedToTheUser.contains(appId)).collect(Collectors.toList());
+        applicationIds.stream().filter(allAppsAllowedToTheUser::contains).collect(Collectors.toList());
     if (isEmpty(filteredAppIds)) {
       return Collections.emptyList();
     }
@@ -116,7 +116,7 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
                                        .addFieldsIncluded(ApplicationKeys.name)
                                        .addFieldsIncluded(ApplicationKeys.uuid)
                                        .build();
-    return appService.list(req);
+    return wingsMongoPersistence.getAllEntities(req, () -> appService.list(req));
   }
 
   private Map<String, String> getAppIdNameMapForAppAccessibleToUser(
@@ -124,7 +124,7 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
     final Set<String> applicationIds =
         yamlGitConfigs.stream()
             .filter(yamlGitConfig -> yamlGitConfig.getEntityType() == EntityType.APPLICATION)
-            .map(yamlGitConfig -> yamlGitConfig.getEntityId())
+            .map(YamlGitConfig::getEntityId)
             .collect(Collectors.toSet());
     List<Application> applications = getApplicationsAllowedToUser(applicationIds, accountId);
     if (isEmpty(applications)) {

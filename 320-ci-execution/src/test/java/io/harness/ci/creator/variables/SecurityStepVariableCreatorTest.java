@@ -81,7 +81,6 @@ public class SecurityStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.security.spec.execution.steps.sto.description",
             "pipeline.stages.security.spec.execution.steps.sto.timeout",
             "pipeline.stages.security.spec.execution.steps.sto.spec.privileged",
-            "pipeline.stages.security.spec.execution.steps.sto.spec.connectorRef",
             "pipeline.stages.security.spec.execution.steps.sto.spec.runAsUser",
             "pipeline.stages.security.spec.execution.steps.sto.spec.resources.limits.cpu");
 

@@ -69,8 +69,9 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
         List<String> pathSegments = SPLITTER.splitToList(req.getPathInfo());
         String accountId = pathSegments.get(1);
         String delegateId = req.getParameter("delegateId");
+        String delegateTokenName = req.getParameter("delegateTokenName");
 
-        authService.validateDelegateToken(accountId, req.getParameter("token"), delegateId, false);
+        authService.validateDelegateToken(accountId, req.getParameter("token"), delegateId, delegateTokenName, false);
         try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
              AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
           String delegateConnectionId = req.getParameter("delegateConnectionId");

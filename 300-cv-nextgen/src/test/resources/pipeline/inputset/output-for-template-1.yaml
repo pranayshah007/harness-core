@@ -1,0 +1,24 @@
+---
+pipeline:
+  identifier: "stage_template_with_normal_verify"
+  stages:
+    - stage:
+        template:
+          templateInputs:
+            type: "Deployment"
+            spec:
+              execution:
+                steps:
+                  - step:
+                      template:
+                        templateInputs:
+                          type: "Verify"
+                          spec:
+                            type: "Rolling"
+                            spec:
+                              sensitivity: "<+input>"
+                      identifier: "verify"
+                  - step:
+                      identifier: "normal_verify"
+                      type: "Verify"
+        identifier: "dep2"

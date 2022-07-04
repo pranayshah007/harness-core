@@ -9,7 +9,9 @@ package io.harness.delegate.task.ssh.config;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.security.encryption.EncryptedDataDetail;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,4 +27,7 @@ public class ConfigFileParameters {
   private String fileContent;
   private long fileSize;
   private String destinationPath;
+  private SecretConfigFile secretConfigFile;
+  private boolean isEncrypted;
+  List<EncryptedDataDetail> encryptionDataDetails;
 }

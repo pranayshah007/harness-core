@@ -179,12 +179,18 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
   public String getAcrRefreshToken(String registryUrl, String azureAccessToken) {
     WingsException we;
     try {
+      log.info(format("Fetching ACR refresh token for registry %s", registryUrl));
+      log.trace(format("Using access token %s", azureAccessToken));
+
       AzureContainerRegistryRestClient acrRestClient =
           getAzureRestClient(buildRepositoryHostUrl(registryUrl), AzureContainerRegistryRestClient.class);
       Response<AcrGetTokenResponse> response =
           acrRestClient.getRefreshToken(AzureConstants.ACCESS_TOKEN, azureAccessToken, registryUrl).execute();
       if (response.isSuccessful()) {
-        return response.body().getRefreshToken();
+        String refreshToken = response.body().getRefreshToken();
+        log.trace(format("Retrieved Refresh token: %s", refreshToken));
+
+        return refreshToken;
       } else {
         we = new AzureAuthenticationException(
             format("Get ACR refresh token in exchange for Azure access token has failed: %s with status code %s",
@@ -203,6 +209,9 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
   public String getAcrAccessToken(String registryUrl, String azureAccessToken, String scope) {
     String errMsg;
     try {
+      log.info(format("Fetching ACR access token for registry %s and scope %s", registryUrl, scope));
+      log.trace(format("Using access token %s", azureAccessToken));
+
       AzureContainerRegistryRestClient acrRestClient =
           getAzureRestClient(buildRepositoryHostUrl(registryUrl), AzureContainerRegistryRestClient.class);
 
@@ -211,7 +220,10 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
           acrRestClient.getAccessToken(AzureConstants.REFRESH_TOKEN, refreshToken, registryUrl, scope).execute();
 
       if (response.isSuccessful()) {
-        return response.body().getAccessToken();
+        String acrAccessToken = response.body().getAccessToken();
+        log.trace(format("Retrieved ACR access token: %s", acrAccessToken));
+
+        return acrAccessToken;
       } else {
         errMsg =
             format("Get ACR access token request failed: %s with status code %s", response.message(), response.code());

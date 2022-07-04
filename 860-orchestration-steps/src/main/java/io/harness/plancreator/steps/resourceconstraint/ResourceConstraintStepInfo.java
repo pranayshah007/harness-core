@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.resourcerestraint.ResourceRestraintFacilitator;
 import io.harness.steps.resourcerestraint.ResourceRestraintSpecParameters;
@@ -42,7 +43,7 @@ public class ResourceConstraintStepInfo implements PMSStepInfo {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String identifier;
 
   @NotNull String name;
-  @NotNull String resourceUnit;
+  @NotNull ParameterField<String> resourceUnit;
   @NotNull AcquireMode acquireMode;
   @NotNull int permits;
   @NotNull HoldingScope holdingScope;

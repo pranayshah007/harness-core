@@ -211,7 +211,7 @@ public class ManifestHelper {
       if (!resource.getSpec().startsWith(YAML_DOCUMENT_DELIMITER)) {
         stringBuilder.append(YAML_DOCUMENT_DELIMITER).append(System.lineSeparator());
       }
-      stringBuilder.append(resource.getSpec());
+      stringBuilder.append(resource.getSpec()).append(System.lineSeparator());
     }
 
     return stringBuilder.toString();

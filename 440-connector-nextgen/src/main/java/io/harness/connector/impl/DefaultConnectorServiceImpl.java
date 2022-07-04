@@ -23,6 +23,7 @@ import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
@@ -40,6 +41,7 @@ import io.harness.connector.ConnectorCategory;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorRegistryFactory;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.ConnectorValidationResult.ConnectorValidationResultBuilder;
@@ -112,8 +114,10 @@ import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -426,16 +430,6 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
         accountIdentifier, connectorEntity.getOrgIdentifier(), connectorEntity.getProjectIdentifier(), connectorEntity);
   }
 
-  private void validateThatAConnectorWithThisNameDoesNotExists(
-      ConnectorInfoDTO connectorRequestDTO, String accountIdentifier) {
-    Page<Connector> connectors = getConnectorsWithGivenName(accountIdentifier, connectorRequestDTO.getOrgIdentifier(),
-        connectorRequestDTO.getProjectIdentifier(), connectorRequestDTO.getName(), true);
-    if (connectors != null && connectors.getSize() >= 1) {
-      throw new InvalidRequestException(
-          format("Connector with name [%s] already exists", connectorRequestDTO.getName()));
-    }
-  }
-
   private Page<Connector> getConnectorsWithGivenName(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String name, boolean isDeletedAllowed) {
     Criteria criteria = new Criteria()
@@ -452,6 +446,22 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     }
     return connectorRepository.findAll(
         criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier);
+  }
+
+  private List<Connector> getConnectors(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers) {
+    Criteria criteria = new Criteria()
+                            .and(ConnectorKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(ConnectorKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(ConnectorKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(ConnectorKeys.identifier)
+                            .in(connectorIdentifiers);
+    return connectorRepository
+        .findAll(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier)
+        .getContent();
   }
 
   @Override
@@ -579,6 +589,26 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
         connectorDTO.getConnectorInfo().getProjectIdentifier(),
         connectorRepository.update(accountIdentifier, connectorDTO.getConnectorInfo().getOrgIdentifier(),
             connectorDTO.getConnectorInfo().getProjectIdentifier(), criteria, update));
+  }
+
+  @Override
+  public List<Map<String, String>> getAttributes(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers) {
+    Map<String, List<Connector>> connectors =
+        getConnectors(accountId, orgIdentifier, projectIdentifier, connectorIdentifiers)
+            .stream()
+            .collect(groupingBy(Connector::getIdentifier));
+    List<Map<String, String>> attributes = new ArrayList<>();
+    for (String connectorId : connectorIdentifiers) {
+      if (connectors.containsKey(connectorId)) {
+        attributes.add(ImmutableMap.of("category",
+            ConnectorRegistryFactory.getConnectorCategory(connectors.get(connectorId).get(0).getType()).name()));
+      } else {
+        attributes.add(Collections.emptyMap());
+      }
+    }
+
+    return attributes;
   }
 
   private void deleteTheExistingReferences(

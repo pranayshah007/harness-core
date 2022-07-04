@@ -22,7 +22,7 @@ import java.util.Optional;
 @OwnedBy(PL)
 public interface NotificationSettingsService {
   List<String> getNotificationRequestForUserGroups(List<NotificationRequest.UserGroup> notificationUserGroups,
-      NotificationChannelType notificationChannelType, String accountId);
+      NotificationChannelType notificationChannelType, String accountId, long expressionFunctorToken);
   List<String> getNotificationSettingsForGroups(
       List<String> userGroups, NotificationChannelType notificationChannelType, String accountId);
   Optional<NotificationSetting> getNotificationSetting(String accountId);
@@ -32,4 +32,6 @@ public interface NotificationSettingsService {
   NotificationSetting setSmtpConfig(String accountId, SmtpConfig smtpConfig);
 
   SmtpConfigResponse getSmtpConfigResponse(String accountId);
+
+  boolean checkIfWebhookIsSecret(List<String> webhooks);
 }

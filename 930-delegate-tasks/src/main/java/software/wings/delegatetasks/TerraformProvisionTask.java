@@ -468,9 +468,17 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
         }
       }
 
+      if (code != 0) {
+        saveExecutionLog("Script execution finished with status: " + CommandExecutionStatus.FAILURE,
+            CommandExecutionStatus.FAILURE, INFO, logCallback);
+        return TerraformExecutionData.builder()
+            .executionStatus(ExecutionStatus.FAILED)
+            .errorMessage("The terraform command exited with code " + code)
+            .build();
+      }
+
       String tfPlanJsonFileId = null;
-      if (code == 0 && parameters.isSaveTerraformJson() && parameters.isUseOptimizedTfPlanJson()
-          && version.minVersion(0, 12)) {
+      if (parameters.isSaveTerraformJson() && parameters.isUseOptimizedTfPlanJson() && version.minVersion(0, 12)) {
         String planName = getPlanName(parameters);
         saveExecutionLog(format("Uploading terraform %s json representation", planName), CommandExecutionStatus.RUNNING,
             INFO, logCallback);
@@ -488,18 +496,15 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
             CommandExecutionStatus.RUNNING, INFO, logCallback);
       }
 
-      if (code == 0 && !parameters.isRunPlanOnly()) {
+      if (!parameters.isRunPlanOnly()) {
         saveExecutionLog(
             format("Waiting: [%s] seconds for resources to be ready", String.valueOf(RESOURCE_READY_WAIT_TIME_SECONDS)),
             CommandExecutionStatus.RUNNING, INFO, logCallback);
         sleep(ofSeconds(RESOURCE_READY_WAIT_TIME_SECONDS));
       }
 
-      CommandExecutionStatus commandExecutionStatus =
-          code == 0 ? CommandExecutionStatus.SUCCESS : CommandExecutionStatus.FAILURE;
-
-      saveExecutionLog("Script execution finished with status: " + commandExecutionStatus, commandExecutionStatus, INFO,
-          logCallback);
+      saveExecutionLog("Script execution finished with status: " + CommandExecutionStatus.SUCCESS,
+          CommandExecutionStatus.SUCCESS, INFO, logCallback);
 
       final DelegateFile delegateFile = aDelegateFile()
                                             .withAccountId(parameters.getAccountId())
@@ -565,16 +570,14 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
               .tfVarFiles(parameters.getTfVarFiles())
               .tfVarSource(parameters.getTfVarSource())
               .delegateTag(parameters.getDelegateTag())
-              .executionStatus(code == 0 ? ExecutionStatus.SUCCESS : ExecutionStatus.FAILED)
-              .errorMessage(code == 0 ? null : "The terraform command exited with code " + code)
+              .executionStatus(ExecutionStatus.SUCCESS)
               .workspace(parameters.getWorkspace())
               .encryptedTfPlan(encryptedTfPlan)
               .awsConfigId(parameters.getAwsConfigId())
               .awsRoleArn(parameters.getAwsRoleArn())
               .awsRegion(parameters.getAwsRegion());
 
-      if (parameters.getCommandUnit() != TerraformCommandUnit.Destroy
-          && commandExecutionStatus == CommandExecutionStatus.SUCCESS && !parameters.isRunPlanOnly()) {
+      if (parameters.getCommandUnit() != TerraformCommandUnit.Destroy && !parameters.isRunPlanOnly()) {
         terraformExecutionDataBuilder.outputs(new String(Files.readAllBytes(tfOutputsFile.toPath()), Charsets.UTF_8));
       }
 

@@ -314,7 +314,7 @@ public class NGHostValidationServiceImplTest extends CategoryTest {
                                PROJECT_IDENTIFIER, Sets.newHashSet(DELEGATE_SELECTOR)))
         .isInstanceOf(HintException.class)
         .hasMessage(
-            "Please make sure that your delegates are connected. Refer https://docs.harness.io/article/migeq3achl-harness-delegate-faqs#delegate_installation for more information on delegate Installation");
+            "Please make sure that your delegates are connected. Refer https://ngdocs.harness.io/article/re8kk0ex4k for more information on delegate Installation");
   }
 
   @Test

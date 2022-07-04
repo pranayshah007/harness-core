@@ -18,9 +18,6 @@
         type: Harness
         spec:
           files:
-            - ref: folderIdentifer
-              path: Root/folder,
-              isEncrypted: true
-            - ref: fileIdentifer,
-              path: Root/folder/fileName.txt,
-              isEncrypted: false
+            - account:/folder/config.yml
+            - org:/folder/service.yml
+            - /folder1/minfests

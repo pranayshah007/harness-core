@@ -10,7 +10,7 @@ package io.harness.ci.plan.creator;
 import static io.harness.beans.execution.WebhookEvent.Type.BRANCH;
 import static io.harness.beans.execution.WebhookEvent.Type.PR;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
-import static io.harness.common.CIExecutionConstants.AZURE_REPO_BASE_URL;
+import static io.harness.ci.commonconstants.CIExecutionConstants.AZURE_REPO_BASE_URL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.git.GitClientHelper.getGitRepo;
@@ -24,14 +24,21 @@ import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
+import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.pipeline.executions.beans.CIBuildAuthor;
 import io.harness.ci.pipeline.executions.beans.CIBuildBranchHook;
 import io.harness.ci.pipeline.executions.beans.CIBuildCommit;
 import io.harness.ci.pipeline.executions.beans.CIBuildPRHook;
+import io.harness.ci.pipeline.executions.beans.CIImageDetails;
+import io.harness.ci.pipeline.executions.beans.CIInfraDetails;
+import io.harness.ci.pipeline.executions.beans.CIScmDetails;
 import io.harness.ci.pipeline.executions.beans.CIWebhookInfoDTO;
+import io.harness.ci.pipeline.executions.beans.TIBuildDetails;
 import io.harness.ci.plan.creator.execution.CIPipelineModuleInfo;
 import io.harness.ci.plan.creator.execution.CIStageModuleInfo;
+import io.harness.ci.states.InitializeTaskStep;
+import io.harness.ci.utils.WebhookTriggerProcessorUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ng.core.BaseNGAccess;
@@ -52,9 +59,6 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.execution.beans.PipelineModuleInfo;
 import io.harness.pms.sdk.execution.beans.StageModuleInfo;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.states.InitializeTaskStep;
-import io.harness.stateutils.buildstate.ConnectorUtils;
-import io.harness.util.WebhookTriggerProcessorUtils;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
@@ -95,6 +99,12 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
     String buildType = null;
     String triggerRepoName = null;
     String url = null;
+
+    List<CIScmDetails> scmDetailsList = new ArrayList<>();
+    List<CIInfraDetails> infraDetailsList = new ArrayList<>();
+    List<CIImageDetails> imageDetailsList = new ArrayList<>();
+    List<TIBuildDetails> tiBuildDetailsList = new ArrayList<>();
+
     CIBuildAuthor author = null;
     Boolean isPrivateRepo = false;
     List<CIBuildCommit> triggerCommits = null;
@@ -131,12 +141,18 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
               if (isEmpty(repoName) || repoName.equals(NULL_STR)) {
                 repoName = getGitRepo(url);
               }
-
+              CIScmDetails scmDetails = IntegrationStageUtils.getCiScmDetails(connectorUtils, connectorDetails);
+              scmDetails.setScmUrl(url);
+              scmDetailsList.add(scmDetails);
             } catch (Exception exception) {
               log.warn("Failed to retrieve repo");
             }
           }
         }
+        infraDetailsList.add(IntegrationStageUtils.getCiInfraDetails(initializeStepInfo.getInfrastructure()));
+        imageDetailsList = IntegrationStageUtils.getCiImageDetails(initializeStepInfo);
+        tiBuildDetailsList = IntegrationStageUtils.getTiBuildDetails(initializeStepInfo);
+
         isPrivateRepo = isPrivateRepo(url);
         Build build = RunTimeInputHandler.resolveBuild(buildParameterField);
         if (build != null) {
@@ -196,6 +212,10 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
             .repoName(repoName)
             .ciExecutionInfoDTO(ciWebhookInfoDTO)
             .isPrivateRepo(isPrivateRepo)
+            .scmDetailsList(scmDetailsList)
+            .infraDetailsList(infraDetailsList)
+            .imageDetailsList(imageDetailsList)
+            .tiBuildDetailsList(tiBuildDetailsList)
             .build();
       }
     }
@@ -236,6 +256,10 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
         .repoName(repoName)
         .ciExecutionInfoDTO(getCiExecutionInfoDTO(codebaseSweepingOutput, author, prNumber, triggerCommits))
         .isPrivateRepo(isPrivateRepo)
+        .scmDetailsList(scmDetailsList)
+        .infraDetailsList(infraDetailsList)
+        .imageDetailsList(imageDetailsList)
+        .tiBuildDetailsList(tiBuildDetailsList)
         .build();
   }
 

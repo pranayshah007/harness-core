@@ -40,7 +40,7 @@ public class DelegateSizeTest {
       when(underTest.fetchDefaultDockerDelegateSize()).thenCallRealMethod();
       DelegateSizeDetails delegateSizeDetails = underTest.fetchDefaultDockerDelegateSize();
 
-      assertThat(delegateSizeDetails.getCpu()).isEqualTo(0.5);
+      assertThat(delegateSizeDetails.getCpu()).isEqualTo(1);
       assertThat(delegateSizeDetails.getLabel()).isEqualTo("Default");
       assertThat(delegateSizeDetails.getRam()).isEqualTo(2048);
       assertThat(delegateSizeDetails.getReplicas()).isEqualTo(0);
@@ -57,7 +57,7 @@ public class DelegateSizeTest {
       when(underTest.fetchDefaultDockerDelegateSize()).thenCallRealMethod();
       DelegateSizeDetails delegateSizeDetails = underTest.fetchDefaultDockerDelegateSize();
 
-      assertThat(delegateSizeDetails.getCpu()).isEqualTo(0.5);
+      assertThat(delegateSizeDetails.getCpu()).isEqualTo(1);
       assertThat(delegateSizeDetails.getLabel()).isEqualTo("Default Community Size");
       assertThat(delegateSizeDetails.getRam()).isEqualTo(768);
       assertThat(delegateSizeDetails.getReplicas()).isEqualTo(0);

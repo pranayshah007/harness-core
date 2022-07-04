@@ -91,11 +91,11 @@ public final class InstanceData implements PersistentEntity, UuidAware, CreatedA
                  .field(InstanceDataKeys.NODE_POOL_NAME)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_instanceType_activeInstanceIterator_usageStartTime")
+                 .name("accountId_activeInstanceIterator_usageStartTime_instanceType")
                  .field(InstanceDataKeys.accountId)
-                 .field(InstanceDataKeys.instanceType)
                  .field(InstanceDataKeys.activeInstanceIterator)
                  .field(InstanceDataKeys.usageStartTime)
+                 .field(InstanceDataKeys.instanceType)
                  .build())
         .build();
   }

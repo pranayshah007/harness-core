@@ -83,6 +83,17 @@ public class IdentityStep
 
   public static Ambiance modifyAmbiance(Ambiance ambiance) {
     Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
+    StepCategory stepCategory = level.getStepType().getStepCategory();
+    if (AmbianceUtils.getStrategyLevelFromAmbiance(ambiance).isPresent()) {
+      String stepType = IdentityStrategyStep.STEP_TYPE.getType();
+      if (stepCategory != StepCategory.STRATEGY) {
+        stepType = IdentityStrategyInternalStep.STEP_TYPE.getType();
+      }
+      return AmbianceUtils.cloneForFinish(ambiance,
+          level.toBuilder()
+              .setStepType(StepType.newBuilder().setType(stepType).setStepCategory(StepCategory.STRATEGY).build())
+              .build());
+    }
     return AmbianceUtils.cloneForFinish(ambiance,
         level.toBuilder()
             .setStepType(StepType.newBuilder().setType("IDENTITY_STEP").setStepCategory(StepCategory.STEP).build())

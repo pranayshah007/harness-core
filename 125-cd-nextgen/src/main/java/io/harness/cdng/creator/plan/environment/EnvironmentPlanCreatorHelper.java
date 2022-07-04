@@ -20,6 +20,7 @@ import io.harness.cdng.infra.steps.EnvironmentStep;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -50,6 +51,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.variables.NGServiceOverrides;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -107,10 +109,20 @@ public class EnvironmentPlanCreatorHelper {
         accountIdentifier, orgIdentifier, projectIdentifier, environmentV2.getEnvironmentRef().getValue(), serviceRef);
     NGServiceOverrides serviceOverride = getNgServiceOverrides(environmentV2, serviceOverridesOptional);
 
-    String mergedEnvYaml = environment.get().getYaml();
+    String originalEnvYaml = environment.get().getYaml();
 
-    if (isNotEmpty(environmentV2.getEnvironmentInputs())) {
-      mergedEnvYaml = mergeEnvironmentInputs(environment.get().getYaml(), environmentV2.getEnvironmentInputs());
+    // TODO: need to remove this once we have the migration for old env
+    if (EmptyPredicate.isEmpty(originalEnvYaml)) {
+      try {
+        originalEnvYaml = YamlPipelineUtils.getYamlString(environment.get());
+      } catch (JsonProcessingException e) {
+        throw new InvalidRequestException("Unable to convert environment to yaml");
+      }
+    }
+
+    String mergedEnvYaml = originalEnvYaml;
+    if (isNotEmpty(environmentV2.getEnvironmentInputs().getValue())) {
+      mergedEnvYaml = mergeEnvironmentInputs(originalEnvYaml, environmentV2.getEnvironmentInputs().getValue());
     }
 
     if (!gitOpsEnabled) {
@@ -131,9 +143,9 @@ public class EnvironmentPlanCreatorHelper {
     if (serviceOverridesOptional.isPresent()) {
       NGServiceOverridesEntity serviceOverridesEntity = serviceOverridesOptional.get();
       String mergedYaml = serviceOverridesEntity.getYaml();
-      if (isNotEmpty(environmentV2.getServiceOverrideInputs())) {
-        mergedYaml =
-            resolveServiceOverrideInputs(serviceOverridesEntity.getYaml(), environmentV2.getServiceOverrideInputs());
+      if (isNotEmpty(environmentV2.getServiceOverrideInputs().getValue())) {
+        mergedYaml = resolveServiceOverrideInputs(
+            serviceOverridesEntity.getYaml(), environmentV2.getServiceOverrideInputs().getValue());
       }
       if (mergedYaml != null) {
         serviceOverride = ServiceOverridesMapper.toServiceOverrides(mergedYaml);
@@ -165,8 +177,8 @@ public class EnvironmentPlanCreatorHelper {
     if (!environmentV2.isDeployToAll()) {
       List<String> infraIdentifierList = new ArrayList<>();
 
-      for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions()) {
-        String ref = infraYaml.getRef().getValue();
+      for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions().getValue()) {
+        String ref = infraYaml.getIdentifier();
         infraIdentifierList.add(ref);
         if (isNotEmpty(infraYaml.getInputs())) {
           refToInputMap.put(ref, infraYaml.getInputs());
@@ -176,9 +188,9 @@ public class EnvironmentPlanCreatorHelper {
           accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifierList);
 
     } else {
-      if (isNotEmpty(environmentV2.getInfrastructureDefinitions())) {
+      if (isNotEmpty(environmentV2.getInfrastructureDefinitions().getValue())) {
         throw new InvalidRequestException(String.format("DeployToAll is enabled along with specific Infrastructures %s",
-            environmentV2.getInfrastructureDefinitions()));
+            environmentV2.getInfrastructureDefinitions().getValue()));
       }
       infrastructureEntityList = infrastructure.getAllInfrastructureFromEnvIdentifier(
           accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier);

@@ -91,7 +91,7 @@ public class CEViewFolderDao {
   public String createDefaultOrSampleFolder(String accountId, ViewType viewType) {
     CEViewFolder ceViewFolder = CEViewFolder.builder()
                                     .accountId(accountId)
-                                    .name((viewType.equals(ViewType.DEFAULT)) ? "Default" : "Out of the box")
+                                    .name((viewType.equals(ViewType.DEFAULT)) ? "Default" : "By Harness")
                                     .pinned(true)
                                     .viewType(viewType)
                                     .description((viewType.equals(ViewType.DEFAULT))

@@ -8,11 +8,13 @@
 package software.wings.service.impl.instance;
 
 import static io.harness.beans.EnvironmentType.NON_PROD;
+import static io.harness.rule.OwnerRule.RISHABH;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_ID;
+import static software.wings.utils.WingsTestConstants.ARTIFACT_NAME;
 import static software.wings.utils.WingsTestConstants.ENV_ID;
 import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
 import static software.wings.utils.WingsTestConstants.SERVICE_ID;
@@ -46,6 +48,7 @@ import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.InfrastructureMappingType;
 import software.wings.beans.Service;
+import software.wings.beans.artifact.Artifact;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.InstanceType;
 import software.wings.beans.infrastructure.instance.info.PhysicalHostInstanceInfo;
@@ -118,17 +121,35 @@ public class CustomDeploymentInstanceHandlerTest extends WingsBaseTest {
   public void shouldAddInstancesOnFirstDeployment() {
     doReturn(emptyList()).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
 
-    handler.handleNewDeployment(singletonList(buildDeploymentSummary(buildSampleInstancesJson(1, 2, 3))), false, null);
+    handler.handleNewDeployment(singletonList(buildDeploymentSummary(buildSampleInstancesJson(1, 2, 3), ARTIFACT_ID,
+                                    ARTIFACT_NAME, ARTIFACT_ID, ARTIFACT_NAME)),
+        false, null);
 
     verify(instanceService, times(3)).save(captor.capture());
     verify(instanceService, never()).delete(anySet());
 
     final List<Instance> savedInstances = captor.getAllValues();
 
-    List<Instance> expectedInstances = buildSampleInstances(null, null, 1, 2, 3);
+    List<Instance> expectedInstances = buildSampleInstances(ARTIFACT_ID, ARTIFACT_NAME, 1, 2, 3);
     savedInstances.forEach(this::nullUuid);
     expectedInstances.forEach(this::nullUuid);
     assertThat(savedInstances).containsExactlyElementsOf(expectedInstances);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void shouldNotAddInstancesOnRollbackInFirstDeployment() {
+    List<Instance> instancesInDb = buildSampleInstances(ARTIFACT_ID, ARTIFACT_NAME, 1, 2, 3);
+    instancesInDb.forEach(setExecutionId());
+    doReturn(instancesInDb).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+
+    handler.handleNewDeployment(singletonList(buildDeploymentSummary(
+                                    buildSampleInstancesJson(1, 2, 3), ARTIFACT_ID, ARTIFACT_NAME, null, null)),
+        true, null);
+
+    verify(instanceService, times(0)).save(captor.capture());
+    verify(instanceService, times(1)).delete(anySet());
   }
 
   @Test
@@ -138,9 +159,9 @@ public class CustomDeploymentInstanceHandlerTest extends WingsBaseTest {
     doReturn(emptyList()).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
 
     final String artifactName = "hello-world";
-    handler.handleNewDeployment(
-        singletonList(buildDeploymentSummary(buildSampleInstancesJson(1, 2, 3), ARTIFACT_ID, artifactName)), false,
-        null);
+    handler.handleNewDeployment(singletonList(buildDeploymentSummary(buildSampleInstancesJson(1, 2, 3), ARTIFACT_ID,
+                                    artifactName, ARTIFACT_ID, artifactName)),
+        false, null);
 
     verify(instanceService, times(3)).save(captor.capture());
     verify(instanceService, never()).delete(anySet());
@@ -161,7 +182,9 @@ public class CustomDeploymentInstanceHandlerTest extends WingsBaseTest {
     instancesInDb.forEach(setExecutionId());
     doReturn(instancesInDb).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
 
-    handler.handleNewDeployment(singletonList(buildDeploymentSummary(buildSampleInstancesJson(1, 5))), false, null);
+    handler.handleNewDeployment(singletonList(buildDeploymentSummary(buildSampleInstancesJson(1, 5), ARTIFACT_ID,
+                                    ARTIFACT_NAME, ARTIFACT_ID, ARTIFACT_NAME)),
+        false, null);
 
     verify(instanceService, times(1)).delete(stringArgumentCaptor.capture());
     verify(instanceService, times(2)).save(captor.capture());
@@ -199,15 +222,16 @@ public class CustomDeploymentInstanceHandlerTest extends WingsBaseTest {
     instancesInDb.forEach(setExecutionId());
     doReturn(instancesInDb).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
 
-    handler.handleNewDeployment(
-        singletonList(buildDeploymentSummary(buildSampleInstancesJson(1, 5, 6, 7))), false, null);
+    handler.handleNewDeployment(singletonList(buildDeploymentSummary(buildSampleInstancesJson(1, 5, 6, 7), ARTIFACT_ID,
+                                    ARTIFACT_NAME, ARTIFACT_ID, ARTIFACT_NAME)),
+        false, null);
 
     verify(instanceService, times(4)).save(captor.capture());
     verify(instanceService, times(1)).delete(stringArgumentCaptor.capture());
 
     @SuppressWarnings("unchecked") final Set<String> instanceIdsDeleted = stringArgumentCaptor.getValue();
 
-    List<Instance> expectedInstances = buildSampleInstances(null, null, 1, 5, 6, 7);
+    List<Instance> expectedInstances = buildSampleInstances(ARTIFACT_ID, ARTIFACT_NAME, 1, 5, 6, 7);
     List<Instance> savedInstances = captor.getAllValues();
     savedInstances.forEach(this::nullUuid);
     expectedInstances.forEach(this::nullUuid);
@@ -227,8 +251,8 @@ public class CustomDeploymentInstanceHandlerTest extends WingsBaseTest {
     instancesInDb.forEach(setExecutionId());
     doReturn(instancesInDb).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
 
-    handler.handleNewDeployment(
-        singletonList(buildDeploymentSummary(buildSampleInstancesJson(1, 5, 6, 7), newArtifactId, newArtifactName)),
+    handler.handleNewDeployment(singletonList(buildDeploymentSummary(buildSampleInstancesJson(1, 5, 6, 7),
+                                    newArtifactId, newArtifactName, newArtifactId, newArtifactName)),
         false, null);
 
     verify(instanceService, times(4)).save(captor.capture());
@@ -340,6 +364,78 @@ public class CustomDeploymentInstanceHandlerTest extends WingsBaseTest {
     assertThat(deploymentKey.getTags()).containsExactly("tag1", "tag2");
   }
 
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void shouldNotUseRollbackArtifactInDeployPhase() {
+    final String lastArtifactId = "last-success-artifact-id";
+    final String lastArtifactName = "hello-last-success-artifact";
+    final String newArtifactId = "new-artifact-id";
+    final String newArtifactName = "hello-new-artifact";
+
+    List<Instance> instancesInDb = buildSampleInstances(newArtifactId, newArtifactName, 1, 2, 3);
+    instancesInDb.forEach(setExecutionId());
+    doReturn(instancesInDb).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+
+    List<DeploymentSummary> deploymentSummary = singletonList(buildDeploymentSummary(
+        buildSampleInstancesJson(1, 2, 3), newArtifactId, newArtifactName, newArtifactId, newArtifactName));
+    Artifact artifact = Artifact.Builder.anArtifact()
+                            .withAppId(APP_ID)
+                            .withUuid(lastArtifactId)
+                            .withDisplayName(lastArtifactName)
+                            .build();
+    List<Artifact> artifacts = new ArrayList<>();
+    artifacts.add(artifact);
+
+    handler.handleNewDeployment(deploymentSummary, false, null);
+
+    verify(instanceService, times(3)).save(captor.capture());
+    verify(instanceService, times(1)).delete(anySet());
+
+    final List<Instance> savedInstances = captor.getAllValues();
+
+    List<Instance> expectedInstances = buildSampleInstances(newArtifactId, newArtifactName, 1, 2, 3);
+    savedInstances.forEach(this::nullUuid);
+    expectedInstances.forEach(this::nullUuid);
+    assertThat(savedInstances).containsExactlyElementsOf(expectedInstances);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void shouldUseRollbackArtifactInRollbackPhase() {
+    final String lastArtifactId = "last-success-artifact-id";
+    final String lastArtifactName = "hello-last-success-artifact";
+    final String newArtifactId = "new-artifact-id";
+    final String newArtifactName = "hello-new-artifact";
+
+    List<Instance> instancesInDb = buildSampleInstances(newArtifactId, newArtifactName, 1, 2, 3);
+    instancesInDb.forEach(setExecutionId());
+    doReturn(instancesInDb).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+
+    List<DeploymentSummary> deploymentSummary = singletonList(buildDeploymentSummary(
+        buildSampleInstancesJson(1, 2, 3), newArtifactId, newArtifactName, lastArtifactId, lastArtifactName));
+    Artifact artifact = Artifact.Builder.anArtifact()
+                            .withAppId(APP_ID)
+                            .withUuid(lastArtifactId)
+                            .withDisplayName(lastArtifactName)
+                            .build();
+    List<Artifact> artifacts = new ArrayList<>();
+    artifacts.add(artifact);
+
+    handler.handleNewDeployment(deploymentSummary, true, null);
+
+    verify(instanceService, times(3)).save(captor.capture());
+    verify(instanceService, times(1)).delete(anySet());
+
+    final List<Instance> savedInstances = captor.getAllValues();
+
+    List<Instance> expectedInstances = buildSampleInstances(lastArtifactId, lastArtifactName, 1, 2, 3);
+    savedInstances.forEach(this::nullUuid);
+    expectedInstances.forEach(this::nullUuid);
+    assertThat(savedInstances).containsExactlyElementsOf(expectedInstances);
+  }
+
   private List<Instance> buildSampleInstances(String artifactId, String artifactName, int... indexes) {
     List<Instance> instances = new ArrayList<>();
     for (int n : indexes) {
@@ -412,14 +508,19 @@ public class CustomDeploymentInstanceHandlerTest extends WingsBaseTest {
         .build();
   }
 
-  private DeploymentSummary buildDeploymentSummary(String scriptOutput, String artifactId, String artifactName) {
+  private DeploymentSummary buildDeploymentSummary(String scriptOutput, String artifactId, String artifactName,
+      String deploymentInfoArtifactId, String deploymentInfoArtifactName) {
     return DeploymentSummary.builder()
         .appId(APP_ID)
         .accountId(ACCOUNT_ID)
         .infraMappingId(INFRA_MAPPING_ID)
         .artifactId(artifactId)
         .artifactName(artifactName)
-        .deploymentInfo(CustomDeploymentTypeInfo.builder().scriptOutput(scriptOutput).build())
+        .deploymentInfo(CustomDeploymentTypeInfo.builder()
+                            .artifactId(deploymentInfoArtifactId)
+                            .artifactName(deploymentInfoArtifactName)
+                            .scriptOutput(scriptOutput)
+                            .build())
         .build();
   }
 

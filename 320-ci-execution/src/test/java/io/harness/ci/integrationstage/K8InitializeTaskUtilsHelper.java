@@ -7,11 +7,11 @@
 
 package io.harness.ci.integrationstage;
 
-import static io.harness.common.CIExecutionConstants.PORT_PREFIX;
-import static io.harness.common.CIExecutionConstants.PORT_STARTING_RANGE;
-import static io.harness.common.CIExecutionConstants.STEP_REQUEST_MEMORY_MIB;
-import static io.harness.common.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
-import static io.harness.common.CIExecutionConstants.UNIX_STEP_COMMAND;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PORT_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PORT_STARTING_RANGE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MEMORY_MIB;
+import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
+import static io.harness.ci.commonconstants.CIExecutionConstants.UNIX_STEP_COMMAND;
 import static io.harness.delegate.beans.ci.pod.CIContainerType.RUN;
 import static io.harness.pms.yaml.ParameterField.createValueField;
 

@@ -10,8 +10,10 @@ package io.harness.pms.plan.execution;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
@@ -28,6 +30,7 @@ import io.harness.engine.executions.retry.RetryInfo;
 import io.harness.engine.executions.retry.RetryLatestExecutionResponseDto;
 import io.harness.engine.executions.retry.RetryStageInfo;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
 import io.harness.plan.IdentityPlanNode;
@@ -37,6 +40,8 @@ import io.harness.plan.Plan;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.ExecutionStatus;
@@ -46,6 +51,7 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.repositories.executions.PmsExecutionSummaryRespository;
 import io.harness.rule.Owner;
+import io.harness.steps.matrix.StrategyStep;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -60,6 +66,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -578,6 +585,23 @@ public class RetryExecuteHelperTest extends CategoryTest {
     replacedProcessedYaml = retryExecuteHelper.retryProcessedYaml(
         previousGoldenYaml, currentGoldenYaml, Arrays.asList("stage3", "stage4", "stage5"), new ArrayList<>());
     assertThat(replacedProcessedYaml).isEqualTo(yamlToJsonString(resultProcessedYaml));
+
+    // testing the matrix scenarios
+    // Resuming from the stage that has strategy in it.
+    previousYaml = readFile("retry/previous-retry-processed-yaml-with-matrix.yaml");
+    currentYaml = readFile("retry/current-processed-yaml-with-matrix.yaml");
+    resultProcessedYaml = readFile("retry/result-processed-yaml-with-matrix.yaml");
+    replacedProcessedYaml = retryExecuteHelper.retryProcessedYaml(
+        previousYaml, currentYaml, Collections.singletonList("approval"), Collections.emptyList());
+    assertEquals(replacedProcessedYaml, resultProcessedYaml);
+
+    // Resuming from the next stage of the stage that has strategy.
+    previousYaml = readFile("retry/previous-retry-processed-yaml-with-matrix-1.yaml");
+    currentYaml = readFile("retry/current-processed-yaml-with-matrix-1.yaml");
+    resultProcessedYaml = readFile("retry/result-processed-yaml-with-matrix-1.yaml");
+    replacedProcessedYaml = retryExecuteHelper.retryProcessedYaml(
+        previousYaml, currentYaml, Collections.singletonList("sssss"), new ArrayList<>());
+    assertEquals(replacedProcessedYaml, resultProcessedYaml);
   }
 
   private String yamlToJsonString(String resultProcessedYaml) throws IOException {
@@ -715,8 +739,10 @@ public class RetryExecuteHelperTest extends CategoryTest {
     StepType TEST_STEP_TYPE =
         StepType.newBuilder().setType("TEST_STEP_PLAN").setStepCategory(StepCategory.STEP).build();
     String uuid = "uuid1";
+    List<String> identifierOfSkipStages = Collections.singletonList(uuid);
+    List<String> stageIdentifierToRetryWith = Collections.singletonList("stage3");
 
-    when(nodeExecutionService.fetchStageFqnFromStageIdentifiers(any(), any()))
+    when(nodeExecutionService.fetchStageFqnFromStageIdentifiers(any(), eq(identifierOfSkipStages)))
         .thenReturn(Collections.singletonList("pipeline.stages.pip1"));
 
     PlanNode planNode1 =
@@ -734,6 +760,8 @@ public class RetryExecuteHelperTest extends CategoryTest {
     uuidMapper.put("nodeUuid", planNode1);
     when(nodeExecutionService.mapNodeExecutionIdWithPlanNodeForGivenStageFQN(any(), any())).thenReturn(uuidMapper);
 
+    // Returning emptyList. So strategy node should not get converted to IdentityNode.
+    doReturn(Collections.emptyList()).when(nodeExecutionService).fetchStrategyNodeExecutions(any(), any());
     PlanNode planNode2 =
         PlanNode.builder()
             .name("Test Node2")
@@ -743,17 +771,76 @@ public class RetryExecuteHelperTest extends CategoryTest {
             .adviserObtainment(
                 AdviserObtainment.newBuilder().setType(AdviserType.newBuilder().setType("NEXT_STEP").build()).build())
             .build();
+
+    PlanNode planNode3 =
+        PlanNode.builder()
+            .name("Test Node3")
+            .uuid("uuid3")
+            .identifier("test3")
+            .stageFqn("pipeline.stages.stage3")
+            .stepType(StrategyStep.STEP_TYPE)
+            .adviserObtainment(
+                AdviserObtainment.newBuilder().setType(AdviserType.newBuilder().setType("NEXT_STEP").build()).build())
+            .build();
+
     Plan newPlan = retryExecuteHelper.transformPlan(
-        Plan.builder().planNodes(Arrays.asList(planNode1, planNode2)).build(), Collections.singletonList(uuid), "abc");
+        Plan.builder().planNodes(Arrays.asList(planNode1, planNode2, planNode3)).build(), identifierOfSkipStages, "abc",
+        stageIdentifierToRetryWith);
 
     List<Node> updatedNodes = newPlan.getPlanNodes();
-    assertThat(updatedNodes.size()).isEqualTo(2);
+    List<Node> identityPlanNodes =
+        updatedNodes.stream().filter(o -> o instanceof IdentityPlanNode).collect(Collectors.toList());
+    assertThat(updatedNodes.size()).isEqualTo(3);
     assertThat(updatedNodes.get(0).getNodeType()).isEqualTo(NodeType.PLAN_NODE);
-    assertThat(updatedNodes.get(1).getNodeType()).isEqualTo(NodeType.IDENTITY_PLAN_NODE);
-    assertThat(((IdentityPlanNode) updatedNodes.get(1)).getOriginalNodeExecutionId()).isEqualTo("nodeUuid");
-    assertThat(updatedNodes.get(1).getIdentifier()).isEqualTo("test");
-    assertThat(updatedNodes.get(1).getName()).isEqualTo("Test Node");
-    assertThat(updatedNodes.get(1).getUuid()).isEqualTo(uuid);
+    assertEquals(identityPlanNodes.size(), 1);
+    assertThat(((IdentityPlanNode) identityPlanNodes.get(0)).getOriginalNodeExecutionId()).isEqualTo("nodeUuid");
+    assertThat(identityPlanNodes.get(0).getIdentifier()).isEqualTo("test");
+    assertThat(identityPlanNodes.get(0).getName()).isEqualTo("Test Node");
+    assertThat(identityPlanNodes.get(0).getUuid()).isEqualTo(uuid);
+
+    List<Node> strategyNodes =
+        updatedNodes.stream().filter(o -> o.getStepType().equals(StrategyStep.STEP_TYPE)).collect(Collectors.toList());
+    assertEquals(strategyNodes.size(), 1);
+    // This would be PlanNode because previous noExecutions did not have strategy node for provided stageFqn.
+    assertEquals(strategyNodes.get(0).getNodeType(), NodeType.PLAN_NODE);
+
+    doReturn(Collections.singletonList("pipeline.stages.stage3"))
+        .when(nodeExecutionService)
+        .fetchStageFqnFromStageIdentifiers(any(), eq(stageIdentifierToRetryWith));
+    // StrategyNode should get converted to IdentityNode now.
+    doReturn(Collections.singletonList(NodeExecution.builder()
+                                           .ambiance(Ambiance.newBuilder()
+                                                         .addLevels(Level.newBuilder().setGroup("STAGES").build())
+                                                         .addLevels(Level.newBuilder().build())
+                                                         .build())
+                                           .stageFqn("pipeline.stages.stage3")
+                                           .planNode(planNode3)
+                                           .build()))
+        .when(nodeExecutionService)
+        .fetchStrategyNodeExecutions(any(), any());
+
+    newPlan = retryExecuteHelper.transformPlan(
+        Plan.builder().planNodes(Arrays.asList(planNode1, planNode2, planNode3)).build(), identifierOfSkipStages, "abc",
+        stageIdentifierToRetryWith);
+
+    updatedNodes = newPlan.getPlanNodes();
+    identityPlanNodes = updatedNodes.stream().filter(o -> o instanceof IdentityPlanNode).collect(Collectors.toList());
+
+    assertEquals(identityPlanNodes.size(), 2);
+    assertThat(((IdentityPlanNode) identityPlanNodes.get(0)).getOriginalNodeExecutionId()).isEqualTo("nodeUuid");
+    assertThat(identityPlanNodes.get(0).getIdentifier()).isEqualTo("test");
+    assertThat(identityPlanNodes.get(0).getName()).isEqualTo("Test Node");
+    assertThat(identityPlanNodes.get(0).getUuid()).isEqualTo(uuid);
+
+    strategyNodes = identityPlanNodes.stream()
+                        .filter(o -> o.getStepType().equals(StrategyStep.STEP_TYPE))
+                        .collect(Collectors.toList());
+    assertEquals(strategyNodes.size(), 1);
+    // This would be of IdentityPlanNode type. Previous nodeExecutions has strategyNode with provided stageFqn.
+    assertEquals(strategyNodes.get(0).getNodeType(), NodeType.IDENTITY_PLAN_NODE);
+    assertThat(strategyNodes.get(0).getIdentifier()).isEqualTo(planNode3.getIdentifier());
+    assertThat(strategyNodes.get(0).getName()).isEqualTo(planNode3.getName());
+    assertThat(strategyNodes.get(0).getUuid()).isEqualTo(planNode3.getUuid());
   }
 
   @Test

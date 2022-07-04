@@ -123,6 +123,7 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .useLatestKustomizeVersion(k8sStepHelper.isUseLatestKustomizeVersion(accountId))
             .useNewKubectlVersion(k8sStepHelper.isUseNewKubectlVersion(accountId))
+            .pruningEnabled(k8sStepHelper.isPruningEnabled(accountId))
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
@@ -166,14 +167,17 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
     InfrastructureOutcome infrastructure = executionPassThroughData.getInfrastructure();
     K8sBGDeployResponse k8sBGDeployResponse = (K8sBGDeployResponse) k8sTaskExecutionResponse.getK8sNGTaskResponse();
 
-    K8sBlueGreenOutcome k8sBlueGreenOutcome = K8sBlueGreenOutcome.builder()
-                                                  .releaseName(k8sStepHelper.getReleaseName(ambiance, infrastructure))
-                                                  .releaseNumber(k8sBGDeployResponse.getReleaseNumber())
-                                                  .primaryServiceName(k8sBGDeployResponse.getPrimaryServiceName())
-                                                  .stageServiceName(k8sBGDeployResponse.getStageServiceName())
-                                                  .stageColor(k8sBGDeployResponse.getStageColor())
-                                                  .primaryColor(k8sBGDeployResponse.getPrimaryColor())
-                                                  .build();
+    K8sBlueGreenOutcome k8sBlueGreenOutcome =
+        K8sBlueGreenOutcome.builder()
+            .releaseName(k8sStepHelper.getReleaseName(ambiance, infrastructure))
+            .releaseNumber(k8sBGDeployResponse.getReleaseNumber())
+            .primaryServiceName(k8sBGDeployResponse.getPrimaryServiceName())
+            .stageServiceName(k8sBGDeployResponse.getStageServiceName())
+            .stageColor(k8sBGDeployResponse.getStageColor())
+            .primaryColor(k8sBGDeployResponse.getPrimaryColor())
+            .prunedResourceIds(k8sStepHelper.getPrunedResourcesIds(
+                AmbianceUtils.getAccountId(ambiance), k8sBGDeployResponse.getPrunedResourceIds()))
+            .build();
     executionSweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.K8S_BLUE_GREEN_OUTCOME, k8sBlueGreenOutcome, StepOutcomeGroup.STEP.name());
 

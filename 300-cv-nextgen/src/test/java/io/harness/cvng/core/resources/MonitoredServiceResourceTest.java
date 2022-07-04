@@ -101,8 +101,7 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
         + "  description: description\n"
         + "  name: <+monitoredService.identifier>\n"
         + "  serviceRef: service1\n"
-        + "  environmentRefList:\n"
-        + "   - env1\n"
+        + "  environmentRef: env1\n"
         + "  tags: {}\n"
         + "  sources:\n"
         + "    healthSources:\n"
@@ -119,7 +118,7 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     RestResponse<MonitoredServiceResponse> restResponse =
         createResponse.readEntity(new GenericType<RestResponse<MonitoredServiceResponse>>() {});
     MonitoredServiceDTO monitoredServiceDTO = restResponse.getResource().getMonitoredServiceDTO();
-    assertThat(monitoredServiceDTO.getIdentifier()).isEqualTo("service1");
+    assertThat(monitoredServiceDTO.getIdentifier()).isEqualTo("service1_env1");
     assertThat(monitoredServiceDTO.getProjectIdentifier())
         .isEqualTo(builderFactory.getContext().getProjectIdentifier());
     assertThat(monitoredServiceDTO.getOrgIdentifier()).isEqualTo(builderFactory.getContext().getOrgIdentifier());
@@ -135,8 +134,7 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
         + "  description: description\n"
         + "  name: <+monitoredService.identifier>\n"
         + "  serviceRef: service1\n"
-        + "  environmentRefList:\n"
-        + "   - env1\n"
+        + "  environmentRef: env1\n"
         + "  tags: {}\n"
         + "  sources:\n"
         + "    healthSources:\n"
@@ -156,14 +154,13 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
         + "  description: description345\n"
         + "  name: <+monitoredService.identifier>\n"
         + "  serviceRef: service1\n"
-        + "  environmentRefList:\n"
-        + "   - env1\n"
+        + "  environmentRef: env1\n"
         + "  tags: {}\n"
         + "  sources:\n"
         + "    healthSources:\n"
         + "    changeSources: \n";
     Response updateResponse = RESOURCES.client()
-                                  .target("http://localhost:9998/monitored-service/service1/yaml")
+                                  .target("http://localhost:9998/monitored-service/service1_env1/yaml")
                                   .queryParam("accountId", builderFactory.getContext().getAccountId())
                                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
                                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
@@ -293,6 +290,7 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     MonitoredServiceDTO monitoredServiceDTO = restResponse.getResource().getMonitoredServiceDTO();
     assertThat(monitoredServiceDTO.getSources().getHealthSources()).hasSize(1);
     HealthSource healthSource = monitoredServiceDTO.getSources().getHealthSources().iterator().next();
+    assertThat(((SplunkMetricHealthSourceSpec) healthSource.getSpec()).getFeature()).isEqualTo("Splunk Metric");
     HealthSourceMetricDefinition healthSourceMetricDefinition =
         ((SplunkMetricHealthSourceSpec) healthSource.getSpec()).getMetricDefinitions().get(0);
     assertThat(healthSourceMetricDefinition.getIdentifier()).isEqualTo("splunk_response_time");

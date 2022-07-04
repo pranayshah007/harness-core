@@ -18,7 +18,7 @@ import com.google.inject.Inject;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class ProgressableStrategy implements ExecuteStrategy {
-  @Inject private SdkNodeExecutionService sdkNodeExecutionService;
+  @Inject protected SdkNodeExecutionService sdkNodeExecutionService;
 
   @Override
   public void progress(ProgressPackage progressPackage) {

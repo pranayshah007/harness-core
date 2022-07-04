@@ -506,6 +506,24 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AwsInstanceFilter": {
+      "type": "object",
+      "properties": {
+        "tags": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "vpcs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AzureWebAppInfrastructure": {
       "allOf": [
         {
@@ -514,18 +532,13 @@
         {
           "type": "object",
           "required": [
-            "appService",
             "connectorRef",
             "deploymentSlot",
             "resourceGroup",
             "subscriptionId",
-            "targetSlot"
+            "webApp"
           ],
           "properties": {
-            "appService": {
-              "type": "string",
-              "minLength": 1
-            },
             "connectorRef": {
               "type": "string",
               "minLength": 1
@@ -543,8 +556,133 @@
               "minLength": 1
             },
             "targetSlot": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "webApp": {
               "type": "string",
               "minLength": 1
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureWebAppRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureWebAppSlotDeploymentStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureWebAppSwapSlotStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureWebAppTrafficShiftStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "traffic": {
+              "type": "string"
             }
           }
         }
@@ -1113,6 +1251,21 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ClusterYaml": {
+      "type": "object",
+      "required": [
+        "ref"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "string"
+        },
+        "ref": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "CommandStepInfo": {
       "allOf": [
         {
@@ -1245,14 +1398,6 @@
       "properties": {
         "store": {
           "$ref": "#/definitions/StoreConfigWrapperParameters"
-        },
-        "type": {
-          "type": "string",
-          "enum": [
-            "LocalFile",
-            "Encrypted",
-            "Remote"
-          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1260,8 +1405,7 @@
     "ConfigFileAttributes": {
       "type": "object",
       "required": [
-        "store",
-        "type"
+        "store"
       ],
       "properties": {
         "configFileAttributeStepParameters": {
@@ -1269,14 +1413,6 @@
         },
         "store": {
           "$ref": "#/definitions/StoreConfigWrapper"
-        },
-        "type": {
-          "type": "string",
-          "enum": [
-            "LocalFile",
-            "Encrypted",
-            "Remote"
-          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1374,10 +1510,11 @@
         },
         {
           "type": "object",
+          "required": [
+            "overrideConfig",
+            "shell"
+          ],
           "properties": {
-            "commitMessage": {
-              "type": "string"
-            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -1393,25 +1530,89 @@
                 }
               ]
             },
-            "isNewBranch": {
-              "type": "boolean"
+            "overrideConfig": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             },
-            "prTitle": {
-              "type": "string"
+            "shell": {
+              "type": "string",
+              "enum": [
+                "Bash"
+              ]
             },
-            "store": {
-              "$ref": "#/definitions/StoreConfigWrapper"
+            "source": {
+              "$ref": "#/definitions/CreatePRStepUpdateConfigScriptWrapper"
             },
             "stringMap": {
               "$ref": "#/definitions/ParameterFieldMapStringString"
-            },
-            "targetBranch": {
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CreatePRStepUpdateConfigScriptBaseSource": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CreatePRStepUpdateConfigScriptInlineSource": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CreatePRStepUpdateConfigScriptBaseSource"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "updateConfigScript": {
               "type": "string"
             }
           }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CreatePRStepUpdateConfigScriptWrapper": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Inline"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CreatePRStepUpdateConfigScriptInlineSource"
+              }
+            }
+          }
+        }
+      ]
     },
     "CriteriaSpec": {
       "type": "object",
@@ -1670,24 +1871,91 @@
       ]
     },
     "DeploymentStageConfig": {
-      "type": "object",
-      "required": [
-        "execution",
-        "infrastructure",
-        "serviceConfig"
-      ],
-      "properties": {
-        "execution": {
-          "$ref": "#/definitions/ExecutionElementConfig"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "execution",
+            "serviceConfig",
+            "infrastructure"
+          ],
+          "properties": {
+            "execution": {
+              "$ref": "#/definitions/ExecutionElementConfig"
+            },
+            "infrastructure": {
+              "$ref": "#/definitions/PipelineInfrastructure"
+            },
+            "serviceConfig": {
+              "$ref": "#/definitions/ServiceConfig"
+            }
+          },
+          "additionalProperties": false
         },
-        "infrastructure": {
-          "$ref": "#/definitions/PipelineInfrastructure"
+        {
+          "type": "object",
+          "required": [
+            "execution",
+            "deploymentType",
+            "environment",
+            "service"
+          ],
+          "properties": {
+            "deploymentType": {
+              "type": "string",
+              "enum": [
+                "Kubernetes",
+                "NativeHelm",
+                "Ssh",
+                "WinRm",
+                "ServerlessAwsLambda"
+              ]
+            },
+            "environment": {
+              "$ref": "#/definitions/EnvironmentYamlV2"
+            },
+            "execution": {
+              "$ref": "#/definitions/ExecutionElementConfig"
+            },
+            "service": {
+              "$ref": "#/definitions/ServiceYamlV2"
+            }
+          },
+          "additionalProperties": false
         },
-        "serviceConfig": {
-          "$ref": "#/definitions/ServiceConfig"
+        {
+          "type": "object",
+          "required": [
+            "execution",
+            "deploymentType",
+            "environmentGroup",
+            "service"
+          ],
+          "properties": {
+            "deploymentType": {
+              "type": "string",
+              "enum": [
+                "Kubernetes",
+                "NativeHelm",
+                "Ssh",
+                "WinRm",
+                "ServerlessAwsLambda"
+              ]
+            },
+            "environmentGroup": {
+              "$ref": "#/definitions/EnvironmentGroupYaml"
+            },
+            "execution": {
+              "$ref": "#/definitions/ExecutionElementConfig"
+            },
+            "service": {
+              "$ref": "#/definitions/ServiceYamlV2"
+            }
+          },
+          "additionalProperties": false
         }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      ]
     },
     "DeploymentStageNode": {
       "type": "object",
@@ -1917,6 +2185,30 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "EnvironmentGroupYaml": {
+      "type": "object",
+      "required": [
+        "envGroupRef"
+      ],
+      "properties": {
+        "deployToAll": {
+          "type": "boolean"
+        },
+        "envGroupConfig": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EnvironmentYamlV2"
+          }
+        },
+        "envGroupRef": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "EnvironmentYaml": {
       "type": "object",
       "required": [
@@ -1946,6 +2238,43 @@
             "PreProduction",
             "Production"
           ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EnvironmentYamlV2": {
+      "type": "object",
+      "required": [
+        "environmentRef"
+      ],
+      "properties": {
+        "deployToAll": {
+          "type": "boolean"
+        },
+        "environmentInputs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "environmentRef": {
+          "type": "string",
+          "pattern": "\\<\\+input\\>|^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+        },
+        "gitOpsClusters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ClusterYaml"
+          }
+        },
+        "infrastructureDefinitions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/InfraStructureDefinitionYaml"
+          }
+        },
+        "metadata": {
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2441,31 +2770,53 @@
         },
         {
           "type": "object",
-          "required": [
-            "filePath",
-            "fileReference",
-            "fileType"
-          ],
           "properties": {
-            "filePath": {
-              "type": "string",
-              "minLength": 1
-            },
-            "fileReference": {
-              "type": "string",
-              "minLength": 1
-            },
-            "fileType": {
-              "type": "string",
-              "description": "io.harness.cdng.manifest.yaml.harness.HarnessFileType",
-              "enum": [
-                "FileStore",
-                "Encrypted"
+            "files": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/HarnessStoreFile"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
               ]
+            },
+            "secretFiles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HarnessStoreFile": {
+      "type": "object",
+      "required": [
+        "path",
+        "scope"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "account",
+            "org",
+            "project",
+            "unknown"
+          ]
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "HelmChartManifest": {
@@ -2746,6 +3097,28 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "InfraStructureDefinitionYaml": {
+      "type": "object",
+      "required": [
+        "ref"
+      ],
+      "properties": {
+        "inputs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "metadata": {
+          "type": "string"
+        },
+        "ref": {
+          "type": "string",
+          "pattern": "\\<\\+input\\>|^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "InfraUseFromStage": {
       "type": "object",
       "required": [
@@ -2785,7 +3158,8 @@
             "Pdc",
             "SshWinRmAzure",
             "ServerlessAwsLambda",
-            "AzureWebApp"
+            "AzureWebApp",
+            "SshWinRmAws"
           ]
         }
       },
@@ -2883,6 +3257,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ServerlessAwsLambdaInfrastructure"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "SshWinRmAws"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SshWinRmAwsInfrastructure"
               }
             }
           }
@@ -3452,6 +3842,9 @@
             "subscriptionId": {
               "type": "string",
               "minLength": 1
+            },
+            "useClusterAdminCredentials": {
+              "type": "boolean"
             }
           }
         }
@@ -3996,7 +4389,8 @@
             "OpenshiftParam",
             "OpenshiftTemplate",
             "Values",
-            "ServerlessAwsLambda"
+            "ServerlessAwsLambda",
+            "ReleaseRepo"
           ]
         }
       },
@@ -4094,6 +4488,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/OpenshiftManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ReleaseRepo"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ReleaseRepoManifest"
               }
             }
           }
@@ -4223,6 +4633,34 @@
               "type": "string",
               "enum": [
                 "MarkAsSuccess"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "MergePRStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
               ]
             }
           }
@@ -4450,6 +4888,96 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "OciHelmChartConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StoreConfig"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "basePath": {
+              "type": "string"
+            },
+            "config": {
+              "$ref": "#/definitions/OciHelmChartStoreConfigWrapper"
+            },
+            "metadata": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "OciHelmChartStoreConfig": {
+      "type": "object",
+      "discriminator": "type",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "OciHelmChartStoreConfigWrapper": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "Generic"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Generic"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/OciHelmChartStoreGenericConfig"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "OciHelmChartStoreGenericConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/OciHelmChartStoreConfig"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "connectorRef": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "OnFailureConfig": {
       "type": "object",
       "required": [
@@ -4651,6 +5179,9 @@
         "defaultValue": {
           "type": "object"
         },
+        "executionInput": {
+          "type": "boolean"
+        },
         "expression": {
           "type": "boolean"
         },
@@ -4681,6 +5212,9 @@
         "defaultValue": {
           "type": "boolean"
         },
+        "executionInput": {
+          "type": "boolean"
+        },
         "expression": {
           "type": "boolean"
         },
@@ -4708,6 +5242,15 @@
     "ParameterFieldMapStringString": {
       "type": "object",
       "properties": {
+        "defaultValue": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
         "expression": {
           "type": "boolean"
         },
@@ -4740,6 +5283,9 @@
       "properties": {
         "defaultValue": {
           "type": "string"
+        },
+        "executionInput": {
+          "type": "boolean"
         },
         "expression": {
           "type": "boolean"
@@ -5257,6 +5803,52 @@
         }
       ]
     },
+    "QueueStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "key",
+            "scope"
+          ],
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "scope": {
+              "type": "string",
+              "enum": [
+                "Pipeline",
+                "Stage"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ReleaseRepoManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "RemoteCloudformationTagsFileSpec": {
       "allOf": [
         {
@@ -5451,7 +6043,7 @@
               "format": "int32"
             },
             "resourceUnit": {
-              "type": "string"
+              "$ref": "#/definitions/ParameterFieldString"
             }
           }
         }
@@ -5615,8 +6207,7 @@
             "shell": {
               "type": "string",
               "enum": [
-                "Bash",
-                "PowerShell"
+                "Bash"
               ]
             },
             "source": {
@@ -6218,6 +6809,28 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ServiceYamlV2": {
+      "type": "object",
+      "required": [
+        "serviceRef"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "string"
+        },
+        "serviceInputs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "serviceRef": {
+          "type": "string",
+          "pattern": "\\<\\+input\\>|^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SetDefaultVariationsYaml": {
       "allOf": [
         {
@@ -6526,8 +7139,7 @@
             "shell": {
               "type": "string",
               "enum": [
-                "Bash",
-                "PowerShell"
+                "Bash"
               ]
             },
             "source": {
@@ -6699,6 +7311,143 @@
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SshWinRmAwsInfrastructure": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Infrastructure"
+        },
+        { }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "credentialsRef",
+            "hostNameConvention",
+            "loadBalancer",
+            "region"
+          ],
+          "properties": {
+            "autoScalingGroupName": {
+              "type": "string"
+            },
+            "connectorRef": {
+              "type": "string",
+              "minLength": 1
+            },
+            "credentialsRef": {
+              "type": "string",
+              "minLength": 1
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "hostNameConvention": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ],
+              "minLength": 1
+            },
+            "loadBalancer": {
+              "type": "string",
+              "minLength": 1
+            },
+            "region": {
+              "type": "string",
+              "minLength": 1
+            },
+            "useAutoScalingGroup": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "credentialsRef",
+            "hostNameConvention",
+            "loadBalancer",
+            "region"
+          ],
+          "properties": {
+            "awsInstanceFilter": {
+              "$ref": "#/definitions/AwsInstanceFilter"
+            },
+            "connectorRef": {
+              "type": "string",
+              "minLength": 1
+            },
+            "credentialsRef": {
+              "type": "string",
+              "minLength": 1
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "hostNameConvention": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ],
+              "minLength": 1
+            },
+            "loadBalancer": {
+              "type": "string",
+              "minLength": 1
+            },
+            "region": {
+              "type": "string",
+              "minLength": 1
+            },
+            "useAutoScalingGroup": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
     },
     "SshWinRmAzureInfrastructure": {
       "allOf": [
@@ -6933,6 +7682,70 @@
           "if": {
             "properties": {
               "type": {
+                "const": "AzureSlotDeployment"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureWebAppSlotDeploymentStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AzureSwapSlot"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureWebAppSwapSlotStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AzureTrafficShift"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureWebAppTrafficShiftStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AzureWebAppRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureWebAppRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Barrier"
               }
             }
@@ -6949,22 +7762,6 @@
           "if": {
             "properties": {
               "type": {
-                "const": "CreatePR"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/CreatePRStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
                 "const": "Command"
               }
             }
@@ -6973,6 +7770,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/CommandStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CreatePR"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CreatePRStepInfo"
               }
             }
           }
@@ -7285,6 +8098,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "MergePR"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/MergePRStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Policy"
               }
             }
@@ -7293,6 +8122,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/PolicyStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Queue"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/QueueStepInfo"
               }
             }
           }
@@ -7601,7 +8446,8 @@
             "Artifactory",
             "S3Url",
             "InheritFromManifest",
-            "Harness"
+            "Harness",
+            "OciHelmChart"
           ]
         }
       },
@@ -7763,6 +8609,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/InlineStoreConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "OciHelmChart"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/OciHelmChartConfig"
               }
             }
           }

@@ -19,6 +19,8 @@ import static io.harness.exception.WingsException.USER_ADMIN;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.git.Constants.EXCEPTION_STRING;
 import static io.harness.govern.Switch.unhandled;
+import static io.harness.logging.CommandExecutionStatus.RUNNING;
+import static io.harness.logging.LogLevel.INFO;
 import static io.harness.shell.AuthenticationScheme.HTTP_PASSWORD;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
 import static io.harness.shell.SshSessionFactory.generateTGTUsingSshConfig;
@@ -55,6 +57,7 @@ import io.harness.git.UsernamePasswordCredentialsProviderWithSkipSslVerify;
 import io.harness.git.model.ChangeType;
 import io.harness.git.model.GitFile;
 import io.harness.git.model.GitRepositoryType;
+import io.harness.logging.LogCallback;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
 
@@ -565,6 +568,7 @@ public class GitClientImpl implements GitClient {
       }
     });
   }
+
   @Override
   public GitFetchFilesResult fetchFilesBetweenCommits(GitConfig gitConfig, GitFilesBetweenCommitsRequest gitRequest) {
     String gitConnectorId = gitRequest.getGitConnectorId();
@@ -672,6 +676,11 @@ public class GitClientImpl implements GitClient {
 
   // use this method wrapped in inter process file lock to handle multiple delegate version
   private String checkoutFiles(GitConfig gitConfig, GitFetchFilesRequest gitRequest, boolean shouldExportCommitSha) {
+    return checkoutFiles(gitConfig, gitRequest, shouldExportCommitSha, null);
+  }
+
+  private String checkoutFiles(
+      GitConfig gitConfig, GitFetchFilesRequest gitRequest, boolean shouldExportCommitSha, LogCallback logCallback) {
     synchronized (gitClientHelper.getLockObject(gitRequest.getGitConnectorId())) {
       defaultRepoTypeToYaml(gitConfig);
 
@@ -694,7 +703,7 @@ public class GitClientImpl implements GitClient {
 
       // clone repo locally without checkout
       String branch = gitRequest.isUseBranch() ? gitRequest.getBranch() : StringUtils.EMPTY;
-      cloneRepoForFilePathCheckout(gitConfig, branch, gitConnectorId);
+      cloneRepoForFilePathCheckout(gitConfig, branch, gitConnectorId, logCallback);
       // if useBranch is set, use it to checkout latest, else checkout given commitId
       String latestCommitSha;
       if (gitRequest.isUseBranch()) {
@@ -711,15 +720,23 @@ public class GitClientImpl implements GitClient {
   @Override
   public String downloadFiles(GitConfig gitConfig, GitFetchFilesRequest gitRequest, String destinationDirectory,
       boolean shouldExportCommitSha) {
+    return downloadFiles(gitConfig, gitRequest, destinationDirectory, shouldExportCommitSha, null);
+  }
+
+  @Override
+  public String downloadFiles(GitConfig gitConfig, GitFetchFilesRequest gitRequest, String destinationDirectory,
+      boolean shouldExportCommitSha, LogCallback logCallback) {
     validateRequiredArgs(gitRequest, gitConfig);
     String gitConnectorId = gitRequest.getGitConnectorId();
+    saveInfoExecutionLogs(logCallback, "Trying to start synchronized download files operation from git");
     File lockFile = gitClientHelper.getLockObject(gitConnectorId);
     synchronized (lockFile) {
       log.info("Trying to acquire lock on {}", lockFile);
       try (FileOutputStream fileOutputStream = new FileOutputStream(lockFile);
            FileLock lock = fileOutputStream.getChannel().lock()) {
         log.info("Successfully acquired lock on {}", lockFile);
-        String latestCommitSha = checkoutFiles(gitConfig, gitRequest, shouldExportCommitSha);
+        saveInfoExecutionLogs(logCallback, "Started synchronized download files operation from git");
+        String latestCommitSha = checkoutFiles(gitConfig, gitRequest, shouldExportCommitSha, logCallback);
         String repoPath = gitClientHelper.getRepoPathForFileDownload(gitConfig, gitRequest.getGitConnectorId());
 
         FileIo.createDirectoryIfDoesNotExist(destinationDirectory);
@@ -766,22 +783,36 @@ public class GitClientImpl implements GitClient {
     }
   }
 
+  private void saveInfoExecutionLogs(LogCallback logCallback, String message) {
+    if (logCallback != null) {
+      logCallback.saveExecutionLog(message, INFO, RUNNING);
+    }
+  }
+
   @Override
   public GitFetchFilesResult fetchFilesByPath(
       GitConfig gitConfig, GitFetchFilesRequest gitRequest, boolean shouldExportCommitSha) {
+    return fetchFilesByPath(gitConfig, gitRequest, shouldExportCommitSha, null);
+  }
+
+  @Override
+  public GitFetchFilesResult fetchFilesByPath(
+      GitConfig gitConfig, GitFetchFilesRequest gitRequest, boolean shouldExportCommitSha, LogCallback logCallback) {
     validateRequiredArgs(gitRequest, gitConfig);
 
     String gitConnectorId = gitRequest.getGitConnectorId();
     /*
      * ConnectorId is per gitConfig and will result in diff local path for repo
      * */
+    saveInfoExecutionLogs(logCallback, "Trying to start synchronized fetch files operation from git");
     File lockFile = gitClientHelper.getLockObject(gitConnectorId);
     synchronized (lockFile) {
       log.info("Trying to acquire lock on {}", lockFile);
       try (FileOutputStream fileOutputStream = new FileOutputStream(lockFile);
            FileLock lock = fileOutputStream.getChannel().lock()) {
         log.info("Successfully acquired lock on {}", lockFile);
-        String latestCommitSHA = checkoutFiles(gitConfig, gitRequest, shouldExportCommitSha);
+        saveInfoExecutionLogs(logCallback, "Started synchronized fetch files operation from git");
+        String latestCommitSHA = checkoutFiles(gitConfig, gitRequest, shouldExportCommitSha, logCallback);
 
         String repoPath = gitClientHelper.getRepoPathForFileDownload(gitConfig, gitRequest.getGitConnectorId());
         List<GitFile> gitFiles = getFilteredGitFiles(gitConfig, gitRequest, repoPath);
@@ -1021,6 +1052,16 @@ public class GitClientImpl implements GitClient {
    * @param gitConfig the git config
    */
   private synchronized void cloneRepoForFilePathCheckout(GitConfig gitConfig, String branch, String connectorId) {
+    cloneRepoForFilePathCheckout(gitConfig, branch, connectorId, null);
+  }
+
+  /**
+   * Ensure repo locally cloned. This is called before performing any git operation with remote
+   *
+   * @param gitConfig the git config
+   */
+  private synchronized void cloneRepoForFilePathCheckout(
+      GitConfig gitConfig, String branch, String connectorId, LogCallback logCallback) {
     log.info(new StringBuilder(64)
                  .append(getGitLogMessagePrefix(gitConfig.getGitRepoType()))
                  .append("Cloning repo without checkout for file fetch op, for GitConfig: ")
@@ -1036,10 +1077,7 @@ public class GitClientImpl implements GitClient {
 
       try (Git git = Git.open(repoDir)) {
         // update ref with latest commits on remote
-        FetchResult fetchResult = ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), gitConfig)))
-                                      .setRemoveDeletedRefs(true)
-                                      .setTagOpt(TagOpt.FETCH_TAGS)
-                                      .call(); // fetch all remote references
+        FetchResult fetchResult = performGitFetchOperation(gitConfig, logCallback, git); // fetch all remote references
 
         log.info(new StringBuilder()
                      .append(getGitLogMessagePrefix(gitConfig.getGitRepoType()))
@@ -1069,6 +1107,19 @@ public class GitClientImpl implements GitClient {
     }
 
     clone(gitConfig, gitClientHelper.getFileDownloadRepoDirectory(gitConfig, connectorId), branch, true);
+  }
+
+  private FetchResult performGitFetchOperation(GitConfig gitConfig, LogCallback logCallback, Git git)
+      throws GitAPIException {
+    FetchResult fetchResult;
+
+    saveInfoExecutionLogs(logCallback, "Waiting on git fetch operation to be completed.");
+    fetchResult = ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), gitConfig)))
+                      .setRemoveDeletedRefs(true)
+                      .setTagOpt(TagOpt.FETCH_TAGS)
+                      .call();
+    saveInfoExecutionLogs(logCallback, "Git fetch operation has been completed.");
+    return fetchResult;
   }
 
   @Override

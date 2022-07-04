@@ -9,11 +9,16 @@ package io.harness.azure.impl;
 
 import static io.harness.azure.model.AzureConstants.SUBSCRIPTION_ID_NULL_VALIDATION_MSG;
 
+import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.azure.AzureClient;
 import io.harness.azure.client.AzureKubernetesClient;
 import io.harness.azure.model.AzureConfig;
+import io.harness.exception.AzureAuthenticationException;
+import io.harness.exception.NestedExceptionUtils;
+
+import software.wings.helpers.ext.azure.AksClusterCredentials;
 
 import com.microsoft.azure.management.Azure;
 import com.microsoft.azure.management.containerservice.KubernetesCluster;
@@ -21,6 +26,8 @@ import groovy.lang.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @Singleton
 @Slf4j
@@ -34,5 +41,43 @@ public class AzureKubernetesClientImpl extends AzureClient implements AzureKuber
 
     log.debug("Start listing Kubernetes clusters for subscriptionId {}", subscriptionId);
     return new ArrayList<>(azure.kubernetesClusters().list());
+  }
+
+  @Override
+  public String getClusterCredentials(AzureConfig azureConfig, String accessToken, String subscriptionId,
+      String resourceGroup, String aksClusterName, boolean shouldGetAdminCredentials) {
+    log.info(format(
+        "Fetching cluster credentials [subscription: %s] [resourceGroup: %s] [aksClusterName: %s] [credentials: %s]",
+        subscriptionId, resourceGroup, aksClusterName, shouldGetAdminCredentials ? "admin" : "user"));
+    log.trace(format("Using token: %s", accessToken));
+
+    Call<AksClusterCredentials> request;
+    String error;
+    try {
+      if (shouldGetAdminCredentials) {
+        request = getAzureKubernetesRestClient(azureConfig.getAzureEnvironmentType())
+                      .listClusterAdminCredential(accessToken, subscriptionId, resourceGroup, aksClusterName);
+      } else {
+        request = getAzureKubernetesRestClient(azureConfig.getAzureEnvironmentType())
+                      .listClusterUserCredential(accessToken, subscriptionId, resourceGroup, aksClusterName);
+      }
+
+      Response<AksClusterCredentials> response = request.execute();
+      if (response.isSuccessful()) {
+        String clusterCredentials = response.body().getKubeconfigs().get(0).getValue();
+        log.trace(format("Cluster credentials (base64): %s", clusterCredentials));
+
+        return clusterCredentials;
+      }
+
+      error = response.errorBody().string();
+
+    } catch (Exception e) {
+      error = e.getMessage();
+    }
+
+    throw NestedExceptionUtils.hintWithExplanationException(
+        format("Failed to retrieve cluster %s credentials", shouldGetAdminCredentials ? "admin" : "user"),
+        "Please check assigned permissions in Azure", new AzureAuthenticationException(error));
   }
 }

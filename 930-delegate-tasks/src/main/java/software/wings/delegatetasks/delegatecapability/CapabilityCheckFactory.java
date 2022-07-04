@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.executioncapability.CapabilityType;
 import io.harness.delegate.task.executioncapability.AlwaysFalseValidationCapabilityCheck;
+import io.harness.delegate.task.executioncapability.AwsCliInstallationCapabilityCheck;
 import io.harness.delegate.task.executioncapability.AwsRegionCapabilityCheck;
 import io.harness.delegate.task.executioncapability.CIVmConnectionCapabilityCheck;
 import io.harness.delegate.task.executioncapability.CapabilityCheck;
@@ -78,6 +79,7 @@ public class CapabilityCheckFactory {
   @Inject NoOpCapabilityCheck noOpCapabilityCheck;
   @Inject CIVmConnectionCapabilityCheck ciVmConnectionCapabilityCheck;
   @Inject ServerlessInstallationCapabilityCheck serverlessInstallationCapabilityCheck;
+  @Inject AwsCliInstallationCapabilityCheck awsCliInstallationCapabilityCheck;
 
   public CapabilityCheck obtainCapabilityCheck(CapabilityType capabilityCheckType) {
     switch (capabilityCheckType) {
@@ -135,6 +137,8 @@ public class CapabilityCheckFactory {
         return serverlessInstallationCapabilityCheck;
       case SELECTORS:
         return noOpCapabilityCheck;
+      case AWS_CLI_INSTALL:
+        return awsCliInstallationCapabilityCheck;
       default:
         return null;
     }

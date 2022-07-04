@@ -61,9 +61,9 @@ public interface DelegateAgentManagerClient {
   Call<RestResponse> doConnectionHeartbeat(@Path("delegateId") String delegateId, @Query("accountId") String accountId,
       @Body DelegateConnectionHeartbeat heartbeat);
 
-  @Headers({"Content-Type: application/x-kryo"})
+  @Headers({"Content-Type: application/x-kryo-v2"})
   @KryoRequest
-  @POST("agent/tasks/{taskId}/delegates/{delegateId}")
+  @POST("agent/tasks/{taskId}/delegates/{delegateId}/v2")
   Call<ResponseBody> sendTaskStatus(@Path("delegateId") String delegateId, @Path("taskId") String taskId,
       @Query("accountId") String accountId, @Body DelegateTaskResponse delegateTaskResponse);
 
@@ -148,7 +148,7 @@ public interface DelegateAgentManagerClient {
       @Query("accountId") String accountId, @Body RequestBody buildSourceExecutionResponse);
 
   @KryoResponse
-  @PUT("agent/delegates/{delegateId}/tasks/{taskId}/acquire")
+  @PUT("agent/delegates/{delegateId}/tasks/{taskId}/acquire/v2")
   Call<DelegateTaskPackage> acquireTask(@Path("delegateId") String delegateId, @Path("taskId") String uuid,
       @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId);
 
@@ -162,7 +162,7 @@ public interface DelegateAgentManagerClient {
       @Query("hostId") String hostId);
 
   @KryoResponse
-  @POST("agent/delegates/{delegateId}/tasks/{taskId}/report")
+  @POST("agent/delegates/{delegateId}/tasks/{taskId}/report/v2")
   Call<DelegateTaskPackage> reportConnectionResults(@Path("delegateId") String delegateId, @Path("taskId") String uuid,
       @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId,
       @Body List<DelegateConnectionResultDetail> results);

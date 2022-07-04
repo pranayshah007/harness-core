@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 
 import java.util.Optional;
@@ -22,12 +23,15 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PIPELINE)
 public interface PMSInputSetService {
-  InputSetEntity create(InputSetEntity inputSetEntity);
+  // pipeline branch and repo ID are needed for old git sync
+  InputSetEntity create(InputSetEntity inputSetEntity, String pipelineBranch, String pipelineRepoID);
 
   Optional<InputSetEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, boolean deleted);
 
-  InputSetEntity update(InputSetEntity inputSetEntity, ChangeType changeType);
+  // pipeline branch and repo ID are needed for old git sync
+  InputSetEntity update(
+      InputSetEntity inputSetEntity, ChangeType changeType, String pipelineBranch, String pipelineRepoID);
 
   InputSetEntity syncInputSetWithGit(EntityDetailProtoDTO entityDetail);
 
@@ -48,4 +52,7 @@ public interface PMSInputSetService {
 
   boolean checkForInputSetsForPipeline(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
+
+  InputSetEntity importInputSetFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequestDTO);
 }

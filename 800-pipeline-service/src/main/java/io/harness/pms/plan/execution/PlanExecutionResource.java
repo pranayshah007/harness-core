@@ -7,8 +7,6 @@
 
 package io.harness.pms.plan.execution;
 
-import static io.harness.beans.FeatureName.NG_PIPELINE_TEMPLATE;
-
 import static java.lang.String.format;
 
 import io.harness.NGCommonEntityConstants;
@@ -22,6 +20,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.apiexamples.PipelineAPIConstants;
 import io.harness.engine.executions.retry.RetryHistoryResponseDto;
 import io.harness.engine.executions.retry.RetryInfo;
 import io.harness.engine.executions.retry.RetryLatestExecutionResponseDto;
@@ -32,7 +31,6 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
-import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineResourceConstants;
@@ -61,6 +59,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -85,7 +84,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
-@Tag(name = "Pipeline Execution", description = "This contains APIs for Executing a Pipeline")
+@Tag(name = "Pipeline Execute", description = "This contains APIs for Executing a Pipeline")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =
     {
@@ -119,7 +118,6 @@ public class PlanExecutionResource {
   @Inject private final PreflightService preflightService;
   @Inject private final PMSPipelineService pmsPipelineService;
   @Inject private final RetryExecutionHelper retryExecutionHelper;
-  @Inject private final PmsFeatureFlagHelper featureFlagService;
   @Inject private final PMSPipelineTemplateHelper pipelineTemplateHelper;
 
   @POST
@@ -149,10 +147,15 @@ public class PlanExecutionResource {
       @Parameter(description = PlanExecutionResourceConstants.PIPELINE_IDENTIFIER_PARAM_MESSAGE) @ResourceIdentifier
       @NotEmpty String pipelineIdentifier, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @QueryParam("useFQNIfError") @DefaultValue("false") boolean useFQNIfErrorResponse,
-      @ApiParam(hidden = true) @Parameter(
+      @ApiParam(hidden = true) @RequestBody(
           description =
-              "Enter Runtime Input YAML if the Pipeline contains Runtime Inputs. Please refer to https://ngdocs.harness.io/article/f6yobn7iq0 and https://ngdocs.harness.io/article/1eishcolt3 to see how to generate Runtime Input YAML for a Pipeline.")
-      String inputSetPipelineYaml) {
+              "Enter Runtime Input YAML if the Pipeline contains Runtime Inputs. Template for this can be Fetched from /inputSets/template API.",
+          content = {
+            @Content(mediaType = "application/yaml",
+                examples = @ExampleObject(name = "Execute Runtime Input YAML",
+                    summary = "Execute Pipeline with Runtime Input YAML",
+                    value = PipelineAPIConstants.EXECUTE_INPUT_YAML, description = ""))
+          }) String inputSetPipelineYaml) {
     PlanExecutionResponseDto planExecutionResponseDto = pipelineExecutor.runPipelineWithInputSetPipelineYaml(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, moduleType, inputSetPipelineYaml, false);
     return ResponseDTO.newResponse(planExecutionResponseDto);
@@ -623,8 +626,7 @@ public class PlanExecutionResource {
     }
     PipelineEntity pipelineEntity = optionalPipelineEntity.get();
     String yaml = pipelineEntity.getYaml();
-    if (featureFlagService.isEnabled(accountId, NG_PIPELINE_TEMPLATE)
-        && Boolean.TRUE.equals(optionalPipelineEntity.get().getTemplateReference())) {
+    if (Boolean.TRUE.equals(optionalPipelineEntity.get().getTemplateReference())) {
       yaml = pipelineTemplateHelper
                  .resolveTemplateRefsInPipeline(accountId, orgIdentifier, projectIdentifier, pipelineEntity.getYaml())
                  .getMergedPipelineYaml();

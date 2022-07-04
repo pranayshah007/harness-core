@@ -130,6 +130,7 @@ gcpConfig:
   gcpProjectId: gcpProjectIdPlaceHolder
   gcpAwsConnectorCrudPubSubTopic: "ce-aws-connector-crud"
   gcpGcpConnectorCrudPubSubTopic: "ce-gcp-connector-crud"
+  gcpAzureConnectorCrudPubSubTopic: "ce-azure-connector-crud"
 
 ceAzureSetupConfig:
   azureAppClientId: azureAppClientIdPlaceholder
@@ -155,6 +156,21 @@ secretsConfiguration:
   gcpSecretManagerProject: ccm-play
 
 awsConnectorCreatedInstantForPolicyCheck: "2022-05-05T00:00:00.00Z"
+
+notificationClient:
+  messageBroker:
+    type: MONGO
+    uri: mongodb://localhost:27017/notificationChannel
+    connectTimeout: 30000
+    serverSelectionTimeout: 90000
+    maxConnectionIdleTime: 600000
+    connectionsPerHost: 300
+  httpClient:
+    baseUrl: http://localhost:9005
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  secrets:
+    notificationClientSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 
 segmentConfiguration:
   enabled: true

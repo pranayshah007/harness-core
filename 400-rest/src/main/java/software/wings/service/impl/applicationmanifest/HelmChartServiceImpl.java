@@ -52,6 +52,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
+import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
@@ -262,6 +263,20 @@ public class HelmChartServiceImpl implements HelmChartService {
                               .displayName(appManifest.getHelmChartConfig().getChartName() + "-" + versionNumber)
                               .build();
     return create(helmChart);
+  }
+
+  @Override
+  public HelmChart createOrUpdateAppVersion(HelmChart helmChart) {
+    HelmChart existingHelmChart = getManifestByVersionNumber(
+        helmChart.getAccountId(), helmChart.getApplicationManifestId(), helmChart.getVersion());
+    if (existingHelmChart != null) {
+      UpdateOperations<HelmChart> updateOperations = wingsPersistence.createUpdateOperations(HelmChart.class)
+                                                         .set(HelmChartKeys.appVersion, helmChart.getAppVersion());
+      wingsPersistence.update(existingHelmChart, updateOperations);
+      return wingsPersistence.get(HelmChart.class, existingHelmChart.getUuid());
+    } else {
+      return create(helmChartService.create(helmChart));
+    }
   }
 
   private HelmCollectChartResponse getHelmCollectChartResponse(String accountId, String appId, String chartVersion,

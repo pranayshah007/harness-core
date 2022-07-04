@@ -9,6 +9,12 @@ package io.harness.ccm.remote.resources;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.ALERTS_COUNT;
+import static io.harness.ccm.remote.resources.TelemetryConstants.BUDGET_CREATED;
+import static io.harness.ccm.remote.resources.TelemetryConstants.BUDGET_PERIOD;
+import static io.harness.ccm.remote.resources.TelemetryConstants.BUDGET_TYPE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
@@ -73,13 +79,6 @@ public class BudgetResource {
   @Inject private BudgetService budgetService;
   @Inject private CEViewService ceViewService;
   @Inject private TelemetryReporter telemetryReporter;
-
-  private static final String BUDGET_CREATED = "Budget Created";
-  private static final String MODULE = "module";
-  private static final String MODULE_NAME = "CCM";
-  private static final String BUDGET_PERIOD = "budget_period";
-  private static final String BUDGET_TYPE = "budget_type";
-  private static final String ALERTS_COUNT = "alerts_count";
 
   @POST
   @Timed

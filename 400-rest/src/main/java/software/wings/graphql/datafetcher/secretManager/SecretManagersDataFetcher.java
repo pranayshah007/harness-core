@@ -25,7 +25,6 @@ import software.wings.graphql.schema.query.QLPageQueryParameters;
 import software.wings.graphql.schema.type.aggregation.QLIdFilter;
 import software.wings.graphql.schema.type.aggregation.QLNoOpSortCriteria;
 import software.wings.graphql.schema.type.secretManagers.QLSecretManager;
-import software.wings.graphql.schema.type.secretManagers.QLSecretManager.QLSecretManagerBuilder;
 import software.wings.graphql.schema.type.secretManagers.QLSecretManagerConnection;
 import software.wings.graphql.schema.type.secretManagers.QLSecretManagerConnection.QLSecretManagerConnectionBuilder;
 import software.wings.security.annotations.AuthRule;
@@ -59,9 +58,8 @@ public class SecretManagersDataFetcher
     query.order(Sort.descending(SecretManagerConfigKeys.createdAt));
     QLSecretManagerConnectionBuilder connectionBuilder = QLSecretManagerConnection.builder();
     connectionBuilder.pageInfo(dataFetcherUtils.populate(pageQueryParameters, query, secretManager -> {
-      QLSecretManagerBuilder builder = QLSecretManager.builder();
-      secretManagerController.populateSecretManager(secretManager, builder);
-      connectionBuilder.node(builder.build());
+      QLSecretManager qlSecretManager = secretManagerController.convertToQLSecretManager(secretManager);
+      connectionBuilder.node(qlSecretManager);
     }));
     return connectionBuilder.build();
   }

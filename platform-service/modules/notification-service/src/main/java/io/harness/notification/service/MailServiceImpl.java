@@ -138,7 +138,7 @@ public class MailServiceImpl implements ChannelService {
       List<String> emailIds, String subject, String body, String notificationId, String accountId) {
     NotificationProcessingResponse notificationProcessingResponse;
     SmtpConfigResponse smtpConfigResponse = notificationSettingsService.getSmtpConfigResponse(accountId);
-    if (notificationSettingsService.getSendNotificationViaDelegate(accountId) && Objects.nonNull(smtpConfigResponse)) {
+    if (Objects.nonNull(smtpConfigResponse)) {
       DelegateTaskRequest delegateTaskRequest =
           DelegateTaskRequest.builder()
               .accountId(accountId)
@@ -219,7 +219,7 @@ public class MailServiceImpl implements ChannelService {
     List<String> recipients = new ArrayList<>(emailDetails.getEmailIdsList());
     if (isNotEmpty(emailDetails.getUserGroupList())) {
       List<String> resolvedRecipients = notificationSettingsService.getNotificationRequestForUserGroups(
-          emailDetails.getUserGroupList(), NotificationChannelType.EMAIL, notificationRequest.getAccountId());
+          emailDetails.getUserGroupList(), NotificationChannelType.EMAIL, notificationRequest.getAccountId(), 0L);
       recipients.addAll(resolvedRecipients);
     }
     return recipients.stream().distinct().collect(Collectors.toList());

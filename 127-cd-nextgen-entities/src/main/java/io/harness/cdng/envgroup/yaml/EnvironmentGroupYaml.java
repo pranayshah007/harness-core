@@ -16,6 +16,7 @@ import io.harness.cdng.envgroup.helper.EnvironmentGroupYamlVisitorHelper;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 
@@ -42,7 +43,16 @@ public class EnvironmentGroupYaml implements Visitable {
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) private ParameterField<String> envGroupRef;
 
-  List<EnvironmentYamlV2> envGroupConfig;
+  List<EnvironmentYamlV2> environments;
 
   boolean deployToAll;
+
+  @Override
+  public VisitableChildren getChildrenToWalk() {
+    VisitableChildren children = VisitableChildren.builder().build();
+    if (environments != null) {
+      environments.forEach(environmentYamlV2 -> children.add("environments", environmentYamlV2));
+    }
+    return children;
+  }
 }
