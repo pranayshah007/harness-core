@@ -11,7 +11,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.ServiceSpec;
+import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.steps.ServiceDefinitionStep;
 import io.harness.cdng.service.steps.ServiceDefinitionStepParameters;
@@ -135,6 +137,32 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
       serviceSpecChildrenIds.add(configFilesPlanNodeId);
     }
 
+    if (serviceConfig.getServiceDefinition().getServiceSpec() instanceof AzureWebAppServiceSpec) {
+      AzureWebAppServiceSpec azureWebAppServiceSpec =
+          (AzureWebAppServiceSpec) serviceConfig.getServiceDefinition().getServiceSpec();
+
+      StoreConfigWrapper startupScript = azureWebAppServiceSpec.getStartupScript();
+      if (startupScript != null) {
+        String startupScriptPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForStartupScript(
+            serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializer);
+        serviceSpecChildrenIds.add(startupScriptPlanNodeId);
+      }
+
+      StoreConfigWrapper applicationSettings = azureWebAppServiceSpec.getApplicationSettings();
+      if (applicationSettings != null) {
+        String applicationSettingsPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForApplicationSettings(
+            serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializer);
+        serviceSpecChildrenIds.add(applicationSettingsPlanNodeId);
+      }
+
+      StoreConfigWrapper connectionStrings = azureWebAppServiceSpec.getConnectionStrings();
+      if (connectionStrings != null) {
+        String connectionStringsPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStrings(
+            serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializer);
+        serviceSpecChildrenIds.add(connectionStringsPlanNodeId);
+      }
+    }
+
     // Add serviceSpec node
     addServiceSpecNode(serviceConfig, planCreationResponseMap, serviceSpecChildrenIds);
   }
@@ -161,6 +189,33 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
       String configFilesPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForConfigFilesV2(
           serviceV2Node, planCreationResponseMap, config, kryoSerializer);
       serviceSpecChildrenIds.add(configFilesPlanNodeId);
+    }
+
+    if (config.getServiceDefinition().getServiceSpec() instanceof AzureWebAppServiceSpec) {
+      AzureWebAppServiceSpec azureWebAppServiceSpec =
+          (AzureWebAppServiceSpec) config.getServiceDefinition().getServiceSpec();
+
+      StoreConfigWrapper startupScript = azureWebAppServiceSpec.getStartupScript();
+      if (startupScript != null) {
+        String configFilesPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForStartupScriptV2(
+            serviceV2Node, planCreationResponseMap, config, kryoSerializer);
+        serviceSpecChildrenIds.add(configFilesPlanNodeId);
+      }
+
+      StoreConfigWrapper applicationSettings = azureWebAppServiceSpec.getApplicationSettings();
+      if (applicationSettings != null) {
+        String applicationSettingsPlanNodeId =
+            ServiceDefinitionPlanCreatorHelper.addDependenciesForApplicationSettingsV2(
+                serviceV2Node, planCreationResponseMap, config, kryoSerializer);
+        serviceSpecChildrenIds.add(applicationSettingsPlanNodeId);
+      }
+
+      StoreConfigWrapper connectionStrings = azureWebAppServiceSpec.getConnectionStrings();
+      if (connectionStrings != null) {
+        String connectionStringsPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForConnectionStringsV2(
+            serviceV2Node, planCreationResponseMap, config, kryoSerializer);
+        serviceSpecChildrenIds.add(connectionStringsPlanNodeId);
+      }
     }
 
     // Add serviceSpec node
@@ -269,6 +324,6 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
   public Map<String, Set<String>> getSupportedTypes() {
     return Collections.singletonMap(YamlTypes.SERVICE_DEFINITION,
         ImmutableSet.of(ServiceSpecType.KUBERNETES, ServiceSpecType.SSH, ServiceSpecType.WINRM,
-            ServiceSpecType.NATIVE_HELM, ServiceSpecType.SERVERLESS_AWS_LAMBDA));
+            ServiceSpecType.NATIVE_HELM, ServiceSpecType.SERVERLESS_AWS_LAMBDA, ServiceSpecType.AZURE_WEBAPPS));
   }
 }

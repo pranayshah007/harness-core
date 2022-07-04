@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -103,6 +104,7 @@ public class PmsOutcomeMapperTest extends PmsSdkCoreTestBase {
 
   @Data
   @Builder
+  @RecasterAlias("io.harness.pms.sdk.core.resolver.outcome.mapper.DummyOutcome")
   public static class DummyOutcome implements Outcome {
     String name;
   }

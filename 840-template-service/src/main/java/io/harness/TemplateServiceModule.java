@@ -47,8 +47,10 @@ import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.pipeline.yamlschema.PipelineYamlSchemaClientModule;
 import io.harness.project.ProjectClientModule;
 import io.harness.redis.RedisConfig;
+import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.TemplateServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
@@ -58,6 +60,8 @@ import io.harness.template.handler.PipelineTemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandlerRegistry;
 import io.harness.template.mappers.TemplateFilterPropertiesMapper;
+import io.harness.template.services.NGTemplateSchemaService;
+import io.harness.template.services.NGTemplateSchemaServiceImpl;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceImpl;
 import io.harness.template.services.TemplateRefreshService;
@@ -66,7 +70,10 @@ import io.harness.time.TimeModule;
 import io.harness.token.TokenClientModule;
 import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.WaiterConfiguration;
+import io.harness.yaml.YamlSdkModule;
+import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -78,6 +85,7 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import io.dropwizard.jackson.Jackson;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -133,7 +141,11 @@ public class TemplateServiceModule extends AbstractModule {
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(new EntitySetupUsageClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
-
+    install(new PipelineYamlSchemaClientModule(
+        ServiceHttpClientConfig.builder()
+            .baseUrl(templateServiceConfiguration.getPipelineServiceClientConfig().getBaseUrl())
+            .build(),
+        templateServiceConfiguration.getPipelineServiceSecret(), TEMPLATE_SERVICE.toString()));
     install(new DelegateServiceDriverGrpcClientModule(templateServiceConfiguration.getManagerServiceSecret(),
         templateServiceConfiguration.getManagerTarget(), templateServiceConfiguration.getManagerAuthority(), true));
     install(new AuditClientModule(this.templateServiceConfiguration.getAuditClientConfig(),
@@ -147,6 +159,7 @@ public class TemplateServiceModule extends AbstractModule {
     install(new TemplateEventsFrameworkModule(this.templateServiceConfiguration.getEventsFrameworkConfiguration()));
     install(new AccountClientModule(templateServiceConfiguration.getManagerClientConfig(),
         templateServiceConfiguration.getManagerServiceSecret(), TEMPLATE_SERVICE.toString()));
+    install(YamlSdkModule.getInstance());
 
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("taskPollExecutor"))
@@ -157,6 +170,7 @@ public class TemplateServiceModule extends AbstractModule {
     bind(OutboxEventHandler.class).to(TemplateOutboxEventHandler.class);
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(NGTemplateService.class).to(NGTemplateServiceImpl.class);
+    bind(NGTemplateSchemaService.class).to(NGTemplateSchemaServiceImpl.class);
     bind(TemplateRefreshService.class).to(TemplateRefreshServiceImpl.class);
 
     install(EnforcementClientModule.getInstance(templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
@@ -189,6 +203,14 @@ public class TemplateServiceModule extends AbstractModule {
   public Set<Class<? extends TypeConverter>> morphiaConverters() {
     return ImmutableSet.<Class<? extends TypeConverter>>builder()
         .addAll(TemplateServiceModuleRegistrars.morphiaConverters)
+        .build();
+  }
+
+  @Provides
+  @Singleton
+  List<YamlSchemaRootClass> yamlSchemaRootClasses() {
+    return ImmutableList.<YamlSchemaRootClass>builder()
+        .addAll(TemplateServiceModuleRegistrars.yamlSchemaRegistrars)
         .build();
   }
 
@@ -252,6 +274,21 @@ public class TemplateServiceModule extends AbstractModule {
     return templateYamlConversionHandlerRegistry;
   }
 
+  @Provides
+  @Singleton
+  @Named("allowedParallelStages")
+  public Integer getAllowedParallelStages() {
+    return templateServiceConfiguration.getAllowedParallelStages();
+  }
+
+  @Provides
+  @Named("yaml-schema-mapper")
+  @Singleton
+  public ObjectMapper getYamlSchemaObjectMapper() {
+    ObjectMapper objectMapper = Jackson.newObjectMapper();
+    TemplateServiceApplication.configureObjectMapper(objectMapper);
+    return objectMapper;
+  }
   private DelegateCallbackToken getDelegateCallbackToken(DelegateServiceGrpcClient delegateServiceClient) {
     log.info("Generating Delegate callback token");
     final DelegateCallbackToken delegateCallbackToken = delegateServiceClient.registerCallback(

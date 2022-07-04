@@ -10,6 +10,7 @@ package io.harness.managerclient;
 import io.harness.network.FibonacciBackOff;
 import io.harness.network.Http;
 import io.harness.network.NoopHostnameVerifier;
+import io.harness.security.AllTrustingX509TrustManager;
 import io.harness.security.TokenGenerator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,7 +33,7 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Slf4j
 public class WatcherManagerClientV2Factory implements Provider<ManagerClientV2> {
   private static final ImmutableList<TrustManager> TRUST_ALL_CERTS =
-      ImmutableList.of(new WatcherManagerClientV2X509TrustManager());
+      ImmutableList.of(new AllTrustingX509TrustManager());
 
   private String baseUrl;
   private TokenGenerator tokenGenerator;

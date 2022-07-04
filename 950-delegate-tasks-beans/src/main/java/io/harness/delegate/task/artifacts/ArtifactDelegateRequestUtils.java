@@ -33,6 +33,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.helpers.ext.jenkins.JobDetails;
 
 import java.util.List;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -172,6 +173,23 @@ public class ArtifactDelegateRequestUtils {
         .parentJobName(parentJobName)
         .jobName(jobName)
         .artifactPaths(artifactPath)
+        .build();
+  }
+
+  public JenkinsArtifactDelegateRequest getJenkinsDelegateRequest(String connectorRef,
+      JenkinsConnectorDTO jenkinsConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails,
+      ArtifactSourceType sourceType, List<JobDetails> jobDetails, String parentJobName, String jobName,
+      List<String> artifactPath, Map<String, String> jobParameter) {
+    return JenkinsArtifactDelegateRequest.builder()
+        .connectorRef(connectorRef)
+        .jenkinsConnectorDTO(jenkinsConnectorDTO)
+        .encryptedDataDetails(encryptedDataDetails)
+        .sourceType(sourceType)
+        .jobDetails(jobDetails)
+        .parentJobName(parentJobName)
+        .jobName(jobName)
+        .artifactPaths(artifactPath)
+        .jobParameter(jobParameter)
         .build();
   }
 

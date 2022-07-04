@@ -289,13 +289,13 @@ public class K8sTaskHelperTest extends CategoryTest {
 
     verify(mockGitService, times(1))
         .downloadFiles(
-            eq(GitConfig.builder().repoUrl(REPO_URL).build()), any(GitFileConfig.class), eq("./dir"), eq(false));
+            eq(GitConfig.builder().repoUrl(REPO_URL).build()), any(GitFileConfig.class), eq("./dir"), eq(false), any());
     verify(mockEncryptionService, times(1)).decrypt(any(), anyList(), eq(false));
 
     // handle exception
     doThrow(new RuntimeException())
         .when(mockGitService)
-        .downloadFiles(any(GitConfig.class), any(GitFileConfig.class), anyString(), eq(false));
+        .downloadFiles(any(GitConfig.class), any(GitFileConfig.class), anyString(), eq(false), any());
     assertThat(
         spyHelper.fetchManifestFilesAndWriteToDirectory(
             K8sDelegateManifestConfig.builder()
@@ -334,7 +334,7 @@ public class K8sTaskHelperTest extends CategoryTest {
     verify(scmFetchFilesHelper, times(1)).downloadFilesUsingScm(any(), any(), any(), any());
     verify(mockGitService, times(0))
         .downloadFiles(
-            eq(GitConfig.builder().repoUrl(REPO_URL).build()), any(GitFileConfig.class), eq("./dir"), eq(false));
+            eq(GitConfig.builder().repoUrl(REPO_URL).build()), any(GitFileConfig.class), eq("./dir"), eq(false), any());
     verify(mockEncryptionService, times(1)).decrypt(any(), anyList(), eq(false));
 
     // handle exception

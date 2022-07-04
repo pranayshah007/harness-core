@@ -86,6 +86,7 @@ import io.harness.beans.yaml.extended.volumes.EmptyDirYaml;
 import io.harness.beans.yaml.extended.volumes.HostPathYaml;
 import io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml;
 import io.harness.ci.beans.entities.BuildNumberDetails;
+import io.harness.ci.beans.entities.CITelemetrySentStatus;
 import io.harness.ci.stdvars.BuildStandardVariables;
 import io.harness.ci.stdvars.GitVariables;
 import io.harness.serializer.KryoRegistrar;
@@ -180,6 +181,7 @@ public class CIBeansKryoRegistrar implements KryoRegistrar {
 
     kryo.register(K8sHostedInfraYaml.class, 110106);
     kryo.register(K8sHostedInfraYamlSpec.class, 110107);
+    kryo.register(CITelemetrySentStatus.class, 110108);
 
     kryo.register(BuildUpdateType.class, 390003);
     kryo.register(BuildStatusUpdateParameter.class, 390004);

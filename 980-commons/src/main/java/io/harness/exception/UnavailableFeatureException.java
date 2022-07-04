@@ -18,7 +18,7 @@ public class UnavailableFeatureException extends WingsException {
   private static final String MESSAGE_KEY = "message";
 
   public UnavailableFeatureException(String message) {
-    super(null, null, FEATURE_UNAVAILABLE, Level.ERROR, null, null);
+    super(message, null, FEATURE_UNAVAILABLE, Level.ERROR, null, null);
     super.param(MESSAGE_KEY, message);
   }
 }

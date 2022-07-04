@@ -18,6 +18,8 @@ import software.wings.beans.sso.LdapUserSettings;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -31,23 +33,40 @@ import lombok.EqualsAndHashCode;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeName("LDAP")
 @OwnedBy(HarnessTeam.PL)
+@Schema(description = "This has the details of LDAP Settings supported in NG.")
 public class LDAPSettings extends NGAuthSettings {
-  @NotNull @Valid LdapConnectionSettings connectionSettings;
-  @NotNull private String identifier;
+  @Schema(description = "This is the LDAP connection setting.")
+  @NotNull
+  @Valid
+  LdapConnectionSettings connectionSettings;
+  @Schema(description = "This is the LDAP setting identifier.") @NotNull private String identifier;
 
-  @Valid List<LdapUserSettings> userSettingsList;
+  @Schema(description = "This is the user settings list in LDAP setting.")
+  @Valid
+  List<LdapUserSettings> userSettingsList;
 
-  @Valid List<LdapGroupSettings> groupSettingsList;
+  @Schema(description = "This is the group settings list in LDAP setting.")
+  @Valid
+  List<LdapGroupSettings> groupSettingsList;
+
+  @Schema(description = "This is the LDAP setting display name.") @NotNull private String displayName;
+  @Schema(description = "This is the cron expression in LDAP Settings.") private String cronExpression;
+  @Schema(description = "This is the list of iterations for next LDAP sync job.") private List<Long> nextIterations;
 
   public LDAPSettings(@JsonProperty("connectionSettings") LdapConnectionSettings connectionSettings,
       @JsonProperty("identifier") String identifier,
       @JsonProperty("userSettingsList") List<LdapUserSettings> userSettingsList,
-      @JsonProperty("groupSettingsList") List<LdapGroupSettings> groupSettingsList) {
+      @JsonProperty("groupSettingsList") List<LdapGroupSettings> groupSettingsList,
+      @JsonProperty("displayName") String displayName, @JsonProperty("cronExpression") String cronExpression,
+      @JsonProperty("nextIterations") List<Long> nextIterations) {
     super(AuthenticationMechanism.LDAP);
     this.connectionSettings = connectionSettings;
     this.userSettingsList = userSettingsList;
     this.groupSettingsList = groupSettingsList;
     this.identifier = identifier;
+    this.displayName = displayName;
+    this.cronExpression = cronExpression == null ? "" : cronExpression;
+    this.nextIterations = nextIterations == null ? new ArrayList<>() : nextIterations;
   }
 
   @Override

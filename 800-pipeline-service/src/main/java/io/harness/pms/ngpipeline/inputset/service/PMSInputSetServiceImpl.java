@@ -28,11 +28,13 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperD
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
+import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.inputset.gitsync.InputSetYamlDTOMapper;
@@ -41,6 +43,7 @@ import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEn
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -66,6 +69,7 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(PIPELINE)
 public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Inject private PMSInputSetRepository inputSetRepository;
+  @Inject private PMSPipelineService pmsPipelineService;
   @Inject private GitSyncSdkService gitSyncSdkService;
   @Inject private GitAwareEntityHelper gitAwareEntityHelper;
 
@@ -73,10 +77,17 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       "Input set [%s] under Project[%s], Organization [%s] for Pipeline [%s] already exists";
 
   @Override
-  public InputSetEntity create(InputSetEntity inputSetEntity) {
+  public InputSetEntity create(InputSetEntity inputSetEntity, String pipelineBranch, String pipelineRepoID) {
+    boolean isOldGitSync = gitSyncSdkService.isGitSyncEnabled(inputSetEntity.getAccountIdentifier(),
+        inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
+    if (isOldGitSync) {
+      InputSetValidationHelper.validateInputSetForOldGitSync(
+          this, pmsPipelineService, inputSetEntity, pipelineBranch, pipelineRepoID);
+    } else {
+      InputSetValidationHelper.validateInputSet(this, pmsPipelineService, inputSetEntity, true);
+    }
     try {
-      if (gitSyncSdkService.isGitSyncEnabled(inputSetEntity.getAccountIdentifier(), inputSetEntity.getOrgIdentifier(),
-              inputSetEntity.getProjectIdentifier())) {
+      if (isOldGitSync) {
         return inputSetRepository.saveForOldGitSync(inputSetEntity, InputSetYamlDTOMapper.toDTO(inputSetEntity));
       } else {
         return inputSetRepository.save(inputSetEntity);
@@ -116,13 +127,37 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       throw new InvalidRequestException(
           String.format("Error while retrieving input set [%s]: %s", identifier, e.getMessage()));
     }
+    if (!optionalInputSetEntity.isPresent()) {
+      throw new InvalidRequestException(
+          String.format("InputSet with the given ID: %s does not exist or has been deleted", identifier));
+    }
+    InputSetEntity inputSetEntity = optionalInputSetEntity.get();
+    if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
+      ScmGitMetaData inputSetScmGitMetaData = GitAwareContextHelper.getScmGitMetaData();
+      try {
+        InputSetValidationHelper.validateInputSet(this, pmsPipelineService, inputSetEntity, false);
+      } finally {
+        // input set validation involves fetching the pipeline, which can change the global scm metadata to that of the
+        // pipeline. Hence, it needs to be changed back to that of the input set once validation is complete,
+        // irrespective of whether the validation throws an exception or not
+        GitAwareContextHelper.updateScmGitMetaData(inputSetScmGitMetaData);
+      }
+    }
     return optionalInputSetEntity;
   }
 
   @Override
-  public InputSetEntity update(InputSetEntity inputSetEntity, ChangeType changeType) {
-    if (gitSyncSdkService.isGitSyncEnabled(inputSetEntity.getAccountIdentifier(), inputSetEntity.getOrgIdentifier(),
-            inputSetEntity.getProjectIdentifier())) {
+  public InputSetEntity update(
+      InputSetEntity inputSetEntity, ChangeType changeType, String pipelineBranch, String pipelineRepoID) {
+    boolean isOldGitSync = gitSyncSdkService.isGitSyncEnabled(inputSetEntity.getAccountIdentifier(),
+        inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
+    if (isOldGitSync) {
+      InputSetValidationHelper.validateInputSetForOldGitSync(
+          this, pmsPipelineService, inputSetEntity, pipelineBranch, pipelineRepoID);
+    } else {
+      InputSetValidationHelper.validateInputSet(this, pmsPipelineService, inputSetEntity, false);
+    }
+    if (isOldGitSync) {
       return updateForOldGitSync(inputSetEntity, changeType);
     }
     return makeInputSetUpdateCall(inputSetEntity, changeType, false);

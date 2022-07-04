@@ -50,5 +50,6 @@ public enum CapabilityType {
   CI_VM,
   ARTIFACTORY,
   SERVERLESS_INSTALL,
-  OCI_HELM_REPO
+  OCI_HELM_REPO,
+  AWS_CLI_INSTALL
 }

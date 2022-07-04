@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.event;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.ngtriggers.Constants.ISSUE_COMMENT_EVENT_TYPE;
 import static io.harness.ngtriggers.Constants.PULL_REQUEST_EVENT_TYPE;
 import static io.harness.ngtriggers.Constants.PUSH_EVENT_TYPE;
 
@@ -24,7 +25,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = AzureRepoPRSpec.class, name = PULL_REQUEST_EVENT_TYPE)
-  , @JsonSubTypes.Type(value = AzureRepoPushSpec.class, name = PUSH_EVENT_TYPE)
+  , @JsonSubTypes.Type(value = AzureRepoPushSpec.class, name = PUSH_EVENT_TYPE),
+      @JsonSubTypes.Type(value = AzureRepoIssueCommentSpec.class, name = ISSUE_COMMENT_EVENT_TYPE)
 })
 @OwnedBy(CI)
 public interface AzureRepoEventSpec extends PayloadAware, GitAware {

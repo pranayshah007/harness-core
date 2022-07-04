@@ -9,6 +9,7 @@ package io.harness.repositories.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.SRIDHAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -35,6 +36,8 @@ import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.rule.Owner;
 import io.harness.springdata.TransactionHelper;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -372,6 +375,27 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
     doReturn(pipelineEntity).when(mongoTemplate).findAndRemove(any(), any());
     pipelineRepository.delete(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId);
     verify(mongoTemplate, times(1)).findAndRemove(any(), any());
+    verify(outboxService, times(1)).save(any());
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testDeleteAllPipelineInProject() {
+    Update update = new Update();
+    update.set(PipelineEntityKeys.deleted, true);
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(pipelineId)
+                                        .yaml(pipelineYaml)
+                                        .deleted(true)
+                                        .build();
+    List<PipelineEntity> entityList = Arrays.asList(pipelineEntity);
+    doReturn(entityList).when(mongoTemplate).findAllAndRemove(any(), (Class<PipelineEntity>) any());
+    pipelineRepository.deleteAllPipelinesInAProject(accountIdentifier, orgIdentifier, projectIdentifier);
+    verify(mongoTemplate, times(1)).findAllAndRemove(any(), (Class<PipelineEntity>) any());
     verify(outboxService, times(1)).save(any());
   }
 }

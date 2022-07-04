@@ -9,8 +9,10 @@ package io.harness.delegate.task.serverless;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.PRAGYESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -21,8 +23,13 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.awscli.AwsCliClient;
 import io.harness.category.element.UnitTests;
+import io.harness.cli.CliResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
+import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaManifestSchema;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.serverless.request.ServerlessCommandRequest;
@@ -32,6 +39,7 @@ import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 import io.harness.serverless.ServerlessCliResponse;
 import io.harness.serverless.ServerlessClient;
+import io.harness.serverless.model.ServerlessAwsLambdaConfig;
 import io.harness.serverless.model.ServerlessDelegateTaskParams;
 
 import software.wings.service.impl.AwsApiHelperService;
@@ -44,9 +52,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.io.IOUtils;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -74,6 +84,31 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   @Mock private AwsConnectorDTO awsConnectorDTO;
   @Mock private LogCallback logCallback;
   @Mock private ServerlessClient serverlessClient;
+  @Mock private AwsCliClient awsCliClient;
+
+  private static ServerlessAwsLambdaConfig serverlessAwsLambdaConfig;
+  private static CliResponse stsResponse;
+
+  @BeforeClass
+  public static void setUp() throws Exception {
+    serverlessAwsLambdaConfig =
+        ServerlessAwsLambdaConfig.builder().accessKey("ased").secretKey("hyyvgtv").provider("aws").build();
+    stsResponse = CliResponse.builder()
+                      .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                      .output("{\n"
+                          + "    \"Credentials\": {\n"
+                          + "        \"AccessKeyId\": \"ASIA3X\",\n"
+                          + "        \"SecretAccessKey\": \"CWyuz0ZDU\",\n"
+                          + "        \"SessionToken\": \"IQoJb3JpZ2luX2VjEGMaC\",\n"
+                          + "        \"Expiration\": \"2022-06-23T19:35:15+00:00\"\n"
+                          + "    },\n"
+                          + "    \"AssumedRoleUser\": {\n"
+                          + "        \"AssumedRoleId\": \"AROA3XTXJV7YI3CLWI4U3:s3-access-example\",\n"
+                          + "        \"Arn\": \"arn:aws:sts::80676:assumed-role/cross_ac_serverless/sls\"\n"
+                          + "    }\n"
+                          + "}\n")
+                      .build();
+  }
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
@@ -225,5 +260,78 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
     verify(awsNgConfigMapper, times(1)).createAwsInternalConfig(awsConnectorDTO);
     verify(awsCFHelperServiceDelegate, times(1))
         .stackExists(awsInternalConfig, serverlessAwsLambdaInfraConfig.getRegion(), cloudFormationStackName);
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void setUpConfigCredsForSTSWithManualKeysTest() throws Exception {
+    CrossAccountAccessDTO crossAccountAccessDTO =
+        CrossAccountAccessDTO.builder().crossAccountRoleArn("alpha").externalId("cgtvg").build();
+    AwsCredentialDTO awsCredentialDTO = AwsCredentialDTO.builder().crossAccountAccess(crossAccountAccessDTO).build();
+    AwsConnectorDTO awsConnectorDTO = AwsConnectorDTO.builder().credential(awsCredentialDTO).build();
+    ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig =
+        ServerlessAwsLambdaInfraConfig.builder().region("us-east-2").awsConnectorDTO(awsConnectorDTO).build();
+    CliResponse configureResponse =
+        CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+    doReturn(stsResponse)
+        .when(awsCliClient)
+        .stsAssumeRole(eq("alpha"), anyString(), eq("cgtvg"), eq(new HashMap<>()),
+            eq(serverlessDelegateTaskParams.getWorkingDirectory()), eq(logCallback), eq(600l), eq(""));
+    doReturn(configureResponse)
+        .when(awsCliClient)
+        .setConfigure(anyString(), anyString(), eq(new HashMap<>()),
+            eq(serverlessDelegateTaskParams.getWorkingDirectory()), eq(logCallback), eq(600l), anyString());
+
+    serverlessAwsCommandTaskHelper.setUpConfigureCredential(serverlessAwsLambdaConfig, logCallback,
+        serverlessDelegateTaskParams, AwsCredentialType.MANUAL_CREDENTIALS.name(), serverlessClient, 600l, true,
+        new HashMap<>(), awsCliClient, serverlessAwsLambdaInfraConfig);
+    verify(awsCliClient)
+        .stsAssumeRole(eq("alpha"), anyString(), eq("cgtvg"), eq(new HashMap<>()),
+            eq(serverlessDelegateTaskParams.getWorkingDirectory()), eq(logCallback), eq(600l), eq(""));
+    verify(awsCliClient, times(7))
+        .setConfigure(anyString(), anyString(), eq(new HashMap<>()),
+            eq(serverlessDelegateTaskParams.getWorkingDirectory()), eq(logCallback), eq(600l), anyString());
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void setUpConfigCredsForSTSWithIrsaOrIamTest() throws Exception {
+    CrossAccountAccessDTO crossAccountAccessDTO =
+        CrossAccountAccessDTO.builder().crossAccountRoleArn("alpha").externalId("cgtvg").build();
+    AwsCredentialDTO awsCredentialDTO = AwsCredentialDTO.builder().crossAccountAccess(crossAccountAccessDTO).build();
+    AwsConnectorDTO awsConnectorDTO = AwsConnectorDTO.builder().credential(awsCredentialDTO).build();
+    ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig =
+        ServerlessAwsLambdaInfraConfig.builder().region("us-east-2").awsConnectorDTO(awsConnectorDTO).build();
+    CliResponse configureResponse =
+        CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+    doReturn(stsResponse)
+        .when(awsCliClient)
+        .stsAssumeRole(eq("alpha"), anyString(), eq("cgtvg"), eq(new HashMap<>()),
+            eq(serverlessDelegateTaskParams.getWorkingDirectory()), eq(logCallback), eq(600l), anyString());
+    doReturn(configureResponse)
+        .when(awsCliClient)
+        .setConfigure(any(), any(), eq(new HashMap<>()), eq(serverlessDelegateTaskParams.getWorkingDirectory()),
+            eq(logCallback), eq(600l), anyString());
+
+    serverlessAwsCommandTaskHelper.setUpConfigureCredential(serverlessAwsLambdaConfig, logCallback,
+        serverlessDelegateTaskParams, AwsCredentialType.INHERIT_FROM_DELEGATE.name(), serverlessClient, 600l, true,
+        new HashMap<>(), awsCliClient, serverlessAwsLambdaInfraConfig);
+
+    verify(awsCliClient)
+        .stsAssumeRole(eq("alpha"), anyString(), eq("cgtvg"), eq(new HashMap<>()),
+            eq(serverlessDelegateTaskParams.getWorkingDirectory()), eq(logCallback), eq(600l), eq(""));
+    verify(awsCliClient)
+        .setConfigure(eq("aws_access_key_id"), eq("ASIA3X"), eq(new HashMap<>()),
+            eq(serverlessDelegateTaskParams.getWorkingDirectory()), eq(logCallback), eq(600l),
+            eq("aws configure set aws_access_key_id ***"));
+    verify(awsCliClient)
+        .setConfigure(eq("aws_secret_access_key"), eq("CWyuz0ZDU"), eq(new HashMap<>()),
+            eq(serverlessDelegateTaskParams.getWorkingDirectory()), eq(logCallback), eq(600l),
+            eq("aws configure set aws_secret_access_key ***"));
+    verify(awsCliClient)
+        .setConfigure(eq("aws_session_token"), eq("IQoJb3JpZ2luX2VjEGMaC"), eq(new HashMap<>()),
+            eq(serverlessDelegateTaskParams.getWorkingDirectory()), eq(logCallback), eq(600l), eq(""));
   }
 }

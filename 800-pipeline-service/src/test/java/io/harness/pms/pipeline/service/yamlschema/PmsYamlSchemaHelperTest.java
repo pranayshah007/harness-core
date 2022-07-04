@@ -87,8 +87,8 @@ public class PmsYamlSchemaHelperTest {
     pmsYamlSchemaHelper.processStageSchema(
         yamlSchemaWithDetailsList, (ObjectNode) schema.get(SchemaConstants.DEFINITIONS_NODE));
     assertNotNull(getOneOfNodeInStages(schema));
-    // Only StageElementConfig in oneOf node.
-    assertEquals(getOneOfNodeInStages(schema).size(), 1);
+    // OneOf nodes would be empty.(Removed StageElemenetConfig from schema)
+    assertEquals(getOneOfNodeInStages(schema).size(), 0);
 
     yamlSchemaWithDetailsList.add(YamlSchemaWithDetails.builder()
                                       .schemaClassName("StageClass")
@@ -100,7 +100,7 @@ public class PmsYamlSchemaHelperTest {
     pmsYamlSchemaHelper.processStageSchema(
         yamlSchemaWithDetailsList, (ObjectNode) schema.get(SchemaConstants.DEFINITIONS_NODE));
     // /cd/StageClass would be added in oneOf node.
-    assertEquals(getOneOfNodeInStages(schema).size(), 2);
+    assertEquals(getOneOfNodeInStages(schema).size(), 1);
   }
 
   private String getResource() throws IOException {

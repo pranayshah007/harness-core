@@ -15,7 +15,8 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.steps.resourcerestraint.ResourceRestraintSpecParameters;
+import io.harness.steps.resourcerestraint.IResourceRestraintSpecParameters;
+import io.harness.steps.resourcerestraint.QueueSpecParameters;
 import io.harness.steps.resourcerestraint.beans.AcquireMode;
 import io.harness.steps.resourcerestraint.beans.HoldingScope;
 import io.harness.steps.resourcerestraint.beans.QueueHoldingScope;
@@ -38,9 +39,9 @@ public class QueueStepInfoTest {
 
     SpecParameters spec = step.getSpecParameters();
     assertThat(spec).isNotNull();
-    assertThat(spec).isInstanceOf(ResourceRestraintSpecParameters.class);
+    assertThat(spec).isInstanceOf(QueueSpecParameters.class);
 
-    ResourceRestraintSpecParameters rrSpec = (ResourceRestraintSpecParameters) spec;
+    IResourceRestraintSpecParameters rrSpec = (IResourceRestraintSpecParameters) spec;
     assertThat(rrSpec.getResourceUnit()).isEqualTo(pfKey);
     assertThat(rrSpec.getResourceUnit().getValue()).isEqualTo("aKey");
     assertThat(rrSpec.getHoldingScope()).isEqualTo(HoldingScope.PIPELINE);
@@ -55,9 +56,9 @@ public class QueueStepInfoTest {
 
     SpecParameters spec = step.getSpecParameters();
     assertThat(spec).isNotNull();
-    assertThat(spec).isInstanceOf(ResourceRestraintSpecParameters.class);
+    assertThat(spec).isInstanceOf(QueueSpecParameters.class);
 
-    ResourceRestraintSpecParameters rrSpec = (ResourceRestraintSpecParameters) spec;
+    IResourceRestraintSpecParameters rrSpec = (IResourceRestraintSpecParameters) spec;
     assertThat(rrSpec.getAcquireMode()).isEqualTo(AcquireMode.ENSURE);
     assertThat(rrSpec.getPermits()).isEqualTo(1);
     assertThat(rrSpec.getName()).isEqualTo("Queuing");

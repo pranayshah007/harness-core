@@ -13,11 +13,11 @@ import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
+import io.harness.ci.utils.CIVmSecretEvaluator;
 import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.util.CIVmSecretEvaluator;
 import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;

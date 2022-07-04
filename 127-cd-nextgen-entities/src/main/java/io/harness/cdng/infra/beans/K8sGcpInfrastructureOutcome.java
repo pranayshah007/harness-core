@@ -12,24 +12,25 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import lombok.Builder;
 import lombok.Value;
-import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 
 @Value
-@SuperBuilder
+@Builder
 @JsonTypeName(InfrastructureKind.KUBERNETES_GCP)
 @TypeAlias("cdng.infra.beans.K8sGcpInfrastructureOutcome")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome")
-public class K8sGcpInfrastructureOutcome extends InfrastructureOutcomeAbstract implements InfrastructureOutcome {
+public class K8sGcpInfrastructureOutcome extends InfrastructureDetailsAbstract implements InfrastructureOutcome {
   String connectorRef;
   String namespace;
   String cluster;
   String releaseName;
-  EnvironmentOutcome environment;
+  @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
   String infrastructureKey;
 
   @Override

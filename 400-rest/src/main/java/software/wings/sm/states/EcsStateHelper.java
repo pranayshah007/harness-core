@@ -591,10 +591,9 @@ public class EcsStateHelper {
       throw new InvalidArgumentsException(Pair.of("Cloud Provider", "Must be of type Aws Config"));
     }
     AwsConfig awsConfig = (AwsConfig) settingValue;
-    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(executionContext,awsConfig);
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(executionContext, awsConfig);
     List<EncryptedDataDetail> encryptedDataDetails = secretManager.getEncryptionDetails(
         awsConfig, executionContext.getAppId(), executionContext.getWorkflowExecutionId());
-
 
     return EcsRunTaskDataBag.builder()
         .applicationAccountId(app.getAccountId())
@@ -644,7 +643,7 @@ public class EcsStateHelper {
       throw new InvalidArgumentsException(Pair.of("Cloud Provider", "Must be of type Aws Config"));
     }
     AwsConfig awsConfig = (AwsConfig) settingValue;
-    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context,awsConfig);
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
     List<EncryptedDataDetail> encryptedDataDetails =
         secretManager.getEncryptionDetails(awsConfig, context.getAppId(), context.getWorkflowExecutionId());
     EcsServiceSpecification serviceSpecification =
@@ -703,7 +702,8 @@ public class EcsStateHelper {
       executionData.setServiceName(setupExecutionData.getContainerServiceName());
       executionData.setLoadBalancer(containerServiceElement.getLoadBalancer());
       executionData.setPreviousAwsAutoScalarConfigs(setupExecutionData.getPreviousAwsAutoScalarConfigs());
-      executionData.setOldInstanceData(singletonList(ContainerServiceData.builder().name(setupExecutionData.getEcsServiceToBeDownsized()).build()));
+      executionData.setOldInstanceData(
+          singletonList(ContainerServiceData.builder().name(setupExecutionData.getEcsServiceToBeDownsized()).build()));
 
       containerServiceElement.setPreviousAwsAutoScalarConfigs(setupExecutionData.getPreviousAwsAutoScalarConfigs());
       containerServiceElement.setNewEcsServiceName(setupExecutionData.getContainerServiceName());
@@ -1168,7 +1168,7 @@ public class EcsStateHelper {
       throw new InvalidRequestException(format("Invalid setting value type: [%s]", settingValue.getClass().getName()));
     }
     AwsConfig awsConfig = (AwsConfig) settingValue;
-    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context,awsConfig);
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
     List<EncryptedDataDetail> encryptionDetails =
         secretManager.getEncryptionDetails(awsConfig, context.getAppId(), context.getWorkflowExecutionId());
     String region = ecsInfrastructureMapping.getRegion();

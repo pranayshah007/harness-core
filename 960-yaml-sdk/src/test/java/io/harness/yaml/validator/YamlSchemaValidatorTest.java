@@ -9,6 +9,8 @@ package io.harness.yaml.validator;
 
 import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.yaml.schema.beans.SchemaConstants.PIPELINE_NODE;
+import static io.harness.yaml.schema.beans.SchemaConstants.STAGES_NODE;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -89,7 +91,9 @@ public class YamlSchemaValidatorTest extends CategoryTest {
     final String pipelineSchema = getYamlResource("testSchema/pipelineSchema.json");
 
     // Validating a pipeline with empty stages list.
-    assertThatThrownBy(() -> yamlSchemaValidator.validate(emptyStagePipeline, pipelineSchema, true, 2))
+    assertThatThrownBy(()
+                           -> yamlSchemaValidator.validate(
+                               emptyStagePipeline, pipelineSchema, true, 2, PIPELINE_NODE + "/" + STAGES_NODE))
         .isInstanceOf(InvalidYamlException.class)
         .hasMessage("$.pipeline.stages: there must be a minimum of 1 items in the array");
   }
@@ -186,22 +190,26 @@ public class YamlSchemaValidatorTest extends CategoryTest {
     ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
     JsonNode yamlNode1 = objectMapper.readTree(pipelineYaml);
     // When the check is off.
-    assertThatCode(() -> yamlSchemaValidator.validateParallelStagesCount(yamlNode1, true, 1))
+    assertThatCode(
+        () -> yamlSchemaValidator.validateParallelStagesCount(yamlNode1, true, 1, PIPELINE_NODE + "/" + STAGES_NODE))
         .doesNotThrowAnyException();
     // Enabling the check.
-    assertThatCode(() -> yamlSchemaValidator.validateParallelStagesCount(yamlNode1, false, 1))
+    assertThatCode(
+        () -> yamlSchemaValidator.validateParallelStagesCount(yamlNode1, false, 1, PIPELINE_NODE + "/" + STAGES_NODE))
         .doesNotThrowAnyException();
 
     // One parallel stage
     pipelineYaml = getYamlResource("validator/one-parallel-stage.yaml");
     JsonNode yamlNode2 = objectMapper.readTree(pipelineYaml);
-    assertThatCode(() -> yamlSchemaValidator.validateParallelStagesCount(yamlNode2, false, 1))
+    assertThatCode(
+        () -> yamlSchemaValidator.validateParallelStagesCount(yamlNode2, false, 1, PIPELINE_NODE + "/" + STAGES_NODE))
         .doesNotThrowAnyException();
 
     // Two parallel stages. While only 1 is allowed.
     pipelineYaml = getYamlResource("validator/two-parallel-stages.yaml");
     JsonNode yamlNode3 = objectMapper.readTree(pipelineYaml);
-    assertThatCode(() -> yamlSchemaValidator.validateParallelStagesCount(yamlNode3, false, 1))
+    assertThatCode(
+        () -> yamlSchemaValidator.validateParallelStagesCount(yamlNode3, false, 1, PIPELINE_NODE + "/" + STAGES_NODE))
         .isInstanceOf(InvalidRequestException.class);
   }
 }

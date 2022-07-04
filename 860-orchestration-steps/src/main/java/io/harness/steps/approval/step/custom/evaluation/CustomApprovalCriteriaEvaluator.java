@@ -79,7 +79,7 @@ public class CustomApprovalCriteriaEvaluator {
         if (matchAnyCondition && currentResult) {
           return true;
         }
-        if (!currentResult) {
+        if (!matchAnyCondition && !currentResult) {
           return false;
         }
       } catch (Exception e) {

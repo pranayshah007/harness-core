@@ -1,0 +1,12 @@
+step:
+    type: Http
+    name: <+strategy.totalIterations>
+    identifier: <+strategy.currentIteration>
+    strategy:
+      parallelism: 4
+    spec:
+      url: https://www.google.com
+      method: GET
+      headers: []
+      outputVariables: []
+    timeout: 1m

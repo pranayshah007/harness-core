@@ -83,7 +83,7 @@ public class EnvGroupPlanCreatorHelper {
 
     List<EnvironmentPlanCreatorConfig> envConfigs = new ArrayList<>();
     if (!envGroupYaml.isDeployToAll()) {
-      List<EnvironmentYamlV2> envV2Yamls = envGroupYaml.getEnvGroupConfig();
+      List<EnvironmentYamlV2> envV2Yamls = envGroupYaml.getEnvironments();
       for (EnvironmentYamlV2 envYaml : envV2Yamls) {
         Environment environment = envMapping.get(envYaml.getEnvironmentRef().getValue());
         if (environment == null) {
@@ -102,9 +102,9 @@ public class EnvGroupPlanCreatorHelper {
         }
 
         String mergedEnvYaml = originalEnvYaml;
-        if (isNotEmpty(envYaml.getEnvironmentInputs())) {
-          mergedEnvYaml =
-              EnvironmentPlanCreatorHelper.mergeEnvironmentInputs(originalEnvYaml, envYaml.getEnvironmentInputs());
+        if (isNotEmpty(envYaml.getEnvironmentInputs().getValue())) {
+          mergedEnvYaml = EnvironmentPlanCreatorHelper.mergeEnvironmentInputs(
+              originalEnvYaml, envYaml.getEnvironmentInputs().getValue());
         }
         envConfigs.add(
             EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(mergedEnvYaml, envYaml, null));

@@ -143,7 +143,35 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   @Override
-  public Optional<FileStoreNodeDTO> getByPath(@NotNull final String accountIdentifier, String orgIdentifier,
+  public Optional<FileDTO> get(
+      @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String identifier) {
+    if (isEmpty(accountIdentifier)) {
+      throw new InvalidArgumentsException("Account identifier cannot be null or empty");
+    }
+    if (isEmpty(identifier)) {
+      throw new InvalidArgumentsException("File identifier cannot be null or empty");
+    }
+
+    Optional<NGFile> ngFileOpt = find(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    return ngFileOpt.map(FileDTOMapper::getFileDTOFromNGFile);
+  }
+
+  @Override
+  public Optional<FileDTO> getByPath(
+      @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String path) {
+    if (isEmpty(accountIdentifier)) {
+      throw new InvalidArgumentsException("Account identifier cannot be null or empty");
+    }
+    if (isEmpty(path)) {
+      throw new InvalidArgumentsException("File path cannot be null or empty");
+    }
+
+    Optional<NGFile> ngFileOpt = findByPath(accountIdentifier, orgIdentifier, projectIdentifier, path);
+    return ngFileOpt.map(FileDTOMapper::getFileDTOFromNGFile);
+  }
+
+  @Override
+  public Optional<FileStoreNodeDTO> getWithChildrenByPath(@NotNull final String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotNull final String path, boolean includeContent) {
     if (isEmpty(accountIdentifier)) {
       throw new InvalidArgumentsException("Account identifier cannot be null or empty");
@@ -152,18 +180,20 @@ public class FileStoreServiceImpl implements FileStoreService {
       throw new InvalidArgumentsException("File or folder path cannot be null or empty");
     }
 
-    String identifier = getIdentifierByPathOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, path);
-    return get(accountIdentifier, orgIdentifier, projectIdentifier, identifier, includeContent);
+    Optional<NGFile> ngFileOpt = findByPath(accountIdentifier, orgIdentifier, projectIdentifier, path);
+    return ngFileOpt.map(NGFile::getIdentifier)
+        .flatMap(identifier
+            -> getWithChildren(accountIdentifier, orgIdentifier, projectIdentifier, identifier, includeContent));
   }
 
   @Override
-  public Optional<FileStoreNodeDTO> get(@NotNull final String accountIdentifier, final String orgIdentifier,
+  public Optional<FileStoreNodeDTO> getWithChildren(@NotNull final String accountIdentifier, final String orgIdentifier,
       final String projectIdentifier, @NotNull final String identifier, boolean includeContent) {
     if (isEmpty(accountIdentifier)) {
       throw new InvalidArgumentsException("Account identifier cannot be null or empty");
     }
     if (isEmpty(identifier)) {
-      throw new InvalidArgumentsException("File or folder with identifier cannot be null or empty");
+      throw new InvalidArgumentsException("File or folder identifier cannot be null or empty");
     }
 
     Optional<NGFile> ngFileOpt = find(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
@@ -359,6 +389,12 @@ public class FileStoreServiceImpl implements FileStoreService {
         accountIdentifier, orgIdentifier, projectIdentifier, identifier);
   }
 
+  private Optional<NGFile> findByPath(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String path) {
+    return fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndPath(
+        accountIdentifier, orgIdentifier, projectIdentifier, path);
+  }
+
   private void saveFile(FileDTO fileDto, NGFile ngFile, @NotNull InputStream content) {
     BoundedInputStream fileContent =
         new BoundedInputStream(content, configuration.getFileUploadLimits().getFileStoreFileLimit());
@@ -381,21 +417,6 @@ public class FileStoreServiceImpl implements FileStoreService {
         fileStoreRepository.save(file);
       });
     }
-  }
-
-  private String getIdentifierByPathOrThrow(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String path) {
-    NGFile ngFile =
-        fileStoreRepository
-            .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndPath(
-                accountIdentifier, orgIdentifier, projectIdentifier, path)
-            .orElseThrow(
-                ()
-                    -> new InvalidArgumentsException(format(
-                        "Not found file/folder with accountIdentifier [%s], orgIdentifier [%s], projectIdentifier [%s], path: [%s]",
-                        accountIdentifier, orgIdentifier, projectIdentifier, path)));
-
-    return ngFile.getIdentifier();
   }
 
   // in the case when we need to return the whole folder structure, create recursion on this method

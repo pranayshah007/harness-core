@@ -599,8 +599,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         .lastModifiedAt(monitoredServiceEntity.getLastUpdatedAt())
         .build();
   }
-
-  private MonitoredServiceResponse getApplicationMonitoredServiceResponse(
+  @Override
+  public MonitoredServiceResponse getApplicationMonitoredServiceResponse(
       ServiceEnvironmentParams serviceEnvironmentParams) {
     Optional<MonitoredService> monitoredService = getApplicationMonitoredService(serviceEnvironmentParams);
     if (monitoredService.isPresent()) {
@@ -617,15 +617,6 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     } else {
       return null;
     }
-  }
-
-  @Override
-  public MonitoredServiceResponse get(ServiceEnvironmentParams serviceEnvironmentParams) {
-    MonitoredService monitoredService = getMonitoredService(serviceEnvironmentParams);
-    if (monitoredService == null) {
-      return null;
-    }
-    return get(serviceEnvironmentParams, monitoredService.getIdentifier());
   }
 
   @Override

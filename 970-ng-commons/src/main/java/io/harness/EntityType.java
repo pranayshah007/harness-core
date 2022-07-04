@@ -170,6 +170,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.TEMPLATE)
   TEMPLATE(ModuleType.TEMPLATESERVICE, EntityTypeConstants.TEMPLATE, NGTemplateReference.class,
       EntityYamlRootNames.TEMPLATE),
+  @JsonProperty(EntityTypeConstants.TEMPLATE_STAGE)
+  TEMPLATE_STAGE(ModuleType.TEMPLATESERVICE, EntityTypeConstants.TEMPLATE_STAGE, NGTemplateReference.class,
+      EntityYamlRootNames.TEMPLATE),
   @JsonProperty(EntityTypeConstants.TRIGGERS)
   TRIGGERS(ModuleType.CD, EntityTypeConstants.TRIGGERS, TriggerReference.class, EntityYamlRootNames.TRIGGERS),
   @JsonProperty(EntityTypeConstants.MONITORED_SERVICE)
@@ -264,7 +267,10 @@ public enum EntityType {
       EntityYamlRootNames.AZURE_SWAP_SLOT_STEP),
   @JsonProperty(EntityTypeConstants.AZURE_WEBAPP_ROLLBACK)
   AZURE_WEBAPP_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.AZURE_WEBAPP_ROLLBACK, IdentifierRef.class,
-      EntityYamlRootNames.AZURE_WEBAPP_ROLLBACK_STEP);
+      EntityYamlRootNames.AZURE_WEBAPP_ROLLBACK_STEP),
+  @JsonProperty(EntityTypeConstants.JENKINS_BUILD)
+  JENKINS_BUILD(
+      ModuleType.CD, EntityTypeConstants.JENKINS_BUILD, IdentifierRef.class, EntityYamlRootNames.JENKINS_BUILD);
 
   private final ModuleType moduleType;
   String yamlName;

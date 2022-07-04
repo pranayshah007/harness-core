@@ -280,10 +280,6 @@ public class NGSecretResourceV2 {
           NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
       @Parameter(description = "Number of entries per page. The default value is 100 ") @QueryParam(
           NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size) {
-    secretPermissionValidator.checkForAccessOrThrow(
-        ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier), Resource.of(SECRET_RESOURCE_TYPE, null),
-        SECRET_VIEW_PERMISSION, null);
-
     if (secretType != null) {
       secretTypes.add(secretType);
     }
@@ -312,9 +308,6 @@ public class NGSecretResourceV2 {
           NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
       @Parameter(description = "Number of entries per page. The default value is 100") @QueryParam(
           NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size) {
-    secretPermissionValidator.checkForAccessOrThrow(
-        ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier), Resource.of(SECRET_RESOURCE_TYPE, null),
-        SECRET_VIEW_PERMISSION, null);
     return ResponseDTO.newResponse(getNGPageResponse(ngSecretService.list(accountIdentifier, orgIdentifier,
         projectIdentifier, secretResourceFilterDTO.getIdentifiers(), secretResourceFilterDTO.getSecretTypes(),
         secretResourceFilterDTO.isIncludeSecretsFromEverySubScope(), secretResourceFilterDTO.getSearchTerm(), page,

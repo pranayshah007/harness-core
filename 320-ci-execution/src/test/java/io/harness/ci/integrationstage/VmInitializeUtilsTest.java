@@ -17,8 +17,8 @@ import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.category.element.UnitTests;
-import io.harness.executionplan.CIExecutionTestBase;
-import io.harness.ff.CIFeatureFlagService;
+import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 

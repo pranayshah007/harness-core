@@ -17,5 +17,6 @@ public interface ArtifactSourceConstants {
   String CUSTOM_ARTIFACT_NAME = "CustomArtifact";
   String ARTIFACTORY_GENERIC_REGISTRY_NAME = "ArtifactoryGenericRegistry";
   String JENKINS_NAME = "Jenkins";
+  String AMAZON_S3_NAME = "AmazonS3";
   String S3_NAME = "S3";
 }

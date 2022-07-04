@@ -1,0 +1,96 @@
+---
+- stepGroup:
+    identifier: "searching"
+    name: "searching"
+    steps:
+      - parallel:
+          - step:
+              type: "Http"
+              strategy:
+                parallelism: 4
+              spec:
+                url: "https://www.google.com"
+                method: "GET"
+              timeout: "1m"
+              identifier: "0_0"
+              name: "4_0"
+          - step:
+              type: "Http"
+              strategy:
+                parallelism: 4
+              spec:
+                url: "https://www.google.com"
+                method: "GET"
+              timeout: "1m"
+              identifier: "1_1"
+              name: "4_1"
+          - step:
+              type: "Http"
+              strategy:
+                parallelism: 4
+              spec:
+                url: "https://www.google.com"
+                method: "GET"
+              timeout: "1m"
+              identifier: "2_2"
+              name: "4_2"
+          - step:
+              type: "Http"
+              strategy:
+                parallelism: 4
+              spec:
+                url: "https://www.google.com"
+                method: "GET"
+              timeout: "1m"
+              identifier: "3_3"
+              name: "4_3"
+          - step:
+              type: "Http"
+              name: "bing"
+              identifier: "bing"
+              spec:
+                url: "https://www.bing.com"
+                method: "GET"
+                headers: []
+                outputVariables: []
+              timeout: "10s"
+      - step:
+          type: "Http"
+          strategy:
+            parallelism: 4
+          spec:
+            url: "https://www.google.com"
+            method: "GET"
+          timeout: "1m"
+          identifier: "0_0"
+          name: "4_0"
+      - step:
+          type: "Http"
+          strategy:
+            parallelism: 4
+          spec:
+            url: "https://www.google.com"
+            method: "GET"
+          timeout: "1m"
+          identifier: "1_1"
+          name: "4_1"
+      - step:
+          type: "Http"
+          strategy:
+            parallelism: 4
+          spec:
+            url: "https://www.google.com"
+            method: "GET"
+          timeout: "1m"
+          identifier: "2_2"
+          name: "4_2"
+      - step:
+          type: "Http"
+          strategy:
+            parallelism: 4
+          spec:
+            url: "https://www.google.com"
+            method: "GET"
+          timeout: "1m"
+          identifier: "3_3"
+          name: "4_3"

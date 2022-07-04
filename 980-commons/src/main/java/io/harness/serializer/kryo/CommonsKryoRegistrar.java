@@ -35,6 +35,7 @@ import io.harness.exception.GitOperationException;
 import io.harness.exception.HttpResponseException;
 import io.harness.exception.IllegalArgumentException;
 import io.harness.exception.ImageNotFoundException;
+import io.harness.exception.InterruptedRuntimeException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidCredentialsException;
 import io.harness.exception.InvalidTagException;
@@ -145,5 +146,6 @@ public class CommonsKryoRegistrar implements KryoRegistrar {
     kryo.register(ServerlessCommandExecutionException.class, 980027);
     kryo.register(AzureAKSException.class, 980028);
     kryo.register(SshCommandExecutionException.class, 980029);
+    kryo.register(InterruptedRuntimeException.class, 980030);
   }
 }

@@ -32,7 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class StageExecutionSelectorHelper {
-  private static final List<String> stageReferenceKeys = Collections.singletonList("useFromStage");
+  private static final List<String> stageReferenceKeys =
+      Collections.singletonList(YAMLFieldNameConstants.USE_FROM_STAGE);
 
   public List<StageExecutionResponse> getStageExecutionResponse(String pipelineYaml) {
     List<BasicStageInfo> stagesInfo = getStageInfoListWithStagesRequired(pipelineYaml);
@@ -129,8 +130,15 @@ public class StageExecutionSelectorHelper {
     List<String> keys = yamlNode.fetchKeys();
     for (String key : keys) {
       if (stageReferenceKeys.contains(key)) {
-        String stage = yamlNode.getField(key).getNode().getField("stage").getNode().asText();
-        references.add(stage);
+        String stage = "";
+        if (key.equals(YAMLFieldNameConstants.USE_FROM_STAGE)) {
+          if (yamlNode.getField(key).getNode().isObject()) {
+            stage = yamlNode.getField(key).getNode().getField(YAMLFieldNameConstants.STAGE).getNode().asText();
+          } else {
+            stage = yamlNode.getField(key).getNode().asText();
+          }
+          references.add(stage);
+        }
         continue;
       }
       getNonExpressionReferences(yamlNode.getField(key).getNode(), references);

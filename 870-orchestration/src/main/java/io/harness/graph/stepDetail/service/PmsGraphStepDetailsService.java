@@ -33,4 +33,6 @@ public interface PmsGraphStepDetailsService {
   void addConcurrentChildInformation(ConcurrentChildInstance concurrentChildInstance, String nodeExecutionId);
 
   ConcurrentChildInstance incrementCursor(String nodeExecutionId);
+
+  ConcurrentChildInstance fetchConcurrentChildInstance(String nodeExecutionId);
 }

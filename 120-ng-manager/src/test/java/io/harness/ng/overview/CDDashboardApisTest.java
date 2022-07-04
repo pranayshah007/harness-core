@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
@@ -56,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
@@ -358,6 +360,11 @@ public class CDDashboardApisTest extends CategoryTest {
     hashMap.put("ServiceId1", "Service1");
     hashMap.put("ServiceId2", "Service2");
     hashMap.put("ServiceId3", "Service3");
+
+    Map<String, Pair<String, AuthorInfo>> temp = new HashMap<>();
+    doReturn(temp)
+        .when(cdOverviewDashboardServiceImpl)
+        .getPipelineExecutionIdToTriggerTypeAndAuthorInfoMapping(anyList());
 
     DashboardWorkloadDeployment dashboardWorkloadDeployment =
         cdOverviewDashboardServiceImpl.getWorkloadDeploymentInfoCalculation(workloadsId, status, timeInterval,

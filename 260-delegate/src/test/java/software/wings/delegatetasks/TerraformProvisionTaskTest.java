@@ -12,6 +12,7 @@ import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 import static io.harness.provision.TerraformConstants.TERRAFORM_PLAN_FILE_OUTPUT_NAME;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.BOJANA;
+import static io.harness.rule.OwnerRule.JELENA;
 import static io.harness.rule.OwnerRule.SATYAM;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
@@ -904,5 +905,38 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
     assertThat(retrievedTerraformPlanContent).isEqualTo(planContent);
 
     FileIo.deleteDirectoryAndItsContentIfExists(scriptDirectory);
+  }
+
+  @Test
+  @Owner(developers = JELENA)
+  @Category(UnitTests.class)
+  public void testShouldNotExecuteScriptIfInitFailed() throws Exception {
+    setupForApply();
+    Map<String, String> backendConfigs = new HashMap<>();
+    backendConfigs.put("var1", "value1");
+    Map<String, String> variables = new HashMap<>();
+    variables.put("var3", "val3");
+    Map<String, String> environmentVariables = new HashMap<>();
+    environmentVariables.put("TF_LOG", "TRACE");
+    List<String> tfVarFiles = Arrays.asList("tfVarFile");
+    AwsConfig awsConfig = new AwsConfig();
+    List<EncryptedDataDetail> awsConfigEncryptionDetails = new ArrayList<>();
+
+    doReturn(1)
+        .when(terraformProvisionTaskSpy)
+        .executeShellCommand(
+            anyString(), anyString(), any(TerraformProvisionParameters.class), anyMap(), any(LogOutputStream.class));
+
+    TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
+        getTerraformProvisionParametersBuilder(false, false, null, TerraformCommandUnit.Apply, TerraformCommand.APPLY,
+            false, false, backendConfigs, variables, environmentVariables, tfVarFiles, false)
+            .awsConfigId("awsConfigId")
+            .awsConfig(awsConfig)
+            .awsRegion("awsRegion")
+            .awsConfigEncryptionDetails(awsConfigEncryptionDetails);
+    TerraformProvisionParameters parameters = terraformProvisionParametersBuilder.build();
+    TerraformExecutionData terraformExecutionData = terraformProvisionTaskSpy.run(parameters);
+    assertThat(terraformExecutionData.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
+    Mockito.verify(delegateFileManager, times(0)).upload(any(DelegateFile.class), any(InputStream.class));
   }
 }

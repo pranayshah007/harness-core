@@ -46,6 +46,8 @@ public class InstanceMapper {
         .connectorRef(instance.getConnectorRef())
         .instanceInfoDTO(InstanceInfoMapper.toDTO(instance.getInstanceInfo()))
         .instanceKey(instance.getInstanceKey())
+        .infraIdentifier(instance.getInfraIdentifier())
+        .infraName(instance.getInfraName())
         .build();
   }
 
@@ -81,6 +83,8 @@ public class InstanceMapper {
         .connectorRef(instanceDTO.getConnectorRef())
         .instanceInfo(InstanceInfoMapper.toEntity(instanceDTO.getInstanceInfoDTO()))
         .instanceKey(instanceDTO.getInstanceKey())
+        .infraIdentifier(instanceDTO.getInfraIdentifier())
+        .infraName(instanceDTO.getInfraName())
         .build();
   }
 }

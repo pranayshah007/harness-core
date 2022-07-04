@@ -431,7 +431,7 @@ public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {
 
     assertThatExceptionOfType(WingsException.class)
         .isThrownBy(() -> winRMCommandUnitExecutorService.execute(commandUnit, commandExecutionContext))
-        .withMessage("SOCKET_CONNECTION_TIMEOUT");
+        .withMessage("WINRM_COMMAND_EXECUTION_TIMEOUT");
 
     verify(winRmExecutorFactory).getExecutor(winRmSessionConfig, false);
   }

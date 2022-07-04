@@ -18,6 +18,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.accesscontrol.acl.ACLService;
 import io.harness.accesscontrol.acl.PermissionCheck;
 import io.harness.accesscontrol.acl.PermissionCheckResult;
+import io.harness.accesscontrol.acl.ResourceAttributeProvider;
 import io.harness.accesscontrol.preference.services.AccessControlPreferenceService;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.roleassignments.privileged.PrivilegedAccessCheck;
@@ -53,6 +54,7 @@ public class ACLResourceImpl implements ACLResource {
   private final ACLService aclService;
   private final AccessControlPreferenceService accessControlPreferenceService;
   private final PrivilegedRoleAssignmentService privilegedRoleAssignmentService;
+  private final ResourceAttributeProvider resourceAttributeProvider;
 
   private Optional<String> getAccountIdentifier(List<PermissionCheckDTO> permissionCheckDTOList) {
     if (permissionCheckDTOList.isEmpty()) {
@@ -127,7 +129,7 @@ public class ACLResourceImpl implements ACLResource {
     List<PermissionCheck> permissionChecks =
         permissionChecksDTOs.stream().map(PermissionCheckDTOMapper::fromDTO).collect(Collectors.toList());
     List<PermissionCheckResult> permissionCheckResults =
-        aclService.checkAccess(principalToCheckPermissionsFor, permissionChecks);
+        aclService.checkAccess(principalToCheckPermissionsFor, permissionChecks, resourceAttributeProvider);
 
     AccessCheckResponseDTO accessCheckResponseDTO =
         AccessCheckResponseDTO.builder()

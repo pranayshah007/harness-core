@@ -75,7 +75,7 @@ public class ACLServiceImplTest extends AccessControlCoreTestBase {
       aclResults.add(new ArrayList<>());
     }
     when(aclDAO.getMatchingACLs(principal, permissionChecks)).thenReturn(aclResults);
-    List<PermissionCheckResult> response = aclService.checkAccess(principal, permissionChecks);
+    List<PermissionCheckResult> response = aclService.checkAccess(principal, permissionChecks, null);
 
     assertEquals(10, response.size());
     response.forEach(check -> assertTrue(check.isPermitted()));

@@ -6,6 +6,9 @@ HarnessTeam = "CE"
 
 shared_dependencies = [
     "@batch//:com_fasterxml_jackson_core_jackson_databind",
+    "@batch//:com_azure_azure_core",
+    "@batch//:com_azure_azure_storage_blob",
+    "@batch//:com_azure_azure_storage_common",
 ] + [
     "//350-event-server:module",
     "//374-ceng-graphql:module",

@@ -38,7 +38,7 @@ public interface ResourceRestraintInstanceService {
 
   int getMaxOrder(String resourceRestraintId);
 
-  int getAllCurrentlyAcquiredPermits(HoldingScope scope, String releaseEntityId);
+  int getAllCurrentlyAcquiredPermits(HoldingScope scope, String releaseEntityId, String resourceUnit);
 
   List<ResourceRestraintInstance> findAllActiveAndBlockedByReleaseEntityId(String releaseEntityId);
 

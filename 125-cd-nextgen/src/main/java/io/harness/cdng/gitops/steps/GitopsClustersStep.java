@@ -7,7 +7,6 @@
 
 package io.harness.cdng.gitops.steps;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
@@ -16,6 +15,8 @@ import static io.harness.logging.LogLevel.INFO;
 import static io.harness.pms.execution.utils.AmbianceUtils.getAccountId;
 import static io.harness.pms.execution.utils.AmbianceUtils.getOrgIdentifier;
 import static io.harness.pms.execution.utils.AmbianceUtils.getProjectIdentifier;
+
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.function.Predicate.not;
 
@@ -38,6 +39,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -47,6 +49,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.executable.SyncExecutableWithRbac;
@@ -83,6 +86,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
   @Inject private GitopsResourceClient gitopsResourceClient;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Inject private EngineExpressionService engineExpressionService;
 
   private static final RetryPolicy<Object> retryPolicyForGitopsClustersFetch = RetryUtils.getRetryPolicy(
       "Error getting clusters from Harness Gitops..retrying", "Failed to fetch clusters from Harness Gitops",
@@ -115,6 +119,10 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
         ? ((VariablesSweepingOutput) optionalSweepingOutput.getOutput())
         : null;
 
+    // TODO: need to have thorough testing. Add unit test also
+    if (isNotEmpty(variables)) {
+      resolveVariables(ambiance, variables);
+    }
     try {
       final Map<String, IndividualClusterInternal> validatedClusters = validatedClusters(ambiance, stepParameters);
       final GitopsClustersOutcome outcome = toOutcome(validatedClusters, variables);
@@ -283,6 +291,27 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     String envName;
     String clusterRef;
     String clusterName;
+  }
+
+  private void resolveVariables(Ambiance ambiance, Map<String, Object> variables) {
+    for (Object value : variables.values()) {
+      if (value instanceof ParameterField) {
+        ParameterField parameterFieldValue = (ParameterField) value;
+        String resolvedValue = null;
+        if (parameterFieldValue.isExpression()) {
+          resolvedValue =
+              engineExpressionService.renderExpression(ambiance, parameterFieldValue.getExpressionValue(), false);
+        }
+        if (resolvedValue != null) {
+          if (!parameterFieldValue.isTypeString()) {
+            parameterFieldValue.setValue(Double.valueOf(resolvedValue));
+
+          } else {
+            parameterFieldValue.setValue(resolvedValue);
+          }
+        }
+      }
+    }
   }
 
   private void logDataFromGitops(List<Cluster> content) {

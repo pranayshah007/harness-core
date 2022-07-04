@@ -59,6 +59,8 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
   private static final Pattern VALID_EXPRESSION_PATTERN =
       Pattern.compile("\\<\\+secrets.getValue\\((\\\"|\\')\\w*[\\.]?\\w*(\\\"|\\')\\)>");
   private static final String INVALID_EXPRESSION_EXCEPTION = "Expression provided is not valid";
+  private static final Pattern SECRET_EXPRESSION =
+      Pattern.compile("\\$\\{ngSecretManager\\.obtain\\(\\\"\\w*[\\.]?\\w*\\\"\\, ([+-]?\\d*|0)\\)\\}");
 
   private List<UserGroupDTO> getUserGroups(List<String> userGroupIds) {
     if (isEmpty(userGroupIds)) {
@@ -198,6 +200,16 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
       log.error("Rest call for getting smtp config failed: ", ex);
     }
     return smtpConfigResponse;
+  }
+
+  @Override
+  public boolean checkIfWebhookIsSecret(List<String> webhooks) {
+    for (String webhook : webhooks) {
+      if (SECRET_EXPRESSION.matcher(webhook).matches()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

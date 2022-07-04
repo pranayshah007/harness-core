@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.RAMA;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.ACCOUNT_1_ID;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.ACCOUNT_2_ID;
@@ -135,7 +136,9 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -292,7 +295,7 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
     workflowExecutionInfo = WorkflowExecutionInfo.builder().build();
     UserThreadLocal.set(user);
     when(featureFlagService.isEnabled(eq(FeatureName.HELM_CHART_AS_ARTIFACT), any())).thenReturn(true);
-    when(workflowExecutionService.getWorkflowExecutionInfo(any(), any())).thenReturn(workflowExecutionInfo);
+    when(workflowExecutionService.getWorkflowExecutionInfo(any())).thenReturn(workflowExecutionInfo);
   }
 
   @After
@@ -1067,6 +1070,30 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
         dashboardStatisticsService.getCurrentActiveInstances(ACCOUNT_1_ID, APP_1_ID, SERVICE_1_ID);
     assertThat(activeInstances).hasSize(1);
     assertThat(activeInstances.get(0).getLastWorkflowExecutionDate().getTime()).isEqualTo(someTime);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testLastDeployedAtTimestampGivenRetentionPolicy() {
+    Instance instance = buildInstance(INSTANCE_1_ID, ACCOUNT_1_ID, APP_1_ID, SERVICE_1_ID, ENV_1_ID, INFRA_MAPPING_1_ID,
+        INFRA_MAPPING_1_NAME, CONTAINER_1_ID, currentTime);
+    instance.setInstanceInfo(
+        K8sPodInfo.builder()
+            .helmChartInfo(HelmChartInfo.builder().name(CHART_NAME).repoUrl(REPO_URL).version("1").build())
+            .build());
+
+    instance.setLastWorkflowExecutionId(WORKFLOW_EXECUTION_ID + "_new");
+    persistence.save(instance);
+
+    DashboardStatisticsServiceImpl dashboardStatisticsService = (DashboardStatisticsServiceImpl) dashboardService;
+    List<CurrentActiveInstances> activeInstances =
+        dashboardStatisticsService.getCurrentActiveInstances(ACCOUNT_1_ID, APP_1_ID, SERVICE_1_ID);
+
+    verify(workflowExecutionService, never())
+        .getLastSuccessfulWorkflowExecution(any(), any(), any(), any(), any(), any());
+    assertThat(activeInstances).hasSize(1);
+    assertThat(activeInstances.get(0).getLastWorkflowExecutionDate()).isNull();
   }
 
   private WorkflowExecution createWorkflowExecution(String uuid, long startTime) {

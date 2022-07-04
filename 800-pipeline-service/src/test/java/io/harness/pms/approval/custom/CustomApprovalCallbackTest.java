@@ -244,9 +244,9 @@ public class CustomApprovalCallbackTest extends CategoryTest {
             .build(),
         KeyValuesCriteriaSpecDTO.builder()
             .matchAnyCondition(true)
-            .conditions(
-                Lists.newArrayList(ConditionDTO.builder().key("Status").value("Done").operator(Operator.EQ).build(),
-                    ConditionDTO.builder().key("ApprovedBy").value("Admin").operator(Operator.EQ).build()))
+            .conditions(Lists.newArrayList(
+                ConditionDTO.builder().key("ApprovedBy").value("Admin").operator(Operator.EQ).build(),
+                ConditionDTO.builder().key("Status").value("Done").operator(Operator.EQ).build()))
             .build());
     Assertions.assertThat(result).isTrue();
 
@@ -263,6 +263,33 @@ public class CustomApprovalCallbackTest extends CategoryTest {
                         ConditionDTO.builder().key("ApprovedBy").value("Admin").operator(Operator.EQ).build()))
                 .build()))
         .isFalse();
+
+    assertThat(
+        evaluateCriteria(
+            CustomApprovalTicketNG.builder()
+                .fields(
+                    ImmutableMap.<String, String>builder().put("Status", "To Do").put("ApprovedBy", "Random").build())
+                .build(),
+            KeyValuesCriteriaSpecDTO.builder()
+                .matchAnyCondition(true)
+                .conditions(
+                    Lists.newArrayList(ConditionDTO.builder().key("Status").value("Done").operator(Operator.EQ).build(),
+                        ConditionDTO.builder().key("ApprovedBy").value("Admin").operator(Operator.EQ).build()))
+                .build()))
+        .isFalse();
+
+    assertThat(
+        evaluateCriteria(
+            CustomApprovalTicketNG.builder()
+                .fields(ImmutableMap.<String, String>builder().put("Status", "Done").put("ApprovedBy", "Admin").build())
+                .build(),
+            KeyValuesCriteriaSpecDTO.builder()
+                .matchAnyCondition(false)
+                .conditions(
+                    Lists.newArrayList(ConditionDTO.builder().key("Status").value("Done").operator(Operator.EQ).build(),
+                        ConditionDTO.builder().key("ApprovedBy").value("Admin").operator(Operator.EQ).build()))
+                .build()))
+        .isTrue();
 
     assertThat(
         evaluateCriteria(

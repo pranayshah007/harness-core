@@ -314,6 +314,18 @@ public class DelegateAgentResource {
   }
 
   @DelegateAuth
+  @PUT
+  @Produces("application/x-kryo-v2")
+  @Path("{delegateId}/tasks/{taskId}/acquire/v2")
+  @Timed
+  @ExceptionMetered
+  public DelegateTaskPackage acquireDelegateTaskV2(@PathParam("delegateId") String delegateId,
+      @PathParam("taskId") String taskId, @QueryParam("accountId") @NotEmpty String accountId,
+      @QueryParam("delegateInstanceId") String delegateInstanceId) {
+    return acquireDelegateTask(delegateId, taskId, accountId, delegateInstanceId);
+  }
+
+  @DelegateAuth
   @POST
   @Produces("application/x-kryo")
   @Path("{delegateId}/tasks/{taskId}/report")
@@ -328,6 +340,18 @@ public class DelegateAgentResource {
       return delegateTaskServiceClassic.reportConnectionResults(
           accountId, delegateId, taskId, delegateInstanceId, getDelegateConnectionResults(results));
     }
+  }
+
+  @DelegateAuth
+  @POST
+  @Produces("application/x-kryo-v2")
+  @Path("{delegateId}/tasks/{taskId}/report/v2")
+  @Timed
+  @ExceptionMetered
+  public DelegateTaskPackage reportConnectionResultsV2(@PathParam("delegateId") String delegateId,
+      @PathParam("taskId") String taskId, @QueryParam("accountId") @NotEmpty String accountId,
+      @QueryParam("delegateInstanceId") String delegateInstanceId, List<DelegateConnectionResultDetail> results) {
+    return reportConnectionResults(delegateId, taskId, accountId, delegateInstanceId, results);
   }
 
   @NotNull

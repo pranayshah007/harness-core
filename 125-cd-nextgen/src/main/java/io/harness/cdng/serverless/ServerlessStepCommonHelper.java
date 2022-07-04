@@ -478,6 +478,19 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
         }
       }
     }
+
+    for (Map.Entry<String, ServerlessArtifactConfig> entry : sidecarServerlessArtifactConfigMap.entrySet()) {
+      String identifier = SIDECAR_ARTIFACT_PATH_PREFIX + entry.getKey() + ">";
+      if (manifestFileContent.contains(identifier)) {
+        if (entry.getValue().getServerlessArtifactType().equals(ServerlessArtifactType.ECR)) {
+          manifestFileContent =
+              manifestFileContent.replace(identifier, ((ServerlessEcrArtifactConfig) entry.getValue()).getImage());
+        } else if (entry.getValue().getServerlessArtifactType().equals(ServerlessArtifactType.ARTIFACTORY)) {
+          manifestFileContent =
+              manifestFileContent.replace(identifier, SIDECAR_ARTIFACT_FILE_NAME_PREFIX + entry.getKey());
+        }
+      }
+    }
     return engineExpressionService.renderExpression(ambiance, manifestFileContent);
   }
 

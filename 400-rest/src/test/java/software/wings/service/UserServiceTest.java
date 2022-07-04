@@ -16,6 +16,7 @@ import static io.harness.beans.SearchFilter.Operator.HAS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
 import static io.harness.rule.OwnerRule.ANUBHAW;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.NANDAN;
@@ -28,6 +29,7 @@ import static io.harness.rule.OwnerRule.VIKAS;
 import static io.harness.rule.OwnerRule.VOJIN;
 
 import static software.wings.beans.Account.Builder.anAccount;
+import static software.wings.beans.AccountType.COMMUNITY;
 import static software.wings.beans.AccountType.ESSENTIALS;
 import static software.wings.beans.AccountType.PAID;
 import static software.wings.beans.AccountType.TRIAL;
@@ -581,7 +583,8 @@ public class UserServiceTest extends WingsBaseTest {
     when(accountService.save(any(Account.class), eq(false), eq(true))).thenReturn(account);
     when(wingsPersistence.saveAndGet(any(Class.class), any(User.class))).thenReturn(savedUser);
     when(wingsPersistence.get(MarketPlace.class, "TESTUUID")).thenReturn(marketPlace);
-    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean())).thenReturn(aPageResponse().build());
+    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), null, null))
+        .thenReturn(aPageResponse().build());
     when(authenticationManager.defaultLogin(USER_EMAIL, "TestPassword")).thenReturn(savedUser);
     User user = userService.completeMarketPlaceSignup(savedUser, testInvite, MarketPlaceType.AWS);
     assertThat(user).isEqualTo(savedUser);
@@ -625,7 +628,8 @@ public class UserServiceTest extends WingsBaseTest {
 
     when(accountService.save(any(Account.class), eq(false), eq(false))).thenReturn(account);
     when(wingsPersistence.query(eq(User.class), any(PageRequest.class))).thenReturn(aPageResponse().build());
-    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean())).thenReturn(aPageResponse().build());
+    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
+        .thenReturn(aPageResponse().build());
     when(subdomainUrlHelper.getPortalBaseUrl(ACCOUNT_ID)).thenReturn(PORTAL_URL + "/");
 
     userService.register(userBuilder.build());
@@ -769,7 +773,8 @@ public class UserServiceTest extends WingsBaseTest {
         .thenReturn(aPageResponse().withResponse(Lists.newArrayList(existingUser)).build());
     when(wingsPersistence.saveAndGet(eq(EmailVerificationToken.class), any(EmailVerificationToken.class)))
         .thenReturn(anEmailVerificationToken().withToken("token123").build());
-    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean())).thenReturn(aPageResponse().build());
+    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
+        .thenReturn(aPageResponse().build());
     when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn(PORTAL_URL);
 
     userService.register(userBuilder.build());
@@ -906,8 +911,8 @@ public class UserServiceTest extends WingsBaseTest {
     when(wingsPersistence.get(User.class, USER_ID)).thenReturn(userBuilder.uuid(USER_ID).build());
     when(wingsPersistence.delete(User.class, USER_ID)).thenReturn(true);
     when(wingsPersistence.findAndDelete(any(), any())).thenReturn(userBuilder.uuid(USER_ID).build());
-    when(userGroupService.list(
-             ACCOUNT_ID, aPageRequest().withLimit("0").addFilter(UserGroupKeys.memberIds, HAS, USER_ID).build(), true))
+    when(userGroupService.list(ACCOUNT_ID,
+             aPageRequest().withLimit("0").addFilter(UserGroupKeys.memberIds, HAS, USER_ID).build(), true, null, null))
         .thenReturn(aPageResponse().withResponse(Collections.emptyList()).withTotal(0).withLimit("0").build());
     userService.delete(ACCOUNT_ID, USER_ID);
     verify(wingsPersistence).findAndDelete(any(), any());
@@ -1594,7 +1599,7 @@ public class UserServiceTest extends WingsBaseTest {
 
     when(ssoSettingService.getSamlSettingsByAccountId(account.getUuid())).thenReturn(samlSettings);
     when(wingsPersistence.get(User.class, user.getUuid())).thenReturn(user);
-    when(userGroupService.list(anyString(), any(), anyBoolean())).thenReturn(val);
+    when(userGroupService.list(anyString(), any(), anyBoolean(), any(), any())).thenReturn(val);
 
     LogoutResponse logoutResponse = userService.logout(account.getUuid(), user.getUuid());
     assertThat(logoutResponse.getLogoutUrl()).isNotNull();
@@ -1683,6 +1688,71 @@ public class UserServiceTest extends WingsBaseTest {
     defaultAccountCandidate = user4.getDefaultAccountCandidate();
 
     assertThat(defaultAccountCandidate).isEqualTo("111");
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void getUserAccountsAndSupportAccountsTest() {
+    User user = initAccountsAndSupportAcccountsForUser();
+    when(wingsPersistence.get(User.class, user.getUuid())).thenReturn(user);
+    List<Account> accountList = userService.getUserAccountsAndSupportAccounts(user.getUuid(), 0, 20, "");
+    assertThat(accountList.size() == 6);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void getUserAccountsPageSizeTest() {
+    User user = initAccountsAndSupportAcccountsForUser();
+    when(wingsPersistence.get(User.class, user.getUuid())).thenReturn(user);
+    List<Account> accountList = userService.getUserAccountsAndSupportAccounts(user.getUuid(), 0, 3, "");
+    assertThat(accountList.size() == 3);
+    assertThat(accountList.containsAll(getAccounts()));
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void getUserAccountsPageIndexTest() {
+    User user = initAccountsAndSupportAcccountsForUser();
+    when(wingsPersistence.get(User.class, user.getUuid())).thenReturn(user);
+    List<Account> accountList = userService.getUserAccountsAndSupportAccounts(user.getUuid(), 3, 2, "");
+    assertThat(accountList.size() == 2);
+    assertThat(accountList.containsAll(getSupportAccounts()));
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void getUserAccountsSearchTermTest() {
+    User user = initAccountsAndSupportAcccountsForUser();
+    List<Account> accountTarget = Arrays.asList(user.getAccounts().get(0));
+    when(accountService.getAccounts(any(PageRequest.class)))
+        .thenReturn(aPageResponse().withResponse(accountTarget).build());
+    when(wingsPersistence.get(User.class, user.getUuid())).thenReturn(user);
+    List<Account> accountListAfterFilter = userService.getUserAccountsAndSupportAccounts(user.getUuid(), 0, 10, "Test");
+    assertThat(accountListAfterFilter.size() == 1);
+    assertThat(accountListAfterFilter.get(0).getAccountName().equals("Test-Account"));
+  }
+
+  private List<Account> getAccounts() {
+    Account account1 = getAccount(AccountStatus.ACTIVE, PAID, "111");
+    account1.setAccountName("Test-Account");
+    Account account2 = getAccount(AccountStatus.ACTIVE, ESSENTIALS, "222");
+    Account account3 = getAccount(AccountStatus.ACTIVE, COMMUNITY, "333");
+    return Arrays.asList(account1, account2, account3);
+  }
+
+  private List<Account> getSupportAccounts() {
+    Account supportAccount1 = getAccount(AccountStatus.ACTIVE, PAID, "444");
+    Account supportAccount2 = getAccount(AccountStatus.ACTIVE, PAID, "555");
+    return Arrays.asList(supportAccount1, supportAccount2);
+  }
+
+  private User initAccountsAndSupportAcccountsForUser() {
+    User user = anUser().uuid("userId").accounts(getAccounts()).supportAccounts(getSupportAccounts()).build();
+    return user;
   }
 
   private Account getAccount(String accountStatus, String accountType, String uuid) {

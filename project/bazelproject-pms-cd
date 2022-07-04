@@ -30,6 +30,7 @@ directories:
   876-orchestration-beans
   878-ng-common-utilities
   879-pms-sdk
+  880-pipeline-cd-commons
   882-pms-sdk-core
   884-pms-commons
   888-pms-client

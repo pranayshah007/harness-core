@@ -38,4 +38,5 @@ public abstract class CommandTaskParameters implements TaskParameters {
   List<NgCommandUnit> commandUnits;
   SshWinRmArtifactDelegateConfig artifactDelegateConfig;
   FileDelegateConfig fileDelegateConfig;
+  @Expression(ALLOW_SECRETS) List<String> outputVariables;
 }

@@ -1,6 +1,7 @@
 <#import "common/delegate-environment.ftl" as delegateEnvironment>
 <#import "common/delegate-role.ftl" as delegateRole>
 <#import "common/delegate-service.ftl" as delegateService>
+<#import "common/mtls.ftl" as mtls>
 <#import "common/upgrader.ftl" as upgrader>
 <#import "common/secret.ftl" as secret>
 <#global accountTokenName=delegateName + "-account-token">
@@ -27,6 +28,12 @@ metadata:
 <@secret.accountToken base64Secret/>
 
 ---
+<#if mtlsEnabled == "true">
+
+   <@mtls.secret />
+
+---
+</#if>
 
 # If delegate needs to use a proxy, please follow instructions available in the documentation
 # https://ngdocs.harness.io/article/5ww21ewdt8-configure-delegate-proxy-settings
@@ -89,9 +96,16 @@ spec:
         - secretRef:
             name: ${accountTokenName}
         env:
-<@delegateEnvironment.common />
-<@delegateEnvironment.ngSpecific />
-<@delegateEnvironment.immutable />
+        <@delegateEnvironment.common />
+        <@delegateEnvironment.ngSpecific />
+        <@delegateEnvironment.immutable />
+<#if mtlsEnabled == "true">
+        <@mtls.delegateEnv />
+        volumeMounts:
+        <@mtls.delegateVolumeMount />
+      volumes:
+      <@mtls.delegateVolume />
+</#if>
 
 <#if ciEnabled == "true">
 ---

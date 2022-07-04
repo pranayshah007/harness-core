@@ -56,6 +56,10 @@ public class TokenGenerator {
     this.encrypter = makeEncrypter(accountSecret);
   }
 
+  public String getAccountId() {
+    return this.accountId;
+  }
+
   public String getToken(String scheme, String host, int port, String issuer) {
     return getToken(scheme + "://" + host + ":" + port, issuer);
   }

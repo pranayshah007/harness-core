@@ -9,10 +9,13 @@ package io.harness;
 
 import static java.util.Collections.singletonList;
 
+import io.harness.cf.CfClientConfig;
 import io.harness.debezium.DebeziumConfig;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
+import io.harness.ff.FeatureFlagConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.redis.RedisConfig;
+import io.harness.secret.ConfigSecret;
 
 import ch.qos.logback.access.spi.IAccessEvent;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -37,6 +40,8 @@ public class DebeziumServiceConfiguration extends Configuration {
   @JsonProperty("eventsFramework") private EventsFrameworkConfiguration eventsFrameworkConfiguration;
   @JsonProperty("redisLockConfig") private RedisConfig redisLockConfig;
   @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
+  @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
+  @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
 
   public DebeziumServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();

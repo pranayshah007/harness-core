@@ -13,6 +13,7 @@ import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldVal
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.filestore.utils.FileStoreNodeUtils.mapFileNodes;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -29,6 +30,7 @@ import io.harness.cdng.manifest.yaml.harness.HarnessStoreFile;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.common.ParameterRuntimeFiledHelper;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
@@ -41,36 +43,41 @@ import io.harness.delegate.task.ssh.NgInitCommandUnit;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
+import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.encryption.Scope;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
-import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
+import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
-import io.harness.ng.core.entities.NGEncryptedData;
-import io.harness.ng.core.filestore.NGFileType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.steps.shellscript.ShellScriptHelperService;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.shell.ScriptType;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @OwnedBy(CDP)
+@Slf4j
 public class SshCommandStepHelper extends CDStepHelper {
-  @Inject private ShellScriptHelperService shellScriptHelperService;
   @Inject private SshEntityHelper sshEntityHelper;
   @Inject private FileStoreService fileStoreService;
   @Inject private NGEncryptedDataService ngEncryptedDataService;
@@ -85,8 +92,8 @@ public class SshCommandStepHelper extends CDStepHelper {
     return builder.accountId(AmbianceUtils.getAccountId(ambiance))
         .executeOnDelegate(onDelegate)
         .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
-        .environmentVariables(
-            shellScriptHelperService.getEnvironmentVariables(executeCommandStepParameters.getEnvironmentVariables()))
+        .outputVariables(getOutputVars(executeCommandStepParameters.getOutputVariables()))
+        .environmentVariables(getEnvironmentVariables(executeCommandStepParameters.getEnvironmentVariables()))
         .sshInfraDelegateConfig(sshEntityHelper.getSshInfraDelegateConfig(infrastructure, ambiance))
         .artifactDelegateConfig(
             artifactOutcome.map(outcome -> sshEntityHelper.getArtifactDelegateConfigConfig(outcome, ambiance))
@@ -115,7 +122,7 @@ public class SshCommandStepHelper extends CDStepHelper {
     List<HarnessStoreFile> files = ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles());
     List<String> secretFiles = ParameterFieldHelper.getParameterFieldValue(harnessStore.getSecretFiles());
 
-    List<ConfigFileParameters> configFileParameters = new ArrayList<>(files.size());
+    List<ConfigFileParameters> configFileParameters = new ArrayList<>();
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
 
     if (isNotEmpty(files)) {
@@ -126,7 +133,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         io.harness.beans.Scope scope = io.harness.beans.Scope.of(
             ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), fileScope);
 
-        configFileParameters.add(fetchConfigFileFromFileStore(scope, harnessStoreFile));
+        configFileParameters.addAll(fetchConfigFileFromFileStore(scope, harnessStoreFile));
       });
     }
 
@@ -142,12 +149,12 @@ public class SshCommandStepHelper extends CDStepHelper {
     return HarnessStoreDelegateConfig.builder().configFiles(configFileParameters).build();
   }
 
-  private ConfigFileParameters fetchConfigFileFromFileStore(
+  private List<ConfigFileParameters> fetchConfigFileFromFileStore(
       io.harness.beans.Scope scope, @NotNull HarnessStoreFile file) {
     String filePathValue =
         ParameterFieldHelper.getParameterFieldFinalValue(file.getPath())
             .orElseThrow(() -> new InvalidRequestException("Config file path cannot be null or empty"));
-    Optional<FileStoreNodeDTO> configFile = fileStoreService.getByPath(
+    Optional<FileStoreNodeDTO> configFile = fileStoreService.getWithChildrenByPath(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), filePathValue, true);
 
     if (!configFile.isPresent()) {
@@ -155,37 +162,40 @@ public class SshCommandStepHelper extends CDStepHelper {
           filePathValue, ParameterRuntimeFiledHelper.getScopeParameterFieldFinalValue(file.getScope()).orElse(null)));
     }
 
-    FileStoreNodeDTO fileStoreNodeDTO = configFile.get();
-    if (NGFileType.FOLDER.equals(fileStoreNodeDTO.getType()) || !(fileStoreNodeDTO instanceof FileNodeDTO)) {
-      throw new InvalidRequestException("Copy config can only accept file types, but provided folder");
-    }
-
-    FileNodeDTO fileNodeDTO = (FileNodeDTO) fileStoreNodeDTO;
-    return ConfigFileParameters.builder()
-        .fileContent(fileNodeDTO.getContent())
-        .fileName(fileNodeDTO.getName())
-        .fileSize(fileNodeDTO.getSize())
-        .build();
+    return mapFileNodes(configFile.get(),
+        fileNode
+        -> ConfigFileParameters.builder()
+               .fileContent(fileNode.getContent())
+               .fileName(fileNode.getName())
+               .fileSize(fileNode.getSize())
+               .build());
   }
 
   private ConfigFileParameters fetchSecretConfigFile(IdentifierRef fileRef) {
-    // TODO decryption should be handled on delegate
-    NGEncryptedData ngEncryptedData = ngEncryptedDataService.get(fileRef.getAccountIdentifier(),
-        fileRef.getOrgIdentifier(), fileRef.getProjectIdentifier(), fileRef.getIdentifier());
-    if (ngEncryptedData == null) {
-      throw new InvalidRequestException(
-          format("Config file not found in encrypted store with identifier : [%s]", fileRef.getIdentifier()));
+    SecretConfigFile secretConfigFile =
+        SecretConfigFile.builder()
+            .encryptedConfigFile(SecretRefHelper.createSecretRef(fileRef.getIdentifier()))
+            .build();
+
+    NGAccess ngAccess = BaseNGAccess.builder()
+                            .accountIdentifier(fileRef.getAccountIdentifier())
+                            .orgIdentifier(fileRef.getOrgIdentifier())
+                            .projectIdentifier(fileRef.getProjectIdentifier())
+                            .build();
+
+    List<EncryptedDataDetail> encryptedDataDetails =
+        ngEncryptedDataService.getEncryptionDetails(ngAccess, secretConfigFile);
+
+    if (isEmpty(encryptedDataDetails)) {
+      throw new InvalidRequestException(format("Secret file with identifier %s not found", fileRef.getIdentifier()));
     }
 
     return ConfigFileParameters.builder()
-        .fileContent(new String(ngEncryptedData.getEncryptedValue()))
-        .fileName(ngEncryptedData.getName())
-        .fileSize(getEncryptedDataLength(ngEncryptedData))
+        .fileName(secretConfigFile.getEncryptedConfigFile().getIdentifier())
+        .isEncrypted(true)
+        .secretConfigFile(secretConfigFile)
+        .encryptionDataDetails(encryptedDataDetails)
         .build();
-  }
-
-  private int getEncryptedDataLength(NGEncryptedData ngEncryptedData) {
-    return new String(ngEncryptedData.getEncryptedValue()).getBytes(StandardCharsets.UTF_8).length;
   }
 
   private List<NgCommandUnit> mapCommandUnits(List<CommandUnitWrapper> stepCommandUnits, boolean onDelegate) {
@@ -222,8 +232,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .script(getShellScript(spec.getSource()))
         .scriptType(spec.getShell().getScriptType())
         .tailFilePatterns(mapTailFilePatterns(spec.getTailFiles()))
-        .workingDirectory(shellScriptHelperService.getWorkingDirectory(
-            spec.getWorkingDirectory(), spec.getShell().getScriptType(), onDelegate))
+        .workingDirectory(getWorkingDirectory(spec.getWorkingDirectory(), spec.getShell().getScriptType(), onDelegate))
         .build();
   }
 
@@ -261,5 +270,67 @@ public class SshCommandStepHelper extends CDStepHelper {
   private String getShellScript(@Nonnull ShellScriptSourceWrapper shellScriptSourceWrapper) {
     ShellScriptInlineSource shellScriptInlineSource = (ShellScriptInlineSource) shellScriptSourceWrapper.getSpec();
     return (String) shellScriptInlineSource.getScript().fetchFinalValue();
+  }
+
+  Map<String, String> getEnvironmentVariables(Map<String, Object> inputVariables) {
+    if (EmptyPredicate.isEmpty(inputVariables)) {
+      return new HashMap<>();
+    }
+    Map<String, String> res = new LinkedHashMap<>();
+    inputVariables.forEach((key, value) -> {
+      if (value instanceof ParameterField) {
+        ParameterField<?> parameterFieldValue = (ParameterField<?>) value;
+        if (parameterFieldValue.getValue() == null) {
+          throw new InvalidRequestException(String.format("Env. variable [%s] value found to be null", key));
+        }
+        res.put(key, parameterFieldValue.getValue().toString());
+      } else if (value instanceof String) {
+        res.put(key, (String) value);
+      } else {
+        log.error(String.format(
+            "Value other than String or ParameterField found for env. variable [%s]. value: [%s]", key, value));
+      }
+    });
+    return res;
+  }
+
+  String getWorkingDirectory(
+      ParameterField<String> workingDirectory, @Nonnull ScriptType scriptType, boolean onDelegate) {
+    if (workingDirectory != null && EmptyPredicate.isNotEmpty(workingDirectory.getValue())) {
+      return workingDirectory.getValue();
+    }
+    String commandPath = null;
+    if (scriptType == ScriptType.BASH) {
+      commandPath = "/tmp";
+    } else if (scriptType == ScriptType.POWERSHELL) {
+      commandPath = "%TEMP%";
+      if (onDelegate) {
+        commandPath = "/tmp";
+      }
+    }
+    return commandPath;
+  }
+
+  List<String> getOutputVars(Map<String, Object> outputVariables) {
+    if (EmptyPredicate.isEmpty(outputVariables)) {
+      return emptyList();
+    }
+
+    List<String> outputVars = new ArrayList<>();
+    outputVariables.forEach((key, val) -> {
+      if (val instanceof ParameterField) {
+        ParameterField<?> parameterFieldValue = (ParameterField<?>) val;
+        if (parameterFieldValue.getValue() == null) {
+          throw new InvalidRequestException(String.format("Output variable [%s] value found to be null", key));
+        }
+        outputVars.add(((ParameterField<?>) val).getValue().toString());
+      } else if (val instanceof String) {
+        outputVars.add((String) val);
+      } else {
+        log.error(String.format(
+            "Value other than String or ParameterField found for output variable [%s]. value: [%s]", key, val));
+      }
+    });
+    return outputVars;
   }
 }

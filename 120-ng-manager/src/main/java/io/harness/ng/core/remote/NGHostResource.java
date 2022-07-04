@@ -21,7 +21,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.accesscontrol.ResourceTypes;
 import io.harness.connector.services.NGHostService;
-import io.harness.data.validator.EntityIdentifier;
 import io.harness.delegate.beans.connector.pdcconnector.HostDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterDTO;
 import io.harness.ng.beans.PageRequest;
@@ -106,11 +105,11 @@ public class NGHostResource {
           NGCommonEntityConstants.ORG_KEY) @io.harness.accesscontrol.OrgIdentifier String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @ProjectIdentifier @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @io.harness.accesscontrol.ProjectIdentifier String projectIdentifier,
-      @Parameter(description = "Connector Identifier") @EntityIdentifier @QueryParam(
-          NGCommonEntityConstants.IDENTIFIER_KEY) @ResourceIdentifier String connectorIdentifier,
+      @Parameter(description = "Connector Identifier") @QueryParam(
+          NGCommonEntityConstants.IDENTIFIER_KEY) @ResourceIdentifier String scopedConnectorIdentifier,
       @RequestBody(description = "Details of the filters applied") @Body HostFilterDTO filter) {
     Page<HostDTO> connectorResponseDTO = hostService.filterHostsByConnector(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, filter, pageRequest);
+        accountIdentifier, orgIdentifier, projectIdentifier, scopedConnectorIdentifier, filter, pageRequest);
     return ResponseDTO.newResponse(getNGPageResponse(connectorResponseDTO));
   }
 }

@@ -455,8 +455,10 @@ public class ExecutionResource {
       deploymentAuthHandler.authorize(appId, workflowExecutionId);
     }
 
+    approvalStateExecutionData.setExecutionUuid(workflowExecutionId);
+
     return new RestResponse<>(workflowExecutionService.approveOrRejectExecution(
-        appId, approvalStateExecutionData.getUserGroups(), approvalDetails));
+        appId, approvalStateExecutionData.getUserGroups(), approvalDetails, workflowExecutionId));
   }
 
   /**

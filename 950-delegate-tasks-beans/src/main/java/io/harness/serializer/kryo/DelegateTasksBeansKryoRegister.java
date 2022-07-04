@@ -211,6 +211,7 @@ import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskP
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskResponse;
 import io.harness.delegate.beans.connector.vaultconnector.VaultValidationParams;
 import io.harness.delegate.beans.executioncapability.AlwaysFalseValidationCapability;
+import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
 import io.harness.delegate.beans.executioncapability.AwsRegionCapability;
 import io.harness.delegate.beans.executioncapability.CIVmConnectionCapability;
 import io.harness.delegate.beans.executioncapability.CapabilityType;
@@ -242,6 +243,7 @@ import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.delegate.beans.gitapi.DecryptGitAPIAccessTaskResponse;
 import io.harness.delegate.beans.gitapi.DecryptGitAPiAccessTaskParams;
 import io.harness.delegate.beans.gitapi.GitApiFindPRTaskResponse;
+import io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse;
 import io.harness.delegate.beans.gitapi.GitApiRequestType;
 import io.harness.delegate.beans.gitapi.GitApiResult;
 import io.harness.delegate.beans.gitapi.GitApiTaskParams;
@@ -454,6 +456,7 @@ import io.harness.delegate.task.helm.HelmValuesFetchResponse;
 import io.harness.delegate.task.http.HttpStepResponse;
 import io.harness.delegate.task.http.HttpTaskParameters;
 import io.harness.delegate.task.http.HttpTaskParametersNg;
+import io.harness.delegate.task.jenkins.JenkinsBuildTaskNGResponse;
 import io.harness.delegate.task.jira.JiraTaskNGParameters;
 import io.harness.delegate.task.jira.JiraTaskNGResponse;
 import io.harness.delegate.task.k8s.AzureK8sInfraDelegateConfig;
@@ -586,6 +589,7 @@ import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
+import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
 import io.harness.delegate.task.stepstatus.StepStatus;
@@ -1527,7 +1531,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureK8sInfraDelegateConfig.class, 563532);
     kryo.register(AzureAcrTokenTaskResponse.class, 563533);
     kryo.register(ServerlessEcrArtifactConfig.class, 563534);
-    kryo.register(ServerlessArtifactsConfig.class, 563635);
+    kryo.register(AwsCliInstallationCapability.class, 563535);
+    kryo.register(ServerlessArtifactsConfig.class, 563536);
 
     kryo.register(LdapTestResponse.Status.class, 5500);
     kryo.register(LdapGroupSettings.class, 5498);
@@ -1551,7 +1556,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(JenkinsCapabilityHelper.class, 29302);
     kryo.register(JenkinsValidationParams.class, 29303);
     kryo.register(JenkinsArtifactDelegateRequest.class, 29304);
-
+    kryo.register(JenkinsBuildTaskNGResponse.class, 29305);
     kryo.register(OciHelmConnectivityTaskParams.class, 29306);
     kryo.register(OciHelmConnectivityTaskResponse.class, 29307);
     kryo.register(OciHelmStoreDelegateConfig.class, 29308);
@@ -1595,5 +1600,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureWebAppSwapSlotsResponseNG.class, 55333);
     kryo.register(SerializedResponseData.class, 55401);
     kryo.register(SerializationFormat.class, 55402);
+    kryo.register(SecretConfigFile.class, 55334);
+    kryo.register(GitApiMergePRTaskResponse.class, 55403);
   }
 }

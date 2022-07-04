@@ -28,8 +28,8 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link ServerInterceptor} that validates the delegate token, and populates context with accountId before calling the
- * rpc implementation on server-side.
+ * {@link ServerInterceptor} that validates the delegate token for gRPC calls, and populates context with accountId
+ * before calling the rpc implementation on server-side.
  */
 @OwnedBy(HarnessTeam.DEL)
 @Slf4j
@@ -58,8 +58,8 @@ public class DelegateAuthServerInterceptor implements ServerInterceptor {
 
     String accountId = metadata.get(DelegateAuthCallCredentials.ACCOUNT_ID_METADATA_KEY);
     String token = metadata.get(DelegateAuthCallCredentials.TOKEN_METADATA_KEY);
-    String delegateId = metadata.get(DelegateAuthCallCredentials.DELEGATE_ID);
-    String delegateTokenName = metadata.get(DelegateAuthCallCredentials.DELEGATE_TOKEN_NAME);
+    String delegateId = metadata.get(DelegateAuthCallCredentials.DELEGATE_ID_METADATA_KEY);
+    String delegateTokenName = metadata.get(DelegateAuthCallCredentials.DELEGATE_TOKEN_NAME_METADATA_KEY);
 
     // Urgent fix for DEL-1954. We are allowing delegate service to be invoked by delegate agent, in which case
     // accountId is mandatory, but also by other backend services, in which case serviceId is mandatory. If accountId is

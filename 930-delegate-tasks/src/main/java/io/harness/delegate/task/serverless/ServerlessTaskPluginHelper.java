@@ -19,6 +19,7 @@ import io.harness.serverless.model.ServerlessDelegateTaskParams;
 
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,7 +35,7 @@ public class ServerlessTaskPluginHelper {
     if (EmptyPredicate.isNotEmpty(ConfigOverridePath)) {
       command.config(ConfigOverridePath);
     }
-    return ServerlessCommandTaskHelper.executeCommand(
-        command, serverlessDelegateTaskParams.getWorkingDirectory(), executionLogCallback, true, timeoutInMillis);
+    return ServerlessCommandTaskHelper.executeCommand(command, serverlessDelegateTaskParams.getWorkingDirectory(),
+        executionLogCallback, true, timeoutInMillis, Collections.emptyMap());
   }
 }

@@ -19,11 +19,11 @@ import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.category.element.UnitTests;
-import io.harness.executionplan.CIExecutionTestBase;
+import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.utils.PortFinder;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.rule.Owner;
-import io.harness.util.PortFinder;
 
 import com.google.inject.Inject;
 import java.util.HashSet;
