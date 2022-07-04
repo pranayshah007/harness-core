@@ -108,7 +108,8 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
     return userGroupDTOS;
   }
 
-  private List<String> getEmailsForUserIds(List<String> userIds, String accountId) {
+  @VisibleForTesting
+  List<String> getEmailsForUserIds(List<String> userIds, String accountId) {
     if (isEmpty(userIds)) {
       return new ArrayList<>();
     }
@@ -138,7 +139,8 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
     return getNotificationSettings(notificationChannelType, userGroups, accountId);
   }
 
-  private List<String> getNotificationSettings(
+  @VisibleForTesting
+  List<String> getNotificationSettings(
       NotificationChannelType notificationChannelType, List<UserGroupDTO> userGroups, String accountId) {
     Set<String> notificationSettings = new HashSet<>();
     for (UserGroupDTO userGroupDTO : userGroups) {
@@ -146,6 +148,9 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
         if (notificationSettingConfigDTO.getType() == notificationChannelType
             && notificationSettingConfigDTO.getSetting().isPresent()) {
           notificationSettings.add(notificationSettingConfigDTO.getSetting().get());
+          if (notificationChannelType.equals(NotificationChannelType.EMAIL)) {
+            notificationSettings.addAll(getEmailsForUserIds(userGroupDTO.getUsers(), accountId));
+          }
         }
       }
     }
