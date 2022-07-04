@@ -148,6 +148,8 @@ import io.harness.migrations.apppermission.NullAppFilterPermissionMigration;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
+
+import io.harness.migrations.apppermission.NullEntityFilterInAppPermissionMigration;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -388,6 +390,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(225, UpdateCorruptedEmptyClusterNameInstanceStatsMigration.class))
         .add(Pair.of(226, AddClusterNameInGcpTypeInstanceMigration.class))
         .add(Pair.of(227, AddDeploymentFreezeReferenceToUserGroups.class))
+        .add(Pair.of(228, NullEntityFilterInAppPermissionMigration.class))
         .build();
   }
 }
