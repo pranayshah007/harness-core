@@ -43,7 +43,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @OwnedBy(CDP)
-
 public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDemander {
   K8sTaskType getTaskType();
   String getCommandName();
