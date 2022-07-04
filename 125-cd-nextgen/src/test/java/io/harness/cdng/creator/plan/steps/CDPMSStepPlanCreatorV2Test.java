@@ -20,7 +20,6 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
-import io.harness.steps.StepSpecTypeConstants;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +34,7 @@ import org.mockito.Spy;
 @OwnedBy(HarnessTeam.CDP)
 public class CDPMSStepPlanCreatorV2Test extends CategoryTest {
   @Spy private CDPMSStepPlanCreatorV2<CdAbstractStepNode> cdPMSStepPlanCreator;
+  private static final String SHELL_SCRIPT_TYPE = "ShellScript";
 
   @Before
   public void setup() {
@@ -48,7 +48,7 @@ public class CDPMSStepPlanCreatorV2Test extends CategoryTest {
     YamlField pipeline = getYamlFieldFromGivenFileName("cdng/plan/pipeline_multistage.yaml");
     YamlField currentStep = pipeline.fromYamlPath("pipeline/stages/[2]/stage/spec/execution/steps/[1]/step");
     List<YamlNode> steps = cdPMSStepPlanCreator.findStepsBeforeCurrentStep(
-        currentStep, yamlNode -> StepSpecTypeConstants.SHELL_SCRIPT.equals(yamlNode.getType()));
+        currentStep, yamlNode -> SHELL_SCRIPT_TYPE.equals(yamlNode.getType()));
     assertThat(steps).hasSize(9);
     assertThat(steps.stream().map(YamlUtils::getFullyQualifiedName))
         .containsOnly("pipeline.stages.Stage1.spec.execution.steps.Execution_Step1",
@@ -69,7 +69,7 @@ public class CDPMSStepPlanCreatorV2Test extends CategoryTest {
     YamlField pipeline = getYamlFieldFromGivenFileName("cdng/plan/pipeline_multistage.yaml");
     YamlField currentStep = pipeline.fromYamlPath("pipeline/stages/[1]/stage/spec/execution/steps/[2]/step");
     List<YamlNode> steps = cdPMSStepPlanCreator.findStepsBeforeCurrentStep(
-        currentStep, yamlNode -> StepSpecTypeConstants.SHELL_SCRIPT.equals(yamlNode.getType()));
+        currentStep, yamlNode -> SHELL_SCRIPT_TYPE.equals(yamlNode.getType()));
     assertThat(steps).hasSize(7);
     assertThat(steps.stream().map(YamlUtils::getFullyQualifiedName))
         .containsOnly("pipeline.stages.Stage1.spec.execution.steps.Execution_Step1",
@@ -89,7 +89,7 @@ public class CDPMSStepPlanCreatorV2Test extends CategoryTest {
     YamlField currentStep = pipeline.fromYamlPath(
         "pipeline/stages/[0]/stage/spec/infrastructure/infrastructureDefinition/provisioner/steps/[1]/step");
     List<YamlNode> steps = cdPMSStepPlanCreator.findStepsBeforeCurrentStep(
-        currentStep, yamlNode -> StepSpecTypeConstants.SHELL_SCRIPT.equals(yamlNode.getType()));
+        currentStep, yamlNode -> SHELL_SCRIPT_TYPE.equals(yamlNode.getType()));
     assertThat(steps).hasSize(4);
     assertThat(steps.stream().map(YamlUtils::getFullyQualifiedName))
         .containsOnly("pipeline.stages.Stage1.spec.execution.steps.Execution_Step1",

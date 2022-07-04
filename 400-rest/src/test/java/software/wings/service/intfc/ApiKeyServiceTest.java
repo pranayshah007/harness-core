@@ -32,6 +32,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageRequest.PageRequestBuilder;
@@ -67,16 +68,19 @@ import org.mockito.Mock;
 @Slf4j
 public class ApiKeyServiceTest extends WingsBaseTest {
   @Mock private AccountService accountService;
+  @Mock private UserService userService;
   @Mock private UserGroupService userGroupService;
   @Mock private AuditServiceHelper auditServiceHelper;
   @Mock private Cache<String, ApiKeyEntry> apiKeyCache;
   @Mock private Cache<String, UserPermissionInfo> apiKeyPermissionInfoCache;
   @Mock private Cache<String, UserRestrictionInfo> apiKeyRestrictionInfoCache;
+
   @Inject @InjectMocks private ApiKeyService apiKeyService;
 
   @Before
   public void init() {
     setUserRequestContext();
+    when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
   }
 
   private void setUserRequestContext() {
@@ -125,7 +129,7 @@ public class ApiKeyServiceTest extends WingsBaseTest {
     doReturn(account).when(accountService).get(ACCOUNT_ID);
     UserGroup userGroup = UserGroup.builder().uuid(USER_GROUP_ID).name(name).build();
     PageResponse pageResponse = aPageResponse().withResponse(asList(userGroup)).build();
-    doReturn(pageResponse).when(userGroupService).list(anyString(), any(PageRequest.class), anyBoolean());
+    doReturn(pageResponse).when(userGroupService).list(anyString(), any(PageRequest.class), anyBoolean(), any(), any());
     ApiKeyEntry apiKeyEntry =
         ApiKeyEntry.builder().name("name1").accountId(ACCOUNT_ID).userGroupIds(asList(USER_GROUP_ID)).build();
     return apiKeyService.generate(ACCOUNT_ID, apiKeyEntry);

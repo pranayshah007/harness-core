@@ -38,7 +38,8 @@ public class PmsLevelUtils {
                                      .setSkipExpressionChain(node.isSkipExpressionChain())
                                      .setStartTs(System.currentTimeMillis())
                                      .setStepType(node.getStepType())
-                                     .setNodeType(node.getNodeType().toString());
+                                     .setNodeType(node.getNodeType().toString())
+                                     .setOriginalIdentifier(node.getIdentifier());
     if (node.getGroup() != null) {
       levelBuilder.setGroup(node.getGroup());
     }

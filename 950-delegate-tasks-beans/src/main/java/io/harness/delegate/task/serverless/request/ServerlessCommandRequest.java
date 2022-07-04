@@ -7,7 +7,6 @@
 
 package io.harness.delegate.task.serverless.request;
 
-import static io.harness.delegate.beans.connector.awsconnector.AwsCredentialType.MANUAL_CREDENTIALS;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GIT;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -15,8 +14,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
+import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.ServerlessInstallationCapability;
@@ -26,12 +27,12 @@ import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessArtifactsConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
-import io.harness.exception.UnknownEnumTypeException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -48,13 +49,13 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
   ServerlessInfraConfig getServerlessInfraConfig();
   ServerlessManifestConfig getServerlessManifestConfig();
   Integer getTimeoutIntervalInMin();
-  ServerlessArtifactConfig getServerlessArtifactConfig();
+  ServerlessArtifactsConfig getServerlessArtifactsConfig();
 
   @Override
   default List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     ServerlessInfraConfig serverlessInfraConfig = getServerlessInfraConfig();
     ServerlessManifestConfig serverlessManifestConfig = getServerlessManifestConfig();
-    ServerlessArtifactConfig serverlessArtifactConfig = getServerlessArtifactConfig();
+    ServerlessArtifactsConfig serverlessArtifactsConfig = getServerlessArtifactsConfig();
     List<EncryptedDataDetail> cloudProviderEncryptionDetails = serverlessInfraConfig.getEncryptionDataDetails();
 
     List<ExecutionCapability> capabilities =
@@ -62,11 +63,11 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
             cloudProviderEncryptionDetails, maskingEvaluator));
     if (serverlessInfraConfig instanceof ServerlessAwsLambdaInfraConfig) {
       AwsConnectorDTO awsConnectorDTO = ((ServerlessAwsLambdaInfraConfig) serverlessInfraConfig).getAwsConnectorDTO();
-      if (awsConnectorDTO.getCredential().getAwsCredentialType() != MANUAL_CREDENTIALS) {
-        throw new UnknownEnumTypeException(
-            "AWS Credential Type", String.valueOf(awsConnectorDTO.getCredential().getAwsCredentialType()));
-      }
       capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(awsConnectorDTO, maskingEvaluator));
+      CrossAccountAccessDTO crossAccountAccess = awsConnectorDTO.getCredential().getCrossAccountAccess();
+      if (crossAccountAccess != null && crossAccountAccess.getCrossAccountRoleArn() != null) {
+        capabilities.add(AwsCliInstallationCapability.builder().criteria("AWS Cli Installed").build());
+      }
     }
     if (getServerlessManifestConfig() != null) {
       if (serverlessManifestConfig instanceof ServerlessAwsLambdaManifestConfig) {
@@ -82,14 +83,25 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
         }
       }
     }
-    if (getServerlessArtifactConfig() != null) {
-      if (serverlessArtifactConfig instanceof ServerlessArtifactoryArtifactConfig) {
-        ServerlessArtifactoryArtifactConfig serverlessArtifactoryArtifactConfig =
-            (ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig;
+    if (serverlessArtifactsConfig != null) {
+      ServerlessArtifactConfig primaryArtifact = serverlessArtifactsConfig.getPrimary();
+      if (primaryArtifact instanceof ServerlessArtifactoryArtifactConfig) {
         capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
-            serverlessArtifactoryArtifactConfig.getConnectorDTO().getConnectorConfig(), maskingEvaluator));
+            ((ServerlessArtifactoryArtifactConfig) primaryArtifact).getConnectorDTO().getConnectorConfig(),
+            maskingEvaluator));
+      }
+
+      if (serverlessArtifactsConfig.getSidecars() != null) {
+        for (ServerlessArtifactConfig serverlessArtifactConfig : serverlessArtifactsConfig.getSidecars().values()) {
+          if (serverlessArtifactConfig instanceof ServerlessArtifactoryArtifactConfig) {
+            capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
+                ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getConnectorDTO().getConnectorConfig(),
+                maskingEvaluator));
+          }
+        }
       }
     }
+
     capabilities.add(ServerlessInstallationCapability.builder().criteria("Serverless Installed").build());
     return capabilities;
   }

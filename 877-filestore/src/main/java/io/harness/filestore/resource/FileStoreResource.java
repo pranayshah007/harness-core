@@ -41,6 +41,8 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SearchPageParams;
 import io.harness.data.validator.EntityIdentifier;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.NoResultFoundException;
 import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.service.FileStoreService;
@@ -73,6 +75,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -176,6 +179,33 @@ public class FileStoreResource {
   }
 
   @GET
+  @Path("{identifier}")
+  @ApiOperation(value = "Get file", nickname = "getFile")
+  @Operation(operationId = "getFile", summary = "Get File",
+      responses =
+      { @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default", description = "Get the file") })
+  public ResponseDTO<FileDTO>
+  getFile(@Parameter(description = FILE_PARAM_MESSAGE) @PathParam(
+              IDENTIFIER_KEY) @NotBlank @EntityIdentifier String identifier,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(FILE, identifier), FILE_VIEW_PERMISSION);
+
+    Optional<FileDTO> file = fileStoreService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+
+    return ResponseDTO.newResponse(file.orElseThrow(
+        ()
+            -> NoResultFoundException.newBuilder()
+                   .code(ErrorCode.ENTITY_NOT_FOUND)
+                   .message(String.format(
+                       "File with identifier: %s, accountIdentifier: %s, orgIdentifier: %s and projectIdentifier: %s could not be found",
+                       identifier, accountIdentifier, orgIdentifier, projectIdentifier))
+                   .build()));
+  }
+
+  @GET
   @Path("files/{identifier}/download")
   @ApiOperation(value = "Download file", nickname = "downloadFile")
   @Operation(operationId = "downloadFile", summary = "Download File",
@@ -185,12 +215,11 @@ public class FileStoreResource {
         ApiResponse(responseCode = "default", description = "Download the file with content")
       })
   public Response
-  downloadFile(
+  downloadFile(@Parameter(description = FILE_PARAM_MESSAGE) @PathParam(
+                   IDENTIFIER_KEY) @NotBlank @EntityIdentifier String fileIdentifier,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
-      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = FILE_PARAM_MESSAGE) @PathParam(
-          IDENTIFIER_KEY) @NotBlank @EntityIdentifier String fileIdentifier) {
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, fileIdentifier), FILE_VIEW_PERMISSION);
 

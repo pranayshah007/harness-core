@@ -520,8 +520,10 @@ public class AccountResource {
   @ExceptionMetered
   @LearningEngineAuth
   public RestResponse<Boolean> validateDelegateToken(@QueryParam("accountId") @NotEmpty String accountId,
-      @QueryParam("delegateToken") @NotNull String delegateToken, @QueryParam("delegateId") String delegateId) {
-    authService.validateDelegateToken(accountId, substringAfter(delegateToken, "Delegate "), delegateId, false);
+      @QueryParam("delegateToken") @NotNull String delegateToken, @QueryParam("delegateId") String delegateId,
+      @QueryParam("delegateTokenName") String delegateTokenName) {
+    authService.validateDelegateToken(
+        accountId, substringAfter(delegateToken, "Delegate "), delegateId, delegateTokenName, false);
     return new RestResponse<>(true);
   }
 

@@ -35,6 +35,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.ScriptSshExecutor;
 
@@ -67,6 +68,7 @@ public class SshScriptCommandHandlerTest extends CategoryTest {
   final NgCommandUnit scriptCommandUnit =
       ScriptCommandUnit.builder().name("test").command(COMMAND).workingDirectory("/test").build();
   final CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+  final List<String> outputVariables = Arrays.asList("var");
 
   @Inject @InjectMocks final SshScriptCommandHandler sshScriptCommandHandler = new SshScriptCommandHandler();
 
@@ -80,7 +82,8 @@ public class SshScriptCommandHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldExecuteCommandWithSshExecutor() {
     doReturn(scriptSshExecutor).when(sshScriptExecutorFactory).getExecutor(any());
-    when(scriptSshExecutor.executeCommandString(COMMAND)).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptSshExecutor.executeCommandString(COMMAND, outputVariables))
+        .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
 
     CommandExecutionStatus status = sshScriptCommandHandler.handle(
         getParameters(false), scriptCommandUnit, logStreamingTaskClient, commandUnitsProgress);
@@ -96,7 +99,8 @@ public class SshScriptCommandHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldExecuteCommandWithScriptProcessExecutorOnDelegate() {
     doReturn(scriptProcessExecutor).when(sshScriptExecutorFactory).getExecutor(any());
-    when(scriptProcessExecutor.executeCommandString(COMMAND)).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptProcessExecutor.executeCommandString(COMMAND, outputVariables))
+        .thenReturn(ExecuteCommandResponse.builder().status(CommandExecutionStatus.SUCCESS).build());
 
     CommandExecutionStatus status = sshScriptCommandHandler.handle(
         getParameters(true), scriptCommandUnit, logStreamingTaskClient, commandUnitsProgress);
@@ -135,6 +139,7 @@ public class SshScriptCommandHandlerTest extends CategoryTest {
                                     .build())
         .artifactDelegateConfig(ArtifactoryArtifactDelegateConfig.builder().build())
         .commandUnits(Arrays.asList(scriptCommandUnit))
+        .outputVariables(outputVariables)
         .host("host")
         .build();
   }

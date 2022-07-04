@@ -23,6 +23,7 @@ import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.http.HttpBaseStepInfo;
 import io.harness.steps.http.HttpStep;
@@ -36,6 +37,7 @@ import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.Collections;
@@ -57,6 +59,11 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(PIPELINE)
 @RecasterAlias("io.harness.plancreator.steps.http.HttpStepInfo")
 public class HttpStepInfo extends HttpBaseStepInfo implements PMSStepInfo, Visitable, WithDelegateSelector {
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  String uuid;
+
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 

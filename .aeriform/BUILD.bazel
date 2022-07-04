@@ -232,6 +232,10 @@ aeriform("//879-pms-sdk:module")
 
 aeriform("//879-pms-sdk:tests")
 
+aeriform("//880-pipeline-cd-commons:module")
+
+aeriform("//880-pipeline-cd-commons:tests")
+
 aeriform("//882-pms-sdk-core:module")
 
 aeriform("//882-pms-sdk-core:supporter-test")
@@ -287,6 +291,8 @@ aeriform("//930-ng-license-manager:module")
 aeriform("//930-ng-license-manager:tests")
 
 aeriform("//932-connector-task:module")
+
+aeriform("//933-scm-commons:module")
 
 aeriform("//935-analyser-service:module")
 

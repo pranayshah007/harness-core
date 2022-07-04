@@ -8,15 +8,10 @@
 package io.harness.delegate.service.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.DelegateSize.LAPTOP;
-import static io.harness.delegate.beans.DelegateSize.LARGE;
-import static io.harness.delegate.beans.DelegateSize.MEDIUM;
-import static io.harness.delegate.beans.DelegateSize.SMALL;
 import static io.harness.delegate.beans.DelegateType.DOCKER;
 import static io.harness.delegate.beans.DelegateType.KUBERNETES;
 import static io.harness.delegate.beans.K8sPermissionType.CLUSTER_ADMIN;
-import static io.harness.delegate.beans.K8sPermissionType.CLUSTER_VIEWER;
 import static io.harness.delegate.beans.K8sPermissionType.NAMESPACE_ADMIN;
 
 import static java.lang.String.format;
@@ -29,6 +24,7 @@ import io.harness.delegate.beans.DelegateSetupDetails.DelegateSetupDetailsBuilde
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.delegate.beans.K8sConfigDetails;
+import io.harness.delegate.beans.K8sConfigDetails.K8sConfigDetailsBuilder;
 import io.harness.delegate.beans.K8sPermissionType;
 import io.harness.delegate.service.intfc.DelegateDownloadService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
@@ -42,7 +38,6 @@ import com.google.inject.Inject;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 
@@ -94,13 +89,13 @@ public class DelegateDownloadServiceImpl implements DelegateDownloadService {
       String projectIdentifier, DelegateDownloadRequest delegateDownloadRequest, String delegateType) {
     delegateService.checkUniquenessOfDelegateName(accountId, delegateDownloadRequest.getName(), true);
 
-    DelegateSetupDetailsBuilder delegateSetupDetails = DelegateSetupDetails.builder()
-                                                           .name(delegateDownloadRequest.getName())
-                                                           .orgIdentifier(orgIdentifier)
-                                                           .projectIdentifier(projectIdentifier)
-                                                           .description(delegateDownloadRequest.getDescription())
-                                                           .tags(delegateDownloadRequest.getTags())
-                                                           .delegateType(delegateType);
+    DelegateSetupDetailsBuilder delegateSetupDetailsBuilder = DelegateSetupDetails.builder()
+                                                                  .name(delegateDownloadRequest.getName())
+                                                                  .orgIdentifier(orgIdentifier)
+                                                                  .projectIdentifier(projectIdentifier)
+                                                                  .description(delegateDownloadRequest.getDescription())
+                                                                  .tags(delegateDownloadRequest.getTags())
+                                                                  .delegateType(delegateType);
 
     DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
 
@@ -113,25 +108,44 @@ public class DelegateDownloadServiceImpl implements DelegateDownloadService {
       throw new InvalidRequestException(format(
           "Can not use %s delegate token. This token does not exists or has been revoked. Please specify a valid delegate token.",
           delegateTokenName));
+    } else if (!matchOwnerIdentifiers(owner, delegateTokenDetails.getOwnerIdentifier())) {
+      throw new InvalidRequestException(
+          format("Can not use %s delegate token. This token does not belong to org %s and project %s.",
+              delegateTokenName, orgIdentifier, projectIdentifier));
     }
-    delegateSetupDetails.tokenName(delegateTokenName);
+    delegateSetupDetailsBuilder.tokenName(delegateTokenName);
 
     // properties specific for k8s delegate
     if (delegateType.equals(KUBERNETES)) {
-      if (!Arrays.asList(LAPTOP, SMALL, MEDIUM, LARGE).contains(delegateDownloadRequest.getSize())) {
-        delegateSetupDetails.size(LAPTOP);
-      }
+      delegateSetupDetailsBuilder.size(
+          delegateDownloadRequest.getSize() != null ? delegateDownloadRequest.getSize() : LAPTOP);
 
       K8sPermissionType clusterPermissionType = delegateDownloadRequest.getClusterPermissionType();
-      if (isNotEmpty(delegateDownloadRequest.getCustomClusterNamespace())) {
-        delegateSetupDetails.k8sConfigDetails(K8sConfigDetails.builder()
-                                                  .k8sPermissionType(NAMESPACE_ADMIN)
-                                                  .namespace(delegateDownloadRequest.getCustomClusterNamespace())
-                                                  .build());
-      } else if (!CLUSTER_ADMIN.equals(clusterPermissionType) && !CLUSTER_VIEWER.equals(clusterPermissionType)) {
-        delegateSetupDetails.k8sConfigDetails(K8sConfigDetails.builder().k8sPermissionType(CLUSTER_ADMIN).build());
+
+      K8sConfigDetailsBuilder k8sConfigDetailsBuilder =
+          K8sConfigDetails.builder().k8sPermissionType(clusterPermissionType);
+
+      // CLUSTER_ADMIN is the default one
+      if (clusterPermissionType == null) {
+        k8sConfigDetailsBuilder.k8sPermissionType(CLUSTER_ADMIN);
+      } else if (NAMESPACE_ADMIN.equals(clusterPermissionType)) {
+        if (isEmpty(delegateDownloadRequest.getCustomClusterNamespace())) {
+          throw new InvalidRequestException("Cluster namespace must be provided for permission type NAMESPACE_ADMIN.");
+        } else {
+          k8sConfigDetailsBuilder.namespace(delegateDownloadRequest.getCustomClusterNamespace());
+        }
       }
+      delegateSetupDetailsBuilder.k8sConfigDetails(k8sConfigDetailsBuilder.build());
     }
-    return delegateSetupDetails.build();
+    return delegateSetupDetailsBuilder.build();
+  }
+
+  private boolean matchOwnerIdentifiers(DelegateEntityOwner owner, String delegateTokenOwnerIdentifier) {
+    if (owner == null && delegateTokenOwnerIdentifier == null) {
+      return true;
+    } else if (owner == null || delegateTokenOwnerIdentifier == null) {
+      return false;
+    }
+    return owner.getIdentifier().equals(delegateTokenOwnerIdentifier);
   }
 }

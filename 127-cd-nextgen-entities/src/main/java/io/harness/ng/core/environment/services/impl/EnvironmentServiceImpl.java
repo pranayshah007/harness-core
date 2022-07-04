@@ -16,6 +16,7 @@ import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPL
 import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.stream.Collectors.groupingBy;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
@@ -63,6 +64,8 @@ import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
 import com.mongodb.client.result.UpdateResult;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -360,7 +363,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
   @Override
   public String createEnvironmentInputsYaml(
-      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+      String accountId, String projectIdentifier, String orgIdentifier, String envIdentifier) {
     Map<String, Object> yamlInputs =
         createEnvironmentInputsYamlInternal(accountId, orgIdentifier, projectIdentifier, envIdentifier);
 
@@ -368,6 +371,26 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       return null;
     }
     return YamlPipelineUtils.writeYamlString(yamlInputs);
+  }
+
+  @Override
+  public List<Map<String, String>> getAttributes(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers) {
+    Map<String, List<Environment>> environments =
+        fetchesNonDeletedEnvironmentFromListOfIdentifiers(accountId, orgIdentifier, projectIdentifier, envIdentifiers)
+            .stream()
+            .collect(groupingBy(Environment::getIdentifier));
+
+    List<Map<String, String>> attributes = new ArrayList<>();
+    for (String envId : envIdentifiers) {
+      if (environments.containsKey(envId)) {
+        attributes.add(ImmutableMap.of("type", environments.get(envId).get(0).getType().name()));
+      } else {
+        attributes.add(Collections.emptyMap());
+      }
+    }
+
+    return attributes;
   }
 
   public Map<String, Object> createEnvironmentInputsYamlInternal(

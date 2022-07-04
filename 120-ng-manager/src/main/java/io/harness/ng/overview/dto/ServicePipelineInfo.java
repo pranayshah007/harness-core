@@ -21,6 +21,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 public class ServicePipelineInfo {
   String pipelineExecutionId;
+  String planExecutionId;
   String identifier;
   String name;
   String status;

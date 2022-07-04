@@ -9,6 +9,9 @@ server:
   rootPath: /api
   maxThreads: 1024
 
+logging:
+  type: external
+
 # Delegate Config
 accountId: kmpySmUISimoRrJL6NL73w
 delegateToken: 2f6b0988b6fb3370073c3d0505baee59

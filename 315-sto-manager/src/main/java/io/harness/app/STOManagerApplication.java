@@ -16,10 +16,16 @@ import static java.util.Collections.singletonList;
 import io.harness.AuthorizationServiceHeader;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
+import io.harness.SCMGrpcClientModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheModule;
+import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
 import io.harness.ci.plan.creator.filter.CIFilterCreationResponseMerger;
+import io.harness.ci.registrars.ExecutionAdvisers;
+import io.harness.ci.registrars.STOExecutionRegistrar;
+import io.harness.ci.serializer.CiExecutionRegistrars;
+import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
@@ -52,19 +58,16 @@ import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsume
 import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
-import io.harness.pms.serializer.jackson.PmsBeansJacksonModule;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
-import io.harness.registrars.ExecutionAdvisers;
-import io.harness.registrars.STOExecutionRegistrar;
+import io.harness.resource.VersionInfoResource;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.serializer.CiBeansRegistrars;
-import io.harness.serializer.CiExecutionRegistrars;
 import io.harness.serializer.ConnectorNextGenRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.OrchestrationRegistrars;
+import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.serializer.StoBeansRegistrars;
 import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
@@ -82,7 +85,6 @@ import io.harness.yaml.YamlSdkInitHelper;
 import io.harness.yaml.YamlSdkModule;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
-import ci.pipeline.execution.OrchestrationExecutionEventHandlerRegistrar;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -163,7 +165,6 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
 
   public static void configureObjectMapper(final ObjectMapper mapper) {
     HObjectMapper.configureObjectMapperForNG(mapper);
-    mapper.registerModule(new PmsBeansJacksonModule());
   }
 
   @Override
@@ -176,6 +177,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
     log.info("Leaving startup maintenance mode");
     List<Module> modules = new ArrayList<>();
     modules.add(KryoModule.getInstance());
+    modules.add(new SCMGrpcClientModule(configuration.getScmConnectionConfig()));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
@@ -191,7 +193,9 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
       @Provides
       @Singleton
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
-        return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().build();
+        return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
+            .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
+            .build();
       }
 
       @Provides
@@ -208,17 +212,13 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
       @Provides
       @Singleton
       Set<Class<? extends TypeConverter>> morphiaConverters() {
-        return ImmutableSet.<Class<? extends TypeConverter>>builder()
-            .addAll(OrchestrationRegistrars.morphiaConverters)
-            .build();
+        return ImmutableSet.<Class<? extends TypeConverter>>builder().build();
       }
 
       @Provides
       @Singleton
       List<Class<? extends Converter<?, ?>>> springConverters() {
-        return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
-            .addAll(OrchestrationRegistrars.springConverters)
-            .build();
+        return ImmutableList.<Class<? extends Converter<?, ?>>>builder().build();
       }
       @Provides
       @Singleton
@@ -312,6 +312,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
         environment.jersey().register(injector.getInstance(resource));
       }
     }
+    environment.jersey().register(injector.getInstance(VersionInfoResource.class));
   }
 
   private void registerPMSSDK(STOManagerConfiguration config, Injector injector) {
@@ -359,6 +360,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
   }
 
   private void scheduleJobs(Injector injector, STOManagerConfiguration config) {
+    injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
     injector.getInstance(NotifierScheduledExecutorService.class)
         .scheduleWithFixedDelay(
             injector.getInstance(NotifyResponseCleaner.class), random.nextInt(300), 300L, TimeUnit.SECONDS);

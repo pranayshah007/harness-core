@@ -414,7 +414,12 @@ public class WingsMongoPersistence extends MongoPersistence implements WingsPers
     }
     User user = UserThreadLocal.get();
     if (user != null) {
-      log.error("User [{}] doesn't have enough permission to perform operation. ", user);
+      UserPermissionInfo userPermissionInfo = null;
+      if (user.getUserRequestContext() != null && user.getUserRequestContext().getUserPermissionInfo() != null) {
+        userPermissionInfo = user.getUserRequestContext().getUserPermissionInfo();
+      }
+      log.error("User [{}] doesn't have enough permission to perform query [{}]. Current perms [{}].", user, query,
+          userPermissionInfo);
     }
     throw new WingsException(ErrorCode.ACCESS_DENIED, USER);
   }

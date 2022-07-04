@@ -51,9 +51,50 @@ public interface FileStoreService {
   FileDTO update(@NotNull FileDTO fileDto, InputStream content, String identifier);
 
   /**
+   * Get the file or folder metadata not including content and children.
+   *
+   * @param accountIdentifier the account identifier
+   * @param orgIdentifier the organization identifier
+   * @param projectIdentifier the project identifier
+   * @param identifier file identifier
+   * @return file DTO
+   */
+  Optional<FileDTO> get(
+      @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String identifier);
+
+  /**
+   * Get the file or folder metadata by path not including content and children.
+   *
+   * @param accountIdentifier the account identifier
+   * @param orgIdentifier the organization identifier
+   * @param projectIdentifier the project identifier
+   * @param path file or folder path
+   * @return file DTO
+   */
+  Optional<FileDTO> getByPath(
+      @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String path);
+
+  /**
+   * Get the file metadata with its content transformed to String if includeContent is set.
+   * If the path is related to folder then returns recursively all files metadata
+   * with its content including files in folder sub-folders.
+   *
+   * @param accountIdentifier the account identifier
+   * @param orgIdentifier the organization identifier
+   * @param projectIdentifier the project identifier
+   * @param path the file or folder path
+   * @param includeContent include file content
+   * @return file store node with content
+   */
+  Optional<FileStoreNodeDTO> getWithChildrenByPath(@NotNull String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, @NotNull String path, boolean includeContent);
+
+  /**
    * Get the file metadata with its content transformed to String if includeContent is set.
    * If identifier is related to folder then returns recursively all files metadata
    * with its content including files in folder sub-folders.
+   *
+   * Note: the identifier is not referring to scoped identifier.
    *
    * @param accountIdentifier the account identifier
    * @param orgIdentifier the organization identifier
@@ -62,8 +103,8 @@ public interface FileStoreService {
    * @param includeContent include file content
    * @return file store node with content
    */
-  Optional<FileStoreNodeDTO> get(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      @NotNull String identifier, boolean includeContent);
+  Optional<FileStoreNodeDTO> getWithChildren(@NotNull String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, @NotNull String identifier, boolean includeContent);
 
   /**
    * Download a file.

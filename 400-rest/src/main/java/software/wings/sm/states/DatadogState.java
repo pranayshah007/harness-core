@@ -178,6 +178,7 @@ public class DatadogState extends AbstractMetricAnalysisState {
   @Override
   protected String triggerAnalysisDataCollection(ExecutionContext context, AnalysisContext analysisContext,
       VerificationStateAnalysisExecutionData executionData, Map<String, String> hosts) {
+    resolveExpressionsInMetrics(context);
     List<String> metricNames = metrics != null ? Arrays.asList(metrics.split(",")) : Collections.EMPTY_LIST;
     String hostFilter = getDeploymentType(context) == DeploymentType.ECS ? DD_ECS_HOST_NAME : DD_K8s_HOST_NAME;
     metricAnalysisService.saveMetricTemplates(context.getAppId(), StateType.DATA_DOG,
@@ -642,6 +643,12 @@ public class DatadogState extends AbstractMetricAnalysisState {
     Map<String, MetricInfo> clonedMetricInfos = new HashMap<>();
     metricInfos.forEach((name, metricInfo) -> clonedMetricInfos.put(name, metricInfo.clone()));
     return clonedMetricInfos;
+  }
+
+  private void resolveExpressionsInMetrics(ExecutionContext executionContext) {
+    customMetrics.values().stream().flatMap(a -> a.stream()).forEach(metric -> {
+      metric.setMetricName(getResolvedFieldValue(executionContext, "metricName", metric.getMetricName()));
+    });
   }
 
   @Data

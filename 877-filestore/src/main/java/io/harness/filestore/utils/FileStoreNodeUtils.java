@@ -12,15 +12,18 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.ng.core.filestore.NGFileType;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
@@ -84,5 +87,56 @@ public class FileStoreNodeUtils {
         .map(FileNodeDTO.class ::cast)
         .map(FileNodeDTO::getContent)
         .collect(Collectors.toList());
+  }
+
+  /**
+   *  Map the file store node to type R and add to list.
+   *  If node is folder then iterates over all sub-folders, map file nodes to type R and add to list.
+   *
+   * @param node file store node
+   * @param fileMapper file mapper
+   * @param <R> type to map file to
+   * @return list of type R
+   */
+  public static <R> List<R> mapFileNodes(FileStoreNodeDTO node, Function<FileNodeDTO, R> fileMapper) {
+    if (node == null) {
+      return Collections.emptyList();
+    }
+
+    if (fileMapper == null) {
+      throw new InvalidArgumentsException("File mapper can't be null");
+    }
+
+    List<R> result = new ArrayList<>();
+    walkThroughNodes(Collections.singletonList(node), result, fileMapper);
+
+    return result;
+  }
+
+  private static <R> void walkThroughNodes(
+      List<FileStoreNodeDTO> nodes, List<R> result, Function<FileNodeDTO, R> fileMapper) {
+    if (isEmpty(nodes)) {
+      return;
+    }
+
+    List<FileStoreNodeDTO> folders = new ArrayList<>();
+    for (FileStoreNodeDTO node : nodes) {
+      NGFileType nodeType = node.getType();
+      if (NGFileType.FOLDER.equals(nodeType)) {
+        FolderNodeDTO folder = (FolderNodeDTO) node;
+        folders.addAll(folder.getChildren());
+        continue;
+      }
+
+      if (NGFileType.FILE.equals(nodeType)) {
+        mapFileAndAddToResult(result, (FileNodeDTO) node, fileMapper);
+      }
+    }
+
+    walkThroughNodes(folders, result, fileMapper);
+  }
+
+  private static <R> void mapFileAndAddToResult(List<R> result, FileNodeDTO file, Function<FileNodeDTO, R> fileMapper) {
+    result.add(fileMapper.apply(file));
   }
 }

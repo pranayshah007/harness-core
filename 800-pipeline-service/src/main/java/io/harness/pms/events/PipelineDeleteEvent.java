@@ -32,7 +32,7 @@ public class PipelineDeleteEvent implements Event {
   private String accountIdentifier;
   private String projectIdentifier;
   private PipelineEntity pipeline;
-  private Boolean isFromGit;
+  private Boolean isForOldGitSync;
 
   public PipelineDeleteEvent(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, PipelineEntity pipeline) {
@@ -40,16 +40,16 @@ public class PipelineDeleteEvent implements Event {
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.pipeline = pipeline;
-    this.isFromGit = false;
+    this.isForOldGitSync = false;
   }
 
   public PipelineDeleteEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      PipelineEntity pipeline, boolean isFromGit) {
+      PipelineEntity pipeline, boolean isForOldGitSync) {
     this.accountIdentifier = accountIdentifier;
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.pipeline = pipeline;
-    this.isFromGit = isFromGit;
+    this.isForOldGitSync = isForOldGitSync;
   }
 
   @JsonIgnore
@@ -70,11 +70,11 @@ public class PipelineDeleteEvent implements Event {
         .build();
   }
 
-  public boolean getIsFromGit() {
-    if (isFromGit == null) {
+  public boolean getIsForOldGitSync() {
+    if (isForOldGitSync == null) {
       return false;
     }
-    return isFromGit;
+    return isForOldGitSync;
   }
 
   @JsonIgnore

@@ -51,11 +51,11 @@ public class YAMLFieldNameConstants {
   public final String ENVIRONMENT = "environment";
   public final String PROVISIONER = "provisioner";
   public final String CONNECTOR_REF = "connectorRef";
-  public final String FILE_REF = "fileRef";
+  public final String FILES = "files";
+  public final String SECRET_FILES = "secretFiles";
   public final String CODEBASE_CONNECTOR_REF = "ciCodebase.connectorRef";
   public final String USE_ROLLBACK_STRATEGY = "useRollbackStrategy";
   public final String FAILED_CHILDREN_OUTPUT = "failedChildrenOutput";
-  public final String STOP_STAGE_SEQUENCE = "stopStageSequence";
 
   public final String STORE = "store";
   public final String PIPELINE_INFRASTRUCTURE = "infrastructure";
@@ -75,4 +75,7 @@ public class YAMLFieldNameConstants {
 
   public final String ORG_IDENTIFIER = "orgIdentifier";
   public final String PROJECT_IDENTIFIER = "projectIdentifier";
+  public final String PIPELINE_IDENTIFIER = "pipelineIdentifier";
+  public final String USE_FROM_STAGE = "useFromStage";
+  public final String SERVICE = "service";
 }

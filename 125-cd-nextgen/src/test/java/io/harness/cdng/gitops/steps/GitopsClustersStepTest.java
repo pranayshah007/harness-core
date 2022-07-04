@@ -30,6 +30,7 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.rule.Owner;
@@ -64,6 +65,7 @@ public class GitopsClustersStepTest extends CategoryTest {
   @Mock private ClusterService clusterService;
   @Mock private ILogStreamingStepClient logStreamingStepClient;
   @Mock private LogStreamingStepClientFactory logStreamingClientFactory;
+  @Mock private EngineExpressionService engineExpressionService;
 
   @InjectMocks private GitopsClustersStep step;
 
@@ -221,7 +223,8 @@ public class GitopsClustersStepTest extends CategoryTest {
             .envClusterRefs(asList(EnvClusterRefs.builder().envRef("env1").deployToAll(true).build()))
             .deployToAllEnvs(false)
             .build(),
-        new GitopsClustersOutcome(new ArrayList<>()).appendCluster(new Metadata("env1", null), new Metadata("c1", "c1-name"))
+        new GitopsClustersOutcome(new ArrayList<>())
+            .appendCluster(new Metadata("env1", null), new Metadata("c1", "c1-name"))
             .appendCluster(new Metadata("env1", null), new Metadata("c2", "c2-name")),
 
     };
@@ -231,7 +234,8 @@ public class GitopsClustersStepTest extends CategoryTest {
             .envClusterRefs(asList(EnvClusterRefs.builder().envRef("env2").deployToAll(true).build()))
             .deployToAllEnvs(false)
             .build(),
-        new GitopsClustersOutcome(new ArrayList<>()).appendCluster(new Metadata("env2", null), new Metadata("c3", "c3-name"))
+        new GitopsClustersOutcome(new ArrayList<>())
+            .appendCluster(new Metadata("env2", null), new Metadata("c3", "c3-name"))
             .appendCluster(new Metadata("env2", null), new Metadata("c4", "c4-name")),
     };
 
@@ -241,7 +245,8 @@ public class GitopsClustersStepTest extends CategoryTest {
                 asList(EnvClusterRefs.builder().envRef("env2").deployToAll(false).clusterRefs(Set.of("c4")).build()))
             .deployToAllEnvs(false)
             .build(),
-        new GitopsClustersOutcome(new ArrayList<>()).appendCluster(new Metadata("env2", null), new Metadata("c4", "c4-name")),
+        new GitopsClustersOutcome(new ArrayList<>())
+            .appendCluster(new Metadata("env2", null), new Metadata("c4", "c4-name")),
     };
 
     return new Object[][] {set1, set2, set3, set4};

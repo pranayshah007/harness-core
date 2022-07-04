@@ -9,6 +9,7 @@ package io.harness.serializer;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.filter.serializer.FiltersRegistrars;
 import io.harness.gitsync.serializer.GitSyncSdkRegistrar;
@@ -17,6 +18,8 @@ import io.harness.serializer.kryo.NGTemplateKryoRegistrar;
 import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
 import io.harness.serializer.morphia.NGTemplateMorphiaRegistrar;
 import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
+import io.harness.template.beans.yaml.NGTemplateConfig;
+import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -70,6 +73,17 @@ public class TemplateServiceModuleRegistrars {
           .addAll(PmsCommonsModuleRegistrars.morphiaRegistrars)
           .add(NGTemplateMorphiaRegistrar.class)
           .add(NotificationBeansMorphiaRegistrar.class)
+          .build();
+
+  public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =
+      ImmutableList.<YamlSchemaRootClass>builder()
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.TEMPLATE)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(true)
+                   .availableAtAccountLevel(true)
+                   .clazz(NGTemplateConfig.class)
+                   .build())
           .build();
 
   public final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =

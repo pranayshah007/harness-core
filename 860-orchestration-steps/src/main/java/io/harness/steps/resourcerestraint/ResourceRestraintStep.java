@@ -22,6 +22,7 @@ import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.resourcerestraint.beans.HoldingScope;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraint;
@@ -57,21 +58,23 @@ public class ResourceRestraintStep
   @Override
   public StepResponse executeSync(Ambiance ambiance, StepElementParameters stepElementParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
-    ResourceRestraintSpecParameters specParameters = (ResourceRestraintSpecParameters) stepElementParameters.getSpec();
+    IResourceRestraintSpecParameters specParameters =
+        (IResourceRestraintSpecParameters) stepElementParameters.getSpec();
     ResourceRestraintPassThroughData data = (ResourceRestraintPassThroughData) passThroughData;
 
     return StepResponse.builder()
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(STEP_TYPE.getType())
-                         .outcome(ResourceRestraintOutcome.builder()
-                                      .name(specParameters.getName())
-                                      .capacity(data.getCapacity())
-                                      .resourceUnit(data.getResourceUnit())
-                                      .usage(specParameters.getPermits())
-                                      .alreadyAcquiredPermits(getAlreadyAcquiredPermits(
-                                          specParameters.getHoldingScope(), data.getReleaseEntityId()))
-                                      .build())
-                         .build())
+        .stepOutcome(
+            StepResponse.StepOutcome.builder()
+                .name(YAMLFieldNameConstants.OUTPUT)
+                .outcome(ResourceRestraintOutcome.builder()
+                             .name(specParameters.getName())
+                             .capacity(data.getCapacity())
+                             .resourceUnit(data.getResourceUnit())
+                             .usage(specParameters.getPermits())
+                             .alreadyAcquiredPermits(getAlreadyAcquiredPermits(
+                                 specParameters.getHoldingScope(), data.getReleaseEntityId(), data.getResourceUnit()))
+                             .build())
+                .build())
         .status(Status.SUCCEEDED)
         .build();
   }
@@ -87,21 +90,23 @@ public class ResourceRestraintStep
   @Override
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, StepElementParameters stepElementParameters, Map<String, ResponseData> responseDataMap) {
-    ResourceRestraintSpecParameters specParameters = (ResourceRestraintSpecParameters) stepElementParameters.getSpec();
+    IResourceRestraintSpecParameters specParameters =
+        (IResourceRestraintSpecParameters) stepElementParameters.getSpec();
     ResourceRestraintResponseData responseData =
         (ResourceRestraintResponseData) responseDataMap.values().iterator().next();
     final ResourceRestraint resourceRestraint = resourceRestraintService.get(responseData.getResourceRestraintId());
     return StepResponse.builder()
         .stepOutcome(
             StepResponse.StepOutcome.builder()
-                .name(STEP_TYPE.getType())
+                .name(YAMLFieldNameConstants.OUTPUT)
                 .outcome(ResourceRestraintOutcome.builder()
                              .name(resourceRestraint.getName())
                              .capacity(resourceRestraint.getCapacity())
-                             .resourceUnit(specParameters.getResourceUnit())
+                             .resourceUnit(specParameters.getResourceUnit().getValue())
                              .usage(specParameters.getPermits())
                              .alreadyAcquiredPermits(getAlreadyAcquiredPermits(specParameters.getHoldingScope(),
-                                 ResourceRestraintUtils.getReleaseEntityId(ambiance, specParameters.getHoldingScope())))
+                                 ResourceRestraintUtils.getReleaseEntityId(ambiance, specParameters.getHoldingScope()),
+                                 specParameters.getResourceUnit().getValue()))
                              .build())
                 .build())
         .status(Status.SUCCEEDED)
@@ -111,16 +116,17 @@ public class ResourceRestraintStep
   @Override
   public void handleAbort(
       Ambiance ambiance, StepElementParameters stepElementParameters, AsyncExecutableResponse executableResponse) {
-    ResourceRestraintSpecParameters specParameters = (ResourceRestraintSpecParameters) stepElementParameters.getSpec();
+    IResourceRestraintSpecParameters specParameters =
+        (IResourceRestraintSpecParameters) stepElementParameters.getSpec();
 
     resourceRestraintInstanceService.finishInstance(
         Preconditions.checkNotNull(executableResponse.getCallbackIdsList().get(0),
             "CallbackId should not be null in handleAbort() for nodeExecution with id %s",
             AmbianceUtils.obtainCurrentRuntimeId(ambiance)),
-        specParameters.getResourceUnit());
+        specParameters.getResourceUnit().getValue());
   }
 
-  private int getAlreadyAcquiredPermits(HoldingScope holdingScope, String releaseEntityId) {
-    return resourceRestraintInstanceService.getAllCurrentlyAcquiredPermits(holdingScope, releaseEntityId);
+  private int getAlreadyAcquiredPermits(HoldingScope holdingScope, String releaseEntityId, String resourceUnit) {
+    return resourceRestraintInstanceService.getAllCurrentlyAcquiredPermits(holdingScope, releaseEntityId, resourceUnit);
   }
 }

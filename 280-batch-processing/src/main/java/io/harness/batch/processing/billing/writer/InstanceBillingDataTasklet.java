@@ -57,6 +57,7 @@ import com.google.inject.Singleton;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -173,15 +174,17 @@ public class InstanceBillingDataTasklet implements Tasklet {
       BatchJobType batchJobType, List<InstanceData> instanceDataLists,
       Map<String, InstanceBillingData> claimRefToPVInstanceBillingData, Map<String, MutableInt> pvcClaimCount) {
     Set<String> parentInstanceIds = new HashSet<>();
+    Instant prevStartTime = startTime.minus(3, ChronoUnit.DAYS);
     instanceDataLists.forEach(instanceData -> {
       if (null == instanceData.getActiveInstanceIterator() && null == instanceData.getUsageStopTime()) {
         instanceDataDao.updateInstanceActiveIterationTime(instanceData);
       }
 
-      if (null != instanceData.getUsageStopTime() && instanceData.getInstanceState() == InstanceState.RUNNING) {
+      if (null != instanceData.getUsageStopTime() && instanceData.getInstanceState() == InstanceState.RUNNING
+          && prevStartTime.compareTo(instanceData.getUsageStopTime()) > 0) {
         log.info("correcting instance state {} {} {} {}", instanceData.getInstanceId(),
             instanceData.getActiveInstanceIterator(), instanceData.getUsageStopTime(), instanceData.getInstanceState());
-        // instanceDataDao.correctInstanceStateActiveIterationTime(instanceData);
+        instanceDataDao.correctInstanceStateActiveIterationTime(instanceData);
       }
     });
 

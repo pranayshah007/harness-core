@@ -14,12 +14,9 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.app.DelegateApplication.getProcessId;
 import static io.harness.delegate.clienttools.InstallUtils.areClientToolsInstalled;
 import static io.harness.delegate.clienttools.InstallUtils.setupClientTools;
-import static io.harness.delegate.message.ManagerMessageConstants.JRE_VERSION;
 import static io.harness.delegate.message.ManagerMessageConstants.MIGRATE;
 import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
 import static io.harness.delegate.message.ManagerMessageConstants.UPDATE_PERPETUAL_TASK;
-import static io.harness.delegate.message.ManagerMessageConstants.USE_CDN;
-import static io.harness.delegate.message.ManagerMessageConstants.USE_STORAGE_PROXY;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_DASH;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_GO_AHEAD;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_HEARTBEAT;
@@ -93,6 +90,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateHeartbeatResponse;
+import io.harness.beans.DelegateHeartbeatResponseStreaming;
 import io.harness.beans.DelegateTaskEventsResponse;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.configuration.DeployMode;
@@ -300,6 +298,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   // Marker string to indicate task events.
   private static final String TASK_EVENT_MARKER = "{\"eventType\":\"DelegateTaskEvent\"";
   private static final String ABORT_EVENT_MARKER = "{\"eventType\":\"DelegateTaskAbortEvent\"";
+  private static final String HEARTBEAT_RESPONSE = "{\"eventType\":\"DelegateHeartbeatResponseStreaming\"";
 
   private static final String HOST_NAME = getLocalHostName();
   private static final String DELEGATE_NAME =
@@ -321,6 +320,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       || (isNotBlank(System.getenv().get("NEXT_GEN")) && Boolean.parseBoolean(System.getenv().get("NEXT_GEN")));
   public static final String JAVA_VERSION = "java.version";
   private final double RESOURCE_USAGE_THRESHOLD = 0.75;
+  private String MANAGER_PROXY_CURL = System.getenv().get("MANAGER_PROXY_CURL");
+  private String MANAGER_HOST_AND_PORT = System.getenv().get("MANAGER_HOST_AND_PORT");
 
   private static volatile String delegateId;
   private static final String delegateInstanceId = generateUuid();
@@ -539,6 +540,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
       final List<String> supportedTasks = Arrays.stream(TaskType.values()).map(Enum::name).collect(toList());
 
+      // Remove tasks which are in TaskTypeV2 and only specified with onlyV2 as true
+      final List<String> unsupportedTasks =
+          Arrays.stream(TaskType.values()).filter(element -> element.isUnsupported()).map(Enum::name).collect(toList());
+      supportedTasks.removeAll(unsupportedTasks);
+
       if (isNotBlank(DELEGATE_TYPE)) {
         log.info("Registering delegate with delegate Type: {}, DelegateGroupName: {} that supports tasks: {}",
             DELEGATE_TYPE, DELEGATE_GROUP_NAME, supportedTasks);
@@ -566,6 +572,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                                              : emptyList())
               .sampleDelegate(isSample)
               .location(Paths.get("").toAbsolutePath().toString())
+              .heartbeatAsObject(true)
               .ceEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CE")));
 
       delegateId = registerDelegate(builder);
@@ -581,7 +588,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       if (isPollingForTasksEnabled()) {
         log.info("Polling is enabled for Delegate");
         startHeartbeat(builder);
-        startKeepAlivePacket(builder);
         startTaskPolling();
       } else {
         client = org.atmosphere.wasync.ClientFactory.getDefault().newClient();
@@ -632,8 +638,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         // TODO(Abhinav): Check if we can avoid separate call for ECS delegates.
         if (isEcsDelegate()) {
           startKeepAlivePacket(builder);
-        } else {
-          startKeepAlivePacket(builder, socket);
         }
       }
 
@@ -642,6 +646,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
 
       startMonitoringWatcher();
+      checkForSSLCertVerification(accountId);
 
       if (!multiVersion) {
         startUpgradeCheck(getVersion());
@@ -751,6 +756,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             }
           })
           .transport(TRANSPORT.WEBSOCKET);
+
+      // send accountId + delegateId as header for delegate gateway to log websocket connection with account.
+      requestBuilder.header("accountId", this.delegateConfiguration.getAccountId());
+      requestBuilder.header("delegateId", DelegateAgentCommonVariables.getDelegateId());
+
       return requestBuilder;
     } catch (URISyntaxException e) {
       throw new UnexpectedException("Unable to prepare uri", e);
@@ -884,8 +894,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
 
     // Handle Heartbeat message in Health-monitor thread-pool.
-    if (StringUtils.startsWith(message, "[X]")) {
-      healthMonitorExecutor.submit(() -> processHeartbeat(message));
+    if (StringUtils.startsWith(message, HEARTBEAT_RESPONSE)) {
+      DelegateHeartbeatResponseStreaming delegateHeartbeatResponse =
+          JsonUtils.asObject(message, DelegateHeartbeatResponseStreaming.class);
+      healthMonitorExecutor.submit(() -> processHeartbeat(delegateHeartbeatResponse));
       return;
     }
 
@@ -906,16 +918,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           initiateSelfDestruct();
         }
       }
-    } else if (StringUtils.equals(message, USE_CDN)) {
-      setSwitchStorage(true);
-    } else if (StringUtils.equals(message, USE_STORAGE_PROXY)) {
-      setSwitchStorage(false);
     } else if (StringUtils.contains(message, UPDATE_PERPETUAL_TASK)) {
       updateTasks();
     } else if (StringUtils.startsWith(message, MIGRATE)) {
       migrate(StringUtils.substringAfter(message, MIGRATE));
-    } else if (StringUtils.startsWith(message, JRE_VERSION)) {
-      updateJreVersion(StringUtils.substringAfter(message, JRE_VERSION));
     } else if (StringUtils.contains(message, INVALID_TOKEN.name())) {
       log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
       initiateSelfDestruct();
@@ -925,6 +931,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     } else if (StringUtils.contains(message, REVOKED_TOKEN.name())) {
       log.warn("Delegate used revoked token. It will be frozen and drained.");
       freeze();
+    } else {
+      log.warn("Delegate received unhandled message");
     }
   }
 
@@ -1040,6 +1048,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                                             //.proxy(set to true if there is a system proxy)
                                             .pollingModeEnabled(delegateConfiguration.isPollForTasks())
                                             .ceEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CE")))
+                                            .heartbeatAsObject(true)
                                             .build();
         restResponse = executeRestCall(delegateAgentManagerClient.registerDelegate(accountId, delegateParams));
       } catch (Exception e) {
@@ -1443,7 +1452,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void startHeartbeat(DelegateParamsBuilder builder, Socket socket) {
-    log.info("Starting heartbeat at interval {} ms", delegateConfiguration.getHeartbeatIntervalMs());
+    log.debug("Starting heartbeat at interval {} ms", delegateConfiguration.getHeartbeatIntervalMs());
     healthMonitorExecutor.scheduleAtFixedRate(() -> {
       try {
         sendHeartbeat(builder, socket);
@@ -1458,19 +1467,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }, 0, delegateConfiguration.getHeartbeatIntervalMs(), TimeUnit.MILLISECONDS);
   }
 
-  private void startKeepAlivePacket(DelegateParamsBuilder builder, Socket socket) {
-    log.info("Starting KeepAlive Packet at interval {} ms", KEEP_ALIVE_INTERVAL);
-    healthMonitorExecutor.scheduleAtFixedRate(() -> {
-      try {
-        sendKeepAlivePacket(builder, socket);
-      } catch (Exception ex) {
-        log.error("Exception while sending KeepAlive Packet", ex);
-      }
-    }, 0, KEEP_ALIVE_INTERVAL, TimeUnit.MILLISECONDS);
-  }
-
   private void startHeartbeat(DelegateParamsBuilder builder) {
-    log.info("Starting heartbeat at interval {} ms", delegateConfiguration.getHeartbeatIntervalMs());
     healthMonitorExecutor.scheduleAtFixedRate(() -> {
       try {
         sendHeartbeat(builder);
@@ -1648,19 +1645,23 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     return doRestart;
   }
 
-  private void processHeartbeat(String message) {
-    String receivedId;
-    if (isEcsDelegate()) {
-      int indexForToken = message.lastIndexOf(TOKEN);
-      receivedId = message.substring(3, indexForToken); // Remove the "[X]
-    } else {
-      receivedId = message.substring(3);
-    }
+  private void processHeartbeat(DelegateHeartbeatResponseStreaming delegateHeartbeatResponse) {
+    String receivedId = delegateHeartbeatResponse.getDelegateId();
     if (delegateId.equals(receivedId)) {
-      long now = clock.millis();
-      log.info("Delegate {} received heartbeat response {} after sending. {} since last response.", receivedId,
-          getDurationString(lastHeartbeatSentAt.get(), now), getDurationString(lastHeartbeatReceivedAt.get(), now));
-      handleEcsDelegateSpecificMessage(message);
+      final long now = clock.millis();
+      if ((now - lastHeartbeatSentAt.get()) > TimeUnit.MINUTES.toMillis(3)) {
+        log.warn(
+            "Delegate {} received heartbeat response {} after sending. {} since last recorded heartbeat response. Harness sent response at {} before",
+            receivedId, getDurationString(lastHeartbeatSentAt.get(), now),
+            getDurationString(lastHeartbeatReceivedAt.get(), now),
+            getDurationString(delegateHeartbeatResponse.getResponseSentAt(), now));
+      } else {
+        log.info("Delegate {} received heartbeat response {} after sending. {} since last response.", receivedId,
+            getDurationString(lastHeartbeatSentAt.get(), now), getDurationString(lastHeartbeatReceivedAt.get(), now));
+      }
+      if (isEcsDelegate()) {
+        handleEcsDelegateSpecificMessage(delegateHeartbeatResponse);
+      }
       lastHeartbeatReceivedAt.set(now);
     } else {
       log.info("Heartbeat response for another delegate received: {}", receivedId);
@@ -1682,6 +1683,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
               .toBuilder()
               .lastHeartBeat(clock.millis())
               .pollingModeEnabled(delegateConfiguration.isPollForTasks())
+              .heartbeatAsObject(true)
               .currentlyExecutingDelegateTasks(currentlyExecutingTasks.values()
                                                    .stream()
                                                    .map(DelegateTaskPackage::getDelegateTaskId)
@@ -1731,8 +1733,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     if (!shouldContactManager() || !acquireTasks.get() || frozen.get()) {
       return;
     }
-
-    log.debug("Sending heartbeat...");
     try {
       updateBuilderIfEcsDelegate(builder);
       DelegateParams delegateParams =
@@ -1740,6 +1740,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
               .toBuilder()
               .keepAlivePacket(false)
               .pollingModeEnabled(true)
+              .heartbeatAsObject(true)
               .currentlyExecutingDelegateTasks(currentlyExecutingTasks.values()
                                                    .stream()
                                                    .map(DelegateTaskPackage::getDelegateTaskId)
@@ -1751,8 +1752,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       RestResponse<DelegateHeartbeatResponse> delegateParamsResponse =
           executeRestCall(delegateAgentManagerClient.delegateHeartbeat(accountId, delegateParams));
       long now = clock.millis();
-      log.info("Delegate {} received heartbeat response {} after sending. {} since last response.", delegateId,
-          getDurationString(lastHeartbeatSentAt.get(), now), getDurationString(lastHeartbeatReceivedAt.get(), now));
+      log.info("[Polling]: Delegate {} received heartbeat response {} after sending at {}. {} since last response.",
+          delegateId, getDurationString(lastHeartbeatSentAt.get(), now), now,
+          getDurationString(lastHeartbeatReceivedAt.get(), now));
       lastHeartbeatReceivedAt.set(now);
 
       DelegateHeartbeatResponse receivedDelegateResponse = delegateParamsResponse.getResource();
@@ -2470,6 +2472,24 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
   }
 
+  private void handleEcsDelegateSpecificMessage(DelegateHeartbeatResponseStreaming delegateHeartbeatResponse) {
+    String token = delegateHeartbeatResponse.getDelegateRandomToken();
+    String sequenceNum = delegateHeartbeatResponse.getSequenceNumber();
+
+    // Did not receive correct data, skip updating token and sequence
+    if (isInvalidData(token) || isInvalidData(sequenceNum)) {
+      return;
+    }
+
+    try {
+      FileIo.writeWithExclusiveLockAcrossProcesses(
+          TOKEN + token + SEQ + sequenceNum, DELEGATE_SEQUENCE_CONFIG_FILE, StandardOpenOption.TRUNCATE_EXISTING);
+      log.info("Token Received From Manager : {}, SeqNum Received From Manager: {}", token, sequenceNum);
+    } catch (Exception e) {
+      log.error("Failed to write registration response into delegate_sequence file", e);
+    }
+  }
+
   private boolean isInvalidData(String value) {
     return isBlank(value) || "null".equalsIgnoreCase(value);
   }
@@ -2676,6 +2696,33 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
     } catch (Exception e) {
       log.error("Unable to send response to manager", e);
+    }
+  }
+
+  // TODO: ARPIT remove this after 1-2 months when we have communicated with the customers.
+  private void checkForSSLCertVerification(String accountId) {
+    if (isBlank(MANAGER_PROXY_CURL)) {
+      MANAGER_PROXY_CURL = EMPTY;
+    }
+    if (isBlank(MANAGER_HOST_AND_PORT)) {
+      MANAGER_HOST_AND_PORT = EMPTY;
+    }
+
+    try {
+      String commandToCheckAccountStatus =
+          "curl " + MANAGER_PROXY_CURL + " -s " + MANAGER_HOST_AND_PORT + "/api/account/" + accountId + "/status";
+      log.info("Checking for SSL cert verification with command {}", commandToCheckAccountStatus);
+      ProcessExecutor processExecutor =
+          new ProcessExecutor().timeout(10, TimeUnit.SECONDS).command("/bin/bash", "-c", commandToCheckAccountStatus);
+
+      int exitcode = processExecutor.execute().getExitValue();
+      if (exitcode != 0) {
+        log.error("SSL cert verification command failed with exitCode {}", exitcode);
+      } else {
+        log.info("SSL cert verification successful.");
+      }
+    } catch (Exception e) {
+      log.error("SSL Cert Verification failed with exception ", e);
     }
   }
 }

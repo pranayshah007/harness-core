@@ -13,7 +13,6 @@ import static io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStat
 import static io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType.SERVICE_GUARD_TIME_SERIES;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
-import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
@@ -27,22 +26,19 @@ import io.harness.cvng.DataGenerator;
 import io.harness.cvng.analysis.beans.LogClusterLevel;
 import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.beans.DataSourceType;
-import io.harness.cvng.beans.job.CanaryVerificationJobDTO;
-import io.harness.cvng.beans.job.HealthVerificationJobDTO;
-import io.harness.cvng.beans.job.Sensitivity;
-import io.harness.cvng.beans.job.VerificationJobDTO;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.DeploymentInfo;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
-import io.harness.cvng.statemachine.entities.ActivityVerificationState;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.cvng.statemachine.entities.CanaryTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.entities.DeploymentLogClusterState;
@@ -52,19 +48,17 @@ import io.harness.cvng.statemachine.entities.ServiceGuardTimeSeriesAnalysisState
 import io.harness.cvng.statemachine.entities.TimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
 import io.harness.cvng.statemachine.services.api.AnalysisStateMachineService;
+import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
-import io.harness.cvng.verificationjob.services.api.VerificationJobService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -77,12 +71,13 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
   @Inject AnalysisStateMachineService stateMachineService;
   @Inject private Clock clock;
   @Inject HPersistence hPersistence;
-  @Inject private VerificationJobService verificationJobService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
 
   @Inject private CVConfigService cvConfigService;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
+
+  @Inject private MonitoredServiceService monitoredServiceService;
 
   private final DataGenerator dataGenerator = DataGenerator.builder().accountId(generateUuid()).build();
   private String accountId;
@@ -94,6 +89,7 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
   private TimeSeriesAnalysisState deploymentTimeSeriesAnalysisState;
 
   private BuilderFactory builderFactory;
+  private String monitoredServiceIdentifier;
 
   @Before
   public void setup() throws IllegalAccessException {
@@ -103,6 +99,8 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     accountId = builderFactory.getContext().getAccountId();
     cvConfigId = cvConfig.getUuid();
     verificationTaskId = cvConfigId;
+    monitoredServiceIdentifier = "monitoredServiceIdentifier";
+    createMonitoredService();
     String verificationJobInstanceId =
         verificationJobInstanceService.create(builderFactory.verificationJobInstanceBuilder()
                                                   .resolvedJob(builderFactory.getDeploymentVerificationJob())
@@ -150,7 +148,7 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     List<String> serviceLevelIndicatorIdentifiers =
         serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
             Collections.singletonList(builderFactory.getServiceLevelIndicatorDTOBuilder()), generateUuid(),
-            generateUuid(), generateUuid());
+            monitoredServiceIdentifier, generateUuid());
     ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
         builderFactory.getProjectParams(), serviceLevelIndicatorIdentifiers.get(0));
     String sliId = serviceLevelIndicator.getUuid();
@@ -186,7 +184,7 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
         VerificationJobInstance.builder()
             .deploymentStartTime(Instant.now())
             .startTime(Instant.now().plus(Duration.ofMinutes(2)))
-            .resolvedJob(verificationJobService.fromDto(newCanaryVerificationJobDTO()))
+            .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
             .build();
     verificationJobInstance.setUuid(verificationJobInstanceId);
     hPersistence.save(verificationJobInstance);
@@ -220,7 +218,9 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
         VerificationJobInstance.builder()
             .deploymentStartTime(Instant.now())
             .startTime(Instant.now().plus(Duration.ofMinutes(2)))
-            .resolvedJob(verificationJobService.fromDto(newCanaryVerificationJobDTO()))
+            .resolvedJob(builderFactory.canaryVerificationJobBuilder()
+                             .duration(VerificationJob.RuntimeParameter.builder().value("15m").build())
+                             .build())
             .build();
     verificationJobInstance.setUuid(verificationJobInstanceId);
     hPersistence.save(verificationJobInstance);
@@ -255,7 +255,7 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
         VerificationJobInstance.builder()
             .deploymentStartTime(Instant.now())
             .startTime(Instant.now().plus(Duration.ofMinutes(2)))
-            .resolvedJob(verificationJobService.fromDto(newCanaryVerificationJobDTO()))
+            .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
             .build();
     verificationJobInstance.setUuid(verificationJobInstanceId);
     hPersistence.save(verificationJobInstance);
@@ -268,42 +268,6 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     AnalysisStateMachine stateMachine = stateMachineService.createStateMachine(inputs);
     assertThat(stateMachine).isNotNull();
     assertThat(stateMachine.getCurrentState()).isInstanceOf(DeploymentLogClusterState.class);
-  }
-
-  @Test
-  @Owner(developers = KAMAL)
-  @Category(UnitTests.class)
-  public void testCreateStateMachine_forHealth() {
-    String verificationTaskId = generateUuid();
-    String verificationJobInstanceId = generateUuid();
-    VerificationTask verificationTask = VerificationTask.builder()
-                                            .accountId(accountId)
-                                            .taskInfo(DeploymentInfo.builder()
-                                                          .verificationJobInstanceId(verificationJobInstanceId)
-                                                          .cvConfigId(cvConfigId)
-                                                          .build())
-                                            .build();
-    verificationTask.setUuid(verificationTaskId);
-    hPersistence.save(verificationTask);
-    Instant startTime = Instant.parse("2020-07-27T10:45:00.000Z");
-    Instant endTime = Instant.parse("2020-07-27T10:50:00.000Z");
-    VerificationJobInstance verificationJobInstance =
-        VerificationJobInstance.builder()
-            .deploymentStartTime(startTime.minus(Duration.ofMinutes(2)))
-            .startTime(startTime)
-            .resolvedJob(verificationJobService.fromDto(createHealthVerificationJobDTO()))
-            .build();
-    verificationJobInstance.setUuid(verificationJobInstanceId);
-    hPersistence.save(verificationJobInstance);
-    AnalysisInput inputs =
-        AnalysisInput.builder().verificationTaskId(verificationTaskId).startTime(startTime).endTime(endTime).build();
-
-    AnalysisStateMachine stateMachine = stateMachineService.createStateMachine(inputs);
-    assertThat(stateMachine).isNotNull();
-    ActivityVerificationState healthVerificationState = (ActivityVerificationState) stateMachine.getCurrentState();
-    assertThat(healthVerificationState.getPreActivityVerificationStartTime())
-        .isEqualTo(startTime.minus(Duration.ofMinutes(5)));
-    assertThat(healthVerificationState.getPostActivityVerificationStartTime()).isEqualTo(startTime);
   }
 
   @Test
@@ -553,34 +517,6 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     assertThat(stateMachineFromDB.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
   }
 
-  private VerificationJobDTO newCanaryVerificationJobDTO() {
-    CanaryVerificationJobDTO canaryVerificationJobDTO = new CanaryVerificationJobDTO();
-    canaryVerificationJobDTO.setIdentifier(generateUuid());
-    canaryVerificationJobDTO.setJobName(generateUuid());
-    canaryVerificationJobDTO.setDataSources(Lists.newArrayList(DataSourceType.SPLUNK));
-    canaryVerificationJobDTO.setSensitivity(Sensitivity.MEDIUM.name());
-    canaryVerificationJobDTO.setServiceIdentifier("service");
-    canaryVerificationJobDTO.setOrgIdentifier(generateUuid());
-    canaryVerificationJobDTO.setProjectIdentifier(generateUuid());
-    canaryVerificationJobDTO.setEnvIdentifier("env");
-    canaryVerificationJobDTO.setSensitivity(Sensitivity.MEDIUM.name());
-    canaryVerificationJobDTO.setDuration("15m");
-    return canaryVerificationJobDTO;
-  }
-
-  private VerificationJobDTO createHealthVerificationJobDTO() {
-    HealthVerificationJobDTO healthVerificationJob = new HealthVerificationJobDTO();
-    healthVerificationJob.setIdentifier(generateUuid());
-    healthVerificationJob.setJobName("jobName");
-    healthVerificationJob.setDuration("5m");
-    healthVerificationJob.setServiceIdentifier(generateUuid());
-    healthVerificationJob.setProjectIdentifier(generateUuid());
-    healthVerificationJob.setOrgIdentifier(generateUuid());
-    healthVerificationJob.setEnvIdentifier(generateUuid());
-    healthVerificationJob.setMonitoringSources(Arrays.asList(generateUuid()));
-    return healthVerificationJob;
-  }
-
   @Test
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
@@ -608,5 +544,12 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     Optional<AnalysisStateMachine> ignoredStateMachine =
         stateMachineService.ignoreOldStateMachine(analysisStateMachine);
     assertThat(ignoredStateMachine).isNotPresent();
+  }
+
+  private void createMonitoredService() {
+    MonitoredServiceDTO monitoredServiceDTO =
+        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
+    monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
   }
 }

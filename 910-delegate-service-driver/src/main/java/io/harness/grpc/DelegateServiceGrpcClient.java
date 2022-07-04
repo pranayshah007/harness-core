@@ -47,6 +47,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.DelegateServiceDriverException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.perpetualtask.PerpetualTaskClientContextDetails;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
@@ -57,6 +58,10 @@ import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.SerializationFormat;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
@@ -85,6 +90,7 @@ public class DelegateServiceGrpcClient {
   private final KryoSerializer kryoSerializer;
   private final DelegateSyncService delegateSyncService;
   private final boolean isDriverInstalledInNgService;
+  @Inject private ObjectMapper objectMapper;
 
   @Inject
   public DelegateServiceGrpcClient(DelegateServiceBlockingStub delegateServiceBlockingStub,
@@ -205,6 +211,24 @@ public class DelegateServiceGrpcClient {
         ? ListUtils.emptyIfNull(((ExecutionCapabilityDemander) taskParameters).fetchRequiredExecutionCapabilities(null))
         : Collections.emptyList();
 
+    TaskDetails.Builder taskDetailsBuilder =
+        TaskDetails.newBuilder()
+            .setParked(taskRequest.isParked())
+            .setMode(taskMode)
+            .setExpressionFunctorToken(taskRequest.getExpressionFunctorToken())
+            .setType(TaskType.newBuilder().setType(taskRequest.getTaskType()).build())
+            .setExecutionTimeout(Durations.fromSeconds(taskRequest.getExecutionTimeout().getSeconds()));
+
+    if (taskRequest.getSerializationFormat().equals(SerializationFormat.JSON)) {
+      try {
+        taskDetailsBuilder.setJsonParameters(ByteString.copyFrom(objectMapper.writeValueAsBytes(taskParameters)));
+      } catch (JsonProcessingException e) {
+        throw new InvalidRequestException("Could not serialize the task request", e);
+      }
+    } else {
+      taskDetailsBuilder.setKryoParameters(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(taskParameters)));
+    }
+
     return submitTask(delegateCallbackToken, AccountId.newBuilder().setId(taskRequest.getAccountId()).build(),
         TaskSetupAbstractions.newBuilder()
             .putAllValues(MapUtils.emptyIfNull(taskRequest.getTaskSetupAbstractions()))
@@ -212,15 +236,8 @@ public class DelegateServiceGrpcClient {
         TaskLogAbstractions.newBuilder()
             .putAllValues(MapUtils.emptyIfNull(taskRequest.getLogStreamingAbstractions()))
             .build(),
-        TaskDetails.newBuilder()
-            .setParked(taskRequest.isParked())
-            .setMode(taskMode)
-            .setExpressionFunctorToken(taskRequest.getExpressionFunctorToken())
-            .setType(TaskType.newBuilder().setType(taskRequest.getTaskType()).build())
-            .setKryoParameters(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(taskParameters)))
-            .setExecutionTimeout(Durations.fromSeconds(taskRequest.getExecutionTimeout().getSeconds()))
-            .build(),
-        capabilities, taskRequest.getTaskSelectors(), holdFor, taskRequest.isForceExecute());
+        taskDetailsBuilder.build(), capabilities, taskRequest.getTaskSelectors(), holdFor,
+        taskRequest.isForceExecute());
   }
 
   public TaskExecutionStage cancelTask(AccountId accountId, TaskId taskId) {

@@ -12,12 +12,15 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.plancreator.strategy.StageStrategyUtils;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
+import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -37,6 +40,13 @@ public abstract class AbstractStepPlanCreator<T extends AbstractStepNode> implem
       return Collections.emptyMap();
     }
     return Collections.singletonMap(STEP, stepTypes);
+  }
+
+  protected void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, AbstractStepNode field,
+      Map<String, YamlField> dependenciesNodeMap, Map<String, ByteString> metadataMap) {
+    StageStrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getIdentifier(),
+        field.getName(), dependenciesNodeMap, metadataMap,
+        StageStrategyUtils.getAdviserObtainmentFromMetaDataForStep(kryoSerializer, ctx.getCurrentField()));
   }
 
   @Override public abstract PlanCreationResponse createPlanForField(PlanCreationContext ctx, T stepElement);

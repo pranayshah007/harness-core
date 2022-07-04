@@ -10,6 +10,7 @@ package io.harness.delegate.task.artifacts.response;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.jenkins.JenkinsBuildTaskNGResponse;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.JobDetails;
@@ -30,4 +31,5 @@ public class ArtifactTaskExecutionResponse {
   List<BuildDetails> buildDetails;
   List<JobDetails> jobDetails;
   List<String> artifactPath;
+  JenkinsBuildTaskNGResponse jenkinsBuildTaskNGResponse;
 }

@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessModule._955_ACCOUNT_MGMT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.AUTO_ACCEPT_SAML_ACCOUNT_INVITES;
 import static io.harness.beans.FeatureName.CG_LICENSE_USAGE;
-import static io.harness.beans.FeatureName.DELEGATE_VERSION_FROM_RING;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -979,16 +978,14 @@ public class AccountServiceImpl implements AccountService {
     if (licenseService.isAccountDeleted(accountId)) {
       throw new InvalidRequestException("Deleted AccountId: " + accountId);
     }
-    if (featureFlagService.isEnabled(DELEGATE_VERSION_FROM_RING, accountId)) {
-      log.info("Getting delegate configuration from Delegate ring");
+    log.info("Getting delegate configuration from Delegate ring");
 
-      // Prefer using delegateConfiguration from DelegateRing.
-      List<String> delegateVersionFromRing = delegateVersionService.getDelegateJarVersions(accountId);
-      if (isNotEmpty(delegateVersionFromRing)) {
-        return DelegateConfiguration.builder().delegateVersions(new ArrayList<>(delegateVersionFromRing)).build();
-      }
-      log.warn("Unable to get Delegate version from ring, falling back to regular flow");
+    // Prefer using delegateConfiguration from DelegateRing.
+    List<String> delegateVersionFromRing = delegateVersionService.getDelegateJarVersions(accountId);
+    if (isNotEmpty(delegateVersionFromRing)) {
+      return DelegateConfiguration.builder().delegateVersions(new ArrayList<>(delegateVersionFromRing)).build();
     }
+    log.warn("Unable to get Delegate version from ring, falling back to regular flow");
 
     // Try to pickup delegateConfiguration from Account collection.
     Account account = wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
@@ -1092,6 +1089,10 @@ public class AccountServiceImpl implements AccountService {
     }
     if (enabled.contains("NEXT_GEN_ENABLED")) {
       updateNextGenEnabled(onPremAccount.get().getUuid(), true);
+    }
+
+    if (enabled.contains("ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM")) {
+      setDefaultExperience(onPremAccount.get().getUuid(), DefaultExperience.NG);
     }
   }
 
@@ -2047,8 +2048,8 @@ public class AccountServiceImpl implements AccountService {
     UpdateOperations<Account> updateOperations = persistence.createUpdateOperations(Account.class);
 
     updateOperations.set(AccountKeys.accountActivelyUsed, accountActivelyUsed);
-    UpdateResults updateResults = persistence.update(
-            persistence.createQuery(Account.class).filter(Mapper.ID_KEY, accountId), updateOperations);
+    UpdateResults updateResults =
+        persistence.update(persistence.createQuery(Account.class).filter(Mapper.ID_KEY, accountId), updateOperations);
 
     if (updateResults != null && updateResults.getUpdatedCount() > 0) {
       log.info("Successfully set accountActivelyUsed to {} for accountId = {} ", accountActivelyUsed, accountId);
@@ -2057,7 +2058,6 @@ public class AccountServiceImpl implements AccountService {
 
     log.info("Failed to set accountActivelyUsed to {} for accountId = {} ", accountActivelyUsed, accountId);
     return false;
-
   }
 
   @Override

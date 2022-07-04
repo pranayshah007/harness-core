@@ -39,6 +39,7 @@ public interface EntityTypeConstants {
   String TRIGGERS = "Triggers";
   String MONITORED_SERVICE = "MonitoredService";
   String TEMPLATE = "Template";
+  String TEMPLATE_STAGE = "TemplateStage";
   String GIT_REPOSITORIES = "GitRepositories";
   String FEATURE_FLAGS = "FeatureFlags";
   String HTTP = "Http";
@@ -80,6 +81,7 @@ public interface EntityTypeConstants {
   String SERVICENOW_APPROVAL = "ServiceNowApproval";
   String JIRA_APPROVAL = "JiraApproval";
   String HARNESS_APPROVAL = "HarnessApproval";
+  String CUSTOM_APPROVAL = "CustomApproval";
   String BARRIER = "Barrier";
   String Verify = "Verify";
   String FlagConfiguration = "FlagConfiguration";
@@ -101,4 +103,6 @@ public interface EntityTypeConstants {
   String AZURE_TRAFFIC_SHIFT = "AzureTrafficShift";
   String AZURE_SWAP_SLOT = "AzureSwapSlot";
   String AZURE_WEBAPP_ROLLBACK = "AzureWebAppRollback";
+  String QUEUE = "Queue";
+  String JENKINS_BUILD = "JenkinsBuild";
 }

@@ -20,14 +20,24 @@ import io.harness.beans.Repository;
 import io.harness.beans.WebhookBaseAttributes;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitUrlType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.entity.metadata.GitMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.NGTriggerMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
+import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
+import io.harness.ngtriggers.beans.source.NGTriggerType;
+import io.harness.ngtriggers.beans.source.WebhookTriggerType;
+import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
+import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.AzureRepoSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.event.AzureRepoPushSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.event.AzureRepoTriggerEvent;
 
 import lombok.experimental.UtilityClass;
 
@@ -48,6 +58,13 @@ public class NgTriggersTestHelper {
                                            .build())
                               .build())
                 .build())
+        .ngTriggerConfigV2(
+            NGTriggerConfigV2.builder()
+                .source(NGTriggerSourceV2.builder()
+                            .type(NGTriggerType.WEBHOOK)
+                            .spec(WebhookTriggerConfigV2.builder().type(WebhookTriggerType.AWS_CODECOMMIT).build())
+                            .build())
+                .build())
         .build();
   }
   public TriggerDetails getAwsRegionTriggerDetails() {
@@ -66,6 +83,13 @@ public class NgTriggersTestHelper {
                                 .build())
                         .build())
                 .build())
+        .ngTriggerConfigV2(
+            NGTriggerConfigV2.builder()
+                .source(NGTriggerSourceV2.builder()
+                            .type(NGTriggerType.WEBHOOK)
+                            .spec(WebhookTriggerConfigV2.builder().type(WebhookTriggerType.AWS_CODECOMMIT).build())
+                            .build())
+                .build())
         .build();
   }
 
@@ -82,6 +106,13 @@ public class NgTriggersTestHelper {
                                            .git(GitMetadata.builder().connectorIdentifier("conRepo2").build())
                                            .build())
                               .build())
+                .build())
+        .ngTriggerConfigV2(
+            NGTriggerConfigV2.builder()
+                .source(NGTriggerSourceV2.builder()
+                            .type(NGTriggerType.WEBHOOK)
+                            .spec(WebhookTriggerConfigV2.builder().type(WebhookTriggerType.GITHUB).build())
+                            .build())
                 .build())
         .build();
   }
@@ -177,6 +208,65 @@ public class NgTriggersTestHelper {
         .projectIdentifier("proj")
         .sourceRepoType("AWS_CODECOMMIT")
         .createdAt(1L)
+        .build();
+  }
+
+  public TriggerDetails getAzureRepoTriggerDetails() {
+    return TriggerDetails.builder()
+        .ngTriggerEntity(
+            NGTriggerEntity.builder()
+                .accountId("acc")
+                .orgIdentifier("org")
+                .projectIdentifier("proj")
+                .metadata(
+                    NGTriggerMetadata.builder()
+                        .webhook(WebhookMetadata.builder()
+                                     .type("AZURE_REPO")
+                                     .git(GitMetadata.builder().repoName("test").connectorIdentifier("conRepo").build())
+                                     .build())
+                        .build())
+                .build())
+        .ngTriggerConfigV2(
+            NGTriggerConfigV2.builder()
+                .source(NGTriggerSourceV2.builder()
+                            .type(NGTriggerType.WEBHOOK)
+                            .spec(WebhookTriggerConfigV2.builder()
+                                      .type(WebhookTriggerType.AZURE)
+                                      .spec(AzureRepoSpec.builder()
+                                                .type(AzureRepoTriggerEvent.PUSH)
+                                                .spec(AzureRepoPushSpec.builder().projectName("test").build())
+                                                .build())
+                                      .build())
+                            .build())
+                .build())
+        .build();
+  }
+
+  public ConnectorResponseDTO getAzureRepoAccountConnectorResponsesDTO() {
+    return ConnectorResponseDTO.builder()
+        .connector(ConnectorInfoDTO.builder()
+                       .connectorConfig(AzureRepoConnectorDTO.builder()
+                                            .connectionType(GitConnectionType.ACCOUNT)
+                                            .url("https://dev.azure.com/org/")
+                                            .build())
+                       .orgIdentifier("org")
+                       .projectIdentifier("proj")
+                       .identifier("conRepo")
+                       .build())
+        .build();
+  }
+
+  public ConnectorResponseDTO getAzureRepoSSHAccountConnectorResponsesDTO() {
+    return ConnectorResponseDTO.builder()
+        .connector(ConnectorInfoDTO.builder()
+                       .connectorConfig(AzureRepoConnectorDTO.builder()
+                                            .connectionType(GitConnectionType.ACCOUNT)
+                                            .url("git@ssh.dev.azure.com:v3/org/")
+                                            .build())
+                       .orgIdentifier("org")
+                       .projectIdentifier("proj")
+                       .identifier("conRepo")
+                       .build())
         .build();
   }
 }

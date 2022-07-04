@@ -20,8 +20,16 @@ public class DelegateTaskRegistrars {
       ImmutableSet.<Class<? extends KryoRegistrar>>builder()
           .add(DelegateTasksKryoRegistrar.class)
           .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
+          .addAll(ApiServicesRegistrars.kryoRegistrars)
+          .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
+          .addAll(DelegateTasksBeansRegistrars.kryoRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
-      ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().add(DelegateTasksMorphiaRegistrar.class).build();
+      ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
+          .add(DelegateTasksMorphiaRegistrar.class)
+          .addAll(ApiServicesRegistrars.morphiaRegistrars)
+          .addAll(DelegateTasksBeansRegistrars.morphiaRegistrars)
+          .addAll(FeatureFlagBeansRegistrars.morphiaRegistrars)
+          .build();
 }

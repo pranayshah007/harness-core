@@ -84,6 +84,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject private TemplateReferenceHelper templateReferenceHelper;
   @Inject private AccountClient accountClient;
 
+  @Inject private NGTemplateSchemaService ngTemplateSchemaService;
+
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
 
@@ -91,6 +93,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   public TemplateEntity create(TemplateEntity templateEntity, boolean setStableTemplate, String comments) {
     enforcementClientService.checkAvailability(
         FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
+
+    ngTemplateSchemaService.validateYamlSchemaInternal(templateEntity);
 
     NGTemplateServiceHelper.validatePresenceOfRequiredFields(
         templateEntity.getAccountId(), templateEntity.getIdentifier(), templateEntity.getVersionLabel());
@@ -107,7 +111,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
     try {
       // populate template references
-      //      templateReferenceHelper.populateTemplateReferences(templateEntity);
+      templateReferenceHelper.populateTemplateReferences(templateEntity);
 
       // Check if this is template identifier first entry, for marking it as stable template.
       boolean firstVersionEntry =
@@ -171,8 +175,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       TemplateEntity templateEntity, ChangeType changeType, boolean setDefaultTemplate, String comments) {
     enforcementClientService.checkAvailability(
         FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
+    ngTemplateSchemaService.validateYamlSchemaInternal(templateEntity);
     // update template references
-    //    templateReferenceHelper.populateTemplateReferences(templateEntity);
+    templateReferenceHelper.populateTemplateReferences(templateEntity);
     return transactionHelper.performTransaction(() -> {
       makePreviousLastUpdatedTemplateFalse(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
           templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(), templateEntity.getVersionLabel());
@@ -326,8 +331,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     if (stableTemplate != null && stableTemplate.getVersionLabel().equals(deleteVersionLabel)
         && templateEntities.size() != 1) {
       throw new InvalidRequestException(
-          format("Template with identifier [%s] and versionLabel [%s] %s cannot delete the stable template.",
-              templateIdentifier, deleteVersionLabel, getMessageHelper(accountId, orgIdentifier, projectIdentifier)));
+          "You cannot delete the stable version of the template. Please update another version as the stable version before deleting this version");
     }
     return deleteMultipleTemplatesHelper(accountId, orgIdentifier, projectIdentifier,
         Collections.singletonList(templateToDelete), version, comments, templateEntities.size() == 1, stableTemplate);
@@ -353,9 +357,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     if (stableTemplate != null && deleteTemplateVersions.contains(stableTemplate.getVersionLabel())
         && !canDeleteStableTemplate) {
       throw new InvalidRequestException(
-          format("Template with identifier [%s] and versionLabel [%s] %s cannot delete the stable template.",
-              templateIdentifier, stableTemplate.getVersionLabel(),
-              getMessageHelper(accountId, orgIdentifier, projectIdentifier)));
+          "You cannot delete the stable version of the template. Please update another version as the stable version before deleting this version");
     }
     return deleteMultipleTemplatesHelper(accountId, orgIdentifier, projectIdentifier, templateToDeleteList, null,
         comments, canDeleteStableTemplate, stableTemplate);
@@ -382,7 +384,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
                format("Deleting template with identifier [%s] and versionLabel [%s].", templateEntity.getIdentifier(),
                    templateEntity.getVersionLabel()))) {
         // delete template references
-        //        templateReferenceHelper.deleteTemplateReferences(templateEntity);
+        templateReferenceHelper.deleteTemplateReferences(templateEntity);
         deleteSingleTemplateHelper(accountId, orgIdentifier, projectIdentifier, templateEntity.getIdentifier(),
             templateEntity, version, canDeleteStableTemplate, comments);
       }
@@ -521,8 +523,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
               StringValueUtils.getStringFromStringValue(templateRef.getIdentifier()),
               StringValueUtils.getStringFromStringValue(templateRef.getVersionLabel()));
 
-      //      unSyncedTemplate.ifPresent(templateEntity ->
-      //      templateReferenceHelper.populateTemplateReferences(templateEntity));
+      unSyncedTemplate.ifPresent(templateEntity -> templateReferenceHelper.populateTemplateReferences(templateEntity));
       return makeTemplateUpdateCall(unSyncedTemplate.get(), unSyncedTemplate.get(), ChangeType.ADD, "",
           TemplateUpdateEventType.OTHERS_EVENT, true);
     } catch (DuplicateKeyException ex) {

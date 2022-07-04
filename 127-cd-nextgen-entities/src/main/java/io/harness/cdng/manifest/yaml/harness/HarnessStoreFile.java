@@ -8,31 +8,39 @@
 package io.harness.cdng.manifest.yaml.harness;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.visitor.helpers.file.FileEntityVisitorHelper;
+import io.harness.encryption.Scope;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.walktree.beans.VisitableChildren;
+import io.harness.walktree.visitor.SimpleVisitorHelper;
+import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.experimental.Wither;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(CDP)
 @Data
 @Builder
+@SimpleVisitorHelper(helperClass = FileEntityVisitorHelper.class)
 @RecasterAlias("io.harness.cdng.manifest.yaml.harness.HarnessStoreFile")
-public class HarnessStoreFile {
-  @NotNull
-  @NotEmpty
-  @Wither
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @JsonProperty("ref")
-  private ParameterField<String> ref;
+public class HarnessStoreFile implements Visitable {
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private String uuid;
 
   @NotNull
   @NotEmpty
@@ -42,8 +50,18 @@ public class HarnessStoreFile {
   private ParameterField<String> path;
 
   @NotNull
+  @NotEmpty
   @Wither
-  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
-  @JsonProperty("isEncrypted")
-  private ParameterField<Boolean> isEncrypted;
+  @YamlSchemaTypes(value = {runtime})
+  @ApiModelProperty(dataType = "io.harness.encryption.Scope")
+  @JsonProperty("scope")
+  private ParameterField<Scope> scope;
+
+  // For Visitor Framework Impl
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
+
+  @Override
+  public VisitableChildren getChildrenToWalk() {
+    return VisitableChildren.builder().build();
+  }
 }

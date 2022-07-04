@@ -30,6 +30,7 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.execution.facilitator.DefaultFacilitatorParams;
 import io.harness.pms.expression.PmsEngineExpressionService;
 import io.harness.pms.sdk.core.execution.events.node.facilitate.FacilitatorResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.resourcerestraint.beans.AcquireMode;
@@ -51,7 +52,8 @@ import org.mockito.Mock;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ResourceRestraintFacilitatorTest extends OrchestrationStepsTestBase {
   private static final String RESOURCE_RESTRAINT_ID = generateUuid();
-  private static final String RESOURCE_UNIT = generateUuid();
+  private static final ParameterField<String> RESOURCE_UNIT =
+      ParameterField.<String>builder().value(generateUuid()).build();
 
   @Inject private KryoSerializer kryoSerializer;
   @Mock private ResourceRestraintInstanceService resourceRestraintInstanceService;
@@ -77,7 +79,7 @@ public class ResourceRestraintFacilitatorTest extends OrchestrationStepsTestBase
                  .build())
         .when(resourceRestraintInstanceService)
         .createAbstraction(any());
-    when(pmsEngineExpressionService.renderExpression(any(), any())).thenReturn(RESOURCE_UNIT);
+    when(pmsEngineExpressionService.renderExpression(any(), any())).thenReturn(RESOURCE_UNIT.getValue());
   }
 
   @Test
@@ -139,7 +141,7 @@ public class ResourceRestraintFacilitatorTest extends OrchestrationStepsTestBase
     doReturn(Collections.emptyList())
         .when(resourceRestraintInstanceService)
         .getAllByRestraintIdAndResourceUnitAndStates(any(), any(), any());
-    doReturn(0).when(resourceRestraintInstanceService).getAllCurrentlyAcquiredPermits(any(), any());
+    doReturn(0).when(resourceRestraintInstanceService).getAllCurrentlyAcquiredPermits(any(), any(), any());
     FacilitatorResponse response =
         resourceRestraintFacilitator.facilitate(ambiance, stepElementParameters, parameters, null);
     assertThat(response).isNotNull();

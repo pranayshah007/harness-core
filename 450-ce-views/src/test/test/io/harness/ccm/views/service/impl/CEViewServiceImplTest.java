@@ -76,6 +76,7 @@ public class CEViewServiceImplTest extends CategoryTest {
   public void testSave() {
     doReturn(true).when(ceViewDao).save(any());
     doReturn(ceViewFolder()).when(ceViewFolderDao).getDefaultFolder(any());
+    doReturn(ceViewFolder()).when(ceViewFolderDao).getSampleFolder(any());
     CEView ceView = ceViewService.save(ceView(), false);
     assertThat(ceView.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(ceView.getName()).isEqualTo(VIEW_NAME);

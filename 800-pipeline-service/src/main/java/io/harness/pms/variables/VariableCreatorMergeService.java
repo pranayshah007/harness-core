@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -155,6 +156,9 @@ public class VariableCreatorMergeService {
     // TODO(archit): delete variables v1 api and this newVersion flag
     metadataBuilder.putMetadata("newVersion", "newVersion");
 
+    metadataBuilder.putMetadata(NGCommonEntityConstants.ACCOUNT_KEY, accountId);
+    metadataBuilder.putMetadata(NGCommonEntityConstants.ORG_KEY, orgIdentifier);
+    metadataBuilder.putMetadata(NGCommonEntityConstants.PROJECT_KEY, projectIdentifier);
     VariablesCreationBlobResponse response =
         createVariablesForDependenciesRecursive(services, dependencies, metadataBuilder.build());
 

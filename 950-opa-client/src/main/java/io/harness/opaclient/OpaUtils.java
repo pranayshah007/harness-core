@@ -30,6 +30,9 @@ public class OpaUtils {
     if (EmptyPredicate.isEmpty(key)) {
       return map;
     } else {
+      if (!map.containsKey(key)) {
+        return map;
+      }
       return map.get(key);
     }
   }

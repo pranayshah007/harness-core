@@ -20,6 +20,7 @@ import io.harness.cdng.gitops.CreatePRStepNode;
 import io.harness.cdng.gitops.MergePRStepNode;
 import io.harness.cdng.helm.HelmDeployStepNode;
 import io.harness.cdng.helm.HelmRollbackStepNode;
+import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepNode;
 import io.harness.cdng.k8s.K8sApplyStepNode;
 import io.harness.cdng.k8s.K8sBGSwapServicesStepNode;
 import io.harness.cdng.k8s.K8sBlueGreenStepNode;
@@ -67,8 +68,7 @@ public class CDNGRegistrars {
           .addAll(DelegateServiceDriverRegistrars.kryoRegistrars)
           .addAll(ConnectorNextGenRegistrars.kryoRegistrars)
           .addAll(GitOpsRegistrars.kryoRegistrars)
-          .addAll(io.harness.serializer.YamlBeansModuleRegistrars.kryoRegistrars)
-          .addAll(io.harness.serializer.OrchestrationStepsModuleRegistrars.kryoRegistrars)
+          .addAll(YamlBeansModuleRegistrars.kryoRegistrars)
           .addAll(CDNGEntityRegistrars.kryoRegistrars)
           .add(NGKryoRegistrar.class)
           .add(PollingKryoRegistrar.class)
@@ -86,8 +86,7 @@ public class CDNGRegistrars {
           .addAll(GitOpsRegistrars.morphiaRegistrars)
           .add(NGMorphiaRegistrar.class)
           .addAll(ConnectorBeansRegistrars.morphiaRegistrars)
-          .addAll(io.harness.serializer.YamlBeansModuleRegistrars.morphiaRegistrars)
-          .addAll(io.harness.serializer.OrchestrationStepsModuleRegistrars.morphiaRegistrars)
+          .addAll(YamlBeansModuleRegistrars.morphiaRegistrars)
           .addAll(CDNGEntityRegistrars.morphiaRegistrars)
           .addAll(InstanceRegistrars.morphiaRegistrars)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
@@ -437,6 +436,18 @@ public class CDNGRegistrars {
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.JENKINS_BUILD)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(JenkinsBuildStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())

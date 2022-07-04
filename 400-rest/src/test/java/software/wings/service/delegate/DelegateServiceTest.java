@@ -340,8 +340,10 @@ public class DelegateServiceTest extends WingsBaseTest {
     when(mainConfiguration.getCdnConfig()).thenReturn(cdnConfig);
     HashMap<String, JreConfig> jreConfigMap = new HashMap<>();
     jreConfigMap.put("openjdk8u242", getOpenjdkJreConfig());
+    jreConfigMap.put("openjdk11014_9", getOpenjdk11JreConfig());
     when(mainConfiguration.getCurrentJre()).thenReturn("openjdk8u242");
     when(mainConfiguration.getJreConfigs()).thenReturn(jreConfigMap);
+    when(mainConfiguration.getMigrateToJre()).thenReturn("openjdk11014_9");
     when(subdomainUrlHelper.getWatcherMetadataUrl(any(), any(), any()))
         .thenReturn("http://localhost:" + port + "/watcherci.txt");
     FileUploadLimit fileUploadLimit = new FileUploadLimit();
@@ -3741,7 +3743,7 @@ public class DelegateServiceTest extends WingsBaseTest {
   public void shouldGenerateNgHelmValuesYamlFile() throws IOException {
     when(accountService.get(ACCOUNT_ID))
         .thenReturn(anAccount().withAccountKey("ACCOUNT_KEY").withUuid(ACCOUNT_ID).build());
-    when(delegateVersionService.getDelegateImageTag(ACCOUNT_ID, HELM_DELEGATE)).thenReturn(DELEGATE_IMAGE_TAG);
+    when(delegateVersionService.getDelegateImageTagForNgHelmDelegates(ACCOUNT_ID)).thenReturn(DELEGATE_IMAGE_TAG);
     when(delegateVersionService.getUpgraderImageTag(ACCOUNT_ID, HELM_DELEGATE)).thenReturn(UPGRADER_IMAGE_TAG);
     DelegateSetupDetails setupDetails =
         DelegateSetupDetails.builder()
@@ -3749,7 +3751,7 @@ public class DelegateServiceTest extends WingsBaseTest {
             .name("harness-delegate")
             .identifier("_delegateGroupId1")
             .size(DelegateSize.LAPTOP)
-            .delegateType(DelegateType.KUBERNETES)
+            .delegateType(HELM_DELEGATE)
             .k8sConfigDetails(K8sConfigDetails.builder().k8sPermissionType(CLUSTER_ADMIN).build())
             .tokenName(TOKEN_NAME)
             .build();
@@ -4255,6 +4257,15 @@ public class DelegateServiceTest extends WingsBaseTest {
         .jreMacDirectory("jdk8u242-b08-jre")
         .jreTarPath("jre/openjdk-8u242/jre_x64_${OS}_8u242b08.tar.gz")
         .alpnJarPath("tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar")
+        .build();
+  }
+
+  public static JreConfig getOpenjdk11JreConfig() {
+    return JreConfig.builder()
+        .version("11.0.14")
+        .jreDirectory("jdk-11.0.14+9-jre")
+        .jreMacDirectory("jdk-11.0.14+9-jre")
+        .jreTarPath("jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.14_9.tar.gz")
         .build();
   }
 

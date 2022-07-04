@@ -136,8 +136,9 @@ public class ServicePlanCreatorHelper {
     }
 
     try {
-      if (EmptyPredicate.isNotEmpty(serviceYamlV2.getServiceInputs())) {
-        serviceYaml = mergeServiceInputsIntoService(serviceYaml, serviceYamlV2.getServiceInputs());
+      if (serviceYamlV2.getServiceInputs() != null
+          && EmptyPredicate.isNotEmpty(serviceYamlV2.getServiceInputs().getValue())) {
+        serviceYaml = mergeServiceInputsIntoService(serviceYaml, serviceYamlV2.getServiceInputs().getValue());
       }
       YamlField yamlField = YamlUtils.injectUuidInYamlField(serviceYaml);
       if (yamlField.getNode().getField(YamlTypes.SERVICE_ENTITY).getNode().getField(YamlTypes.SERVICE_DEFINITION)

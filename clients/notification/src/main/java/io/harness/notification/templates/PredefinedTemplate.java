@@ -56,7 +56,9 @@ public enum PredefinedTemplate {
   CVNG_MONITOREDSERVICE_PAGERDUTY(
       "cvng_notification_templates/cvng_monitoredservice_pagerduty.txt", "cvng_monitoredservice_pagerduty"),
   CVNG_MONITOREDSERVICE_MSTEAMS(
-      "cvng_notification_templates/cvng_monitoredservice_msteams.txt", "cvng_monitoredservice_msteams");
+      "cvng_notification_templates/cvng_monitoredservice_msteams.txt", "cvng_monitoredservice_msteams"),
+  EMAIL_CCM_ANOMALY_ALERT("templates/email_ccm_anomaly_alert.txt", "email_ccm_anomaly_alert"),
+  SLACK_CCM_ANOMALY_ALERT("templates/slack_ccm_anomaly_alert.txt", "slack_ccm_anomaly_alert");
 
   private String path;
   private String identifier;

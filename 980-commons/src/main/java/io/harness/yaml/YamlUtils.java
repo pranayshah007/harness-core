@@ -7,10 +7,10 @@
 
 package io.harness.yaml;
 
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.DumperOptions;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import lombok.extern.slf4j.Slf4j;
+import org.yaml.snakeyaml.DumperOptions;
 
 @Slf4j
 public class YamlUtils {
@@ -70,6 +70,7 @@ public class YamlUtils {
     dumpOpts.setPrettyFlow(false); // keeps the empty square brackets together
     dumpOpts.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
     dumpOpts.setDefaultScalarStyle(DumperOptions.ScalarStyle.PLAIN);
+    dumpOpts.setSplitLines(false);
     dumpOpts.setIndent(2);
 
     return dumpOpts;

@@ -12,6 +12,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.azure.model.AzureConfig;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.task.azure.appservice.AzureAppServiceResourceUtilities;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskResponse;
 import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
@@ -32,6 +33,7 @@ public abstract class AbstractAzureWebAppTaskHandler extends AbstractAzureAppSer
   @Inject protected AzureAppServiceDeploymentService azureAppServiceDeploymentService;
   @Inject protected AzureAppServiceService azureAppServiceService;
   @Inject protected AzureLogCallbackProviderFactory logCallbackProviderFactory;
+  @Inject protected AzureAppServiceResourceUtilities azureAppServiceResourceUtilities;
   @Inject private ArtifactDownloaderServiceLogWrapper artifactDownloaderServiceLogWrapper;
 
   protected AzureWebClientContext buildAzureWebClientContext(

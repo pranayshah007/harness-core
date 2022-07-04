@@ -50,6 +50,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -369,5 +370,11 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   public ConnectorResponseDTO updateGitFilePath(
       ConnectorDTO connectorDTO, String accountIdentifier, String newFilePath) {
     return defaultConnectorService.updateGitFilePath(connectorDTO, accountIdentifier, newFilePath);
+  }
+
+  @Override
+  public List<Map<String, String>> getAttributes(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiers) {
+    return defaultConnectorService.getAttributes(accountId, orgIdentifier, projectIdentifier, connectorIdentifiers);
   }
 }

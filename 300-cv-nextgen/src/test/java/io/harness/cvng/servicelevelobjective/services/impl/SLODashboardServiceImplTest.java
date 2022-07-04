@@ -90,7 +90,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
-  public void testGetSloDashboardWidgets_withSLOs() {
+  public void testGetSloDashboardWidgets_withNoData() {
     String monitoredServiceIdentifier = "monitoredServiceIdentifier";
     MonitoredServiceDTO monitoredServiceDTO =
         builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
@@ -128,7 +128,8 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloDashboardWidget.getSloTargetPercentage()).isCloseTo(80, offset(.0001));
     assertThat(sloDashboardWidget.getErrorBudgetRemainingPercentage()).isCloseTo(100, offset(0.0001));
     assertThat(sloDashboardWidget.getErrorBudgetRisk()).isEqualTo(ErrorBudgetRisk.HEALTHY);
-    assertThat(sloDashboardWidget.isRecalculatingSLI()).isFalse();
+    assertThat(sloDashboardWidget.isRecalculatingSLI()).isTrue();
+    assertThat(sloDashboardWidget.isCalculatingSLI()).isTrue();
     assertThat(sloDashboardWidget.getTimeRemainingDays()).isEqualTo(0);
     assertThat(sloDashboardWidget.getServiceIdentifier()).isEqualTo(monitoredServiceDTO.getServiceRef());
     assertThat(sloDashboardWidget.getEnvironmentIdentifier()).isEqualTo(monitoredServiceDTO.getEnvironmentRef());

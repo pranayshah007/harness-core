@@ -10,19 +10,19 @@ package io.harness.ci.serializer.vm;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
+import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.buildstate.PluginSettingUtils;
+import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.utils.CIStepInfoUtils;
+import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
-import io.harness.execution.CIExecutionConfigService;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.stateutils.buildstate.ConnectorUtils;
-import io.harness.stateutils.buildstate.PluginSettingUtils;
-import io.harness.steps.CIStepInfoUtils;
-import io.harness.util.HarnessImageUtils;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.timeout.Timeout;
 
@@ -44,8 +44,8 @@ public class VmPluginCompatibleStepSerializer {
         PluginSettingUtils.getPluginCompatibleEnvVariables(pluginCompatibleStep, identifier, timeout, Type.VM);
     String image = CIStepInfoUtils.getPluginCustomStepImage(
         pluginCompatibleStep, ciExecutionConfigService, Type.VM, AmbianceUtils.getAccountId(ambiance));
-
     String connectorRef = PluginSettingUtils.getConnectorRef(pluginCompatibleStep);
+
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     Map<EnvVariableEnum, String> connectorSecretEnvMap =
         PluginSettingUtils.getConnectorSecretEnvMap(pluginCompatibleStep.getNonYamlInfo().getStepInfoType());

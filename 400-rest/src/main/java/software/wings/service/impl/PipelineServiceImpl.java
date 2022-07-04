@@ -2103,6 +2103,10 @@ public class PipelineServiceImpl implements PipelineService {
           }
         });
       } else {
+        if (stageElement.getRuntimeInputsConfig() != null) {
+          List<String> userGroupIds = stageElement.getRuntimeInputsConfig().getUserGroupIds();
+          userGroups.addAll(userGroupIds);
+        }
         String workflowId = (String) stageElement.getProperties().get("workflowId");
         Workflow workflow = getWorkflow(pipeline, workflowCache, workflowId);
         workflowCache.put(workflowId, workflow);

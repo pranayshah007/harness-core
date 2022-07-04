@@ -81,7 +81,9 @@ public enum ExecutionInterruptType {
 
   CONTINUE_WITH_DEFAULTS("Run the same execution Instance with default values"),
 
-  CONTINUE_PIPELINE_STAGE("Run the env state with runtime values");
+  CONTINUE_PIPELINE_STAGE("Run the env state with runtime values"),
+  ROLLBACK_ON_APPROVAL("Rollback on approval"),
+  ROLLBACK_PROVISIONER_AFTER_PHASES_ON_APPROVAL("Rollback Provisioner after Phases on approval");
 
   private String description;
 

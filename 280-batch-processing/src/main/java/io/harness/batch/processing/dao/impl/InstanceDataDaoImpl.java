@@ -263,13 +263,12 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
       String accountId, Instant startTime, Instant endTime, List<InstanceType> instanceTypes) {
     return hPersistence.createQuery(InstanceData.class, excludeCount)
         .filter(InstanceDataKeys.accountId, accountId)
-        .field(InstanceDataKeys.instanceType)
-        .in(instanceTypes)
         .field(InstanceDataKeys.activeInstanceIterator)
         .greaterThanOrEq(startTime)
         .field(InstanceDataKeys.usageStartTime)
         .lessThanOrEq(endTime)
-        .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.instanceType + ","
-            + InstanceDataKeys.activeInstanceIterator);
+        .field(InstanceDataKeys.instanceType)
+        .in(instanceTypes)
+        .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.activeInstanceIterator);
   }
 }

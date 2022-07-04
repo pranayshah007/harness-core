@@ -32,6 +32,9 @@
       "type": "string",
       "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
     },
+    "strategy": {
+      "$ref": "#/definitions/StrategyConfig"
+    },
     "tags": {
       "type": "object",
       "additionalProperties": {
@@ -100,237 +103,6 @@
               "enum": [
                 "Abort"
               ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "AddRuleYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/PatchInstruction"
-        },
-        {
-          "type": "object",
-          "required": [
-            "identifier",
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "identifier": {
-              "type": "string"
-            },
-            "spec": {
-              "$ref": "#/definitions/AddRuleYamlSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "AddRule"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "AddRuleYamlSpec": {
-      "type": "object",
-      "properties": {
-        "clauses": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Clause"
-          }
-        },
-        "distribution": {
-          "$ref": "#/definitions/DistributionYamlSpec"
-        },
-        "priority": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "serve": {
-          "$ref": "#/definitions/Serve"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "AddSegmentToVariationTargetMapYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/PatchInstruction"
-        },
-        {
-          "type": "object",
-          "required": [
-            "identifier",
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "identifier": {
-              "type": "string"
-            },
-            "spec": {
-              "$ref": "#/definitions/AddSegmentToVariationTargetMapYamlSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "AddSegmentToVariationTargetMap"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "AddSegmentToVariationTargetMapYamlSpec": {
-      "type": "object",
-      "required": [
-        "segments",
-        "variation"
-      ],
-      "properties": {
-        "segments": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "variation": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "AddTargetsToVariationTargetMapYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/PatchInstruction"
-        },
-        {
-          "type": "object",
-          "required": [
-            "identifier",
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "identifier": {
-              "type": "string"
-            },
-            "spec": {
-              "$ref": "#/definitions/AddTargetsToVariationTargetMapYamlSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "AddTargetsToVariationTargetMap"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "AddTargetsToVariationTargetMapYamlSpec": {
-      "type": "object",
-      "required": [
-        "targets",
-        "variation"
-      ],
-      "properties": {
-        "targets": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "variation": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ApproverInputInfo": {
-      "type": "object",
-      "properties": {
-        "defaultValue": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string",
-          "minLength": 1
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "Approvers": {
-      "type": "object",
-      "required": [
-        "disallowPipelineExecutor",
-        "minimumCount"
-      ],
-      "properties": {
-        "disallowPipelineExecutor": {
-          "oneOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "string"
-            }
-          ]
-        },
-        "minimumCount": {
-          "oneOf": [
-            {
-              "type": "integer",
-              "format": "int32"
-            },
-            {
-              "type": "string"
-            }
-          ]
-        },
-        "userGroups": {
-          "oneOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "maxItems": 2147483647,
-              "minItems": 1
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
-              "minLength": 1
-            }
-          ],
-          "minLength": 1
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "BarrierStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "barrierRef"
-          ],
-          "properties": {
-            "barrierRef": {
-              "type": "string"
             }
           }
         }
@@ -554,59 +326,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "Clause": {
-      "type": "object",
-      "required": [
-        "attribute",
-        "id",
-        "negate",
-        "op",
-        "values"
-      ],
-      "properties": {
-        "attribute": {
-          "type": "string"
-        },
-        "id": {
-          "type": "string"
-        },
-        "negate": {
-          "type": "boolean"
-        },
-        "op": {
-          "type": "string"
-        },
-        "values": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ClauseYamlSpec": {
-      "type": "object",
-      "required": [
-        "op",
-        "values"
-      ],
-      "properties": {
-        "attribute": {
-          "type": "string"
-        },
-        "op": {
-          "type": "string"
-        },
-        "values": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "CleanupStepInfo": {
       "allOf": [
         {
@@ -693,32 +412,6 @@
         "timeStamp": {
           "type": "integer",
           "format": "int64"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "Condition": {
-      "type": "object",
-      "required": [
-        "key",
-        "operator"
-      ],
-      "properties": {
-        "key": {
-          "type": "string"
-        },
-        "operator": {
-          "type": "string",
-          "enum": [
-            "equals",
-            "not equals",
-            "in",
-            "not in"
-          ]
-        },
-        "value": {
-          "type": "string",
-          "minLength": 1
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -870,62 +563,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "CriteriaSpec": {
-      "type": "object",
-      "discriminator": "type",
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "CriteriaSpecWrapper": {
-      "type": "object",
-      "required": [
-        "spec",
-        "type"
-      ],
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "Jexl",
-            "KeyValues"
-          ]
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "Jexl"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/JexlCriteriaSpec"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "KeyValues"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/KeyValuesCriteriaSpec"
-              }
-            }
-          }
-        }
-      ]
-    },
     "CustomExecutionSource": {
       "allOf": [
         {
@@ -938,25 +575,6 @@
               "type": "string"
             },
             "tag": {
-              "type": "string"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "CustomPolicyStepSpec": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/PolicySpec"
-        },
-        {
-          "type": "object",
-          "required": [
-            "payload"
-          ],
-          "properties": {
-            "payload": {
               "type": "string"
             }
           }
@@ -995,49 +613,6 @@
     "DependencySpecType": {
       "type": "object",
       "discriminator": "type",
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "Distribution": {
-      "type": "object",
-      "required": [
-        "bucketBy",
-        "variations"
-      ],
-      "properties": {
-        "bucketBy": {
-          "type": "string"
-        },
-        "variations": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/WeightedVariation"
-          }
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "DistributionYamlSpec": {
-      "type": "object",
-      "required": [
-        "bucketBy"
-      ],
-      "properties": {
-        "bucketBy": {
-          "type": "string"
-        },
-        "clauses": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ClauseYamlSpec"
-          }
-        },
-        "variations": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/VariationYamlSpec"
-          }
-        }
-      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "DockerStepInfo": {
@@ -1337,6 +912,18 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ExcludeConfig": {
+      "type": "object",
+      "properties": {
+        "exclude": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ExecutionElementConfig": {
       "type": "object",
       "required": [
@@ -1371,21 +958,6 @@
             "MANUAL",
             "CUSTOM"
           ]
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ExecutionTarget": {
-      "type": "object",
-      "properties": {
-        "connectorRef": {
-          "type": "string"
-        },
-        "host": {
-          "type": "string"
-        },
-        "workingDirectory": {
-          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1437,45 +1009,6 @@
           "$ref": "#/definitions/OnFailureConfig"
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "FlagConfigurationStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "environment",
-            "feature",
-            "instructions"
-          ],
-          "properties": {
-            "environment": {
-              "type": "string"
-            },
-            "feature": {
-              "type": "string"
-            },
-            "instructions": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/PatchInstruction"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
-                  "minLength": 1
-                }
-              ]
-            }
-          }
-        }
-      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "GCRStepInfo": {
@@ -1588,44 +1121,38 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "HarnessApprovalStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "approvers",
-            "includePipelineExecutionHistory"
-          ],
-          "properties": {
-            "approvalMessage": {
+    "HarnessForConfig": {
+      "type": "object",
+      "properties": {
+        "iteration": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
               "type": "string",
+              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
               "minLength": 1
-            },
-            "approverInputs": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/ApproverInputInfo"
-              }
-            },
-            "approvers": {
-              "$ref": "#/definitions/Approvers"
-            },
-            "includePipelineExecutionHistory": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
             }
-          }
+          ]
+        },
+        "maxConcurrency": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "minLength": 1
+            }
+          ]
         }
-      ],
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "HostPathVolume": {
@@ -1703,84 +1230,6 @@
           "type": "string"
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "HttpHeaderConfig": {
-      "type": "object",
-      "properties": {
-        "key": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "HttpStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "method",
-            "url"
-          ],
-          "properties": {
-            "assertion": {
-              "type": "string"
-            },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "headers": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/HttpHeaderConfig"
-              }
-            },
-            "method": {
-              "type": "string"
-            },
-            "outputVariables": {
-              "type": "array",
-              "items": {
-                "oneOf": [
-                  {
-                    "$ref": "#/definitions/NumberNGVariable"
-                  },
-                  {
-                    "$ref": "#/definitions/SecretNGVariable"
-                  },
-                  {
-                    "$ref": "#/definitions/StringNGVariable"
-                  }
-                ]
-              }
-            },
-            "requestBody": {
-              "type": "string"
-            },
-            "url": {
-              "type": "string"
-            }
-          }
-        }
-      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "IgnoreFailureActionConfig": {
@@ -2042,6 +1491,9 @@
           "type": "string",
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
         },
+        "strategy": {
+          "$ref": "#/definitions/StrategyConfig"
+        },
         "tags": {
           "type": "object",
           "additionalProperties": {
@@ -2114,181 +1566,6 @@
                   "type": "string"
                 }
               ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "JexlCriteriaSpec": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/CriteriaSpec"
-        },
-        {
-          "type": "object",
-          "required": [
-            "expression"
-          ],
-          "properties": {
-            "expression": {
-              "type": "string"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "JiraApprovalStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "approvalCriteria",
-            "connectorRef",
-            "issueKey"
-          ],
-          "properties": {
-            "approvalCriteria": {
-              "$ref": "#/definitions/CriteriaSpecWrapper"
-            },
-            "connectorRef": {
-              "type": "string"
-            },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "issueKey": {
-              "type": "string"
-            },
-            "rejectionCriteria": {
-              "$ref": "#/definitions/CriteriaSpecWrapper"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "JiraCreateStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "connectorRef",
-            "issueType",
-            "projectKey"
-          ],
-          "properties": {
-            "connectorRef": {
-              "type": "string"
-            },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "fields": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/JiraField"
-              }
-            },
-            "issueType": {
-              "type": "string"
-            },
-            "projectKey": {
-              "type": "string"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "JiraField": {
-      "type": "object",
-      "required": [
-        "value"
-      ],
-      "properties": {
-        "name": {
-          "type": "string",
-          "minLength": 1
-        },
-        "value": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "JiraUpdateStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "connectorRef",
-            "issueKey"
-          ],
-          "properties": {
-            "connectorRef": {
-              "type": "string"
-            },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "fields": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/JiraField"
-              }
-            },
-            "issueKey": {
-              "type": "string"
-            },
-            "transitionTo": {
-              "$ref": "#/definitions/TransitionTo"
             }
           }
         }
@@ -2548,38 +1825,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "KeyValuesCriteriaSpec": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/CriteriaSpec"
-        },
-        {
-          "type": "object",
-          "required": [
-            "conditions"
-          ],
-          "properties": {
-            "conditions": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Condition"
-              }
-            },
-            "matchAnyCondition": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "Limits": {
       "type": "object",
       "properties": {
@@ -2687,6 +1932,53 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "MatrixConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/MatrixConfigInterface"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "exclude": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldListExcludeConfig"
+                },
+                {
+                  "type": "array"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "maxConcurrency": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "MatrixConfigInterface": {
+      "type": "object",
+      "discriminator": "type",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "NGVariable": {
@@ -3125,6 +2417,45 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ParameterFieldListExcludeConfig": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExcludeConfig"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExcludeConfig"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ParameterFieldListString": {
       "type": "object",
       "properties": {
@@ -3199,28 +2530,6 @@
           "additionalProperties": {
             "$ref": "#/definitions/JsonNode"
           }
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "PatchInstruction": {
-      "type": "object",
-      "discriminator": "type",
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "SetFeatureFlagState",
-            "SetOnVariation",
-            "SetOffVariation",
-            "SetDefaultVariations",
-            "AddRule",
-            "UpdateRule",
-            "AddTargetsToVariationTargetMap",
-            "RemoveTargetsToVariationTargetMap",
-            "AddSegmentToVariationTargetMap",
-            "RemoveSegmentsToVariationTargetMap"
-          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -3458,167 +2767,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "PolicySpec": {
-      "type": "object",
-      "discriminator": "type",
-      "properties": {
-        "type": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "PolicyStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "policySets"
-          ],
-          "properties": {
-            "metadata": {
-              "type": "string"
-            },
-            "policySets": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "type": {
-              "type": "string"
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "Custom"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "policySpec": {
-                "$ref": "#/definitions/CustomPolicyStepSpec"
-              }
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "RemoveSegmentToVariationTargetMapYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/PatchInstruction"
-        },
-        {
-          "type": "object",
-          "required": [
-            "identifier",
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "identifier": {
-              "type": "string"
-            },
-            "spec": {
-              "$ref": "#/definitions/RemoveSegmentToVariationTargetMapYamlSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "RemoveSegmentToVariationTargetMap"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "RemoveSegmentToVariationTargetMapYamlSpec": {
-      "type": "object",
-      "required": [
-        "segments",
-        "variation"
-      ],
-      "properties": {
-        "segments": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "variation": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "RemoveTargetsToVariationTargetMapYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/PatchInstruction"
-        },
-        {
-          "type": "object",
-          "required": [
-            "identifier",
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "identifier": {
-              "type": "string"
-            },
-            "spec": {
-              "$ref": "#/definitions/RemoveTargetsToVariationTargetMapYamlSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "RemoveTargetsToVariationTargetMap"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "RemoveTargetsToVariationTargetMapYamlSpec": {
-      "type": "object",
-      "required": [
-        "targets",
-        "variation"
-      ],
-      "properties": {
-        "targets": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "variation": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "Repository": {
       "type": "object",
       "properties": {
@@ -3647,52 +2795,6 @@
           "type": "string"
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ResourceConstraintStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "acquireMode",
-            "holdingScope",
-            "name",
-            "permits",
-            "resourceUnit"
-          ],
-          "properties": {
-            "acquireMode": {
-              "type": "string",
-              "enum": [
-                "ENSURE",
-                "ACCUMULATE"
-              ]
-            },
-            "holdingScope": {
-              "type": "string",
-              "enum": [
-                "PLAN",
-                "PIPELINE",
-                "STAGE",
-                "STEP_GROUP"
-              ]
-            },
-            "name": {
-              "type": "string"
-            },
-            "permits": {
-              "type": "integer",
-              "format": "int32"
-            },
-            "resourceUnit": {
-              "type": "string"
-            }
-          }
-        }
-      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "RestoreCacheGCSStepInfo": {
@@ -4557,15 +3659,9 @@
         },
         {
           "type": "object",
-          "required": [
-            "connectorRef"
-          ],
           "properties": {
             "baseImageConnectorRefs": {
               "$ref": "#/definitions/ParameterFieldListString"
-            },
-            "connectorRef": {
-              "type": "string"
             },
             "imagePullPolicy": {
               "oneOf": [
@@ -4640,508 +3736,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "Serve": {
-      "type": "object",
-      "properties": {
-        "distribution": {
-          "$ref": "#/definitions/Distribution"
-        },
-        "variation": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ServiceNowApprovalStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "approvalCriteria",
-            "connectorRef",
-            "ticketNumber",
-            "ticketType"
-          ],
-          "properties": {
-            "approvalCriteria": {
-              "$ref": "#/definitions/CriteriaSpecWrapper"
-            },
-            "connectorRef": {
-              "type": "string"
-            },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "rejectionCriteria": {
-              "$ref": "#/definitions/CriteriaSpecWrapper"
-            },
-            "ticketNumber": {
-              "type": "string"
-            },
-            "ticketType": {
-              "type": "string"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ServiceNowCreateStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "connectorRef",
-            "ticketType",
-            "useServiceNowTemplate"
-          ],
-          "properties": {
-            "connectorRef": {
-              "type": "string"
-            },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "fields": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/ServiceNowField"
-              }
-            },
-            "templateName": {
-              "type": "string"
-            },
-            "ticketType": {
-              "type": "string"
-            },
-            "useServiceNowTemplate": {
-              "type": "boolean"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ServiceNowField": {
-      "type": "object",
-      "required": [
-        "value"
-      ],
-      "properties": {
-        "name": {
-          "type": "string",
-          "minLength": 1
-        },
-        "value": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ServiceNowUpdateStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "connectorRef",
-            "ticketNumber",
-            "ticketType",
-            "useServiceNowTemplate"
-          ],
-          "properties": {
-            "connectorRef": {
-              "type": "string"
-            },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "fields": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/ServiceNowField"
-              }
-            },
-            "templateName": {
-              "type": "string"
-            },
-            "ticketNumber": {
-              "type": "string"
-            },
-            "ticketType": {
-              "type": "string"
-            },
-            "useServiceNowTemplate": {
-              "type": "boolean"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "SetDefaultVariationsYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/PatchInstruction"
-        },
-        {
-          "type": "object",
-          "required": [
-            "identifier",
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "identifier": {
-              "type": "string"
-            },
-            "spec": {
-              "$ref": "#/definitions/SetDefaultVariationsYamlSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "SetDefaultVariations"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "SetDefaultVariationsYamlSpec": {
-      "type": "object",
-      "required": [
-        "off",
-        "on"
-      ],
-      "properties": {
-        "off": {
-          "type": "string"
-        },
-        "on": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "SetFeatureFlagStateYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/PatchInstruction"
-        },
-        {
-          "type": "object",
-          "required": [
-            "identifier",
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "identifier": {
-              "type": "string"
-            },
-            "spec": {
-              "$ref": "#/definitions/SetFeatureFlagStateYamlSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "SetFeatureFlagState"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "SetFeatureFlagStateYamlSpec": {
-      "type": "object",
-      "required": [
-        "state"
-      ],
-      "properties": {
-        "state": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "SetOffVariationYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/PatchInstruction"
-        },
-        {
-          "type": "object",
-          "required": [
-            "identifier",
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "identifier": {
-              "type": "string"
-            },
-            "spec": {
-              "$ref": "#/definitions/SetOffVariationYamlSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "SetOffVariation"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "SetOffVariationYamlSpec": {
-      "type": "object",
-      "required": [
-        "variation"
-      ],
-      "properties": {
-        "variation": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "SetOnVariationYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/PatchInstruction"
-        },
-        {
-          "type": "object",
-          "required": [
-            "identifier",
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "identifier": {
-              "type": "string"
-            },
-            "spec": {
-              "$ref": "#/definitions/SetOnVariationYamlSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "SetOnVariation"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "SetOnVariationYamlSpec": {
-      "type": "object",
-      "required": [
-        "variation"
-      ],
-      "properties": {
-        "variation": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ShellScriptBaseSource": {
-      "type": "object",
-      "discriminator": "type",
-      "properties": {
-        "type": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ShellScriptInlineSource": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/ShellScriptBaseSource"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "script": {
-              "type": "string"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ShellScriptSourceWrapper": {
-      "type": "object",
-      "required": [
-        "spec",
-        "type"
-      ],
-      "properties": {
-        "type": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "Inline"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/ShellScriptInlineSource"
-              }
-            }
-          }
-        }
-      ]
-    },
-    "ShellScriptStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "onDelegate",
-            "shell",
-            "source"
-          ],
-          "properties": {
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "environmentVariables": {
-              "type": "array",
-              "items": {
-                "oneOf": [
-                  {
-                    "$ref": "#/definitions/NumberNGVariable"
-                  },
-                  {
-                    "$ref": "#/definitions/SecretNGVariable"
-                  },
-                  {
-                    "$ref": "#/definitions/StringNGVariable"
-                  }
-                ]
-              }
-            },
-            "executionTarget": {
-              "$ref": "#/definitions/ExecutionTarget"
-            },
-            "metadata": {
-              "type": "string"
-            },
-            "onDelegate": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
-            "outputVariables": {
-              "type": "array",
-              "items": {
-                "oneOf": [
-                  {
-                    "$ref": "#/definitions/NumberNGVariable"
-                  },
-                  {
-                    "$ref": "#/definitions/SecretNGVariable"
-                  },
-                  {
-                    "$ref": "#/definitions/StringNGVariable"
-                  }
-                ]
-              }
-            },
-            "shell": {
-              "type": "string",
-              "enum": [
-                "Bash"
-              ]
-            },
-            "source": {
-              "$ref": "#/definitions/ShellScriptSourceWrapper"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "StageRollbackFailureActionConfig": {
       "allOf": [
         {
@@ -5209,6 +3803,9 @@
           "type": "string",
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
         },
+        "strategy": {
+          "$ref": "#/definitions/StrategyConfig"
+        },
         "timeout": {
           "type": "string",
           "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*))$"
@@ -5234,22 +3831,6 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/UploadToArtifactoryStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "Barrier"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/BarrierStepInfo"
               }
             }
           }
@@ -5306,22 +3887,6 @@
           "if": {
             "properties": {
               "type": {
-                "const": "FlagConfiguration"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/FlagConfigurationStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
                 "const": "GCSUpload"
               }
             }
@@ -5338,86 +3903,6 @@
           "if": {
             "properties": {
               "type": {
-                "const": "HarnessApproval"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/HarnessApprovalStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "Http"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/HttpStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "JiraApproval"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/JiraApprovalStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "JiraCreate"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/JiraCreateStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "JiraUpdate"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/JiraUpdateStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
                 "const": "Plugin"
               }
             }
@@ -5426,22 +3911,6 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/PluginStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "Policy"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/PolicyStepInfo"
               }
             }
           }
@@ -5573,70 +4042,6 @@
               }
             }
           }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "ServiceNowApproval"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/ServiceNowApprovalStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "ServiceNowCreate"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/ServiceNowCreateStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "ServiceNowUpdate"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/ServiceNowUpdateStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "ShellScript"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/ShellScriptStepInfo"
-              }
-            }
-          }
         }
       ]
     },
@@ -5737,6 +4142,57 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "StrategyConfig": {
+      "type": "object",
+      "properties": {
+        "for": {
+          "$ref": "#/definitions/HarnessForConfig"
+        },
+        "matrix": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/MatrixConfig"
+            }
+          ]
+        },
+        "parallelism": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "parallelism"
+              ]
+            },
+            {
+              "required": [
+                "for"
+              ]
+            },
+            {
+              "required": [
+                "matrix"
+              ]
+            }
+          ]
+        }
+      ]
+    },
     "StringNGVariable": {
       "allOf": [
         {
@@ -5810,21 +4266,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "TransitionTo": {
-      "type": "object",
-      "required": [
-        "status"
-      ],
-      "properties": {
-        "status": {
-          "type": "string"
-        },
-        "transitionName": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "UnitTestReport": {
       "type": "object",
       "properties": {
@@ -5857,61 +4298,6 @@
     },
     "UnitTestReportSpec": {
       "type": "object",
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "UpdateRuleYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/PatchInstruction"
-        },
-        {
-          "type": "object",
-          "required": [
-            "identifier",
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "identifier": {
-              "type": "string"
-            },
-            "spec": {
-              "$ref": "#/definitions/UpdateRuleYamlSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "UpdateRule"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "UpdateRuleYamlSpec": {
-      "type": "object",
-      "required": [
-        "bucketBy",
-        "ruleID"
-      ],
-      "properties": {
-        "bucketBy": {
-          "type": "string"
-        },
-        "ruleID": {
-          "type": "string"
-        },
-        "serve": {
-          "$ref": "#/definitions/Serve"
-        },
-        "variations": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/VariationYamlSpec"
-          }
-        }
-      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "UploadToArtifactoryStepInfo": {
@@ -6079,23 +4465,6 @@
           }
         }
       ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "VariationYamlSpec": {
-      "type": "object",
-      "required": [
-        "variation",
-        "weight"
-      ],
-      "properties": {
-        "variation": {
-          "type": "string"
-        },
-        "weight": {
-          "type": "integer",
-          "format": "int32"
-        }
-      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "VmBuildJobInfo": {
@@ -6340,23 +4709,6 @@
         },
         "name": {
           "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "WeightedVariation": {
-      "type": "object",
-      "required": [
-        "variation",
-        "weight"
-      ],
-      "properties": {
-        "variation": {
-          "type": "string"
-        },
-        "weight": {
-          "type": "integer",
-          "format": "int32"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"

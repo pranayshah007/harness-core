@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PL)
 public class BitbucketServerListRepoScmApiErrorHandler implements ScmApiErrorHandler {
-  public static final String LIST_REPO_FAILED_MESSAGE = "Listing repositories from Github failed. ";
+  public static final String LIST_REPO_FAILED_MESSAGE = "Listing repositories from Bitbucket failed. ";
 
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {

@@ -60,7 +60,7 @@ public class SLOErrorBudgetResetServiceImplTest extends CvNextGenTestBase {
             builderFactory.getSLOErrorBudgetResetDTOBuilder().serviceLevelObjectiveIdentifier(sloIdentifier).build());
     SLOErrorBudgetResetDTO saved =
         sloErrorBudgetResetService.getErrorBudgetResets(builderFactory.getProjectParams(), sloIdentifier).get(0);
-    assertThat(saved.getValidUntil().longValue()).isEqualTo(1587549726000L);
+    assertThat(saved.getValidUntil().longValue()).isEqualTo(1587549720000L);
   }
 
   @Test

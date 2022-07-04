@@ -19,8 +19,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.ci.beans.entities.CIExecutionImages;
 import io.harness.ci.config.Operation;
-import io.harness.execution.CIExecutionConfigService;
-import io.harness.execution.DeprecatedImageInfo;
+import io.harness.ci.execution.CIExecutionConfigService;
+import io.harness.ci.execution.DeprecatedImageInfo;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -83,7 +83,7 @@ public class CIExecutionConfigResource {
   @Inject CIExecutionConfigService configService;
 
   @POST
-  @Path("/updateConfig")
+  @Path("/update-config")
   @ApiOperation(value = "Update execution config", nickname = "updateExecutionConfig")
   @io.swagger.v3.oas.annotations.
   Operation(operationId = "updateExecutionConfig", summary = "Override execution Config for CI builds",
@@ -98,7 +98,7 @@ public class CIExecutionConfigResource {
   }
 
   @POST
-  @Path("/resetConfig")
+  @Path("/reset-config")
   @ApiOperation(value = "Reset execution config", nickname = "resetExecutionConfig")
   @io.swagger.v3.oas.annotations.
   Operation(operationId = "resetExecutionConfig", summary = "Reset execution Config for CI builds",

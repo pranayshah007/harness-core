@@ -70,8 +70,9 @@ public class EnvironmentPlanCreatorConfigMapper {
   private List<String> getClusterRefs(EnvironmentYamlV2 environmentV2) {
     if (!environmentV2.isDeployToAll()) {
       return environmentV2.getGitOpsClusters()
+          .getValue()
           .stream()
-          .map(ClusterYaml::getRef)
+          .map(ClusterYaml::getIdentifier)
           .map(ParameterField::getValue)
           .collect(Collectors.toList());
     }

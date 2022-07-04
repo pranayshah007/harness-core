@@ -16,6 +16,7 @@ public interface Constants {
   String PR = "PR";
   String PUSH = "PUSH";
 
+  String AZURE_REPO = "AzureRepo";
   String GITHUB_REPO = "Github";
   String GITLAB_REPO = "Gitlab";
   String BITBUCKET_REPO = "Bitbucket";
@@ -26,6 +27,8 @@ public interface Constants {
   String MERGE_REQUEST_EVENT_TYPE = "MergeRequest";
   String PUSH_EVENT_TYPE = "Push";
   String ISSUE_COMMENT_EVENT_TYPE = "IssueComment";
+  String MR_COMMENT_EVENT_TYPE = "MRComment";
+  String PR_COMMENT_EVENT_TYPE = "PRComment";
 
   String TRIGGER_EXECUTION_TAG_TAG_VALUE_DELIMITER = ":";
   String TRIGGER_REF_DELIMITER = "/";

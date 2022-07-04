@@ -7,9 +7,12 @@
 
 package io.harness.serverless;
 
+import io.harness.data.structure.CollectionUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import lombok.experimental.UtilityClass;
@@ -20,12 +23,14 @@ import org.zeroturnaround.exec.ProcessResult;
 @UtilityClass
 public class ServerlessUtils {
   public static ProcessResult executeScript(String directoryPath, String command, OutputStream output,
-      OutputStream error, long timeoutInMillis) throws InterruptedException, TimeoutException, IOException {
+      OutputStream error, long timeoutInMillis, Map<String, String> envVariables)
+      throws InterruptedException, TimeoutException, IOException {
     ProcessExecutor processExecutor = new ProcessExecutor()
                                           .directory(new File(directoryPath))
                                           .timeout(timeoutInMillis, TimeUnit.MILLISECONDS)
                                           .commandSplit(command)
                                           .readOutput(true)
+                                          .environment(CollectionUtils.emptyIfNull(envVariables))
                                           .redirectOutput(output)
                                           .redirectError(error);
     return processExecutor.execute();

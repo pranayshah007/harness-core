@@ -94,6 +94,7 @@ import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator.AnalysisOrchestratorKeys;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
@@ -105,6 +106,7 @@ import io.harness.rule.Owner;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -457,7 +459,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = DEEPAK_CHHIKARA)
   @Category(UnitTests.class)
-  public void testUpdate_SLIUpdateWithSLOTarget() {
+  public void testUpdate_SLIUpdateWithSLOTarget() throws ParseException {
     ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
     createMonitoredService();
     ServiceLevelObjectiveResponse serviceLevelObjectiveResponse =
@@ -494,6 +496,8 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
             .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
             .get();
     assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().size()).isEqualTo(14);
+    assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().get(0).getStartTime())
+        .isEqualTo(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse("2020-07-20T12:00:00").toInstant());
   }
 
   @Test
@@ -1006,6 +1010,8 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     when(notificationClient.sendNotificationAsync(any()))
         .thenReturn(NotificationResultWithoutStatus.builder().notificationId("notificationId").build());
     when(accountClient.getVanityUrl(any()).execute()).thenReturn(Response.success(new RestResponse()));
+    when(accountClient.getAccountDTO(any()).execute())
+        .thenReturn(Response.success(new RestResponse(AccountDTO.builder().build())));
 
     serviceLevelObjectiveService.sendNotification(serviceLevelObjective);
     verify(notificationClient, times(1)).sendNotificationAsync(any());
@@ -1033,7 +1039,8 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
         SLOErrorBudgetRemainingPercentageCondition.builder().threshold(10.0).build();
 
     assertThat(((ServiceLevelObjectiveServiceImpl) serviceLevelObjectiveService)
-                   .shouldSendNotification(serviceLevelObjective, condition))
+                   .getNotificationMessage(serviceLevelObjective, condition)
+                   .isShouldSendNotification())
         .isFalse();
   }
 
@@ -1062,12 +1069,14 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
                                                     .build();
 
     assertThat(((ServiceLevelObjectiveServiceImpl) serviceLevelObjectiveService)
-                   .shouldSendNotification(serviceLevelObjective, condition))
+                   .getNotificationMessage(serviceLevelObjective, condition)
+                   .isShouldSendNotification())
         .isTrue();
 
     condition.setThreshold(0.05);
     assertThat(((ServiceLevelObjectiveServiceImpl) serviceLevelObjectiveService)
-                   .shouldSendNotification(serviceLevelObjective, condition))
+                   .getNotificationMessage(serviceLevelObjective, condition)
+                   .isShouldSendNotification())
         .isFalse();
   }
 

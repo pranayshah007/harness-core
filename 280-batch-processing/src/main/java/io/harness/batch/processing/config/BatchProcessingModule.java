@@ -66,6 +66,7 @@ import io.harness.lock.noop.PersistentNoopLocker;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.metrics.service.api.MetricsPublisher;
 import io.harness.mongo.MongoConfig;
+import io.harness.notifications.NotificationResourceClientModule;
 import io.harness.persistence.HPersistence;
 import io.harness.pricing.client.CloudInfoPricingClientModule;
 import io.harness.remote.client.ClientMode;
@@ -78,10 +79,12 @@ import io.harness.time.TimeModule;
 
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.dl.WingsPersistence;
+import software.wings.service.impl.SlackMessageSenderImpl;
 import software.wings.service.impl.ce.CeAccountExpirationCheckerImpl;
 import software.wings.service.impl.instance.CloudToHarnessMappingServiceImpl;
 import software.wings.service.impl.instance.DeploymentServiceImpl;
 import software.wings.service.impl.security.NoOpSecretManagerImpl;
+import software.wings.service.intfc.SlackMessageSender;
 import software.wings.service.intfc.ce.CeAccountExpirationChecker;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 import software.wings.service.intfc.instance.DeploymentService;
@@ -126,6 +129,7 @@ public class BatchProcessingModule extends AbstractModule {
     bind(CloudToHarnessMappingService.class).to(CloudToHarnessMappingServiceImpl.class);
     bind(ProductMetricsService.class).to(ProductMetricsServiceImpl.class);
     bind(CESlackWebhookService.class).to(CESlackWebhookServiceImpl.class);
+    bind(SlackMessageSender.class).to(SlackMessageSenderImpl.class);
     bind(BigQueryService.class).to(BigQueryServiceImpl.class);
     bind(CeCloudMetricsService.class).to(CeCloudMetricsServiceImpl.class);
     bind(CENGTelemetryService.class).to(CENGTelemetryServiceImpl.class);
@@ -142,6 +146,8 @@ public class BatchProcessingModule extends AbstractModule {
         batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
     install(NgLicenseHttpClientModule.getInstance(batchMainConfig.getNgManagerServiceHttpClientConfig(),
         batchMainConfig.getNgManagerServiceSecret(), MANAGER.getServiceId()));
+    install(new NotificationResourceClientModule(batchMainConfig.getCeNgServiceHttpClientConfig(),
+        batchMainConfig.getCeNgServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
     install(new AbstractTelemetryModule() {
       @Override
       public TelemetryConfiguration telemetryConfiguration() {

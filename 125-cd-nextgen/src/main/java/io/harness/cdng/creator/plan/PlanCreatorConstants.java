@@ -31,10 +31,13 @@ public class PlanCreatorConstants {
   public final String MANIFESTS_NODE_NAME = "Manifests";
   public final String MANIFEST_NODE_NAME = "Manifest";
   public final String INFRA_NODE_NAME = "Infrastructure";
-  public final String GITOPS_INFRA_NODE_NAME = "GitopsClusters";
+  public final String GITOPS_INFRA_NODE_NAME = "Gitops Clusters";
   public final String SPEC_IDENTIFIER = "spec";
   public final String CONFIG_FILES_NODE_NAME = "ConfigFiles";
   public final String CONFIG_FILE_NODE_NAME = "ConfigFile";
+  public final String STARTUP_SCRIPT = "startupScript";
+  public final String APPLICATION_SETTINGS = "applicationSettings";
+  public final String CONNECTION_STRINGS = "connectionStrings";
 
   // DependencyMetadata constants
   public final String PRIMARY_STEP_PARAMETERS = "primaryStepParameters";
@@ -43,4 +46,7 @@ public class PlanCreatorConstants {
   public final String SIDECAR_STEP_PARAMETERS = "sideCarsStepParameters";
   public final String MANIFEST_STEP_PARAMETER = "manifestStepParameters";
   public final String CONFIG_FILE_STEP_PARAMETER = "configFileStepParameters";
+  public final String STARTUP_SCRIPT_STEP_PARAMETER = "startupScriptStepParameters";
+  public final String APPLICATION_SETTINGS_STEP_PARAMETER = "applicationSettingsStepParameters";
+  public final String CONNECTION_STRINGS_STEP_PARAMETER = "connectionStringsStepParameters";
 }

@@ -67,13 +67,19 @@ public class KryoSerializer {
    */
   @VisibleForTesting
   public KryoSerializer(Set<Class<? extends KryoRegistrar>> registrars, boolean skipHarnessClassOriginRegistrarCheck) {
-    this.pool = new KryoPool.Builder(() -> kryo(registrars)).softReferences().build();
+    this.pool = new KryoPool.Builder(() -> kryo(registrars, true)).softReferences().build();
     this.skipHarnessClassOriginRegistrarCheck = skipHarnessClassOriginRegistrarCheck;
   }
 
-  private HKryo kryo(Collection<Class<? extends KryoRegistrar>> registrars) {
+  public KryoSerializer(Set<Class<? extends KryoRegistrar>> registrars, boolean skipHarnessClassOriginRegistrarCheck,
+      boolean shouldSetReferences) {
+    this.pool = new KryoPool.Builder(() -> kryo(registrars, shouldSetReferences)).softReferences().build();
+    this.skipHarnessClassOriginRegistrarCheck = skipHarnessClassOriginRegistrarCheck;
+  }
+
+  private HKryo kryo(Collection<Class<? extends KryoRegistrar>> registrars, boolean shouldSetReferences) {
     final ClassResolver classResolver = new ClassResolver();
-    HKryo kryo = new HKryo(classResolver, this.skipHarnessClassOriginRegistrarCheck);
+    HKryo kryo = new HKryo(classResolver, this.skipHarnessClassOriginRegistrarCheck, shouldSetReferences);
     try {
       for (Class<? extends KryoRegistrar> kryoRegistrarClass : registrars) {
         final IntMap<Registration> previousState = new IntMap<>(classResolver.getRegistrations());

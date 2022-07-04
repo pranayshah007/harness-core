@@ -225,6 +225,9 @@ public class AmbianceUtils {
       return StringUtils.EMPTY;
     }
     if (!level.getStrategyMetadata().hasMatrixMetadata()) {
+      if (level.getStrategyMetadata().getTotalIterations() <= 0) {
+        return StringUtils.EMPTY;
+      }
       return "_" + level.getStrategyMetadata().getCurrentIteration();
     }
     if (level.getStrategyMetadata().getMatrixMetadata().getMatrixCombinationList().isEmpty()) {
@@ -237,5 +240,18 @@ public class AmbianceUtils {
               .stream()
               .map(String::valueOf)
               .collect(Collectors.joining("_"));
+  }
+  public boolean isCurrentStrategyLevelAtStage(Ambiance ambiance) {
+    int levelsCount = ambiance.getLevelsCount();
+    // Parent of current level is stages.
+    if (levelsCount >= 2 && ambiance.getLevels(levelsCount - 2).getGroup().equals("STAGES")) {
+      return true;
+    }
+    // Parent is Parallel and Its parent of parent is STAGES.
+    if (levelsCount >= 3 && ambiance.getLevels(levelsCount - 2).getStepType().getStepCategory() == StepCategory.FORK
+        && ambiance.getLevels(levelsCount - 3).getGroup().equals("STAGES")) {
+      return true;
+    }
+    return false;
   }
 }

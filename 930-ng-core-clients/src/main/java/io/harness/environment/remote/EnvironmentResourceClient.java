@@ -16,6 +16,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 
 import java.util.List;
+import java.util.Map;
 import javax.ws.rs.DefaultValue;
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -32,4 +33,11 @@ public interface EnvironmentResourceClient {
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Query("envIdentifiers") List<String> envIdentifiers, @Query("sort") List<String> sort);
+
+  @GET(ENVIRONMENT_API + "/attributes")
+  Call<ResponseDTO<List<Map<String, String>>>> getEnvironmentsAttributes(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query("envIdentifiers") List<String> envIdentifiers);
 }

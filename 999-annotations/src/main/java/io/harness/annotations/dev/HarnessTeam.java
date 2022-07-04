@@ -7,4 +7,4 @@
 
 package io.harness.annotations.dev;
 
-public enum HarnessTeam { CDC, CDP, CF, CI, CE, CV, PL, DEL, DX, PIPELINE, GTM, GITOPS, STO, OPA }
+public enum HarnessTeam { CDC, CDP, CF, CI, CE, CV, PL, DEL, DX, PIPELINE, GTM, GITOPS, STO, OPA, SPG }

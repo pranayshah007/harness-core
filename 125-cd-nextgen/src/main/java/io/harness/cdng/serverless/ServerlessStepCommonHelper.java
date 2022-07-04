@@ -20,6 +20,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -43,7 +44,9 @@ import io.harness.delegate.beans.serverless.ServerlessAwsLambdaPrepareRollbackDa
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessArtifactType;
 import io.harness.delegate.task.serverless.ServerlessDeployConfig;
+import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessGitFetchFileConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
@@ -91,6 +94,7 @@ import software.wings.beans.TaskType;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -104,9 +108,12 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   @Inject private ServerlessEntityHelper serverlessEntityHelper;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
+  private static final String PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY = "<+artifact.path>";
+  private static final String PRIMARY_ARTIFACT_PATH_FOR_ECR = "<+artifact.image>";
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
-  private static final String ARTIFACT_PATH = "<+artifact.path>";
   private static final String ARTIFACT_ACTUAL_PATH = "harnessArtifact/artifactFile";
+  private static final String SIDECAR_ARTIFACT_PATH_PREFIX = "<+sidecar.artifact.";
+  private static final String SIDECAR_ARTIFACT_FILE_NAME_PREFIX = "sidecar-artifact-";
 
   public TaskChainResponse startChainLink(
       Ambiance ambiance, StepElementParameters stepElementParameters, ServerlessStepHelper serverlessStepHelper) {
@@ -150,7 +157,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     }
   }
 
-  public ServerlessArtifactConfig getArtifactoryConfig(ArtifactOutcome artifactOutcome, Ambiance ambiance) {
+  public ServerlessArtifactConfig getArtifactConfig(ArtifactOutcome artifactOutcome, Ambiance ambiance) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     return serverlessEntityHelper.getServerlessArtifactConfig(artifactOutcome, ngAccess);
   }
@@ -238,7 +245,23 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     if (!manifestFilePathContent.isPresent()) {
       throw new GeneralException("Found No Manifest Content from serverless git fetch task");
     }
-    String manifestFileOverrideContent = renderManifestContent(ambiance, manifestFilePathContent.get().getValue());
+
+    ServerlessArtifactConfig serverlessArtifactConfig = null;
+    Optional<ArtifactsOutcome> artifactsOutcome = getArtifactsOutcome(ambiance);
+    Map<String, ServerlessArtifactConfig> sidecarServerlessArtifactConfigMap = new HashMap<>();
+    if (artifactsOutcome.isPresent()) {
+      if (artifactsOutcome.get().getPrimary() != null) {
+        serverlessArtifactConfig = getArtifactConfig(artifactsOutcome.get().getPrimary(), ambiance);
+      }
+      artifactsOutcome.get().getSidecars().forEach((key, value) -> {
+        if (value != null) {
+          sidecarServerlessArtifactConfigMap.put(key, getArtifactConfig(value, ambiance));
+        }
+      });
+    }
+
+    String manifestFileOverrideContent = renderManifestContent(ambiance, manifestFilePathContent.get().getValue(),
+        serverlessArtifactConfig, sidecarServerlessArtifactConfigMap);
     ServerlessGitFetchOutcome serverlessGitFetchOutcome = ServerlessGitFetchOutcome.builder()
                                                               .manifestFilePathContent(manifestFilePathContent.get())
                                                               .manifestFileOverrideContent(manifestFileOverrideContent)
@@ -428,12 +451,31 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
         .build();
   }
 
-  public String renderManifestContent(Ambiance ambiance, String manifestFileContent) {
+  public String renderManifestContent(Ambiance ambiance, String manifestFileContent,
+      ServerlessArtifactConfig serverlessArtifactConfig,
+      Map<String, ServerlessArtifactConfig> sidecarServerlessArtifactConfigMap) {
     if (isEmpty(manifestFileContent)) {
       return manifestFileContent;
     }
-    if (manifestFileContent.contains(ARTIFACT_PATH)) {
-      manifestFileContent = manifestFileContent.replace(ARTIFACT_PATH, ARTIFACT_ACTUAL_PATH);
+    if (serverlessArtifactConfig != null
+        && serverlessArtifactConfig.getServerlessArtifactType().equals(ServerlessArtifactType.ECR)) {
+      manifestFileContent = manifestFileContent.replace(
+          PRIMARY_ARTIFACT_PATH_FOR_ECR, ((ServerlessEcrArtifactConfig) serverlessArtifactConfig).getImage());
+    } else if (manifestFileContent.contains(PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY)) {
+      manifestFileContent = manifestFileContent.replace(PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY, ARTIFACT_ACTUAL_PATH);
+    }
+
+    for (Map.Entry<String, ServerlessArtifactConfig> entry : sidecarServerlessArtifactConfigMap.entrySet()) {
+      String identifier = SIDECAR_ARTIFACT_PATH_PREFIX + entry.getKey() + ">";
+      if (manifestFileContent.contains(identifier)) {
+        if (entry.getValue().getServerlessArtifactType().equals(ServerlessArtifactType.ECR)) {
+          manifestFileContent =
+              manifestFileContent.replace(identifier, ((ServerlessEcrArtifactConfig) entry.getValue()).getImage());
+        } else if (entry.getValue().getServerlessArtifactType().equals(ServerlessArtifactType.ARTIFACTORY)) {
+          manifestFileContent =
+              manifestFileContent.replace(identifier, SIDECAR_ARTIFACT_FILE_NAME_PREFIX + entry.getKey());
+        }
+      }
     }
     return engineExpressionService.renderExpression(ambiance, manifestFileContent);
   }

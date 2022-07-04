@@ -12,6 +12,7 @@ import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,6 +27,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.OrchestrationService;
@@ -47,6 +49,7 @@ import io.harness.pms.contracts.plan.RerunInfo;
 import io.harness.pms.contracts.plan.RetryExecutionInfo;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
+import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.pms.helpers.PrincipalInfoHelper;
 import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
@@ -98,6 +101,7 @@ public class ExecutionHelperTest extends CategoryTest {
   @Mock PlanExecutionMetadataService planExecutionMetadataService;
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
   @Mock PmsExecutionSummaryRespository pmsExecutionSummaryRespository;
+  @Mock PmsFeatureFlagHelper featureFlagService;
 
   String accountId = "accountId";
   String orgId = "orgId";
@@ -553,6 +557,38 @@ public class ExecutionHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testGetPipelineYamlAndValidateWhenOPAFFisOff() {
+    String yamlWithTempRef = "pipeline:\n"
+        + "    name: ww\n"
+        + "    template:\n"
+        + "        templateRef: new_pipeline_template_name\n"
+        + "        versionLabel: v1\n"
+        + "    tags: {}\n";
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountId)
+                                        .orgIdentifier(orgId)
+                                        .projectIdentifier(projectId)
+                                        .identifier(pipelineId)
+                                        .yaml(yamlWithTempRef)
+                                        .build();
+    when(featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE))
+        .thenReturn(false);
+    when(featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.NG_TEMPLATES)).thenReturn(true);
+    TemplateMergeResponseDTO templateMergeResponse =
+        TemplateMergeResponseDTO.builder().mergedPipelineYaml(yamlWithTempRef).build();
+
+    doReturn(templateMergeResponse)
+        .when(pipelineTemplateHelper)
+        .resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+            pipelineEntity.getProjectIdentifier(), yamlWithTempRef, true, false);
+    TemplateMergeResponseDTO templateMergeResponseDTO = executionHelper.getPipelineYamlAndValidate("", pipelineEntity);
+    assertThat(templateMergeResponseDTO.getMergedPipelineYaml())
+        .isEqualTo(templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef());
+  }
+
+  @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testStartExecution() throws IOException {
@@ -578,7 +614,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(orchestrationService)
         .startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
     PlanExecution createdPlanExecution = executionHelper.startExecution(
-        accountId, orgId, projectId, executionMetadata, planExecutionMetadata, false, null, null);
+        accountId, orgId, projectId, executionMetadata, planExecutionMetadata, false, null, null, null);
     assertThat(createdPlanExecution).isEqualTo(planExecution);
     verify(planCreatorMergeService, times(1))
         .createPlan(accountId, orgId, projectId, executionMetadata, planExecutionMetadata);

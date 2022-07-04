@@ -89,7 +89,7 @@ public class GithubCreatePullRequestScmApiErrorHandlerTest extends GitSyncTestBa
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
       assertThat(exception).isNotNull();
-      assertThat(exception.getMessage()).isEqualTo(SCMExceptionErrorMessages.CREATE_PULL_REQUEST_VALIDATION_FAILED);
+      assertThat(exception.getMessage()).isEqualTo(SCMExceptionErrorMessages.CREATE_PULL_REQUEST_FAILURE);
     }
   }
 

@@ -23,6 +23,7 @@ public interface PmsExecutionSummaryService {
   void update(String planExecutionId, Update update);
   void updateStageOfIdentityType(String planExecutionId, Update update);
   void addStageNodeInGraphIfUnderStrategy(String planExecutionId, NodeExecution nodeExecution, Update update);
+  void updateStrategyNode(String planExecutionId, NodeExecution nodeExecution, Update update);
   Optional<PipelineExecutionSummaryEntity> getPipelineExecutionSummary(
       String accountId, String orgId, String projectId, String planExecutionId);
 }
