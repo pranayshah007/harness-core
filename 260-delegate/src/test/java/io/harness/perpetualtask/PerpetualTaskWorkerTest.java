@@ -94,7 +94,8 @@ public class PerpetualTaskWorkerTest extends DelegateTestBase {
     PerpetualTaskSchedule schedule = PerpetualTaskSchedule.newBuilder().setInterval(Durations.fromSeconds(1)).build();
     context = PerpetualTaskExecutionContext.newBuilder().setTaskParams(params).setTaskSchedule(schedule).build();
 
-    when(perpetualTaskServiceAgentClient.perpetualTaskContext(isA(PerpetualTaskId.class),accountId)).thenReturn(context);
+    when(perpetualTaskServiceAgentClient.perpetualTaskContext(isA(PerpetualTaskId.class), accountId))
+        .thenReturn(context);
   }
 
   @Test

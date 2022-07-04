@@ -7,7 +7,4 @@ resources()
 filegroup(
     name = "resource",
     srcs = glob(["*"]),
-
 )
-
-
