@@ -52,7 +52,7 @@ func (b *dotnetRunner) AutoDetectPackages() ([]string, error) {
 func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	defaultSetupCmd := fmt.Sprintf("%s %s", dotnetCmd, userArgs)
 	defaultRunCmd := fmt.Sprintf("%s test --no-build --logger \"junit;LogFilePath=test_results.xml\"", dotnetCmd)
-	defaultCmd := fmt.Sprintf("%s; %s", defaultSetupCmd, defaultRunCmd)
+	defaultCmd := fmt.Sprintf("%s\n%s", defaultSetupCmd, defaultRunCmd)
 	agentFullName := path.Join(b.agentPath, "dotnet-agent.injector.dll")
 	instrumentCmd := fmt.Sprintf("%s %s %s %s", dotnetCmd, agentFullName, userArgs, agentConfigPath)
 	if ignoreInstr {
@@ -61,7 +61,8 @@ func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 	}
 
 	if runAll {
-		return fmt.Sprintf("%s; %s", instrumentCmd, defaultRunCmd), nil // Add instrumentation here
+		b.log.Infow("Running all tests")
+		return fmt.Sprintf("%s\n%s", instrumentCmd, defaultRunCmd), nil // Add instrumentation here
 	}
 
 	// Need to handle this for Windows as well
@@ -94,5 +95,5 @@ func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 	}
 	// dotnet /dotnet-agent.injector.dll /TestProject1.dll ./Config.yaml
 	runtestCmd := fmt.Sprintf("%s test --no-build --logger \"junit;LogFilePath=test_results.xml\" --filter \"%s\"", dotnetCmd, testStr)
-	return fmt.Sprintf("%s; %s", instrumentCmd, runtestCmd), nil
+	return fmt.Sprintf("%s\n%s", instrumentCmd, runtestCmd), nil
 }
