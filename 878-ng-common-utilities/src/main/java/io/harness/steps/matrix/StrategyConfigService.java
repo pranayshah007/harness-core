@@ -10,8 +10,11 @@ package io.harness.steps.matrix;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 
 public interface StrategyConfigService {
   List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfig strategyConfig, String childNodeId);
+
+  List<JsonNode> expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode);
 }

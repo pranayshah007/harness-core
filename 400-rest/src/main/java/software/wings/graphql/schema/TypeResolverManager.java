@@ -514,10 +514,11 @@ public class TypeResolverManager {
                                       .put(QLSNOWApprovalDetails.class, TypeResolverManagerTypes.SNOW_APPROVAL_DETAILS)
                                       .put(QLShellScriptDetails.class, TypeResolverManagerTypes.SHELL_SCRIPT_DETAILS)
                                       .build()))
-            .put(TypeResolverManagerUnifaces.SECRET_MANAGER_CONFIG,
-                    getResultTypeResolver(ImmutableMap.<Class, String>builder()
-                            .put(QLCustomSecretManagerConfig.class, TypeResolverManagerTypes.CUSTOM_SECRET_MANAGER)
-                            .build()))
+        .put(TypeResolverManagerUnifaces.SECRET_MANAGER_CONFIG,
+            getResultTypeResolver(
+                ImmutableMap.<Class, String>builder()
+                    .put(QLCustomSecretManagerConfig.class, TypeResolverManagerTypes.CUSTOM_SECRET_MANAGER)
+                    .build()))
         .build();
   }
 

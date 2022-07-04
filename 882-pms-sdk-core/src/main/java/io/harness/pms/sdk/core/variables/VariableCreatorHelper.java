@@ -595,7 +595,7 @@ public class VariableCreatorHelper {
       ParameterField<?> parameterFieldValue = (ParameterField) fieldValue;
       addExpressionInCustomObject(field, parameterFieldValue.getValue(), resultantFieldExpressions, mergedFqn);
     } else {
-      resultantFieldExpressions.addAll(getExpressionsInObject(field.getType(), mergedFqn));
+      resultantFieldExpressions.addAll(getExpressionsInObject(fieldValue, mergedFqn));
     }
   }
 }

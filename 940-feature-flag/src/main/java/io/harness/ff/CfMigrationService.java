@@ -117,8 +117,9 @@ public class CfMigrationService {
          */
         if (!cfFeatures.contains(featureName.name())) {
           try {
-            cfAdminApi.createFeatureFlag(
-                cfAccount, cfOrg, createCFFeatureFlag(featureName.name(), featureName.getScope(), cfProject));
+            cfAdminApi.createFeatureFlag(cfAccount, cfOrg,
+                createCFFeatureFlag(featureName.name(), featureName.getScope(), cfProject, featureName.getDescription(),
+                    featureName.getOwner()));
             Feature feature = cfAdminApi.getFeatureFlag(featureName.name(), cfAccount, cfOrg, cfProject, cfEnvironment);
             featureMap.put(featureName.name(), feature);
             log.info("CF-SYNC Created featureFlag [{}] in CF", featureName);
@@ -302,7 +303,8 @@ public class CfMigrationService {
     }
   }
 
-  private InlineObject createCFFeatureFlag(String featureName, Scope scope, String project) {
+  private InlineObject createCFFeatureFlag(
+      String featureName, Scope scope, String project, String description, String owner) {
     InlineObject inlineObject = new InlineObject();
     inlineObject.setProject(project);
     inlineObject.setIdentifier(featureName);
@@ -328,6 +330,8 @@ public class CfMigrationService {
     inlineObject.setPermanent(false);
     inlineObject.setArchived(false);
 
+    inlineObject.setDescription(description);
+    inlineObject.setOwner(owner);
     return inlineObject;
   }
 }

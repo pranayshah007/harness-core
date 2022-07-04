@@ -18,11 +18,11 @@ import io.harness.serializer.kryo.NGTemplateKryoRegistrar;
 import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
 import io.harness.serializer.morphia.NGTemplateMorphiaRegistrar;
 import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
+import io.harness.template.beans.yaml.NGTemplateConfig;
+import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import io.harness.template.beans.yaml.NGTemplateConfig;
-import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 import io.serializer.registrars.NGCommonsRegistrars;
 import lombok.experimental.UtilityClass;
 import org.mongodb.morphia.converters.TypeConverter;
@@ -76,15 +76,15 @@ public class TemplateServiceModuleRegistrars {
           .build();
 
   public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =
-          ImmutableList.<YamlSchemaRootClass>builder()
-                  .add(YamlSchemaRootClass.builder()
-                          .entityType(EntityType.TEMPLATE)
-                          .availableAtProjectLevel(true)
-                          .availableAtOrgLevel(true)
-                          .availableAtAccountLevel(true)
-                          .clazz(NGTemplateConfig.class)
-                          .build())
-                  .build();
+      ImmutableList.<YamlSchemaRootClass>builder()
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.TEMPLATE)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(true)
+                   .availableAtAccountLevel(true)
+                   .clazz(NGTemplateConfig.class)
+                   .build())
+          .build();
 
   public final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =
       ImmutableSet.<Class<? extends TypeConverter>>builder().build();

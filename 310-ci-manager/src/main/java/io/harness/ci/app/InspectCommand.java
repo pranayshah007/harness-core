@@ -8,6 +8,7 @@
 package io.harness.ci.app;
 
 import io.harness.app.CIManagerConfiguration;
+import io.harness.ci.serializer.CiExecutionRegistrars;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
@@ -18,7 +19,6 @@ import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
-import io.harness.serializer.CiExecutionRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.PrimaryVersionManagerRegistrars;
 

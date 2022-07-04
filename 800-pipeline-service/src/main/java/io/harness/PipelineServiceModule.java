@@ -399,7 +399,7 @@ public class PipelineServiceModule extends AbstractModule {
 
     // ng-license dependencies
     install(NgLicenseHttpClientModule.getInstance(configuration.getNgManagerServiceHttpClientConfig(),
-            configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
+        configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
     registerEventsFrameworkMessageListeners();
   }
 

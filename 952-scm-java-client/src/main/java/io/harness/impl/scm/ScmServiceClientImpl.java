@@ -303,22 +303,74 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     return ListBranchesResponse.newBuilder().addAllBranches(branchesList).build();
   }
 
+  private boolean hasMoreBranches(ListBranchesResponse branchList) {
+    return branchList != null && branchList.getPagination() != null && branchList.getPagination().getNext() != 0;
+  }
+
   @Override
   public ListBranchesWithDefaultResponse listBranchesWithDefault(
       ScmConnector scmConnector, PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
     final String slug = scmGitProviderHelper.getSlug(scmConnector);
     final Provider provider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
-    ListBranchesWithDefaultRequest listBranchesRequest =
+    int pageNumber = 1;
+    ListBranchesWithDefaultRequest listBranchesWithDefaultRequest =
         ListBranchesWithDefaultRequest.newBuilder()
             .setSlug(slug)
             .setProvider(provider)
-            .setPagination(PageRequest.newBuilder().setPage(pageRequest.getPageIndex() + 1).build())
+            .setPagination(PageRequest.newBuilder().setPage(pageNumber).build())
             .build();
-    return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::listBranchesWithDefault, listBranchesRequest);
+    ListBranchesWithDefaultResponse listBranchesWithDefaultResponse = ScmGrpcClientUtils.retryAndProcessException(
+        scmBlockingStub::listBranchesWithDefault, listBranchesWithDefaultRequest);
+    if (isNotEmpty(listBranchesWithDefaultResponse.getError())) {
+      return listBranchesWithDefaultResponse;
+    }
+    return listMoreBranches(scmConnector, listBranchesWithDefaultResponse, pageRequest.getPageSize(), scmBlockingStub);
   }
 
-  private boolean hasMoreBranches(ListBranchesResponse branchList) {
-    return branchList != null && branchList.getPagination() != null && branchList.getPagination().getNext() != 0;
+  private ListBranchesWithDefaultResponse listMoreBranches(ScmConnector scmConnector,
+      ListBranchesWithDefaultResponse listBranchesWithDefaultResponse, int pageSize,
+      SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    final String slug = scmGitProviderHelper.getSlug(scmConnector);
+    final Provider provider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
+    ListBranchesResponse listBranchesResponse = null;
+    int branchCount = listBranchesWithDefaultResponse.getBranchesCount();
+    List<String> branchesList = listBranchesWithDefaultResponse.getBranchesList();
+    int pageNumber = listBranchesWithDefaultResponse.getPagination().getNext();
+    while (pageNumber != 0 && branchCount <= pageSize) {
+      ListBranchesRequest listBranchesRequest = ListBranchesRequest.newBuilder()
+                                                    .setSlug(slug)
+                                                    .setProvider(provider)
+                                                    .setPagination(PageRequest.newBuilder().setPage(pageNumber).build())
+                                                    .build();
+      listBranchesResponse =
+          ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::listBranches, listBranchesRequest);
+      if (isNotEmpty(listBranchesResponse.getError())) {
+        return ListBranchesWithDefaultResponse.newBuilder()
+            .setStatus(listBranchesResponse.getStatus())
+            .setError(listBranchesResponse.getError())
+            .build();
+      }
+      branchesList.addAll(listBranchesResponse.getBranchesList());
+      pageNumber = listBranchesResponse.getPagination().getNext();
+      branchCount += listBranchesResponse.getBranchesCount();
+    }
+    return prepareListBranchResponse(listBranchesWithDefaultResponse.getDefaultBranch(), branchesList, pageSize);
+  }
+
+  private ListBranchesWithDefaultResponse prepareListBranchResponse(
+      String defaultBranch, List<String> branchesList, int pageSize) {
+    if (branchesList.size() > pageSize) {
+      return ListBranchesWithDefaultResponse.newBuilder()
+          .setStatus(200)
+          .setDefaultBranch(defaultBranch)
+          .addAllBranches(branchesList.subList(0, pageSize))
+          .build();
+    }
+    return ListBranchesWithDefaultResponse.newBuilder()
+        .setStatus(200)
+        .setDefaultBranch(defaultBranch)
+        .addAllBranches(branchesList)
+        .build();
   }
 
   @Override

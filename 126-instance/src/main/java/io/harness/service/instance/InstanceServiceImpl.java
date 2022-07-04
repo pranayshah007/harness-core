@@ -7,6 +7,10 @@
 
 package io.harness.service.instance;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static com.google.common.base.Preconditions.checkArgument;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
@@ -85,8 +89,24 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   @Override
-  public Optional<InstanceDTO> softDelete(String instanceKey) {
-    Criteria criteria = Criteria.where(InstanceKeys.instanceKey).is(instanceKey);
+  public Optional<InstanceDTO> delete(String instanceKey, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String infrastructureMappingId) {
+    checkArgument(isNotEmpty(instanceKey), "instanceKey must be present");
+    checkArgument(isNotEmpty(accountIdentifier), "accountIdentifier must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "orgIdentifier must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "projectIdentifier must be present");
+    checkArgument(isNotEmpty(infrastructureMappingId), "infrastructureMappingId must be present");
+
+    Criteria criteria = Criteria.where(InstanceKeys.instanceKey)
+                            .is(instanceKey)
+                            .and(InstanceKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(InstanceKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(InstanceKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(InstanceKeys.infrastructureMappingId)
+                            .is(infrastructureMappingId);
     Update update =
         new Update().set(InstanceKeys.isDeleted, true).set(InstanceKeys.deletedAt, System.currentTimeMillis());
     Instance instance = instanceRepository.findAndModify(criteria, update);

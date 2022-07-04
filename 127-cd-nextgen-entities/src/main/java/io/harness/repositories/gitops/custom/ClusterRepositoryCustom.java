@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.gitops.entity.Cluster;
 
 import com.mongodb.client.result.DeleteResult;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +23,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public interface ClusterRepositoryCustom {
   Page<Cluster> find(@NotNull Criteria criteria, @NotNull Pageable pageable);
   Cluster create(@NotNull Cluster cluster);
+  long bulkCreate(@NotNull List<Cluster> cluster);
   Cluster update(@NotNull Criteria criteria, @NotNull Cluster cluster);
   DeleteResult delete(@NotNull Criteria criteria);
   Cluster findOne(@NotNull Criteria criteria);

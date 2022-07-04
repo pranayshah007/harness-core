@@ -36,7 +36,8 @@ public enum HookEventType {
           BitbucketServerWebhookEvent.BITBUCKET_SERVER_BRANCH_PUSH_TAG,
           BitbucketServerWebhookEvent.BITBUCKET_SERVER_PR_COMMENT),
       Arrays.asList(AzureWebhookEvent.AZURE_PUSH, AzureWebhookEvent.AZURE_PULLREQUEST_CREATED,
-          AzureWebhookEvent.AZURE_PULLREQUEST_MERGED, AzureWebhookEvent.AZURE_PULLREQUEST_UPDATED));
+          AzureWebhookEvent.AZURE_PULLREQUEST_MERGED, AzureWebhookEvent.AZURE_PULLREQUEST_UPDATED,
+          AzureWebhookEvent.AZURE_PULL_REQUEST_ISSUE_COMMENT));
 
   public List<GithubWebhookEvent> githubWebhookEvents;
   public List<GitlabWebhookEvent> gitlabWebhookEvents;

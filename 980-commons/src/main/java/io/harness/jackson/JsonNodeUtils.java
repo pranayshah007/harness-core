@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.NumericNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -32,7 +31,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(CDC)
@@ -134,13 +132,13 @@ public class JsonNodeUtils {
     }
     int size = arrayNode.size();
     int j = 0;
-    for(int i = 0; i < size; i++){
+    for (int i = 0; i < size; i++) {
       JsonNode node = arrayNode.get(j);
       if (node != null) {
         if (node.isTextual()) {
           if (keys.contains(node.asText())) {
             arrayNode.remove(j);
-          }else{
+          } else {
             j++;
           }
         }
@@ -217,7 +215,7 @@ public class JsonNodeUtils {
       } else if (keyNode.isObject()) {
         // We can't add multiple values in an object node. Hence updating whole keynode.
         addValuesToObjectNode((ObjectNode) objectNode, key, valuesList);
-      } else if(keyNode.isTextual() && objectNode.isObject() && valuesList.size() == 1){
+      } else if (keyNode.isTextual() && objectNode.isObject() && valuesList.size() == 1) {
         ObjectNode node = (ObjectNode) objectNode;
         node.put(key, valuesList.get(0));
       }

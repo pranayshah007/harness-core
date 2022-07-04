@@ -61,12 +61,12 @@ public class AzureRepoServiceImpl implements AzureRepoService {
                               .addConverterFactory(JacksonConverterFactory.create())
                               .client(Http.getUnsafeOkHttpClient(azureRepoUrl))
                               .build();
-       return retrofit.create(AzureRepoRestClient.class);
+      return retrofit.create(AzureRepoRestClient.class);
     } catch (InvalidRequestException e) {
       throw e;
     } catch (Exception e) {
       throw new InvalidRequestException(
-           "Failed to post commit status request to Azure server :" + azureRepoConfig.getAzureRepoUrl(), e);
+          "Failed to post commit status request to Azure server :" + azureRepoConfig.getAzureRepoUrl(), e);
     }
   }
 

@@ -7,6 +7,8 @@
 
 package io.harness.pms.preflight.service;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.ORG_IDENTIFIER;
 import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PIPELINE_ID;
 import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PROJECT_IDENTIFIER;
@@ -14,7 +16,6 @@ import static io.harness.pms.instrumentaion.PipelineInstrumentationConstants.PRO
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.manage.ManagedExecutorService;
 import io.harness.ng.core.EntityDetail;
@@ -78,11 +79,11 @@ public class PreflightServiceImpl implements PreflightService {
     sendPreflightTelemetryEvent(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     Optional<PipelineEntity> pipelineEntity =
         pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
-    if (!pipelineEntity.isPresent()) {
+    if (pipelineEntity.isEmpty()) {
       throw new InvalidRequestException(String.format("The given pipeline id [%s] does not exist", pipelineIdentifier));
     }
     String pipelineYaml;
-    if (EmptyPredicate.isEmpty(inputSetPipelineYaml)) {
+    if (isEmpty(inputSetPipelineYaml)) {
       pipelineYaml = pipelineEntity.get().getYaml();
     } else {
       pipelineYaml =
@@ -93,7 +94,7 @@ public class PreflightServiceImpl implements PreflightService {
     pipelineRbacServiceImpl.validateStaticallyReferredEntities(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineYaml, entityDetails);
 
-    Map<String, InputSetErrorResponseDTOPMS> errorResponseMap = EmptyPredicate.isEmpty(inputSetPipelineYaml)
+    Map<String, InputSetErrorResponseDTOPMS> errorResponseMap = isEmpty(inputSetPipelineYaml)
         ? null
         : InputSetErrorsHelper.getUuidToErrorResponseMap(pipelineEntity.get().getYaml(), inputSetPipelineYaml);
     PreFlightEntity preFlightEntitySaved;
@@ -154,7 +155,7 @@ public class PreflightServiceImpl implements PreflightService {
     List<ConnectorCheckResponse> connectorCheckResponses =
         connectorPreflightHandler.getConnectorCheckResponsesForReferredConnectors(
             accountId, orgId, projectId, fqnToObjectMapMergedYaml, connectorUsages);
-    if (!EmptyPredicate.isEmpty(connectorCheckResponses)) {
+    if (isNotEmpty(connectorCheckResponses)) {
       Criteria criteria = Criteria.where(PreFlightEntityKeys.uuid).is(preflightEntityId);
       Update update = new Update();
       update.set(PreFlightEntityKeys.connectorCheckResponse, connectorCheckResponses);
@@ -166,7 +167,7 @@ public class PreflightServiceImpl implements PreflightService {
   @Override
   public PreFlightDTO getPreflightCheckResponse(String preflightCheckId) {
     Optional<PreFlightEntity> optionalPreFlightEntity = preFlightRepository.findById(preflightCheckId);
-    if (!optionalPreFlightEntity.isPresent()) {
+    if (optionalPreFlightEntity.isEmpty()) {
       throw new InvalidRequestException("Could not find pre flight check data corresponding to id:" + preflightCheckId);
     }
     PreFlightEntity preFlightEntity = optionalPreFlightEntity.get();

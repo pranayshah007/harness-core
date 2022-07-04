@@ -9,8 +9,10 @@ package io.harness.cvng.core.beans.monitoredService.healthSourceSpec;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ANJAN;
+import static io.harness.rule.OwnerRule.DHRUVX;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
@@ -31,6 +33,7 @@ import io.harness.cvng.core.entities.CustomHealthMetricCVConfig;
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthMethod;
+import io.harness.exception.DataFormatException;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -59,6 +62,11 @@ public class CustomHealthSourceMetricSpecTest extends CvNextGenTestBase {
   MetricResponseMapping responseMapping;
   @Inject MetricPackService metricPackService;
 
+  private static final String INVALID_DATA_PATH_ERROR_MESSAGE = "Json paths do not match.";
+  private static final String INVALID_CHARACTER_ERROR_MESSAGE = "Json path contains invalid character(s).";
+  private static final String NO_ARRAY_FOUND_ERROR_MESSAGE = "No array found in the Json path.";
+  private static final String MISSING_KEY_ERROR_MESSAGE = "Can not derive relative path. Missing key.";
+
   @Before
   public void setup() {
     builderFactory = BuilderFactory.getDefault();
@@ -67,9 +75,9 @@ public class CustomHealthSourceMetricSpecTest extends CvNextGenTestBase {
     projectIdentifier = builderFactory.getContext().getProjectIdentifier();
     environmentRef = builderFactory.getContext().getEnvIdentifier();
     serviceRef = builderFactory.getContext().getServiceIdentifier();
-    String metricValueJSONPath = "json.[*].metrics.[*].metricValue";
-    String timestampValueJSONPath = "json.[*].metrics.[*].timestampValue";
-    String serviceInstanceValueJSONPath = "json.[*].serviceInstanceValue";
+    String metricValueJSONPath = "$.[*].metrics.[*].metricValue";
+    String timestampValueJSONPath = "$.[*].metrics.[*].metricTsValue";
+    String serviceInstanceValueJSONPath = "$.[*].metricPath";
     responseMapping = MetricResponseMapping.builder()
                           .metricValueJsonPath(metricValueJSONPath)
                           .timestampJsonPath(timestampValueJSONPath)
@@ -314,6 +322,409 @@ public class CustomHealthSourceMetricSpecTest extends CvNextGenTestBase {
       assertThat(configs.get(0).getMetricInfos()).isEqualTo(singleMetricDefinition.getMetricInfos());
       assertThat(configs.get(1).getMetricInfos()).isEqualTo(multipleMetricDefinitions.getMetricInfos());
     }
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetCVConfigUpdateResult_invalidJsonPath_extraBraceInMetricValuePath() {
+    String metricValueJSONPath = "$.[*].metrics.[*].metricValue[";
+    String timestampValueJSONPath = "$.[*].metrics.[*].metricTsValue";
+    String serviceInstanceValueJSONPath = "$.[*].metricPath";
+    responseMapping = MetricResponseMapping.builder()
+                          .metricValueJsonPath(metricValueJSONPath)
+                          .timestampJsonPath(timestampValueJSONPath)
+                          .serviceInstanceJsonPath(serviceInstanceValueJSONPath)
+                          .build();
+    customHealthSourceSpec = builderFactory.customHealthMetricSourceSpecBuilder(metricValueJSONPath,
+        timestampValueJSONPath, serviceInstanceValueJSONPath, groupName, metricName, identifier,
+        HealthSourceQueryType.HOST_BASED, CVMonitoringCategory.PERFORMANCE, true, false, false);
+    customHealthSourceSpecs = customHealthSourceSpec.getMetricDefinitions();
+    CustomHealthMetricCVConfig existingCVConfig =
+        builderFactory.customHealthMetricCVConfigBuilder("metric_3", true, false, true, responseMapping, "group",
+            HealthSourceQueryType.HOST_BASED, CustomHealthMethod.GET, CVMonitoringCategory.PERFORMANCE, null);
+
+    List<CVConfig> existingCVConfigs = new ArrayList<>();
+    existingCVConfigs.add(existingCVConfig);
+
+    assertThatThrownBy(()
+                           -> customHealthSourceSpec.getCVConfigUpdateResult(accountId, orgIdentifier,
+                               projectIdentifier, environmentRef, serviceRef, monitoredServiceIdentifier,
+                               "1234234_iden", "healthsource", existingCVConfigs, metricPackService))
+        .isInstanceOf(DataFormatException.class)
+        .hasMessage(INVALID_CHARACTER_ERROR_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetCVConfigUpdateResult_invalidJsonPath_extraBraceInTimestampValuePath() {
+    String metricValueJSONPath = "$.[*].metrics.[*].metricValue";
+    String timestampValueJSONPath = "$.[*].metrics.[*].metricTsValue[";
+    String serviceInstanceValueJSONPath = "$.[*].metricPath";
+    responseMapping = MetricResponseMapping.builder()
+                          .metricValueJsonPath(metricValueJSONPath)
+                          .timestampJsonPath(timestampValueJSONPath)
+                          .serviceInstanceJsonPath(serviceInstanceValueJSONPath)
+                          .build();
+    customHealthSourceSpec = builderFactory.customHealthMetricSourceSpecBuilder(metricValueJSONPath,
+        timestampValueJSONPath, serviceInstanceValueJSONPath, groupName, metricName, identifier,
+        HealthSourceQueryType.HOST_BASED, CVMonitoringCategory.PERFORMANCE, true, false, false);
+    customHealthSourceSpecs = customHealthSourceSpec.getMetricDefinitions();
+    CustomHealthMetricCVConfig existingCVConfig =
+        builderFactory.customHealthMetricCVConfigBuilder("metric_3", true, false, true, responseMapping, "group",
+            HealthSourceQueryType.HOST_BASED, CustomHealthMethod.GET, CVMonitoringCategory.PERFORMANCE, null);
+
+    List<CVConfig> existingCVConfigs = new ArrayList<>();
+    existingCVConfigs.add(existingCVConfig);
+
+    assertThatThrownBy(()
+                           -> customHealthSourceSpec.getCVConfigUpdateResult(accountId, orgIdentifier,
+                               projectIdentifier, environmentRef, serviceRef, monitoredServiceIdentifier,
+                               "1234234_iden", "healthsource", existingCVConfigs, metricPackService))
+        .isInstanceOf(DataFormatException.class)
+        .hasMessage(INVALID_CHARACTER_ERROR_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetCVConfigUpdateResult_invalidJsonPath_extraBraceInServiceInstanceValuePath() {
+    String metricValueJSONPath = "$.[*].metrics.[*].metricValue";
+    String timestampValueJSONPath = "$.[*].metrics.[*].metricTsValue";
+    String serviceInstanceValueJSONPath = "$.[*].metricPath[";
+    responseMapping = MetricResponseMapping.builder()
+                          .metricValueJsonPath(metricValueJSONPath)
+                          .timestampJsonPath(timestampValueJSONPath)
+                          .serviceInstanceJsonPath(serviceInstanceValueJSONPath)
+                          .build();
+    customHealthSourceSpec = builderFactory.customHealthMetricSourceSpecBuilder(metricValueJSONPath,
+        timestampValueJSONPath, serviceInstanceValueJSONPath, groupName, metricName, identifier,
+        HealthSourceQueryType.HOST_BASED, CVMonitoringCategory.PERFORMANCE, true, false, false);
+    customHealthSourceSpecs = customHealthSourceSpec.getMetricDefinitions();
+    CustomHealthMetricCVConfig existingCVConfig =
+        builderFactory.customHealthMetricCVConfigBuilder("metric_3", true, false, true, responseMapping, "group",
+            HealthSourceQueryType.HOST_BASED, CustomHealthMethod.GET, CVMonitoringCategory.PERFORMANCE, null);
+
+    List<CVConfig> existingCVConfigs = new ArrayList<>();
+    existingCVConfigs.add(existingCVConfig);
+
+    assertThatThrownBy(()
+                           -> customHealthSourceSpec.getCVConfigUpdateResult(accountId, orgIdentifier,
+                               projectIdentifier, environmentRef, serviceRef, monitoredServiceIdentifier,
+                               "1234234_iden", "healthsource", existingCVConfigs, metricPackService))
+        .isInstanceOf(DataFormatException.class)
+        .hasMessage(INVALID_CHARACTER_ERROR_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetCVConfigUpdateResult_invalidJsonPath_extraBraceInServiceInstanceListPath() {
+    String metricValueJSONPath = "$[.[*].metrics.[*].metricValue";
+    String timestampValueJSONPath = "$[.[*].metrics.[*].metricTsValue";
+    String serviceInstanceValueJSONPath = "$[.[*].metricPath";
+    responseMapping = MetricResponseMapping.builder()
+                          .metricValueJsonPath(metricValueJSONPath)
+                          .timestampJsonPath(timestampValueJSONPath)
+                          .serviceInstanceJsonPath(serviceInstanceValueJSONPath)
+                          .build();
+    customHealthSourceSpec = builderFactory.customHealthMetricSourceSpecBuilder(metricValueJSONPath,
+        timestampValueJSONPath, serviceInstanceValueJSONPath, groupName, metricName, identifier,
+        HealthSourceQueryType.HOST_BASED, CVMonitoringCategory.PERFORMANCE, true, false, false);
+    customHealthSourceSpecs = customHealthSourceSpec.getMetricDefinitions();
+    CustomHealthMetricCVConfig existingCVConfig =
+        builderFactory.customHealthMetricCVConfigBuilder("metric_3", true, false, true, responseMapping, "group",
+            HealthSourceQueryType.HOST_BASED, CustomHealthMethod.GET, CVMonitoringCategory.PERFORMANCE, null);
+
+    List<CVConfig> existingCVConfigs = new ArrayList<>();
+    existingCVConfigs.add(existingCVConfig);
+
+    assertThatThrownBy(()
+                           -> customHealthSourceSpec.getCVConfigUpdateResult(accountId, orgIdentifier,
+                               projectIdentifier, environmentRef, serviceRef, monitoredServiceIdentifier,
+                               "1234234_iden", "healthsource", existingCVConfigs, metricPackService))
+        .isInstanceOf(DataFormatException.class)
+        .hasMessage(INVALID_CHARACTER_ERROR_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetCVConfigUpdateResult_invalidJsonPath_extraBraceInMetricListPath() {
+    String metricValueJSONPath = "$.[*].metrics[.[*].metricValue";
+    String timestampValueJSONPath = "$.[*].metrics[.[*].metricTsValue";
+    String serviceInstanceValueJSONPath = "$.[*].metricPath";
+    responseMapping = MetricResponseMapping.builder()
+                          .metricValueJsonPath(metricValueJSONPath)
+                          .timestampJsonPath(timestampValueJSONPath)
+                          .serviceInstanceJsonPath(serviceInstanceValueJSONPath)
+                          .build();
+    customHealthSourceSpec = builderFactory.customHealthMetricSourceSpecBuilder(metricValueJSONPath,
+        timestampValueJSONPath, serviceInstanceValueJSONPath, groupName, metricName, identifier,
+        HealthSourceQueryType.HOST_BASED, CVMonitoringCategory.PERFORMANCE, true, false, false);
+    customHealthSourceSpecs = customHealthSourceSpec.getMetricDefinitions();
+    CustomHealthMetricCVConfig existingCVConfig =
+        builderFactory.customHealthMetricCVConfigBuilder("metric_3", true, false, true, responseMapping, "group",
+            HealthSourceQueryType.HOST_BASED, CustomHealthMethod.GET, CVMonitoringCategory.PERFORMANCE, null);
+
+    List<CVConfig> existingCVConfigs = new ArrayList<>();
+    existingCVConfigs.add(existingCVConfig);
+
+    assertThatThrownBy(()
+                           -> customHealthSourceSpec.getCVConfigUpdateResult(accountId, orgIdentifier,
+                               projectIdentifier, environmentRef, serviceRef, monitoredServiceIdentifier,
+                               "1234234_iden", "healthsource", existingCVConfigs, metricPackService))
+        .isInstanceOf(DataFormatException.class)
+        .hasMessage(INVALID_CHARACTER_ERROR_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetCVConfigUpdateResult_invalidJsonPath_inequalMetricListPath() {
+    String metricValueJSONPath = "$.[*].metrics.[*].metricValue";
+    String timestampValueJSONPath = "$.[*].metric.[*].metricTsValue";
+    String serviceInstanceValueJSONPath = "$.[*].metricPath";
+    responseMapping = MetricResponseMapping.builder()
+                          .metricValueJsonPath(metricValueJSONPath)
+                          .timestampJsonPath(timestampValueJSONPath)
+                          .serviceInstanceJsonPath(serviceInstanceValueJSONPath)
+                          .build();
+    customHealthSourceSpec = builderFactory.customHealthMetricSourceSpecBuilder(metricValueJSONPath,
+        timestampValueJSONPath, serviceInstanceValueJSONPath, groupName, metricName, identifier,
+        HealthSourceQueryType.HOST_BASED, CVMonitoringCategory.PERFORMANCE, true, false, false);
+    customHealthSourceSpecs = customHealthSourceSpec.getMetricDefinitions();
+    CustomHealthMetricCVConfig existingCVConfig =
+        builderFactory.customHealthMetricCVConfigBuilder("metric_3", true, false, true, responseMapping, "group",
+            HealthSourceQueryType.HOST_BASED, CustomHealthMethod.GET, CVMonitoringCategory.PERFORMANCE, null);
+
+    List<CVConfig> existingCVConfigs = new ArrayList<>();
+    existingCVConfigs.add(existingCVConfig);
+
+    assertThatThrownBy(()
+                           -> customHealthSourceSpec.getCVConfigUpdateResult(accountId, orgIdentifier,
+                               projectIdentifier, environmentRef, serviceRef, monitoredServiceIdentifier,
+                               "1234234_iden", "healthsource", existingCVConfigs, metricPackService))
+        .isInstanceOf(DataFormatException.class)
+        .hasMessage(INVALID_DATA_PATH_ERROR_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetCVConfigUpdateResult_invalidJsonPath_inequalServiceInstanceListPath() {
+    String metricValueJSONPath = "$.[*].metrics.[*].metricValue";
+    String timestampValueJSONPath = "$..[*].metric.[*].metricTsValue";
+    String serviceInstanceValueJSONPath = "$.[*].metricPath";
+    responseMapping = MetricResponseMapping.builder()
+                          .metricValueJsonPath(metricValueJSONPath)
+                          .timestampJsonPath(timestampValueJSONPath)
+                          .serviceInstanceJsonPath(serviceInstanceValueJSONPath)
+                          .build();
+    customHealthSourceSpec = builderFactory.customHealthMetricSourceSpecBuilder(metricValueJSONPath,
+        timestampValueJSONPath, serviceInstanceValueJSONPath, groupName, metricName, identifier,
+        HealthSourceQueryType.HOST_BASED, CVMonitoringCategory.PERFORMANCE, true, false, false);
+    customHealthSourceSpecs = customHealthSourceSpec.getMetricDefinitions();
+    CustomHealthMetricCVConfig existingCVConfig =
+        builderFactory.customHealthMetricCVConfigBuilder("metric_3", true, false, true, responseMapping, "group",
+            HealthSourceQueryType.HOST_BASED, CustomHealthMethod.GET, CVMonitoringCategory.PERFORMANCE, null);
+
+    List<CVConfig> existingCVConfigs = new ArrayList<>();
+    existingCVConfigs.add(existingCVConfig);
+
+    assertThatThrownBy(()
+                           -> customHealthSourceSpec.getCVConfigUpdateResult(accountId, orgIdentifier,
+                               projectIdentifier, environmentRef, serviceRef, monitoredServiceIdentifier,
+                               "1234234_iden", "healthsource", existingCVConfigs, metricPackService))
+        .isInstanceOf(DataFormatException.class)
+        .hasMessage(INVALID_DATA_PATH_ERROR_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetCVConfigUpdateResult_invalidJsonPath_invalidMetricValuePath() {
+    String metricValueJSONPath = "$.[*].metric.[].metricValue";
+    String timestampValueJSONPath = "$.[*].metric.[*].metricTsValue";
+    String serviceInstanceValueJSONPath = "$.[*].metricPath";
+    responseMapping = MetricResponseMapping.builder()
+                          .metricValueJsonPath(metricValueJSONPath)
+                          .timestampJsonPath(timestampValueJSONPath)
+                          .serviceInstanceJsonPath(serviceInstanceValueJSONPath)
+                          .build();
+    customHealthSourceSpec = builderFactory.customHealthMetricSourceSpecBuilder(metricValueJSONPath,
+        timestampValueJSONPath, serviceInstanceValueJSONPath, groupName, metricName, identifier,
+        HealthSourceQueryType.HOST_BASED, CVMonitoringCategory.PERFORMANCE, true, false, false);
+    customHealthSourceSpecs = customHealthSourceSpec.getMetricDefinitions();
+    CustomHealthMetricCVConfig existingCVConfig =
+        builderFactory.customHealthMetricCVConfigBuilder("metric_3", true, false, true, responseMapping, "group",
+            HealthSourceQueryType.HOST_BASED, CustomHealthMethod.GET, CVMonitoringCategory.PERFORMANCE, null);
+
+    List<CVConfig> existingCVConfigs = new ArrayList<>();
+    existingCVConfigs.add(existingCVConfig);
+
+    assertThatThrownBy(()
+                           -> customHealthSourceSpec.getCVConfigUpdateResult(accountId, orgIdentifier,
+                               projectIdentifier, environmentRef, serviceRef, monitoredServiceIdentifier,
+                               "1234234_iden", "healthsource", existingCVConfigs, metricPackService))
+        .isInstanceOf(DataFormatException.class)
+        .hasMessage(NO_ARRAY_FOUND_ERROR_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetCVConfigUpdateResult_invalidJsonPath_invalidTimestampValuePath() {
+    String metricValueJSONPath = "$.[*].metric.[*].metricValue";
+    String timestampValueJSONPath = "$.[].metric.[*].metricTsValue";
+    String serviceInstanceValueJSONPath = "$.[*].metricPath";
+    responseMapping = MetricResponseMapping.builder()
+                          .metricValueJsonPath(metricValueJSONPath)
+                          .timestampJsonPath(timestampValueJSONPath)
+                          .serviceInstanceJsonPath(serviceInstanceValueJSONPath)
+                          .build();
+    customHealthSourceSpec = builderFactory.customHealthMetricSourceSpecBuilder(metricValueJSONPath,
+        timestampValueJSONPath, serviceInstanceValueJSONPath, groupName, metricName, identifier,
+        HealthSourceQueryType.HOST_BASED, CVMonitoringCategory.PERFORMANCE, true, false, false);
+    customHealthSourceSpecs = customHealthSourceSpec.getMetricDefinitions();
+    CustomHealthMetricCVConfig existingCVConfig =
+        builderFactory.customHealthMetricCVConfigBuilder("metric_3", true, false, true, responseMapping, "group",
+            HealthSourceQueryType.HOST_BASED, CustomHealthMethod.GET, CVMonitoringCategory.PERFORMANCE, null);
+
+    List<CVConfig> existingCVConfigs = new ArrayList<>();
+    existingCVConfigs.add(existingCVConfig);
+
+    assertThatThrownBy(()
+                           -> customHealthSourceSpec.getCVConfigUpdateResult(accountId, orgIdentifier,
+                               projectIdentifier, environmentRef, serviceRef, monitoredServiceIdentifier,
+                               "1234234_iden", "healthsource", existingCVConfigs, metricPackService))
+        .isInstanceOf(DataFormatException.class)
+        .hasMessage(INVALID_DATA_PATH_ERROR_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetCVConfigUpdateResult_invalidJsonPath_invalidServiceInstanceValuePath() {
+    String metricValueJSONPath = "$.[*].metrics.[*].metricValue";
+    String timestampValueJSONPath = "$.[*].metric.[*].metricTsValue";
+    String serviceInstanceValueJSONPath = "$.[].metricPath";
+    responseMapping = MetricResponseMapping.builder()
+                          .metricValueJsonPath(metricValueJSONPath)
+                          .timestampJsonPath(timestampValueJSONPath)
+                          .serviceInstanceJsonPath(serviceInstanceValueJSONPath)
+                          .build();
+    customHealthSourceSpec = builderFactory.customHealthMetricSourceSpecBuilder(metricValueJSONPath,
+        timestampValueJSONPath, serviceInstanceValueJSONPath, groupName, metricName, identifier,
+        HealthSourceQueryType.HOST_BASED, CVMonitoringCategory.PERFORMANCE, true, false, false);
+    customHealthSourceSpecs = customHealthSourceSpec.getMetricDefinitions();
+    CustomHealthMetricCVConfig existingCVConfig =
+        builderFactory.customHealthMetricCVConfigBuilder("metric_3", true, false, true, responseMapping, "group",
+            HealthSourceQueryType.HOST_BASED, CustomHealthMethod.GET, CVMonitoringCategory.PERFORMANCE, null);
+
+    List<CVConfig> existingCVConfigs = new ArrayList<>();
+    existingCVConfigs.add(existingCVConfig);
+
+    assertThatThrownBy(()
+                           -> customHealthSourceSpec.getCVConfigUpdateResult(accountId, orgIdentifier,
+                               projectIdentifier, environmentRef, serviceRef, monitoredServiceIdentifier,
+                               "1234234_iden", "healthsource", existingCVConfigs, metricPackService))
+        .isInstanceOf(DataFormatException.class)
+        .hasMessage(NO_ARRAY_FOUND_ERROR_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetCVConfigUpdateResult_invalidJsonPath_invalidMetricListPath() {
+    String metricValueJSONPath = "$.[*].metrics.[].metricValue";
+    String timestampValueJSONPath = "$.[*].metric.[*].metricTsValue";
+    String serviceInstanceValueJSONPath = "$.[*].metricPath";
+    responseMapping = MetricResponseMapping.builder()
+                          .metricValueJsonPath(metricValueJSONPath)
+                          .timestampJsonPath(timestampValueJSONPath)
+                          .serviceInstanceJsonPath(serviceInstanceValueJSONPath)
+                          .build();
+    customHealthSourceSpec = builderFactory.customHealthMetricSourceSpecBuilder(metricValueJSONPath,
+        timestampValueJSONPath, serviceInstanceValueJSONPath, groupName, metricName, identifier,
+        HealthSourceQueryType.HOST_BASED, CVMonitoringCategory.PERFORMANCE, true, false, false);
+    customHealthSourceSpecs = customHealthSourceSpec.getMetricDefinitions();
+    CustomHealthMetricCVConfig existingCVConfig =
+        builderFactory.customHealthMetricCVConfigBuilder("metric_3", true, false, true, responseMapping, "group",
+            HealthSourceQueryType.HOST_BASED, CustomHealthMethod.GET, CVMonitoringCategory.PERFORMANCE, null);
+
+    List<CVConfig> existingCVConfigs = new ArrayList<>();
+    existingCVConfigs.add(existingCVConfig);
+
+    assertThatThrownBy(()
+                           -> customHealthSourceSpec.getCVConfigUpdateResult(accountId, orgIdentifier,
+                               projectIdentifier, environmentRef, serviceRef, monitoredServiceIdentifier,
+                               "1234234_iden", "healthsource", existingCVConfigs, metricPackService))
+        .isInstanceOf(DataFormatException.class)
+        .hasMessage(NO_ARRAY_FOUND_ERROR_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetCVConfigUpdateResult_invalidJsonPath_missingServiceInstanceListPath() {
+    String metricValueJSONPath = ".[*].metrics.[*].metricValue";
+    String timestampValueJSONPath = "$.[*].metric.[*].metricTsValue";
+    String serviceInstanceValueJSONPath = "$.[*].metricPath";
+    responseMapping = MetricResponseMapping.builder()
+                          .metricValueJsonPath(metricValueJSONPath)
+                          .timestampJsonPath(timestampValueJSONPath)
+                          .serviceInstanceJsonPath(serviceInstanceValueJSONPath)
+                          .build();
+    customHealthSourceSpec = builderFactory.customHealthMetricSourceSpecBuilder(metricValueJSONPath,
+        timestampValueJSONPath, serviceInstanceValueJSONPath, groupName, metricName, identifier,
+        HealthSourceQueryType.HOST_BASED, CVMonitoringCategory.PERFORMANCE, true, false, false);
+    customHealthSourceSpecs = customHealthSourceSpec.getMetricDefinitions();
+    CustomHealthMetricCVConfig existingCVConfig =
+        builderFactory.customHealthMetricCVConfigBuilder("metric_3", true, false, true, responseMapping, "group",
+            HealthSourceQueryType.HOST_BASED, CustomHealthMethod.GET, CVMonitoringCategory.PERFORMANCE, null);
+
+    List<CVConfig> existingCVConfigs = new ArrayList<>();
+    existingCVConfigs.add(existingCVConfig);
+
+    assertThatThrownBy(()
+                           -> customHealthSourceSpec.getCVConfigUpdateResult(accountId, orgIdentifier,
+                               projectIdentifier, environmentRef, serviceRef, monitoredServiceIdentifier,
+                               "1234234_iden", "healthsource", existingCVConfigs, metricPackService))
+        .isInstanceOf(DataFormatException.class)
+        .hasMessage(MISSING_KEY_ERROR_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetCVConfigUpdateResult_invalidJsonPath_missingMetricListPath() {
+    String metricValueJSONPath = "$.[*]..[*].metricValue";
+    String timestampValueJSONPath = "$.[*].metric.[*].metricTsValue";
+    String serviceInstanceValueJSONPath = "$.[*].metricPath";
+    responseMapping = MetricResponseMapping.builder()
+                          .metricValueJsonPath(metricValueJSONPath)
+                          .timestampJsonPath(timestampValueJSONPath)
+                          .serviceInstanceJsonPath(serviceInstanceValueJSONPath)
+                          .build();
+    customHealthSourceSpec = builderFactory.customHealthMetricSourceSpecBuilder(metricValueJSONPath,
+        timestampValueJSONPath, serviceInstanceValueJSONPath, groupName, metricName, identifier,
+        HealthSourceQueryType.HOST_BASED, CVMonitoringCategory.PERFORMANCE, true, false, false);
+    customHealthSourceSpecs = customHealthSourceSpec.getMetricDefinitions();
+    CustomHealthMetricCVConfig existingCVConfig =
+        builderFactory.customHealthMetricCVConfigBuilder("metric_3", true, false, true, responseMapping, "group",
+            HealthSourceQueryType.HOST_BASED, CustomHealthMethod.GET, CVMonitoringCategory.PERFORMANCE, null);
+
+    List<CVConfig> existingCVConfigs = new ArrayList<>();
+    existingCVConfigs.add(existingCVConfig);
+
+    assertThatThrownBy(()
+                           -> customHealthSourceSpec.getCVConfigUpdateResult(accountId, orgIdentifier,
+                               projectIdentifier, environmentRef, serviceRef, monitoredServiceIdentifier,
+                               "1234234_iden", "healthsource", existingCVConfigs, metricPackService))
+        .isInstanceOf(DataFormatException.class)
+        .hasMessage(MISSING_KEY_ERROR_MESSAGE);
   }
 
   private void compareMetricDefinition(CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition def1,

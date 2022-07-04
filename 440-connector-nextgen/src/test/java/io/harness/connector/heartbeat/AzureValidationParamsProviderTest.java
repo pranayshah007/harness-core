@@ -14,7 +14,6 @@ import static io.harness.connector.ConnectorTestConstants.PROJECT_IDENTIFIER;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.collect.Sets;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -45,6 +44,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import com.google.common.collect.Sets;
 import java.util.HashSet;
 import java.util.List;
 import org.junit.Test;

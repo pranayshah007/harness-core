@@ -76,6 +76,7 @@ import static software.wings.beans.deployment.DeploymentMetadata.Include.DEPLOYM
 import static software.wings.beans.deployment.DeploymentMetadata.Include.ENVIRONMENT;
 import static software.wings.service.impl.ApplicationManifestServiceImpl.CHART_NAME;
 import static software.wings.service.impl.pipeline.PipelineServiceHelper.generatePipelineExecutionUrl;
+import static software.wings.sm.ExecutionInterrupt.ExecutionInterruptBuilder.anExecutionInterrupt;
 import static software.wings.sm.InstanceStatusSummary.InstanceStatusSummaryBuilder.anInstanceStatusSummary;
 import static software.wings.sm.StateType.APPROVAL;
 import static software.wings.sm.StateType.APPROVAL_RESUME;
@@ -625,26 +626,27 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   public boolean approveOrRejectExecution(
       String appId, List<String> userGroupIds, ApprovalDetails approvalDetails, ApiKeyEntry apiEntryKey) {
     if (apiEntryKey == null) {
-      return approveOrRejectExecution(appId, userGroupIds, approvalDetails);
+      return approveOrRejectExecution(appId, userGroupIds, approvalDetails, (String) null);
     }
     if (apiEntryKey != null && isNotEmpty(userGroupIds)
         && !verifyAuthorizedToAcceptOrReject(userGroupIds, apiEntryKey.getUserGroupIds(), appId, null)) {
       throw new InvalidRequestException("User not authorized to accept or reject the approval");
     }
 
-    return approveOrRejectExecution(appId, approvalDetails);
+    return approveOrRejectExecution(appId, approvalDetails, null);
   }
 
   @Override
-  public boolean approveOrRejectExecution(String appId, List<String> userGroupIds, ApprovalDetails approvalDetails) {
+  public boolean approveOrRejectExecution(
+      String appId, List<String> userGroupIds, ApprovalDetails approvalDetails, String executionUuid) {
     if (isNotEmpty(userGroupIds) && !verifyAuthorizedToAcceptOrReject(userGroupIds, appId, null)) {
       throw new InvalidRequestException("User not authorized to accept or reject the approval");
     }
 
-    return approveOrRejectExecution(appId, approvalDetails);
+    return approveOrRejectExecution(appId, approvalDetails, executionUuid);
   }
 
-  private boolean approveOrRejectExecution(String appId, ApprovalDetails approvalDetails) {
+  private boolean approveOrRejectExecution(String appId, ApprovalDetails approvalDetails, String executionUuid) {
     User user = UserThreadLocal.get();
     if (user != null && approvalDetails.getApprovedBy() == null) {
       approvalDetails.setApprovedBy(
@@ -667,11 +669,35 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     if (approvalDetails.getAction() == APPROVE) {
       executionData.setStatus(SUCCESS);
-    } else if (approvalDetails.getAction() == REJECT) {
+    } else {
       executionData.setStatus(ExecutionStatus.REJECTED);
     }
 
     waitNotifyEngine.doneWith(approvalDetails.getApprovalId(), executionData);
+
+    if (approvalDetails.getAction().isRollbackAction() && executionUuid != null) {
+      WorkflowExecution workflowExecution = fetchWorkflowExecution(appId, executionUuid);
+      if (workflowExecution.getWorkflowType() == PIPELINE) {
+        executionData.setStatus(ExecutionStatus.REJECTED);
+        throw new InvalidRequestException("Unsupported rollback from pipeline, defaulting to reject.");
+      }
+      ExecutionInterruptType executionInterruptType = null;
+
+      switch (approvalDetails.getAction()) {
+        case ROLLBACK_PROVISIONER_AFTER_PHASES:
+          executionInterruptType = ExecutionInterruptType.ROLLBACK_PROVISIONER_AFTER_PHASES_ON_APPROVAL;
+          break;
+        default:
+          executionInterruptType = ExecutionInterruptType.ROLLBACK_ON_APPROVAL;
+      }
+      ExecutionInterrupt executionInterrupt = anExecutionInterrupt()
+                                                  .executionUuid(workflowExecution.getUuid())
+                                                  .appId(appId)
+                                                  .executionInterruptType(executionInterruptType)
+                                                  .build();
+
+      triggerExecutionInterrupt(executionInterrupt);
+    }
     return true;
   }
 
@@ -2998,9 +3024,13 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       alertService.closeAlertsOfType(accountId, appId, AlertType.USAGE_LIMIT_EXCEEDED);
       return execution;
     } catch (UsageLimitExceededException e) {
-      String errMsg =
-          "Deployment rate limit reached. Some deployments may not be allowed. Please contact Harness support.";
-      log.info("Message: {}, accountId={}", e.getMessage(), accountId);
+      String errMsg;
+      if (e.getErrorType() != null) {
+        errMsg = "Deployment rate limit reached. " + e.getErrorType().getErrorMessage();
+      } else {
+        errMsg = "Deployment rate limit reached. Some deployments may not be allowed. Please contact Harness support.";
+      }
+      log.info("Exception: {}, accountId={}", e, accountId);
 
       // open alert for triggers
       if (executionArgs.getWorkflowType() == WorkflowType.ORCHESTRATION && null != trigger) {
@@ -6500,7 +6530,8 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       String stateExecutionId, ApprovalDetails approvalDetails, PreviousApprovalDetails previousApprovalDetails) {
     ApprovalStateExecutionData stateExecutionData = fetchApprovalStateExecutionDataFromWorkflowExecution(
         appId, workflowExecutionId, stateExecutionId, approvalDetails);
-    boolean success = approveOrRejectExecution(appId, stateExecutionData.getUserGroups(), approvalDetails);
+    boolean success =
+        approveOrRejectExecution(appId, stateExecutionData.getUserGroups(), approvalDetails, (String) null);
     List<String> previousApprovalIds = new ArrayList<>();
     if (previousApprovalDetails.getPreviousApprovals() != null) {
       previousApprovalIds =
@@ -6535,7 +6566,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                     + " rejected when the following execution was approved: " + executionUrl
                 : approvalDetails.getComments());
         rejectionDetails.setAction(REJECT);
-        approveOrRejectExecution(appId, rejectionDetails);
+        approveOrRejectExecution(appId, rejectionDetails, null);
       }
     }
   }
@@ -6595,6 +6626,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   public WorkflowExecution getLastSuccessfulWorkflowExecution(
       String accountId, String appId, String workflowId, String envId, String serviceId, String infraMappingId) {
+    if (isEmpty(workflowId)) {
+      return null;
+    }
     return wingsPersistence.createQuery(WorkflowExecution.class)
         .filter(WorkflowExecutionKeys.accountId, accountId)
         .filter(WorkflowExecutionKeys.appId, appId)
@@ -6605,23 +6639,5 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         .filter(WorkflowExecutionKeys.status, SUCCESS)
         .order(Sort.descending(WorkflowExecutionKeys.createdAt))
         .get();
-  }
-
-  @Override
-  public WorkflowExecutionInfo getWorkflowExecutionInfo(String appId, String workflowExecutionId) {
-    WorkflowExecution workflowExecution =
-        wingsPersistence.getWithAppId(WorkflowExecution.class, appId, workflowExecutionId);
-    if (workflowExecution == null) {
-      throw new InvalidRequestException("Couldn't find a workflow Execution with Id: " + workflowExecutionId, USER);
-    }
-
-    return WorkflowExecutionInfo.builder()
-        .accountId(workflowExecution.getAccountId())
-        .name(workflowExecution.getName())
-        .appId(workflowExecution.getAppId())
-        .executionId(workflowExecutionId)
-        .workflowId(workflowExecution.getWorkflowId())
-        .startTs(workflowExecution.getStartTs())
-        .build();
   }
 }

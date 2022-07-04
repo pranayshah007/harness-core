@@ -29,7 +29,6 @@ import io.harness.apiexamples.PipelineAPIConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
-import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -167,8 +166,14 @@ public class InputSetResourcePMS {
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     log.info(String.format("Retrieving input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
-    Optional<InputSetEntity> optionalInputSetEntity = pmsInputSetService.get(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false);
+    Optional<InputSetEntity> optionalInputSetEntity;
+    try {
+      optionalInputSetEntity = pmsInputSetService.get(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false);
+    } catch (InvalidInputSetException e) {
+      return ResponseDTO.newResponse(PMSInputSetElementMapper.toInputSetResponseDTOPMSWithErrors(
+          e.getInputSetEntity(), (InputSetErrorWrapperDTOPMS) e.getMetadata()));
+    }
     if (!optionalInputSetEntity.isPresent()) {
       throw new InvalidRequestException(
           String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
@@ -176,19 +181,7 @@ public class InputSetResourcePMS {
     InputSetEntity inputSetEntity = optionalInputSetEntity.get();
     InputSetResponseDTOPMS inputSet = PMSInputSetElementMapper.toInputSetResponseDTOPMS(inputSetEntity);
 
-    if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
-      // todo: move the business logic to service layer, and in service layer make use of helpers as required.
-      InputSetErrorWrapperDTOPMS errorWrapperDTOPMS = validateAndMergeHelper.validateInputSet(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetEntity.getYaml(), null, null);
-      if (errorWrapperDTOPMS != null) {
-        return ResponseDTO.newResponse(
-            PMSInputSetElementMapper.toInputSetResponseDTOPMSWithErrors(inputSetEntity, errorWrapperDTOPMS));
-      }
-    }
-
-    String version = inputSetEntity.getVersion().toString();
-
-    return ResponseDTO.newResponse(version, inputSet);
+    return ResponseDTO.newResponse(inputSetEntity.getVersion().toString(), inputSet);
   }
 
   @GET
@@ -218,8 +211,14 @@ public class InputSetResourcePMS {
     log.info(String.format(
         "Retrieving overlay input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
-    Optional<InputSetEntity> optionalInputSetEntity = pmsInputSetService.get(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false);
+    Optional<InputSetEntity> optionalInputSetEntity;
+    try {
+      optionalInputSetEntity = pmsInputSetService.get(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false);
+    } catch (InvalidOverlayInputSetException e) {
+      return ResponseDTO.newResponse(PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(
+          e.getInputSetEntity(), true, ((OverlayInputSetErrorWrapperDTOPMS) e.getMetadata()).getInvalidReferences()));
+    }
     if (!optionalInputSetEntity.isPresent()) {
       throw new InvalidRequestException(
           String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
@@ -228,19 +227,7 @@ public class InputSetResourcePMS {
     OverlayInputSetResponseDTOPMS overlayInputSet =
         PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(inputSetEntity);
 
-    if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
-      // todo: move the business logic to service layer, and in service layer make use of helpers as required.
-      Map<String, String> overlayInputSetErrorResponse = validateAndMergeHelper.validateOverlayInputSet(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetEntity.getYaml());
-      if (!overlayInputSetErrorResponse.isEmpty()) {
-        return ResponseDTO.newResponse(PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(
-            inputSetEntity, true, overlayInputSetErrorResponse));
-      }
-    }
-
-    String version = inputSetEntity.getVersion().toString();
-
-    return ResponseDTO.newResponse(version, overlayInputSet);
+    return ResponseDTO.newResponse(inputSetEntity.getVersion().toString(), overlayInputSet);
   }
 
   @POST
@@ -282,13 +269,7 @@ public class InputSetResourcePMS {
     log.info(String.format("Create input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         entity.getIdentifier(), pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
 
-    InputSetErrorWrapperDTOPMS errorWrapperDTO = validateAndMergeHelper.validateInputSet(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml, pipelineBranch, pipelineRepoID);
-    if (errorWrapperDTO != null) {
-      throw new InvalidInputSetException("Exception in creating the Input Set", errorWrapperDTO);
-    }
-
-    InputSetEntity createdEntity = pmsInputSetService.create(entity);
+    InputSetEntity createdEntity = pmsInputSetService.create(entity, pipelineBranch, pipelineRepoID);
     return ResponseDTO.newResponse(
         createdEntity.getVersion().toString(), PMSInputSetElementMapper.toInputSetResponseDTOPMS(createdEntity));
   }
@@ -326,17 +307,8 @@ public class InputSetResourcePMS {
         String.format("Create overlay input set with identifier %s for pipeline %s in project %s, org %s, account %s",
             entity.getIdentifier(), pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
 
-    Map<String, String> invalidReferences = validateAndMergeHelper.validateOverlayInputSet(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
-    if (!invalidReferences.isEmpty()) {
-      OverlayInputSetErrorWrapperDTOPMS overlayInputSetErrorWrapperDTOPMS =
-          OverlayInputSetErrorWrapperDTOPMS.builder().invalidReferences(invalidReferences).build();
-
-      throw new InvalidOverlayInputSetException(
-          "Exception in creating the Overlay Input Set", overlayInputSetErrorWrapperDTOPMS);
-    }
-
-    InputSetEntity createdEntity = pmsInputSetService.create(entity);
+    // overlay input set validation does not require pipeline branch and repo, hence sending null here
+    InputSetEntity createdEntity = pmsInputSetService.create(entity, null, null);
     return ResponseDTO.newResponse(
         createdEntity.getVersion().toString(), PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(createdEntity));
   }
@@ -385,16 +357,11 @@ public class InputSetResourcePMS {
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
     yaml = removeRuntimeInputFromYaml(yaml);
 
-    InputSetErrorWrapperDTOPMS errorWrapperDTO = validateAndMergeHelper.validateInputSet(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml, pipelineBranch, pipelineRepoID);
-    if (errorWrapperDTO != null) {
-      throw new InvalidInputSetException("Exception in updating the Input Set", errorWrapperDTO);
-    }
-
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
     InputSetEntity entityWithVersion = entity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
-    InputSetEntity updatedEntity = pmsInputSetService.update(entityWithVersion, ChangeType.MODIFY);
+    InputSetEntity updatedEntity =
+        pmsInputSetService.update(entityWithVersion, ChangeType.MODIFY, pipelineBranch, pipelineRepoID);
     return ResponseDTO.newResponse(
         updatedEntity.getVersion().toString(), PMSInputSetElementMapper.toInputSetResponseDTOPMS(updatedEntity));
   }
@@ -436,17 +403,8 @@ public class InputSetResourcePMS {
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
     InputSetEntity entityWithVersion = entity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
 
-    Map<String, String> invalidReferences = validateAndMergeHelper.validateOverlayInputSet(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
-    if (!invalidReferences.isEmpty()) {
-      OverlayInputSetErrorWrapperDTOPMS overlayInputSetErrorWrapperDTOPMS =
-          OverlayInputSetErrorWrapperDTOPMS.builder().invalidReferences(invalidReferences).build();
-
-      throw new InvalidOverlayInputSetException(
-          "Exception in updating the Overlay Input Set", overlayInputSetErrorWrapperDTOPMS);
-    }
-
-    InputSetEntity updatedEntity = pmsInputSetService.update(entityWithVersion, ChangeType.MODIFY);
+    // overlay input set validation does not require pipeline branch and repo, hence sending null here
+    InputSetEntity updatedEntity = pmsInputSetService.update(entityWithVersion, ChangeType.MODIFY, null, null);
     return ResponseDTO.newResponse(
         updatedEntity.getVersion().toString(), PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(updatedEntity));
   }
@@ -709,7 +667,7 @@ public class InputSetResourcePMS {
 
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, newInputSetYaml);
-    InputSetEntity updatedEntity = pmsInputSetService.update(entity, ChangeType.MODIFY);
+    InputSetEntity updatedEntity = pmsInputSetService.update(entity, ChangeType.MODIFY, pipelineBranch, pipelineRepoID);
     return ResponseDTO.newResponse(
         InputSetSanitiseResponseDTO.builder()
             .shouldDeleteInputSet(false)

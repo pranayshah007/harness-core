@@ -20,6 +20,7 @@ import io.harness.service.impl.DelegateCacheImpl;
 import io.harness.service.impl.DelegateCallbackRegistryImpl;
 import io.harness.service.impl.DelegateInsightsServiceImpl;
 import io.harness.service.impl.DelegateMtlsEndpointServiceImpl;
+import io.harness.service.impl.DelegateMtlsEndpointServiceReadOnlyImpl;
 import io.harness.service.impl.DelegateSetupServiceImpl;
 import io.harness.service.impl.DelegateTaskSelectorMapServiceImpl;
 import io.harness.service.impl.DelegateTaskServiceImpl;
@@ -58,8 +59,10 @@ public class DelegateServiceModule extends AbstractModule {
   protected void configure() {
     install(FiltersModule.getInstance());
 
-    // register only if mtlsSubdomain is provided - UTs and other services don't need it.
-    if (StringUtils.isNotEmpty(this.mtlsSubdomain)) {
+    // Depending on configuration, only use read-only impl. so any non-get operations throw runtime exceptions.
+    if (StringUtils.isBlank(this.mtlsSubdomain)) {
+      bind(DelegateMtlsEndpointService.class).to(DelegateMtlsEndpointServiceReadOnlyImpl.class);
+    } else {
       bind(DelegateMtlsEndpointService.class).to(DelegateMtlsEndpointServiceImpl.class);
     }
 

@@ -91,12 +91,12 @@ public class TemplateReferenceTestHelper extends EntityReferenceServiceGrpc.Enti
         .build();
   }
 
-  public static EntityDetailProtoDTO generateTemplateRefEntityDetailProto(
-      String accountId, String orgId, String project, String identifier, String versionLabel) {
+  public static EntityDetailProtoDTO generateTemplateRefEntityDetailProto(String accountId, String orgId,
+      String project, String identifier, String versionLabel, Map<String, String> metadata) {
     return EntityDetailProtoDTO.newBuilder()
         .setType(EntityTypeProtoEnum.TEMPLATE)
         .setTemplateRef(TemplateReferenceProtoUtils.createTemplateReferenceProtoFromIdentifierRef(
-            generateIdentifierRef(accountId, orgId, project, identifier, null), versionLabel))
+            generateIdentifierRef(accountId, orgId, project, identifier, null), versionLabel, metadata))
         .build();
   }
 

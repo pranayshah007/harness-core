@@ -37,6 +37,7 @@ enum Action {
   // pull requests
   SYNC = 9;
   MERGE = 10;
+  EDIT = 11;
 }
 
 // User represents a user account.
@@ -597,6 +598,7 @@ enum AzureWebhookEvent {
   AZURE_PULLREQUEST_CREATED = 1;
   AZURE_PULLREQUEST_UPDATED = 2;
   AZURE_PULLREQUEST_MERGED = 3;
+  AZURE_PULL_REQUEST_ISSUE_COMMENT = 4;
 }
 
 message GithubWebhookEvents {

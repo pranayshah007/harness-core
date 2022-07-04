@@ -23,6 +23,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.service.NGTriggerYamlSchemaService;
+import io.harness.plancreator.pipeline.PipelineConfig;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.service.PMSYamlSchemaService;
 import io.harness.pms.yaml.SchemaErrorResponse;
@@ -44,6 +45,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Api("/yaml-schema")
 @Path("/yaml-schema")
@@ -56,6 +58,7 @@ import lombok.AllArgsConstructor;
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
 @PipelineServiceAuth
+@Slf4j
 @OwnedBy(PIPELINE)
 public class PmsYamlSchemaResource implements YamlSchemaResource {
   private final PMSYamlSchemaService pmsYamlSchemaService;
@@ -99,5 +102,14 @@ public class PmsYamlSchemaResource implements YamlSchemaResource {
         accountIdentifier, orgIdentifier, projectIdentifier, scope, stepEntityType, yamlGroup);
     return ResponseDTO.newResponse(
         YamlSchemaResponse.builder().schema(schema).schemaErrorResponse(SchemaErrorResponse.builder().build()).build());
+  }
+
+  @GET
+  @ApiOperation(value = "dummy api for checking pms schema", nickname = "dummyApiForSwaggerSchemaCheck")
+  @Path("/dummyApiForSwaggerSchemaCheck")
+  // DO NOT DELETE THIS WITHOUT CONFIRMING WITH UI
+  public ResponseDTO<PipelineConfig> dummyApiForSwaggerSchemaCheck() {
+    log.info("Get pipeline");
+    return ResponseDTO.newResponse(PipelineConfig.builder().build());
   }
 }

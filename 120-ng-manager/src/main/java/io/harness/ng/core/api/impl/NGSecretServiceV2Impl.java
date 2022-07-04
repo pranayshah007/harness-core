@@ -14,8 +14,18 @@ import static io.harness.delegate.beans.NgSetupFields.OWNER;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
+import static io.harness.secrets.SecretPermissions.SECRET_VIEW_PERMISSION;
 import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
 
+import static java.util.stream.Collectors.groupingBy;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
@@ -56,23 +66,32 @@ import io.harness.utils.PageUtils;
 
 import software.wings.beans.TaskType;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Streams;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import io.serializer.HObjectMapper;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import lombok.Builder;
+import lombok.Data;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -89,13 +108,14 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
   private final TransactionTemplate transactionTemplate;
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
   private final TaskSetupAbstractionHelper taskSetupAbstractionHelper;
+  private final AccessControlClient accessControlClient;
 
   @Inject
   public NGSecretServiceV2Impl(SecretRepository secretRepository, DelegateGrpcClientWrapper delegateGrpcClientWrapper,
       SshKeySpecDTOHelper sshKeySpecDTOHelper, NGSecretActivityService ngSecretActivityService,
       OutboxService outboxService, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
       TaskSetupAbstractionHelper taskSetupAbstractionHelper,
-      WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper) {
+      WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper, AccessControlClient accessControlClient) {
     this.secretRepository = secretRepository;
     this.outboxService = outboxService;
     this.delegateGrpcClientWrapper = delegateGrpcClientWrapper;
@@ -104,6 +124,7 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
     this.transactionTemplate = transactionTemplate;
     this.taskSetupAbstractionHelper = taskSetupAbstractionHelper;
     this.winRmCredentialsSpecDTOHelper = winRmCredentialsSpecDTOHelper;
+    this.accessControlClient = accessControlClient;
   }
 
   @Override
@@ -327,9 +348,89 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
   }
 
   @Override
-  public Page<Secret> list(Criteria criteria, int page, int size) {
-    return secretRepository.findAll(
-        criteria, PageUtils.getPageRequest(page, size, Collections.singletonList(SecretKeys.createdAt + ",desc")));
+  public Page<Secret> list(Criteria criteria) {
+    return secretRepository.findAll(criteria, Pageable.unpaged());
+  }
+
+  @Override
+  public List<Secret> getPermitted(Collection<Secret> secrets) {
+    return Streams.stream(Iterables.partition(secrets, 1000))
+        .map(this::checkAccess)
+        .flatMap(Collection::stream)
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public Page<Secret> list(List<Secret> secrets, int page, int size) {
+    Criteria[] criteria = secrets.stream()
+                              .map(secret
+                                  -> Criteria.where(SecretKeys.accountIdentifier)
+                                         .is(secret.getAccountIdentifier())
+                                         .and(SecretKeys.orgIdentifier)
+                                         .is(secret.getOrgIdentifier())
+                                         .and(SecretKeys.projectIdentifier)
+                                         .is(secret.getProjectIdentifier())
+                                         .and(SecretKeys.identifier)
+                                         .is(secret.getIdentifier()))
+                              .toArray(Criteria[] ::new);
+
+    return secretRepository.findAll(new Criteria().orOperator(criteria),
+        PageUtils.getPageRequest(page, size, Collections.singletonList(SecretKeys.createdAt + ",desc")));
+  }
+
+  private Collection<Secret> checkAccess(List<Secret> secrets) {
+    Map<SecretResource, List<Secret>> secretsMap = secrets.stream().collect(groupingBy(SecretResource::fromSecret));
+    List<PermissionCheckDTO> permissionChecks =
+        secrets.stream()
+            .map(secret
+                -> PermissionCheckDTO.builder()
+                       .permission(SECRET_VIEW_PERMISSION)
+                       .resourceIdentifier(secret.getIdentifier())
+                       .resourceScope(ResourceScope.of(
+                           secret.getAccountIdentifier(), secret.getOrgIdentifier(), secret.getProjectIdentifier()))
+                       .resourceType(SECRET_RESOURCE_TYPE)
+                       .build())
+            .collect(Collectors.toList());
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionChecks);
+
+    Collection<Secret> permittedSecrets = new ArrayList<>();
+    for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
+      if (accessControlDTO.isPermitted()) {
+        permittedSecrets.add(secretsMap.get(SecretResource.fromAccessControlDTO(accessControlDTO)).get(0));
+      }
+    }
+
+    return permittedSecrets;
+  }
+
+  @Value
+  @Data
+  @Builder
+  private static class SecretResource {
+    String accountIdentifier;
+    String orgIdentifier;
+    String projectIdentifier;
+    String identifier;
+
+    static SecretResource fromSecret(Secret secret) {
+      return SecretResource.builder()
+          .accountIdentifier(secret.getAccountIdentifier())
+          .orgIdentifier(isBlank(secret.getOrgIdentifier()) ? null : secret.getOrgIdentifier())
+          .projectIdentifier(isBlank(secret.getProjectIdentifier()) ? null : secret.getProjectIdentifier())
+          .build();
+    }
+
+    static SecretResource fromAccessControlDTO(AccessControlDTO accessControlDTO) {
+      return SecretResource.builder()
+          .accountIdentifier(accessControlDTO.getResourceScope().getAccountIdentifier())
+          .orgIdentifier(isBlank(accessControlDTO.getResourceScope().getOrgIdentifier())
+                  ? null
+                  : accessControlDTO.getResourceScope().getOrgIdentifier())
+          .projectIdentifier(isBlank(accessControlDTO.getResourceScope().getProjectIdentifier())
+                  ? null
+                  : accessControlDTO.getResourceScope().getProjectIdentifier())
+          .build();
+    }
   }
 
   @Override

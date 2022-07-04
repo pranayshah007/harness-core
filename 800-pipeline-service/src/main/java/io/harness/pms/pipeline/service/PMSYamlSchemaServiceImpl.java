@@ -10,10 +10,10 @@ package io.harness.pms.pipeline.service;
 import static io.harness.yaml.schema.beans.SchemaConstants.ALL_OF_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.DEFINITIONS_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.ONE_OF_NODE;
+import static io.harness.yaml.schema.beans.SchemaConstants.PIPELINE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.PROPERTIES_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.REF_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.SPEC_NODE;
-import static io.harness.yaml.schema.beans.SchemaConstants.PIPELINE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.STAGES_NODE;
 
 import static java.lang.String.format;
@@ -259,16 +259,17 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   private List<ModuleType> obtainEnabledModules(String accountIdentifier) {
     List<ModuleType> modules = new ArrayList<>();
 
-    //TODO: Ideally it should be received from accountLicenses but there were some issues observed this part.
-//    AccountLicenseDTO accountLicense =
-//        NGRestUtils.getResponse(ngLicenseHttpClient.getAccountLicensesDTO(accountIdentifier));
-//    accountLicense.getAllModuleLicenses().forEach((moduleType, value) -> {
-//      if (EmptyPredicate.isNotEmpty(value)) {
-//        modules.add(moduleType);
-//      }
-//    });
+    // TODO: Ideally it should be received from accountLicenses but there were some issues observed this part.
+    //    AccountLicenseDTO accountLicense =
+    //        NGRestUtils.getResponse(ngLicenseHttpClient.getAccountLicensesDTO(accountIdentifier));
+    //    accountLicense.getAllModuleLicenses().forEach((moduleType, value) -> {
+    //      if (EmptyPredicate.isNotEmpty(value)) {
+    //        modules.add(moduleType);
+    //      }
+    //    });
 
-    modules = ModuleType.getModules().stream().filter(moduleType -> !moduleType.isInternal()).collect(Collectors.toList());
+    modules =
+        ModuleType.getModules().stream().filter(moduleType -> !moduleType.isInternal()).collect(Collectors.toList());
 
     List<ModuleType> instanceModuleTypes = pmsSdkInstanceService.getActiveInstanceNames()
                                                .stream()
@@ -311,10 +312,10 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     JsonNode jsonNode = schemaFetcher.fetchStepYamlSchema(
         accountId, projectIdentifier, orgIdentifier, scope, entityType, yamlGroup, yamlSchemaWithDetailsList);
 
-    //TODO: hack to remove v2 steps from stage yamls. Fix it properly
-    if(StepCategory.STAGE.toString().equals(yamlGroup)){
-      YamlSchemaTransientHelper.removeV2StepEnumsFromStepElementConfig(jsonNode
-              .get(DEFINITIONS_NODE).fields().next().getValue().get(STEP_ELEMENT_CONFIG));
+    // TODO: hack to remove v2 steps from stage yamls. Fix it properly
+    if (StepCategory.STAGE.toString().equals(yamlGroup)) {
+      YamlSchemaTransientHelper.removeV2StepEnumsFromStepElementConfig(
+          jsonNode.get(DEFINITIONS_NODE).fields().next().getValue().get(STEP_ELEMENT_CONFIG));
     }
     return jsonNode;
   }

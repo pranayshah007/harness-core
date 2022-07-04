@@ -10,9 +10,7 @@ package io.harness.cdng.gitops;
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.ListUtils.trimStrings;
-import static io.harness.exception.WingsException.USER;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import static org.apache.commons.lang3.StringUtils.trim;
@@ -20,11 +18,10 @@ import static org.apache.commons.lang3.StringUtils.trim;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.k8s.K8sStepHelper;
-import io.harness.cdng.manifest.ManifestType;
-import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -42,7 +39,7 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
+import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -56,8 +53,6 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
-import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
-import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
@@ -74,13 +69,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import joptsimple.internal.Strings;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(GITOPS)
 @Slf4j
-public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
+public class CreatePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.GITOPS_CREATE_PR.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -93,33 +87,27 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject protected OutcomeService outcomeService;
   @Inject private K8sStepHelper k8sStepHelper;
+  @Inject private GitOpsStepHelper gitOpsStepHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
-      throws Exception {
-    return null;
-  }
-
-  @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+      ThrowingSupplier<NGGitOpsResponse> responseDataSupplier) throws Exception {
     ResponseData responseData = responseDataSupplier.get();
 
     NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseData;
 
     if (TaskStatus.SUCCESS.equals(ngGitOpsResponse.getTaskStatus())) {
       CreatePROutcome createPROutcome = CreatePROutcome.builder()
-                                            .changedFiles(((CreatePRPassThroughData) passThroughData).getFilePaths())
-                                            .prLink(ngGitOpsResponse.getPrLink())
+                                            .prlink(ngGitOpsResponse.getPrLink())
+                                            .prNumber(ngGitOpsResponse.getPrNumber())
                                             .commitId(ngGitOpsResponse.getCommitId())
                                             .build();
 
       executionSweepingOutputService.consume(
-          ambiance, OutcomeExpressionConstants.CREATE_PR_OUTCOME, createPROutcome, StepOutcomeGroup.STEP.name());
+          ambiance, OutcomeExpressionConstants.CREATE_PR_OUTCOME, createPROutcome, StepOutcomeGroup.STAGE.name());
 
       return StepResponse.builder()
           .unitProgressList(ngGitOpsResponse.getUnitProgressData().getUnitProgresses())
@@ -138,77 +126,51 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
         .build();
   }
 
-  public ManifestOutcome getReleaseRepoOutcome(Ambiance ambiance) {
-    ManifestsOutcome manifestsOutcomes = k8sStepHelper.resolveManifestsOutcome(ambiance);
-
-    List<ManifestOutcome> releaseRepoManifests =
-        manifestsOutcomes.values()
-            .stream()
-            .filter(manifestOutcome -> ManifestType.ReleaseRepo.equals(manifestOutcome.getType()))
-            .collect(Collectors.toList());
-
-    if (isEmpty(releaseRepoManifests)) {
-      throw new InvalidRequestException("Release Repo Manifests are mandatory for Create PR step. Select one from "
-              + String.join(", ", ManifestType.ReleaseRepo),
-          USER);
-    }
-
-    if (releaseRepoManifests.size() > 1) {
-      throw new InvalidRequestException("There can be only a single Release Repo manifest", USER);
-    }
-    return releaseRepoManifests.get(0);
-  }
-
   @Override
-  public TaskChainResponse startChainLinkAfterRbac(
+  public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     /*
-    TODO:
-     2. Handle the case when PR already exists
-     Delegate side: (NgGitOpsCommandTask.java)
-     */
+  TODO:
+   2. Handle the case when PR already exists
+   Delegate side: (NgGitOpsCommandTask.java)
+   */
     CreatePRStepParams gitOpsSpecParams = (CreatePRStepParams) stepParameters.getSpec();
+    try {
+      ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
+      // Fetch files from releaseRepoOutcome and replace expressions if present with cluster name and environment
+      Map<String, Map<String, String>> filesToVariablesMap = buildFilePathsToVariablesMap(releaseRepoOutcome, ambiance);
 
-    ManifestOutcome releaseRepoOutcome = getReleaseRepoOutcome(ambiance);
-    // Fetch files from releaseRepoOutcome and replace expressions if present with cluster name and environment
-    Map<String, Map<String, String>> filesToVariablesMap = buildFilePathsToVariablesMap(releaseRepoOutcome, ambiance);
+      List<GitFetchFilesConfig> gitFetchFilesConfig = new ArrayList<>();
+      gitFetchFilesConfig.add(getGitFetchFilesConfig(ambiance, releaseRepoOutcome, filesToVariablesMap.keySet()));
 
-    List<GitFetchFilesConfig> gitFetchFilesConfig = new ArrayList<>();
-    gitFetchFilesConfig.add(getGitFetchFilesConfig(ambiance, releaseRepoOutcome, filesToVariablesMap.keySet()));
+      NGGitOpsTaskParams ngGitOpsTaskParams =
+          NGGitOpsTaskParams.builder()
+              .gitOpsTaskType(GitOpsTaskType.CREATE_PR)
+              .gitFetchFilesConfig(gitFetchFilesConfig.get(0))
+              .overrideConfig(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getOverrideConfig(),
+                  CreatePRStepInfo.CreatePRBaseStepInfoKeys.overrideConfig, stepParameters))
+              .accountId(AmbianceUtils.getAccountId(ambiance))
+              .connectorInfoDTO(
+                  cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance))
+              .filesToVariablesMap(filesToVariablesMap)
+              .build();
 
-    NGGitOpsTaskParams ngGitOpsTaskParams =
-        NGGitOpsTaskParams.builder()
-            .gitOpsTaskType(GitOpsTaskType.CREATE_PR)
-            .gitFetchFilesConfig(gitFetchFilesConfig.get(0))
-            .overrideConfig(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getOverrideConfig(),
-                CreatePRStepInfo.CreatePRBaseStepInfoKeys.overrideConfig, stepParameters))
-            .accountId(AmbianceUtils.getAccountId(ambiance))
-            .connectorInfoDTO(
-                cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance))
-            .filesToVariablesMap(filesToVariablesMap)
-            .build();
+      final TaskData taskData = TaskData.builder()
+                                    .async(true)
+                                    .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
+                                    .taskType(TaskType.GITOPS_TASK_NG.name())
+                                    .parameters(new Object[] {ngGitOpsTaskParams})
+                                    .build();
 
-    final TaskData taskData = TaskData.builder()
-                                  .async(true)
-                                  .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
-                                  .taskType(TaskType.GITOPS_TASK_NG.name())
-                                  .parameters(new Object[] {ngGitOpsTaskParams})
-                                  .build();
+      return prepareCDTaskRequest(ambiance, taskData, kryoSerializer, gitOpsSpecParams.getCommandUnits(),
+          TaskType.GITOPS_TASK_NG.getDisplayName(),
+          TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))),
+          stepHelper.getEnvironmentType(ambiance));
 
-    String taskName = TaskType.GITOPS_TASK_NG.getDisplayName();
-
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        gitOpsSpecParams.getCommandUnits(), taskName,
-        TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))),
-        stepHelper.getEnvironmentType(ambiance));
-
-    return TaskChainResponse.builder()
-        .chainEnd(true)
-        .taskRequest(taskRequest)
-        .passThroughData(CreatePRPassThroughData.builder()
-                             .filePaths(gitFetchFilesConfig.get(0).getGitStoreDelegateConfig().getPaths())
-                             .build())
-        .build();
+    } catch (Exception e) {
+      log.error("Failed to execute Create PR step", e);
+      throw new InvalidRequestException(String.format("Failed to execute Create PR step. %s", e.getMessage()));
+    }
   }
 
   private Map<String, Map<String, String>> buildFilePathsToVariablesMap(
@@ -251,6 +213,8 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
         }
         filePathsToVariables.put(file, flattennedVariables);
       }
+    } else {
+      throw new InvalidRequestException("No outcome published from GitOpsCluster Step");
     }
     return filePathsToVariables;
   }

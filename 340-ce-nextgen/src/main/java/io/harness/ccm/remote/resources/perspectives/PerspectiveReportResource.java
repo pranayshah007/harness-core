@@ -9,6 +9,10 @@ package io.harness.ccm.remote.resources.perspectives;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
+import static io.harness.ccm.remote.resources.TelemetryConstants.REPORT_CREATED;
+import static io.harness.ccm.remote.resources.TelemetryConstants.REPORT_TYPE;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
@@ -72,10 +76,6 @@ public class PerspectiveReportResource {
   private final TelemetryReporter telemetryReporter;
   private final CEReportScheduleService ceReportScheduleService;
   private static final String accountIdPathParam = "{" + NGCommonEntityConstants.ACCOUNT_KEY + "}";
-  private static final String REPORT_CREATED = "Report Created";
-  private static final String MODULE = "module";
-  private static final String MODULE_NAME = "CCM";
-  private static final String REPORT_TYPE = "report_type";
 
   @Inject
   public PerspectiveReportResource(

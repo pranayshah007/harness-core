@@ -524,7 +524,8 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
 
   @VisibleForTesting
   Kubectl getKubectlClient(boolean useNewKubectlVersion) {
-    return Kubectl.client(k8sGlobalConfigService.getKubectlPath(useNewKubectlVersion), K8sConstants.KUBECONFIG_FILENAME);
+    return Kubectl.client(
+        k8sGlobalConfigService.getKubectlPath(useNewKubectlVersion), K8sConstants.KUBECONFIG_FILENAME);
   }
 
   private void cleanupDir(File kubeConfigDir) {

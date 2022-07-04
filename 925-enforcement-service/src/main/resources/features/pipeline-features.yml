@@ -82,3 +82,22 @@ features:
       COMMUNITY:
         restrictionType: AVAILABILITY
         enabled: false
+  - name: STRATEGY_MAX_CONCURRENT
+    description: The restriction on number of initial number of deployments
+    restrictions:
+      FREE:
+        restrictionType: STATIC_LIMIT
+        limit: 5
+        clientName: pipelineService
+      TEAM:
+        restrictionType: STATIC_LIMIT
+        limit: 10
+        clientName: pipelineService
+      ENTERPRISE:
+        restrictionType: STATIC_LIMIT
+        limit: 100
+        clientName: pipelineService
+      COMMUNITY:
+        restrictionType: STATIC_LIMIT
+        limit: 10000
+        clientName: pipelineService

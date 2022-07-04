@@ -320,6 +320,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       || (isNotBlank(System.getenv().get("NEXT_GEN")) && Boolean.parseBoolean(System.getenv().get("NEXT_GEN")));
   public static final String JAVA_VERSION = "java.version";
   private final double RESOURCE_USAGE_THRESHOLD = 0.75;
+  private String MANAGER_PROXY_CURL = System.getenv().get("MANAGER_PROXY_CURL");
+  private String MANAGER_HOST_AND_PORT = System.getenv().get("MANAGER_HOST_AND_PORT");
 
   private static volatile String delegateId;
   private static final String delegateInstanceId = generateUuid();
@@ -644,6 +646,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
 
       startMonitoringWatcher();
+      checkForSSLCertVerification(accountId);
 
       if (!multiVersion) {
         startUpgradeCheck(getVersion());
@@ -753,6 +756,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             }
           })
           .transport(TRANSPORT.WEBSOCKET);
+
+      // send accountId + delegateId as header for delegate gateway to log websocket connection with account.
+      requestBuilder.header("accountId", this.delegateConfiguration.getAccountId());
+      requestBuilder.header("delegateId", DelegateAgentCommonVariables.getDelegateId());
+
       return requestBuilder;
     } catch (URISyntaxException e) {
       throw new UnexpectedException("Unable to prepare uri", e);
@@ -2688,6 +2696,33 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
     } catch (Exception e) {
       log.error("Unable to send response to manager", e);
+    }
+  }
+
+  // TODO: ARPIT remove this after 1-2 months when we have communicated with the customers.
+  private void checkForSSLCertVerification(String accountId) {
+    if (isBlank(MANAGER_PROXY_CURL)) {
+      MANAGER_PROXY_CURL = EMPTY;
+    }
+    if (isBlank(MANAGER_HOST_AND_PORT)) {
+      MANAGER_HOST_AND_PORT = EMPTY;
+    }
+
+    try {
+      String commandToCheckAccountStatus =
+          "curl " + MANAGER_PROXY_CURL + " -s " + MANAGER_HOST_AND_PORT + "/api/account/" + accountId + "/status";
+      log.info("Checking for SSL cert verification with command {}", commandToCheckAccountStatus);
+      ProcessExecutor processExecutor =
+          new ProcessExecutor().timeout(10, TimeUnit.SECONDS).command("/bin/bash", "-c", commandToCheckAccountStatus);
+
+      int exitcode = processExecutor.execute().getExitValue();
+      if (exitcode != 0) {
+        log.error("SSL cert verification command failed with exitCode {}", exitcode);
+      } else {
+        log.info("SSL cert verification successful.");
+      }
+    } catch (Exception e) {
+      log.error("SSL Cert Verification failed with exception ", e);
     }
   }
 }

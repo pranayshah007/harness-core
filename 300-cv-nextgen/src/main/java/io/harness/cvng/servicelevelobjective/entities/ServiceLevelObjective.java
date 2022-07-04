@@ -315,6 +315,7 @@ public class ServiceLevelObjective
 
     @Override
     public TimePeriod getCurrentTimeRange(LocalDateTime currentDateTime) {
+      currentDateTime = currentDateTime.truncatedTo(ChronoUnit.MINUTES);
       return TimePeriod.createWithLocalTime(
           currentDateTime.minusMinutes(TimeUnit.DAYS.toMinutes(periodLengthDays)), currentDateTime);
     }

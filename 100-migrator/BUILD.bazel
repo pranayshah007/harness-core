@@ -33,6 +33,7 @@ java_binary(
         "//430-cv-nextgen-commons:module",
         "//460-capability:module",
         "//800-pipeline-service:module",
+        "//860-orchestration-steps:module",
         "//870-cg-orchestration:module",
         "//874-orchestration-delay:module",
         "//890-sm-core:module",

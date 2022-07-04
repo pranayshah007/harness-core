@@ -7,7 +7,8 @@
 
 package io.harness.pipeline.yamlschema;
 
-import com.google.inject.Provider;
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.AbstractHttpClientFactory;
 import io.harness.remote.client.ClientMode;
@@ -15,19 +16,18 @@ import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-
+import com.google.inject.Provider;
 
 @OwnedBy(PIPELINE)
-public class PipelineYamlSchemaServiceHttpClientFactory extends AbstractHttpClientFactory implements Provider<PipelineYamlSchemaServiceClient>{
-
+public class PipelineYamlSchemaServiceHttpClientFactory
+    extends AbstractHttpClientFactory implements Provider<PipelineYamlSchemaServiceClient> {
   public PipelineYamlSchemaServiceHttpClientFactory(ServiceHttpClientConfig config, String serviceSecret,
-                                                    ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId) {
-        super(config, serviceSecret, tokenGenerator, kryoConverterFactory, clientId, false, ClientMode.PRIVILEGED);
-    }
+      ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId) {
+    super(config, serviceSecret, tokenGenerator, kryoConverterFactory, clientId, false, ClientMode.PRIVILEGED);
+  }
 
-        @Override
-        public PipelineYamlSchemaServiceClient get() {
-           return getRetrofit().create(PipelineYamlSchemaServiceClient.class);
-    }
+  @Override
+  public PipelineYamlSchemaServiceClient get() {
+    return getRetrofit().create(PipelineYamlSchemaServiceClient.class);
+  }
 }

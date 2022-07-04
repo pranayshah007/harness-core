@@ -11,9 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
@@ -23,21 +25,26 @@ import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.harness.HarnessStoreFile;
+import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
+import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
+import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.NGCommandUnitType;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
+import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.encryption.Scope;
+import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.ng.core.api.NGEncryptedDataService;
@@ -47,18 +54,20 @@ import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
 import io.harness.pms.data.OrchestrationRefType;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
 import io.harness.ssh.FileSourceType;
-import io.harness.steps.shellscript.ShellScriptHelperService;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellType;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -68,17 +77,18 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 @OwnedBy(CDP)
 public class SshCommandStepHelperTest extends CategoryTest {
-  @Mock private ShellScriptHelperService shellScriptHelperService;
   @Mock private SshEntityHelper sshEntityHelper;
   @Mock private OutcomeService outcomeService;
   @Mock private FileStoreService fileStoreService;
   @Mock private NGEncryptedDataService ngEncryptedDataService;
   @Mock private EncryptedDataDetail encryptedDataDetail;
+  @Mock private CDExpressionResolver cdExpressionResolver;
 
-  @InjectMocks private SshCommandStepHelper helper;
+  @Spy @InjectMocks private SshCommandStepHelper helper;
 
   private final String workingDir = "/tmp";
   private final String accountId = "test";
@@ -131,8 +141,15 @@ public class SshCommandStepHelperTest extends CategoryTest {
   private final OptionalOutcome configFilesOutcome =
       OptionalOutcome.builder().found(true).outcome(configFilesOutCm).build();
 
+  private final ServiceStepOutcome sshServiceOutcome = ServiceStepOutcome.builder().type("Ssh").build();
+  private final ServiceStepOutcome winRmServiceOutcome = ServiceStepOutcome.builder().type("WinRm").build();
+
   private final PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig =
-      PdcSshInfraDelegateConfig.builder().hosts(Arrays.asList("host1")).build();
+      PdcSshInfraDelegateConfig.builder().hosts(Collections.singletonList("host1")).build();
+
+  private final PdcWinRmInfraDelegateConfig pdcWinRmInfraDelegateConfig =
+      PdcWinRmInfraDelegateConfig.builder().hosts(Collections.singletonList("host1")).build();
+
   private final ArtifactoryArtifactDelegateConfig artifactDelegateConfig =
       ArtifactoryArtifactDelegateConfig.builder().build();
   private final ParameterField workingDirParam = ParameterField.createValueField(workingDir);
@@ -140,20 +157,9 @@ public class SshCommandStepHelperTest extends CategoryTest {
   @Before
   public void prepare() {
     MockitoAnnotations.initMocks(this);
-    configFilesOutCm.put("test",
-        ConfigFileOutcome.builder()
-            .identifier("test")
-            .store(HarnessStore.builder()
-                       .files(ParameterField.createValueField(
-                           Arrays.asList(HarnessStoreFile.builder()
-                                             .scope(ParameterField.createValueField(Scope.ACCOUNT))
-                                             .path(ParameterField.createValueField("fs"))
-                                             .build())))
-                       .secretFiles(ParameterField.createValueField(Arrays.asList("account.secret-ref")))
-                       .build())
-            .build());
+    HarnessStore harnessStore = getHarnessStore();
+    configFilesOutCm.put("test", ConfigFileOutcome.builder().identifier("test").store(harnessStore).build());
     doReturn(pdcInfrastructureOutcome).when(outcomeService).resolveOptional(eq(ambiance), eq(infra));
-    doReturn(pdcSshInfraDelegateConfig).when(sshEntityHelper).getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
     doReturn(artifactOutcome).when(outcomeService).resolveOptional(eq(ambiance), eq(artifact));
     doReturn(configFilesOutcome).when(outcomeService).resolveOptional(eq(ambiance), eq(configFiles));
     doReturn(artifactDelegateConfig)
@@ -162,11 +168,19 @@ public class SshCommandStepHelperTest extends CategoryTest {
 
     doReturn(Optional.of(FileNodeDTO.builder().content("Hello World").name("test.txt").size(11L).build()))
         .when(fileStoreService)
-        .getByPath(any(), any(), any(), any(), anyBoolean());
+        .getWithChildrenByPath(any(), any(), any(), any(), anyBoolean());
+    doReturn(workingDir).when(helper).getWorkingDirectory(eq(workingDirParam), any(ScriptType.class), anyBoolean());
     doReturn(Arrays.asList(encryptedDataDetail)).when(ngEncryptedDataService).getEncryptionDetails(any(), any());
-    doReturn(workingDir)
-        .when(shellScriptHelperService)
-        .getWorkingDirectory(eq(workingDirParam), any(ScriptType.class), anyBoolean());
+    doReturn(harnessStore).when(cdExpressionResolver).updateExpressions(any(), any());
+    doNothing().when(cdExpressionResolver).updateStoreConfigExpressions(any(), any());
+  }
+
+  private HarnessStore getHarnessStore() {
+    return HarnessStore.builder()
+        .files(ParameterField.createValueField(
+            Collections.singletonList(String.format("%s:%s", Scope.ACCOUNT.getYamlRepresentation(), "fs"))))
+        .secretFiles(ParameterField.createValueField(Collections.singletonList("account.secret-ref")))
+        .build();
   }
 
   @Test
@@ -181,13 +195,104 @@ public class SshCommandStepHelperTest extends CategoryTest {
 
     CommandStepParameters stepParameters = buildScriptCommandStepParams(env);
 
-    doReturn(workingDir)
-        .when(shellScriptHelperService)
-        .getWorkingDirectory(eq(workingDirParam), any(ScriptType.class), anyBoolean());
-    doReturn(taskEnv).when(shellScriptHelperService).getEnvironmentVariables(env);
-    SshCommandTaskParameters taskParameters = helper.buildSshCommandTaskParameters(ambiance, stepParameters);
+    doReturn(sshServiceOutcome)
+        .when(outcomeService)
+        .resolve(eq(ambiance), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE)));
+    doReturn(pdcSshInfraDelegateConfig).when(sshEntityHelper).getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
+    doReturn(workingDir).when(helper).getWorkingDirectory(eq(workingDirParam), any(ScriptType.class), anyBoolean());
+    doReturn(taskEnv).when(helper).getEnvironmentVariables(env);
+    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
+    assertThat(taskParameters).isInstanceOf(SshCommandTaskParameters.class);
+    SshCommandTaskParameters sshTaskParameters = (SshCommandTaskParameters) taskParameters;
+
+    assertScriptTaskParameters(taskParameters, taskEnv);
+    assertThat(sshTaskParameters.getSshInfraDelegateConfig()).isEqualTo(pdcSshInfraDelegateConfig);
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testBuildCopySshCommandTaskParameters() {
+    Map<String, Object> env = new LinkedHashMap<>();
+    env.put("key", "val");
+
+    Map<String, String> taskEnv = new LinkedHashMap<>();
+    env.put("key", "val");
+
+    ParameterField workingDirParam = ParameterField.createValueField(workingDir);
+    CommandStepParameters stepParameters = buildCopyCommandStepParams(env);
+
+    doReturn(sshServiceOutcome)
+        .when(outcomeService)
+        .resolve(eq(ambiance), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE)));
+    doReturn(pdcSshInfraDelegateConfig).when(sshEntityHelper).getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
+    doReturn(taskEnv).when(helper).getEnvironmentVariables(env);
+    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
+    assertThat(taskParameters).isInstanceOf(SshCommandTaskParameters.class);
+    SshCommandTaskParameters sshTaskParameters = (SshCommandTaskParameters) taskParameters;
+
+    assertCopyTaskParameters(taskParameters, taskEnv);
+    assertThat(sshTaskParameters.getSshInfraDelegateConfig()).isEqualTo(pdcSshInfraDelegateConfig);
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testBuildScriptWinRmCommandTaskParameters() {
+    Map<String, Object> env = new LinkedHashMap<>();
+    env.put("key", "val");
+
+    Map<String, String> taskEnv = new LinkedHashMap<>();
+    env.put("key", "val");
+
+    CommandStepParameters stepParameters = buildScriptCommandStepParams(env);
+
+    doReturn(winRmServiceOutcome)
+        .when(outcomeService)
+        .resolve(eq(ambiance), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE)));
+    doReturn(pdcWinRmInfraDelegateConfig)
+        .when(sshEntityHelper)
+        .getWinRmInfraDelegateConfig(pdcInfrastructure, ambiance);
+    doReturn(workingDir).when(helper).getWorkingDirectory(eq(workingDirParam), any(ScriptType.class), anyBoolean());
+    doReturn(taskEnv).when(helper).getEnvironmentVariables(env);
+    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
+    assertThat(taskParameters).isInstanceOf(WinrmTaskParameters.class);
+    WinrmTaskParameters winrmTaskParameters = (WinrmTaskParameters) taskParameters;
+
+    assertThat(winrmTaskParameters.getWinRmInfraDelegateConfig()).isEqualTo(pdcWinRmInfraDelegateConfig);
+    assertScriptTaskParameters(taskParameters, taskEnv);
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testBuildCopyWinRmCommandTaskParameters() {
+    Map<String, Object> env = new LinkedHashMap<>();
+    env.put("key", "val");
+
+    Map<String, String> taskEnv = new LinkedHashMap<>();
+    env.put("key", "val");
+
+    ParameterField workingDirParam = ParameterField.createValueField(workingDir);
+    CommandStepParameters stepParameters = buildCopyCommandStepParams(env);
+
+    doReturn(winRmServiceOutcome)
+        .when(outcomeService)
+        .resolve(eq(ambiance), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE)));
+    doReturn(pdcWinRmInfraDelegateConfig)
+        .when(sshEntityHelper)
+        .getWinRmInfraDelegateConfig(pdcInfrastructure, ambiance);
+    doReturn(taskEnv).when(helper).getEnvironmentVariables(env);
+    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
+    assertThat(taskParameters).isInstanceOf(WinrmTaskParameters.class);
+    WinrmTaskParameters winRmTaskParameters = (WinrmTaskParameters) taskParameters;
+
+    assertCopyTaskParameters(taskParameters, taskEnv);
+    assertThat(winRmTaskParameters.getWinRmInfraDelegateConfig()).isEqualTo(pdcWinRmInfraDelegateConfig);
+  }
+
+  private void assertScriptTaskParameters(CommandTaskParameters taskParameters, Map<String, String> taskEnv) {
     assertThat(taskParameters).isNotNull();
-    assertThat(taskParameters.getSshInfraDelegateConfig()).isEqualTo(pdcSshInfraDelegateConfig);
     assertThat(taskParameters.getAccountId()).isEqualTo(accountId);
     assertThat(taskParameters.getCommandUnits()).isNotEmpty();
     assertThat(taskParameters.getCommandUnits().size()).isEqualTo(3);
@@ -206,24 +311,8 @@ public class SshCommandStepHelperTest extends CategoryTest {
     assertThat(taskParameters.getEnvironmentVariables()).isEqualTo(taskEnv);
   }
 
-  @Test
-  @Owner(developers = ACASIAN)
-  @Category(UnitTests.class)
-  public void testBuildCopySshCommandTaskParameters() {
-    Map<String, Object> env = new LinkedHashMap<>();
-    env.put("key", "val");
-
-    Map<String, String> taskEnv = new LinkedHashMap<>();
-    env.put("key", "val");
-
-    ParameterField workingDirParam = ParameterField.createValueField(workingDir);
-    CommandStepParameters stepParameters = buildCopyCommandStepParams(env);
-
-    doReturn(taskEnv).when(shellScriptHelperService).getEnvironmentVariables(env);
-    SshCommandTaskParameters taskParameters = helper.buildSshCommandTaskParameters(ambiance, stepParameters);
-
+  private void assertCopyTaskParameters(CommandTaskParameters taskParameters, Map<String, String> taskEnv) {
     assertThat(taskParameters).isNotNull();
-    assertThat(taskParameters.getSshInfraDelegateConfig()).isEqualTo(pdcSshInfraDelegateConfig);
     assertThat(taskParameters.getFileDelegateConfig()).isNotNull();
     assertThat(taskParameters.getFileDelegateConfig().getStores()).isNotEmpty();
     StoreDelegateConfig storeDelegateConfig = taskParameters.getFileDelegateConfig().getStores().get(0);
@@ -317,5 +406,46 @@ public class SshCommandStepHelperTest extends CategoryTest {
         .delegateSelectors(ParameterField.createValueField(Arrays.asList(new TaskSelectorYaml("ssh-delegate"))))
         .onDelegate(ParameterField.createValueField(false))
         .build();
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testGetWorkingDirectory() {
+    ParameterField<Boolean> onDelegate = ParameterField.createValueField(true);
+    assertThat(helper.getWorkingDirectory(ParameterField.ofNull(), ScriptType.BASH, onDelegate.getValue()))
+        .isEqualTo("/tmp");
+    assertThat(helper.getWorkingDirectory(ParameterField.ofNull(), ScriptType.POWERSHELL, onDelegate.getValue()))
+        .isEqualTo("/tmp");
+    onDelegate = ParameterField.createValueField(false);
+    assertThat(helper.getWorkingDirectory(ParameterField.ofNull(), ScriptType.POWERSHELL, onDelegate.getValue()))
+        .isEqualTo("%TEMP%");
+
+    ParameterField<String> workingDirectory = ParameterField.createValueField("dir");
+    assertThat(helper.getWorkingDirectory(workingDirectory, ScriptType.BASH, onDelegate.getValue())).isEqualTo("dir");
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testGetEnvironmentVariables() {
+    assertThat(helper.getEnvironmentVariables(null)).isEmpty();
+    assertThat(helper.getEnvironmentVariables(new HashMap<>())).isEmpty();
+
+    Map<String, Object> envVariables = new HashMap<>();
+    envVariables.put("var1", Arrays.asList(1));
+    envVariables.put("var2", "val2");
+    envVariables.put("var3", ParameterField.createValueField("val3"));
+    envVariables.put("var4", ParameterField.createExpressionField(true, "<+unresolved>", null, true));
+
+    assertThatThrownBy(() -> helper.getEnvironmentVariables(envVariables))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Env. variable [var4] value found to be null");
+
+    envVariables.remove("var4");
+    Map<String, String> environmentVariables = helper.getEnvironmentVariables(envVariables);
+    assertThat(environmentVariables).hasSize(2);
+    assertThat(environmentVariables.get("var2")).isEqualTo("val2");
+    assertThat(environmentVariables.get("var3")).isEqualTo("val3");
   }
 }

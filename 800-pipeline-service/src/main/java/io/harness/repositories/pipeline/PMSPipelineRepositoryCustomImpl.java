@@ -320,7 +320,10 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     Criteria criteria = PMSPipelineFilterHelper.getCriteriaForAllPipelinesInProject(accountId, orgId, projectId);
     Query query = new Query(criteria);
     try {
-      mongoTemplate.findAllAndRemove(query, PipelineEntity.class);
+      List<PipelineEntity> entities = mongoTemplate.findAllAndRemove(query, PipelineEntity.class);
+      entities.stream().forEach(deletedPipelineEntity -> {
+        outboxService.save(new PipelineDeleteEvent(accountId, orgId, projectId, deletedPipelineEntity));
+      });
       return true;
     } catch (Exception e) {
       String errorMessage = PipelineCRUDErrorResponse.errorMessageForPipelinesNotDeleted(

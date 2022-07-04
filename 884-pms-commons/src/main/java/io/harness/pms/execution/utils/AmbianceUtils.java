@@ -110,11 +110,6 @@ public class AmbianceUtils {
     return ambiance.getLevelsList().get(ambiance.getLevelsList().size() - 1);
   }
 
-  public static String obtainOriginalStepIdentifier(Ambiance ambiance) {
-    Level level = obtainCurrentLevel(ambiance);
-    return level == null || isEmpty(level.getOriginalIdentifier()) ? null : level.getOriginalIdentifier();
-  }
-
   public static String obtainStepIdentifier(Ambiance ambiance) {
     Level level = obtainCurrentLevel(ambiance);
     return level == null || isEmpty(level.getIdentifier()) ? null : level.getIdentifier();
@@ -245,5 +240,18 @@ public class AmbianceUtils {
               .stream()
               .map(String::valueOf)
               .collect(Collectors.joining("_"));
+  }
+  public boolean isCurrentStrategyLevelAtStage(Ambiance ambiance) {
+    int levelsCount = ambiance.getLevelsCount();
+    // Parent of current level is stages.
+    if (levelsCount >= 2 && ambiance.getLevels(levelsCount - 2).getGroup().equals("STAGES")) {
+      return true;
+    }
+    // Parent is Parallel and Its parent of parent is STAGES.
+    if (levelsCount >= 3 && ambiance.getLevels(levelsCount - 2).getStepType().getStepCategory() == StepCategory.FORK
+        && ambiance.getLevels(levelsCount - 3).getGroup().equals("STAGES")) {
+      return true;
+    }
+    return false;
   }
 }

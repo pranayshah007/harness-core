@@ -19,6 +19,7 @@ import static java.lang.String.format;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -33,7 +34,6 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
-import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorConnectivityDetails;
@@ -48,6 +48,7 @@ import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
+import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -67,7 +68,6 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
-import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -83,6 +83,7 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.executable.SyncExecutableWithRbac;
 import io.harness.steps.shellscript.K8sInfraDelegateConfigOutput;
 import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
+import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -106,7 +107,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Inject private OutcomeService outcomeService;
-  @Inject private K8sStepHelper k8sStepHelper;
+  @Inject private CDStepHelper cdStepHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Override
@@ -183,28 +184,44 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
       ServiceStepOutcome serviceOutcome, InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
     if (ServiceSpecType.SSH.equals(serviceOutcome.getType())) {
       publishSshInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
+      return;
+    }
+
+    if (ServiceSpecType.WINRM.equals(serviceOutcome.getType())) {
+      publishWinRmInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
+      return;
     }
 
     if (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome
         || infrastructureOutcome instanceof K8sDirectInfrastructureOutcome) {
       K8sInfraDelegateConfig k8sInfraDelegateConfig =
-          k8sStepHelper.getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
+          cdStepHelper.getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
 
       K8sInfraDelegateConfigOutput k8sInfraDelegateConfigOutput =
           K8sInfraDelegateConfigOutput.builder().k8sInfraDelegateConfig(k8sInfraDelegateConfig).build();
       executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.K8S_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
-          k8sInfraDelegateConfigOutput, StepOutcomeGroup.STAGE.name());
+          k8sInfraDelegateConfigOutput, StepCategory.STAGE.name());
     }
   }
 
   private void publishSshInfraDelegateConfigOutput(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
     SshInfraDelegateConfig sshInfraDelegateConfig =
-        k8sStepHelper.getSshInfraDelegateConfig(infrastructureOutcome, ambiance);
+        cdStepHelper.getSshInfraDelegateConfig(infrastructureOutcome, ambiance);
 
     SshInfraDelegateConfigOutput sshInfraDelegateConfigOutput =
         SshInfraDelegateConfigOutput.builder().sshInfraDelegateConfig(sshInfraDelegateConfig).build();
     executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
-        sshInfraDelegateConfigOutput, StepOutcomeGroup.STAGE.name());
+        sshInfraDelegateConfigOutput, StepCategory.STAGE.name());
+  }
+
+  private void publishWinRmInfraDelegateConfigOutput(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
+    WinRmInfraDelegateConfig winRmInfraDelegateConfig =
+        cdStepHelper.getWinRmInfraDelegateConfig(infrastructureOutcome, ambiance);
+
+    WinRmInfraDelegateConfigOutput winRmInfraDelegateConfigOutput =
+        WinRmInfraDelegateConfigOutput.builder().winRmInfraDelegateConfig(winRmInfraDelegateConfig).build();
+    executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.WINRM_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
+        winRmInfraDelegateConfigOutput, StepCategory.STAGE.name());
   }
 
   @VisibleForTesting

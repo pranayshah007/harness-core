@@ -7,14 +7,17 @@
 
 package io.harness.ng.core.service.services.impl;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.beans.FeatureName.HARD_DELETE_ENTITIES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.pms.yaml.YamlNode.PATH_SEP;
 import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.String.format;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -42,6 +45,7 @@ import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
@@ -67,6 +71,7 @@ import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -368,16 +373,17 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
         throw new YamlException("Yaml provided is not a service yaml.");
       }
       ObjectNode serviceNode = (ObjectNode) serviceYamlField.getNode().getCurrJsonNode();
-      String serviceDefinition = serviceNode.retain(YamlTypes.SERVICE_DEFINITION).toString();
-      if (isEmpty(serviceDefinition)) {
-        throw new YamlException("Service yaml provided does not have service definition in it.");
+      ObjectNode serviceDefinitionNode = serviceNode.retain(YamlTypes.SERVICE_DEFINITION);
+      if (EmptyPredicate.isEmpty(serviceDefinitionNode)) {
+        return null;
       }
+      String serviceDefinition = serviceDefinitionNode.toString();
       String serviceDefinitionInputs = RuntimeInputFormHelper.createTemplateFromYaml(serviceDefinition);
       if (isEmpty(serviceDefinitionInputs)) {
         return serviceDefinitionInputs;
       }
-      JsonNode serviceDefinitionNode = YamlUtils.readTree(serviceDefinitionInputs).getNode().getCurrJsonNode();
-      serviceInputs.put(YamlTypes.SERVICE_INPUTS, serviceDefinitionNode);
+      JsonNode serviceDefinitionInputNode = YamlUtils.readTree(serviceDefinitionInputs).getNode().getCurrJsonNode();
+      serviceInputs.put(YamlTypes.SERVICE_INPUTS, serviceDefinitionInputNode);
       return YamlPipelineUtils.writeYamlString(serviceInputs);
     } catch (IOException e) {
       throw new InvalidRequestException("Error occurred while creating service inputs ", e);
@@ -399,6 +405,53 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       }
       return true;
     }));
+  }
+
+  @Override
+  public YamlNode getYamlNodeForFqn(String accountId, String orgIdentifier, String projectIdentifier,
+      @NotEmpty String serviceIdentifier, String fqn) {
+    Optional<ServiceEntity> entity = get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false);
+    if (entity.isEmpty()) {
+      throw new InvalidRequestException(format("Service: %s does not exist", serviceIdentifier));
+    }
+
+    int index = 0;
+    String[] split = fqn.split("\\.");
+    final String serviceDefinitionLimiter = "serviceDefinition";
+    for (int i = 0; i < split.length; i++) {
+      if (serviceDefinitionLimiter.equals(split[i])) {
+        index = i;
+        break;
+      }
+    }
+
+    if (index == 0) {
+      throw new InvalidRequestException(format("FQN must contain %s", serviceDefinitionLimiter));
+    }
+
+    List<String> splitPaths = List.of(split).subList(index, split.length);
+    String fqnWithinServiceEntityYaml = String.join(PATH_SEP, splitPaths);
+
+    // convert sidecars[0]/sidecar to sidecars/[0]/
+    fqnWithinServiceEntityYaml = fqnWithinServiceEntityYaml.replace("[", "/[");
+
+    YamlNode service;
+    try {
+      service = YamlNode.fromYamlPath(entity.get().getYaml(), "service");
+    } catch (IOException e) {
+      throw new InvalidRequestException("Service entity yaml must be rooted at \"service\"");
+    }
+
+    if (service == null) {
+      throw new InvalidRequestException("Service entity yaml must be rooted at \"service\"");
+    }
+
+    YamlNode leafNode = service.gotoPath(fqnWithinServiceEntityYaml);
+    if (leafNode == null) {
+      throw new InvalidRequestException(
+          format("Unable to locate path %s within service yaml", fqnWithinServiceEntityYaml));
+    }
+    return leafNode;
   }
 
   String getDuplicateServiceExistsErrorMessage(

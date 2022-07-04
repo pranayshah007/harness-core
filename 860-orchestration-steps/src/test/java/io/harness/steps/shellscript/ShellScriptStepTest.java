@@ -37,7 +37,10 @@ import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.utils.YamlPipelineUtils;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -150,5 +153,20 @@ public class ShellScriptStepTest extends CategoryTest {
     stepResponse = shellScriptStep.handleTaskResult(ambiance, stepElementParameters, () -> successResponse);
     assertThat(stepResponse.getStepOutcomes()).hasSize(1);
     assertThat(((List<StepOutcome>) stepResponse.getStepOutcomes()).get(0).getOutcome()).isEqualTo(shellScriptOutcome);
+  }
+
+  @Test
+  @Owner(developers = VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void testShellScriptStepSerialization() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("shellScriptStep.yml");
+    ShellScriptStepParameters shellScriptStepParameters =
+        YamlPipelineUtils.read(testFile, ShellScriptStepParameters.class);
+    assertThat(shellScriptStepParameters.getOnDelegate().getValue()).isEqualTo(true);
+    assertThat(shellScriptStepParameters.getShell()).isEqualTo(ShellType.Bash);
+    assertThat(shellScriptStepParameters.getSource().getType()).isEqualTo("Inline");
+    assertThat(((ShellScriptInlineSource) shellScriptStepParameters.getSource().getSpec()).getScript().getValue())
+        .isEqualTo("echo hi");
   }
 }

@@ -31,4 +31,5 @@ public class AzureWebAppInfraMapping implements InfraMapping {
   private String resourceGroup;
   private String webApp;
   private String deploymentSlot;
+  private String targetSlot;
 }

@@ -14,18 +14,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CiBeansTestBase;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.stages.IntegrationStageConfig;
+import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.category.element.UnitTests;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.pipeline.PipelineConfig;
-import io.harness.plancreator.stages.StageElementWrapperConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.properties.CIProperties;
 import io.harness.yaml.core.properties.NGProperties;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
@@ -42,23 +44,26 @@ public class CIPmsPipelineYamlTest extends CiBeansTestBase {
   public void testCiPipelineConversion() throws IOException {
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource("cipms.yml");
-    PipelineConfig ngPipelineActual = YamlPipelineUtils.read(testFile, PipelineConfig.class);
+    String pipelineJson = Resources.toString(testFile, Charsets.UTF_8);
+    YamlField ngPipelineActual = YamlUtils.readTree(pipelineJson);
     assertThat(ngPipelineActual).isNotNull();
 
-    NGProperties properties = ngPipelineActual.getPipelineInfoConfig().getProperties();
+    YamlField propertiesField = ngPipelineActual.getNode().getField("pipeline").getNode().getField("properties");
+    NGProperties properties =
+        YamlPipelineUtils.read(propertiesField.getNode().getCurrJsonNode().toString(), NGProperties.class);
     CIProperties ciProperties = properties.getCi();
     log.info(ciProperties.toString());
 
-    List<StageElementWrapperConfig> stages = ngPipelineActual.getPipelineInfoConfig().getStages();
-    for (StageElementWrapperConfig stage : stages) {
-      StageElementConfig stageElementConfig =
-          YamlPipelineUtils.read(stage.getStage().toString(), StageElementConfig.class);
-
-      assertThat(stageElementConfig).isNotNull();
-
-      IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageElementConfig.getStageType();
-      if (integrationStageConfig.getExecution() != null) {
-        for (ExecutionWrapperConfig executionWrapperConfig : integrationStageConfig.getExecution().getSteps()) {
+    List<YamlNode> stagesNodes =
+        ngPipelineActual.getNode().getField("pipeline").getNode().getField("stages").getNode().asArray();
+    for (YamlNode stageParentNode : stagesNodes) {
+      YamlField stageNodeField = stageParentNode.getField("stage");
+      IntegrationStageNode integrationStageNode =
+          YamlPipelineUtils.read(stageNodeField.getNode().getCurrJsonNode().toString(), IntegrationStageNode.class);
+      assertThat(integrationStageNode).isNotNull();
+      if (integrationStageNode.getIntegrationStageConfig().getExecution() != null) {
+        for (ExecutionWrapperConfig executionWrapperConfig :
+            integrationStageNode.getIntegrationStageConfig().getExecution().getSteps()) {
           StepElementConfig stepElementConfig =
               YamlPipelineUtils.read(executionWrapperConfig.getStep().toString(), StepElementConfig.class);
           assertThat(stepElementConfig).isNotNull();

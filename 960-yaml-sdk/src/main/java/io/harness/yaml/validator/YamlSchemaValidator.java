@@ -83,7 +83,7 @@ public class YamlSchemaValidator {
   }
 
   public Set<String> validate(String yaml, String stringSchema, boolean shouldValidateParallelStageCount,
-                              int allowedParallelStages, String pathToJsonNode) throws IOException {
+      int allowedParallelStages, String pathToJsonNode) throws IOException {
     JsonNode jsonNode = mapper.readTree(yaml);
     validateParallelStagesCount(jsonNode, shouldValidateParallelStageCount, allowedParallelStages, pathToJsonNode);
     JsonSchemaFactory factory =
@@ -120,16 +120,16 @@ public class YamlSchemaValidator {
   }
 
   protected void validateParallelStagesCount(
-          JsonNode yaml, boolean shouldValidateParallelStageCount, int allowedParallelStages, String pathToJsonNode) {
+      JsonNode yaml, boolean shouldValidateParallelStageCount, int allowedParallelStages, String pathToJsonNode) {
     if (shouldValidateParallelStageCount) {
       return;
     }
     String[] pathToStageNode = pathToJsonNode.split("/");
     JsonNode stagesNode = yaml;
-    for(String s : pathToStageNode){
-      if(stagesNode == null){
+    for (String s : pathToStageNode) {
+      if (stagesNode == null) {
         return;
-      }else{
+      } else {
         stagesNode = stagesNode.get(s);
       }
     }

@@ -19,6 +19,7 @@ import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -42,5 +43,10 @@ public class AxisConfig {
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public AxisConfig(ParameterField<List<String>> axisValue) {
     this.axisValue = axisValue;
+  }
+
+  @JsonValue
+  public ParameterField<List<String>> toJson() {
+    return axisValue;
   }
 }

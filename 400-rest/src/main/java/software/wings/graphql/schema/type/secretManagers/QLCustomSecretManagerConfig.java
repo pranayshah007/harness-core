@@ -7,23 +7,21 @@
 
 package software.wings.graphql.schema.type.secretManagers;
 
-
-import lombok.Builder;
-import lombok.Value;
 import software.wings.graphql.schema.mutation.secretManager.QLEncryptedDataParams;
 
 import java.util.Set;
+import lombok.Builder;
+import lombok.Value;
 @Value
 @Builder
-public class QLCustomSecretManagerConfig implements QLSecretManagerConfig{
-
-    String templateId;
-    Set <String> delegateSelectors;
-    Set <QLEncryptedDataParams> testVariables;
-    Boolean executeOnDelegate;
-    Boolean isConnectorTemplatized;
-    String host;
-    String commandPath;
-    String connectorId;
-    Boolean isDefault;
+public class QLCustomSecretManagerConfig implements QLSecretManagerConfig {
+  String templateId;
+  Set<String> delegateSelectors;
+  Set<QLEncryptedDataParams> testVariables;
+  Boolean executeOnDelegate;
+  Boolean isConnectorTemplatized;
+  String host;
+  String commandPath;
+  String connectorId;
+  Boolean isDefault;
 }

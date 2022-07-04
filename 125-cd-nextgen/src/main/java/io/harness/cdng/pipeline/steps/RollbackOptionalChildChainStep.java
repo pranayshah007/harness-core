@@ -9,7 +9,6 @@ package io.harness.cdng.pipeline.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import io.harness.advisers.rollback.RollbackTriggeredOutput;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.beans.RollbackNode;
 import io.harness.cdng.pipeline.beans.RollbackOptionalChildChainStepParameters;
@@ -19,14 +18,11 @@ import io.harness.pms.contracts.execution.ChildChainExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
-import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.ChildChainExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.section.chain.SectionChainPassThroughData;
 import io.harness.tasks.ResponseData;
@@ -94,14 +90,6 @@ public class RollbackOptionalChildChainStep implements ChildChainExecutable<Roll
   public StepResponse finalizeExecution(Ambiance ambiance, RollbackOptionalChildChainStepParameters stepParameters,
       ByteString passThroughData, Map<String, ResponseData> responseDataMap) {
     StepResponseNotifyData notifyData = (StepResponseNotifyData) responseDataMap.values().iterator().next();
-    // Publish this outcome to let the next step advise for stage know that the stage has been rolled back and new stage
-    // should not run
-    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(YAMLFieldNameConstants.STOP_STAGE_SEQUENCE));
-    if (!optionalSweepingOutput.isFound()) {
-      executionSweepingOutputService.consume(ambiance, YAMLFieldNameConstants.STOP_STAGE_SEQUENCE,
-          RollbackTriggeredOutput.builder().rollbackTriggered(true).build(), StepCategory.PIPELINE.name());
-    }
     // If status is suspended, then we should mark the execution as success
     if (notifyData.getStatus() == Status.SUSPENDED) {
       return StepResponse.builder().status(Status.SUCCEEDED).failureInfo(notifyData.getFailureInfo()).build();

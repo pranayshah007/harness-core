@@ -1,0 +1,14 @@
+environment:
+    name: environmentVariableTest
+    identifier: environmentVariableTest
+    tags: {}
+    type: Production
+    orgIdentifier: default
+    projectIdentifier: svcenvrefactor
+    variables:
+        - name: envVar1
+          type: String
+          value: EnvironmentVar1
+        - name: svar1
+          type: String
+          value: ServiceVariableButEnvironVarAlso

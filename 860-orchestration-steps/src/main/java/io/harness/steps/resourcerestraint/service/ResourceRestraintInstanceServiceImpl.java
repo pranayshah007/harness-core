@@ -215,11 +215,12 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
   }
 
   @Override
-  public int getAllCurrentlyAcquiredPermits(HoldingScope scope, String releaseEntityId) {
+  public int getAllCurrentlyAcquiredPermits(HoldingScope scope, String releaseEntityId, String resourceUnit) {
     int currentPermits = 0;
 
     List<ResourceRestraintInstance> instances =
-        restraintInstanceRepository.findByReleaseEntityTypeAndReleaseEntityId(scope.name(), releaseEntityId);
+        restraintInstanceRepository.findByReleaseEntityTypeAndReleaseEntityIdAndResourceUnit(
+            scope.name(), releaseEntityId, resourceUnit);
     if (isNotEmpty(instances)) {
       for (ResourceRestraintInstance instance : instances) {
         currentPermits += instance.getPermits();

@@ -19,6 +19,8 @@ shared_dependencies = [
     "//:lombok",
     "//120-ng-manager/modules/ldap:module",
     "//120-ng-manager/modules/ldap/contracts:module",
+    "//120-ng-manager/modules/ng-variables:module",
+    "//120-ng-manager/modules/ng-variables/contracts:module",
     "//122-ng-authentication-settings:module",
     "//clients/resource-group:module",
     "//123-ng-core-user:module",

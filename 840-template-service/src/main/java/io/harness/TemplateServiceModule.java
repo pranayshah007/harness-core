@@ -16,8 +16,6 @@ import static io.harness.ng.core.template.TemplateEntityConstants.STAGE;
 import static io.harness.ng.core.template.TemplateEntityConstants.STEP;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.dropwizard.jackson.Jackson;
 import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
@@ -72,7 +70,10 @@ import io.harness.time.TimeModule;
 import io.harness.token.TokenClientModule;
 import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.WaiterConfiguration;
+import io.harness.yaml.YamlSdkModule;
+import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -84,14 +85,12 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import io.dropwizard.jackson.Jackson;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
-
-import io.harness.yaml.YamlSdkModule;
-import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
@@ -143,7 +142,9 @@ public class TemplateServiceModule extends AbstractModule {
     install(new EntitySetupUsageClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(new PipelineYamlSchemaClientModule(
-            ServiceHttpClientConfig.builder().baseUrl(templateServiceConfiguration.getPipelineServiceClientConfig().getBaseUrl()).build(),
+        ServiceHttpClientConfig.builder()
+            .baseUrl(templateServiceConfiguration.getPipelineServiceClientConfig().getBaseUrl())
+            .build(),
         templateServiceConfiguration.getPipelineServiceSecret(), TEMPLATE_SERVICE.toString()));
     install(new DelegateServiceDriverGrpcClientModule(templateServiceConfiguration.getManagerServiceSecret(),
         templateServiceConfiguration.getManagerTarget(), templateServiceConfiguration.getManagerAuthority(), true));
@@ -208,7 +209,9 @@ public class TemplateServiceModule extends AbstractModule {
   @Provides
   @Singleton
   List<YamlSchemaRootClass> yamlSchemaRootClasses() {
-    return ImmutableList.<YamlSchemaRootClass>builder().addAll(TemplateServiceModuleRegistrars.yamlSchemaRegistrars).build();
+    return ImmutableList.<YamlSchemaRootClass>builder()
+        .addAll(TemplateServiceModuleRegistrars.yamlSchemaRegistrars)
+        .build();
   }
 
   @Provides

@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
@@ -279,6 +280,9 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
         }
       } catch (IOException ex) {
         String message = format("Invalid yaml path [%s] during execution plan creation", field.getYamlPath());
+        if (ex.getCause() instanceof InvalidYamlException) {
+          message = ex.getCause().getMessage();
+        }
         log.error(message, ex);
         return PlanCreationResponse.builder().errorMessage(message).build();
       }

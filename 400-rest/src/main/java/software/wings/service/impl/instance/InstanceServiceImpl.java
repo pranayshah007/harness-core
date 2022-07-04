@@ -439,12 +439,14 @@ public class InstanceServiceImpl implements InstanceService {
 
   @Override
   public List<SyncStatus> getSyncStatus(String appId, String serviceId, String envId) {
+    log.info("get sync status params APPID :{}, ServiceId:{}, EnvId:{}", appId, serviceId, envId);
     PageRequest<SyncStatus> pageRequest = aPageRequest()
                                               .addFilter("appId", EQ, appId)
                                               .addFilter("serviceId", EQ, serviceId)
                                               .addFilter("envId", EQ, envId)
                                               .build();
     PageResponse<SyncStatus> response = wingsPersistence.query(SyncStatus.class, pageRequest);
+    log.info("InfraMappingId from SyncStatus: {}", response.getResponse());
     return response.getResponse();
   }
 

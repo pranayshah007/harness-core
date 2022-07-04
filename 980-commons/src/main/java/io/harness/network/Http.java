@@ -16,6 +16,7 @@ import static org.apache.commons.lang3.StringUtils.startsWith;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.KeyValuePair;
+import io.harness.security.AllTrustingX509TrustManager;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
@@ -296,25 +297,8 @@ public class Http {
     return sc;
   }
 
-  static class SslTrustManager implements X509TrustManager {
-    @Override
-    public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-      return new java.security.cert.X509Certificate[] {};
-    }
-
-    @Override
-    public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) {
-      // do nothing
-    }
-
-    @Override
-    public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) {
-      // do nothing
-    }
-  }
-
   public static TrustManager[] getTrustManagers() {
-    return new TrustManager[] {new SslTrustManager()};
+    return new TrustManager[] {new AllTrustingX509TrustManager()};
   }
 
   public static OkHttpClient getUnsafeOkHttpClient(String url) {

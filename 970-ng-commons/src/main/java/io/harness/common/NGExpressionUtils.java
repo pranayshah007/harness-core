@@ -55,6 +55,13 @@ public class NGExpressionUtils {
     return NGExpressionUtils.ExecutionInputPattern.matcher(expression).matches();
   }
 
+  public boolean matchesGenericExpressionPattern(final String expression) {
+    if (isEmpty(expression)) {
+      return false;
+    }
+    return NGExpressionUtils.GENERIC_EXPRESSIONS_PATTERN.matcher(expression).matches();
+  }
+
   public boolean matchesPattern(Pattern pattern, String expression) {
     if (isEmpty(expression)) {
       return false;

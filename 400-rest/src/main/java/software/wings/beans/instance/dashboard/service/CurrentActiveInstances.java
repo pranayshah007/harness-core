@@ -36,6 +36,5 @@ public class CurrentActiveInstances {
   private Date deployedAt;
   private EntitySummary lastWorkflowExecution;
   private EntitySummary lastPipelineExecution;
-  private ArtifactSummary artifactSummaryFromSvc;
   private boolean onDemandRollbackAvailable;
 }

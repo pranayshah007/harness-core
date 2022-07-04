@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
@@ -28,9 +29,11 @@ import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
+import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
@@ -105,10 +108,27 @@ public class ArtifactResponseToOutcomeMapper {
       case CUSTOM_ARTIFACT:
         CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
         return getCustomArtifactOutcome(customArtifactConfig);
+      case AMAZONS3:
+        AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactConfig;
+        S3ArtifactDelegateResponse s3ArtifactDelegateResponse = (S3ArtifactDelegateResponse) artifactDelegateResponse;
+        return getS3ArtifactOutcome(amazonS3ArtifactConfig, s3ArtifactDelegateResponse, useDelegateResponse);
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
     }
+  }
+
+  private static S3ArtifactOutcome getS3ArtifactOutcome(AmazonS3ArtifactConfig amazonS3ArtifactConfig,
+      S3ArtifactDelegateResponse s3ArtifactDelegateResponse, boolean useDelegateResponse) {
+    return S3ArtifactOutcome.builder()
+        .bucketName(amazonS3ArtifactConfig.getBucketName().getValue())
+        .filePath(amazonS3ArtifactConfig.getFilePath().getValue())
+        .connectorRef(amazonS3ArtifactConfig.getConnectorRef().getValue())
+        .type(ArtifactSourceType.AMAZONS3.getDisplayName())
+        .identifier(amazonS3ArtifactConfig.getIdentifier())
+        .primaryArtifact(amazonS3ArtifactConfig.isPrimaryArtifact())
+        .filePathRegex(amazonS3ArtifactConfig.getFilePathRegex().getValue())
+        .build();
   }
 
   private DockerArtifactOutcome getDockerArtifactOutcome(DockerHubArtifactConfig dockerConfig,

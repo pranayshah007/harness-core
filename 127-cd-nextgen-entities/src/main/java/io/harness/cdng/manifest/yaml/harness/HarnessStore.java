@@ -15,10 +15,12 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.visitor.helpers.store.HarnessStoreVisitorHelper;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.beans.VisitableChildren;
+import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 
@@ -38,6 +40,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @JsonTypeName(HARNESS_STORE_TYPE)
+@SimpleVisitorHelper(helperClass = HarnessStoreVisitorHelper.class)
 @TypeAlias("harnessStore")
 @RecasterAlias("io.harness.cdng.manifest.yaml.harness.HarnessStore")
 public class HarnessStore implements HarnessStoreConfig, Visitable {
@@ -48,17 +51,15 @@ public class HarnessStore implements HarnessStoreConfig, Visitable {
 
   @Wither
   @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = "[Lio.harness.cdng.manifest.yaml.harness.HarnessStoreFile;")
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @JsonProperty("files")
-  private ParameterField<List<HarnessStoreFile>> files;
+  private ParameterField<List<String>> files;
 
   @Wither
+  @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @JsonProperty("secretFiles")
   private ParameterField<List<String>> secretFiles;
-
-  // For Visitor Framework Impl
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Override
   public String getKind() {
@@ -67,11 +68,6 @@ public class HarnessStore implements HarnessStoreConfig, Visitable {
 
   public HarnessStore cloneInternal() {
     return HarnessStore.builder().files(files).secretFiles(secretFiles).build();
-  }
-
-  @Override
-  public VisitableChildren getChildrenToWalk() {
-    return VisitableChildren.builder().build();
   }
 
   @Override
@@ -95,5 +91,13 @@ public class HarnessStore implements HarnessStoreConfig, Visitable {
         .files(ParameterFieldHelper.getParameterFieldValue(files))
         .secretFiles(ParameterFieldHelper.getParameterFieldValue(secretFiles))
         .build();
+  }
+
+  // For Visitor Framework Impl
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
+
+  @Override
+  public VisitableChildren getChildrenToWalk() {
+    return VisitableChildren.builder().build();
   }
 }

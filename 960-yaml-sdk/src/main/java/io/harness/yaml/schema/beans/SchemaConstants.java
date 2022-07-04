@@ -50,5 +50,6 @@ public class SchemaConstants {
   public static final String EXPRESSION_PATTERN = EXPR_START_ESC + "([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)" + EXPR_END_ESC;
   public static final String SPEC_NODE = "spec";
   public static final String STAGE_ELEMENT_WRAPPER_CONFIG = "StageElementWrapperConfig";
+  public static final String STAGE_ELEMENT_CONFIG_REF_VALUE = "#/definitions/StageElementConfig";
   public static final String STAGE_NODE = "stage";
 }
