@@ -19,17 +19,17 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.harness.HarnessStoreFile;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.common.ParameterFieldHelper;
-import io.harness.common.ParameterRuntimeFiledHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
@@ -44,7 +44,6 @@ import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
 import io.harness.delegate.task.ssh.config.SecretConfigFile;
-import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
@@ -71,7 +70,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -81,6 +79,7 @@ public class SshCommandStepHelper extends CDStepHelper {
   @Inject private SshEntityHelper sshEntityHelper;
   @Inject private FileStoreService fileStoreService;
   @Inject private NGEncryptedDataService ngEncryptedDataService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   public SshCommandTaskParameters buildSshCommandTaskParameters(
       @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters executeCommandStepParameters) {
@@ -119,21 +118,19 @@ public class SshCommandStepHelper extends CDStepHelper {
   }
 
   private HarnessStoreDelegateConfig buildHarnessStoreDelegateConfig(Ambiance ambiance, HarnessStore harnessStore) {
-    List<HarnessStoreFile> files = ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles());
+    harnessStore = (HarnessStore) cdExpressionResolver.updateExpressions(ambiance, harnessStore);
+    List<String> files = ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles());
     List<String> secretFiles = ParameterFieldHelper.getParameterFieldValue(harnessStore.getSecretFiles());
 
     List<ConfigFileParameters> configFileParameters = new ArrayList<>();
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
 
     if (isNotEmpty(files)) {
-      files.forEach(harnessStoreFile -> {
-        Scope fileScope =
-            ParameterRuntimeFiledHelper.getScopeParameterFieldFinalValue(harnessStoreFile.getScope())
-                .orElseThrow(() -> new InvalidRequestException("Config file scope cannot be null or empty"));
-        io.harness.beans.Scope scope = io.harness.beans.Scope.of(
-            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), fileScope);
+      files.forEach(scopedFilePath -> {
+        FileReference fileReference = FileReference.of(scopedFilePath, ngAccess.getAccountIdentifier(),
+            ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
-        configFileParameters.addAll(fetchConfigFileFromFileStore(scope, harnessStoreFile));
+        configFileParameters.addAll(fetchConfigFileFromFileStore(fileReference));
       });
     }
 
@@ -149,17 +146,13 @@ public class SshCommandStepHelper extends CDStepHelper {
     return HarnessStoreDelegateConfig.builder().configFiles(configFileParameters).build();
   }
 
-  private List<ConfigFileParameters> fetchConfigFileFromFileStore(
-      io.harness.beans.Scope scope, @NotNull HarnessStoreFile file) {
-    String filePathValue =
-        ParameterFieldHelper.getParameterFieldFinalValue(file.getPath())
-            .orElseThrow(() -> new InvalidRequestException("Config file path cannot be null or empty"));
-    Optional<FileStoreNodeDTO> configFile = fileStoreService.getWithChildrenByPath(
-        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), filePathValue, true);
+  private List<ConfigFileParameters> fetchConfigFileFromFileStore(FileReference fileReference) {
+    Optional<FileStoreNodeDTO> configFile = fileStoreService.getWithChildrenByPath(fileReference.getAccountIdentifier(),
+        fileReference.getOrgIdentifier(), fileReference.getProjectIdentifier(), fileReference.getPath(), true);
 
     if (!configFile.isPresent()) {
       throw new InvalidRequestException(format("Config file not found in local file store, path [%s], scope: [%s]",
-          filePathValue, ParameterRuntimeFiledHelper.getScopeParameterFieldFinalValue(file.getScope()).orElse(null)));
+          fileReference.getPath(), fileReference.getScope()));
     }
 
     return mapFileNodes(configFile.get(),

@@ -60,7 +60,6 @@ import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.harness.HarnessStoreFile;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.manifest.yaml.kinds.KustomizeManifest;
@@ -187,7 +186,6 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(ConfigFileAttributes.class, 12588);
     kryo.register(HarnessStore.class, 12590);
     kryo.register(NGServiceV2InfoConfig.class, 12592);
-    kryo.register(HarnessStoreFile.class, 12593);
     kryo.register(OciHelmChartStoreGenericConfig.class, 12594);
     kryo.register(OciHelmChartStoreConfigType.class, 12595);
     kryo.register(OciHelmChartConfig.class, 12596);

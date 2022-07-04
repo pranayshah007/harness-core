@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
@@ -24,9 +25,9 @@ import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.harness.HarnessStoreFile;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
@@ -60,6 +61,7 @@ import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellType;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -79,6 +81,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
   @Mock private FileStoreService fileStoreService;
   @Mock private NGEncryptedDataService ngEncryptedDataService;
   @Mock private EncryptedDataDetail encryptedDataDetail;
+  @Mock private CDExpressionResolver cdExpressionResolver;
 
   @Spy @InjectMocks private SshCommandStepHelper helper;
 
@@ -134,7 +137,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
       OptionalOutcome.builder().found(true).outcome(configFilesOutCm).build();
 
   private final PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig =
-      PdcSshInfraDelegateConfig.builder().hosts(Arrays.asList("host1")).build();
+      PdcSshInfraDelegateConfig.builder().hosts(Collections.singletonList("host1")).build();
   private final ArtifactoryArtifactDelegateConfig artifactDelegateConfig =
       ArtifactoryArtifactDelegateConfig.builder().build();
   private final ParameterField workingDirParam = ParameterField.createValueField(workingDir);
@@ -142,18 +145,8 @@ public class SshCommandStepHelperTest extends CategoryTest {
   @Before
   public void prepare() {
     MockitoAnnotations.initMocks(this);
-    configFilesOutCm.put("test",
-        ConfigFileOutcome.builder()
-            .identifier("test")
-            .store(HarnessStore.builder()
-                       .files(ParameterField.createValueField(
-                           Arrays.asList(HarnessStoreFile.builder()
-                                             .scope(ParameterField.createValueField(Scope.ACCOUNT))
-                                             .path(ParameterField.createValueField("fs"))
-                                             .build())))
-                       .secretFiles(ParameterField.createValueField(Arrays.asList("account.secret-ref")))
-                       .build())
-            .build());
+    HarnessStore harnessStore = getHarnessStore();
+    configFilesOutCm.put("test", ConfigFileOutcome.builder().identifier("test").store(harnessStore).build());
     doReturn(pdcInfrastructureOutcome).when(outcomeService).resolveOptional(eq(ambiance), eq(infra));
     doReturn(pdcSshInfraDelegateConfig).when(sshEntityHelper).getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
     doReturn(artifactOutcome).when(outcomeService).resolveOptional(eq(ambiance), eq(artifact));
@@ -167,6 +160,16 @@ public class SshCommandStepHelperTest extends CategoryTest {
         .getWithChildrenByPath(any(), any(), any(), any(), anyBoolean());
     doReturn(workingDir).when(helper).getWorkingDirectory(eq(workingDirParam), any(ScriptType.class), anyBoolean());
     doReturn(Arrays.asList(encryptedDataDetail)).when(ngEncryptedDataService).getEncryptionDetails(any(), any());
+    doReturn(harnessStore).when(cdExpressionResolver).updateExpressions(any(), any());
+    doNothing().when(cdExpressionResolver).updateStoreConfigExpressions(any(), any());
+  }
+
+  private HarnessStore getHarnessStore() {
+    return HarnessStore.builder()
+        .files(ParameterField.createValueField(
+            Collections.singletonList(String.format("%s:%s", Scope.ACCOUNT.getYamlRepresentation(), "fs"))))
+        .secretFiles(ParameterField.createValueField(Collections.singletonList("account.secret-ref")))
+        .build();
   }
 
   @Test

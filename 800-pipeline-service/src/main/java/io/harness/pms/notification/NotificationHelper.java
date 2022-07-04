@@ -17,6 +17,7 @@ import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.logging.AutoLogContext;
 import io.harness.notification.PipelineEventType;
 import io.harness.notification.PipelineEventTypeConstants;
 import io.harness.notification.bean.NotificationChannelWrapper;
@@ -80,11 +81,11 @@ public class NotificationHelper {
 
     String yaml = obtainYaml(ambiance.getPlanExecutionId());
     if (EmptyPredicate.isEmpty(yaml)) {
-      log.error("Empty yaml found in executionMetaData");
+      log.error("Empty yaml found in executionMetaData for execution id: {}", ambiance.getPlanExecutionId());
       return;
     }
     List<NotificationRules> notificationRules = null;
-    try {
+    try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       notificationRules = getNotificationRulesFromYaml(yaml, ambiance);
     } catch (IOException exception) {
       log.error("Unable to parse yaml to get notification objects", exception);
@@ -93,7 +94,7 @@ public class NotificationHelper {
       return;
     }
 
-    try {
+    try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       sendNotificationInternal(notificationRules, pipelineEventType, identifier, accountId,
           constructTemplateData(
               ambiance, pipelineEventType, nodeExecution, identifier, updatedAt, orgIdentifier, projectIdentifier),
@@ -117,8 +118,9 @@ public class NotificationHelper {
         String templateId = getNotificationTemplate(pipelineEventType.getLevel(), wrapper.getType());
         NotificationChannel channel = wrapper.getNotificationChannel().toNotificationChannel(
             accountIdentifier, orgIdentifier, projectIdentifier, templateId, notificationContent, ambiance);
-        log.info("Sending notification via notification-client");
-        try {
+        log.info(
+            "Sending notification via notification-client for plan execution id: {} ", ambiance.getPlanExecutionId());
+        try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
           notificationClient.sendNotificationAsync(channel);
         } catch (Exception ex) {
           log.error("Unable to send notification because of following exception", ex);
