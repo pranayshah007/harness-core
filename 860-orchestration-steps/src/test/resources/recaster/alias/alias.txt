@@ -129,3 +129,4 @@ io.harness.steps.resourcerestraint.QueueSpecParameters
 io.harness.plancreator.steps.email.EmailStepInfo
 io.harness.plancreator.steps.email.EmailStepNode
 io.harness.steps.email.EmailOutcome
+io.harness.steps.email.EmailStepParameters
