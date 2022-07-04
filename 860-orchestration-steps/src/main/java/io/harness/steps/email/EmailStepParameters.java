@@ -1,5 +1,6 @@
 package io.harness.steps.email;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
@@ -22,6 +23,7 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 @OwnedBy(HarnessTeam.CDC)
 @TypeAlias("EmailStepParameters")
+@RecasterAlias("io.harness.steps.email.EmailStepParameters")
 
 public class EmailStepParameters implements SpecParameters {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
