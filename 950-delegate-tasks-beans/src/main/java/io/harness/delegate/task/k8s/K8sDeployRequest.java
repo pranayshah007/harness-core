@@ -45,7 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @OwnedBy(CDP)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "taskType", include = JsonTypeInfo.As.EXISTING_PROPERTY)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "taskType")
 @JsonSubTypes({ @JsonSubTypes.Type(value = K8sApplyRequest.class, name = "APPLY") })
 public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDemander {
   K8sTaskType getTaskType();
