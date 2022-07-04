@@ -20,6 +20,9 @@ import io.harness.delegate.beans.ci.docker.CIDockerInitializeTaskRequest;
 import io.harness.delegate.beans.ci.docker.DockerTaskExecutionResponse;
 import io.harness.delegate.task.TaskParameters;
 
+import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
+import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
+
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
 public enum TaskType {
@@ -276,7 +279,7 @@ public enum TaskType {
   AWS_LAMBDA_TASK(TaskGroup.AWS),
   AWS_AMI_ASYNC_TASK(TaskGroup.AWS),
   AWS_CF_TASK(TaskGroup.AWS),
-  K8S_COMMAND_TASK(TaskGroup.K8S),
+  K8S_COMMAND_TASK(TaskGroup.K8S, K8sTaskParameters.class, K8sTaskExecutionResponse.class, false),
   K8S_COMMAND_TASK_NG(TaskGroup.K8S_NG, "K8s Task"),
   K8S_WATCH_TASK(TaskGroup.CE),
   TRIGGER_TASK(TaskGroup.TRIGGER),
