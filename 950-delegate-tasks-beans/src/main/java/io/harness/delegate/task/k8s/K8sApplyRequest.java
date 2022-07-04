@@ -48,9 +48,4 @@ public class K8sApplyRequest implements K8sDeployRequest {
   public List<String> getOpenshiftParamList() {
     return Collections.emptyList();
   }
-
-  @Override
-  public K8sTaskType getTaskType() {
-    return K8sTaskType.APPLY;
-  }
 }
