@@ -329,7 +329,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @Inject
   @Getter(value = PACKAGE, onMethod = @__({ @VisibleForTesting }))
   private DelegateConfiguration delegateConfiguration;
-  @Inject private RestartableServiceManager restartableServiceManager;
+  //@Inject private RestartableServiceManager restartableServiceManager;
 
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
 
@@ -340,7 +340,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @Inject @Named("taskPollExecutor") private ScheduledExecutorService taskPollExecutor;
   @Inject @Named("taskExecutor") private ThreadPoolExecutor taskExecutor;
   @Inject @Named("timeoutExecutor") private ThreadPoolExecutor timeoutEnforcement;
-  @Inject @Named("grpcServiceExecutor") private ExecutorService grpcServiceExecutor;
+  //@Inject @Named("grpcServiceExecutor") private ExecutorService grpcServiceExecutor;
   @Inject @Named("taskProgressExecutor") private ExecutorService taskProgressExecutor;
 
   @Inject private SignalService signalService;
@@ -509,9 +509,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         }, 0, 60, TimeUnit.MINUTES);
       } else {
         log.info("Delegate process started");
-        if (delegateConfiguration.isGrpcServiceEnabled()) {
+       /* if (delegateConfiguration.isGrpcServiceEnabled()) {
           restartableServiceManager.start();
-        }
+        }*/
       }
 
       if (!delegateConfiguration.isInstallClientToolsInBackground()) {
@@ -936,7 +936,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
   }
 
-  private void stopGrpcService() {
+  /*private void stopGrpcService() {
     if (delegateConfiguration.isGrpcServiceEnabled() && restartableServiceManager.isRunning()) {
       grpcServiceExecutor.submit(() -> restartableServiceManager.stop());
     }
@@ -946,7 +946,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     if (delegateConfiguration.isGrpcServiceEnabled() && acquireTasks.get() && !restartableServiceManager.isRunning()) {
       grpcServiceExecutor.submit(() -> { restartableServiceManager.start(); });
     }
-  }
+  }*/
 
   private void updateTasks() {
     if (perpetualTaskWorker != null) {
@@ -1255,9 +1255,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           } else if (DELEGATE_RESUME.equals(message.getMessage())) {
             resume();
           } else if (DELEGATE_START_GRPC.equals(message.getMessage())) {
-            startGrpcService();
+            //startGrpcService();
           } else if (DELEGATE_STOP_GRPC.equals(message.getMessage())) {
-            stopGrpcService();
+            //stopGrpcService();
           }
         }), 0, 1, TimeUnit.SECONDS);
   }
@@ -1289,9 +1289,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.info("Stopped perpetual task workers");
     }
 
-    if (restartableServiceManager != null) {
-      restartableServiceManager.stop();
-    }
+
 
     if (chronicleEventTailer != null) {
       log.info("Stopping chronicle event trailer");

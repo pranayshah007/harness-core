@@ -118,10 +118,10 @@ public class PerpetualTaskWorkerModule extends AbstractModule {
                 .build(WatcherFactory.class));
   }
 
-  @Provides
+  /*@Provides
   @Singleton
   PerpetualTaskServiceBlockingStub perpetualTaskServiceBlockingStub(
       @Named("manager-channel") Channel channel, CallCredentials callCredentials) {
     return PerpetualTaskServiceGrpc.newBlockingStub(channel).withCallCredentials(callCredentials);
-  }
+  }*/
 }

@@ -15,14 +15,12 @@ import static io.harness.grpc.utils.DelegateGrpcConfigExtractor.extractTarget;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import io.harness.delegate.app.DelegateGrpcServiceModule;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.task.citasks.CITaskFactoryModule;
 import io.harness.delegate.task.k8s.apiclient.KubernetesApiClientFactoryModule;
 import io.harness.event.client.impl.appender.AppenderModule;
 import io.harness.event.client.impl.appender.AppenderModule.Config;
 import io.harness.event.client.impl.tailer.DelegateTailerModule;
-import io.harness.grpc.delegateservice.DelegateServiceGrpcAgentClientModule;
 import io.harness.logstreaming.LogStreamingModule;
 import io.harness.managerclient.DelegateManagerClientModule;
 import io.harness.metrics.MetricRegistryModule;
@@ -65,7 +63,7 @@ public class DelegateAgentModule extends AbstractModule {
     install(new LogStreamingModule(configuration.getLogStreamingServiceBaseUrl(),
         configuration.getClientCertificateFilePath(), configuration.getClientCertificateKeyFilePath(),
         configuration.isTrustAllCertificates()));
-    install(new DelegateManagerGrpcClientModule(configuration));
+    //install(new DelegateManagerGrpcClientModule(configuration));
 
     configureCcmEventPublishing();
     install(new PerpetualTaskWorkerModule());
@@ -75,12 +73,12 @@ public class DelegateAgentModule extends AbstractModule {
     install(new CITaskFactoryModule());
     install(new DelegateModule(configuration));
 
-    if (configuration.isGrpcServiceEnabled()) {
+   /* if (configuration.isGrpcServiceEnabled()) {
       install(DelegateServiceGrpcAgentClientModule.getInstance());
       install(
           new DelegateGrpcServiceModule(configuration.getGrpcServiceConnectorPort(), configuration.getDelegateToken()));
     }
-
+*/
     install(new DelegateTokensModule(configuration));
   }
 
