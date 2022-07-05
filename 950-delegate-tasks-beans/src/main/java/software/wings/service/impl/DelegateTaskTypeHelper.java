@@ -35,6 +35,6 @@ public class DelegateTaskTypeHelper {
     if (taskDetails != null) {
       return taskDetails.isUnsupported();
     }
-    throw new InvalidRequestException(String.format("Task %s is not supported in new framework", taskType));
+    return false;
   }
 }
