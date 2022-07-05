@@ -10,10 +10,12 @@ package io.harness.artifactory;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.TMACARI;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
@@ -23,15 +25,18 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import com.google.common.collect.ImmutableMap;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -91,5 +96,81 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     Long result = artifactoryNgService.getFileSize(artifactoryConfigRequest, metadata, "artifactPath");
     assertThat(result).isEqualTo(artifactFileSize);
     verify(artifactoryClient, times(1)).getFileSize(eq(artifactoryConfigRequest), eq(metadata), eq("artifactPath"));
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetArtifactList() {
+    List<BuildDetails> buildDetails = Collections.singletonList(aBuildDetails().build());
+    ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder().build();
+    doReturn(buildDetails).when(artifactoryClient).getArtifactList(any(), any(), any(), anyInt());
+
+    List<BuildDetails> result =
+        artifactoryNgService.getArtifactList(artifactoryConfigRequest, "repoName", "artifactPath", 10);
+
+    verify(artifactoryClient, times(1)).getArtifactList(any(), any(), any(), anyInt());
+    assertThat(result).isEqualTo(buildDetails);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetRepositorie() {
+    Map<String, String> repositories = Collections.singletonMap("repo", "repo");
+    ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder().build();
+    doReturn(repositories).when(artifactoryClient).getRepositories(any(), any());
+
+    Map<String, String> result = artifactoryNgService.getRepositories(artifactoryConfigRequest, "docker");
+
+    assertThat(result).isEqualTo(repositories);
+
+    Map<String, String> resultmaven = artifactoryNgService.getRepositories(artifactoryConfigRequest, "maven");
+
+    verify(artifactoryClient, times(2)).getRepositories(any(), any());
+    assertThat(resultmaven).isEqualTo(repositories);
+    doReturn(repositories).when(artifactoryClient).getRepositoriesByRepoType(any(), any());
+    Map<String, String> resultgeneric = artifactoryNgService.getRepositories(artifactoryConfigRequest, "generic");
+    verify(artifactoryClient, times(1)).getRepositoriesByRepoType(any(), any());
+    assertThat(resultgeneric).isEqualTo(repositories);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testaGetLatestArtifact() {
+    ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder().build();
+    List<BuildDetails> buildDetails = Collections.singletonList(aBuildDetails().build());
+    doReturn(buildDetails).when(artifactoryClient).getArtifactList(any(), any(), any(), anyInt());
+
+    assertThat(artifactoryNgService.getLatestArtifact(
+                   artifactoryConfigRequest, "repoName", "artifactDirectory", "artifactPathFilter", "", 10))
+        .isEqualTo(
+            buildDetails.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
+
+    assertThatThrownBy(
+        () -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "", "", "", 10))
+        .hasMessage("Please check ArtifactPath/ArtifactPathFilter field in Artifactory artifact configuration.");
+    BuildDetails expectedresult = BuildDetails.Builder.aBuildDetails().withArtifactPath("artifactPath").build();
+    BuildDetails actualresult =
+        artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "", "", "artifactpath", 10);
+
+    assertThat(actualresult).isEqualTo(expectedresult);
+    String artifactDirectory = "/artifactDirectory/";
+    String artifactPathFilter = "/artifactPathFilter/";
+    String filePath = Paths.get(artifactDirectory, artifactPathFilter).toString();
+    buildDetails = Collections.emptyList();
+    doReturn(buildDetails).when(artifactoryClient).getArtifactList(any(), any(), any(), anyInt());
+    assertThatThrownBy(()
+                           -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName",
+                               artifactDirectory, artifactPathFilter, "artifactpath", 10))
+        .hasMessage(
+            "Please check artifactPath or artifactDirectory or repository field in Artifactory artifact configuration.");
+
+    assertThatThrownBy(()
+                           -> artifactoryNgService.getLatestArtifact(
+                               artifactoryConfigRequest, "repoName", artifactDirectory, artifactPathFilter, "", 10))
+        .hasMessage(
+            "Please check artifactPathFilter or artifactDirectory or repository field in Artifactory artifact .");
   }
 }
