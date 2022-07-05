@@ -16,6 +16,7 @@ import io.harness.delegate.beans.DelegateProgressData;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskEvent;
+import io.harness.delegate.beans.DelegateTaskExpiryReason;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
@@ -67,7 +68,7 @@ public interface DelegateTaskServiceClassic extends OwnedByAccount {
 
   boolean checkDelegateConnected(String accountId, String delegateId);
 
-  void markAllTasksFailedForDelegate(String accountId, String delegateId);
+  void markAllTasksFailedForDelegate(String accountId, String delegateId, DelegateTaskExpiryReason reason);
 
   void addToTaskActivityLog(DelegateTask task, String message);
 

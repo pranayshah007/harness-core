@@ -69,6 +69,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskEvent;
+import io.harness.delegate.beans.DelegateTaskExpiryReason;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskPackage.DelegateTaskPackageBuilder;
 import io.harness.delegate.beans.DelegateTaskRank;
@@ -1291,7 +1292,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   @Override
-  public void markAllTasksFailedForDelegate(String accountId, String delegateId) {
+  public void markAllTasksFailedForDelegate(String accountId, String delegateId, DelegateTaskExpiryReason reason) {
     final List<DelegateTask> delegateTasks = persistence.createQuery(DelegateTask.class)
                                                  .filter(DelegateTaskKeys.accountId, accountId)
                                                  .filter(DelegateTaskKeys.delegateId, delegateId)
@@ -1302,14 +1303,13 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
     log.info("Marking delegate tasks {} failed since delegate went down before completion.",
         delegateTasks.stream().map(DelegateTask::getUuid).collect(Collectors.toList()));
-    final String errorMessage = "Delegate disconnected while executing the task";
     final DelegateTaskResponse delegateTaskResponse =
         DelegateTaskResponse.builder()
             .responseCode(ResponseCode.FAILED)
             .accountId(accountId)
             .response(ErrorNotifyResponseData.builder()
-                          .errorMessage(errorMessage)
-                          .exception(new DelegateNotAvailableException(errorMessage))
+                          .errorMessage(reason.getMessage())
+                          .exception(new DelegateNotAvailableException(reason.getMessage()))
                           .delegateMetaInfo(DelegateMetaInfo.builder().id(delegateId).build())
                           .build())
             .build();

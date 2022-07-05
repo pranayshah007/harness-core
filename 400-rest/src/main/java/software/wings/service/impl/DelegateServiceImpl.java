@@ -114,6 +114,7 @@ import io.harness.delegate.beans.DelegateScripts;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateSizeDetails;
 import io.harness.delegate.beans.DelegateTags;
+import io.harness.delegate.beans.DelegateTaskExpiryReason;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.delegate.beans.DelegateType;
@@ -3185,6 +3186,8 @@ public class DelegateServiceImpl implements DelegateService {
           }
         } else {
           delegateMetricsService.recordDelegateMetrics(delegate, DELEGATE_RESTARTED);
+          delegateTaskServiceClassic.markAllTasksFailedForDelegate(
+              delegate.getAccountId(), delegate.getUuid(), DelegateTaskExpiryReason.DELEGATE_RESTARTED);
           log.error("Delegate restarted");
         }
       }
