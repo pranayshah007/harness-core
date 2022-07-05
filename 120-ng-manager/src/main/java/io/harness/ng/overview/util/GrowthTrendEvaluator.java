@@ -7,7 +7,6 @@
 
 package io.harness.ng.overview.util;
 
-import io.harness.NGDateUtils;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.activityhistory.dto.TimeGroupType;
