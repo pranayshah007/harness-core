@@ -19,24 +19,24 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
+import io.harness.delegate.beans.DelegateTaskExpiryReason;
+import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.task.TaskLogContext;
+import io.harness.exception.DelegateNotAvailableException;
 import io.harness.exception.WingsException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.ExceptionLogger;
 import io.harness.metrics.intfc.DelegateMetricsService;
+import io.harness.network.FibonacciBackOff;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateTaskService;
-import io.harness.version.VersionInfoManager;
 
 import software.wings.beans.TaskType;
-import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.service.impl.DelegateTaskBroadcastHelper;
-import software.wings.service.intfc.AssignDelegateService;
 import software.wings.service.intfc.DelegateSelectionLogsService;
-import software.wings.service.intfc.DelegateService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -44,6 +44,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.security.SecureRandom;
 import java.time.Clock;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -64,18 +65,12 @@ public class DelegateQueueTask implements Runnable {
 
   @Inject private HPersistence persistence;
   @Inject private Clock clock;
-  @Inject private VersionInfoManager versionInfoManager;
-  @Inject private AssignDelegateService assignDelegateService;
-  @Inject private DelegateService delegateService;
   @Inject private DelegateTaskBroadcastHelper broadcastHelper;
-  @Inject private ConfigurationController configurationController;
-  @Inject private DelegateTaskService delegateTaskService;
   @Inject private DelegateSelectionLogsService delegateSelectionLogsService;
   @Inject private DelegateMetricsService delegateMetricsService;
-  @Inject private FeatureFlagService featureFlagService;
+  @Inject private DelegateTaskService delegateTaskService;
 
-  private static long BROADCAST_INTERVAL = TimeUnit.MINUTES.toMillis(1);
-  private static int MAX_BROADCAST_ROUND = 3;
+  private static int MAX_BROADCAST_ROUND = 5;
 
   @Override
   public void run() {
@@ -103,14 +98,26 @@ public class DelegateQueueTask implements Runnable {
                                                    .field(DelegateTaskKeys.expiry)
                                                    .greaterThan(now)
                                                    .field(DelegateTaskKeys.broadcastRound)
-                                                   .lessThan(MAX_BROADCAST_ROUND)
+                                                   .lessThanOrEq(MAX_BROADCAST_ROUND)
                                                    .field(DelegateTaskKeys.delegateId)
                                                    .doesNotExist();
 
     try (HIterator<DelegateTask> iterator = new HIterator<>(unassignedTasksQuery.fetch())) {
-      int count = 0;
       while (iterator.hasNext()) {
         DelegateTask delegateTask = iterator.next();
+        if (delegateTask.getBroadcastRound() >= MAX_BROADCAST_ROUND) {
+          delegateTaskService.processDelegateResponse(delegateTask.getAccountId(), null, delegateTask.getUuid(),
+              DelegateTaskResponse.builder()
+                  .responseCode(DelegateTaskResponse.ResponseCode.FAILED)
+                  .accountId(delegateTask.getAccountId())
+                  .response(ErrorNotifyResponseData.builder()
+                                .errorMessage(DelegateTaskExpiryReason.REBROADCAST_LIMIT_REACHED.getMessage())
+                                .exception(new DelegateNotAvailableException(
+                                    DelegateTaskExpiryReason.REBROADCAST_LIMIT_REACHED.getMessage()))
+                                .build())
+                  .build());
+          continue;
+        }
         Query<DelegateTask> query = persistence.createQuery(DelegateTask.class, excludeAuthority)
                                         .filter(DelegateTaskKeys.uuid, delegateTask.getUuid())
                                         .filter(DelegateTaskKeys.broadcastCount, delegateTask.getBroadcastCount());
@@ -133,17 +140,17 @@ public class DelegateQueueTask implements Runnable {
           broadcastToDelegates.add(delegateId);
           eligibleDelegatesList.addLast(delegateId);
         }
-        long nextInterval = TimeUnit.SECONDS.toMillis(5);
         int broadcastRoundCount = delegateTask.getBroadcastRound();
         Set<String> alreadyTriedDelegates =
             Optional.ofNullable(delegateTask.getAlreadyTriedDelegates()).orElse(Sets.newHashSet());
 
+        long nextInterval = nextRebroadcastInterval(alreadyTriedDelegates, delegateTask);
         // if all delegates got one round of rebroadcast, then increase broadcast interval & broadcastRound
         if (alreadyTriedDelegates.containsAll(delegateTask.getEligibleToExecuteDelegateIds())) {
           alreadyTriedDelegates.clear();
           broadcastRoundCount++;
-          nextInterval = (long) broadcastRoundCount * BROADCAST_INTERVAL;
         }
+
         alreadyTriedDelegates.addAll(broadcastToDelegates);
 
         UpdateOperations<DelegateTask> updateOperations =
@@ -171,9 +178,21 @@ public class DelegateQueueTask implements Runnable {
               delegateTask.getBroadcastToDelegateIds());
           delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_REBROADCAST);
           broadcastHelper.rebroadcastDelegateTask(delegateTask);
-          count++;
         }
       }
     }
+  }
+
+  /**
+   * returns the time after which the task will be eligible to be rebroadcasted
+   * broadcast count is starts from zero and we don't want to wait for long when the rebroadcast limit is reached
+   * hence the condition delegateTask.getBroadcastRound() + 1 < MAX_BROADCAST_ROUND
+   */
+  private long nextRebroadcastInterval(Set<String> alreadyTriedDelegates, DelegateTask delegateTask) {
+    if (alreadyTriedDelegates.containsAll(delegateTask.getEligibleToExecuteDelegateIds())
+        && delegateTask.getBroadcastRound() + 1 < MAX_BROADCAST_ROUND) {
+      return TimeUnit.MINUTES.toMillis(FibonacciBackOff.getFibonacciElement(delegateTask.getBroadcastRound()));
+    }
+    return TimeUnit.SECONDS.toMillis(5);
   }
 }

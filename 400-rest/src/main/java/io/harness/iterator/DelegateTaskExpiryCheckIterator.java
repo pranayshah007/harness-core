@@ -17,6 +17,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateInstanceStatus;
+import io.harness.delegate.beans.DelegateTaskExpiryReason;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
@@ -81,7 +82,8 @@ public class DelegateTaskExpiryCheckIterator implements MongoPersistenceIterator
     log.info("Expiring all tasks for delegate [{}], accountId: [{}]", delegate.getUuid(), delegate.getAccountId());
     try (AutoLogContext ignore1 = new DelegateLogContext(delegate.getUuid(), OVERRIDE_ERROR);
          AccountLogContext ignore2 = new AccountLogContext(delegate.getAccountId(), OVERRIDE_ERROR)) {
-      delegateTaskServiceClassic.markAllTasksFailedForDelegate(delegate.getAccountId(), delegate.getUuid());
+      delegateTaskServiceClassic.markAllTasksFailedForDelegate(
+          delegate.getAccountId(), delegate.getUuid(), DelegateTaskExpiryReason.DELEGATE_DISCONNECTED);
       delegateService.updateLastExpiredEventHeartbeatTime(
           delegate.getLastHeartBeat(), delegate.getUuid(), delegate.getAccountId());
     }
