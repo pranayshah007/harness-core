@@ -25,6 +25,7 @@ import static io.harness.secretmanagerclient.ValueType.Reference;
 import static io.harness.secrets.SecretPermissions.SECRET_ACCESS_PERMISSION;
 import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
 import static io.harness.security.SimpleEncryption.CHARSET;
+import static io.harness.security.dto.PrincipalType.SERVICE;
 import static io.harness.security.encryption.EncryptionType.GCP_KMS;
 import static io.harness.security.encryption.EncryptionType.LOCAL;
 import static io.harness.security.encryption.SecretManagerType.KMS;
@@ -58,6 +59,7 @@ import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.VaultConfigDTO;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
 import io.harness.secrets.SecretsFileService;
+import io.harness.security.SecurityContextBuilder;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
@@ -476,7 +478,8 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
                 .get(ngAccess.getAccountIdentifier(), getOrgIdentifier(ngAccess.getOrgIdentifier(), secretScope),
                     getProjectIdentifier(ngAccess.getProjectIdentifier(), secretScope), secretRefData.getIdentifier())
                 .orElse(null);
-        if (!ngAccess.getAccountIdentifier().equals(GLOBAL_ACCOUNT_ID)) {
+        if (!GLOBAL_ACCOUNT_ID.equals(ngAccess.getAccountIdentifier())
+            || !SERVICE.equals(SecurityContextBuilder.getPrincipal().getType())) {
           secretPermissionValidator.checkForAccessOrThrow(
               ResourceScope.of(ngAccess.getAccountIdentifier(),
                   getOrgIdentifier(ngAccess.getOrgIdentifier(), secretScope),
