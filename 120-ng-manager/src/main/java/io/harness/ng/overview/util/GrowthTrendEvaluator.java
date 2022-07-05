@@ -87,10 +87,6 @@ public class GrowthTrendEvaluator {
    */
   @VisibleForTesting
   public Pair<Long, Long> tuneQueryInterval(long startTimeInMs, long endTimeInMs, TimeGroupType timeGroupType) {
-    // Adjust the start time and end time to the same day's end time (midnight)
-    startTimeInMs = NGDateUtils.getNextNearestWholeDayUTC(startTimeInMs);
-    endTimeInMs = NGDateUtils.getNextNearestWholeDayUTC(endTimeInMs);
-
     // Adjust startTime such that endTime - startTime is multiples of group by time
     // It should form complete intervals b/w start time and end time
     long intervalTimeInMs = timeGroupType.getDurationInMs();
