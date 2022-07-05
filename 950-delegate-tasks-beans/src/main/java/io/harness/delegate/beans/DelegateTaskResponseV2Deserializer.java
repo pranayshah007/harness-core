@@ -10,6 +10,7 @@ package io.harness.delegate.beans;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
+import software.wings.service.impl.DelegateTaskTypeHelper;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -18,11 +19,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.inject.Inject;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DelegateTaskResponseV2Deserializer extends StdDeserializer<DelegateTaskResponseV2> {
+  @Inject DelegateTaskTypeHelper delegateTaskTypeHelper;
   String CLASS_ANNOTATION = "@class";
 
   public DelegateTaskResponseV2Deserializer() {
@@ -38,7 +41,7 @@ public class DelegateTaskResponseV2Deserializer extends StdDeserializer<Delegate
       throws IOException, JacksonException {
     JsonNode node = jsonParser.getCodec().readTree(jsonParser);
     TaskType taskType = TaskType.valueOf(node.get("type").asText());
-    Class<? extends ResponseData> responseClass = taskType.getResponse();
+    Class<? extends ResponseData> responseClass = delegateTaskTypeHelper.getResponse(taskType);
     ObjectMapper objectMapper = new ObjectMapper();
     String id = node.get("id").asText();
     DelegateTaskResponse.ResponseCode code = DelegateTaskResponse.ResponseCode.valueOf(node.get("code").asText());

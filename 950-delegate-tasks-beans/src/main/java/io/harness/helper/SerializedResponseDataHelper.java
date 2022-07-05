@@ -12,6 +12,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.SerializationFormat;
+import software.wings.service.impl.DelegateTaskTypeHelper;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SerializedResponseDataHelper {
   @Inject KryoSerializer kryoSerializer;
   @Inject ObjectMapper objectMapper;
+  @Inject DelegateTaskTypeHelper delegateTaskTypeHelper;
 
   public ResponseData deserialize(ResponseData responseData) {
     if (responseData instanceof SerializedResponseData) {
@@ -29,8 +31,8 @@ public class SerializedResponseDataHelper {
       if (serializedResponseData.getSerializationFormat().equals(SerializationFormat.JSON)) {
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try {
-          return objectMapper.readValue(
-              serializedResponseData.serialize(), serializedResponseData.getTaskType().getResponse());
+          return objectMapper.readValue(serializedResponseData.serialize(),
+              delegateTaskTypeHelper.getResponse(serializedResponseData.getTaskType()));
         } catch (Exception e) {
           log.error("Could not deserialize bytes to object", e);
           return null;

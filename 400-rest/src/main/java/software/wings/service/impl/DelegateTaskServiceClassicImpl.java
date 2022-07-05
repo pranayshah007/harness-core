@@ -276,6 +276,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   private Supplier<Long> taskCountCache = Suppliers.memoizeWithExpiration(this::fetchTaskCount, 1, TimeUnit.MINUTES);
   @Inject @Getter private Subject<DelegateTaskStatusObserver> delegateTaskStatusObserverSubject;
+  @Inject DelegateTaskTypeHelper delegateTaskTypeHelper;
 
   private LoadingCache<String, String> logStreamingAccountTokenCache =
       CacheBuilder.newBuilder()
@@ -834,7 +835,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       TaskType type = TaskType.valueOf(delegateTask.getData().getTaskType());
       TaskParameters taskParameters;
       try {
-        taskParameters = objectMapper.readValue(delegateTask.getData().getData(), type.getRequest());
+        taskParameters =
+            objectMapper.readValue(delegateTask.getData().getData(), delegateTaskTypeHelper.getRequest(type));
       } catch (IOException e) {
         throw new InvalidRequestException("could not parse bytes from delegate task data", e);
       }

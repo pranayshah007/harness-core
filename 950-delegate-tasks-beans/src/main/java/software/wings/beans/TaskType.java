@@ -12,16 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskGroup;
-import io.harness.delegate.beans.ci.docker.CIDockerCleanupStepRequest;
-import io.harness.delegate.beans.ci.docker.CIDockerExecuteStepRequest;
-import io.harness.delegate.beans.ci.docker.CIDockerInitializeTaskRequest;
-import io.harness.delegate.beans.ci.docker.DockerTaskExecutionResponse;
-import io.harness.delegate.task.TaskParameters;
-
-import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
-import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
@@ -279,7 +270,7 @@ public enum TaskType {
   AWS_LAMBDA_TASK(TaskGroup.AWS),
   AWS_AMI_ASYNC_TASK(TaskGroup.AWS),
   AWS_CF_TASK(TaskGroup.AWS),
-  K8S_COMMAND_TASK(TaskGroup.K8S, K8sTaskParameters.class, K8sTaskExecutionResponse.class, false),
+  K8S_COMMAND_TASK(TaskGroup.K8S),
   K8S_COMMAND_TASK_NG(TaskGroup.K8S_NG, "K8s Task"),
   K8S_WATCH_TASK(TaskGroup.CE),
   TRIGGER_TASK(TaskGroup.TRIGGER),
@@ -367,14 +358,12 @@ public enum TaskType {
   OCI_HELM_CONNECTIVITY_TASK(TaskGroup.HELM_REPO_CONFIG_VALIDATION),
   AZURE_WEB_APP_TASK_NG(TaskGroup.AZURE, "Azure Web App Task"),
   COMMAND_TASK_NG(TaskGroup.COMMAND_TASK_NG, "Command Task"),
-  CI_DOCKER_INITIALIZE_TASK(TaskGroup.CI, CIDockerInitializeTaskRequest.class, DockerTaskExecutionResponse.class, true),
-  CI_DOCKER_EXECUTE_TASK(TaskGroup.CI, CIDockerExecuteStepRequest.class, DockerTaskExecutionResponse.class, true),
-  CI_DOCKER_CLEANUP_TASK(TaskGroup.CI, CIDockerCleanupStepRequest.class, DockerTaskExecutionResponse.class, true);
+  CI_DOCKER_INITIALIZE_TASK(TaskGroup.CI),
+  CI_DOCKER_EXECUTE_TASK(TaskGroup.CI),
+  CI_DOCKER_CLEANUP_TASK(TaskGroup.CI);
 
   private final TaskGroup taskGroup;
   private final String displayName;
-  private final Class<? extends TaskParameters> request;
-  private final Class<? extends DelegateResponseData> response;
   // Flag to denote whether the java based delegate supports this task or not
   // All unsupported tasks will be removed from the supported task types on initialization
   // of the java delegate.
@@ -383,25 +372,10 @@ public enum TaskType {
   TaskType(TaskGroup taskGroup) {
     this.taskGroup = taskGroup;
     this.displayName = null;
-    this.request = null;
-    this.response = null;
-    this.unsupported = false;
   }
   TaskType(TaskGroup taskGroup, String displayName) {
     this.taskGroup = taskGroup;
     this.displayName = displayName;
-    this.request = null;
-    this.response = null;
-    this.unsupported = false;
-  }
-
-  TaskType(TaskGroup taskGroup, Class<? extends TaskParameters> request, Class<? extends DelegateResponseData> response,
-      boolean unsupported) {
-    this.taskGroup = taskGroup;
-    this.request = request;
-    this.response = response;
-    this.displayName = null;
-    this.unsupported = unsupported;
   }
 
   public TaskGroup getTaskGroup() {
@@ -409,14 +383,5 @@ public enum TaskType {
   }
   public String getDisplayName() {
     return displayName != null ? displayName : name();
-  }
-  public Class<? extends TaskParameters> getRequest() {
-    return this.request;
-  }
-  public Class<? extends DelegateResponseData> getResponse() {
-    return this.response;
-  }
-  public boolean isUnsupported() {
-    return this.unsupported;
   }
 }

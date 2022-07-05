@@ -73,8 +73,13 @@ import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.impl.DataCollectionServiceImpl;
 import io.harness.delegate.DelegateConfigurationServiceProvider;
 import io.harness.delegate.DelegatePropertiesServiceProvider;
+import io.harness.delegate.TaskDetails;
 import io.harness.delegate.app.DelegateApplication;
 import io.harness.delegate.beans.DelegateFileManagerBase;
+import io.harness.delegate.beans.ci.docker.CIDockerCleanupStepRequest;
+import io.harness.delegate.beans.ci.docker.CIDockerExecuteStepRequest;
+import io.harness.delegate.beans.ci.docker.CIDockerInitializeTaskRequest;
+import io.harness.delegate.beans.ci.docker.DockerTaskExecutionResponse;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.cf.PcfApplicationDetailsCommandTaskHandler;
 import io.harness.delegate.cf.PcfCommandTaskHandler;
@@ -523,6 +528,8 @@ import software.wings.helpers.ext.helm.HelmDeployServiceImpl;
 import software.wings.helpers.ext.jenkins.Jenkins;
 import software.wings.helpers.ext.jenkins.JenkinsFactory;
 import software.wings.helpers.ext.jenkins.JenkinsImpl;
+import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
+import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 import software.wings.helpers.ext.nexus.NexusService;
 import software.wings.helpers.ext.nexus.NexusServiceImpl;
 import software.wings.helpers.ext.sftp.SftpService;
@@ -1841,5 +1848,35 @@ public class DelegateModule extends AbstractModule {
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(TerraformRuntimeExceptionHandler.class));
     KubernetesCliRuntimeExceptionHandler.exceptions().forEach(
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(KubernetesCliRuntimeExceptionHandler.class));
+  }
+
+  private void bindDelegateTasksWithTaskData() {
+    MapBinder<TaskType, TaskDetails> mapBinder =
+        MapBinder.newMapBinder(binder(), new TypeLiteral<TaskType>() {}, new TypeLiteral<TaskDetails>() {});
+
+    mapBinder.addBinding(TaskType.CI_DOCKER_INITIALIZE_TASK)
+        .toInstance(TaskDetails.builder()
+                        .taskRequest(CIDockerInitializeTaskRequest.class)
+                        .taskResponse(DockerTaskExecutionResponse.class)
+                        .unsupported(true)
+                        .build());
+    mapBinder.addBinding(TaskType.CI_DOCKER_EXECUTE_TASK)
+        .toInstance(TaskDetails.builder()
+                        .taskRequest(CIDockerExecuteStepRequest.class)
+                        .taskResponse(DockerTaskExecutionResponse.class)
+                        .unsupported(true)
+                        .build());
+    mapBinder.addBinding(TaskType.CI_DOCKER_CLEANUP_TASK)
+        .toInstance(TaskDetails.builder()
+                        .taskRequest(CIDockerCleanupStepRequest.class)
+                        .taskResponse(DockerTaskExecutionResponse.class)
+                        .unsupported(true)
+                        .build());
+    mapBinder.addBinding(TaskType.K8S_COMMAND_TASK)
+        .toInstance(TaskDetails.builder()
+                        .taskRequest(K8sTaskParameters.class)
+                        .taskResponse(K8sTaskExecutionResponse.class)
+                        .unsupported(false)
+                        .build());
   }
 }

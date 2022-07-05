@@ -173,6 +173,7 @@ import software.wings.delegatetasks.delegatecapability.CapabilityCheckController
 import software.wings.delegatetasks.validation.DelegateConnectionResult;
 import software.wings.delegatetasks.validation.DelegateValidateTask;
 import software.wings.misc.MemoryHelper;
+import software.wings.service.impl.DelegateTaskTypeHelper;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -359,6 +360,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @Inject private KryoSerializer kryoSerializer;
   @Nullable @Inject(optional = true) private ChronicleEventTailer chronicleEventTailer;
   @Inject HarnessMetricRegistry metricRegistry;
+  @Inject DelegateTaskTypeHelper delegateTaskTypeHelper;
 
   private final AtomicBoolean waiter = new AtomicBoolean(true);
 
@@ -539,8 +541,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       final List<String> supportedTasks = Arrays.stream(TaskType.values()).map(Enum::name).collect(toList());
 
       // Remove tasks which are in TaskTypeV2 and only specified with onlyV2 as true
-      final List<String> unsupportedTasks =
-          Arrays.stream(TaskType.values()).filter(element -> element.isUnsupported()).map(Enum::name).collect(toList());
+      final List<String> unsupportedTasks = Arrays.stream(TaskType.values())
+                                                .filter(element -> delegateTaskTypeHelper.isUnsupported(element))
+                                                .map(Enum::name)
+                                                .collect(toList());
       supportedTasks.removeAll(unsupportedTasks);
 
       if (isNotBlank(DELEGATE_TYPE)) {
