@@ -67,7 +67,8 @@ public interface UserGroupService
   /* (non-Javadoc)
    * @see software.wings.service.intfc.UserGroupService#list(software.wings.dl.PageRequest)
    */
-  PageResponse<UserGroup> list(@NotEmpty String accountId, PageRequest<UserGroup> req, boolean loadUsers, UserGroupSearchTermType searchTermType, String searchTerm);
+  PageResponse<UserGroup> list(@NotEmpty String accountId, PageRequest<UserGroup> req, boolean loadUsers,
+      UserGroupSearchTermType searchTermType, String searchTerm);
   long getCountOfUserGroups(String accountId);
   /**
    * list user groups by name.

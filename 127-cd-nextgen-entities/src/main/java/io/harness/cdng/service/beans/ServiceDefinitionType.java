@@ -37,7 +37,13 @@ public enum ServiceDefinitionType {
   @JsonProperty(ServiceSpecType.SERVERLESS_AWS_LAMBDA)
   SERVERLESS_AWS_LAMBDA("Serverless Aws Lambda",
       Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT),
-      ServiceSpecType.SERVERLESS_AWS_LAMBDA);
+      ServiceSpecType.SERVERLESS_AWS_LAMBDA),
+
+  @JsonProperty(ServiceSpecType.AZURE_WEBAPPS)
+  AZURE_WEBAPP("Azure Web Apps",
+      Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY,
+          ExecutionStrategyType.DEFAULT),
+      ServiceSpecType.AZURE_WEBAPPS);
 
   /*
   //Unsupported for now

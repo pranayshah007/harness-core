@@ -12,12 +12,16 @@ import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.strategy.AxisConfig;
 import io.harness.plancreator.strategy.ExcludeConfig;
 import io.harness.plancreator.strategy.MatrixConfig;
+import io.harness.plancreator.strategy.StageStrategyUtils;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.serializer.JsonUtils;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Singleton
 public class MatrixConfigService implements StrategyConfigService {
@@ -62,6 +67,32 @@ public class MatrixConfigService implements StrategyConfigService {
     return children;
   }
 
+  public List<JsonNode> expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode) {
+    MatrixConfig matrixConfig = (MatrixConfig) strategyConfig.getMatrixConfig();
+    List<Map<String, String>> combinations = new ArrayList<>();
+    List<List<Integer>> matrixMetadata = new ArrayList<>();
+    List<String> keys = new LinkedList<>(matrixConfig.getAxes().keySet());
+
+    fetchCombinations(new LinkedHashMap<>(), matrixConfig.getAxes(), combinations,
+        ParameterField.isBlank(matrixConfig.getExclude()) ? null : matrixConfig.getExclude().getValue(), matrixMetadata,
+        keys, 0, new LinkedList<>());
+    int totalCount = combinations.size();
+    if (totalCount == 0) {
+      throw new InvalidRequestException(
+          "Total number of iterations found to be 0 for this strategy. Please check pipeline yaml");
+    }
+    List<JsonNode> jsonNodes = new ArrayList<>();
+    int currentIteration = 0;
+    for (List<Integer> matrixData : matrixMetadata) {
+      JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StageStrategyUtils.replaceExpressions(
+          jsonNode.deepCopy().toString(), combinations.get(currentIteration), currentIteration, totalCount)));
+      StageStrategyUtils.modifyJsonNode(
+          clonedNode, matrixData.stream().map(String::valueOf).collect(Collectors.toList()));
+      jsonNodes.add(clonedNode);
+      currentIteration++;
+    }
+    return jsonNodes;
+  }
   /**
    *
    * This function is used to recursively calculate the number of combinations that can be there for the

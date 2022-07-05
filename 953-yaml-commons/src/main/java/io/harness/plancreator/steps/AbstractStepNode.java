@@ -69,8 +69,7 @@ public abstract class AbstractStepNode {
   @ApiModelProperty(hidden = true)
   ParameterField<List<String>> delegateSelectors;
 
-  @VariableExpression(skipVariableExpression = true)
-  @JsonProperty("strategy") StrategyConfig strategy;
+  @VariableExpression(skipVariableExpression = true) @JsonProperty("strategy") StrategyConfig strategy;
 
   @JsonIgnore public abstract String getType();
 

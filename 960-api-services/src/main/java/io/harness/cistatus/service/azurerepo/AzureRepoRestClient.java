@@ -17,9 +17,9 @@ import retrofit2.http.POST;
 import retrofit2.http.Path;
 
 public interface AzureRepoRestClient {
-    @POST("{organization}/{project}/_apis/git/repositories/{repositoryId}/commits/{commitId}/statuses?api-version=6.0")
-    Call<StatusCreationResponse> createStatus(@Header("Authorization") String authorization,
-        @Path("organization") String organization, @Path("project") String project,
-        @Path("repositoryId") String repositoryId, @Path("commitId") String commitId,
-        @Body Map<String, Object> parameters);
+  @POST("{organization}/{project}/_apis/git/repositories/{repositoryId}/commits/{commitId}/statuses?api-version=6.0")
+  Call<StatusCreationResponse> createStatus(@Header("Authorization") String authorization,
+      @Path("organization") String organization, @Path("project") String project,
+      @Path("repositoryId") String repositoryId, @Path("commitId") String commitId,
+      @Body Map<String, Object> parameters);
 }

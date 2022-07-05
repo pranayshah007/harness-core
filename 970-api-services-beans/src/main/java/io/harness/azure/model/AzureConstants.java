@@ -365,5 +365,4 @@ public interface AzureConstants {
   String KUBECFG_CLIENT_ID = "client-id";
   String KUBECFG_CONFIG_MODE = "config-mode";
   String KUBECFG_TENANT_ID = "tenant-id";
-
 }

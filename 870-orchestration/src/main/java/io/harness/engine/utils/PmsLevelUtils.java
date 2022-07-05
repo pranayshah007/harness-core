@@ -39,7 +39,7 @@ public class PmsLevelUtils {
                                      .setStartTs(System.currentTimeMillis())
                                      .setStepType(node.getStepType())
                                      .setNodeType(node.getNodeType().toString())
-            .setOriginalIdentifier(node.getIdentifier());
+                                     .setOriginalIdentifier(node.getIdentifier());
     if (node.getGroup() != null) {
       levelBuilder.setGroup(node.getGroup());
     }

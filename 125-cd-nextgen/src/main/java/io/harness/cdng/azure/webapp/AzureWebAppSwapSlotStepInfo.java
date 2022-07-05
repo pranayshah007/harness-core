@@ -66,9 +66,7 @@ public class AzureWebAppSwapSlotStepInfo extends AzureWebAppSwapSlotBaseStepInfo
 
   @Override
   public SpecParameters getSpecParameters() {
-    return AzureWebAppSwapSlotStepParameters.infoBuilder()
-        .delegateSelectors(this.getDelegateSelectors())
-        .build();
+    return AzureWebAppSwapSlotStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
   }
 
   @Override

@@ -18,6 +18,17 @@ import org.springframework.data.domain.Page;
 
 @OwnedBy(CDP)
 public interface NGHostService {
+  /**
+   * List of filtered hosts.
+   *
+   * @param accountIdentifier the account identifier
+   * @param orgIdentifier the organization identifier
+   * @param projectIdentifier the project identifier
+   * @param scopedConnectorIdentifier scoped connector identifier
+   * @param filter host names or host attributes filter
+   * @param pageRequest page
+   * @return list of hosts
+   */
   Page<HostDTO> filterHostsByConnector(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String connectorIdentifier, HostFilterDTO filter, PageRequest pageRequest);
+      String scopedConnectorIdentifier, HostFilterDTO filter, PageRequest pageRequest);
 }

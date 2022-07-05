@@ -138,6 +138,7 @@ public class YamlChangeSetHelper {
     changeSet.addAll(
         entityUpdateService.obtainEntityGitSyncFileChangeSet(accountId, null, newEntity, ChangeType.MODIFY));
     YamlChangeSet savedChangeSet = yamlChangeSetService.saveChangeSet(accountId, changeSet, newEntity);
+    long timeOfRename = System.currentTimeMillis();
     String parentYamlChangeSetId = savedChangeSet.getUuid();
 
     List<YamlChangeSet> yamlChangeSets =
@@ -148,6 +149,15 @@ public class YamlChangeSetHelper {
     }
     for (YamlChangeSet yamlChangeSet : yamlChangeSets) {
       yamlChangeSet.setParentYamlChangeSetId(parentYamlChangeSetId);
+      // [PL-25117]: In rename operation, we are creating two changesets,
+      // 1. The First one to perform rename
+      // 2. Second to perform a full sync
+      // If two renames are done at the same time, then the order of this operations can be
+      // rename1 rename2 fullsync1 fullsync2
+      // This leads to a bad state in git as fullsync1 will recreate the renamed entity
+      // The solution was to ensure that fullsync happens just after rename. So we used the queue on
+      // field to say that full sync is queued just after the rename
+      yamlChangeSet.setQueuedOn(timeOfRename);
       yamlChangeSetService.save(yamlChangeSet);
     }
   }
@@ -180,6 +190,7 @@ public class YamlChangeSetHelper {
     }
 
     YamlChangeSet savedChangeSet = yamlChangeSetService.saveChangeSet(accountId, changeSet, newEntity);
+    long timeOfRename = System.currentTimeMillis();
     String parentYamlChangeSetId = savedChangeSet.getUuid();
 
     List<YamlChangeSet> yamlChangeSets =
@@ -190,6 +201,7 @@ public class YamlChangeSetHelper {
     }
     for (YamlChangeSet yamlChangeSet : yamlChangeSets) {
       yamlChangeSet.setParentYamlChangeSetId(parentYamlChangeSetId);
+      yamlChangeSet.setQueuedOn(timeOfRename);
       yamlChangeSetService.save(yamlChangeSet);
     }
   }

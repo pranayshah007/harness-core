@@ -646,4 +646,6 @@ public interface UserService extends OwnedByAccount {
       throws URISyntaxException;
 
   RestrictedSwitchAccountInfo getSwitchAccountInfo(String accountId, String userId);
+
+  List<Account> getUserAccountsAndSupportAccounts(String userId, int pageIndex, int pageSize, String searchTerm);
 }

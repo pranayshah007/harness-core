@@ -34,7 +34,8 @@ public interface BuildJobEnvInfo {
     @JsonValue
     public String getYamlName() {
       return yamlName;
-    }}
+    }
+  }
 
   Type getType();
 }

@@ -49,7 +49,11 @@ import lombok.experimental.SuperBuilder;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CustomHealthSourceMetricSpec extends MetricHealthSourceSpec {
   private static final String JSON_PATH_ARRAY_DELIMITER = ".[*].";
-  private static final String INVALID_DATA_PATH_ERROR_MESSAGE = "Invalid Json path for metric data.";
+  private static final String JSON_PATH_ARRAY_OPENING_BRACKET = "[";
+  private static final String INVALID_DATA_PATH_ERROR_MESSAGE = "Json paths do not match.";
+  private static final String INVALID_CHARACTER_ERROR_MESSAGE = "Json path contains invalid character(s).";
+  private static final String NO_ARRAY_FOUND_ERROR_MESSAGE = "No array found in the Json path.";
+  private static final String MISSING_KEY_ERROR_MESSAGE = "Can not derive relative path. Missing key.";
 
   @UniqueIdentifierCheck List<CustomHealthMetricDefinition> metricDefinitions = new ArrayList<>();
 
@@ -126,6 +130,7 @@ public class CustomHealthSourceMetricSpec extends MetricHealthSourceSpec {
       MetricResponseMapping metricResponseMapping = metricDefinition.getMetricResponseMapping();
       validateJsonPaths(metricResponseMapping);
       populateRelativeJsonPaths(metricResponseMapping);
+      validateRelativePaths(metricResponseMapping);
       cvConfigMetricDefinitions.add(
           CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition.builder()
               .metricName(metricDefinition.getMetricName())
@@ -195,23 +200,26 @@ public class CustomHealthSourceMetricSpec extends MetricHealthSourceSpec {
     String metricValueJsonPath = metricResponseMapping.getMetricValueJsonPath();
     String timestampJsonPath = metricResponseMapping.getTimestampJsonPath();
     String serviceInstanceJsonPath = metricResponseMapping.getServiceInstanceJsonPath();
-    int index = 0;
-    for (int i = 0; i < metricValueJsonPath.length() && i < serviceInstanceJsonPath.length(); ++i) {
-      if (metricValueJsonPath.charAt(i) == serviceInstanceJsonPath.charAt(i)) {
-        index++;
-      } else {
-        break;
-      }
+    int metricValuePathDelimiterIndex = metricValueJsonPath.indexOf(JSON_PATH_ARRAY_DELIMITER);
+    int timestampValuePathDelimiterIndex = timestampJsonPath.indexOf(JSON_PATH_ARRAY_DELIMITER);
+    int serviceInstanceValuePathDelimiterIndex = serviceInstanceJsonPath.indexOf(JSON_PATH_ARRAY_DELIMITER);
+    if (metricValuePathDelimiterIndex == -1 || timestampValuePathDelimiterIndex == -1
+        || serviceInstanceValuePathDelimiterIndex == -1) {
+      throw new DataFormatException(NO_ARRAY_FOUND_ERROR_MESSAGE, null);
     }
-    String commonJsonPath = metricValueJsonPath.substring(0, index);
-    if (commonJsonPath.length() <= JSON_PATH_ARRAY_DELIMITER.length() || !timestampJsonPath.contains(commonJsonPath)) {
+    if (metricValuePathDelimiterIndex == 0 || timestampValuePathDelimiterIndex == 0
+        || serviceInstanceValuePathDelimiterIndex == 0) {
+      throw new DataFormatException(MISSING_KEY_ERROR_MESSAGE, null);
+    }
+    String pathDerivedFromMetricValuePath = metricValueJsonPath.substring(0, metricValuePathDelimiterIndex);
+    String pathDerivedFromTimestampValuePath = timestampJsonPath.substring(0, timestampValuePathDelimiterIndex);
+    String pathDerivedFromServiceInstanceValuePath =
+        serviceInstanceJsonPath.substring(0, serviceInstanceValuePathDelimiterIndex);
+    if (!pathDerivedFromMetricValuePath.equals(pathDerivedFromTimestampValuePath)
+        || !pathDerivedFromMetricValuePath.equals(pathDerivedFromServiceInstanceValuePath)) {
       throw new DataFormatException(INVALID_DATA_PATH_ERROR_MESSAGE, null);
     }
-    String serviceInstanceListPath = removeJsonPathArrayDelimiterSuffix(commonJsonPath);
-    if (serviceInstanceListPath.contains("[")) {
-      throw new DataFormatException(INVALID_DATA_PATH_ERROR_MESSAGE, null);
-    }
-    return serviceInstanceListPath;
+    return pathDerivedFromMetricValuePath;
   }
 
   private String getMetricListJsonPath(MetricResponseMapping metricResponseMapping) {
@@ -219,26 +227,31 @@ public class CustomHealthSourceMetricSpec extends MetricHealthSourceSpec {
     String metricValueJsonPath = metricResponseMapping.getMetricValueJsonPath();
     String timestampJsonPath = metricResponseMapping.getTimestampJsonPath();
     int startingIndex = serviceInstanceListJsonPath.length() + JSON_PATH_ARRAY_DELIMITER.length();
-    int endingIndex = startingIndex;
-    for (int i = startingIndex; i < metricValueJsonPath.length() && i < timestampJsonPath.length(); ++i) {
-      if (metricValueJsonPath.charAt(i) == timestampJsonPath.charAt(i)) {
-        endingIndex++;
-      } else {
-        break;
-      }
+    String reducedMetricValuePath = metricValueJsonPath.substring(startingIndex);
+    String reducedTimestampValuePath = timestampJsonPath.substring(startingIndex);
+    int metricValuePathDelimiterIndex = reducedMetricValuePath.indexOf(JSON_PATH_ARRAY_DELIMITER);
+    int timestampValuePathDelimiterIndex = reducedTimestampValuePath.indexOf(JSON_PATH_ARRAY_DELIMITER);
+    if (metricValuePathDelimiterIndex == -1 || timestampValuePathDelimiterIndex == -1) {
+      throw new DataFormatException(NO_ARRAY_FOUND_ERROR_MESSAGE, null);
     }
-    String commonJsonPath = metricValueJsonPath.substring(startingIndex, endingIndex);
-    if (commonJsonPath.length() <= JSON_PATH_ARRAY_DELIMITER.length()) {
+    if (metricValuePathDelimiterIndex == 0 || timestampValuePathDelimiterIndex == 0) {
+      throw new DataFormatException(MISSING_KEY_ERROR_MESSAGE, null);
+    }
+    String pathDerivedFromMetricValuePath = reducedMetricValuePath.substring(0, metricValuePathDelimiterIndex);
+    String pathDerivedFromTimestampValuePath = reducedTimestampValuePath.substring(0, timestampValuePathDelimiterIndex);
+    if (!pathDerivedFromMetricValuePath.equals(pathDerivedFromTimestampValuePath)) {
       throw new DataFormatException(INVALID_DATA_PATH_ERROR_MESSAGE, null);
     }
-    String metricListPath = removeJsonPathArrayDelimiterSuffix(commonJsonPath);
-    if (metricListPath.contains("[")) {
-      throw new DataFormatException(INVALID_DATA_PATH_ERROR_MESSAGE, null);
-    }
-    return metricListPath;
+    return pathDerivedFromMetricValuePath;
   }
 
-  private String removeJsonPathArrayDelimiterSuffix(String path) {
-    return path.substring(0, path.length() - JSON_PATH_ARRAY_DELIMITER.length());
+  private void validateRelativePaths(MetricResponseMapping metricResponseMapping) {
+    if (metricResponseMapping.getServiceInstanceListJsonPath().contains(JSON_PATH_ARRAY_OPENING_BRACKET)
+        || metricResponseMapping.getRelativeServiceInstanceValueJsonPath().contains(JSON_PATH_ARRAY_OPENING_BRACKET)
+        || metricResponseMapping.getRelativeMetricListJsonPath().contains(JSON_PATH_ARRAY_OPENING_BRACKET)
+        || metricResponseMapping.getRelativeMetricValueJsonPath().contains(JSON_PATH_ARRAY_OPENING_BRACKET)
+        || metricResponseMapping.getRelativeTimestampJsonPath().contains(JSON_PATH_ARRAY_OPENING_BRACKET)) {
+      throw new DataFormatException(INVALID_CHARACTER_ERROR_MESSAGE, null);
+    }
   }
 }

@@ -108,12 +108,13 @@ public class UserGroupResource {
     if (UserGroupSearchTermType.USERGROUP_NAME.equals(searchTermType) && !StringUtils.isEmpty(searchTerm)) {
       SearchFilter searchFilter = SearchFilter.builder()
                                       .fieldName(UserGroupKeys.name)
-                                      .op(Operator.STARTS_WITH)
+                                      .op(Operator.CONTAINS)
                                       .fieldValues(new String[] {searchTerm})
                                       .build();
       pageRequest.setFilters(Lists.newArrayList(searchFilter));
     }
-    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, loadUsers, searchTermType, searchTerm);
+    PageResponse<UserGroup> pageResponse =
+        userGroupService.list(accountId, pageRequest, loadUsers, searchTermType, searchTerm);
     return getPublicUserGroups(pageResponse);
   }
 

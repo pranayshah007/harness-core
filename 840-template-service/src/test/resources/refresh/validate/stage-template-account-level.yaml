@@ -1,0 +1,33 @@
+template:
+  identifier: stageTemplate
+  versionLabel: 1
+  name: template1
+  type: Stage
+  spec:
+    type: Approval
+    spec:
+      execution:
+        steps:
+          - step:
+              name: Approval
+              identifier: approval
+              template:
+                templateRef: approvalTemplate
+                versionLabel: 1
+                templateInputs:
+                  type: HarnessApproval
+                  spec:
+                    approvers:
+                      userGroups: <+input>
+          - step:
+              name: http
+              identifier: http
+              template:
+                templateRef: httpTemplate
+                versionLabel: 1
+                templateInputs:
+                  spec:
+                    url: <+input>
+                    method: <+input>
+                    requestBody: <+input>
+                  timeout: <+input>

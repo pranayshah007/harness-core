@@ -1022,8 +1022,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:zApbc0WTTpqYgOIDp4ffLgdNkhHoVVtTrIPkl43RA1g=",
-    version = "v1.25.1-0.20220620103940-f6260707e685",
+    sum = "h1:ydIzFACT2VH9euHfBZuHxFu7AGN21xStbernowJvlHY=",
+    version = "v1.26.0",
 )
 
 go_repository(
@@ -4345,7 +4345,6 @@ plain_artifacts = [
     "com.rabbitmq:amqp-client:jar:4.8.0",
     "com.bugsnag:bugsnag:3.6.2",
     "com.carrotsearch:hppc:0.8.1",
-    "com.coveo:saml-client:4.0.0",
     "com.cronutils:cron-utils:9.1.6",
     "com.datadoghq:java-dogstatsd-client:2.3",
     "com.deftlabs:mongo-java-distributed-lock:0.1.7",
@@ -4510,7 +4509,7 @@ plain_artifacts = [
     "com.microsoft.azure:azure-mgmt-storage:1.31.1",
     "com.microsoft.azure:azure-mgmt-trafficmanager:1.31.1",
     "com.microsoft.azure:azure-storage:6.1.0",
-    "com.microsoft.azure:msal4j:1.8.1",
+    "com.microsoft.azure:msal4j:1.11.0",
     "com.microsoft.rest:client-runtime:1.7.4",
     "com.networknt:json-schema-validator:1.0.54",
     "com.nimbusds:lang-tag:1.5",
@@ -4662,7 +4661,7 @@ plain_artifacts = [
     "io.grpc:grpc-services:1.33.1",
     "io.grpc:grpc-stub:1.33.1",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.37-RELEASE",
+    "io.harness.cv:data-collection-dsl:0.38-RELEASE",
     "io.harness:ff-java-server-sdk:1.0.5.1",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:11.0.2",
@@ -4946,18 +4945,17 @@ plain_artifacts = [
     "org.mortbay.jetty.alpn:alpn-boot:8.1.13.v20181017",
     "org.mozilla:rhino:1.7R4",
     "org.objenesis:objenesis:2.6",
-    "org.opensaml:opensaml-core:4.0.1",
-    "org.opensaml:opensaml-messaging-api:4.0.1",
-    "org.opensaml:opensaml-profile-api:4.0.1",
-    "org.opensaml:opensaml-saml-api:4.0.1",
-    "org.opensaml:opensaml-saml-impl:4.0.1",
-    "org.opensaml:opensaml-security-api:4.0.1",
-    "org.opensaml:opensaml-security-impl:4.0.1",
-    "org.opensaml:opensaml-soap-api:4.0.1",
-    "org.opensaml:opensaml-soap-impl:4.0.1",
-    "org.opensaml:opensaml-storage-api:4.0.1",
-    "org.opensaml:opensaml-xmlsec-api:4.0.1",
-    "org.opensaml:opensaml-xmlsec-impl:4.0.1",
+    "org.opensaml:opensaml-core:3.4.3",
+    "org.opensaml:opensaml-messaging-api:3.4.3",
+    "org.opensaml:opensaml-profile-api:3.4.3",
+    "org.opensaml:opensaml-saml-api:3.4.3",
+    "org.opensaml:opensaml-security-api:3.4.3",
+    "org.opensaml:opensaml-security-impl:3.4.3",
+    "org.opensaml:opensaml-soap-api:3.4.3",
+    "org.opensaml:opensaml-soap-impl:3.4.3",
+    "org.opensaml:opensaml-storage-api:3.4.3",
+    "org.opensaml:opensaml-xmlsec-api:3.4.3",
+    "org.opensaml:opensaml-xmlsec-impl:3.4.3",
     "org.ow2.asm:asm-analysis:5.0.4",
     "org.ow2.asm:asm-commons:5.0.4",
     "org.ow2.asm:asm-tree:5.0.4",
@@ -5157,6 +5155,24 @@ maven_install(
                 "org.slf4j:slf4j-log4j12",
             ],
         ),
+        maven.artifact(
+            group = "org.opensaml",
+            artifact = "opensaml-saml-impl",
+            version = "3.4.3",
+            exclusions = [
+                "org.apache.velocity:velocity-engine-core",
+                "org.apache.velocity:velocity",
+            ],
+        ),
+        maven.artifact(
+            group = "com.coveo",
+            artifact = "saml-client",
+            version = "3.0.2",
+            exclusions = [
+                "org.apache.velocity:velocity-engine-core",
+                "org.apache.velocity:velocity",
+            ],
+        ),
         maven_test_artifact("com.github.tomakehurst:wiremock-jre8-standalone:2.27.2"),
         maven_test_artifact("com.icegreen:greenmail:1.5.0"),
         maven_test_artifact("com.squareup.okhttp3:mockwebserver:3.6.0"),
@@ -5218,8 +5234,9 @@ maven_install(
     artifacts = [
         "com.fasterxml.jackson.core:jackson-databind:2.13.1",
         "com.azure:azure-core:1.25.0",
-        "com.azure:azure-storage-blob:12.9.0",
-        "com.azure:azure-storage-common:12.9.0",
+        "com.azure:azure-identity:1.4.4",
+        "com.azure:azure-storage-blob:12.14.4",
+        "com.azure:azure-storage-common:12.14.3",
     ],
     repositories = [
         "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
@@ -5232,8 +5249,9 @@ maven_install(
     name = "ce-nextgen",
     artifacts = [
         "com.azure:azure-core:1.25.0",
-        "com.azure:azure-storage-blob:12.9.0",
-        "com.azure:azure-storage-common:12.9.0",
+        "com.azure:azure-identity:1.4.4",
+        "com.azure:azure-storage-blob:12.14.4",
+        "com.azure:azure-storage-common:12.14.3",
     ],
     repositories = [
         "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
@@ -5478,4 +5496,11 @@ go_repository(
     importpath = "github.com/robinjoseph08/redisqueue/v2",
     sum = "h1:GactHlrxS8YSCJc4CbP1KbTObo14pieNmNWSUlquTGI=",
     version = "v2.1.0",
+)
+
+go_repository(
+    name = "com_github_bmatcuk_doublestar",
+    importpath = "github.com/bmatcuk/doublestar",
+    sum = "h1:1jLE2y0VpSrOn/QR9G4f2RmrCtkM3AuATcWradjHUvM=",
+    version = "v1.3.0",
 )

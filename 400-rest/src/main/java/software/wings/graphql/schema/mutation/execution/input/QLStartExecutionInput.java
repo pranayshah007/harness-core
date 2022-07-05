@@ -36,6 +36,7 @@ public class QLStartExecutionInput implements QLMutationInput {
   List<QLVariableInput> variableInputs;
   List<QLServiceInput> serviceInputs;
   String notes;
+  String executionUrl;
   boolean excludeHostsWithSameArtifact;
   boolean targetToSpecificHosts;
   List<String> specificHosts;

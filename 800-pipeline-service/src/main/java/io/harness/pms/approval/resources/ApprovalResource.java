@@ -8,11 +8,15 @@
 package io.harness.pms.approval.resources;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.approval.ApprovalResourceService;
+import io.harness.pms.pipeline.PipelineResourceConstants;
+import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.steps.approval.step.beans.ApprovalInstanceResponseDTO;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivityRequestDTO;
@@ -28,6 +32,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -41,6 +46,7 @@ import javax.ws.rs.QueryParam;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@Tag(name = "Approvals", description = "This contains APIs related to Pipeline approvals")
 @Api("approvals")
 @Path("approvals")
 @Produces({"application/json", "application/yaml"})
@@ -100,19 +106,22 @@ public class ApprovalResource {
 
   @POST
   @Path("/{approvalInstanceId}/harness/activity")
-  @ApiOperation(value = "Add a new Harness Approval activity", nickname = "addHarnessApprovalActivity")
-  @Operation(operationId = "addHarnessApprovalActivity", summary = "Add a new Harness Approval activity",
+  @ApiOperation(value = "Approve or Reject a Pipeline Execution", nickname = "addHarnessApprovalActivity")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
+  @Operation(operationId = "addHarnessApprovalActivity", summary = "Approve or Reject a Pipeline Execution",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns a newly added Harness Approval activity")
       })
-  @Hidden
   public ResponseDTO<ApprovalInstanceResponseDTO>
-  addHarnessApprovalActivity(@Parameter(description = APPROVAL_PARAM_MESSAGE) @NotEmpty @PathParam(
-                                 "approvalInstanceId") String approvalInstanceId,
-      @Parameter(description = "This contains the details of Harness Approval Activity requested") @NotNull
-      @Valid HarnessApprovalActivityRequestDTO request) {
+  addHarnessApprovalActivity(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(
+          description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @AccountIdentifier String accountId,
+      @Parameter(description = APPROVAL_PARAM_MESSAGE) @NotEmpty @PathParam(
+          "approvalInstanceId") String approvalInstanceId,
+      @Parameter(
+          description = "Details of approval activity") @NotNull @Valid HarnessApprovalActivityRequestDTO request) {
     return ResponseDTO.newResponse(approvalResourceService.addHarnessApprovalActivity(approvalInstanceId, request));
   }
 

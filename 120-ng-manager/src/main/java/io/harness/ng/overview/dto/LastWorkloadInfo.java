@@ -9,6 +9,7 @@ package io.harness.ng.overview.dto;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.dashboard.AuthorInfo;
 
 import lombok.Builder;
 import lombok.Value;
@@ -21,4 +22,6 @@ public class LastWorkloadInfo {
   private Long endTime;
   private String deploymentType;
   private String status;
+  private AuthorInfo authorInfo;
+  private String triggerType;
 }

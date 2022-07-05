@@ -50,7 +50,7 @@ public class GitFilePathHelper {
   public String getFileUrl(
       Scope scope, String connectorRef, String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
     ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(),
-        scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, gitRepositoryDTO);
+        scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, gitRepositoryDTO.getName());
     return scmConnector.getFileUrl(branchName, filePath, gitRepositoryDTO);
   }
 

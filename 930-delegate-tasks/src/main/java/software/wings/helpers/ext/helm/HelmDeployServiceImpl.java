@@ -445,7 +445,8 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       scmFetchFilesHelper.downloadFilesUsingScm(
           workingDirectory, gitFileConfig, gitConfig, commandRequest.getExecutionLogCallback());
     } else {
-      gitService.downloadFiles(gitConfig, gitFileConfig, workingDirectory, false);
+      gitService.downloadFiles(
+          gitConfig, gitFileConfig, workingDirectory, false, commandRequest.getExecutionLogCallback());
     }
     commandRequest.setWorkingDir(workingDirectory);
     commandRequest.getExecutionLogCallback().saveExecutionLog("Repo checked-out locally");
@@ -911,9 +912,10 @@ public class HelmDeployServiceImpl implements HelmDeployService {
         gitFetchFilesResult = scmFetchFilesHelper.fetchFilesFromRepoWithScm(
             gitFileConfig, gitConfig, Collections.singletonList(gitFileConfig.getFilePath()));
       } else {
-        gitFetchFilesResult = gitService.fetchFilesByPath(gitConfig, gitFileConfig.getConnectorId(),
-            gitFileConfig.getCommitId(), gitFileConfig.getBranch(),
-            Collections.singletonList(gitFileConfig.getFilePath()), gitFileConfig.isUseBranch(), false);
+        gitFetchFilesResult =
+            gitService.fetchFilesByPath(gitConfig, gitFileConfig.getConnectorId(), gitFileConfig.getCommitId(),
+                gitFileConfig.getBranch(), Collections.singletonList(gitFileConfig.getFilePath()),
+                gitFileConfig.isUseBranch(), false, executionLogCallback);
       }
 
       if (isNotEmpty(gitFetchFilesResult.getFiles())) {

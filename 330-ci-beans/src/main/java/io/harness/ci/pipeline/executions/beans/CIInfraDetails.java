@@ -27,7 +27,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.ci.pipeline.executions.beans.CIInfraDetails")
 @OwnedBy(HarnessTeam.CI)
 public class CIInfraDetails {
-    private String infraType;
-    private String infraOSType;
-    private String infraHostType;
+  private String infraType;
+  private String infraOSType;
+  private String infraHostType;
 }

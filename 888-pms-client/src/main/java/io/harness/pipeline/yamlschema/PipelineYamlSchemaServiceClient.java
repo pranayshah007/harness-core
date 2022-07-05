@@ -7,29 +7,30 @@
 
 package io.harness.pipeline.yamlschema;
 
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+
 import io.harness.EntityType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.Scope;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.yaml.YamlSchemaResponse;
+
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-
 @OwnedBy(PIPELINE)
 public interface PipelineYamlSchemaServiceClient {
-    String YAML_SCHEMA_ENDPOINT = "yaml-schema";
+  String YAML_SCHEMA_ENDPOINT = "yaml-schema";
 
-    //TODO: Move yamlGroup and scope to constants
-    @GET(YAML_SCHEMA_ENDPOINT+"/get")
-    Call<ResponseDTO<YamlSchemaResponse>> getYamlSchema(
-            @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-            @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-            @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-            @Query(value = "yamlGroup") String yamlGroup,
-            @Query(value = NGCommonEntityConstants.ENTITY_TYPE)EntityType stepEntityType,
-            @Query(value = "scope") Scope scope);
+  // TODO: Move yamlGroup and scope to constants
+  @GET(YAML_SCHEMA_ENDPOINT + "/get")
+  Call<ResponseDTO<YamlSchemaResponse>> getYamlSchema(
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query(value = "yamlGroup") String yamlGroup,
+      @Query(value = NGCommonEntityConstants.ENTITY_TYPE) EntityType stepEntityType,
+      @Query(value = "scope") Scope scope);
 }

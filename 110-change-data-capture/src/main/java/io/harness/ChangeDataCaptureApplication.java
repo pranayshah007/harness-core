@@ -11,9 +11,13 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cf.AbstractCfModule;
+import io.harness.cf.CfClientConfig;
+import io.harness.cf.CfMigrationConfig;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
+import io.harness.ff.FeatureFlagConfig;
 import io.harness.govern.ProviderModule;
 import io.harness.health.HealthService;
 import io.harness.maintenance.MaintenanceController;
@@ -113,6 +117,22 @@ public class ChangeDataCaptureApplication extends Application<ChangeDataCaptureS
 
     modules.add(MorphiaModule.getInstance());
     modules.add(new ChangeDataCaptureModule(changeDataCaptureServiceConfig));
+    modules.add(new AbstractCfModule() {
+      @Override
+      public CfClientConfig cfClientConfig() {
+        return changeDataCaptureServiceConfig.getCfClientConfig();
+      }
+
+      @Override
+      public CfMigrationConfig cfMigrationConfig() {
+        return CfMigrationConfig.builder().build();
+      }
+
+      @Override
+      public FeatureFlagConfig featureFlagConfig() {
+        return changeDataCaptureServiceConfig.getFeatureFlagConfig();
+      }
+    });
 
     Injector injector = Guice.createInjector(modules);
     registerStores(changeDataCaptureServiceConfig, injector);

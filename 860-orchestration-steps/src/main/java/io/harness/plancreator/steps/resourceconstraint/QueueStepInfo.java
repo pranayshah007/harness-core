@@ -14,14 +14,12 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.utils.PmsConstants;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.resourcerestraint.QueueSpecParameters;
 import io.harness.steps.resourcerestraint.QueueStep;
 import io.harness.steps.resourcerestraint.ResourceRestraintFacilitator;
-import io.harness.steps.resourcerestraint.ResourceRestraintSpecParameters;
-import io.harness.steps.resourcerestraint.beans.AcquireMode;
 import io.harness.steps.resourcerestraint.beans.QueueHoldingScope;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -64,23 +62,8 @@ public class QueueStepInfo implements PMSStepInfo {
     return ResourceRestraintFacilitator.FACILITATOR_TYPE.getType();
   }
 
-  /**
-   * Create the parameters using a fixed name, permits, and acquire mode.
-   *
-   * <ul>
-   *     <li>name: {@link PmsConstants#QUEUING_RC_NAME}</li>
-   *     <li>permits: {@link PmsConstants#QUEUING_RC_PERMITS}</li>
-   *     <li>acquireMode: {@link AcquireMode#ENSURE} (FIFO)</li>
-   * </ul>
-   */
   @Override
   public SpecParameters getSpecParameters() {
-    return ResourceRestraintSpecParameters.builder()
-        .resourceUnit(key)
-        .holdingScope(scope.getHoldingScope())
-        .name(PmsConstants.QUEUING_RC_NAME)
-        .permits(PmsConstants.QUEUING_RC_PERMITS)
-        .acquireMode(AcquireMode.ENSURE)
-        .build();
+    return new QueueSpecParameters(key, scope.getHoldingScope());
   }
 }

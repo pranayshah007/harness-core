@@ -115,6 +115,18 @@ public class ShellScriptStepVariableCreatorTest extends CategoryTest {
     assertThat(fqnExtraPropertiesForShellScriptSource)
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.source.type");
 
+    List<String> fqnExtraPropertiesForShellEnum =
+        variablesForParentNodeV2.getYamlExtraProperties()
+            .get("M6HHtApvRa6cscRUnJ5NqA") // uuid for shell script source pojo
+            .getPropertiesList()
+            .stream()
+            .map(YamlProperties::getFqn)
+            .collect(Collectors.toList());
+
+    assertThat(fqnExtraPropertiesForShellEnum)
+        .containsOnly("pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.shell",
+            "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.executionTarget");
+
     // yaml output properties
     List<String> fqnOutputPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
                                                .get("xtkQAaoNRkCgtI5mU8KnEQ") // uuid for step node

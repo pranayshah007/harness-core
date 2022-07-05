@@ -10,6 +10,12 @@ package io.harness.ccm.remote.resources.perspectives;
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.DATA_SOURCES;
+import static io.harness.ccm.remote.resources.TelemetryConstants.IS_CLONE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
+import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
+import static io.harness.ccm.remote.resources.TelemetryConstants.PERSPECTIVE_CREATED;
+import static io.harness.ccm.remote.resources.TelemetryConstants.PERSPECTIVE_ID;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
@@ -97,13 +103,6 @@ public class PerspectiveResource {
   private final CCMNotificationService notificationService;
   private final AwsAccountFieldHelper awsAccountFieldHelper;
   private final TelemetryReporter telemetryReporter;
-
-  private static final String PERSPECTIVE_CREATED = "Perspective Created";
-  private static final String PERSPECTIVE_ID = "Perspective ID";
-  private static final String MODULE = "module";
-  private static final String MODULE_NAME = "CCM";
-  private static final String DATA_SOURCES = "data_sources";
-  private static final String IS_CLONE = "is_clone";
 
   @Inject
   public PerspectiveResource(CEViewService ceViewService, CEReportScheduleService ceReportScheduleService,

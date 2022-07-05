@@ -73,6 +73,20 @@ public class EntitySetupUsageResource {
   }
 
   @GET
+  @Path("v2")
+  @ApiOperation(value = "Get Entities referring this resource if fqn is given", nickname = "listAllEntityUsageByFqn")
+  public ResponseDTO<Page<EntitySetupUsageDTO>> listAllEntityUsageV2(
+      @QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
+      @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(REFERRED_ENTITY_FQN) String referredEntityFQN,
+      @QueryParam(REFERRED_ENTITY_TYPE) EntityType entityType,
+      @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
+    return ResponseDTO.newResponse(entitySetupUsageService.listAllEntityUsage(
+        page, size, accountIdentifier, referredEntityFQN, entityType, searchTerm));
+  }
+
+  @GET
   @Path("internal")
   @ApiOperation(
       value = "Get Entities referring this resource if fqn is given", nickname = "listAllEntityUsage", hidden = true)

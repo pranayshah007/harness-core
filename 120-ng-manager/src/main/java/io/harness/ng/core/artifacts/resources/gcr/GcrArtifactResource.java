@@ -95,7 +95,7 @@ public class GcrArtifactResource {
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
-          accountId, orgIdentifier, projectIdentifier, fqnPath, serviceRef);
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
       GcrArtifactConfig gcrArtifactConfig = (GcrArtifactConfig) artifactSpecFromService;
       if (isEmpty(imagePath)) {
         imagePath = gcrArtifactConfig.getImagePath().getValue();
@@ -112,7 +112,7 @@ public class GcrArtifactResource {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(gcrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     imagePath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo);
+        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
     GcrResponseDTO buildDetails =
         gcrResourceService.getBuildDetails(connectorRef, imagePath, registryHostname, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);

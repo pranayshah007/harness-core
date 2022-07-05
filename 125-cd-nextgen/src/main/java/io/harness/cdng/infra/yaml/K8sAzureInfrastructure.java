@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.infra.beans.InfraMapping;
+import io.harness.cdng.infra.beans.InfrastructureDetailsAbstract;
 import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
@@ -42,7 +43,8 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("k8sAzureInfrastructure")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.yaml.K8sAzureInfrastructure")
-public class K8sAzureInfrastructure implements Infrastructure, Visitable, WithConnectorRef {
+public class K8sAzureInfrastructure
+    extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef {
   @NotNull
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)

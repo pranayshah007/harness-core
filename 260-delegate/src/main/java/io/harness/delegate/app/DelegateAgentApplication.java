@@ -119,8 +119,7 @@ public class DelegateAgentApplication extends Application<DelegateAgentConfig> {
   }
 
   @Override
-  protected void bootstrapLogging() {
-  }
+  protected void bootstrapLogging() {}
 
   private void addShutdownHook(final Injector injector) {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {

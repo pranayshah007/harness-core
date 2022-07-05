@@ -168,7 +168,7 @@ public class EcsBGUpdateRoute53DNSWeightState extends State {
         application.getUuid(), context.fetchInfraMappingId());
     SettingAttribute settingAttribute = settingsService.get(infrastructureMapping.getComputeProviderSettingId());
     AwsConfig awsConfig = (AwsConfig) settingAttribute.getValue();
-    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context,awsConfig);
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
     List<EncryptedDataDetail> encryptedDetails =
         secretManager.getEncryptionDetails(awsConfig, context.getAppId(), context.getWorkflowExecutionId());
 

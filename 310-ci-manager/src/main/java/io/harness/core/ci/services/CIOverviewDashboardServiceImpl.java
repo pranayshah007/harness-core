@@ -7,8 +7,9 @@
 
 package io.harness.core.ci.services;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import static io.harness.beans.execution.ExecutionSource.Type.WEBHOOK;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.app.beans.entities.BuildActiveInfo;
 import io.harness.app.beans.entities.BuildCount;
 import io.harness.app.beans.entities.BuildExecutionInfo;
@@ -33,8 +34,9 @@ import io.harness.ng.core.dashboard.ServiceDeploymentInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.TimeScaleDBService;
-import lombok.extern.slf4j.Slf4j;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -45,9 +47,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static io.harness.beans.execution.ExecutionSource.Type.WEBHOOK;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
@@ -195,11 +195,37 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     return totalBuildSqlBuilder.toString();
   }
 
+  public long getActiveCommitterCount(String accountId) {
+    long timestamp = System.currentTimeMillis();
+    long totalTries = 0;
+    String query = "select count(distinct moduleinfo_author_id) from " + tableName
+        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and startts<=? and startts>=?;";
+
+    while (totalTries <= MAX_RETRY_COUNT) {
+      ResultSet resultSet = null;
+      try (Connection connection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = connection.prepareStatement(query)) {
+        statement.setString(1, accountId);
+        statement.setLong(2, timestamp);
+        statement.setLong(3, timestamp - 30 * DAY_IN_MS);
+        resultSet = statement.executeQuery();
+        return resultSet.next() ? resultSet.getLong(1) : 0L;
+      } catch (SQLException ex) {
+        log.error(ex.getMessage());
+        totalTries++;
+      } finally {
+        DBUtils.close(resultSet);
+      }
+    }
+    return -1L;
+  }
+
   @Override
   public UsageDataDTO getActiveCommitter(String accountId, long timestamp) {
     long totalTries = 0;
     String query = "select distinct moduleinfo_author_id, projectidentifier , orgidentifier from " + tableName
-        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and trigger_type='" + WEBHOOK + "' and startts<=? and startts>=?;";
+        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and trigger_type='"
+        + WEBHOOK + "' and startts<=? and startts>=?;";
 
     while (totalTries <= MAX_RETRY_COUNT) {
       ResultSet resultSet = null;

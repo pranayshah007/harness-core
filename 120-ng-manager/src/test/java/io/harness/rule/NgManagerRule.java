@@ -34,7 +34,6 @@ import io.harness.ng.userprofile.entities.GitlabSCM.GitlabSCMMapper;
 import io.harness.ng.userprofile.entities.SourceCodeManager.SourceCodeManagerMapper;
 import io.harness.oas.OASModule;
 import io.harness.persistence.HPersistence;
-import io.harness.pms.serializer.jackson.PmsBeansJacksonModule;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
@@ -152,7 +151,6 @@ public class NgManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       public ObjectMapper getYamlSchemaObjectMapper() {
         ObjectMapper objectMapper = Jackson.newObjectMapper();
         HObjectMapper.configureObjectMapperForNG(objectMapper);
-        objectMapper.registerModule(new PmsBeansJacksonModule());
         return objectMapper;
       }
     });

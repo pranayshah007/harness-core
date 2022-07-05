@@ -7,10 +7,10 @@
 
 package io.harness.ci.integrationstage;
 
-import static io.harness.common.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
-import static io.harness.common.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
-import static io.harness.common.CIExecutionConstants.GIT_CLONE_STEP_ID;
-import static io.harness.common.CIExecutionConstants.GIT_CLONE_STEP_NAME;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_NAME;
 
 import static org.assertj.core.util.Lists.newArrayList;
 

@@ -74,8 +74,8 @@ public class ECSRecommendationService {
 
     HistogramCheckpoint memoryHistogramCp = memoryHistogram.saveToCheckpoint();
     HistogramCheckpoint cpuHistogramCp = cpuHistogram.saveToCheckpoint();
-    StrippedHistogram memStripped = StrippedHistogram.fromCheckpoint(memoryHistogramCp, NUMBER_OF_BUCKETS);
-    StrippedHistogram cpuStripped = StrippedHistogram.fromCheckpoint(cpuHistogramCp, NUMBER_OF_BUCKETS);
+    StrippedHistogram memStripped = StrippedHistogram.fromCheckpoint(memoryHistogramCp, NUMBER_OF_BUCKETS + 1);
+    StrippedHistogram cpuStripped = StrippedHistogram.fromCheckpoint(cpuHistogramCp, NUMBER_OF_BUCKETS + 1);
 
     return ECSRecommendationDTO.builder()
         .id(recommendation.getUuid())

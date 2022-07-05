@@ -10,8 +10,8 @@ package io.harness.cvng.verificationjob.services.api;
 import io.harness.cvng.activity.beans.ActivityVerificationSummary;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO;
 import io.harness.cvng.core.beans.TimeRange;
+import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.entities.CVConfig;
-import io.harness.cvng.verificationjob.beans.TestVerificationBaselineExecutionDTO;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.ProgressLog;
@@ -28,10 +28,7 @@ public interface VerificationJobInstanceService {
   void createDataCollectionTasks(VerificationJobInstance verificationJobInstance);
   void logProgress(ProgressLog progressLog);
   Optional<TimeRange> getPreDeploymentTimeRange(String verificationJobInstanceId);
-  List<TestVerificationBaselineExecutionDTO> getTestJobBaselineExecutions(
-      String accountId, String orgIdentifier, String projectIdentifier, String verificationJobIdentifier);
-  Optional<String> getLastSuccessfulTestVerificationJobExecutionId(
-      String accountId, String orgIdentifier, String projectIdentifier, String verificationJobIdentifier);
+  Optional<String> getLastSuccessfulTestVerificationJobExecutionId(ServiceEnvironmentParams serviceEnvironmentParams);
   ActivityVerificationSummary getActivityVerificationSummary(List<VerificationJobInstance> verificationJobInstances);
   DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary getDeploymentVerificationJobInstanceSummary(
       List<String> verificationJobInstanceIds);

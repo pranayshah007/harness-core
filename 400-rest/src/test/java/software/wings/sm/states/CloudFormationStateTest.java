@@ -546,5 +546,4 @@ public class CloudFormationStateTest extends WingsBaseTest {
     cloudFormationDeleteStackState.setProvisionerId("test provisioner");
     assertThat(cloudFormationDeleteStackState.validateFields().size()).isEqualTo(0);
   }
-
 }

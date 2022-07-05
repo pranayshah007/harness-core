@@ -595,7 +595,9 @@ public class IndexManagerSession {
         // Persistent locks
         "locks",
         // verification service
-        "timeSeriesAnomaliesRecords", "timeSeriesCumulativeSums");
+        "timeSeriesAnomaliesRecords", "timeSeriesCumulativeSums",
+        // telemetry
+        "ciTelemetrySentStatus", "ciAccountExecutionMetadata");
 
     List<String> obsoleteCollections = datastore.getDB()
                                            .getCollectionNames()

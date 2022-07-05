@@ -16,6 +16,7 @@ import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import lombok.experimental.UtilityClass;
 import org.zeroturnaround.exec.stream.LogOutputStream;
@@ -33,11 +34,12 @@ public class ServerlessCommandTaskHelper {
   }
 
   public static ServerlessCliResponse executeCommand(AbstractExecutable command, String workingDirectory,
-      LogCallback executionLogCallback, boolean printCommand, long timeoutInMillis)
+      LogCallback executionLogCallback, boolean printCommand, long timeoutInMillis, Map<String, String> envVariables)
       throws InterruptedException, TimeoutException, IOException {
     try (LogOutputStream logOutputStream = getExecutionLogOutputStream(executionLogCallback, INFO);
          LogOutputStream logErrorStream = getExecutionLogOutputStream(executionLogCallback, ERROR)) {
-      return command.execute(workingDirectory, logOutputStream, logErrorStream, printCommand, timeoutInMillis);
+      return command.execute(
+          workingDirectory, logOutputStream, logErrorStream, printCommand, timeoutInMillis, envVariables);
     }
   }
 }

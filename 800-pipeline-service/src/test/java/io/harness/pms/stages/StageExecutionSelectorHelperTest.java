@@ -9,6 +9,7 @@ package io.harness.pms.stages;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,6 +30,44 @@ public class StageExecutionSelectorHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetStageExecutionResponse() {
     String pipelineYaml = getPipelineYamlForStagesRequired();
+    List<StageExecutionResponse> stageExecutionResponse =
+        StageExecutionSelectorHelper.getStageExecutionResponse(pipelineYaml);
+    assertThat(stageExecutionResponse).hasSize(4);
+
+    StageExecutionResponse s1 = stageExecutionResponse.get(0);
+    assertThat(s1.getStageIdentifier()).isEqualTo("s1");
+    assertThat(s1.getStageName()).isEqualTo("s1");
+    assertThat(s1.getStagesRequired()).containsExactlyInAnyOrder("s3", "s2");
+    assertThat(s1.getMessage()).isNotEmpty();
+    assertThat(s1.isToBeBlocked()).isTrue();
+
+    StageExecutionResponse s2 = stageExecutionResponse.get(1);
+    assertThat(s2.getStageIdentifier()).isEqualTo("s2");
+    assertThat(s2.getStageName()).isEqualTo("s2");
+    assertThat(s2.getStagesRequired()).containsExactlyInAnyOrder("s3", "s1");
+    assertThat(s2.getMessage()).isNotEmpty();
+    assertThat(s2.isToBeBlocked()).isTrue();
+
+    StageExecutionResponse s3 = stageExecutionResponse.get(2);
+    assertThat(s3.getStageIdentifier()).isEqualTo("s3");
+    assertThat(s3.getStageName()).isEqualTo("s3");
+    assertThat(s3.getStagesRequired()).containsExactlyInAnyOrder("s2", "s1");
+    assertThat(s3.getMessage()).isNotEmpty();
+    assertThat(s3.isToBeBlocked()).isTrue();
+
+    StageExecutionResponse s4 = stageExecutionResponse.get(3);
+    assertThat(s4.getStageIdentifier()).isEqualTo("s4");
+    assertThat(s4.getStageName()).isEqualTo("s4");
+    assertThat(s4.getStagesRequired()).isEmpty();
+    assertThat(s4.getMessage()).isNull();
+    assertThat(s4.isToBeBlocked()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testGetStageExecutionResponseWithCIUseFromStage() {
+    String pipelineYaml = getPipelineYamlForStagesRequiredWithCIUseFromStage();
     List<StageExecutionResponse> stageExecutionResponse =
         StageExecutionSelectorHelper.getStageExecutionResponse(pipelineYaml);
     assertThat(stageExecutionResponse).hasSize(4);
@@ -282,6 +321,50 @@ public class StageExecutionSelectorHelperTest extends CategoryTest {
         + "              identifier: m3\n"
         + "              useFromStage:\n"
         + "                stage: s1\n"
+        + "    - stage:\n"
+        + "        identifier: s4\n"
+        + "        name: s4\n"
+        + "        type: Deployment\n"
+        + "        manifests:\n"
+        + "          - manifest:\n"
+        + "              identifier: m1\n";
+  }
+
+  private String getPipelineYamlForStagesRequiredWithCIUseFromStage() {
+    return "pipeline:\n"
+        + "  stages:\n"
+        + "    - stage:\n"
+        + "        identifier: s1\n"
+        + "        name: s1\n"
+        + "        type: Deployment\n"
+        + "        spec:\n"
+        + "          serviceConfig:\n"
+        + "            useFromStage: s3\n"
+        + "          infrastructure:\n"
+        + "            useFromStage: s2\n"
+        + "    - stage:\n"
+        + "        identifier: s2\n"
+        + "        name: s2\n"
+        + "        type: Deployment\n"
+        + "        spec:\n"
+        + "          something:\n"
+        + "            useFromStage: s3\n"
+        + "          somethingElse:\n"
+        + "            useFromStage: s1\n"
+        + "    - stage:\n"
+        + "        identifier: s3\n"
+        + "        name: s3\n"
+        + "        type: Deployment\n"
+        + "        manifests:\n"
+        + "          - manifest:\n"
+        + "              identifier: m1\n"
+        + "              useFromStage: s2\n"
+        + "          - manifest:\n"
+        + "              identifier: m2\n"
+        + "              useFromStage: s3\n"
+        + "          - manifest:\n"
+        + "              identifier: m3\n"
+        + "              useFromStage: s1\n"
         + "    - stage:\n"
         + "        identifier: s4\n"
         + "        name: s4\n"

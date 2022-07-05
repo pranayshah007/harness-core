@@ -18,12 +18,15 @@ public class ChangeConsumerFactory {
   public <T extends MongoCollectionChangeConsumer> T get(
       String collectionName, ChangeConsumerConfig changeConsumerConfig) {
     ConsumerType consumerType = changeConsumerConfig.getConsumerType();
-
-    switch (consumerType) {
-      case EVENTS_FRAMEWORK:
-        return (T) new EventsFrameworkChangeConsumer(collectionName, producerFactory);
-      default:
-        throw new InvalidRequestException("Change Consumer not Supported for " + consumerType.toString());
+    if (consumerType != null) {
+      switch (consumerType) {
+        case EVENTS_FRAMEWORK:
+          return (T) new EventsFrameworkChangeConsumer(collectionName, producerFactory);
+        default:
+          throw new InvalidRequestException("Change Consumer not Supported for " + consumerType.toString());
+      }
+    } else {
+      throw new InvalidRequestException("Consumer Type is null");
     }
   }
 }

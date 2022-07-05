@@ -10,7 +10,6 @@ package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.exception.WingsException.USER_ADMIN;
 import static io.harness.network.Http.connectableJenkinsHttpUrl;
 import static io.harness.validation.Validator.equalCheck;
 
@@ -25,6 +24,7 @@ import io.harness.delegate.task.artifacts.mappers.JenkinsRequestResponseMapper;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -99,8 +99,10 @@ public class JenkinsBuildServiceImpl implements JenkinsBuildService {
     } catch (WingsException e) {
       throw e;
     } catch (IOException ex) {
-      throw new InvalidRequestException(
-          "Failed to fetch build details jenkins server. Reason:" + ExceptionUtils.getMessage(ex), USER);
+      throw NestedExceptionUtils.hintWithExplanationException("Failed to fetch build details jenkins server",
+          JenkinsRegistryUtils.ERROR_HINT_ARTIFACT_PATH,
+          new ArtifactServerException(
+              "Failed to fetch build details jenkins server. Reason: " + ExceptionUtils.getMessage(ex), USER));
     }
   }
 
@@ -118,7 +120,9 @@ public class JenkinsBuildServiceImpl implements JenkinsBuildService {
     } catch (WingsException e) {
       throw e;
     } catch (IOException e) {
-      throw new ArtifactServerException("Failed to fetch Jobs. Reason:" + ExceptionUtils.getMessage(e), e, USER);
+      throw NestedExceptionUtils.hintWithExplanationException("Failed to fetch Jobs",
+          JenkinsRegistryUtils.ERROR_HINT_ARTIFACT_PATH,
+          new ArtifactServerException("Failed to fetch Jobs. Reason:" + ExceptionUtils.getMessage(e), USER));
     }
   }
 
@@ -139,8 +143,10 @@ public class JenkinsBuildServiceImpl implements JenkinsBuildService {
     } catch (WingsException e) {
       throw e;
     } catch (Exception ex) {
-      throw new ArtifactServerException(
-          "Error in artifact paths from jenkins server. Reason:" + ExceptionUtils.getMessage(ex), ex, USER);
+      throw NestedExceptionUtils.hintWithExplanationException(JenkinsRegistryUtils.ERROR_MESSAGE_ARTIFACT_PATH,
+          JenkinsRegistryUtils.ERROR_HINT_ARTIFACT_PATH,
+          new ArtifactServerException(
+              "Error in fetching build from jenkins server. Reason:" + ExceptionUtils.getMessage(ex), USER));
     }
   }
 
@@ -158,8 +164,10 @@ public class JenkinsBuildServiceImpl implements JenkinsBuildService {
     } catch (WingsException e) {
       throw e;
     } catch (IOException ex) {
-      throw new ArtifactServerException(
-          "Error in fetching build from jenkins server. Reason:" + ExceptionUtils.getMessage(ex), ex, USER_ADMIN);
+      throw NestedExceptionUtils.hintWithExplanationException(JenkinsRegistryUtils.ERROR_MESSAGE_ARTIFACT_PATH,
+          JenkinsRegistryUtils.ERROR_HINT_ARTIFACT_PATH,
+          new ArtifactServerException(
+              "Error in fetching build from jenkins server. Reason:" + ExceptionUtils.getMessage(ex), USER));
     }
   }
 
@@ -191,16 +199,25 @@ public class JenkinsBuildServiceImpl implements JenkinsBuildService {
 
     if (JenkinsUtils.TOKEN_FIELD.equals(jenkinsConfig.getAuthMechanism())) {
       if (isEmpty(new String(jenkinsConfig.getToken()))) {
-        throw new ArtifactServerException("Token should be not empty", USER);
+        throw NestedExceptionUtils.hintWithExplanationException("Token should not be empty",
+            "Check if the token is provided", new ArtifactServerException("Token should not be empty", USER));
       }
     } else {
       if (isEmpty(jenkinsConfig.getUsername()) || isEmpty(new String(jenkinsConfig.getPassword()))) {
-        throw new ArtifactServerException("UserName/Password should be not empty", USER);
+        throw NestedExceptionUtils.hintWithExplanationException(
+            String.format(JenkinsRegistryUtils.ERROR_MESSAGE, jenkinsConfig.getJenkinsUrl()),
+            JenkinsRegistryUtils.ERROR_HINT,
+            new ArtifactServerException(
+                String.format(JenkinsRegistryUtils.ERROR_MESSAGE, jenkinsConfig.getJenkinsUrl()), USER));
       }
     }
 
     if (!connectableJenkinsHttpUrl(jenkinsConfig.getJenkinsUrl())) {
-      throw new ArtifactServerException("Could not reach Jenkins Server at : " + jenkinsConfig.getJenkinsUrl(), USER);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          String.format(JenkinsRegistryUtils.ERROR_MESSAGE, jenkinsConfig.getJenkinsUrl()),
+          JenkinsRegistryUtils.ERROR_HINT,
+          new ArtifactServerException(
+              String.format(JenkinsRegistryUtils.ERROR_MESSAGE, jenkinsConfig.getJenkinsUrl()), USER));
     }
 
     return jenkinsRegistryUtils.isRunning(JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsConfig));

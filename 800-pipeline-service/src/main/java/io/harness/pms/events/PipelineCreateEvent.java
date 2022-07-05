@@ -21,7 +21,6 @@ import io.harness.pms.pipeline.PipelineEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashMap;
 import java.util.Map;
-
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -94,7 +94,7 @@ public class EcrArtifactResource {
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
-          accountId, orgIdentifier, projectIdentifier, fqnPath, serviceRef);
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
       EcrArtifactConfig ecrArtifactConfig = (EcrArtifactConfig) artifactSpecFromService;
       if (isEmpty(imagePath)) {
         imagePath = ecrArtifactConfig.getImagePath().getValue();
@@ -111,7 +111,7 @@ public class EcrArtifactResource {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(ecrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     imagePath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo);
+        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
     EcrResponseDTO buildDetails =
         ecrResourceService.getBuildDetails(connectorRef, imagePath, region, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);

@@ -62,6 +62,8 @@ import io.harness.template.migration.TemplateMigrationProvider;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
+import io.harness.yaml.YamlSdkConfiguration;
+import io.harness.yaml.YamlSdkInitHelper;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -83,8 +85,6 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
-import io.harness.yaml.YamlSdkConfiguration;
-import io.harness.yaml.YamlSdkInitHelper;
 import io.serializer.HObjectMapper;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import java.util.ArrayList;
@@ -353,10 +353,10 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
 
   private void registerYamlSdk(Injector injector) {
     YamlSdkConfiguration yamlSdkConfiguration = YamlSdkConfiguration.builder()
-            .requireSchemaInit(true)
-            .requireSnippetInit(true)
-            .requireValidatorInit(false)
-            .build();
+                                                    .requireSchemaInit(true)
+                                                    .requireSnippetInit(true)
+                                                    .requireValidatorInit(false)
+                                                    .build();
     YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
   }
 }

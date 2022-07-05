@@ -65,6 +65,7 @@ public enum FeatureName {
   CUSTOM_DEPLOYMENT,
   NG_DEPLOYMENT_TEMPLATE,
   CUSTOM_MAX_PAGE_SIZE,
+  ENABLE_PAGINATED_CLOUD_PROVIDERS,
   CUSTOM_RESOURCEGROUP_SCOPE,
   CUSTOM_SECRETS_MANAGER,
   CVNG_ENABLED,
@@ -263,7 +264,6 @@ public enum FeatureName {
   SERVICENOW_NG_INTEGRATION,
   OPTIMIZED_TF_PLAN,
   SELF_SERVICE_ENABLED,
-  NG_NATIVE_HELM,
   CHI_CUSTOM_HEALTH,
   CHI_CUSTOM_HEALTH_LOGS,
   AZURE_SAML_150_GROUPS_SUPPORT,
@@ -290,10 +290,11 @@ public enum FeatureName {
   EXTERNAL_USERID_BASED_LOGIN,
   LDAP_SYNC_WITH_USERID,
   DISABLE_HARNESS_SM,
-  SECURITY,
-  SECURITY_STAGE,
-  STO_CI_PIPELINE_SECURITY,
-  STO_CD_PIPELINE_SECURITY,
+  SECURITY("Enable the STO module on NG", HarnessTeam.STO),
+  SECURITY_STAGE("Enable the Security Tests stage on NG", HarnessTeam.STO),
+  STO_CI_PIPELINE_SECURITY("Enable the Security Tests execution results tab for CI on NG", HarnessTeam.STO),
+  STO_CD_PIPELINE_SECURITY("Enable the Security Tests execution results tab for CD on NG", HarnessTeam.STO),
+  STO_API_V2("Enable the new STO API version on NG", HarnessTeam.STO),
   GIT_SYNC_WITH_BITBUCKET,
   REFACTOR_ARTIFACT_SELECTION,
   CCM_DEV_TEST,
@@ -380,21 +381,41 @@ public enum FeatureName {
   SRM_LICENSE_ENABLED,
   AZURE_WEBAPP_NG,
   ACCOUNT_BASIC_ROLE_ONLY,
-  SEARCH_USERGROUP_BY_APPLICATION,
+  SEARCH_USERGROUP_BY_APPLICATION("Search in usergroup by application in CG", HarnessTeam.SPG),
   GITOPS_BYO_ARGO,
   CCM_MICRO_FRONTEND,
   NG_GIT_EXPERIENCE_IMPORT_FLOW,
   CVNG_LICENSE_ENFORCEMENT,
   SERVICE_DASHBOARD_V2,
-  TEMPLATE_SCHEMA_VALIDATION;
+  DEBEZIUM_ENABLED,
+  TEMPLATE_SCHEMA_VALIDATION,
+  YAML_APIS_GRANULAR_PERMISSION,
+  JENKINS_BUILD,
+  ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM,
+  PRUNE_KUBERNETES_RESOURCES_NG;
 
+  @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
   }
 
+  @Deprecated
   FeatureName(Scope scope) {
     this.scope = scope;
   }
 
   @Getter private FeatureFlag.Scope scope;
+
+  FeatureName(String description, HarnessTeam owner) {
+    this.description = description;
+    this.owner = owner;
+    this.scope = Scope.PER_ACCOUNT;
+  }
+
+  @Getter private String description;
+  private HarnessTeam owner;
+
+  public String getOwner() {
+    return owner.name();
+  }
 }
