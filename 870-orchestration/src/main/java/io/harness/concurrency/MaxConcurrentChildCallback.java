@@ -44,7 +44,7 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
 
   long maxConcurrency;
   String parentNodeExecutionId;
-  Ambiance ambiance;
+  Ambiance ambiance; // Store only planExecutionId
 
   @Override
   public void notify(Map<String, ResponseData> response) {

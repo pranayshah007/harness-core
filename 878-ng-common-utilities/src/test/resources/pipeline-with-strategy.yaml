@@ -25,10 +25,10 @@ pipeline:
             value: <+matrix.b>
             type: String
           - name: currentItertionVariable
-            value: <+strategy.currentIteration>
+            value: <+strategy.iteration>
             type: String
           - name: totalIterationVariable
-            value: <+strategy.totalIterations>
+            value: <+strategy.iterations>
             type: String
         spec:
           execution:
@@ -159,10 +159,10 @@ pipeline:
             iteration: 10
         variables:
           - name: currentItertionVariable
-            value: <+strategy.currentIteration>
+            value: <+strategy.iteration>
             type: String
           - name: totalIterationVariable
-            value: <+strategy.totalIterations>
+            value: <+strategy.iterations>
             type: String
         type: Approval
         spec:
@@ -174,8 +174,8 @@ pipeline:
                   steps:
                     - step:
                         type: Http
-                        name: <+strategy.totalIterations>
-                        identifier: <+strategy.currentIteration>
+                        name: <+strategy.iterations>
+                        identifier: <+strategy.iteration>
                         strategy:
                           for:
                             iteration: 10
@@ -226,10 +226,10 @@ pipeline:
           parallelism: 4
         variables:
           - name: currentItertionVariable
-            value: <+strategy.currentIteration>
+            value: <+strategy.iteration>
             type: String
           - name: totalIterationVariable
-            value: <+strategy.totalIterations>
+            value: <+strategy.iterations>
             type: String
         type: Approval
         spec:
@@ -241,8 +241,8 @@ pipeline:
                   steps:
                     - step:
                         type: Http
-                        name: <+strategy.totalIterations>
-                        identifier: <+strategy.currentIteration>
+                        name: <+strategy.iterations>
+                        identifier: <+strategy.iteration>
                         strategy:
                           parallelism: 4
                         spec:
