@@ -47,7 +47,6 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -70,12 +69,7 @@ public class ServerlessAwsLambdaStepHelperTest extends CategoryTest {
   @Mock private ServerlessStepCommonHelper serverlessStepCommonHelper;
   @Mock private LogCallback mockLogCallback;
 
-  private static final String SOME_URL = "https://url.com/owner/repo.git";
-
   @Spy @InjectMocks private ServerlessAwsLambdaStepHelper serverlessAwsLambdaStepHelper;
-
-  @Before
-  public void setup() {}
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
@@ -187,9 +181,8 @@ public class ServerlessAwsLambdaStepHelperTest extends CategoryTest {
     GitFile gitFile = GitFile.builder().filePath("filePath").fileContent("fileContent").build();
     List<GitFile> gitFileList = Arrays.asList(gitFile);
     FetchFilesResult fetchFilesResult = FetchFilesResult.builder().files(gitFileList).build();
-    Map<String, FetchFilesResult> fetchFilesResultMap = new HashMap<String, FetchFilesResult>() {
-      { put("identifier", fetchFilesResult); }
-    };
+    Map<String, FetchFilesResult> fetchFilesResultMap = new HashMap<>();
+    fetchFilesResultMap.put("identifier", fetchFilesResult);
     Optional<Pair<String, String>> manifestFileContent = Optional.of(new MutablePair<>("adsf", "fileContent"));
 
     assertThat(serverlessAwsLambdaStepHelper.getManifestFileContent(fetchFilesResultMap, manifestOutcome))
@@ -199,7 +192,7 @@ public class ServerlessAwsLambdaStepHelperTest extends CategoryTest {
   @Test
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
-  public void getServerlessDeployFunctionInstanceInfoTest() {
+  public void serverlessDeployFunctionInstanceInfoTest() {
     ServerlessAwsLambdaFunction serverlessAwsLambdaFunction =
         ServerlessAwsLambdaFunction.builder().timeout(10).memorySize("1024").handler("handler").build();
     ServerlessDeployResult serverlessDeployResult = ServerlessAwsLambdaDeployResult.builder()

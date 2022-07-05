@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
@@ -34,23 +35,36 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaDeployResult;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaPrepareRollbackDataResult;
 import io.harness.delegate.exception.ServerlessNGException;
+import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.request.ServerlessDeployRequest;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
+import io.harness.delegate.task.serverless.response.ServerlessGitFetchResponse;
 import io.harness.delegate.task.serverless.response.ServerlessPrepareRollbackDataResponse;
+import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.git.model.FetchFilesResult;
+import io.harness.git.model.GitFile;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
+import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.tasks.ResponseData;
 
+import com.google.common.collect.Sets;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.junit.Test;
@@ -63,6 +77,16 @@ public class ServerlessAwsLambdaDeployStepTest extends AbstractServerlessStepExe
   @Mock private InstanceInfoService instanceInfoService;
 
   @InjectMocks private ServerlessAwsLambdaDeployStep serverlessAwsLambdaDeployStep;
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void startChainLinkAfterRbacTest() {
+    StepInputPackage inputPackage = StepInputPackage.builder().build();
+    StepElementParameters stepParameters =
+        StepElementParameters.builder().timeout(ParameterField.createValueField("10m")).build();
+    serverlessAwsLambdaDeployStep.startChainLinkAfterRbac(ambiance, stepParameters, inputPackage);
+  }
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
@@ -250,6 +274,32 @@ public class ServerlessAwsLambdaDeployStepTest extends AbstractServerlessStepExe
   @Test
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
+  public void executeNextLinkWithSecurityContextTest() throws Exception {
+    StepInputPackage inputPackage = StepInputPackage.builder().build();
+    StepElementParameters stepParameters =
+        StepElementParameters.builder().timeout(ParameterField.createValueField("10m")).build();
+    Map<String, FetchFilesResult> fetchFilesResultMap = new HashMap<>();
+    fetchFilesResultMap.put("adsf",
+        FetchFilesResult.builder()
+            .files(Arrays.asList(GitFile.builder().fileContent("safddsaf").filePath("sdafsda/").build()))
+            .build());
+    PassThroughData passThroughData = ServerlessStepPassThroughData.builder()
+                                          .serverlessManifestOutcome(manifestOutcome)
+                                          .infrastructureOutcome(infrastructureOutcome)
+                                          .build();
+    ResponseData responseData =
+        ServerlessGitFetchResponse.builder()
+            .taskStatus(TaskStatus.SUCCESS)
+            .filesFromMultipleRepo(fetchFilesResultMap)
+            .unitProgressData(UnitProgressData.builder().unitProgresses(Arrays.asList()).build())
+            .build();
+    serverlessAwsLambdaDeployStep.executeNextLinkWithSecurityContext(
+        ambiance, stepParameters, inputPackage, passThroughData, () -> responseData);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
   public void executeServerlessPrepareRollbackTaskTest() {
     ManifestOutcome manifestOutcome =
         ServerlessAwsLambdaManifestOutcome.builder().identifier("adsf").store(storeConfig).build();
@@ -294,5 +344,58 @@ public class ServerlessAwsLambdaDeployStepTest extends AbstractServerlessStepExe
             stepElementParameters, serverlessStepPassThroughData, unitProgressData, serverlessStepExecutorParams);
     assertThat(taskChainResponse.isChainEnd()).isFalse();
     assertThat(taskChainResponse).isEqualTo(expectedTaskChainResponse);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void serverlessAwsLambdaDeployStepInfoTest() {
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("delegateSelector");
+    ServerlessAwsLambdaDeployStepInfo serverlessAwsLambdaDeployStepInfo =
+        ServerlessAwsLambdaDeployStepInfo.infoBuilder()
+            .delegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)))
+            .commandOptions(ParameterField.createValueField("abc"))
+            .build();
+    ServerlessAwsLambdaDeployStepParameters stepParameters =
+        ServerlessAwsLambdaDeployStepParameters.infoBuilder()
+            .delegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)))
+            .commandOptions(ParameterField.createValueField("abc"))
+            .build();
+
+    assertThat(serverlessAwsLambdaDeployStepInfo.getStepType()).isEqualTo(ServerlessAwsLambdaDeployStep.STEP_TYPE);
+    assertThat(serverlessAwsLambdaDeployStepInfo.getFacilitatorType())
+        .isEqualTo(OrchestrationFacilitatorType.TASK_CHAIN);
+    assertThat(serverlessAwsLambdaDeployStepInfo.getSpecParameters()).isEqualTo(stepParameters);
+    assertThat(serverlessAwsLambdaDeployStepInfo.fetchDelegateSelectors())
+        .isEqualTo(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)));
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void serverlessAwsLambdaDeployStepNodeTest() {
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("delegateSelector");
+    ServerlessAwsLambdaDeployStepInfo serverlessAwsLambdaDeployStepInfo =
+        ServerlessAwsLambdaDeployStepInfo.infoBuilder()
+            .delegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)))
+            .commandOptions(ParameterField.createValueField("abc"))
+            .build();
+    ServerlessAwsLambdaDeployStepNode serverlessAwsLambdaDeployStepNode = new ServerlessAwsLambdaDeployStepNode();
+    serverlessAwsLambdaDeployStepNode.serverlessAwsLambdaDeployStepInfo = serverlessAwsLambdaDeployStepInfo;
+    assertThat(serverlessAwsLambdaDeployStepNode.getType())
+        .isEqualTo(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY);
+    assertThat(serverlessAwsLambdaDeployStepNode.getStepSpecType()).isEqualTo(serverlessAwsLambdaDeployStepInfo);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void ServerlessAwsLambdaDeployStepPlanCreatorTest() throws IOException {
+    ServerlessAwsLambdaDeployStepPlanCreator serverlessAwsLambdaDeployStepPlanCreator =
+        new ServerlessAwsLambdaDeployStepPlanCreator();
+    assertThat(serverlessAwsLambdaDeployStepPlanCreator.getSupportedStepTypes())
+        .isEqualTo(Sets.newHashSet(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY));
+    assertThat(serverlessAwsLambdaDeployStepPlanCreator.getFieldClass())
+        .isEqualTo(ServerlessAwsLambdaDeployStepNode.class);
   }
 }

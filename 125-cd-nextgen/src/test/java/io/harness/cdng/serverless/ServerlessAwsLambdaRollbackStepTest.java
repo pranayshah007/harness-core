@@ -19,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -40,15 +41,18 @@ import io.harness.delegate.task.serverless.ServerlessManifestConfig;
 import io.harness.delegate.task.serverless.request.ServerlessRollbackRequest;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.delegate.task.serverless.response.ServerlessRollbackResponse;
+import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.dto.AccountDTO;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -57,9 +61,13 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.serverless.ServerlessCommandUnitConstants;
 import io.harness.steps.StepHelper;
 
+import com.google.common.collect.Sets;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -285,5 +293,72 @@ public class ServerlessAwsLambdaRollbackStepTest {
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes().stream().findFirst().get().getOutcome())
         .isEqualTo(serverlessAwsLambdaRollbackOutcome);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void serverlessAwsLambdaRollbackStepInfoTest() {
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("delegateSelector");
+    ServerlessAwsLambdaRollbackStepInfo serverlessAwsLambdaRollbackStepInfo =
+        ServerlessAwsLambdaRollbackStepInfo.infoBuilder()
+            .delegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)))
+            .serverlessAwsLambdaRollbackFnq("abc")
+            .build();
+    ServerlessAwsLambdaRollbackStepParameters stepParameters =
+        ServerlessAwsLambdaRollbackStepParameters.infoBuilder()
+            .delegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)))
+            .build();
+
+    assertThat(serverlessAwsLambdaRollbackStepInfo.getStepType()).isEqualTo(ServerlessAwsLambdaRollbackStep.STEP_TYPE);
+    assertThat(serverlessAwsLambdaRollbackStepInfo.getFacilitatorType()).isEqualTo(OrchestrationFacilitatorType.TASK);
+    assertThat(serverlessAwsLambdaRollbackStepInfo.getSpecParameters()).isEqualTo(stepParameters);
+    assertThat(serverlessAwsLambdaRollbackStepInfo.fetchDelegateSelectors())
+        .isEqualTo(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)));
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void serverlessAwsLambdaRollbackStepParametersTest() {
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("delegateSelector");
+    ServerlessAwsLambdaRollbackStepParameters stepParameters =
+        ServerlessAwsLambdaRollbackStepParameters.infoBuilder()
+            .delegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)))
+            .serverlessAwsLambdaRollbackFnq("abc")
+            .build();
+    List<String> commandUnits = Arrays.asList(ServerlessCommandUnitConstants.setupDirectory.toString(),
+        ServerlessCommandUnitConstants.configureCred.toString(), ServerlessCommandUnitConstants.plugin.toString(),
+        ServerlessCommandUnitConstants.rollback.toString());
+    assertThat(stepParameters.getCommandUnits()).isEqualTo(commandUnits);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void serverlessAwsLambdaRollbackStepNodeTest() {
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("delegateSelector");
+    ServerlessAwsLambdaRollbackStepInfo serverlessAwsLambdaRollbackStepInfo =
+        ServerlessAwsLambdaRollbackStepInfo.infoBuilder()
+            .delegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)))
+            .serverlessAwsLambdaRollbackFnq("abc")
+            .build();
+    ServerlessAwsLambdaRollbackStepNode serverlessAwsLambdaRollbackStepNode = new ServerlessAwsLambdaRollbackStepNode();
+    serverlessAwsLambdaRollbackStepNode.serverlessAwsLambdaRollbackStepInfo = serverlessAwsLambdaRollbackStepInfo;
+    assertThat(serverlessAwsLambdaRollbackStepNode.getType())
+        .isEqualTo(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK);
+    assertThat(serverlessAwsLambdaRollbackStepNode.getStepSpecType()).isEqualTo(serverlessAwsLambdaRollbackStepInfo);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void serverlessAwsLambdaRollbackStepPlanCreatorTest() throws IOException {
+    ServerlessAwsLambdaRollbackStepPlanCreator serverlessAwsLambdaRollbackStepPlanCreator =
+        new ServerlessAwsLambdaRollbackStepPlanCreator();
+    assertThat(serverlessAwsLambdaRollbackStepPlanCreator.getSupportedStepTypes())
+        .isEqualTo(Sets.newHashSet(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK));
+    assertThat(serverlessAwsLambdaRollbackStepPlanCreator.getFieldClass())
+        .isEqualTo(ServerlessAwsLambdaRollbackStepNode.class);
   }
 }
