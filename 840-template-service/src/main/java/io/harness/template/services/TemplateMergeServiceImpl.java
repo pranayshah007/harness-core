@@ -8,6 +8,7 @@
 package io.harness.template.services;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_REF;
@@ -40,6 +41,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -126,7 +128,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
     }
 
     List<TemplateReferenceSummary> templateReferenceSummaries =
-        getTemplateReferenceSummaries(accountId, orgId, projectId, yaml);
+        getTemplateReferenceSummaries(accountId, orgId, projectId, yaml, templateCacheMap);
     return TemplateMergeResponseDTO.builder()
         .mergedPipelineYaml(YamlPipelineUtils.writeYamlString(resMap))
         .templateReferenceSummaries(templateReferenceSummaries)
@@ -150,8 +152,8 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
     return yamlNode;
   }
 
-  private List<TemplateReferenceSummary> getTemplateReferenceSummaries(
-      String accountId, String orgId, String projectId, String pipelineYaml) {
+  private List<TemplateReferenceSummary> getTemplateReferenceSummaries(String accountId, String orgId, String projectId,
+      String pipelineYaml, Map<String, TemplateEntity> templateCacheMap) {
     YamlConfig yamlConfig = new YamlConfig(pipelineYaml);
     Map<FQN, Object> fqnToValueMap = yamlConfig.getFqnToValueMap();
     Set<FQN> fqnSet = new LinkedHashSet<>(yamlConfig.getFqnToValueMap().keySet());
@@ -171,13 +173,16 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
           fqnList.add(FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(TEMPLATE_VERSION_LABEL).build());
           JsonNode versionLabelNode = (JsonNode) fqnToValueMap.get(FQN.builder().fqnList(fqnList).build());
           String versionLabel = "";
+          Optional<TemplateEntity> templateEntity = templateService.getOrThrowExceptionIfInvalid(
+              templateIdentifierRef.getAccountIdentifier(), templateIdentifierRef.getOrgIdentifier(),
+              templateIdentifierRef.getProjectIdentifier(), templateIdentifierRef.getIdentifier(), versionLabel, false);
+          Set<String> moduleInfo = new HashSet<>();
+          if (templateEntity.isPresent()) {
+            moduleInfo = isNotEmpty(templateEntity.get().getModule()) ? templateEntity.get().getModule() : moduleInfo;
+          }
           boolean isStableTemplate = false;
           if (versionLabelNode == null) {
             isStableTemplate = true;
-            Optional<TemplateEntity> templateEntity =
-                templateService.getOrThrowExceptionIfInvalid(templateIdentifierRef.getAccountIdentifier(),
-                    templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
-                    templateIdentifierRef.getIdentifier(), versionLabel, false);
             if (templateEntity.isPresent()) {
               versionLabel = templateEntity.get().getVersionLabel();
             }
@@ -194,6 +199,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
                   .templateIdentifier(templateIdentifierRef.getIdentifier())
                   .versionLabel(versionLabel)
                   .scope(templateIdentifierRef.getScope())
+                  .moduleInfo(moduleInfo)
                   .stableTemplate(isStableTemplate)
                   .build();
           templateReferenceSummaries.add(templateReferenceSummary);
