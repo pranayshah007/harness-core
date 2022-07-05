@@ -44,7 +44,6 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateProgressService;
 import io.harness.service.intfc.DelegateSyncService;
-import io.harness.task.TaskServiceAgentClient;
 import io.harness.tasks.ProgressData;
 import io.harness.tasks.ResponseData;
 import io.harness.threading.Poller;
@@ -385,7 +384,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
 
     DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(
         delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
-    TaskServiceAgentClient taskServiceAgentClient = new TaskServiceAgentClient();
+    //TaskServiceDelegateAgentClient taskServiceDelegateAgentClient = new TaskServiceDelegateAgentClient();
 
     DelegateCallbackToken callbackToken = delegateServiceGrpcClient.registerCallback(
         DelegateCallback.newBuilder()
@@ -407,11 +406,11 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
 
     waitNotifyEngine.waitForAllOn("general", new TestNotifyCallback(), new TestProgressCallback(), taskUuid);
 
-    taskServiceAgentClient.sendTaskProgressUpdate(
+ /*   taskServiceDelegateAgentClient.sendTaskProgressUpdate(
         AccountId.newBuilder().setId(getAccount().getUuid()).build(), taskId, callbackToken, testDataBytes);
-    taskServiceAgentClient.sendTaskProgressUpdate(
+    taskServiceDelegateAgentClient.sendTaskProgressUpdate(
         AccountId.newBuilder().setId(getAccount().getUuid()).build(), taskId, callbackToken, testDataBytes2);
-
+*/
     Poller.pollFor(Duration.ofMinutes(5), Duration.ofSeconds(5), () -> { return progressCallCount.get() == 2; });
 
     assertThat(progressCallCount.get()).isEqualTo(2);

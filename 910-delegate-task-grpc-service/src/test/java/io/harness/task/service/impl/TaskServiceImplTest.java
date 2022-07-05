@@ -29,7 +29,6 @@ import io.harness.delegate.task.stepstatus.artifact.DockerArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.DockerArtifactMetadata;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactMetadata;
-import io.harness.task.TaskServiceAgentClient;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.task.TaskServiceTestBase;
@@ -61,7 +60,7 @@ import org.mockito.Mock;
 @OwnedBy(CI)
 public class TaskServiceImplTest extends TaskServiceTestBase {
   @Rule public GrpcCleanupRule grpcCleanupRule = new GrpcCleanupRule();
-  @Mock private TaskServiceAgentClient taskServiceAgentClient;
+  //@Mock private TaskServiceDelegateAgentClient taskServiceDelegateAgentClient;
   @Inject KryoSerializer kryoSerializer;
   @Inject ResponseDataConverterRegistry registry;
 
@@ -72,16 +71,16 @@ public class TaskServiceImplTest extends TaskServiceTestBase {
   private AccountId accountId;
   private TaskId taskId;
   private DelegateCallbackToken delegateCallbackToken;
-  private TaskServiceImpl taskService;
+
 
   @Before
   public void doSetup() throws IOException {
     TaskServiceTestHelper.registerConverters(registry);
-    taskService = new TaskServiceImpl(taskServiceAgentClient, kryoSerializer, registry);
+    //taskService = new TaskServiceImpl(taskServiceDelegateAgentClient, kryoSerializer, registry);
 
     String serverName = InProcessServerBuilder.generateName();
-    testInProcessServer = grpcCleanupRule.register(
-        InProcessServerBuilder.forName(serverName).directExecutor().addService(taskService).build().start());
+   /* testInProcessServer = grpcCleanupRule.register(
+        InProcessServerBuilder.forName(serverName).directExecutor().addService(taskService).build().start());*/
     taskServiceBlockingStub = TaskServiceGrpc.newBlockingStub(
         grpcCleanupRule.register(InProcessChannelBuilder.forName(serverName).directExecutor().build()));
 
@@ -99,9 +98,9 @@ public class TaskServiceImplTest extends TaskServiceTestBase {
   @Owner(developers = ALEKSANDAR)
   @Category(UnitTests.class)
   public void shouldGetTaskProgress() {
-    when(taskServiceAgentClient.taskProgress(eq(accountId), eq(taskId)))
+   /* when(taskServiceDelegateAgentClient.taskProgress(eq(accountId), eq(taskId)))
         .thenReturn(TaskExecutionStage.EXECUTING)
-        .thenThrow(new IllegalArgumentException());
+        .thenThrow(new IllegalArgumentException());*/
     TaskProgressResponse taskProgressResponse = taskServiceBlockingStub.taskProgress(
         TaskProgressRequest.newBuilder().setAccountId(accountId).setTaskId(taskId).build());
     assertThat(taskProgressResponse)
@@ -117,10 +116,10 @@ public class TaskServiceImplTest extends TaskServiceTestBase {
   @Owner(developers = ALEKSANDAR)
   @Category(UnitTests.class)
   public void shouldSendTaskStatus() {
-    when(taskServiceAgentClient.sendTaskStatus(eq(accountId), eq(taskId), eq(delegateCallbackToken),
-             eq(taskServiceTestHelper.getDeflatedStepStatusTaskResponseData())))
-        .thenReturn(true)
-        .thenThrow(new IllegalArgumentException());
+//    when(taskServiceDelegateAgentClient.sendTaskStatus(eq(accountId), eq(taskId), eq(delegateCallbackToken),
+//             eq(taskServiceTestHelper.getDeflatedStepStatusTaskResponseData())))
+//        .thenReturn(true)
+//        .thenThrow(new IllegalArgumentException());
     SendTaskStatusResponse sendTaskStatusResponse =
         taskServiceBlockingStub.sendTaskStatus(SendTaskStatusRequest.newBuilder()
                                                    .setAccountId(accountId)
@@ -154,9 +153,9 @@ public class TaskServiceImplTest extends TaskServiceTestBase {
   @Owner(developers = SANJA)
   @Category(UnitTests.class)
   public void shouldSendTaskProgressSuccess() {
-    when(taskServiceAgentClient.sendTaskProgressUpdate(eq(accountId), eq(taskId), eq(delegateCallbackToken),
+  /*  when(taskServiceDelegateAgentClient.sendTaskProgressUpdate(eq(accountId), eq(taskId), eq(delegateCallbackToken),
              eq(taskServiceTestHelper.getTaskProgressResponseData().getKryoResultsData().toByteArray())))
-        .thenReturn(true);
+        .thenReturn(true);*/
     SendTaskProgressResponse sendTaskProgressResponse = taskServiceBlockingStub.sendTaskProgress(
         SendTaskProgressRequest.newBuilder()
             .setAccountId(accountId)
@@ -172,9 +171,9 @@ public class TaskServiceImplTest extends TaskServiceTestBase {
   @Owner(developers = SANJA)
   @Category(UnitTests.class)
   public void shouldSendTaskProgressException() {
-    when(taskServiceAgentClient.sendTaskProgressUpdate(eq(accountId), eq(taskId), eq(delegateCallbackToken),
+   /* when(taskServiceDelegateAgentClient.sendTaskProgressUpdate(eq(accountId), eq(taskId), eq(delegateCallbackToken),
              eq(taskServiceTestHelper.getTaskProgressResponseData().getKryoResultsData().toByteArray())))
-        .thenThrow(new IllegalArgumentException());
+        .thenThrow(new IllegalArgumentException());*/
 
     assertThatThrownBy(()
                            -> taskServiceBlockingStub.sendTaskProgress(
@@ -214,7 +213,7 @@ public class TaskServiceImplTest extends TaskServiceTestBase {
                             .build())
                     .build())
             .build();
-    ArtifactMetadata artifactMetadata = taskService.buildArtifactMetadata(stepStatus);
+   /* ArtifactMetadata artifactMetadata = taskService.buildArtifactMetadata(stepStatus);
     assertThat(artifactMetadata).isNotNull();
     assertThat(artifactMetadata.getType()).isEqualTo(DOCKER_ARTIFACT_METADATA);
     assertThat(artifactMetadata.getSpec())
@@ -230,7 +229,7 @@ public class TaskServiceImplTest extends TaskServiceTestBase {
                                     .imageName("harness/ci-automation:latest")
                                     .digest("sha256:49f756463ad9dcfb9b6ade54d7d6f15476e7214f46a65b4b0c55d46845b12f70")
                                     .build())
-                .build());
+                .build());*/
   }
 
   @Test
@@ -254,7 +253,7 @@ public class TaskServiceImplTest extends TaskServiceTestBase {
                             .build())
                     .build())
             .build();
-    ArtifactMetadata artifactMetadata = taskService.buildArtifactMetadata(stepStatus);
+    /*ArtifactMetadata artifactMetadata = taskService.buildArtifactMetadata(stepStatus);
     assertThat(artifactMetadata).isNotNull();
     assertThat(artifactMetadata.getType()).isEqualTo(FILE_ARTIFACT_METADATA);
     assertThat(artifactMetadata.getSpec())
@@ -267,6 +266,6 @@ public class TaskServiceImplTest extends TaskServiceTestBase {
                                                    .name("/dir/file2")
                                                    .url("https://mybucket.s3.us-east-1.amazonaws.com/dir/file2")
                                                    .build())
-                       .build());
+                       .build());*/
   }
 }

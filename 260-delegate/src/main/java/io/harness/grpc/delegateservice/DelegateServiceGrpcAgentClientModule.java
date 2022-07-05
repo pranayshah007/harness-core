@@ -12,7 +12,7 @@ import static io.harness.delegate.DelegateServiceGrpc.newBlockingStub;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.DelegateServiceGrpc.DelegateServiceBlockingStub;
-import io.harness.task.TaskServiceAgentClient;
+import io.harness.task.TaskServiceDelegateAgentClient;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -36,7 +36,7 @@ public class DelegateServiceGrpcAgentClientModule extends AbstractModule {
 
   @Override
   protected void configure() {
-    bind(TaskServiceAgentClient.class).in(Singleton.class);
+    bind(TaskServiceDelegateAgentClient.class).in(Singleton.class);
   }
 
   @Named("agent-client-stub")

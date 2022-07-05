@@ -34,7 +34,7 @@ import retrofit2.Call;
 
 @Slf4j
 @TargetModule(HarnessModule._920_DELEGATE_AGENT_BEANS)
-public class TaskServiceAgentClient {
+public class TaskServiceDelegateAgentClient {
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
 
   public boolean sendTaskProgressUpdate(

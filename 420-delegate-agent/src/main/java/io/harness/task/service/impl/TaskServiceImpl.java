@@ -18,7 +18,7 @@ import io.harness.delegate.task.stepstatus.artifact.DockerArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.DockerArtifactMetadata;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactMetadata;
-import io.harness.task.TaskServiceAgentClient;
+import io.harness.task.TaskServiceDelegateAgentClient;
 import io.harness.serializer.KryoSerializer;
 import io.harness.task.converters.ResponseDataConverterRegistry;
 import io.harness.task.service.SendTaskProgressRequest;
@@ -41,14 +41,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CI)
 public class TaskServiceImpl extends TaskServiceGrpc.TaskServiceImplBase {
-  private final TaskServiceAgentClient taskServiceAgentClient;
+  private final TaskServiceDelegateAgentClient taskServiceDelegateAgentClient;
   private final KryoSerializer kryoSerializer;
   private final ResponseDataConverterRegistry responseDataConverterRegistry;
 
   @Inject
-  public TaskServiceImpl(TaskServiceAgentClient taskServiceAgentClient, KryoSerializer kryoSerializer,
+  public TaskServiceImpl(TaskServiceDelegateAgentClient taskServiceDelegateAgentClient, KryoSerializer kryoSerializer,
                          ResponseDataConverterRegistry responseDataConverterRegistry) {
-    this.taskServiceAgentClient = taskServiceAgentClient;
+    this.taskServiceDelegateAgentClient = taskServiceDelegateAgentClient;
     this.kryoSerializer = kryoSerializer;
     this.responseDataConverterRegistry = responseDataConverterRegistry;
   }
@@ -59,7 +59,7 @@ public class TaskServiceImpl extends TaskServiceGrpc.TaskServiceImplBase {
         request.getTaskId().getId());
     try {
       TaskExecutionStage taskExecutionStage =
-          taskServiceAgentClient.taskProgress(request.getAccountId(), request.getTaskId());
+          taskServiceDelegateAgentClient.taskProgress(request.getAccountId(), request.getTaskId());
       responseObserver.onNext(TaskProgressResponse.newBuilder().setCurrentStage(taskExecutionStage).build());
       responseObserver.onCompleted();
     } catch (Exception ex) {
@@ -93,7 +93,7 @@ public class TaskServiceImpl extends TaskServiceGrpc.TaskServiceImplBase {
                                 .error(stepStatus.getErrorMessage())
                                 .build())
                 .build();
-        boolean success = taskServiceAgentClient.sendTaskStatus(request.getAccountId(), request.getTaskId(),
+        boolean success = taskServiceDelegateAgentClient.sendTaskStatus(request.getAccountId(), request.getTaskId(),
             request.getCallbackToken(), kryoSerializer.asDeflatedBytes(responseData));
         if (success) {
           log.info(
@@ -172,7 +172,7 @@ public class TaskServiceImpl extends TaskServiceGrpc.TaskServiceImplBase {
     log.info("Received sendTaskStatus call, accountId:{}, taskId:{}, callbackToken:{}", request.getAccountId().getId(),
         request.getTaskId().getId(), request.getCallbackToken().getToken());
     try {
-      taskServiceAgentClient.sendTaskProgressUpdate(request.getAccountId(), request.getTaskId(),
+      taskServiceDelegateAgentClient.sendTaskProgressUpdate(request.getAccountId(), request.getTaskId(),
           request.getCallbackToken(), request.getTaskResponseData().getKryoResultsData().toByteArray());
       responseObserver.onNext(SendTaskProgressResponse.newBuilder().setSuccess(true).build());
       responseObserver.onCompleted();
