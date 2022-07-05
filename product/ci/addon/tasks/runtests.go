@@ -393,6 +393,13 @@ func (r *runTestsTask) execute(ctx context.Context, retryCount int32) (map[strin
 	var err error
 	if r.language == "csharp" {
 		agentPath, err = installAgentFn(ctx, r.tmpFilePath, r.language, r.buildTool, r.frameworkVersion, r.buildEnvironment, r.log, r.fs)
+
+		// Unzip everything at agentInstallDir/dotnet-agent.zip
+		err := unzipSource(filepath.Join(agentPath, "dotnet-agent.zip"), agentPath, r.log, r.fs)
+		if err != nil {
+			r.log.Errorw("could not unarchive the dotnet agent", zap.Error(err))
+			return nil, err
+		}
 		if err != nil {
 			return nil, err
 		}
