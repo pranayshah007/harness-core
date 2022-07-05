@@ -362,6 +362,10 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
 
   @Override
   public Page<Secret> list(List<Secret> secrets, int page, int size) {
+    if (secrets.isEmpty()) {
+      return Page.empty();
+    }
+
     Criteria[] criteria = secrets.stream()
                               .map(secret
                                   -> Criteria.where(SecretKeys.accountIdentifier)
@@ -417,6 +421,7 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
           .accountIdentifier(secret.getAccountIdentifier())
           .orgIdentifier(isBlank(secret.getOrgIdentifier()) ? null : secret.getOrgIdentifier())
           .projectIdentifier(isBlank(secret.getProjectIdentifier()) ? null : secret.getProjectIdentifier())
+          .identifier(secret.getIdentifier())
           .build();
     }
 
@@ -429,6 +434,7 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
           .projectIdentifier(isBlank(accessControlDTO.getResourceScope().getProjectIdentifier())
                   ? null
                   : accessControlDTO.getResourceScope().getProjectIdentifier())
+          .identifier(accessControlDTO.getResourceIdentifier())
           .build();
     }
   }
