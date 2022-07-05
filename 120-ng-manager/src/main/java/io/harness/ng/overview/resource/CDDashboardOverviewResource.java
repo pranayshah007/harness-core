@@ -8,9 +8,7 @@
 package io.harness.ng.overview.resource;
 
 import static io.harness.NGDateUtils.getNumberOfDays;
-import static io.harness.NGDateUtils.getStartTimeOfNextDay;
 import static io.harness.NGDateUtils.getStartTimeOfPreviousInterval;
-import static io.harness.NGDateUtils.getStartTimeOfTheDayAsEpoch;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.PROJECT;
 
@@ -83,9 +81,6 @@ public class CDDashboardOverviewResource {
   private final long HR_IN_MS = 60 * 60 * 1000;
   private final long DAY_IN_MS = 24 * HR_IN_MS;
 
-  private long epochShouldBeOfStartOfDay(long epoch) {
-    return epoch - epoch % DAY_IN_MS;
-  }
   @GET
   @Path("/deploymentHealth")
   @ApiOperation(value = "Get deployment health", nickname = "getDeploymentHealth")
@@ -97,9 +92,6 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
     log.info("Getting deployment health");
-    startInterval = epochShouldBeOfStartOfDay(startInterval);
-    endInterval = epochShouldBeOfStartOfDay(endInterval);
-
     long previousStartInterval = startInterval - (endInterval - startInterval + DAY_IN_MS);
     return ResponseDTO.newResponse(cdOverviewDashboardService.getHealthDeploymentDashboard(
         accountIdentifier, orgIdentifier, projectIdentifier, startInterval, endInterval, previousStartInterval));
@@ -146,9 +138,6 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
     log.info("Getting deployment execution");
-    startInterval = epochShouldBeOfStartOfDay(startInterval);
-    endInterval = epochShouldBeOfStartOfDay(endInterval);
-
     return ResponseDTO.newResponse(cdOverviewDashboardService.getExecutionDeploymentDashboard(
         accountIdentifier, orgIdentifier, projectIdentifier, startInterval, endInterval));
   }
@@ -181,8 +170,7 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval,
       @QueryParam(NGServiceConstants.ENVIRONMENT_TYPE) EnvironmentType envType) {
     log.info("Getting workloads");
-    startInterval = getStartTimeOfTheDayAsEpoch(startInterval);
-    endInterval = getStartTimeOfNextDay(endInterval);
+    endInterval = endInterval + DAY_IN_MS;
     long numDays = getNumberOfDays(startInterval, endInterval);
     long previousStartInterval = getStartTimeOfPreviousInterval(startInterval, numDays);
 

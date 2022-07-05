@@ -682,8 +682,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public ServiceDetailsInfoDTO getServiceDetailsList(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, long startTime, long endTime) throws Exception {
-    startTime = getStartTimeOfTheDayAsEpoch(startTime);
-    endTime = getStartTimeOfNextDay(endTime);
+    endTime = endTime + DAY_IN_MS;
 
     long numberOfDays = getNumberOfDays(startTime, endTime);
     if (numberOfDays < 0) {
@@ -990,8 +989,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   public io.harness.ng.overview.dto.ServiceDeploymentListInfo getServiceDeploymentsInfo(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, long startTime, long endTime, String serviceIdentifier,
       long bucketSizeInDays) throws Exception {
-    startTime = getStartTimeOfTheDayAsEpoch(startTime);
-    endTime = getStartTimeOfNextDay(endTime);
+    endTime = endTime + DAY_IN_MS;
     long numberOfDays = getNumberOfDays(startTime, endTime);
     validateBucketSize(numberOfDays, bucketSizeInDays);
     long prevStartTime = getStartTimeOfPreviousInterval(startTime, numberOfDays);
@@ -1499,7 +1497,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   }
 
   public long getStartingDateEpochValue(long epochValue, long startInterval) {
-    return epochValue - epochValue % DAY_IN_MS;
+    return epochValue - (epochValue - startInterval) % DAY_IN_MS;
   }
 
   /*
@@ -1792,8 +1790,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
   public DeploymentsInfo getDeploymentsByServiceId(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, long startTimeInMs, long endTimeInMs) {
-    startTimeInMs = getStartTimeOfTheDayAsEpoch(startTimeInMs);
-    endTimeInMs = getStartTimeOfNextDay(endTimeInMs);
+    endTimeInMs = endTimeInMs + DAY_IN_MS;
     String query = queryBuilderDeployments(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, startTimeInMs, endTimeInMs);
     String queryServiceNameTagId = queryToGetId(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
