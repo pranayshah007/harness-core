@@ -273,6 +273,7 @@ import software.wings.common.WingsExpressionProcessorFactory;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.core.outbox.UserEventHandler;
 import software.wings.core.outbox.WingsOutboxEventHandler;
+import software.wings.delegatetasks.DelegateTaskRegistryFactory;
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.dl.WingsPersistence;
 import software.wings.dl.exportimport.WingsMongoExportImport;
@@ -1463,6 +1464,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
     install(new ProjectClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId()));
+    DelegateTaskRegistryFactory.bindDelegateTasksWithTaskData(binder());
   }
 
   private void registerOutboxEventHandlers() {
