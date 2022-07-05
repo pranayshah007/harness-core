@@ -62,6 +62,7 @@ import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.service.intfc.DelegateTaskService;
 import io.harness.shell.ScriptType;
+import io.harness.task.TaskServiceAgentClient;
 import io.harness.tasks.ProgressData;
 
 import software.wings.WingsBaseTest;
@@ -102,7 +103,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   public static final String TASK_DESCRIPTION = "taskDescription";
 
   private DelegateServiceGrpcClient delegateServiceGrpcClient;
-  private DelegateServiceGrpcAgentClient delegateServiceGrpcAgentClient;
+  private TaskServiceAgentClient taskServiceAgentClient;
   private DelegateServiceGrpcImpl delegateServiceGrpcImpl;
 
   private DelegateCallbackRegistry delegateCallbackRegistry;
@@ -132,7 +133,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
         DelegateServiceGrpc.newBlockingStub(channel);
     delegateServiceGrpcClient = new DelegateServiceGrpcClient(
         delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
-    delegateServiceGrpcAgentClient = new DelegateServiceGrpcAgentClient(delegateServiceBlockingStub);
+    taskServiceAgentClient = new TaskServiceAgentClient(delegateServiceBlockingStub);
     delegateSyncService = mock(DelegateSyncService.class);
 
     delegateCallbackRegistry = mock(DelegateCallbackRegistry.class);
@@ -334,7 +335,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
 
     ProgressData testData = DelegateStringProgressData.builder().data("Example").build();
     byte[] testDataBytes = kryoSerializer.asDeflatedBytes(testData);
-    assertThat(delegateServiceGrpcAgentClient.sendTaskProgressUpdate(AccountId.newBuilder().setId(accountId).build(),
+    assertThat(taskServiceAgentClient.sendTaskProgressUpdate(AccountId.newBuilder().setId(accountId).build(),
                    TaskId.newBuilder().setId(taskId).build(), token, testDataBytes))
         .isEqualTo(true);
   }

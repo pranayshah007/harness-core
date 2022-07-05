@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.grpc;
+package io.harness.task;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -28,15 +28,17 @@ import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import io.grpc.StatusRuntimeException;
 import java.util.concurrent.TimeUnit;
+
+import io.harness.grpc.DelegateServiceGrpcClientException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @TargetModule(HarnessModule._920_DELEGATE_AGENT_BEANS)
-public class DelegateServiceGrpcAgentClient {
+public class TaskServiceAgentClient {
   private final DelegateServiceBlockingStub delegateServiceBlockingStub;
 
   @Inject
-  public DelegateServiceGrpcAgentClient(
+  public TaskServiceAgentClient(
       @Named("agent-client-stub") DelegateServiceBlockingStub delegateServiceBlockingStub) {
     this.delegateServiceBlockingStub = delegateServiceBlockingStub;
   }
