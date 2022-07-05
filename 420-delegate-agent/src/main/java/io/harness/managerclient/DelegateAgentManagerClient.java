@@ -11,6 +11,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateHeartbeatResponse;
 import io.harness.beans.DelegateTaskEventsResponse;
+import io.harness.delegate.SendTaskProgressRequest;
+import io.harness.delegate.SendTaskProgressResponse;
+import io.harness.delegate.SendTaskStatusRequest;
+import io.harness.delegate.SendTaskStatusResponse;
+import io.harness.delegate.TaskProgressRequest;
+import io.harness.delegate.TaskProgressResponse;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateFile;
 import io.harness.delegate.beans.DelegateParams;
@@ -185,4 +191,16 @@ public interface DelegateAgentManagerClient {
   @Consumes({"application/x-protobuf"})
   @PUT("agent/delegates/perpetual-task/heartbeat")
   Call<HeartbeatResponse> heartbeat(@Body HeartbeatRequest heartbeatRequest);
+
+  @Consumes({"application/x-protobuf"})
+  @PUT("agent/delegates/task-progress/progress-update")
+  Call<SendTaskProgressResponse> sendTaskProgressUpdate(@Body SendTaskProgressRequest sendTaskProgressRequest);
+
+  @Consumes({"application/x-protobuf"})
+  @PUT("agent/delegates/task-progress/progress")
+  Call<TaskProgressResponse> taskProgress(@Body TaskProgressRequest taskProgressRequest);
+
+  @Consumes({"application/x-protobuf"})
+  @PUT("agent/delegates/task-progress/status")
+  Call<SendTaskStatusResponse> sendTaskStatus(@Body SendTaskStatusRequest sendTaskStatusRequest);
 }

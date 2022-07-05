@@ -133,7 +133,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
         DelegateServiceGrpc.newBlockingStub(channel);
     delegateServiceGrpcClient = new DelegateServiceGrpcClient(
         delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
-    taskServiceAgentClient = new TaskServiceAgentClient(delegateServiceBlockingStub);
+    taskServiceAgentClient = new TaskServiceAgentClient();
     delegateSyncService = mock(DelegateSyncService.class);
 
     delegateCallbackRegistry = mock(DelegateCallbackRegistry.class);

@@ -38,13 +38,13 @@ import io.harness.delegate.task.http.HttpTaskParameters;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.functional.AbstractFunctionalTest;
-import io.harness.task.TaskServiceAgentClient;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateProgressService;
 import io.harness.service.intfc.DelegateSyncService;
+import io.harness.task.TaskServiceAgentClient;
 import io.harness.tasks.ProgressData;
 import io.harness.tasks.ResponseData;
 import io.harness.threading.Poller;
@@ -385,8 +385,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
 
     DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(
         delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
-    TaskServiceAgentClient taskServiceAgentClient =
-        new TaskServiceAgentClient(delegateServiceBlockingStub);
+    TaskServiceAgentClient taskServiceAgentClient = new TaskServiceAgentClient();
 
     DelegateCallbackToken callbackToken = delegateServiceGrpcClient.registerCallback(
         DelegateCallback.newBuilder()
