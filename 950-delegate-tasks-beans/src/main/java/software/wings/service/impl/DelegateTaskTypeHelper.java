@@ -1,6 +1,6 @@
 package software.wings.service.impl;
 
-import io.harness.delegate.TaskDetails;
+import io.harness.delegate.TaskDetailsV2;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.InvalidRequestException;
@@ -13,17 +13,17 @@ import java.util.Map;
 
 @Singleton
 public class DelegateTaskTypeHelper {
-  @Inject Map<TaskType, TaskDetails> taskTypeTaskDetailsMap;
+  @Inject Map<TaskType, TaskDetailsV2> taskTypeTaskDetailsMap;
 
   public Class<? extends TaskParameters> getRequest(TaskType taskType) {
-    TaskDetails taskDetails = taskTypeTaskDetailsMap.get(taskType);
+    TaskDetailsV2 taskDetails = taskTypeTaskDetailsMap.get(taskType);
     if (taskDetails != null) {
       return taskDetails.getTaskRequest();
     }
     throw new InvalidRequestException(String.format("Task %s is not supported in new framework", taskType));
   }
   public Class<? extends DelegateResponseData> getResponse(TaskType taskType) {
-    TaskDetails taskDetails = taskTypeTaskDetailsMap.get(taskType);
+    TaskDetailsV2 taskDetails = taskTypeTaskDetailsMap.get(taskType);
     if (taskDetails != null) {
       return taskDetails.getTaskResponse();
     }
@@ -31,7 +31,7 @@ public class DelegateTaskTypeHelper {
   }
 
   public boolean isUnsupported(TaskType taskType) {
-    TaskDetails taskDetails = taskTypeTaskDetailsMap.get(taskType);
+    TaskDetailsV2 taskDetails = taskTypeTaskDetailsMap.get(taskType);
     if (taskDetails != null) {
       return taskDetails.isUnsupported();
     }

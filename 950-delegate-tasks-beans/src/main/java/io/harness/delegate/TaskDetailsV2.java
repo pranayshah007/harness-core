@@ -8,7 +8,7 @@ import lombok.Value;
 
 @Value
 @Builder
-public class TaskDetails {
+public class TaskDetailsV2 {
   Class<? extends TaskParameters> taskRequest;
   Class<? extends DelegateResponseData> taskResponse;
   boolean unsupported;

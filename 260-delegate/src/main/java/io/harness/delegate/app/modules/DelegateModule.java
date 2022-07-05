@@ -73,7 +73,7 @@ import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.impl.DataCollectionServiceImpl;
 import io.harness.delegate.DelegateConfigurationServiceProvider;
 import io.harness.delegate.DelegatePropertiesServiceProvider;
-import io.harness.delegate.TaskDetails;
+import io.harness.delegate.TaskDetailsV2;
 import io.harness.delegate.app.DelegateApplication;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.ci.docker.CIDockerCleanupStepRequest;
@@ -890,6 +890,7 @@ public class DelegateModule extends AbstractModule {
   @Override
   protected void configure() {
     bindDelegateTasks();
+    bindDelegateTasksWithTaskData();
 
     install(VersionModule.getInstance());
     install(TimeModule.getInstance());
@@ -1851,29 +1852,29 @@ public class DelegateModule extends AbstractModule {
   }
 
   private void bindDelegateTasksWithTaskData() {
-    MapBinder<TaskType, TaskDetails> mapBinder =
-        MapBinder.newMapBinder(binder(), new TypeLiteral<TaskType>() {}, new TypeLiteral<TaskDetails>() {});
+    MapBinder<TaskType, TaskDetailsV2> mapBinder =
+        MapBinder.newMapBinder(binder(), new TypeLiteral<TaskType>() {}, new TypeLiteral<TaskDetailsV2>() {});
 
     mapBinder.addBinding(TaskType.CI_DOCKER_INITIALIZE_TASK)
-        .toInstance(TaskDetails.builder()
+        .toInstance(TaskDetailsV2.builder()
                         .taskRequest(CIDockerInitializeTaskRequest.class)
                         .taskResponse(DockerTaskExecutionResponse.class)
                         .unsupported(true)
                         .build());
     mapBinder.addBinding(TaskType.CI_DOCKER_EXECUTE_TASK)
-        .toInstance(TaskDetails.builder()
+        .toInstance(TaskDetailsV2.builder()
                         .taskRequest(CIDockerExecuteStepRequest.class)
                         .taskResponse(DockerTaskExecutionResponse.class)
                         .unsupported(true)
                         .build());
     mapBinder.addBinding(TaskType.CI_DOCKER_CLEANUP_TASK)
-        .toInstance(TaskDetails.builder()
+        .toInstance(TaskDetailsV2.builder()
                         .taskRequest(CIDockerCleanupStepRequest.class)
                         .taskResponse(DockerTaskExecutionResponse.class)
                         .unsupported(true)
                         .build());
     mapBinder.addBinding(TaskType.K8S_COMMAND_TASK)
-        .toInstance(TaskDetails.builder()
+        .toInstance(TaskDetailsV2.builder()
                         .taskRequest(K8sTaskParameters.class)
                         .taskResponse(K8sTaskExecutionResponse.class)
                         .unsupported(false)
