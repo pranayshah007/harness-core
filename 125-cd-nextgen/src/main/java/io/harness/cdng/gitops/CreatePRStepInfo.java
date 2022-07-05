@@ -63,7 +63,7 @@ public class CreatePRStepInfo extends CreatePRBaseStepInfo implements CDStepInfo
 
   @Override
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
+    return OrchestrationFacilitatorType.TASK;
   }
 
   @Override

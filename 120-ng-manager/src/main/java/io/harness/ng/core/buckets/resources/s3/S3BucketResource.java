@@ -22,6 +22,8 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.utils.IdentifierRefHelper;
 
+import software.wings.helpers.ext.jenkins.BuildDetails;
+
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -107,5 +109,30 @@ public class S3BucketResource {
     }
 
     return ResponseDTO.newResponse(bucketResponse);
+  }
+
+  @GET
+  @Path("getFilePaths")
+  @ApiOperation(value = "Gets s3 file paths", nickname = "getFilePathsForS3")
+  public ResponseDTO<List<FilePathDTO>> getFilePaths(@QueryParam("region") String region,
+      @NotNull @QueryParam("connectorRef") String awsConnectorIdentifier,
+      @NotNull @QueryParam("bucketName") String bucketName, @QueryParam("filePathRegex") String filePathRegex,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    List<BuildDetails> s3ArtifactPaths = s3ResourceService.getFilePaths(
+        connectorRef, region, bucketName, filePathRegex, orgIdentifier, projectIdentifier);
+
+    List<FilePathDTO> artifactPathDTOS = new ArrayList<>();
+
+    for (BuildDetails s : s3ArtifactPaths) {
+      FilePathDTO artifactPathDTO = FilePathDTO.builder().buildDetails(s).build();
+      artifactPathDTOS.add(artifactPathDTO);
+    }
+
+    return ResponseDTO.newResponse(artifactPathDTOS);
   }
 }

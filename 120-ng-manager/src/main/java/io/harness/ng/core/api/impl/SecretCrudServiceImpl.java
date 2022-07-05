@@ -43,6 +43,14 @@ import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.api.SecretCrudService;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
+import io.harness.ng.core.dto.secrets.BaseSSHSpecDTO;
+import io.harness.ng.core.dto.secrets.SSHAuthDTO;
+import io.harness.ng.core.dto.secrets.SSHConfigDTO;
+import io.harness.ng.core.dto.secrets.SSHCredentialSpecDTO;
+import io.harness.ng.core.dto.secrets.SSHKeyPathCredentialDTO;
+import io.harness.ng.core.dto.secrets.SSHKeyReferenceCredentialDTO;
+import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.ng.core.dto.secrets.SSHPasswordCredentialDTO;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
@@ -61,6 +69,8 @@ import io.harness.secretmanagerclient.ValueType;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.stream.BoundedInputStream;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -144,6 +154,45 @@ public class SecretCrudServiceImpl implements SecretCrudService {
         .build();
   }
 
+  public SecretDTOV2 getMaskedDTOForOpa(SecretDTOV2 dto) {
+    SecretDTOV2 secretDTOV2ForOpa;
+    try {
+      ObjectMapper mapper = new ObjectMapper();
+      String jsonSource = mapper.writeValueAsString(dto);
+      secretDTOV2ForOpa = mapper.readValue(jsonSource, SecretDTOV2.class);
+    } catch (JsonProcessingException je) {
+      throw new InvalidRequestException("Cannot parse secret json with error", je);
+    }
+    if (secretDTOV2ForOpa.getSpec() instanceof SecretTextSpecDTO) {
+      SecretTextSpecDTO secretTextSpecDTOForOpa = (SecretTextSpecDTO) secretDTOV2ForOpa.getSpec();
+      secretTextSpecDTOForOpa.setValue(null);
+      secretDTOV2ForOpa.setSpec(secretTextSpecDTOForOpa);
+    }
+    if (secretDTOV2ForOpa.getSpec() instanceof SSHKeySpecDTO) {
+      SSHKeySpecDTO sshKeySpecDTOForOpa = (SSHKeySpecDTO) secretDTOV2ForOpa.getSpec();
+      SSHAuthDTO sshAuthDTO = sshKeySpecDTOForOpa.getAuth();
+      BaseSSHSpecDTO baseSSHSpecDTOForOpa = sshAuthDTO.getSpec();
+      if (baseSSHSpecDTOForOpa instanceof SSHConfigDTO) {
+        SSHCredentialSpecDTO sshCredentialSpecDTOForOpa = ((SSHConfigDTO) baseSSHSpecDTOForOpa).getSpec();
+        if (sshCredentialSpecDTOForOpa instanceof SSHKeyPathCredentialDTO) {
+          ((SSHKeyPathCredentialDTO) sshCredentialSpecDTOForOpa).setEncryptedPassphrase(null);
+        }
+        if (sshCredentialSpecDTOForOpa instanceof SSHKeyReferenceCredentialDTO) {
+          ((SSHKeyReferenceCredentialDTO) sshCredentialSpecDTOForOpa).setKey(null);
+          ((SSHKeyReferenceCredentialDTO) sshCredentialSpecDTOForOpa).setEncryptedPassphrase(null);
+        }
+        if (sshCredentialSpecDTOForOpa instanceof SSHPasswordCredentialDTO) {
+          ((SSHPasswordCredentialDTO) sshCredentialSpecDTOForOpa).setPassword(null);
+        }
+        ((SSHConfigDTO) baseSSHSpecDTOForOpa).setSpec(sshCredentialSpecDTOForOpa);
+      }
+      sshAuthDTO.setSpec(baseSSHSpecDTOForOpa);
+      sshKeySpecDTOForOpa.setAuth(sshAuthDTO);
+      secretDTOV2ForOpa.setSpec(sshKeySpecDTOForOpa);
+    }
+    return secretDTOV2ForOpa;
+  }
+
   @Override
   public Boolean validateTheIdentifierIsUnique(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
@@ -156,6 +205,13 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     if (SecretText.equals(dto.getType()) && isEmpty(((SecretTextSpecDTO) dto.getSpec()).getValue())) {
       throw new InvalidRequestException("value cannot be empty for a secret text.");
     }
+
+    SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
+    if (!isOpaPoliciesSatisfied(accountIdentifier, getMaskedDTOForOpa(dto), secretResponseWrapper)) {
+      return secretResponseWrapper;
+    }
+    GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
+
     boolean isHarnessManaged = checkIfSecretManagerUsedIsHarnessManaged(accountIdentifier, dto);
     boolean isBuiltInSMDisabled =
         accountSettingService.getIsBuiltInSMDisabled(accountIdentifier, null, null, AccountSettingType.CONNECTOR);
@@ -168,12 +224,16 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       case SecretText:
         NGEncryptedData encryptedData = encryptedDataService.createSecretText(accountIdentifier, dto);
         if (Optional.ofNullable(encryptedData).isPresent()) {
-          return createSecretInternal(accountIdentifier, dto, false);
+          secretResponseWrapper = createSecretInternal(accountIdentifier, dto, false);
+          secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
+          return secretResponseWrapper;
         }
         break;
       case SSHKey:
       case WinRmCredentials:
-        return createSecretInternal(accountIdentifier, dto, false);
+        secretResponseWrapper = createSecretInternal(accountIdentifier, dto, false);
+        secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
+        return secretResponseWrapper;
       default:
         throw new IllegalArgumentException("Invalid secret type provided: " + dto.getType());
     }
@@ -205,18 +265,10 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   }
 
   private SecretResponseWrapper createSecretInternal(String accountIdentifier, SecretDTOV2 dto, boolean draft) {
-    SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
-    if (!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)) {
-      return secretResponseWrapper;
-    }
-    GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
-
     secretEntityReferenceHelper.createSetupUsageForSecretManager(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), dto.getIdentifier(), dto.getName(), getSecretManagerIdentifier(dto));
     Secret secret = ngSecretService.create(accountIdentifier, dto, draft);
-    secretResponseWrapper = getResponseWrapper(secret);
-    secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
-    return secretResponseWrapper;
+    return getResponseWrapper(secret);
   }
 
   @Override
@@ -226,24 +278,36 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       throw new InvalidRequestException(message.get(), USER);
     }
 
+    SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
+    if (!isOpaPoliciesSatisfied(accountIdentifier, getMaskedDTOForOpa(dto), secretResponseWrapper)) {
+      return secretResponseWrapper;
+    }
+    GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
+
     NGEncryptedData encryptedData;
 
     switch (dto.getType()) {
       case SecretText:
         encryptedData = encryptedDataService.createSecretText(accountIdentifier, dto);
         if (Optional.ofNullable(encryptedData).isPresent()) {
-          return createSecretInternal(accountIdentifier, dto, true);
+          secretResponseWrapper = createSecretInternal(accountIdentifier, dto, true);
+          secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
+          return secretResponseWrapper;
         }
         break;
       case SecretFile:
         encryptedData = encryptedDataService.createSecretFile(accountIdentifier, dto, null);
         if (Optional.ofNullable(encryptedData).isPresent()) {
-          return createSecretInternal(accountIdentifier, dto, true);
+          secretResponseWrapper = createSecretInternal(accountIdentifier, dto, true);
+          secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
+          return secretResponseWrapper;
         }
         break;
       case SSHKey:
       case WinRmCredentials:
-        return createSecretInternal(accountIdentifier, dto, true);
+        secretResponseWrapper = createSecretInternal(accountIdentifier, dto, true);
+        secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
+        return secretResponseWrapper;
       default:
         throw new IllegalArgumentException("Invalid secret type provided: " + dto.getType());
     }
@@ -417,7 +481,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     boolean remoteUpdateSuccess = true;
 
     SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
-    if (!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)) {
+    if (!isOpaPoliciesSatisfied(accountIdentifier, getMaskedDTOForOpa(dto), secretResponseWrapper)) {
       return secretResponseWrapper;
     }
     GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
@@ -445,7 +509,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     }
 
     SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
-    if (!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)) {
+    if (!isOpaPoliciesSatisfied(accountIdentifier, getMaskedDTOForOpa(dto), secretResponseWrapper)) {
       return secretResponseWrapper;
     }
     GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
@@ -502,7 +566,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   public SecretResponseWrapper createFile(
       @NotNull String accountIdentifier, @NotNull SecretDTOV2 dto, @NotNull InputStream inputStream) {
     SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
-    if (!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)) {
+    if (!isOpaPoliciesSatisfied(accountIdentifier, getMaskedDTOForOpa(dto), secretResponseWrapper)) {
       return secretResponseWrapper;
     }
     GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
@@ -542,7 +606,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   public SecretResponseWrapper updateFile(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String identifier, @Valid SecretDTOV2 dto, @NotNull InputStream inputStream) {
     SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
-    if (!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)) {
+    if (!isOpaPoliciesSatisfied(accountIdentifier, getMaskedDTOForOpa(dto), secretResponseWrapper)) {
       return secretResponseWrapper;
     }
     GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();

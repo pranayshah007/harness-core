@@ -64,8 +64,7 @@ serviceDefinition:
               type: Harness
               spec:
                 files:
-                  - path: /folder/config.yml,
-                    scope: account
+                  - account:/folder/config.yml
       - configFile:
           identifier: harnessFSConfigFileIdentifier
           spec:

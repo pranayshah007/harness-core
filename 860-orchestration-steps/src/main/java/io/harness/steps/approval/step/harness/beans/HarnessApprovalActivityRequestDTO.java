@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -27,9 +28,9 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel("HarnessApprovalActivityRequest")
-@Schema(name = "HarnessApprovalActivityRequest", description = "This contains details of Approval Activity requested")
+@Schema(name = "HarnessApprovalActivityRequest", description = "Details of approval activity requested")
 public class HarnessApprovalActivityRequestDTO {
-  @NotNull HarnessApprovalAction action;
-  List<ApproverInput> approverInputs;
-  String comments;
+  @Parameter(description = "Approval activity action") @NotNull HarnessApprovalAction action;
+  @Parameter(description = "Custom data to capture at the time of approval") List<ApproverInput> approverInputs;
+  @Parameter(description = "Approval activity with the comment") String comments;
 }

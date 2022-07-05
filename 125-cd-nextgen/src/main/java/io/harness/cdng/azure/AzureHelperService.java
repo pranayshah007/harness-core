@@ -17,15 +17,15 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.acr.mappers.AcrResourceMapper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.harness.HarnessStoreFile;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.common.NGTaskType;
-import io.harness.common.ParameterRuntimeFiledHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -47,7 +47,6 @@ import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
-import io.harness.encryption.Scope;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -85,6 +84,7 @@ public class AzureHelperService {
   @Inject private SecretManagerClientService secretManagerClientService;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private FileStoreService fileStoreService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @VisibleForTesting static final int defaultTimeoutInSecs = 30;
 
   public AzureConnectorDTO getConnector(IdentifierRef azureConnectorRef) {
@@ -220,6 +220,7 @@ public class AzureHelperService {
 
   public void validateSettingsStoreReferences(
       StoreConfigWrapper storeConfigWrapper, Ambiance ambiance, String entityType) {
+    cdExpressionResolver.updateStoreConfigExpressions(ambiance, storeConfigWrapper);
     StoreConfig storeConfig = storeConfigWrapper.getSpec();
     String storeKind = storeConfig.getKind();
     if (HARNESS_STORE_TYPE.equals(storeKind)) {
@@ -247,11 +248,11 @@ public class AzureHelperService {
   }
 
   private void validateSettingsFileRefs(HarnessStore harnessStore, Ambiance ambiance, String entityType) {
-    if (harnessStore.getFiles().isExpression()) {
+    if (harnessStore.getFiles() == null || harnessStore.getFiles().isExpression()) {
       return;
     }
 
-    List<HarnessStoreFile> fileReferences = harnessStore.getFiles().getValue();
+    List<String> fileReferences = harnessStore.getFiles().getValue();
     if (isEmpty(fileReferences)) {
       throw new InvalidRequestException(
           format("Cannot find any file for %s, store kind: %s", entityType, harnessStore.getKind()));
@@ -265,28 +266,22 @@ public class AzureHelperService {
   }
 
   private void validateSettingsFileByPath(
-      HarnessStore harnessStore, Ambiance ambiance, HarnessStoreFile file, String entityType) {
-    if (ParameterField.isNull(file.getPath())) {
+      HarnessStore harnessStore, Ambiance ambiance, String scopedFilePath, String entityType) {
+    if (isEmpty(scopedFilePath)) {
       throw new InvalidRequestException(
           format("File path not found for one for %s, store kind: %s", entityType, harnessStore.getKind()));
     }
 
-    if (file.getPath().isExpression()) {
-      return;
-    }
-
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    Scope scope = ParameterRuntimeFiledHelper.getScopeParameterFieldFinalValue(file.getScope())
-                      .orElseThrow(() -> new InvalidRequestException("Config file scope cannot be null or empty"));
-    io.harness.beans.Scope fileScope = io.harness.beans.Scope.of(
-        ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), scope);
+    FileReference fileReference = FileReference.of(
+        scopedFilePath, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
-    Optional<FileStoreNodeDTO> fileNode = fileStoreService.getWithChildrenByPath(fileScope.getAccountIdentifier(),
-        fileScope.getOrgIdentifier(), fileScope.getProjectIdentifier(), file.getPath().getValue(), false);
+    Optional<FileStoreNodeDTO> fileNode = fileStoreService.getWithChildrenByPath(fileReference.getAccountIdentifier(),
+        fileReference.getOrgIdentifier(), fileReference.getProjectIdentifier(), fileReference.getPath(), false);
 
     if (!fileNode.isPresent()) {
       throw new InvalidRequestException(
-          format("%s file not found in File Store with ref : [%s]", entityType, file.getPath().getValue()));
+          format("%s file not found in File Store with ref : [%s]", entityType, fileReference.getPath()));
     }
   }
 

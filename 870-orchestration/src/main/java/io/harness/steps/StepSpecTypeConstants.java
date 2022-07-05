@@ -34,4 +34,5 @@ public interface StepSpecTypeConstants {
   String CUSTOM_STAGE = "Custom";
   String FEATURE_FLAG_STAGE = "FeatureFlag";
   String POLICY_STEP = "Policy";
+  String EMAIL = "Email";
 }

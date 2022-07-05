@@ -30,22 +30,38 @@ public class PipelineExpressionHelper {
   @Inject PipelineServiceConfiguration pipelineServiceConfiguration;
   @Inject private AccountClient accountClient;
 
-  public String generateUrl(Ambiance ambiance) {
+  public String generatePipelineUrl(Ambiance ambiance) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
-    String planExecutionId = ambiance.getPlanExecutionId();
+    String moduleName = getModuleName(ambiance);
+    String baseUrl = getBaseUrl(pipelineServiceConfiguration.getPipelineServiceBaseUrl(), getVanityUrl(accountId));
+    return String.format("%s/account/%s/%s/orgs/%s/projects/%s/pipelines/%s/pipeline-studio", baseUrl, accountId,
+        moduleName, orgId, projectId, ambiance.getMetadata().getPipelineIdentifier());
+  }
+
+  private String getModuleName(Ambiance ambiance) {
     String moduleName = "cd";
 
     if (!EmptyPredicate.isEmpty(ambiance.getMetadata().getModuleType())) {
       moduleName = ambiance.getMetadata().getModuleType();
     } else {
       Optional<PipelineExecutionSummaryEntity> optional = pmsExecutionSummaryService.getPipelineExecutionSummary(
-          accountId, orgId, projectId, ambiance.getPlanExecutionId());
+          AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+          AmbianceUtils.getProjectIdentifier(ambiance), ambiance.getPlanExecutionId());
       if (optional.isPresent()) {
         moduleName = getModuleName(optional.get(), moduleName);
       }
     }
+    return moduleName;
+  }
+
+  public String generateUrl(Ambiance ambiance) {
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String moduleName = getModuleName(ambiance);
     String vanityUrl = getVanityUrl(accountId);
     String baseUrl = getBaseUrl(pipelineServiceConfiguration.getPipelineServiceBaseUrl(), vanityUrl);
     return String.format("%s/account/%s/%s/orgs/%s/projects/%s/pipelines/%s/executions/%s/pipeline", baseUrl, accountId,

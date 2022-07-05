@@ -90,7 +90,7 @@ public class CommandStepTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     doReturn(sshCommandTaskParameters)
         .when(sshCommandStepHelper)
-        .buildSshCommandTaskParameters(ambiance, commandStepParameters);
+        .buildCommandTaskParameters(ambiance, commandStepParameters);
     doReturn(EnvironmentType.ALL).when(stepHelper).getEnvironmentType(ambiance);
     doReturn(serializedParams).when(kryoSerializer).asDeflatedBytes(sshCommandTaskParameters);
   }
@@ -106,7 +106,7 @@ public class CommandStepTest extends CategoryTest {
 
     TaskRequest taskRequest =
         commandStep.obtainTaskAfterRbac(ambiance, stepElementParameters, StepInputPackage.builder().build());
-    verify(sshCommandStepHelper, times(1)).buildSshCommandTaskParameters(ambiance, commandStepParameters);
+    verify(sshCommandStepHelper, times(1)).buildCommandTaskParameters(ambiance, commandStepParameters);
     assertThat(taskRequest).isNotNull();
     assertThat(taskRequest.getDelegateTaskRequest().getTaskName()).isEqualTo(TaskType.COMMAND_TASK_NG.getDisplayName());
     assertThat(taskRequest.getDelegateTaskRequest().getRequest().getDetails().getKryoParameters())

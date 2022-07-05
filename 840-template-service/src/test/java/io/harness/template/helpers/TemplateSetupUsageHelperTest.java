@@ -158,14 +158,14 @@ public class TemplateSetupUsageHelperTest extends TemplateServiceTestBase {
         .send(Message.newBuilder()
                   .putAllMetadata(ImmutableMap.of("accountId", templateEntity.getAccountId(),
                       EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.SECRETS.name(),
-                      EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.CREATE_ACTION))
+                      EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
                   .setData(secretEntityReferenceDTO.toByteString())
                   .build());
     verify(eventProducer)
         .send(Message.newBuilder()
                   .putAllMetadata(ImmutableMap.of("accountId", templateEntity.getAccountId(),
                       EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.CONNECTORS.name(),
-                      EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.CREATE_ACTION))
+                      EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
                   .setData(connectorEntityReferenceDTO.toByteString())
                   .build());
   }

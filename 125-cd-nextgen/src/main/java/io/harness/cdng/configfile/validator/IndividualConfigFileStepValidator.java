@@ -12,8 +12,8 @@ import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNES
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.common.ParameterFieldHelper.hasListValue;
 import static io.harness.common.ParameterFieldHelper.hasStringValue;
-import static io.harness.common.ParameterRuntimeFiledHelper.hasScopeValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
@@ -22,7 +22,6 @@ import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.harness.HarnessStoreFile;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.exception.InvalidArgumentsException;
@@ -79,27 +78,24 @@ public class IndividualConfigFileStepValidator {
   }
 
   private static void validateHarnessStore(String configFileIdentifier, HarnessStore store, boolean allowExpression) {
-    ParameterField<List<HarnessStoreFile>> files = store.getFiles();
+    ParameterField<List<String>> files = store.getFiles();
     ParameterField<List<String>> secretFiles = store.getSecretFiles();
     validateFiles(files, configFileIdentifier, allowExpression);
     validateSecretFiles(secretFiles, configFileIdentifier, allowExpression);
   }
 
   private static void validateFiles(
-      ParameterField<List<HarnessStoreFile>> files, final String configFileIdentifier, boolean allowExpression) {
+      ParameterField<List<String>> files, final String configFileIdentifier, boolean allowExpression) {
     if (hasListValue(files, allowExpression)) {
-      List<HarnessStoreFile> filesValue = getParameterFieldValue(files);
-      filesValue.forEach(harnessStoreFile -> {
-        if (!hasStringValue(harnessStoreFile.getPath(), allowExpression)) {
-          throw new InvalidRequestException(
-              format("Config file path cannot be null or empty, ConfigFile identifier: %s", configFileIdentifier));
-        }
-
-        if (!hasScopeValue(harnessStoreFile.getScope(), allowExpression)) {
-          throw new InvalidRequestException(
-              format("Config file scope cannot be null or empty, ConfigFile identifier: %s", configFileIdentifier));
-        }
-      });
+      List<String> filesValue = getParameterFieldValue(files);
+      if (isNotEmpty(filesValue)) {
+        filesValue.forEach(file -> {
+          if (isEmpty(file)) {
+            throw new InvalidRequestException(format(
+                "Config file reference cannot be null or empty, ConfigFile identifier: %s", configFileIdentifier));
+          }
+        });
+      }
     }
   }
 
@@ -107,12 +103,15 @@ public class IndividualConfigFileStepValidator {
       ParameterField<List<String>> secretFiles, final String configFileIdentifier, boolean allowExpression) {
     if (hasListValue(secretFiles, allowExpression)) {
       List<String> secretFilesValue = getParameterFieldValue(secretFiles);
-      secretFilesValue.forEach(secretFileRef -> {
-        if (isEmpty(secretFileRef)) {
-          throw new InvalidRequestException(format(
-              "Config file secret reference cannot be null or empty, ConfigFile identifier: %s", configFileIdentifier));
-        }
-      });
+      if (isNotEmpty(secretFilesValue)) {
+        secretFilesValue.forEach(secretFileRef -> {
+          if (isEmpty(secretFileRef)) {
+            throw new InvalidRequestException(
+                format("Config file secret reference cannot be null or empty, ConfigFile identifier: %s",
+                    configFileIdentifier));
+          }
+        });
+      }
     }
   }
 }

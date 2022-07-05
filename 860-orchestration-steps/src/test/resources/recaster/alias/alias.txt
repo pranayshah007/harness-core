@@ -40,6 +40,7 @@ io.harness.steps.common.pipeline.PipelineSetupStepParameters
 io.harness.pms.yaml.validation.InputSetValidator
 io.harness.steps.shellscript.K8sInfraDelegateConfigOutput
 io.harness.steps.shellscript.SshInfraDelegateConfigOutput
+io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput
 io.harness.steps.barriers.beans.BarrierOutcome
 io.harness.when.beans.StageWhenCondition
 io.harness.steps.approval.step.jira.JiraApprovalSpecParameters
@@ -126,3 +127,7 @@ io.harness.plancreator.steps.resourceconstraint.QueueStepInfo
 io.harness.steps.policy.PolicyStepSpecParameters
 io.harness.steps.policy.step.outcome.PolicyStepOutcome
 io.harness.steps.resourcerestraint.QueueSpecParameters
+io.harness.plancreator.steps.email.EmailStepInfo
+io.harness.plancreator.steps.email.EmailStepNode
+io.harness.steps.email.EmailOutcome
+io.harness.steps.email.EmailStepParameters

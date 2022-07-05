@@ -165,7 +165,7 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
       List<EntityDetailProtoDTO> entityDetailProtoDTOs, String setupUsageDetailType, String pipelineIdentifier) {
     List<EntityDetailWithSetupUsageDetailProtoDTO> res = new ArrayList<>();
     for (EntityDetailProtoDTO entityDetailProtoDTO : entityDetailProtoDTOs) {
-      String fqn = null;
+      String fqn;
       if (EntityTypeProtoEnum.TEMPLATE.equals(entityDetailProtoDTO.getType())) {
         fqn = entityDetailProtoDTO.getTemplateRef().getMetadataMap().get(PreFlightCheckMetadata.FQN);
       } else {

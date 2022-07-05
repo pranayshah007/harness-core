@@ -74,6 +74,17 @@ public class TemplateInputsValidator {
     return validateTemplateInputsResponse;
   }
 
+  public ValidateTemplateInputsResponseDTO validateNestedTemplateInputsForGivenYaml(
+      String accountId, String orgId, String projectId, String yaml, Map<String, TemplateEntity> templateCacheMap) {
+    ErrorNodeSummary errorNodeSummary = ErrorNodeSummary.builder().childrenErrorNodes(new ArrayList<>()).build();
+
+    ValidateTemplateInputsResponseDTO validateTemplateInputsResponse =
+        ValidateTemplateInputsResponseDTO.builder().validYaml(true).errorNodeSummary(errorNodeSummary).build();
+    validateNestedTemplateInputsInternal(
+        accountId, orgId, projectId, yaml, 0, templateCacheMap, validateTemplateInputsResponse);
+    return validateTemplateInputsResponse;
+  }
+
   private void validateNestedTemplateInputsInternal(String accountId, String orgId, String projectId, String yaml,
       int depth, Map<String, TemplateEntity> templateCacheMap,
       ValidateTemplateInputsResponseDTO validateTemplateInputsResponse) {

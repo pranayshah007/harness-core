@@ -1012,7 +1012,9 @@ public class StateMachineExecutor implements StateInspectionListener {
       }
       case NEXT_STEP:
       case ROLLBACK_PROVISIONER_AFTER_PHASES:
-      case ROLLBACK: {
+      case ROLLBACK:
+      case ROLLBACK_ON_APPROVAL:
+      case ROLLBACK_PROVISIONER_AFTER_PHASES_ON_APPROVAL: {
         if (executionEventAdvice.getNextChildStateMachineId() != null
             || executionEventAdvice.getNextStateName() != null) {
           executionEventAdviceTransition(context, executionEventAdvice);

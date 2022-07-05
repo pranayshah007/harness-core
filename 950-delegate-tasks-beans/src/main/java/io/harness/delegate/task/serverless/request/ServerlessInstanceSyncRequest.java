@@ -12,7 +12,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessArtifactsConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
@@ -41,7 +41,7 @@ public class ServerlessInstanceSyncRequest implements ServerlessCommandRequest {
   }
 
   @Override
-  public ServerlessArtifactConfig getServerlessArtifactConfig() {
+  public ServerlessArtifactsConfig getServerlessArtifactsConfig() {
     return null;
   }
 }

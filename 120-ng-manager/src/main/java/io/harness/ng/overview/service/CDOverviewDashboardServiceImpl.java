@@ -25,6 +25,7 @@ import io.harness.cd.NGPipelineSummaryCDConstants;
 import io.harness.cd.NGServiceConstants;
 import io.harness.event.timeseries.processor.utils.DateUtils;
 import io.harness.exception.UnknownEnumTypeException;
+import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstanceDetailsByBuildId;
 import io.harness.models.constants.TimescaleConstants;
@@ -60,6 +61,7 @@ import io.harness.ng.overview.dto.ExecutionDeployment;
 import io.harness.ng.overview.dto.ExecutionDeploymentInfo;
 import io.harness.ng.overview.dto.HealthDeploymentDashboard;
 import io.harness.ng.overview.dto.HealthDeploymentInfo;
+import io.harness.ng.overview.dto.InstanceGroupedByArtifactList;
 import io.harness.ng.overview.dto.InstancesByBuildIdList;
 import io.harness.ng.overview.dto.LastWorkloadInfo;
 import io.harness.ng.overview.dto.ServiceDeployment;
@@ -1497,7 +1499,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Returns a list of buildId and instance counts for various environments for given account+org+project+service
   */
   @Override
-  public io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfoList getEnvBuildInstanceCountByServiceId(
+  public EnvBuildIdAndInstanceCountInfoList getEnvBuildInstanceCountByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     Map<String, List<BuildIdAndInstanceCount>> envIdToBuildMap = new HashMap<>();
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
@@ -1533,6 +1535,85 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     return EnvBuildIdAndInstanceCountInfoList.builder()
         .envBuildIdAndInstanceCountInfoList(envBuildIdAndInstanceCountInfoList)
         .build();
+  }
+
+  @Override
+  public InstanceGroupedByArtifactList getInstanceGroupedByArtifactList(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+    Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> buildEnvInfraMap =
+        new HashMap<>();
+    Map<String, String> envIdToEnvNameMap = new HashMap<>();
+    List<ActiveServiceInstanceInfo> activeServiceInstanceInfoList =
+        instanceDashboardService.getActiveServiceInstanceInfo(
+            accountIdentifier, orgIdentifier, projectIdentifier, serviceId, getCurrentTime());
+    activeServiceInstanceInfoList.forEach(activeServiceInstanceInfo -> {
+      final String infraIdentifier = activeServiceInstanceInfo.getInfraIdentifier();
+      final String infraName = activeServiceInstanceInfo.getInfraName();
+      final String lastPipelineExecutionId = activeServiceInstanceInfo.getLastPipelineExecutionId();
+      final String lastPipelineExecutionName = activeServiceInstanceInfo.getLastPipelineExecutionName();
+      final String lastDeployedAt = activeServiceInstanceInfo.getLastDeployedAt();
+      final String envId = activeServiceInstanceInfo.getEnvIdentifier();
+      final String envName = activeServiceInstanceInfo.getEnvName();
+      final String buildId = activeServiceInstanceInfo.getTag();
+      final int count = activeServiceInstanceInfo.getCount();
+      buildEnvInfraMap.putIfAbsent(buildId, new HashMap<>());
+      buildEnvInfraMap.get(buildId).putIfAbsent(envId, new ArrayList<>());
+
+      buildEnvInfraMap.get(buildId).get(envId).add(
+          InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure.builder()
+              .infraIdentifier(infraIdentifier)
+              .infraName(infraName)
+              .count(count)
+              .lastDeployedAt(lastDeployedAt)
+              .lastPipelineExecutionId(lastPipelineExecutionId)
+              .lastPipelineExecutionName(lastPipelineExecutionName)
+              .build());
+      envIdToEnvNameMap.putIfAbsent(envId, envName);
+    });
+    List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> instanceGroupedByArtifactList =
+        groupedByArtifacts(buildEnvInfraMap, envIdToEnvNameMap);
+
+    return InstanceGroupedByArtifactList.builder().instanceGroupedByArtifactList(instanceGroupedByArtifactList).build();
+  }
+
+  private List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> groupedByArtifacts(
+      Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> buildEnvInfraMap,
+      Map<String, String> envIdToEnvNameMap) {
+    List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> instanceGroupedByArtifactList = new ArrayList<>();
+
+    for (Map.Entry<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> entry :
+        buildEnvInfraMap.entrySet()) {
+      String buildId = entry.getKey();
+      List<InstanceGroupedByArtifactList.InstanceGroupedByEnvironment> instanceGroupedByEnvironmentList =
+          groupedByEnvironments(entry.getValue(), envIdToEnvNameMap);
+      instanceGroupedByArtifactList.add(InstanceGroupedByArtifactList.InstanceGroupedByArtifact.builder()
+                                            .artifactVersion(buildId)
+                                            .instanceGroupedByEnvironmentList(instanceGroupedByEnvironmentList)
+                                            .build());
+    }
+
+    return instanceGroupedByArtifactList;
+  }
+
+  private List<InstanceGroupedByArtifactList.InstanceGroupedByEnvironment> groupedByEnvironments(
+      Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>> envInfraMap,
+      Map<String, String> envIdToEnvNameMap) {
+    List<InstanceGroupedByArtifactList.InstanceGroupedByEnvironment> instanceGroupedByEnvironmentList =
+        new ArrayList<>();
+
+    for (Map.Entry<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>> entry :
+        envInfraMap.entrySet()) {
+      String envId = entry.getKey();
+      String envName = envIdToEnvNameMap.get(envId);
+      List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure> instanceGroupedByInfrastructureList =
+          entry.getValue();
+      instanceGroupedByEnvironmentList.add(InstanceGroupedByArtifactList.InstanceGroupedByEnvironment.builder()
+                                               .envId(envId)
+                                               .envName(envName)
+                                               .instanceGroupedByInfraList(instanceGroupedByInfrastructureList)
+                                               .build());
+    }
+    return instanceGroupedByEnvironmentList;
   }
 
   /*

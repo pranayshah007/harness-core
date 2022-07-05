@@ -44,6 +44,8 @@ public enum EntityType {
       ModuleType.CD, EntityTypeConstants.PIPELINE_STEPS, IdentifierRef.class, EntityYamlRootNames.PIPELINE_STEP),
   @JsonProperty(EntityTypeConstants.HTTP)
   HTTP_STEP(ModuleType.PMS, EntityTypeConstants.HTTP, IdentifierRef.class, EntityYamlRootNames.HTTP),
+  @JsonProperty(EntityTypeConstants.EMAIL)
+  EMAIL_STEP(ModuleType.PMS, EntityTypeConstants.EMAIL, IdentifierRef.class, EntityYamlRootNames.EMAIL),
   @JsonProperty(EntityTypeConstants.JIRA_CREATE)
   JIRA_CREATE_STEP(
       ModuleType.PMS, EntityTypeConstants.JIRA_CREATE, IdentifierRef.class, EntityYamlRootNames.JIRA_CREATE),

@@ -1714,8 +1714,11 @@
 55332:io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSwapSlotsRequest
 55333:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSwapSlotsResponseNG
 55334:io.harness.delegate.task.ssh.config.SecretConfigFile
+55335:io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig
+55336:io.harness.delegate.task.shell.WinrmTaskParameters
 55401:io.harness.delegate.beans.SerializedResponseData
 55402:software.wings.beans.SerializationFormat
+55403:io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
 70003:io.harness.accesscontrol.acl.api.ResourceScope
@@ -2133,6 +2136,7 @@
 563533:io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse
 563534:io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig
 563535:io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability
+563536:io.harness.delegate.task.serverless.ServerlessArtifactsConfig
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO

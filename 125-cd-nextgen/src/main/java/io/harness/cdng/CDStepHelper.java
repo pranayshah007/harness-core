@@ -77,6 +77,8 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
+import io.harness.delegate.TaskSelector;
+import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
@@ -114,6 +116,7 @@ import io.harness.delegate.task.helm.HelmFetchFileConfig;
 import io.harness.delegate.task.helm.HelmFetchFileResult;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
+import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.encryption.SecretRefData;
 import io.harness.eraro.Level;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -138,6 +141,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.rbac.PipelineRbacHelper;
@@ -149,7 +153,10 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.ExpressionUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.serializer.KryoSerializer;
 import io.harness.steps.EntityReferenceExtractorUtils;
+import io.harness.steps.StepHelper;
+import io.harness.steps.StepUtils;
 import io.harness.validation.Validator;
 
 import com.google.inject.Inject;
@@ -180,6 +187,8 @@ public class CDStepHelper {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
+  @Inject private KryoSerializer kryoSerializer;
+  @Inject private StepHelper stepHelper;
   @Inject protected OutcomeService outcomeService;
 
   public static final String RELEASE_NAME_VALIDATION_REGEX =
@@ -297,6 +306,16 @@ public class CDStepHelper {
 
   public GitStoreDelegateConfig getGitStoreDelegateConfig(@Nonnull GitStoreConfig gitstoreConfig,
       @Nonnull ConnectorInfoDTO connectorDTO, ManifestOutcome manifestOutcome, List<String> paths, Ambiance ambiance) {
+    boolean optimizedFilesFetch = isOptimizedFilesFetch(connectorDTO, AmbianceUtils.getAccountId(ambiance))
+        && !ManifestType.Kustomize.equals(manifestOutcome.getType());
+
+    return getGitStoreDelegateConfig(gitstoreConfig, connectorDTO, paths, ambiance, manifestOutcome.getType(),
+        manifestOutcome.getIdentifier(), optimizedFilesFetch);
+  }
+
+  public GitStoreDelegateConfig getGitStoreDelegateConfig(@Nonnull GitStoreConfig gitstoreConfig,
+      @Nonnull ConnectorInfoDTO connectorDTO, List<String> paths, Ambiance ambiance, String manifestType,
+      String manifestIdentifier, boolean optimizedFilesFetch) {
     NGAccess basicNGAccessObject = AmbianceUtils.getNgAccess(ambiance);
     ScmConnector scmConnector;
     List<EncryptedDataDetail> apiAuthEncryptedDataDetails = null;
@@ -306,10 +325,6 @@ public class CDStepHelper {
         gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(gitConfigDTO, sshKeySpecDTO, basicNGAccessObject);
 
     scmConnector = gitConfigDTO;
-
-    boolean optimizedFilesFetch = isOptimizedFilesFetch(connectorDTO, AmbianceUtils.getAccountId(ambiance))
-        && !ManifestType.Kustomize.equals(manifestOutcome.getType());
-
     if (optimizedFilesFetch) {
       scmConnector = (ScmConnector) connectorDTO.getConnectorConfig();
       addApiAuthIfRequired(scmConnector);
@@ -330,8 +345,8 @@ public class CDStepHelper {
         .commitId(trim(getParameterFieldValue(gitstoreConfig.getCommitId())))
         .paths(trimStrings(paths))
         .connectorName(connectorDTO.getName())
-        .manifestType(manifestOutcome.getType())
-        .manifestId(manifestOutcome.getIdentifier())
+        .manifestType(manifestType)
+        .manifestId(manifestIdentifier)
         .optimizedFilesFetch(optimizedFilesFetch)
         .build();
   }
@@ -349,6 +364,20 @@ public class CDStepHelper {
 
     return getGitFetchFilesConfigFromBuilder(
         manifestOutcome.getIdentifier(), manifestOutcome.getType(), false, gitStoreDelegateConfig);
+  }
+
+  public GitFetchFilesConfig getGitFetchFilesConfig(
+      Ambiance ambiance, GitStoreConfig gitStoreConfig, String manifestType, String manifestIdentifier) {
+    String connectorId = gitStoreConfig.getConnectorRef().getValue();
+    ConnectorInfoDTO connectorDTO = getConnector(connectorId, ambiance);
+    List<String> paths = getParameterFieldValue(gitStoreConfig.getPaths());
+
+    boolean useOptimizedFilesFetch = isOptimizedFilesFetch(connectorDTO, AmbianceUtils.getAccountId(ambiance));
+
+    GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig(
+        gitStoreConfig, connectorDTO, paths, ambiance, manifestType, manifestIdentifier, useOptimizedFilesFetch);
+
+    return getGitFetchFilesConfigFromBuilder(manifestIdentifier, manifestType, false, gitStoreDelegateConfig);
   }
 
   public GitFetchFilesConfig getGitFetchFilesConfigFromBuilder(String identifier, String manifestType,
@@ -689,6 +718,10 @@ public class CDStepHelper {
     return sshEntityHelper.getSshInfraDelegateConfig(infrastructure, ambiance);
   }
 
+  public WinRmInfraDelegateConfig getWinRmInfraDelegateConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
+    return sshEntityHelper.getWinRmInfraDelegateConfig(infrastructure, ambiance);
+  }
+
   public boolean isUseLatestKustomizeVersion(String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NEW_KUSTOMIZE_BINARY);
   }
@@ -949,5 +982,11 @@ public class CDStepHelper {
       }
     }
     return Optional.empty();
+  }
+
+  public TaskRequest prepareTaskRequest(
+      Ambiance ambiance, TaskData taskData, List<String> units, String taskName, List<TaskSelector> selectors) {
+    return StepUtils.prepareCDTaskRequest(
+        ambiance, taskData, kryoSerializer, units, taskName, selectors, stepHelper.getEnvironmentType(ambiance));
   }
 }

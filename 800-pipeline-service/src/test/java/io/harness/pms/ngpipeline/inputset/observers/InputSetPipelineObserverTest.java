@@ -12,7 +12,6 @@ import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.SAMARTH;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -24,7 +23,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.pms.events.PipelineDeleteEvent;
 import io.harness.pms.events.PipelineUpdateEvent;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
-import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
+import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
+import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.repositories.inputset.PMSInputSetRepository;
@@ -43,7 +44,6 @@ import org.mockito.MockitoAnnotations;
 public class InputSetPipelineObserverTest extends PipelineServiceTestBase {
   @Mock PMSInputSetRepository inputSetRepository;
   @Mock PMSInputSetService inputSetService;
-  @Mock ValidateAndMergeHelper validateAndMergeHelper;
   @InjectMocks InputSetPipelineObserver inputSetPipelineObserver;
 
   private static final String ACCOUNT_ID = "accountId";
@@ -100,9 +100,17 @@ public class InputSetPipelineObserverTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testOnUpdate() {
     List<InputSetEntity> inputSetList = new ArrayList<>();
-    inputSetList.add(InputSetEntity.builder().yaml(inputSetYaml).isInvalid(true).build());
-    inputSetList.add(InputSetEntity.builder().yaml(inputSetYaml1).build());
-    when(inputSetRepository.findAll(any())).thenReturn(inputSetList);
+    inputSetList.add(InputSetEntity.builder()
+                         .yaml(inputSetYaml)
+                         .isInvalid(true)
+                         .inputSetEntityType(InputSetEntityType.INPUT_SET)
+                         .build());
+    inputSetList.add(
+        InputSetEntity.builder().yaml(inputSetYaml1).inputSetEntityType(InputSetEntityType.INPUT_SET).build());
+    when(inputSetRepository.findAll(PMSInputSetFilterHelper.createCriteriaForGetListForBranchAndRepo(
+             pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(),
+             pipelineEntity.getIdentifier(), InputSetListTypePMS.INPUT_SET)))
+        .thenReturn(inputSetList);
     assertThatCode(()
                        -> inputSetPipelineObserver.onUpdate(
                            new PipelineUpdateEvent(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntity, pipelineEntity)))

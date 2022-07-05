@@ -51,7 +51,9 @@ import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessManifestConfig;
 import io.harness.delegate.task.serverless.request.ServerlessDeployRequest;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
@@ -117,6 +119,8 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   private static final String PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY = "<+artifact.path>";
   private static final String PRIMARY_ARTIFACT_PATH_FOR_ECR = "<+artifact.image>";
   private static final String ARTIFACT_ACTUAL_PATH = "harnessArtifact/artifactFile";
+  private static final String SIDECAR_ARTIFACT_PATH_PREFIX = "<+sidecar.artifact.";
+  private static final String SIDECAR_ARTIFACT_FILE_NAME_PREFIX = "sidecar-artifact-";
 
   @Mock private EngineExpressionService engineExpressionService;
   @Mock private OutcomeService outcomeService;
@@ -126,15 +130,16 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   @Mock private StepUtils stepUtils;
   @Mock private StepHelper stepHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Mock private ServerlessStepUtils serverlessStepUtils;
 
   @Spy @InjectMocks private ServerlessStepCommonHelper serverlessStepCommonHelper;
 
-  final ServerlessAwsLambdaDeployStepParameters serverlessSpecParameters =
+  private final ServerlessAwsLambdaDeployStepParameters serverlessSpecParameters =
       ServerlessAwsLambdaDeployStepParameters.infoBuilder().build();
-  final StepElementParameters stepElementParameters = StepElementParameters.builder()
-                                                          .spec(serverlessSpecParameters)
-                                                          .timeout(ParameterField.createValueField("10m"))
-                                                          .build();
+  private final StepElementParameters stepParameters = StepElementParameters.builder()
+                                                           .spec(serverlessSpecParameters)
+                                                           .timeout(ParameterField.createValueField("10m"))
+                                                           .build();
 
   @Test
   @Owner(developers = ALLU_VAMSI)
@@ -175,7 +180,7 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
         .thenReturn(TaskRequest.newBuilder().build());
 
     TaskChainResponse taskChainResponse =
-        serverlessStepCommonHelper.startChainLink(ambiance, stepElementParameters, serverlessStepHelper);
+        serverlessStepCommonHelper.startChainLink(ambiance, stepParameters, serverlessStepHelper);
 
     PowerMockito.verifyStatic(StepUtils.class, times(1));
     StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
@@ -205,7 +210,7 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
         .thenReturn(TaskRequest.newBuilder().build());
 
     serverlessStepCommonHelper.queueServerlessTask(
-        stepElementParameters, serverlessCommandRequest, ambiance, executionPassThroughData, false);
+        stepParameters, serverlessCommandRequest, ambiance, executionPassThroughData, false);
     PowerMockito.verifyStatic(StepUtils.class, times(1));
     StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
   }
@@ -466,7 +471,8 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
                                     .build();
 
     TaskChainResponse taskChainResponse = serverlessStepCommonHelper.executeNextLink(serverlessAwsLambdaDeployStep,
-        ambiance, stepElementParameters, passThroughData, () -> responseData, serverlessStepHelper);
+        ambiance, stepParameters, passThroughData, () -> responseData, serverlessStepHelper);
+    assertThat(taskChainResponse.isChainEnd()).isEqualTo(true);
   }
 
   @Test
@@ -526,11 +532,11 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
         TaskChainResponse.builder().chainEnd(false).taskRequest(TaskRequest.newBuilder().build()).build();
     doReturn(taskChainRes)
         .when(serverlessAwsLambdaDeployStep)
-        .executeServerlessTask(passThroughData.getServerlessManifestOutcome(), ambiance, stepElementParameters,
+        .executeServerlessTask(passThroughData.getServerlessManifestOutcome(), ambiance, stepParameters,
             serverlessExecutionPassThroughData, responseData.getUnitProgressData(), serverlessStepExecutorParams);
 
     TaskChainResponse taskChainResponse = serverlessStepCommonHelper.executeNextLink(serverlessAwsLambdaDeployStep,
-        ambiance, stepElementParameters, passThroughData, () -> responseData, serverlessStepHelper);
+        ambiance, stepParameters, passThroughData, () -> responseData, serverlessStepHelper);
     assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
   }
 
@@ -595,9 +601,12 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   public void renderManifestContentTestWhenManifestFileContentNotEmpty() {
     String manifestFileContent = "dsfa";
     ServerlessArtifactConfig serverlessArtifactConfig = ServerlessArtifactoryArtifactConfig.builder().build();
+    Map<String, ServerlessArtifactConfig> sidecarArtifactMap = new HashMap<>();
+    sidecarArtifactMap.put("sidecar1", serverlessArtifactConfig);
+    sidecarArtifactMap.put("sidecar2", serverlessArtifactConfig);
     doReturn(manifestFileContent).when(engineExpressionService).renderExpression(ambiance, manifestFileContent);
-    assertThat(
-        serverlessStepCommonHelper.renderManifestContent(ambiance, manifestFileContent, serverlessArtifactConfig))
+    assertThat(serverlessStepCommonHelper.renderManifestContent(
+                   ambiance, manifestFileContent, serverlessArtifactConfig, sidecarArtifactMap))
         .isEqualTo(manifestFileContent);
   }
 
@@ -608,9 +617,12 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   renderManifestContentTestWhenManifestFileContentNotEmptyAndContainsPrimaryArtifactoryReplacementExpression() {
     String manifestFileContent = PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY;
     ServerlessArtifactConfig serverlessArtifactConfig = ServerlessArtifactoryArtifactConfig.builder().build();
+    Map<String, ServerlessArtifactConfig> sidecarArtifactMap = new HashMap<>();
+    sidecarArtifactMap.put("sidecar1", serverlessArtifactConfig);
+    sidecarArtifactMap.put("sidecar2", serverlessArtifactConfig);
     doReturn(ARTIFACT_ACTUAL_PATH).when(engineExpressionService).renderExpression(ambiance, ARTIFACT_ACTUAL_PATH);
-    assertThat(
-        serverlessStepCommonHelper.renderManifestContent(ambiance, manifestFileContent, serverlessArtifactConfig))
+    assertThat(serverlessStepCommonHelper.renderManifestContent(
+                   ambiance, manifestFileContent, serverlessArtifactConfig, sidecarArtifactMap))
         .isEqualTo(ARTIFACT_ACTUAL_PATH);
   }
 
@@ -622,10 +634,36 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
     String replacedContent = "448640225317.dkr.ecr.us-east-1.amazonaws.com/test-docker-2:latest";
     ServerlessArtifactConfig serverlessArtifactConfig =
         ServerlessEcrArtifactConfig.builder().image(replacedContent).build();
+    Map<String, ServerlessArtifactConfig> sidecarArtifactMap = new HashMap<>();
+    sidecarArtifactMap.put("sidecar1", serverlessArtifactConfig);
+    sidecarArtifactMap.put("sidecar2", serverlessArtifactConfig);
     doReturn(replacedContent).when(engineExpressionService).renderExpression(ambiance, replacedContent);
-    assertThat(
-        serverlessStepCommonHelper.renderManifestContent(ambiance, manifestFileContent, serverlessArtifactConfig))
+    assertThat(serverlessStepCommonHelper.renderManifestContent(
+                   ambiance, manifestFileContent, serverlessArtifactConfig, sidecarArtifactMap))
         .isEqualTo(replacedContent);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void
+  renderManifestContentTestWhenManifestFileContentNotEmptyAndContainsPrimaryAndSecondaryReplacementExpression() {
+    String manifestFileContent = "image: " + PRIMARY_ARTIFACT_PATH_FOR_ECR + "\nimage: " + SIDECAR_ARTIFACT_PATH_PREFIX
+        + "sidecar1>\n path: " + SIDECAR_ARTIFACT_PATH_PREFIX + "sidecar2>";
+    String image = "448640225317.dkr.ecr.us-east-1.amazonaws.com/test-docker-2:latest";
+    String image1 = "443440225317.dkr.ecr.us-east-1.amazonaws.com/test-docker:latest";
+    ServerlessArtifactConfig serverlessArtifactConfig = ServerlessEcrArtifactConfig.builder().image(image).build();
+    ServerlessArtifactConfig serverlessArtifactConfig1 = ServerlessEcrArtifactConfig.builder().image(image1).build();
+    String replacedManifestContent =
+        "image: " + image + "\nimage: " + image1 + "\n path: " + SIDECAR_ARTIFACT_FILE_NAME_PREFIX + "sidecar2";
+    ServerlessArtifactConfig serverlessArtifactConfig2 = ServerlessArtifactoryArtifactConfig.builder().build();
+    Map<String, ServerlessArtifactConfig> sidecarArtifactMap = new HashMap<>();
+    sidecarArtifactMap.put("sidecar1", serverlessArtifactConfig1);
+    sidecarArtifactMap.put("sidecar2", serverlessArtifactConfig2);
+    doReturn(replacedManifestContent).when(engineExpressionService).renderExpression(ambiance, replacedManifestContent);
+    assertThat(serverlessStepCommonHelper.renderManifestContent(
+                   ambiance, manifestFileContent, serverlessArtifactConfig, sidecarArtifactMap))
+        .isEqualTo(replacedManifestContent);
   }
 
   @Test
@@ -634,9 +672,20 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   public void renderManifestContentTestWhenManifestFileContentEmpty() {
     String manifestFileContent = "";
     ServerlessArtifactConfig serverlessArtifactConfig = ServerlessArtifactoryArtifactConfig.builder().build();
-    assertThat(
-        serverlessStepCommonHelper.renderManifestContent(ambiance, manifestFileContent, serverlessArtifactConfig))
+    Map<String, ServerlessArtifactConfig> sidecarArtifactMap = new HashMap<>();
+    sidecarArtifactMap.put("sidecar1", serverlessArtifactConfig);
+    sidecarArtifactMap.put("sidecar2", serverlessArtifactConfig);
+    assertThat(serverlessStepCommonHelper.renderManifestContent(
+                   ambiance, manifestFileContent, serverlessArtifactConfig, sidecarArtifactMap))
         .isEqualTo(manifestFileContent);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void getArtifactConfigTest() {
+    ArtifactOutcome artifactOutcome = ArtifactoryArtifactOutcome.builder().build();
+    serverlessStepCommonHelper.getArtifactConfig(artifactOutcome, ambiance);
   }
 
   @Test
@@ -649,5 +698,32 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
         .isEqualTo("serverless.yml");
     assertThat(serverlessStepCommonHelper.getManifestDefaultFileName("filePath/serverless.json"))
         .isEqualTo("serverless.json");
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void getServerlessInfraConfigTest() {
+    InfrastructureOutcome infrastructureOutcome = ServerlessAwsLambdaInfrastructureOutcome.builder().build();
+    serverlessStepCommonHelper.getServerlessInfraConfig(infrastructureOutcome, ambiance);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void getServerlessDeployConfigTest() {
+    serverlessStepCommonHelper.getServerlessDeployConfig(serverlessSpecParameters, serverlessStepHelper);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void getServerlessManifestConfigTest() {
+    Map<String, Object> manifestParams = new HashMap<>();
+    GitStoreConfig gitStoreConfig = GitStore.builder().build();
+    ManifestOutcome manifestOutcome = ServerlessAwsLambdaManifestOutcome.builder().store(gitStoreConfig).build();
+
+    serverlessStepCommonHelper.getServerlessManifestConfig(
+        manifestParams, manifestOutcome, ambiance, serverlessStepHelper);
   }
 }
