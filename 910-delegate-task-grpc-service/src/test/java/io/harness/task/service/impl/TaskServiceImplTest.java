@@ -22,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.AccountId;
+import io.harness.delegate.DelegateServiceAgentClient;
 import io.harness.delegate.TaskExecutionStage;
 import io.harness.delegate.TaskId;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadata;
@@ -29,7 +30,6 @@ import io.harness.delegate.task.stepstatus.artifact.DockerArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.DockerArtifactMetadata;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactMetadata;
-import io.harness.grpc.DelegateServiceGrpcAgentClient;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.task.TaskServiceTestBase;
@@ -61,7 +61,7 @@ import org.mockito.Mock;
 @OwnedBy(CI)
 public class TaskServiceImplTest extends TaskServiceTestBase {
   @Rule public GrpcCleanupRule grpcCleanupRule = new GrpcCleanupRule();
-  @Mock private DelegateServiceGrpcAgentClient delegateServiceGrpcAgentClient;
+  @Mock private DelegateServiceAgentClient delegateServiceAgentClient;
   @Inject KryoSerializer kryoSerializer;
   @Inject ResponseDataConverterRegistry registry;
 
@@ -77,7 +77,7 @@ public class TaskServiceImplTest extends TaskServiceTestBase {
   @Before
   public void doSetup() throws IOException {
     TaskServiceTestHelper.registerConverters(registry);
-    taskService = new TaskServiceImpl(delegateServiceGrpcAgentClient, kryoSerializer, registry);
+    taskService = new TaskServiceImpl(delegateServiceAgentClient, kryoSerializer, registry);
 
     String serverName = InProcessServerBuilder.generateName();
     testInProcessServer = grpcCleanupRule.register(
@@ -99,7 +99,7 @@ public class TaskServiceImplTest extends TaskServiceTestBase {
   @Owner(developers = ALEKSANDAR)
   @Category(UnitTests.class)
   public void shouldGetTaskProgress() {
-    when(delegateServiceGrpcAgentClient.taskProgress(eq(accountId), eq(taskId)))
+    when(delegateServiceAgentClient.taskProgress(eq(accountId), eq(taskId)))
         .thenReturn(TaskExecutionStage.EXECUTING)
         .thenThrow(new IllegalArgumentException());
     TaskProgressResponse taskProgressResponse = taskServiceBlockingStub.taskProgress(
@@ -117,7 +117,7 @@ public class TaskServiceImplTest extends TaskServiceTestBase {
   @Owner(developers = ALEKSANDAR)
   @Category(UnitTests.class)
   public void shouldSendTaskStatus() {
-    when(delegateServiceGrpcAgentClient.sendTaskStatus(eq(accountId), eq(taskId), eq(delegateCallbackToken),
+    when(delegateServiceAgentClient.sendTaskStatus(eq(accountId), eq(taskId), eq(delegateCallbackToken),
              eq(taskServiceTestHelper.getDeflatedStepStatusTaskResponseData())))
         .thenReturn(true)
         .thenThrow(new IllegalArgumentException());
@@ -154,7 +154,7 @@ public class TaskServiceImplTest extends TaskServiceTestBase {
   @Owner(developers = SANJA)
   @Category(UnitTests.class)
   public void shouldSendTaskProgressSuccess() {
-    when(delegateServiceGrpcAgentClient.sendTaskProgressUpdate(eq(accountId), eq(taskId), eq(delegateCallbackToken),
+    when(delegateServiceAgentClient.sendTaskProgressUpdate(eq(accountId), eq(taskId), eq(delegateCallbackToken),
              eq(taskServiceTestHelper.getTaskProgressResponseData().getKryoResultsData().toByteArray())))
         .thenReturn(true);
     SendTaskProgressResponse sendTaskProgressResponse = taskServiceBlockingStub.sendTaskProgress(
@@ -172,7 +172,7 @@ public class TaskServiceImplTest extends TaskServiceTestBase {
   @Owner(developers = SANJA)
   @Category(UnitTests.class)
   public void shouldSendTaskProgressException() {
-    when(delegateServiceGrpcAgentClient.sendTaskProgressUpdate(eq(accountId), eq(taskId), eq(delegateCallbackToken),
+    when(delegateServiceAgentClient.sendTaskProgressUpdate(eq(accountId), eq(taskId), eq(delegateCallbackToken),
              eq(taskServiceTestHelper.getTaskProgressResponseData().getKryoResultsData().toByteArray())))
         .thenThrow(new IllegalArgumentException());
 

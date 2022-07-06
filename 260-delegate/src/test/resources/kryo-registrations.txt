@@ -1560,6 +1560,8 @@
 19701:io.harness.delegate.task.k8s.OpenshiftManifestDelegateConfig
 19702:io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig
 19703:io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig
+19704:io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse
+19705:io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest
 19800:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType
 19801:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO
 19802:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoCredentialsDTO

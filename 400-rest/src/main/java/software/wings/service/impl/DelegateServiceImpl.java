@@ -53,6 +53,7 @@ import static freemarker.template.Configuration.VERSION_2_3_23;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.time.Duration.ofMinutes;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
@@ -111,6 +112,7 @@ import io.harness.delegate.beans.DelegateProfileParams;
 import io.harness.delegate.beans.DelegateRegisterResponse;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateScripts;
+import io.harness.delegate.beans.DelegateSelector;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateSizeDetails;
 import io.harness.delegate.beans.DelegateTags;
@@ -273,6 +275,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 import javax.validation.ConstraintViolation;
 import javax.validation.executable.ValidateOnExecution;
@@ -413,6 +416,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private DelegateVersionService delegateVersionService;
+  private static final Duration HEARTBEAT_EXPIRY_TIME = ofMinutes(5);
   @Inject private DelegateMtlsEndpointService delegateMtlsEndpointService;
 
   private final LoadingCache<String, String> delegateVersionCache =
@@ -569,6 +573,57 @@ public class DelegateServiceImpl implements DelegateService {
         })
         .flatMap(Collection::stream)
         .collect(toSet());
+  }
+  @Override
+  public List<DelegateSelector> getAllDelegateSelectorsUpTheHierarchyV2(
+      final String accountId, final String orgId, final String projectId) {
+    final Query<DelegateGroup> delegateGroupQuery = persistence.createQuery(DelegateGroup.class)
+                                                        .filter(DelegateGroupKeys.accountId, accountId)
+                                                        .filter(DelegateGroupKeys.ng, true);
+
+    final DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgId, projectId);
+
+    delegateGroupQuery.field(DelegateKeys.owner_identifier)
+        .in(Arrays.asList(null, orgId, owner != null ? owner.getIdentifier() : null));
+
+    final List<DelegateGroup> delegateGroups =
+        delegateGroupQuery.field(DelegateGroupKeys.status).notEqual(DelegateGroupStatus.DELETED).asList();
+
+    Map<String, DelegateSelector> delegateSelectorMap = new HashMap<>();
+    delegateGroups.forEach(group -> {
+      boolean isConnected = isDelegateGroupConnected(delegateCache.getDelegatesForGroup(accountId, group.getUuid()));
+
+      // Add implicit selectors to map.
+      delegateSetupService.retrieveDelegateGroupImplicitSelectors(group).keySet().forEach(
+          implicitSelector -> addDelegateSelector(implicitSelector, delegateSelectorMap, isConnected));
+
+      // Add group tags to map.
+      if (isNotEmpty(group.getTags())) {
+        group.getTags().forEach(tag -> addDelegateSelector(tag, delegateSelectorMap, isConnected));
+      }
+    });
+    return delegateSelectorMap.values().stream().sorted(new DelegateSelectorComparator()).collect(Collectors.toList());
+  }
+
+  private boolean isDelegateGroupConnected(List<Delegate> delegateList) {
+    if (isNotEmpty(delegateList)) {
+      return delegateList.stream().anyMatch(this::checkHeartBeatExpiration);
+    } else {
+      log.warn("unable to get delegate list for group from cache");
+      return false;
+    }
+  }
+
+  private void addDelegateSelector(
+      String selector, Map<String, DelegateSelector> delegateSelectorMap, boolean isConnected) {
+    // Add to map if: 1) the selector is not present. 2) selector is connected.
+    if (!delegateSelectorMap.containsKey(selector) || isConnected) {
+      delegateSelectorMap.put(selector, new DelegateSelector(selector, isConnected));
+    }
+  }
+
+  private boolean checkHeartBeatExpiration(Delegate delegate) {
+    return delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis();
   }
 
   @Override

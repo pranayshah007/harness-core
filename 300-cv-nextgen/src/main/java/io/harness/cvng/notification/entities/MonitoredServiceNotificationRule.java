@@ -37,9 +37,7 @@ public class MonitoredServiceNotificationRule extends NotificationRule {
 
   @Data
   @SuperBuilder
-  public abstract static class MonitoredServiceNotificationRuleCondition {
-    public abstract NotificationRuleConditionType getType();
-  }
+  public abstract static class MonitoredServiceNotificationRuleCondition extends NotificationRuleConditionEntity {}
 
   @SuperBuilder
   @Data

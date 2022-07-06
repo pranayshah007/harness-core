@@ -4,6 +4,7 @@ load("//:tools/bazel/macros.bzl", "run_analysis")
 
 shared_dependencies = [
     "//955-delegate-beans:module",
+    "//870-orchestration/contracts:module",
     "//876-orchestration-beans:module",
     "//874-orchestration-delay:module",
     "//878-ng-common-utilities:module",

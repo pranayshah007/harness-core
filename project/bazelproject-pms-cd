@@ -20,7 +20,6 @@ directories:
   800-pipeline-service
   810-ng-triggers
   platform-service
-  860-orchestration-steps
   860-orchestration-visualization
   865-cg-events
   867-polling-contracts

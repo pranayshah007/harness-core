@@ -16,6 +16,7 @@ import io.harness.gitsync.gitfileactivity.beans.GitFileProcessingSummary;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
 import io.harness.persistence.PersistentEntity;
@@ -59,6 +60,14 @@ public class GitCommit
                  .field(GitCommitKeys.commitId)
                  .field(GitCommitKeys.repoURL)
                  .field(GitCommitKeys.gitSyncDirection)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountIdentifier_repoURL_branchName_gitsyncdirection_createdAtSort")
+                 .field(GitCommitKeys.accountIdentifier)
+                 .field(GitCommitKeys.repoURL)
+                 .field(GitCommitKeys.branchName)
+                 .field(GitCommitKeys.gitSyncDirection)
+                 .descSortField(GitCommitKeys.createdAt)
                  .build())
         .build();
   }

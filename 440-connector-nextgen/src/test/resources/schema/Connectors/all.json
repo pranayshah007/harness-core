@@ -1837,6 +1837,7 @@
     },
     "ConnectorConfigDTO": {
       "type": "object",
+      "discriminator": "connectorType",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ConnectorInfoDTO": {

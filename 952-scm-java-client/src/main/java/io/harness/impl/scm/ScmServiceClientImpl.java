@@ -327,14 +327,17 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     return listMoreBranches(scmConnector, listBranchesWithDefaultResponse, pageRequest.getPageSize(), scmBlockingStub);
   }
 
-  private ListBranchesWithDefaultResponse listMoreBranches(ScmConnector scmConnector,
+  @VisibleForTesting
+  ListBranchesWithDefaultResponse listMoreBranches(ScmConnector scmConnector,
       ListBranchesWithDefaultResponse listBranchesWithDefaultResponse, int pageSize,
       SCMGrpc.SCMBlockingStub scmBlockingStub) {
     final String slug = scmGitProviderHelper.getSlug(scmConnector);
     final Provider provider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
     ListBranchesResponse listBranchesResponse = null;
     int branchCount = listBranchesWithDefaultResponse.getBranchesCount();
-    List<String> branchesList = listBranchesWithDefaultResponse.getBranchesList();
+    List<String> branchesList = new ArrayList<>();
+
+    branchesList.addAll(new ArrayList<>(listBranchesWithDefaultResponse.getBranchesList()));
     int pageNumber = listBranchesWithDefaultResponse.getPagination().getNext();
     while (pageNumber != 0 && branchCount <= pageSize) {
       ListBranchesRequest listBranchesRequest = ListBranchesRequest.newBuilder()
@@ -350,7 +353,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
             .setError(listBranchesResponse.getError())
             .build();
       }
-      branchesList.addAll(listBranchesResponse.getBranchesList());
+      branchesList.addAll(new ArrayList<>(listBranchesResponse.getBranchesList()));
       pageNumber = listBranchesResponse.getPagination().getNext();
       branchCount += listBranchesResponse.getBranchesCount();
     }
