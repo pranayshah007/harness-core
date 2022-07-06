@@ -47,6 +47,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @StoreIn(DbAliases.CIMANAGER)
 @StoreIn(DbAliases.ACCESS_CONTROL)
 @StoreIn(DbAliases.RESOURCEGROUP)
+@StoreIn(DbAliases.CENG)
 public class OutboxEvent implements PersistentEntity {
   @Id @org.mongodb.morphia.annotations.Id String id;
 

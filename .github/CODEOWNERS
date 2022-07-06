@@ -10,7 +10,7 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /300-cv-nextgen/src/test/resources/recaster/alias/alias.txt prashant.pal@harness.io sahil.hindwani@harness.io
 /320-ci-execution/src/test/resources/recaster/alias/alias.txt prashant.pal@harness.io sahil.hindwani@harness.io
 /800-pipeline-service/src/test/resources/recaster/alias/alias.txt prashant.pal@harness.io sahil.hindwani@harness.io archit.singla@harness.io
-/860-orchestration-steps/src/test/resources/recaster/alias/alias.txt prashant.pal@harness.io sahil.hindwani@harness.io archit.singla@harness.io
+/800-pipeline-service/modules/orchestration-steps/src/test/resources/recaster/alias/alias.txt prashant.pal@harness.io sahil.hindwani@harness.io archit.singla@harness.io
 /860-orchestration-visualization/src/test/resources/recaster/alias/alias.txt prashant.pal@harness.io sahil.hindwani@harness.io archit.singla@harness.io
 /870-orchestration/src/test/resources/recaster/alias/alias.txt prashant.pal@harness.io sahil.hindwani@harness.io archit.singla@harness.io
 /260-delegate/module-dependency.hash bojan.micovic@harness.io raghu@harness.io jenny.james@harness.io ankit.singhal@harness.io anil.chowdhury@harness.io deepak.puthraya@harness.io

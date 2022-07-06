@@ -11,11 +11,15 @@ import static io.harness.rule.OwnerRule.SAHILDEEP;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.ccm.audittrails.events.CostCategoryCreateEvent;
+import io.harness.ccm.audittrails.events.CostCategoryDeleteEvent;
+import io.harness.ccm.audittrails.events.CostCategoryUpdateEvent;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.entities.CostTarget;
 import io.harness.ccm.views.businessMapping.entities.SharedCost;
@@ -25,6 +29,7 @@ import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.entities.ViewCondition;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewRule;
+import io.harness.outbox.api.OutboxService;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
@@ -38,19 +43,32 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BusinessMappingResourceTest extends CategoryTest {
   @Mock private BusinessMappingService businessMappingService;
+  @Mock private OutboxService outboxService;
+  @Mock private TransactionTemplate transactionTemplate;
   @InjectMocks private BusinessMappingResource businessMappingResource;
   private BusinessMapping businessMapping;
+  private BusinessMapping costCategoryDTO;
+
+  @Captor private ArgumentCaptor<CostCategoryCreateEvent> costCategoryCreateEventArgumentCaptor;
+  @Captor private ArgumentCaptor<CostCategoryUpdateEvent> costCategoryUpdateEventArgumentCaptor;
+  @Captor private ArgumentCaptor<CostCategoryDeleteEvent> costCategoryDeleteEventArgumentCaptor;
 
   @Before
   public void setUp() {
     businessMapping = BusinessMappingHelper.getBusinessMapping(UUID.randomUUID().toString());
+    costCategoryDTO = businessMapping.toDTO();
   }
 
   @Test
@@ -58,9 +76,17 @@ public class BusinessMappingResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSave() {
     when(businessMappingService.save(any(BusinessMapping.class))).thenReturn(businessMapping);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     final RestResponse<BusinessMapping> response =
         businessMappingResource.save(BusinessMappingHelper.TEST_ACCOUNT_ID, businessMapping);
     verify(businessMappingService).save(businessMapping);
+    verify(transactionTemplate, times(1)).execute(any());
+    verify(outboxService, times(1)).save(costCategoryCreateEventArgumentCaptor.capture());
+    CostCategoryCreateEvent capturedCostCategoryCreateEvent = costCategoryCreateEventArgumentCaptor.getValue();
+    assertThat(costCategoryDTO).isEqualTo(capturedCostCategoryCreateEvent.getCostCategoryDTO());
     assertThat(response.getResource()).isEqualTo(businessMapping);
   }
 
@@ -93,9 +119,19 @@ public class BusinessMappingResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdate() {
     when(businessMappingService.update(businessMapping)).thenReturn(businessMapping);
+    when(businessMappingService.get(businessMapping.getUuid(), BusinessMappingHelper.TEST_ACCOUNT_ID))
+        .thenReturn(businessMapping);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     final RestResponse<String> response =
         businessMappingResource.update(BusinessMappingHelper.TEST_ACCOUNT_ID, businessMapping);
     verify(businessMappingService).update(businessMapping);
+    verify(transactionTemplate, times(1)).execute(any());
+    verify(outboxService, times(1)).save(costCategoryUpdateEventArgumentCaptor.capture());
+    CostCategoryUpdateEvent costCategoryUpdateEvent = costCategoryUpdateEventArgumentCaptor.getValue();
+    assertThat(costCategoryDTO).isEqualTo(costCategoryUpdateEvent.getCostCategoryDTO());
     assertThat(response.getResource()).isEqualTo("Successfully updated the Business Mapping");
   }
 
@@ -103,11 +139,21 @@ public class BusinessMappingResourceTest extends CategoryTest {
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void testDelete() {
+    when(businessMappingService.get(BusinessMappingHelper.TEST_ID, BusinessMappingHelper.TEST_ACCOUNT_ID))
+        .thenReturn(businessMapping);
     when(businessMappingService.delete(BusinessMappingHelper.TEST_ID, BusinessMappingHelper.TEST_ACCOUNT_ID))
         .thenReturn(true);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     final RestResponse<String> response =
         businessMappingResource.delete(BusinessMappingHelper.TEST_ACCOUNT_ID, BusinessMappingHelper.TEST_ID);
     verify(businessMappingService).delete(BusinessMappingHelper.TEST_ID, BusinessMappingHelper.TEST_ACCOUNT_ID);
+    verify(transactionTemplate, times(1)).execute(any());
+    verify(outboxService, times(1)).save(costCategoryDeleteEventArgumentCaptor.capture());
+    CostCategoryDeleteEvent costCategoryDeleteEvent = costCategoryDeleteEventArgumentCaptor.getValue();
+    assertThat(costCategoryDTO).isEqualTo(costCategoryDeleteEvent.getCostCategoryDTO());
     assertThat(response.getResource()).isEqualTo("Successfully deleted the Business Mapping");
   }
 

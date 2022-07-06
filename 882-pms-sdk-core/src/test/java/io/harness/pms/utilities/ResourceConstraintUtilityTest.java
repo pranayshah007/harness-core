@@ -7,6 +7,7 @@
 
 package io.harness.pms.utilities;
 
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,5 +33,21 @@ public class ResourceConstraintUtilityTest extends PmsSdkCoreTestBase {
     assertThat(JsonNodeUtils.getString(jsonNode, "type")).isEqualTo("ResourceConstraint");
     assertThat(JsonNodeUtils.getMap(jsonNode, "spec").get("name").asText()).isEqualTo("Queuing");
     assertThat(JsonNodeUtils.getMap(jsonNode, "spec").get("resourceUnit").asText()).isEqualTo(resourceConstraint);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldResourceConstraintHasStageScope() {
+    JsonNode jsonNode = ResourceConstraintUtility.getResourceConstraintJsonNode("unitTest");
+    assertThat(JsonNodeUtils.getMap(jsonNode, "spec").get("holdingScope").asText()).isEqualTo("STAGE");
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldResourceConstraintHasOnePermits() {
+    JsonNode jsonNode = ResourceConstraintUtility.getResourceConstraintJsonNode("unitTest");
+    assertThat(JsonNodeUtils.getMap(jsonNode, "spec").get("permits").asInt()).isEqualTo(1);
   }
 }

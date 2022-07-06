@@ -127,3 +127,7 @@ io.harness.steps.approval.step.custom.CustomApprovalStepNode
 io.harness.steps.approval.step.custom.CustomApprovalOutcome
 io.harness.steps.policy.step.outcome.PolicyStepOutcome
 io.harness.steps.resourcerestraint.QueueSpecParameters
+io.harness.steps.email.EmailOutcome
+io.harness.plancreator.steps.email.EmailStepInfo
+io.harness.plancreator.steps.email.EmailStepNode
+io.harness.steps.email.EmailStepParameters

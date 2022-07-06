@@ -68,12 +68,14 @@ import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 
 import software.wings.beans.TaskType;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -93,6 +95,7 @@ public class AzureWebAppStepHelper {
   @Inject private AzureHelperService azureHelperService;
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private CDExpressionResolver cdExpressionResolver;
+  @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
 
   public Map<String, StoreConfig> fetchWebAppConfig(Ambiance ambiance) {
     Map<String, StoreConfig> settingsConfig = new HashMap<>();
@@ -273,11 +276,15 @@ public class AzureWebAppStepHelper {
             Pair.of("artifacts", format("Unsupported artifact type %s", artifactOutcome.getArtifactType())));
     }
 
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+
     return AzureContainerArtifactConfig.builder()
         .connectorConfig(connectorInfo.getConnectorConfig())
         .registryType(azureRegistryType)
         .image(image)
         .tag(tag)
+        .encryptedDataDetails(
+            secretManagerClientService.getEncryptionDetails(ngAccess, connectorInfo.getConnectorConfig()))
         .build();
   }
 

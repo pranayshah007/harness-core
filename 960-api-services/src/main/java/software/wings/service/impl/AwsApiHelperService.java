@@ -9,8 +9,11 @@ package software.wings.service.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eraro.ErrorCode.AWS_ACCESS_DENIED;
+import static io.harness.exception.WingsException.EVERYBODY;
 import static io.harness.exception.WingsException.USER;
 
+import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
 import static software.wings.service.impl.aws.model.AwsConstants.DEFAULT_BACKOFF_MAX_ERROR_RETRIES;
 
@@ -24,10 +27,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.AwsCallTracker;
 import io.harness.aws.CloseableAmazonWebServiceClient;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AwsAutoScaleException;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
@@ -35,6 +40,8 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
 import software.wings.beans.AwsCrossAccountAttributes;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
+import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -73,18 +80,24 @@ import com.amazonaws.services.ecs.model.ServiceNotFoundException;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -93,6 +106,8 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(HarnessTeam.CDP)
 public class AwsApiHelperService {
   @Inject private AwsCallTracker tracker;
+
+  private static final int FETCH_FILE_COUNT_IN_BUCKET = 500;
 
   public AmazonECRClient getAmazonEcrClient(AwsInternalConfig awsConfig, String region) {
     AmazonECRClientBuilder builder = AmazonECRClientBuilder.standard().withRegion(region);
@@ -193,16 +208,182 @@ public class AwsApiHelperService {
     return emptyList();
   }
 
+  public List<BuildDetails> listBuilds(
+      AwsInternalConfig awsInternalConfig, String region, String bucketName, String filePathRegex) {
+    List<BuildDetails> buildDetailsList = Lists.newArrayList();
+
+    boolean isExpression = filePathRegex.contains("*") || filePathRegex.endsWith("/");
+
+    if (isExpression == false) {
+      return null;
+    }
+
+    try {
+      boolean versioningEnabledForBucket = isVersioningEnabledForBucket(awsInternalConfig, bucketName, region);
+
+      ListObjectsV2Request listObjectsV2Request = getListObjectsV2Request(bucketName, filePathRegex);
+      ListObjectsV2Result result;
+
+      Pattern pattern = Pattern.compile(filePathRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
+
+      List<S3ObjectSummary> objectSummaryListFinal = new ArrayList<>();
+
+      do {
+        result = listBuildsInS3(awsInternalConfig, listObjectsV2Request, region);
+
+        List<S3ObjectSummary> objectSummaryList = result.getObjectSummaries();
+
+        if (EmptyPredicate.isNotEmpty(objectSummaryList)) {
+          objectSummaryListFinal.addAll(objectSummaryList);
+        }
+
+        listObjectsV2Request.setContinuationToken(result.getNextContinuationToken());
+
+      } while (result.isTruncated());
+
+      sortAscending(objectSummaryListFinal);
+
+      List<BuildDetails> pageBuildDetails =
+          getObjectSummariesNG(pattern, objectSummaryListFinal, awsInternalConfig, versioningEnabledForBucket, region);
+
+      int size = pageBuildDetails.size();
+
+      if (size > FETCH_FILE_COUNT_IN_BUCKET) {
+        pageBuildDetails.subList(0, size - FETCH_FILE_COUNT_IN_BUCKET).clear();
+      }
+
+      buildDetailsList.addAll(pageBuildDetails);
+
+      return buildDetailsList;
+
+    } catch (WingsException e) {
+      e.excludeReportTarget(AWS_ACCESS_DENIED, EVERYBODY);
+      throw new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER);
+    } catch (RuntimeException e) {
+      throw new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER);
+    }
+  }
+
+  private boolean isVersioningEnabledForBucket(AwsInternalConfig awsInternalConfig, String bucketName, String region) {
+    try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
+             new CloseableAmazonWebServiceClient(getAmazonS3Client(awsInternalConfig, region))) {
+      tracker.trackS3Call("Get Bucket Versioning Configuration");
+
+      BucketVersioningConfiguration bucketVersioningConfiguration =
+          closeableAmazonS3Client.getClient().getBucketVersioningConfiguration(bucketName);
+
+      return "ENABLED".equals(bucketVersioningConfiguration.getStatus());
+
+    } catch (AmazonServiceException amazonServiceException) {
+      handleAmazonServiceException(amazonServiceException);
+    } catch (AmazonClientException amazonClientException) {
+      handleAmazonClientException(amazonClientException);
+    } catch (Exception e) {
+      log.error("Exception isVersioningEnabledForBucket", e);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+    }
+
+    return false;
+  }
+
+  private List<BuildDetails> getObjectSummariesNG(Pattern pattern, List<S3ObjectSummary> objectSummaryList,
+      AwsInternalConfig awsInternalConfig, boolean versioningEnabledForBucket, String region) {
+    return objectSummaryList.stream()
+        .filter(
+            objectSummary -> !objectSummary.getKey().endsWith("/") && pattern.matcher(objectSummary.getKey()).find())
+        .map(objectSummary
+            -> getArtifactBuildDetails(awsInternalConfig, objectSummary.getBucketName(), objectSummary.getKey(),
+                versioningEnabledForBucket, objectSummary.getSize(), region))
+        .collect(toList());
+  }
+
+  private BuildDetails getArtifactBuildDetails(AwsInternalConfig awsInternalConfig, String bucketName, String key,
+      boolean versioningEnabledForBucket, long artifactFileSize, String region) {
+    String versionId = null;
+
+    if (versioningEnabledForBucket) {
+      ObjectMetadata objectMetadata = getObjectMetadataFromS3(awsInternalConfig, bucketName, key, region);
+      if (objectMetadata != null) {
+        versionId = key + ":" + objectMetadata.getVersionId();
+      }
+    }
+
+    if (versionId == null) {
+      versionId = key;
+    }
+
+    Map<String, String> map = new HashMap<>();
+
+    map.put(ArtifactMetadataKeys.url, "https://s3.amazonaws.com/" + bucketName + "/" + key);
+    map.put(ArtifactMetadataKeys.buildNo, versionId);
+    map.put(ArtifactMetadataKeys.bucketName, bucketName);
+    map.put(ArtifactMetadataKeys.artifactPath, key);
+    map.put(ArtifactMetadataKeys.key, key);
+    map.put(ArtifactMetadataKeys.artifactFileSize, String.valueOf(artifactFileSize));
+
+    return aBuildDetails()
+        .withNumber(versionId)
+        .withRevision(versionId)
+        .withArtifactPath(key)
+        .withArtifactFileSize(String.valueOf(artifactFileSize))
+        .withBuildParameters(map)
+        .withUiDisplayName("Build# " + versionId)
+        .build();
+  }
+
+  private ObjectMetadata getObjectMetadataFromS3(
+      AwsInternalConfig awsInternalConfig, String bucketName, String key, String region) {
+    try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
+             new CloseableAmazonWebServiceClient(getAmazonS3Client(awsInternalConfig, region))) {
+      tracker.trackS3Call("Get Object Metadata");
+
+      return closeableAmazonS3Client.getClient().getObjectMetadata(bucketName, key);
+
+    } catch (AmazonServiceException amazonServiceException) {
+      handleAmazonServiceException(amazonServiceException);
+    } catch (AmazonClientException amazonClientException) {
+      handleAmazonClientException(amazonClientException);
+    } catch (Exception e) {
+      log.error("Exception getObjectMetadataFromS3", e);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+    }
+
+    return null;
+  }
+
+  private ListObjectsV2Result listBuildsInS3(
+      AwsInternalConfig awsInternalConfig, ListObjectsV2Request listObjectsV2Request, String region) {
+    try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
+             new CloseableAmazonWebServiceClient(getAmazonS3Client(awsInternalConfig, region))) {
+      tracker.trackS3Call("Get Builds");
+
+      return closeableAmazonS3Client.getClient().listObjectsV2(listObjectsV2Request);
+
+    } catch (AmazonServiceException amazonServiceException) {
+      handleAmazonServiceException(amazonServiceException);
+    } catch (AmazonClientException amazonClientException) {
+      handleAmazonClientException(amazonClientException);
+    } catch (Exception e) {
+      log.error("Exception list builds", e);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+    }
+
+    return new ListObjectsV2Result();
+  }
+
   public S3Object getObjectFromS3(AwsInternalConfig awsInternalConfig, String region, String bucketName, String key) {
     try {
       tracker.trackS3Call("Get Object");
+
       return getAmazonS3Client(awsInternalConfig, getBucketRegion(awsInternalConfig, bucketName, region))
           .getObject(bucketName, key);
+
     } catch (AmazonServiceException amazonServiceException) {
       handleAmazonServiceException(amazonServiceException);
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     }
+
     return null;
   }
 
@@ -366,5 +547,51 @@ public class AwsApiHelperService {
     } else {
       return AWS_DEFAULT_REGION;
     }
+  }
+
+  public S3Object getBuild(AwsInternalConfig awsInternalConfig, String region, String bucketName, String filePath) {
+    return getObjectFromS3(awsInternalConfig, region, bucketName, filePath);
+  }
+
+  private ListObjectsV2Request getListObjectsV2Request(String bucketName, String artifactpathRegex) {
+    ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request();
+
+    String prefix = getPrefix(artifactpathRegex);
+
+    if (prefix != null) {
+      listObjectsV2Request.withPrefix(prefix);
+    }
+
+    listObjectsV2Request.withBucketName(bucketName).withMaxKeys(FETCH_FILE_COUNT_IN_BUCKET);
+
+    return listObjectsV2Request;
+  }
+
+  private static String getPrefix(String artifactPath) {
+    int index = artifactPath.indexOf('*');
+
+    String prefix = null;
+
+    if (index != -1) {
+      prefix = artifactPath.substring(0, index);
+    }
+
+    return prefix;
+  }
+
+  private static void sortDescending(List<S3ObjectSummary> objectSummaryList) {
+    if (EmptyPredicate.isEmpty(objectSummaryList)) {
+      return;
+    }
+
+    objectSummaryList.sort((o1, o2) -> o2.getLastModified().compareTo(o1.getLastModified()));
+  }
+
+  private static void sortAscending(List<S3ObjectSummary> objectSummaryList) {
+    if (EmptyPredicate.isEmpty(objectSummaryList)) {
+      return;
+    }
+
+    objectSummaryList.sort((o1, o2) -> o1.getLastModified().compareTo(o2.getLastModified()));
   }
 }

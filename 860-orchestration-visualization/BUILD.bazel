@@ -9,6 +9,7 @@ java_library(
     deps = [
         "//:lombok",
         "//870-orchestration:module",
+        "//870-orchestration/contracts:module",
         "@maven//:com_esotericsoftware_kryo",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:com_google_code_findbugs_annotations",

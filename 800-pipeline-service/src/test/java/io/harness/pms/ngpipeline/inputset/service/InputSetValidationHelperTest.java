@@ -9,6 +9,7 @@ package io.harness.pms.ngpipeline.inputset.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
@@ -96,6 +97,27 @@ public class InputSetValidationHelperTest extends CategoryTest {
         () -> InputSetValidationHelper.validateInputSet(inputSetService, pipelineService, inputSetEntity, true))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Input Set should have the same Store Type as the Pipeline it is for");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testForLengthCheckOnInputSetIdentifiers() {
+    doReturn(Optional.of(PipelineEntity.builder().storeType(StoreType.INLINE).build()))
+        .when(pipelineService)
+        .get(accountId, orgId, projectId, pipelineId, false);
+    String yaml = "inputSet:\n"
+        + "  identifier: abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghij";
+    InputSetEntity inputSetEntity = InputSetEntity.builder()
+                                        .accountId(accountId)
+                                        .orgIdentifier(orgId)
+                                        .projectIdentifier(projectId)
+                                        .pipelineIdentifier(pipelineId)
+                                        .yaml(yaml)
+                                        .inputSetEntityType(InputSetEntityType.INPUT_SET)
+                                        .build();
+    assertThatThrownBy(() -> InputSetValidationHelper.validateInputSet(null, pipelineService, inputSetEntity, false))
+        .hasMessage("Input Set identifier length cannot be more that 63 characters.");
   }
 
   @Test

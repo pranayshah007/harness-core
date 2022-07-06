@@ -44,6 +44,13 @@ public class CommonStepInfo {
           .setType("Http")
           .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Utilities/Non-Scripted").build())
           .build();
+  StepInfo emailStepInfo =
+      StepInfo.newBuilder()
+          .setName("Email")
+          .setType("Email")
+          .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Utilities/Non-Scripted").build())
+          .setFeatureFlag(FeatureName.NG_EMAIL_STEP.name())
+          .build();
   StepInfo harnessApprovalStepInfo =
       StepInfo.newBuilder()
           .setName("Harness Approval")
@@ -168,6 +175,7 @@ public class CommonStepInfo {
     stepInfos.add(policyStepInfo);
     stepInfos.add(serviceNowCreateStepInfo);
     stepInfos.add(serviceNowUpdateStepInfo);
+    stepInfos.add(emailStepInfo);
     return stepInfos;
   }
 }

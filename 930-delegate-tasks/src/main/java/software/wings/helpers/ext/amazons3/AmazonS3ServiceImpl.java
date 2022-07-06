@@ -90,7 +90,7 @@ public class AmazonS3ServiceImpl implements AmazonS3Service {
     return objectSummaryListFinal.stream().map(S3ObjectSummary::getKey).collect(toList());
   }
 
-  private String getPrefix(String artifactPath) {
+  private static String getPrefix(String artifactPath) {
     int index = artifactPath.indexOf('*');
     String prefix = null;
     if (index != -1) {
@@ -163,7 +163,7 @@ public class AmazonS3ServiceImpl implements AmazonS3Service {
     return buildDetailsList;
   }
 
-  private void sortDescending(List<S3ObjectSummary> objectSummaryList) {
+  public static void sortDescending(List<S3ObjectSummary> objectSummaryList) {
     if (EmptyPredicate.isEmpty(objectSummaryList)) {
       return;
     }
@@ -171,7 +171,7 @@ public class AmazonS3ServiceImpl implements AmazonS3Service {
     objectSummaryList.sort((o1, o2) -> o2.getLastModified().compareTo(o1.getLastModified()));
   }
 
-  private void sortAscending(List<S3ObjectSummary> objectSummaryList) {
+  public static void sortAscending(List<S3ObjectSummary> objectSummaryList) {
     if (EmptyPredicate.isEmpty(objectSummaryList)) {
       return;
     }
@@ -179,7 +179,7 @@ public class AmazonS3ServiceImpl implements AmazonS3Service {
     objectSummaryList.sort((o1, o2) -> o1.getLastModified().compareTo(o2.getLastModified()));
   }
 
-  private List<String> getObjectSummaries(Pattern pattern, List<S3ObjectSummary> objectSummaryList) {
+  public static List<String> getObjectSummaries(Pattern pattern, List<S3ObjectSummary> objectSummaryList) {
     return objectSummaryList.stream()
         .filter(
             objectSummary -> !objectSummary.getKey().endsWith("/") && pattern.matcher(objectSummary.getKey()).find())
@@ -187,7 +187,7 @@ public class AmazonS3ServiceImpl implements AmazonS3Service {
         .collect(toList());
   }
 
-  private List<BuildDetails> getObjectSummaries(Pattern pattern, List<S3ObjectSummary> objectSummaryList,
+  public List<BuildDetails> getObjectSummaries(Pattern pattern, List<S3ObjectSummary> objectSummaryList,
       AwsConfig awsConfig, List<EncryptedDataDetail> encryptedDataDetails, boolean versioningEnabled) {
     return objectSummaryList.stream()
         .filter(
@@ -241,7 +241,7 @@ public class AmazonS3ServiceImpl implements AmazonS3Service {
     }
   }
 
-  private ListObjectsV2Request getListObjectsV2Request(String bucketName, String artifactpathRegex) {
+  public static ListObjectsV2Request getListObjectsV2Request(String bucketName, String artifactpathRegex) {
     ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request();
     String prefix = getPrefix(artifactpathRegex);
     if (prefix != null) {
