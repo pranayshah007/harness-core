@@ -5,18 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.perpetualtask.grpc;
+package io.harness.perpetualtask;
 
 import io.harness.delegate.DelegateId;
 import io.harness.grpc.utils.HTimestamps;
-import io.harness.perpetualtask.HeartbeatRequest;
-import io.harness.perpetualtask.PerpetualTaskAssignDetails;
-import io.harness.perpetualtask.PerpetualTaskContextRequest;
-import io.harness.perpetualtask.PerpetualTaskExecutionContext;
-import io.harness.perpetualtask.PerpetualTaskId;
-import io.harness.perpetualtask.PerpetualTaskListRequest;
-import io.harness.perpetualtask.PerpetualTaskListResponse;
-import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.PerpetualTaskServiceGrpc.PerpetualTaskServiceBlockingStub;
 
 import com.google.inject.Inject;
@@ -29,18 +21,20 @@ import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
-public class PerpetualTaskServiceGrpcClient {
+public class PerpetualTaskServiceAgentClient {
   private final PerpetualTaskServiceBlockingStub serviceBlockingStub;
 
   @Inject
-  public PerpetualTaskServiceGrpcClient(PerpetualTaskServiceBlockingStub perpetualTaskServiceBlockingStub) {
+  public PerpetualTaskServiceAgentClient(PerpetualTaskServiceBlockingStub perpetualTaskServiceBlockingStub) {
     serviceBlockingStub = perpetualTaskServiceBlockingStub;
   }
 
   public List<PerpetualTaskAssignDetails> perpetualTaskList(String delegateId) {
     PerpetualTaskListResponse response =
         serviceBlockingStub.withDeadlineAfter(60, TimeUnit.SECONDS)
-            .perpetualTaskList(PerpetualTaskListRequest.newBuilder()
+            .perpetualTaskList(PerpetualTaskListRequest
+                                   .newBuilder()
+
                                    .setDelegateId(DelegateId.newBuilder().setId(delegateId).build())
                                    .build());
     return response.getPerpetualTaskAssignDetailsList();
