@@ -20,6 +20,7 @@ import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.connector.services.NGVaultService;
+import io.harness.encryptors.CustomEncryptorsRegistry;
 import io.harness.encryptors.KmsEncryptor;
 import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.encryptors.VaultEncryptorsRegistry;
@@ -55,6 +56,8 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
   private final NGConnectorSecretManagerService ngConnectorSecretManagerService;
   private final KmsEncryptorsRegistry kmsEncryptorsRegistry;
   private final VaultEncryptorsRegistry vaultEncryptorsRegistry;
+
+  private final CustomEncryptorsRegistry customEncryptorsRegistry;
   private final NGVaultService ngVaultService;
   private final RetryConfig config = RetryConfig.custom()
                                          .maxAttempts(5)
@@ -112,6 +115,11 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
             KmsEncryptor kmsEncryptor = kmsEncryptorsRegistry.getKmsEncryptor(encryptionConfig);
             validationResult = kmsEncryptor.validateKmsConfiguration(encryptionConfig.getAccountId(), encryptionConfig);
             break;
+            //          case CUSTOM:
+            //            CustomEncryptor customEncryptor =
+            //            customEncryptorsRegistry.getCustomEncryptor(encryptionConfig.getEncryptionType());
+            //            validationResult = customEncryptor.validateReference(encryptionConfig.getAccountId(),
+            //            encryptionConfig); break;
           default:
             String errorMessage = " Encryptor for validate reference task for encryption config"
                 + encryptionConfig.getName() + " not configured";
