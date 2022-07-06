@@ -14,28 +14,42 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.data.algorithm.HashGenerator;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.UserGroupDTO;
+import io.harness.ng.core.notification.EmailConfigDTO;
+import io.harness.ng.core.notification.SlackConfigDTO;
+import io.harness.ng.core.user.UserInfo;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.remote.SmtpConfigClient;
 import io.harness.notification.repositories.NotificationSettingRepository;
+import io.harness.remote.client.RestClientUtils;
 import io.harness.rule.Owner;
 import io.harness.user.remote.UserClient;
 import io.harness.usergroups.UserGroupClient;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(PL)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(RestClientUtils.class)
 public class NotificationSettingsServiceImplTest extends CategoryTest {
   @Mock private UserGroupClient userGroupClient;
   @Mock private UserClient userClient;
@@ -64,10 +78,18 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
       String.format("${ngSecretManager.obtain(\"account.SlackWebhookUrlSecret\", %d)}", EXPRESSION_FUNCTOR_TOKEN_1);
   private static final String RESOLVED_SLACK_SECRET_WITH_FUNCTOR_ZERO =
       "${ngSecretManager.obtain(\"SlackWebhookUrlSecret1\", 0)}";
+  private static final String EMAIL_ID_1 = "user1@gmail.com";
+  private static final String EMAIL_ID_2 = "user2@gmail.com";
+  private static final String EMAIL_ID_3 = "user3@gmail.com";
+  private static final String ACCOUNT_ID = "vpCkHKsDSxK9_KYfjCT";
+  private static final String USER_ID_1 = "kIbAmAVeQIaUPntB2jDBKA";
+  private static final String USER_ID_2 = "imsuYBJ1TKG4j1ycwZEqOA";
+  private static final String USER_ID_3 = "EiTE4Ij2RXqazZlvlvHpMQ";
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
+    PowerMockito.mockStatic(RestClientUtils.class);
     notificationSettingsService = new NotificationSettingsServiceImpl(
         userGroupClient, userClient, notificationSettingRepository, smtpConfigClient);
   }
@@ -76,26 +98,20 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testGetNotificationRequestForSecretExpressionSlackUserGroups() {
-    List<String> notificationSettings = new ArrayList<>();
-    notificationSettings.add(SLACK_SECRET_1);
-    notificationSettings.add(SLACK_SECRET_2);
+    List<String> notificationSettings = Arrays.asList(SLACK_SECRET_1, SLACK_SECRET_2);
     List<String> resolvedUserGroups = notificationSettingsService.resolveUserGroups(
         NotificationChannelType.SLACK, notificationSettings, EXPRESSION_FUNCTOR_TOKEN_1);
-    assertEquals(RESOLVED_SLACK_SECRET_1, resolvedUserGroups.get(0));
-    assertEquals(RESOLVED_SLACK_SECRET_2, resolvedUserGroups.get(1));
+    assertEquals(Arrays.asList(RESOLVED_SLACK_SECRET_1, RESOLVED_SLACK_SECRET_2), resolvedUserGroups);
   }
 
   @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testGetNotificationRequestForOrgSecretAndAccountSecretExpressionSlackUserGroups() {
-    List<String> notificationSettings = new ArrayList<>();
-    notificationSettings.add(SLACK_ORG_SECRET);
-    notificationSettings.add(SLACK_ACCOUNT_SECRET);
+    List<String> notificationSettings = Arrays.asList(SLACK_ORG_SECRET, SLACK_ACCOUNT_SECRET);
     List<String> resolvedUserGroups = notificationSettingsService.resolveUserGroups(
         NotificationChannelType.SLACK, notificationSettings, EXPRESSION_FUNCTOR_TOKEN_1);
-    assertEquals(RESOLVED_SLACK_ORG_SECRET, resolvedUserGroups.get(0));
-    assertEquals(RESOLVED_SLACK_ACCOUNT_SECRET, resolvedUserGroups.get(1));
+    assertEquals(Arrays.asList(RESOLVED_SLACK_ORG_SECRET, RESOLVED_SLACK_ACCOUNT_SECRET), resolvedUserGroups);
   }
 
   @Test
@@ -115,22 +131,20 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testGetNotificationRequestForPlainTextSlackUserGroups() {
-    List<String> notificationSettings = new ArrayList<>();
-    notificationSettings.add(SLACK_WEBHOOK_URL);
+    List<String> notificationSettings = Arrays.asList(SLACK_WEBHOOK_URL);
     List<String> resolvedUserGroups = notificationSettingsService.resolveUserGroups(
         NotificationChannelType.SLACK, notificationSettings, EXPRESSION_FUNCTOR_TOKEN_1);
-    assertEquals(SLACK_WEBHOOK_URL, resolvedUserGroups.get(0));
+    assertEquals(Arrays.asList(SLACK_WEBHOOK_URL), resolvedUserGroups);
   }
 
   @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testGetNotificationRequestForSecretExpressionPagerDutyUserGroups() {
-    List<String> notificationSettings = new ArrayList<>();
-    notificationSettings.add(PAGERDUTY_SECRET);
+    List<String> notificationSettings = Arrays.asList(PAGERDUTY_SECRET);
     List<String> resolvedUserGroups = notificationSettingsService.resolveUserGroups(
         NotificationChannelType.SLACK, notificationSettings, EXPRESSION_FUNCTOR_TOKEN_1);
-    assertEquals(RESOLVED_PAGER_DUTY_SECRET, resolvedUserGroups.get(0));
+    assertEquals(Arrays.asList(RESOLVED_PAGER_DUTY_SECRET), resolvedUserGroups);
   }
 
   @Test
@@ -150,17 +164,15 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
     notificationSettings.add(SLACK_SECRET_3);
     List<String> resolvedUserGroups = notificationSettingsService.resolveUserGroups(
         NotificationChannelType.SLACK, notificationSettings, EXPRESSION_FUNCTOR_TOKEN_1);
-    assertEquals(RESOLVED_SLACK_SECRET_3, resolvedUserGroups.get(0));
+    assertEquals(Arrays.asList(RESOLVED_SLACK_SECRET_3), resolvedUserGroups);
   }
 
   @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testSlackWebhookSecret() {
-    List<String> notificationSettings = new ArrayList<>();
-    notificationSettings.add(RESOLVED_SLACK_SECRET_1);
-    notificationSettings.add(RESOLVED_SLACK_SECRET_2);
-    notificationSettings.add(RESOLVED_SLACK_SECRET_WITH_FUNCTOR_ZERO);
+    List<String> notificationSettings =
+        Arrays.asList(RESOLVED_SLACK_SECRET_1, RESOLVED_SLACK_SECRET_2, RESOLVED_SLACK_SECRET_WITH_FUNCTOR_ZERO);
     boolean isSecret = notificationSettingsService.checkIfWebhookIsSecret(notificationSettings);
     assertTrue(isSecret);
   }
@@ -169,8 +181,7 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testSlackWebhookNonSecret() {
-    List<String> notificationSettings = new ArrayList<>();
-    notificationSettings.add(SLACK_WEBHOOK_URL);
+    List<String> notificationSettings = Arrays.asList(SLACK_WEBHOOK_URL);
     boolean isSecret = notificationSettingsService.checkIfWebhookIsSecret(notificationSettings);
     assertFalse(isSecret);
   }
@@ -179,10 +190,92 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testSlackWebhookSecretAndNonSecret() {
-    List<String> notificationSettings = new ArrayList<>();
-    notificationSettings.add(SLACK_WEBHOOK_URL);
-    notificationSettings.add(RESOLVED_SLACK_SECRET_1);
+    List<String> notificationSettings = Arrays.asList(SLACK_WEBHOOK_URL, RESOLVED_SLACK_SECRET_1);
     boolean isSecret = notificationSettingsService.checkIfWebhookIsSecret(notificationSettings);
     assertTrue(isSecret);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetEmailsForUserIds() {
+    List<String> userIds = Arrays.asList(USER_ID_1, USER_ID_2, USER_ID_3);
+    List<UserInfo> userInfoList = Arrays.asList(UserInfo.builder().email(EMAIL_ID_1).build(),
+        UserInfo.builder().email(EMAIL_ID_2).build(), UserInfo.builder().email(EMAIL_ID_3).build());
+    when(RestClientUtils.getResponse(any())).thenReturn(userInfoList);
+    List<String> emails = notificationSettingsService.getEmailsForUserIds(userIds, ACCOUNT_ID);
+    List<String> expected = Arrays.asList(EMAIL_ID_1, EMAIL_ID_2, EMAIL_ID_3);
+    assertEquals(expected, emails);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetEmailsForEmptyUserIds() {
+    List<String> emails = notificationSettingsService.getEmailsForUserIds(new ArrayList<>(), ACCOUNT_ID);
+    assertTrue(emails.isEmpty());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetNotificationSettings() {
+    List<String> userIds = Arrays.asList(USER_ID_1);
+    List<UserInfo> userInfoList = Arrays.asList(UserInfo.builder().email(EMAIL_ID_1).build());
+    when(RestClientUtils.getResponse(any())).thenReturn(userInfoList);
+    List<UserGroupDTO> userGroupDTOList = new ArrayList<>();
+    EmailConfigDTO emailConfigDTO = EmailConfigDTO.builder().groupEmail(EMAIL_ID_1).build();
+    userGroupDTOList.add(
+        UserGroupDTO.builder().notificationConfigs(Arrays.asList(emailConfigDTO)).users(userIds).build());
+    List<String> emails = notificationSettingsService.getNotificationSettings(
+        NotificationChannelType.EMAIL, userGroupDTOList, ACCOUNT_ID);
+    assertEquals(Arrays.asList(EMAIL_ID_1), emails);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetNotificationSettingsWithDifferentChannelTypes() {
+    List<UserGroupDTO> userGroupDTOList =
+        Arrays.asList(UserGroupDTO.builder()
+                          .notificationConfigs(Arrays.asList(EmailConfigDTO.builder().groupEmail(EMAIL_ID_1).build()))
+                          .build());
+    List<String> emails = notificationSettingsService.getNotificationSettings(
+        NotificationChannelType.SLACK, userGroupDTOList, ACCOUNT_ID);
+    assertTrue(emails.isEmpty());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetNotificationSettingsWhenNotificationConfigsIsEmpty() {
+    List<UserGroupDTO> userGroupDTOList = Arrays.asList(UserGroupDTO.builder().build());
+    List<String> emails = notificationSettingsService.getNotificationSettings(
+        NotificationChannelType.EMAIL, userGroupDTOList, ACCOUNT_ID);
+    assertTrue(emails.isEmpty());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetNotificationSettingsWhenSettingIsNotPresent() {
+    List<UserGroupDTO> userGroupDTOList =
+        Arrays.asList(UserGroupDTO.builder().notificationConfigs(new ArrayList<>()).build());
+    List<String> emails = notificationSettingsService.getNotificationSettings(
+        NotificationChannelType.EMAIL, userGroupDTOList, ACCOUNT_ID);
+    assertTrue(emails.isEmpty());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetNotificationSettingsForSlack() {
+    List<UserGroupDTO> userGroupDTOList = Arrays.asList(
+        UserGroupDTO.builder()
+            .notificationConfigs(Arrays.asList(SlackConfigDTO.builder().slackWebhookUrl(SLACK_WEBHOOK_URL).build()))
+            .build());
+    List<String> slackWebhooks = notificationSettingsService.getNotificationSettings(
+        NotificationChannelType.SLACK, userGroupDTOList, ACCOUNT_ID);
+    assertEquals(Arrays.asList(SLACK_WEBHOOK_URL), slackWebhooks);
   }
 }

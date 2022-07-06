@@ -288,6 +288,7 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
     boolean hasAllAccess = false;
     if (hasAllProdRestrictions) {
       if (!hasAllProdPermissions) {
+        log.info("The user doesn't has all prod permissions");
         return false;
       }
       hasAllAccess = true;
@@ -295,6 +296,7 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
 
     if (hasAllNonProdRestrictions) {
       if (!hasAllNonProdPermissions) {
+        log.info("The user doesn't has all non prod permissions");
         return false;
       }
       hasAllAccess = true;
@@ -892,6 +894,7 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
     }
 
     if (hasNoRestrictions(restrictionsFromUserPermissions)) {
+      log.info("The user has no restrictions {}", restrictionsFromUserPermissions);
       return false;
     }
 
@@ -925,12 +928,14 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
       Map<String, Set<String>> appEnvMap, UsageRestrictions parentRestrictions,
       Map<String, Set<String>> parentAppEnvMap) {
     if (isEmpty(appEnvMap)) {
+      log.info("The appEnvMap {} is empty", appEnvMap);
       return hasAllCommonEnv(usageRestrictions, parentRestrictions);
     }
     UsageRestrictions entityUsageRestrictionsFinal = usageRestrictions;
     return appEnvMap.entrySet().stream().allMatch((Entry<String, Set<String>> appEnvEntryOfEntity) -> {
       String appId = appEnvEntryOfEntity.getKey();
       if (!parentAppEnvMap.containsKey(appId)) {
+        log.info("The parentAppEnvMap {} doesn't contains the appId {}", parentAppEnvMap, appId);
         return false;
       }
       Set<String> envIdsFromRestrictions = appEnvEntryOfEntity.getValue();
@@ -939,6 +944,7 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
       }
       Set<String> envIdsFromUserPermissions = parentAppEnvMap.get(appId);
       if (isEmpty(envIdsFromUserPermissions)) {
+        log.info("The envIdsFromUserPermissions {} is empty", envIdsFromUserPermissions);
         return false;
       }
       return envIdsFromUserPermissions.containsAll(envIdsFromRestrictions);
@@ -1147,6 +1153,7 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
       EncryptedData encryptedData = secretManager.getSecretById(accountId, entityId);
 
       if (encryptedData == null) {
+        log.info("The entity {} of type {} is not editable as the encrypted data is null", entityId, entityType);
         return false;
       }
       return userHasPermissionsToChangeEntity(accountId, PermissionType.MANAGE_SECRETS,
@@ -1155,6 +1162,7 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
     } else if (EntityType.SECRETS_MANAGER.name().equals(entityType)) {
       SecretManagerConfig secretManagerConfig = secretManager.getSecretManager(accountId, entityId);
       if (secretManagerConfig == null) {
+        log.info("The secret manager config with id {} is not editable as it is null", entityId);
         return false;
       }
       return userHasPermissionsToChangeEntity(accountId, PermissionType.MANAGE_SECRET_MANAGERS,
@@ -1162,6 +1170,7 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
     } else {
       SettingAttribute settingAttribute = settingsService.get(entityId);
       if (settingAttribute == null || !accountId.equals(settingAttribute.getAccountId())) {
+        log.info("The setting Attribute with id {} is not editable as it is null", entityId);
         return false;
       }
       PermissionAttribute.PermissionType permissionType = settingServiceHelper.getPermissionType(settingAttribute);

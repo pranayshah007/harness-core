@@ -29,13 +29,16 @@ import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
+import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
-import io.harness.delegate.task.shell.SshCommandTaskParameters.SshCommandTaskParametersBuilder;
 import io.harness.delegate.task.shell.TailFilePatternDto;
+import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.NgCleanupCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
@@ -51,8 +54,10 @@ import io.harness.filestore.service.FileStoreService;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
@@ -81,18 +86,34 @@ public class SshCommandStepHelper extends CDStepHelper {
   @Inject private NGEncryptedDataService ngEncryptedDataService;
   @Inject private CDExpressionResolver cdExpressionResolver;
 
-  public SshCommandTaskParameters buildSshCommandTaskParameters(
-      @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters executeCommandStepParameters) {
+  public CommandTaskParameters buildCommandTaskParameters(
+      @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters commandStepParameters) {
+    ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+
+    switch (serviceOutcome.getType()) {
+      case ServiceSpecType.SSH:
+        return buildSshCommandTaskParameters(ambiance, commandStepParameters);
+      case ServiceSpecType.WINRM:
+        return buildWinRmTaskParameters(ambiance, commandStepParameters);
+      default:
+        throw new UnsupportedOperationException(
+            format("Unsupported service type: [%s] selected for command step", serviceOutcome.getType()));
+    }
+  }
+
+  private SshCommandTaskParameters buildSshCommandTaskParameters(
+      @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters commandStepParameters) {
     InfrastructureOutcome infrastructure = getInfrastructureOutcome(ambiance);
     Optional<ArtifactOutcome> artifactOutcome = resolveArtifactsOutcome(ambiance);
     Optional<ConfigFilesOutcome> configFilesOutcomeOptional = getConfigFilesOutcome(ambiance);
-    Boolean onDelegate = getBooleanParameterFieldValue(executeCommandStepParameters.onDelegate);
-    SshCommandTaskParametersBuilder<?, ?> builder = SshCommandTaskParameters.builder();
-    return builder.accountId(AmbianceUtils.getAccountId(ambiance))
+    Boolean onDelegate = getBooleanParameterFieldValue(commandStepParameters.onDelegate);
+    return SshCommandTaskParameters.builder()
+        .accountId(AmbianceUtils.getAccountId(ambiance))
         .executeOnDelegate(onDelegate)
         .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
-        .outputVariables(getOutputVars(executeCommandStepParameters.getOutputVariables()))
-        .environmentVariables(getEnvironmentVariables(executeCommandStepParameters.getEnvironmentVariables()))
+        .outputVariables(getOutputVars(commandStepParameters.getOutputVariables()))
+        .environmentVariables(getEnvironmentVariables(commandStepParameters.getEnvironmentVariables()))
         .sshInfraDelegateConfig(sshEntityHelper.getSshInfraDelegateConfig(infrastructure, ambiance))
         .artifactDelegateConfig(
             artifactOutcome.map(outcome -> sshEntityHelper.getArtifactDelegateConfigConfig(outcome, ambiance))
@@ -100,8 +121,32 @@ public class SshCommandStepHelper extends CDStepHelper {
         .fileDelegateConfig(
             configFilesOutcomeOptional.map(configFilesOutcome -> getFileDelegateConfig(ambiance, configFilesOutcome))
                 .orElse(null))
-        .commandUnits(mapCommandUnits(executeCommandStepParameters.getCommandUnits(), onDelegate))
-        .host(executeCommandStepParameters.getHost())
+        .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
+        .host(commandStepParameters.getHost())
+        .build();
+  }
+
+  private WinrmTaskParameters buildWinRmTaskParameters(
+      @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters commandStepParameters) {
+    InfrastructureOutcome infrastructure = getInfrastructureOutcome(ambiance);
+    Optional<ArtifactOutcome> artifactOutcome = resolveArtifactsOutcome(ambiance);
+    Optional<ConfigFilesOutcome> configFilesOutcomeOptional = getConfigFilesOutcome(ambiance);
+    Boolean onDelegate = getBooleanParameterFieldValue(commandStepParameters.onDelegate);
+    return WinrmTaskParameters.builder()
+        .accountId(AmbianceUtils.getAccountId(ambiance))
+        .executeOnDelegate(onDelegate)
+        .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
+        .outputVariables(getOutputVars(commandStepParameters.getOutputVariables()))
+        .environmentVariables(getEnvironmentVariables(commandStepParameters.getEnvironmentVariables()))
+        .winRmInfraDelegateConfig(sshEntityHelper.getWinRmInfraDelegateConfig(infrastructure, ambiance))
+        .artifactDelegateConfig(
+            artifactOutcome.map(outcome -> sshEntityHelper.getArtifactDelegateConfigConfig(outcome, ambiance))
+                .orElse(null))
+        .fileDelegateConfig(
+            configFilesOutcomeOptional.map(configFilesOutcome -> getFileDelegateConfig(ambiance, configFilesOutcome))
+                .orElse(null))
+        .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
+        .host(commandStepParameters.getHost())
         .build();
   }
 

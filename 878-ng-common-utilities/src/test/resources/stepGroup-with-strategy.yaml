@@ -5,8 +5,8 @@ stepGroup:
       - parallel:
           - step:
               type: Http
-              name: <+strategy.totalIterations>
-              identifier: <+strategy.currentIteration>
+              name: <+strategy.iterations>
+              identifier: <+strategy.iteration>
               strategy:
                 parallelism: 4
               spec:
@@ -27,8 +27,8 @@ stepGroup:
               timeout: 10s
       - step:
           type: Http
-          name: <+strategy.totalIterations>
-          identifier: <+strategy.currentIteration>
+          name: <+strategy.iterations>
+          identifier: <+strategy.iteration>
           strategy:
             parallelism: 4
           spec:

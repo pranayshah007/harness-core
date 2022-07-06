@@ -9,8 +9,6 @@ package io.harness.pms.ngpipeline.inputset.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.removeRuntimeInputFromYaml;
-import static io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType.INPUT_SET;
-import static io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType.OVERLAY_INPUT_SET;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static java.lang.Long.parseLong;
@@ -34,6 +32,7 @@ import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.gitsync.interceptor.GitImportInfoDTO;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -65,6 +64,7 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
 import io.harness.pms.pipeline.PipelineResourceConstants;
+import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.utils.PageUtils;
 
@@ -84,7 +84,6 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -138,6 +137,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Slf4j
 public class InputSetResourcePMS {
   private final PMSInputSetService pmsInputSetService;
+  private final PMSPipelineService pipelineService;
+  private final GitSyncSdkService gitSyncSdkService;
   private final ValidateAndMergeHelper validateAndMergeHelper;
 
   @GET
@@ -474,27 +475,14 @@ public class InputSetResourcePMS {
         pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
     Criteria criteria = PMSInputSetFilterHelper.createCriteriaForGetList(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetListType, searchTerm, false);
-
     Pageable pageRequest =
         PageUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, InputSetEntityKeys.createdAt));
+    Page<InputSetEntity> inputSetEntities =
+        pmsInputSetService.list(criteria, pageRequest, accountId, orgIdentifier, projectIdentifier);
 
     Page<InputSetSummaryResponseDTOPMS> inputSetList =
-        pmsInputSetService.list(criteria, pageRequest, accountId, orgIdentifier, projectIdentifier)
-            .map(inputSetEntity -> {
-              InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS = null;
-              if (inputSetEntity.getIsInvalid() && inputSetEntity.getInputSetEntityType() == INPUT_SET) {
-                inputSetErrorWrapperDTOPMS = validateAndMergeHelper.validateInputSet(accountId, orgIdentifier,
-                    projectIdentifier, pipelineIdentifier, inputSetEntity.getYaml(), gitEntityBasicInfo.getBranch(),
-                    gitEntityBasicInfo.getYamlGitConfigId());
-              }
-              Map<String, String> overlaySetErrorDetails = null;
-              if (inputSetEntity.getIsInvalid() && inputSetEntity.getInputSetEntityType() == OVERLAY_INPUT_SET) {
-                overlaySetErrorDetails = validateAndMergeHelper.validateOverlayInputSet(
-                    accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetEntity.getYaml());
-              }
-              return PMSInputSetElementMapper.toInputSetSummaryResponseDTOPMS(
-                  inputSetEntity, inputSetErrorWrapperDTOPMS, overlaySetErrorDetails);
-            });
+        PMSInputSetElementMapper.toInputSetSummaryResponseDTOPMSList(pmsInputSetService, pipelineService,
+            gitSyncSdkService, accountId, orgIdentifier, projectIdentifier, inputSetEntities);
     return ResponseDTO.newResponse(getNGPageResponse(inputSetList));
   }
 

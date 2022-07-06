@@ -108,6 +108,17 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
     return currentChild < maxConcurrency;
   }
 
+  /**
+   * (100, 10)
+   *
+   * @param ambiance
+   * @param parentNodeExecutionId
+   * @param childNodeExecutionId
+   * @param childNodeId
+   * @param strategyMetadata
+   * @param maxConcurrency
+   * @param initiateMode
+   */
   private void createAndStart(Ambiance ambiance, String parentNodeExecutionId, String childNodeExecutionId,
       String childNodeId, StrategyMetadata strategyMetadata, int maxConcurrency, InitiateMode initiateMode) {
     initiateNodeHelper.publishEvent(ambiance, childNodeId, childNodeExecutionId, strategyMetadata, initiateMode);

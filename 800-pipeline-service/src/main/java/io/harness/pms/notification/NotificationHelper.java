@@ -25,6 +25,7 @@ import io.harness.notification.bean.NotificationRules;
 import io.harness.notification.bean.PipelineEvent;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.notificationclient.NotificationClient;
+import io.harness.pms.approval.notification.ApprovalNotificationHandlerImpl;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -97,7 +98,7 @@ public class NotificationHelper {
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       sendNotificationInternal(notificationRules, pipelineEventType, identifier, accountId,
           constructTemplateData(
-              ambiance, pipelineEventType, nodeExecution, identifier, updatedAt, orgIdentifier, projectIdentifier),
+              ambiance, pipelineEventType, nodeExecution, updatedAt, orgIdentifier, projectIdentifier),
           orgIdentifier, projectIdentifier, ambiance);
     } catch (Exception ex) {
       log.error("Exception occurred in sendNotificationInternal", ex);
@@ -164,13 +165,17 @@ public class NotificationHelper {
     return pipelineExpressionHelper.generateUrl(ambiance);
   }
 
+  public String generatePipelineUrl(Ambiance ambiance) {
+    return pipelineExpressionHelper.generatePipelineUrl(ambiance);
+  }
+
   String obtainYaml(String planExecutionId) {
     Optional<PlanExecutionMetadata> optional = planExecutionMetadataService.findByPlanExecutionId(planExecutionId);
     return optional.map(PlanExecutionMetadata::getYaml).orElse(null);
   }
 
   private Map<String, String> constructTemplateData(Ambiance ambiance, PipelineEventType pipelineEventType,
-      NodeExecution nodeExecution, String identifier, Long updatedAt, String orgIdentifier, String projectIdentifier) {
+      NodeExecution nodeExecution, Long updatedAt, String orgIdentifier, String projectIdentifier) {
     Map<String, String> templateData = new HashMap<>();
     PlanExecution planExecution = planExecutionService.get(ambiance.getPlanExecutionId());
     String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
@@ -180,6 +185,7 @@ public class NotificationHelper {
     String startDate;
     String endDate;
     String stepIdentifier = "";
+    String stepName = "";
     String imageStatus = PipelineNotificationUtils.getStatusForImage(planExecution.getStatus());
     String themeColor = PipelineNotificationUtils.getThemeColor(planExecution.getStatus());
     String nodeStatus = PipelineNotificationUtils.getNodeStatus(planExecution.getStatus());
@@ -193,6 +199,7 @@ public class NotificationHelper {
       startDate = new Date(startTs * 1000).toString();
       endDate = new Date(endTs * 1000).toString();
       stepIdentifier = AmbianceUtils.obtainStepIdentifier(nodeExecution.getAmbiance());
+      stepName = nodeExecution.getName();
     } else {
       userName = ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getIdentifier();
       startTs = planExecution.getStartTs() / 1000;
@@ -210,12 +217,15 @@ public class NotificationHelper {
     templateData.put("EVENT_TYPE", pipelineEventType.getDisplayName());
     templateData.put("PIPELINE", pipelineId);
     templateData.put("PIPELINE_STEP", stepIdentifier);
+    templateData.put("PIPELINE_STEP_NAME", stepName);
     templateData.put("START_TS_SECS", String.valueOf(startTs));
     templateData.put("END_TS_SECS", String.valueOf(endTs));
     templateData.put("START_DATE", startDate);
     templateData.put("END_DATE", endDate);
+    templateData.put("DURATION_READABLE", ApprovalNotificationHandlerImpl.formatDuration((endTs - startTs) * 1000));
     templateData.put("DURATION", String.valueOf(endTs - startTs));
     templateData.put("URL", generateUrl(ambiance));
+    templateData.put("PIPELINE_URL", generatePipelineUrl(ambiance));
     templateData.put("OUTER_DIV", PipelineNotificationConstants.OUTER_DIV);
     templateData.put("IMAGE_STATUS", imageStatus);
     templateData.put("COLOR", themeColor);

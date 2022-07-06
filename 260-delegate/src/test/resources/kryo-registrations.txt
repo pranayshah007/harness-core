@@ -1560,6 +1560,8 @@
 19701:io.harness.delegate.task.k8s.OpenshiftManifestDelegateConfig
 19702:io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig
 19703:io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig
+19704:io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse
+19705:io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest
 19800:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType
 19801:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO
 19802:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoCredentialsDTO
@@ -1714,6 +1716,8 @@
 55332:io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSwapSlotsRequest
 55333:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSwapSlotsResponseNG
 55334:io.harness.delegate.task.ssh.config.SecretConfigFile
+55335:io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig
+55336:io.harness.delegate.task.shell.WinrmTaskParameters
 55401:io.harness.delegate.beans.SerializedResponseData
 55402:software.wings.beans.SerializationFormat
 55403:io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse

@@ -8,6 +8,7 @@
 package io.harness.serializer.kryo;
 
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSetWrapper;
 import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSets;
@@ -25,6 +26,7 @@ import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.ConfigFileWrapper;
@@ -123,6 +125,7 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(StoreConfig.class, 8022);
     kryo.register(KustomizePatchesManifestOutcome.class, 12548);
     kryo.register(DockerArtifactOutcome.class, 8007);
+    kryo.register(S3ArtifactOutcome.class, 8013);
     kryo.register(GcrArtifactOutcome.class, 390006);
     kryo.register(EcrArtifactOutcome.class, 390007);
     kryo.register(ServerlessAwsLambdaServiceSpec.class, 12576);
@@ -192,5 +195,6 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(OciHelmChartStoreConfigWrapper.class, 12597);
     kryo.register(ReleaseRepoManifest.class, 12598);
     kryo.register(AzureWebAppServiceSpec.class, 12599);
+    kryo.register(AmazonS3ArtifactConfig.class, 12569);
   }
 }

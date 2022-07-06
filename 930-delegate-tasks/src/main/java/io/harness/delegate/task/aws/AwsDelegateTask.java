@@ -86,6 +86,12 @@ public class AwsDelegateTask extends AbstractDelegateRunnableTask {
         return handleValidateTask(awsTaskParams, encryptionDetails);
       case LIST_S3_BUCKETS:
         return awsS3DelegateTaskHelper.getS3Buckets(awsTaskParams);
+      case GET_BUILD:
+        return awsS3DelegateTaskHelper.getBuild(awsTaskParams);
+      case GET_BUILDS:
+        return awsS3DelegateTaskHelper.getBuilds(awsTaskParams);
+      case LAST_SUCCESSFUL_BUILD:
+        return awsS3DelegateTaskHelper.getLastSuccessfulBuild(awsTaskParams);
       case LIST_IAM_ROLES:
         return awsIAMDelegateTaskHelper.getIAMRoleList(awsTaskParams);
       case CF_LIST_PARAMS:

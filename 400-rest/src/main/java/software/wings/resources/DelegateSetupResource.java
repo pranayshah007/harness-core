@@ -39,6 +39,7 @@ import io.harness.data.validator.Trimmed;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateApproval;
 import io.harness.delegate.beans.DelegateApprovalResponse;
+import io.harness.delegate.beans.DelegateSelector;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateSizeDetails;
 import io.harness.delegate.beans.DelegateTags;
@@ -373,6 +374,22 @@ public class DelegateSetupResource {
 
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       return new RestResponse<>(delegateService.getAllDelegateSelectorsUpTheHierarchy(accountId, orgId, projectId));
+    }
+  }
+
+  @GET
+  @Path("delegate-selectors-up-the-hierarchy-v2")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = LOGGED_IN)
+  public RestResponse<List<DelegateSelector>> delegateSelectorsUpTheHierarchyV2(@Context HttpServletRequest request,
+      @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("orgId") String orgId,
+      @QueryParam("projectId") String projectId) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
+
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      return new RestResponse<>(delegateService.getAllDelegateSelectorsUpTheHierarchyV2(accountId, orgId, projectId));
     }
   }
 

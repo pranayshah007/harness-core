@@ -29,6 +29,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.beans.PageResponse;
@@ -49,6 +50,7 @@ import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateRespons
 import io.harness.pms.ngpipeline.inputset.exceptions.InvalidInputSetException;
 import io.harness.pms.ngpipeline.inputset.exceptions.InvalidOverlayInputSetException;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
+import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
 import io.harness.rule.Owner;
@@ -66,16 +68,20 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.support.PageableExecutionUtils;
 
 @OwnedBy(PIPELINE)
+@PrepareForTest({InputSetValidationHelper.class})
 public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   InputSetResourcePMS inputSetResourcePMS;
   @Mock PMSInputSetService pmsInputSetService;
   @Mock ValidateAndMergeHelper validateAndMergeHelper;
+  @Mock GitSyncSdkService gitSyncSdkService;
 
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_IDENTIFIER = "orgId";
@@ -107,7 +113,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
-    inputSetResourcePMS = new InputSetResourcePMS(pmsInputSetService, validateAndMergeHelper);
+    inputSetResourcePMS = new InputSetResourcePMS(pmsInputSetService, null, gitSyncSdkService, validateAndMergeHelper);
 
     String inputSetFilename = "inputSet1.yml";
     inputSetYaml = readFile(inputSetFilename);
@@ -414,10 +420,13 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testListInputSetsForPipeline() {
+    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     doReturn(PageableExecutionUtils.getPage(Collections.singletonList(inputSetEntity),
                  PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, InputSetEntityKeys.createdAt)), () -> 1L))
         .when(pmsInputSetService)
         .list(any(), any(), eq(ACCOUNT_ID), eq(ORG_IDENTIFIER), eq(PROJ_IDENTIFIER));
+    Mockito.mockStatic(InputSetValidationHelper.class);
+
     ResponseDTO<PageResponse<InputSetSummaryResponseDTOPMS>> responseDTO = inputSetResourcePMS.listInputSetsForPipeline(
         0, 10, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, null);
     assertEquals(responseDTO.getStatus(), Status.SUCCESS);

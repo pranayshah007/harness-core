@@ -119,6 +119,7 @@ import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfileParams;
 import io.harness.delegate.beans.DelegateRegisterResponse;
 import io.harness.delegate.beans.DelegateScripts;
+import io.harness.delegate.beans.DelegateSelector;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateSize;
 import io.harness.delegate.beans.DelegateSizeDetails;
@@ -2986,6 +2987,61 @@ public class DelegateServiceTest extends WingsBaseTest {
     final Set<String> actual = delegateService.getAllDelegateSelectorsUpTheHierarchy(accountId, orgId, projectId);
     assertThat(actual).containsExactlyInAnyOrder(
         "acctgrp", "orggrp", "projectgrp", "custom-acct", "custom-org", "custom-proj");
+  }
+
+  @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void shouldGetAllDelegateSelectorsInSortedOrder() {
+    String accountId = generateUuid();
+
+    final DelegateGroup acctGrpPartiallyConnected =
+        DelegateGroup.builder().name("acctGrpPartiallyConnected").accountId(accountId).ng(true).build();
+    final DelegateGroup acctGrpDisconnected =
+        DelegateGroup.builder().name("acctGrpDisconnected").accountId(accountId).ng(true).build();
+    final DelegateGroup acctGrpConnected =
+        DelegateGroup.builder().name("acctGrpConnected").accountId(accountId).ng(true).build();
+
+    persistence.saveBatch(Arrays.asList(acctGrpPartiallyConnected, acctGrpDisconnected, acctGrpConnected));
+
+    // Add delegates to acctGrpPartiallyConnected group.
+    Delegate delegate1 = createDelegateBuilder().build();
+    delegate1.setDelegateGroupId(acctGrpPartiallyConnected.getUuid());
+    delegate1.setLastHeartBeat(System.currentTimeMillis());
+    delegate1.setAccountId(accountId);
+    delegate1.setNg(true);
+    persistence.save(delegate1);
+
+    Delegate delegate2 = createDelegateBuilder().build();
+    delegate2.setDelegateGroupId(acctGrpPartiallyConnected.getUuid());
+    delegate2.setLastHeartBeat(0);
+    delegate2.setAccountId(accountId);
+    delegate2.setNg(true);
+    persistence.save(delegate2);
+
+    // Add delegates to acctGrpDisconnected group.
+    Delegate delegate3 = createDelegateBuilder().build();
+    delegate3.setDelegateGroupId(acctGrpDisconnected.getUuid());
+    delegate3.setLastHeartBeat(0);
+    delegate3.setAccountId(accountId);
+    delegate3.setNg(true);
+    persistence.save(delegate3);
+
+    // Add delegates to acctGrpConnected group
+    Delegate delegate4 = createDelegateBuilder().build();
+    delegate4.setDelegateGroupId(acctGrpConnected.getUuid());
+    delegate4.setLastHeartBeat(System.currentTimeMillis());
+    delegate4.setAccountId(accountId);
+    delegate4.setNg(true);
+    persistence.save(delegate4);
+
+    final List<DelegateSelector> delegateSelectors =
+        delegateService.getAllDelegateSelectorsUpTheHierarchyV2(accountId, null, null);
+
+    DelegateSelector expectedSelector1 = new DelegateSelector("acctgrpconnected", true);
+    DelegateSelector expectedSelector2 = new DelegateSelector("acctgrppartiallyconnected", true);
+    DelegateSelector expectedSelector3 = new DelegateSelector("acctgrpdisconnected", false);
+    assertThat(delegateSelectors).containsExactly(expectedSelector1, expectedSelector2, expectedSelector3);
   }
 
   @Test

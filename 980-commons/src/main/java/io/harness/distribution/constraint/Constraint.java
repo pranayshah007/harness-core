@@ -12,6 +12,9 @@ import static io.harness.distribution.constraint.Constraint.Strategy.FIFO;
 import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
 import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
 import static io.harness.distribution.constraint.Consumer.State.REJECTED;
+import static io.harness.distribution.constraint.ConsumerContextUtils.getReleaseEntityId;
+import static io.harness.distribution.constraint.ConsumerContextUtils.getReleaseEntityType;
+import static io.harness.distribution.constraint.ConsumerContextUtils.hasContext;
 import static io.harness.govern.Switch.unhandled;
 
 import static java.lang.String.format;
@@ -20,11 +23,13 @@ import io.harness.distribution.constraint.Consumer.State;
 import io.harness.distribution.constraint.RunnableConsumers.RunnableConsumersBuilder;
 import io.harness.threading.Morpheus;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
 
@@ -189,6 +194,9 @@ public class Constraint {
       if (consumer.getState() != BLOCKED) {
         continue;
       }
+      if (consumerIds.contains(consumer.getId())) {
+        continue;
+      }
 
       if (!enoughPermits(consumer.getPermits(), usedPermits)) {
         final Strategy strategy = getSpec().getStrategy();
@@ -203,8 +211,30 @@ public class Constraint {
 
       consumerIds.add(consumer.getId());
       usedPermits += consumer.getPermits();
+
+      // WHEN ONE CONSUMER IS CHOOSE TO RUN, SEARCH FOR OTHERS CONSUMERS WITH THE SAME resourceUnit, releaseEntityType
+      // AND releaseEntityId TO NOTIFY AND START THEM. IN THE NEXT ITERATIONS SKIP IF ALREADY ADDED TO FINAL RESULT.
+      consumerIds.addAll(searchRelated(consumers, consumer));
     }
 
     return builder.consumerIds(consumerIds).build();
+  }
+
+  /**
+   * Search for consumers with the same releaseEntityType and releaseEntityId and return them.
+   */
+  @VisibleForTesting
+  List<ConsumerId> searchRelated(List<Consumer> consumers, Consumer consumer) {
+    return consumers.stream()
+        .filter(c
+            -> isDifferentId(c, consumer) && hasContext(c) && hasContext(consumer)
+                && getReleaseEntityType(c).equals(getReleaseEntityType(consumer))
+                && getReleaseEntityId(c).equals(getReleaseEntityId(consumer)))
+        .map(Consumer::getId)
+        .collect(Collectors.toList());
+  }
+
+  private boolean isDifferentId(Consumer c1, Consumer c2) {
+    return !c1.getId().equals(c2.getId());
   }
 }

@@ -9,21 +9,18 @@ package io.harness.cdng.azure.webapp;
 
 import static io.harness.azure.model.AzureConstants.SLOT_TRAFFIC_PERCENTAGE;
 import static io.harness.azure.model.AzureConstants.TRAFFIC_WEIGHT_IN_PERCENTAGE_INVALID_ERROR_MSG;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.CDStepHelper;
-import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppTrafficShiftRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppTaskResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -37,16 +34,18 @@ import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
 
+import com.google.inject.Inject;
 import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class AzureWebAppTrafficShiftStep extends AbstractAzureWebAppStep {
+public class AzureWebAppTrafficShiftStep extends TaskExecutableWithRollbackAndRbac<AzureWebAppTaskResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AZURE_TRAFFIC_SHIFT.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
+  @Inject private AzureWebAppStepHelper azureWebAppStepHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -69,20 +68,11 @@ public class AzureWebAppTrafficShiftStep extends AbstractAzureWebAppStep {
     AzureWebAppTrafficShiftRequest azureWebAppTrafficShiftRequest =
         AzureWebAppTrafficShiftRequest.builder()
             .trafficPercentage(trafficPercent)
-            .infrastructure(getAzureWebAppInfrastructure(ambiance))
+            .infrastructure(azureWebAppStepHelper.getInfraDelegateConfig(ambiance))
             .build();
 
-    TaskData taskData = TaskData.builder()
-                            .async(true)
-                            .taskType(TaskType.AZURE_WEB_APP_TASK_NG.name())
-                            .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
-                            .parameters(new Object[] {azureWebAppTrafficShiftRequest})
-                            .build();
-
-    return prepareCDTaskRequest(ambiance, taskData, kryoSerializer, Collections.singletonList(SLOT_TRAFFIC_PERCENTAGE),
-        TaskType.AZURE_WEB_APP_TASK_NG.getDisplayName(),
-        TaskSelectorYaml.toTaskSelector(azureWebAppTrafficShiftStepParameters.getDelegateSelectors()),
-        stepHelper.getEnvironmentType(ambiance));
+    return azureWebAppStepHelper.prepareTaskRequest(stepParameters, ambiance, azureWebAppTrafficShiftRequest,
+        TaskType.AZURE_WEB_APP_TASK_NG, Collections.singletonList(SLOT_TRAFFIC_PERCENTAGE));
   }
 
   @Override

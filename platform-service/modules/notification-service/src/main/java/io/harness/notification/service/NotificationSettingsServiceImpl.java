@@ -9,6 +9,7 @@ package io.harness.notification.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.EngineExpressionEvaluator.EXPR_END;
 import static io.harness.expression.EngineExpressionEvaluator.EXPR_START;
 import static io.harness.remote.client.NGRestUtils.getResponse;
@@ -108,7 +109,8 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
     return userGroupDTOS;
   }
 
-  private List<String> getEmailsForUserIds(List<String> userIds, String accountId) {
+  @VisibleForTesting
+  List<String> getEmailsForUserIds(List<String> userIds, String accountId) {
     if (isEmpty(userIds)) {
       return new ArrayList<>();
     }
@@ -138,14 +140,20 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
     return getNotificationSettings(notificationChannelType, userGroups, accountId);
   }
 
-  private List<String> getNotificationSettings(
+  @VisibleForTesting
+  List<String> getNotificationSettings(
       NotificationChannelType notificationChannelType, List<UserGroupDTO> userGroups, String accountId) {
     Set<String> notificationSettings = new HashSet<>();
     for (UserGroupDTO userGroupDTO : userGroups) {
-      for (NotificationSettingConfigDTO notificationSettingConfigDTO : userGroupDTO.getNotificationConfigs()) {
-        if (notificationSettingConfigDTO.getType() == notificationChannelType
-            && notificationSettingConfigDTO.getSetting().isPresent()) {
-          notificationSettings.add(notificationSettingConfigDTO.getSetting().get());
+      if (userGroupDTO.getNotificationConfigs() != null && isNotEmpty(userGroupDTO.getNotificationConfigs())) {
+        for (NotificationSettingConfigDTO notificationSettingConfigDTO : userGroupDTO.getNotificationConfigs()) {
+          if (notificationSettingConfigDTO.getType().equals(notificationChannelType)) {
+            if (NotificationChannelType.EMAIL.equals(notificationChannelType)) {
+              notificationSettings.addAll(getEmailsForUserIds(userGroupDTO.getUsers(), accountId));
+            } else if (notificationSettingConfigDTO.getSetting().isPresent()) {
+              notificationSettings.add(notificationSettingConfigDTO.getSetting().get());
+            }
+          }
         }
       }
     }

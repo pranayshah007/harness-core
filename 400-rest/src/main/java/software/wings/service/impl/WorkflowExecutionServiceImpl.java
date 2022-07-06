@@ -5203,6 +5203,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             .filter(StateExecutionInstanceKeys.appId, appId)
             .filter(StateExecutionInstanceKeys.executionUuid, executionUuid)
             .filter(StateExecutionInstanceKeys.stateType, ARTIFACT_COLLECTION.name())
+            .filter(StateExecutionInstanceKeys.status, SUCCESS)
             .asList();
 
     if (isEmpty(allStateExecutionInstances)) {
@@ -5217,7 +5218,14 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
       AppManifestCollectionExecutionData executionData =
           (AppManifestCollectionExecutionData) stateExecutionInstance.fetchStateExecutionData();
-      helmCharts.add(helmChartService.get(appId, executionData.getChartId()));
+      if (EmptyPredicate.isNotEmpty(executionData.getChartId())) {
+        HelmChart helmChart = helmChartService.get(appId, executionData.getChartId());
+        if (helmChart != null) {
+          helmCharts.add(helmChart);
+        } else {
+          log.warn("StateExecutionData has helm chart id, but helm chart doesn't exist in database. Please check!");
+        }
+      }
     });
     return helmCharts;
   }
@@ -5229,6 +5237,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             .filter(StateExecutionInstanceKeys.appId, appId)
             .filter(StateExecutionInstanceKeys.executionUuid, executionUuid)
             .filter(StateExecutionInstanceKeys.stateType, ARTIFACT_COLLECTION.name())
+            .filter(StateExecutionInstanceKeys.status, SUCCESS)
             .asList();
 
     if (isEmpty(allStateExecutionInstances)) {
@@ -5243,7 +5252,14 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
       ArtifactCollectionExecutionData artifactCollectionExecutionData =
           (ArtifactCollectionExecutionData) stateExecutionInstance.fetchStateExecutionData();
-      artifacts.add(artifactService.get(artifactCollectionExecutionData.getArtifactId()));
+      if (EmptyPredicate.isNotEmpty(artifactCollectionExecutionData.getArtifactId())) {
+        Artifact artifact = artifactService.get(artifactCollectionExecutionData.getArtifactId());
+        if (artifact != null) {
+          artifacts.add(artifact);
+        } else {
+          log.warn("StateExecutionData has artifact id, but artifact doesn't exist in database. Please check!");
+        }
+      }
     });
     return artifacts;
   }

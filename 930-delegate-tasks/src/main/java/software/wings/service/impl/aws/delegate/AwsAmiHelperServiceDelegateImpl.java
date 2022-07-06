@@ -16,6 +16,7 @@ import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
+import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
@@ -586,6 +587,7 @@ public class AwsAmiHelperServiceDelegateImpl
   }
 
   private void assignMinTrafficWeightToNewAsg(AwsAmiTrafficShiftAlbSwitchRouteRequest request) {
+    notNullCheck("Did not find any valid target group tuple", request.getLbDetails());
     ExecutionLogCallback logCallback =
         getLogCallBack(request.getAccountId(), request.getAppId(), request.getActivityId(), request.getCommandName());
     awsElbHelperServiceDelegate.updateRulesForAlbTrafficShift(request.getAwsConfig(), request.getRegion(),

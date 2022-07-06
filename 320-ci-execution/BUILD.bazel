@@ -424,6 +424,7 @@ test_deps = [
     "@maven//:org_assertj_assertj_core",
     "@maven//:org_mockito_mockito_core",
     "@maven//:org_mockito_mockito_inline",
+    "@maven//:org_powermock_powermock_reflect",
     "@maven//:org_mongodb_morphia_morphia",
 ]
 

@@ -4049,6 +4049,7 @@
       "type": "object",
       "required": [
         "identifier",
+        "name",
         "steps"
       ],
       "properties": {

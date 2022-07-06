@@ -82,6 +82,7 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
+import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.TriggerType;
@@ -131,6 +132,14 @@ public class IntegrationStageUtils {
   public StepElementConfig getStepElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
     try {
       return YamlUtils.read(executionWrapperConfig.getStep().toString(), StepElementConfig.class);
+    } catch (Exception ex) {
+      throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
+    }
+  }
+
+  public StepGroupElementConfig getStepGroupElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
+    try {
+      return YamlUtils.read(executionWrapperConfig.getStepGroup().toString(), StepGroupElementConfig.class);
     } catch (Exception ex) {
       throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
     }
@@ -388,12 +397,16 @@ public class IntegrationStageUtils {
         continue;
       }
 
-      if (executionWrapper.getStep() != null) {
+      if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
         stepElementConfigs.add(getStepElementConfig(executionWrapper));
-      } else if (executionWrapper.getParallel() != null) {
+      } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
         ParallelStepElementConfig parallelStepElementConfig = getParallelStepElementConfig(executionWrapper);
         List<StepElementConfig> fromParallel = getAllSteps(parallelStepElementConfig.getSections());
         stepElementConfigs.addAll(fromParallel);
+      } else if (executionWrapper.getStepGroup() != null && !executionWrapper.getStepGroup().isNull()) {
+        StepGroupElementConfig stepGroupElementConfig = getStepGroupElementConfig(executionWrapper);
+        List<StepElementConfig> fromStepGroup = getAllSteps(stepGroupElementConfig.getSteps());
+        stepElementConfigs.addAll(fromStepGroup);
       }
     }
     return stepElementConfigs;
@@ -546,9 +559,9 @@ public class IntegrationStageUtils {
     return resolveOSType(k8sDirectInfraYaml.getSpec().getOs());
   }
 
-  public List<String> getStageConnectorRefs(IntegrationStageConfig integrationStageConfig) {
+  public ArrayList<String> populateConnectorIdentifiers(List<ExecutionWrapperConfig> wrappers) {
     ArrayList<String> connectorIdentifiers = new ArrayList<>();
-    for (ExecutionWrapperConfig executionWrapper : integrationStageConfig.getExecution().getSteps()) {
+    for (ExecutionWrapperConfig executionWrapper : wrappers) {
       if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
         StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
         String identifier = getConnectorIdentifier(stepElementConfig);
@@ -559,20 +572,30 @@ public class IntegrationStageUtils {
         ParallelStepElementConfig parallelStepElementConfig =
             IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
         if (isNotEmpty(parallelStepElementConfig.getSections())) {
-          for (ExecutionWrapperConfig executionWrapperInParallel : parallelStepElementConfig.getSections()) {
-            if (executionWrapperInParallel.getStep() == null || executionWrapperInParallel.getStep().isNull()) {
-              continue;
-            }
-            StepElementConfig stepElementConfig =
-                IntegrationStageUtils.getStepElementConfig(executionWrapperInParallel);
-            String identifier = getConnectorIdentifier(stepElementConfig);
-            if (identifier != null) {
-              connectorIdentifiers.add(identifier);
-            }
+          ArrayList<String> connectorIdentifiersForParallel =
+              populateConnectorIdentifiers(parallelStepElementConfig.getSections());
+          if (connectorIdentifiersForParallel != null && connectorIdentifiersForParallel.size() > 0) {
+            connectorIdentifiers.addAll(connectorIdentifiersForParallel);
+          }
+        }
+      } else {
+        StepGroupElementConfig stepGroupElementConfig =
+            IntegrationStageUtils.getStepGroupElementConfig(executionWrapper);
+        if (isNotEmpty(stepGroupElementConfig.getSteps())) {
+          ArrayList<String> connectorIdentifiersForStepGroup =
+              populateConnectorIdentifiers(stepGroupElementConfig.getSteps());
+          if (connectorIdentifiersForStepGroup != null && connectorIdentifiersForStepGroup.size() > 0) {
+            connectorIdentifiers.addAll(connectorIdentifiersForStepGroup);
           }
         }
       }
     }
+    return connectorIdentifiers;
+  }
+
+  public List<String> getStageConnectorRefs(IntegrationStageConfig integrationStageConfig) {
+    ArrayList<String> connectorIdentifiers = new ArrayList<>();
+    connectorIdentifiers = populateConnectorIdentifiers(integrationStageConfig.getExecution().getSteps());
 
     if (integrationStageConfig.getServiceDependencies() == null
         || isEmpty(integrationStageConfig.getServiceDependencies().getValue())) {

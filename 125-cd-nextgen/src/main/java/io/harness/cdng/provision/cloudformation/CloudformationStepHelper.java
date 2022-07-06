@@ -47,7 +47,9 @@ import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.cloudformation.CloudformationCommandUnit;
@@ -171,7 +173,7 @@ public class CloudformationStepHelper {
           getAwsS3FetchFileDelegateConfigs(ambiance, stepConfiguration);
       if (isNotEmpty(awsS3FetchFileDelegateConfigs)) {
         return getS3FetchFileTaskChainResponse(
-            ambiance, awsS3FetchFileDelegateConfigs, stepElementParameters, passThroughData);
+            ambiance, awsS3FetchFileDelegateConfigs, stepElementParameters, passThroughData, null);
       }
     }
     String templateBody = null;
@@ -194,7 +196,7 @@ public class CloudformationStepHelper {
     populatePassThroughData(passThroughData, templateBody, templateUrl, tags);
     CloudformationTaskNGParameters cloudformationTaskNGParameters = getCloudformationTaskNGParameters(ambiance,
         stepElementParameters, (AwsConnectorDTO) connectorDTO.getConnectorConfig(),
-        getInlineParameters(stepConfiguration), templateBody, templateUrl, tags);
+        getInlineParameters(stepConfiguration), templateBody, templateUrl, tags, null);
 
     return cloudformationStepExecutor.executeCloudformationTask(
         ambiance, stepElementParameters, cloudformationTaskNGParameters, passThroughData);
@@ -448,7 +450,7 @@ public class CloudformationStepHelper {
 
   private CloudformationTaskNGParameters getCloudformationTaskNGParameters(Ambiance ambiance,
       StepElementParameters stepElementParameters, AwsConnectorDTO awsConnectorDTO, Map<String, String> parameters,
-      String templateBody, String templateUrl, String tags) {
+      String templateBody, String templateUrl, String tags, CommandUnitsProgress commandUnitsProgress) {
     CloudformationCreateStackStepParameters cloudformationCreateStackStepParameters =
         (CloudformationCreateStackStepParameters) stepElementParameters.getSpec();
     CloudformationCreateStackStepConfigurationParameters stepConfiguration =
@@ -477,6 +479,7 @@ public class CloudformationStepHelper {
             .tags(tags)
             .stackStatusesToMarkAsSuccess(stackStatuses)
             .timeoutInMs(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), DEFAULT_TIMEOUT))
+            .commandUnitsProgress(commandUnitsProgress)
             .build();
     ExpressionEvaluatorUtils.updateExpressions(
         cloudformationTaskNGParameters, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
@@ -525,8 +528,9 @@ public class CloudformationStepHelper {
 
     populatePassThroughData(cloudFormationCreateStackPassThroughData, templateBody, templateUrl, tags);
     AwsConnectorDTO awsConnectorDTO = getAwsConnectorConfig(ambiance, stepConfiguration.getConnectorRef());
-    CloudformationTaskNGParameters cloudformationTaskNGParameters = getCloudformationTaskNGParameters(
-        ambiance, stepElementParameters, awsConnectorDTO, parameters, templateBody, templateUrl, tags);
+    CloudformationTaskNGParameters cloudformationTaskNGParameters =
+        getCloudformationTaskNGParameters(ambiance, stepElementParameters, awsConnectorDTO, parameters, templateBody,
+            templateUrl, tags, UnitProgressDataMapper.toCommandUnitsProgress(responseData.getUnitProgressData()));
 
     return cloudformationStepExecutor.executeCloudformationTask(
         ambiance, stepElementParameters, cloudformationTaskNGParameters, cloudFormationCreateStackPassThroughData);
@@ -557,7 +561,8 @@ public class CloudformationStepHelper {
             filesFromMultipleRepo.get(TAGS_FILE_IDENTIFIER).getFiles().get(0).getFileContent());
       }
       return getS3FetchFileTaskChainResponse(ambiance, getAwsS3FetchFileDelegateConfigs(ambiance, stepConfiguration),
-          stepElementParameters, cloudFormationCreateStackPassThroughData);
+          stepElementParameters, cloudFormationCreateStackPassThroughData,
+          UnitProgressDataMapper.toCommandUnitsProgress(responseData.getUnitProgressData()));
     }
 
     Map<String, String> parameters =
@@ -590,8 +595,9 @@ public class CloudformationStepHelper {
 
     populatePassThroughData(cloudFormationCreateStackPassThroughData, templateBody, templateUrl, tags);
     AwsConnectorDTO awsConnectorDTO = getAwsConnectorConfig(ambiance, stepConfiguration.getConnectorRef());
-    CloudformationTaskNGParameters cloudformationTaskNGParameters = getCloudformationTaskNGParameters(
-        ambiance, stepElementParameters, awsConnectorDTO, parameters, templateBody, templateUrl, tags);
+    CloudformationTaskNGParameters cloudformationTaskNGParameters =
+        getCloudformationTaskNGParameters(ambiance, stepElementParameters, awsConnectorDTO, parameters, templateBody,
+            templateUrl, tags, UnitProgressDataMapper.toCommandUnitsProgress(responseData.getUnitProgressData()));
 
     return cloudformationStepExecutor.executeCloudformationTask(
         ambiance, stepElementParameters, cloudformationTaskNGParameters, cloudFormationCreateStackPassThroughData);
@@ -711,11 +717,12 @@ public class CloudformationStepHelper {
 
   private TaskChainResponse getS3FetchFileTaskChainResponse(Ambiance ambiance,
       List<AwsS3FetchFileDelegateConfig> awsS3FetchFileDelegateConfigs, StepElementParameters stepElementParameters,
-      CloudFormationCreateStackPassThroughData passThroughData) {
+      CloudFormationCreateStackPassThroughData passThroughData, CommandUnitsProgress commandUnitsProgress) {
     AwsS3FetchFilesTaskParams awsS3FetchFilesTaskParams = AwsS3FetchFilesTaskParams.builder()
                                                               .fetchFileDelegateConfigs(awsS3FetchFileDelegateConfigs)
                                                               .shouldOpenLogStream(!passThroughData.hasGitFiles())
                                                               .closeLogStream(true)
+                                                              .commandUnitsProgress(commandUnitsProgress)
                                                               .build();
 
     final TaskData taskData = TaskData.builder()

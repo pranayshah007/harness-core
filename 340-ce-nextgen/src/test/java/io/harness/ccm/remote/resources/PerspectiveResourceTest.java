@@ -31,6 +31,7 @@ import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryReporter;
 
@@ -39,8 +40,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class PerspectiveResourceTest extends CategoryTest {
@@ -53,6 +54,9 @@ public class PerspectiveResourceTest extends CategoryTest {
   private BudgetService budgetService = mock(BudgetService.class);
   private CCMNotificationService notificationService = mock(CCMNotificationService.class);
   private AwsAccountFieldHelper awsAccountFieldHelper = mock(AwsAccountFieldHelper.class);
+  private TelemetryReporter telemetryReporter = mock(TelemetryReporter.class);
+  private TransactionTemplate transactionTemplate = mock(TransactionTemplate.class);
+  private OutboxService outboxService = mock(OutboxService.class);
   private PerspectiveResource perspectiveResource;
 
   private final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -65,8 +69,6 @@ public class PerspectiveResourceTest extends CategoryTest {
   private final String UNIFIED_TABLE_NAME = "unified";
 
   private CEView perspective;
-
-  @Mock private TelemetryReporter telemetryReporter;
 
   @Before
   public void setUp() throws IllegalAccessException, IOException {
@@ -87,7 +89,7 @@ public class PerspectiveResourceTest extends CategoryTest {
 
     perspectiveResource = new PerspectiveResource(ceViewService, ceReportScheduleService, viewCustomFieldService,
         bigQueryService, bigQueryHelper, budgetCostService, budgetService, notificationService, awsAccountFieldHelper,
-        telemetryReporter);
+        telemetryReporter, transactionTemplate, outboxService);
   }
 
   @Test

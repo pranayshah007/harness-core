@@ -43,7 +43,9 @@ import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
+import io.harness.request.RequestContextFilter;
 import io.harness.resource.VersionInfoResource;
 import io.harness.secret.ConfigSecretUtils;
 import io.harness.security.InternalApiAuthFilter;
@@ -176,6 +178,7 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
     injector.getInstance(HPersistence.class);
 
     registerAuthFilters(configuration, environment, injector);
+    registerRequestContextFilter(environment);
     registerJerseyFeatures(environment);
     registerCorsFilter(configuration, environment);
     registerResources(environment, injector);
@@ -186,9 +189,14 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
     registerScheduledJobs(injector);
     registerMigrations(injector);
     registerOasResource(configuration, environment, injector);
+    environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
     MaintenanceController.forceMaintenance(false);
     createConsumerThreadsToListenToEvents(environment, injector);
     initializeEnforcementSdk(injector);
+  }
+
+  private void registerRequestContextFilter(Environment environment) {
+    environment.jersey().register(new RequestContextFilter());
   }
 
   private void registerOasResource(CENextGenConfiguration configuration, Environment environment, Injector injector) {

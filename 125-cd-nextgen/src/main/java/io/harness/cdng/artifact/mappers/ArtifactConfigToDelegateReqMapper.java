@@ -12,6 +12,7 @@ import static software.wings.utils.RepositoryFormat.generic;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
@@ -33,6 +34,7 @@ import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -54,6 +56,19 @@ public class ArtifactConfigToDelegateReqMapper {
     }
     return ArtifactDelegateRequestUtils.getDockerDelegateRequest(artifactConfig.getImagePath().getValue(), tag,
         tagRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.DOCKER_REGISTRY);
+  }
+
+  public S3ArtifactDelegateRequest getAmazonS3DelegateRequest(AmazonS3ArtifactConfig artifactConfig,
+      AwsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+    // If both are empty, regex is latest among all S3 artifacts.
+    String filePathRegex =
+        artifactConfig.getFilePathRegex() != null ? artifactConfig.getFilePathRegex().getValue() : "";
+    String filePath = artifactConfig.getFilePath() != null ? artifactConfig.getFilePath().getValue() : "";
+    if (EmptyPredicate.isEmpty(filePath) && EmptyPredicate.isEmpty(filePathRegex)) {
+      filePathRegex = ACCEPT_ALL_REGEX;
+    }
+    return ArtifactDelegateRequestUtils.getAmazonS3DelegateRequest(artifactConfig.getBucketName().getValue(), filePath,
+        filePathRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.DOCKER_REGISTRY);
   }
 
   public GcrArtifactDelegateRequest getGcrDelegateRequest(GcrArtifactConfig gcrArtifactConfig,

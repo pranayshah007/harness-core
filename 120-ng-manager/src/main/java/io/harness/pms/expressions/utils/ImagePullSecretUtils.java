@@ -10,6 +10,7 @@ package io.harness.pms.expressions.utils;
 import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.awsconnector.AwsCredentialType.MANUAL_CREDENTIALS;
 import static io.harness.k8s.model.ImageDetails.ImageDetailsBuilder;
 
 import static java.lang.String.format;
@@ -24,6 +25,7 @@ import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
+import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -33,6 +35,7 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthT
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureAdditionalParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
@@ -102,6 +105,9 @@ public class ImagePullSecretUtils {
       case ArtifactSourceConstants.DOCKER_REGISTRY_NAME:
         getImageDetailsFromDocker((DockerArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
         break;
+      case ArtifactSourceConstants.AMAZON_S3_NAME:
+        getImageDetailsFromS3((S3ArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
+        break;
       case ArtifactSourceConstants.GCR_NAME:
         getImageDetailsFromGcr((GcrArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
         break;
@@ -130,6 +136,24 @@ public class ImagePullSecretUtils {
       return getArtifactRegistryCredentialsFromUsernameRef(imageDetails);
     }
     return "";
+  }
+
+  private void getImageDetailsFromS3(
+      S3ArtifactOutcome artifactOutcome, ImageDetailsBuilder imageDetailsBuilder, Ambiance ambiance) {
+    String connectorRef = artifactOutcome.getConnectorRef();
+    ConnectorInfoDTO connectorDTO = getConnector(connectorRef, ambiance);
+    AwsConnectorDTO connectorConfig = (AwsConnectorDTO) connectorDTO.getConnectorConfig();
+    if (connectorConfig.getCredential() != null && connectorConfig.getCredential().getConfig() != null
+        && connectorConfig.getCredential().getAwsCredentialType() == MANUAL_CREDENTIALS) {
+      AwsManualConfigSpecDTO credentials = (AwsManualConfigSpecDTO) connectorConfig.getCredential().getConfig();
+      String passwordRef = credentials.getSecretKeyRef().toSecretRefStringValue();
+      if (credentials.getAccessKeyRef() != null) {
+        imageDetailsBuilder.usernameRef(
+            getPasswordExpression(credentials.getAccessKeyRef().toSecretRefStringValue(), ambiance));
+      }
+      imageDetailsBuilder.username(credentials.getAccessKey());
+      imageDetailsBuilder.password(getPasswordExpression(passwordRef, ambiance));
+    }
   }
 
   public static String getArtifactRegistryCredentials(ImageDetails imageDetails) {
