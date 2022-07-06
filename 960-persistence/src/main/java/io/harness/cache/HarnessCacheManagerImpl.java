@@ -25,30 +25,48 @@ import javax.cache.expiry.ExpiryPolicy;
 @OwnedBy(PL)
 public class HarnessCacheManagerImpl implements HarnessCacheManager {
   private final CacheManager cacheManager;
+  private final Optional<CacheManager> enterpriseRedisCacheManagerOptional;
   private final CacheConfig cacheConfig;
   static final String CACHE_PREFIX = "hCache";
 
-  HarnessCacheManagerImpl(CacheManager cacheManager, CacheConfig cacheConfig) {
+  HarnessCacheManagerImpl(
+      CacheManager cacheManager, Optional<CacheManager> enterpriseRedisCacheManagerOptional, CacheConfig cacheConfig) {
     this.cacheManager = cacheManager;
+    this.enterpriseRedisCacheManagerOptional = enterpriseRedisCacheManagerOptional;
     this.cacheConfig = cacheConfig;
   }
 
   @Override
   public <K, V> Cache<K, V> getCache(
       String cacheName, Class<K> keyType, Class<V> valueType, Factory<ExpiryPolicy> expiryPolicy) {
-    return getCacheInternal(cacheName, keyType, valueType, expiryPolicy);
+    return getCacheInternal(cacheName, keyType, valueType, expiryPolicy, false);
+  }
+
+  @Override
+  public <K, V> Cache<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType,
+      Factory<ExpiryPolicy> expiryPolicy, boolean enterpriseRedis) {
+    return getCacheInternal(cacheName, keyType, valueType, expiryPolicy, enterpriseRedis);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <K, V> Cache<K, V> getCache(
-      String cacheName, Class<K> keyType, Class<V> valueType, Factory<ExpiryPolicy> expiryPolicy, String keyVersion) {
-    Cache<VersionedKey<K>, V> jCache = getCacheInternal(cacheName, (Class) VersionedKey.class, valueType, expiryPolicy);
-    return new VersionedCache<>(jCache, keyVersion);
+      String cacheName, Class<K> keyType, Class<V> valueType, Factory<ExpiryPolicy> expiryPolicy, String keyPrefix) {
+    Cache<VersionedKey<K>, V> jCache =
+        getCacheInternal(cacheName, (Class) VersionedKey.class, valueType, expiryPolicy, false);
+    return new VersionedCache<>(jCache, keyPrefix);
   }
 
-  private <K, V> Cache<K, V> getCacheInternal(
-      String cacheName, Class<K> keyType, Class<V> valueType, Factory<ExpiryPolicy> expiryPolicy) {
+  @Override
+  public <K, V> Cache<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType,
+      Factory<ExpiryPolicy> expiryPolicy, String keyPrefix, boolean enterpriseRedis) {
+    Cache<VersionedKey<K>, V> jCache =
+        getCacheInternal(cacheName, (Class) VersionedKey.class, valueType, expiryPolicy, enterpriseRedis);
+    return new VersionedCache<>(jCache, keyPrefix);
+  }
+
+  private <K, V> Cache<K, V> getCacheInternal(String cacheName, Class<K> keyType, Class<V> valueType,
+      Factory<ExpiryPolicy> expiryPolicy, boolean enterpriseRedis) {
     if (isCacheDisabled(cacheName)) {
       return new NoOpCache<>();
     }
@@ -62,12 +80,17 @@ public class HarnessCacheManagerImpl implements HarnessCacheManager {
     jCacheConfiguration.setExpiryPolicyFactory(expiryPolicy);
     jCacheConfiguration.setStatisticsEnabled(true);
     jCacheConfiguration.setManagementEnabled(true);
+
+    CacheManager manager = (enterpriseRedis && enterpriseRedisCacheManagerOptional.isPresent())
+        ? enterpriseRedisCacheManagerOptional.get()
+        : cacheManager;
+
     try {
-      return Optional.ofNullable(cacheManager.getCache(internalCacheName, keyType, valueType))
-          .orElseGet(() -> cacheManager.createCache(internalCacheName, jCacheConfiguration));
+      return Optional.ofNullable(manager.getCache(internalCacheName, keyType, valueType))
+          .orElseGet(() -> manager.createCache(internalCacheName, jCacheConfiguration));
     } catch (CacheException ce) {
       if (isCacheExistsError(ce, internalCacheName)) {
-        return cacheManager.getCache(internalCacheName, keyType, valueType);
+        return manager.getCache(internalCacheName, keyType, valueType);
       }
       throw ce;
     }

@@ -19,6 +19,7 @@ java_library(
         "//999-annotations:module",
         "@maven//:com_cronutils_cron_utils",
         "@maven//:com_deftlabs_mongo_java_distributed_lock",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:com_google_cloud_google_cloud_datastore",
         "@maven//:com_novemberain_quartz_mongodb_harness_mongo_ssl",
         "@maven//:commons_dbcp_commons_dbcp",
