@@ -242,6 +242,8 @@ func (h *tiProxyHandler) getCgFiles(dir, ext1, ext2 string) ([]string, []string,
 	}
 	cgFiles, err1 := filepath.Glob(dir + "*." + ext1)
 	visFiles, err2 := filepath.Glob(dir + "*." + ext2)
+	h.log.Infow(fmt.Sprintf(strings.Join(cgFiles, ", ")))
+	h.log.Infow(fmt.Sprintf(strings.Join(visFiles, ", ")))
 
 	if err1 != nil || err2 != nil {
 		h.log.Errorw(fmt.Sprintf("error in getting files list in dir %s", dir), zap.Error(err1), zap.Error(err2))
