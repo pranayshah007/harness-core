@@ -959,7 +959,7 @@ if [[ "" != "$NG_MANAGER_BASE_URL" ]]; then
 fi
 
 if [[ "" != "$MANAGER_CLIENT_BASEURL" ]]; then
-  yq write -i $CONFIG_FILE managerClientConfig.baseUrl "$MANAGER_CLIENT_BASEURL"
+  yq write -i $CONFIG_FILE managerServiceHttpClientConfig.baseUrl "$MANAGER_CLIENT_BASEURL"
 fi
 
 if [[ "" != "$ENABLE_USER_CHANGESTREAM" ]]; then
