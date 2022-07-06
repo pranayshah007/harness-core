@@ -48,8 +48,8 @@ public class StrategyFunctorTest extends PipelineServiceTestBase {
   public void testMatrixFunctorWithStrategyMetadata() {
     Ambiance ambiance = buildAmbiance(true);
     Map<String, Object> expected = new HashMap<>();
-    expected.put("currentIteration", 0);
-    expected.put("totalIteration", 0);
+    expected.put("iteration", 0);
+    expected.put("iterations", 0);
     Map<String, String> matrix = new HashMap<>();
     matrix.put("a", "1");
     expected.put("matrix", matrix);

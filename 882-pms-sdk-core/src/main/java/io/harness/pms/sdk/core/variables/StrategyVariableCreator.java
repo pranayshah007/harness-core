@@ -46,8 +46,8 @@ public class StrategyVariableCreator implements VariableCreator<StrategyConfig> 
             YamlProperties.newBuilder().setFqn(qualifiedName).setLocalName(qualifiedName).setVisible(true).build());
       }
     }
-    String currentIterationExpression = "strategy.currentIteration";
-    String totalIterationExpression = "strategy.totalIteration";
+    String currentIterationExpression = "strategy.iteration";
+    String totalIterationExpression = "strategy.iterations";
 
     yamlPropertiesMap.put(generateUuid(),
         YamlProperties.newBuilder()
