@@ -92,7 +92,7 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
     log.info("Getting deployment health");
-    long previousStartInterval = startInterval - (endInterval - startInterval + DAY_IN_MS);
+    long previousStartInterval = startInterval - (endInterval - startInterval);
     return ResponseDTO.newResponse(cdOverviewDashboardService.getHealthDeploymentDashboard(
         accountIdentifier, orgIdentifier, projectIdentifier, startInterval, endInterval, previousStartInterval));
   }
@@ -170,7 +170,6 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval,
       @QueryParam(NGServiceConstants.ENVIRONMENT_TYPE) EnvironmentType envType) {
     log.info("Getting workloads");
-    endInterval = endInterval + DAY_IN_MS;
     long numDays = getNumberOfDays(startInterval, endInterval);
     long previousStartInterval = getStartTimeOfPreviousInterval(startInterval, numDays);
 

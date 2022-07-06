@@ -383,7 +383,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public io.harness.ng.overview.dto.HealthDeploymentDashboard getHealthDeploymentDashboard(String accountId,
       String orgId, String projectId, long startInterval, long endInterval, long previousStartInterval) {
-    endInterval = endInterval + getTimeUnitToGroupBy(DAY);
     String query = queryBuilderSelectStatusTime(accountId, orgId, projectId, previousStartInterval, endInterval);
 
     List<Long> time = new ArrayList<>();
@@ -563,7 +562,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public io.harness.ng.overview.dto.ExecutionDeploymentInfo getExecutionDeploymentDashboard(
       String accountId, String orgId, String projectId, long startInterval, long endInterval) {
-    endInterval = endInterval + DAY_IN_MS;
     String query = queryBuilderSelectStatusTime(accountId, orgId, projectId, startInterval, endInterval);
 
     HashMap<Long, Integer> totalCountMap = new HashMap<>();
@@ -682,8 +680,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public ServiceDetailsInfoDTO getServiceDetailsList(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, long startTime, long endTime) throws Exception {
-    endTime = endTime + DAY_IN_MS;
-
     long numberOfDays = getNumberOfDays(startTime, endTime);
     if (numberOfDays < 0) {
       throw new Exception("start date should be less than or equal to end date");
@@ -989,7 +985,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   public io.harness.ng.overview.dto.ServiceDeploymentListInfo getServiceDeploymentsInfo(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, long startTime, long endTime, String serviceIdentifier,
       long bucketSizeInDays) throws Exception {
-    endTime = endTime + DAY_IN_MS;
     long numberOfDays = getNumberOfDays(startTime, endTime);
     validateBucketSize(numberOfDays, bucketSizeInDays);
     long prevStartTime = getStartTimeOfPreviousInterval(startTime, numberOfDays);
@@ -1232,7 +1227,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public DashboardExecutionStatusInfo getDeploymentActiveFailedRunningInfo(
       String accountId, String orgId, String projectId, long days, long startInterval, long endInterval) {
-    endInterval = endInterval + getTimeUnitToGroupBy(DAY);
     // failed
     String queryFailed = queryBuilderStatus(
         accountId, orgId, projectId, days, CDDashboardServiceHelper.failedStatusList, startInterval, endInterval);
@@ -1684,9 +1678,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<TimeValuePair<Integer>> timeValuePairList = new ArrayList<>();
     Map<Long, Integer> timeValuePairMap = new HashMap<>();
 
-    final long tunedStartTimeInMs = getStartTimeOfTheDayAsEpoch(startTimeInMs);
-    final long tunedEndTimeInMs = getStartTimeOfNextDay(endTimeInMs);
-
     final String query =
         "select reportedat, SUM(instancecount) as count from ng_instance_stats_day where accountid = ? and orgid = ? and projectid = ? and serviceid = ? and reportedat >= ? and reportedat <= ? group by reportedat order by reportedat asc";
 
@@ -1700,15 +1691,15 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         statement.setString(2, orgIdentifier);
         statement.setString(3, projectIdentifier);
         statement.setString(4, serviceId);
-        statement.setTimestamp(5, new Timestamp(tunedStartTimeInMs), DateUtils.getDefaultCalendar());
-        statement.setTimestamp(6, new Timestamp(tunedEndTimeInMs), DateUtils.getDefaultCalendar());
+        statement.setTimestamp(5, new Timestamp(startTimeInMs), DateUtils.getDefaultCalendar());
+        statement.setTimestamp(6, new Timestamp(endTimeInMs), DateUtils.getDefaultCalendar());
 
         resultSet = statement.executeQuery();
         while (resultSet != null && resultSet.next()) {
           final long timestamp =
               resultSet.getTimestamp(TimescaleConstants.REPORTEDAT.getKey(), DateUtils.getDefaultCalendar()).getTime();
           final int count = Integer.parseInt(resultSet.getString("count"));
-          timeValuePairMap.put(getStartTimeOfTheDayAsEpoch(timestamp), count);
+          timeValuePairMap.put(getStartingDateEpochValue(timestamp, startTimeInMs), count);
         }
         successfulOperation = true;
       } catch (SQLException ex) {
@@ -1718,8 +1709,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       }
     }
 
-    long currTime = tunedStartTimeInMs;
-    while (currTime < tunedEndTimeInMs) {
+    long currTime = startTimeInMs;
+    while (currTime < endTimeInMs) {
       timeValuePairList.add(new TimeValuePair<>(currTime, timeValuePairMap.getOrDefault(currTime, 0)));
       currTime = currTime + DAY.getDurationInMs();
     }
@@ -1737,9 +1728,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<TimeValuePair<io.harness.ng.overview.dto.EnvIdCountPair>> timeValuePairList = new ArrayList<>();
     Map<String, Map<Long, Integer>> envIdToTimestampAndCountMap = new HashMap<>();
 
-    final long tunedStartTimeInMs = getStartTimeOfTheDayAsEpoch(startTimeInMs);
-    final long tunedEndTimeInMs = getStartTimeOfNextDay(endTimeInMs);
-
     final String query =
         "select reportedat, envid, SUM(instancecount) as count from ng_instance_stats_day where accountid = ? and orgid = ? and projectid = ? and serviceid = ? and reportedat >= ? and reportedat <= ? group by reportedat, envid order by reportedat asc";
 
@@ -1753,8 +1741,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         statement.setString(2, orgIdentifier);
         statement.setString(3, projectIdentifier);
         statement.setString(4, serviceId);
-        statement.setTimestamp(5, new Timestamp(tunedStartTimeInMs), DateUtils.getDefaultCalendar());
-        statement.setTimestamp(6, new Timestamp(tunedEndTimeInMs), DateUtils.getDefaultCalendar());
+        statement.setTimestamp(5, new Timestamp(startTimeInMs), DateUtils.getDefaultCalendar());
+        statement.setTimestamp(6, new Timestamp(endTimeInMs), DateUtils.getDefaultCalendar());
 
         resultSet = statement.executeQuery();
         while (resultSet != null && resultSet.next()) {
@@ -1764,7 +1752,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           final int count = Integer.parseInt(resultSet.getString("count"));
 
           envIdToTimestampAndCountMap.putIfAbsent(envId, new HashMap<>());
-          envIdToTimestampAndCountMap.get(envId).put(getStartTimeOfTheDayAsEpoch(timestamp), count);
+          envIdToTimestampAndCountMap.get(envId).put(getStartingDateEpochValue(timestamp, startTimeInMs), count);
         }
         successfulOperation = true;
       } catch (SQLException ex) {
@@ -1775,8 +1763,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     }
 
     envIdToTimestampAndCountMap.forEach((envId, timeStampAndCountMap) -> {
-      long currTime = tunedStartTimeInMs;
-      while (currTime <= tunedEndTimeInMs) {
+      long currTime = startTimeInMs;
+      while (currTime <= endTimeInMs) {
         int count = timeStampAndCountMap.getOrDefault(currTime, 0);
         io.harness.ng.overview.dto.EnvIdCountPair envIdCountPair =
             EnvIdCountPair.builder().envId(envId).count(count).build();
@@ -1790,7 +1778,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
   public DeploymentsInfo getDeploymentsByServiceId(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, long startTimeInMs, long endTimeInMs) {
-    endTimeInMs = endTimeInMs + DAY_IN_MS;
     String query = queryBuilderDeployments(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, startTimeInMs, endTimeInMs);
     String queryServiceNameTagId = queryToGetId(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
