@@ -49,7 +49,7 @@ func (b *dotnetRunner) AutoDetectPackages() ([]string, error) {
 
 func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	defaultRunCmd := fmt.Sprintf("%s test --no-build --logger \"junit;LogFilePath=test_results.xml\"", dotnetCmd)
-	agentFullName := path.Join(b.agentPath, "dotnet-agent", "dotnet-agent.injector.dll")
+	agentFullName := path.Join(b.agentPath, "dotnet-agent.injector.dll")
 	instrumentCmd := fmt.Sprintf("%s %s %s %s", dotnetCmd, agentFullName, userArgs, agentConfigPath)
 	if ignoreInstr {
 		b.log.Infow("ignoring instrumentation and not attaching agent")
