@@ -137,7 +137,10 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
       return;
     }
     try {
-      Scope scope = projectIdentifier != null ? Scope.PROJECT : orgIdentifier != null ? Scope.ORG : Scope.ACCOUNT;
+      Scope scope = templateEntity.getTemplateScope() != null ? templateEntity.getTemplateScope()
+          : projectIdentifier != null                         ? Scope.PROJECT
+          : orgIdentifier != null                             ? Scope.ORG
+                                                              : Scope.ACCOUNT;
       JsonNode schema = getTemplateSchema(accountIdentifier, projectIdentifier, orgIdentifier, scope,
           templateEntity.getChildType(), templateEntity.getTemplateEntityType());
       String schemaString = JsonPipelineUtils.writeJsonString(schema);
