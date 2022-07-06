@@ -132,7 +132,6 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
 import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.filesystem.FileIo;
-import io.harness.task.TaskServiceDelegateAgentClient;
 import io.harness.grpc.util.RestartableServiceManager;
 import io.harness.logging.AutoLogContext;
 import io.harness.logstreaming.LogStreamingClient;
@@ -153,6 +152,7 @@ import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.serializer.JsonUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.task.TaskServiceDelegateAgentClient;
 import io.harness.taskprogress.TaskProgressClient;
 import io.harness.threading.Schedulable;
 import io.harness.utils.ProcessControl;
@@ -357,7 +357,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @Inject(optional = true) @Nullable private PerpetualTaskWorker perpetualTaskWorker;
   @Inject(optional = true) @Nullable private LogStreamingClient logStreamingClient;
   @Inject DelegateTaskFactory delegateTaskFactory;
-  //@Inject(optional = true) @Nullable private TaskServiceDelegateAgentClient taskServiceDelegateAgentClient;
+  @Inject(optional = true) @Nullable private TaskServiceDelegateAgentClient taskServiceDelegateAgentClient;
   @Inject private KryoSerializer kryoSerializer;
   @Nullable @Inject(optional = true) private ChronicleEventTailer chronicleEventTailer;
   @Inject HarnessMetricRegistry metricRegistry;
@@ -2118,15 +2118,15 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             .appId(appId)
             .activityId(activityId);
 
-    /*if (isNotBlank(delegateTaskPackage.getDelegateCallbackToken()) && taskServiceDelegateAgentClient != null) {
+    if (isNotBlank(delegateTaskPackage.getDelegateCallbackToken()) && taskServiceDelegateAgentClient != null) {
       taskClientBuilder.taskProgressClient(TaskProgressClient.builder()
                                                .accountId(delegateTaskPackage.getAccountId())
                                                .taskId(delegateTaskPackage.getDelegateTaskId())
                                                .delegateCallbackToken(delegateTaskPackage.getDelegateCallbackToken())
-                                               .taskServiceAgentClient(taskServiceDelegateAgentClient)
+                                               .taskServiceDelegateAgentClient(taskServiceDelegateAgentClient)
                                                .kryoSerializer(kryoSerializer)
                                                .build());
-    }*/
+    }
 
     return taskClientBuilder.build();
   }
