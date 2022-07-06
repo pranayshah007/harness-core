@@ -395,7 +395,7 @@ func (r *runTestsTask) execute(ctx context.Context, retryCount int32) (map[strin
 		if err != nil {
 			return nil, err
 		}
-		r.log.Infow("agent downloaded to: ", csharpAgentPath)
+		r.log.Infow("agent downloaded to: " + csharpAgentPath)
 		// Unzip everything at agentInstallDir/dotnet-agent.zip
 		err = unzipSource(filepath.Join(csharpAgentPath, "dotnet-agent.zip"), csharpAgentPath, r.log, r.fs)
 		if err != nil {
