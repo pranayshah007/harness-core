@@ -1,0 +1,5 @@
+name: Aggregator Metrics Group
+identifier: aggregatorMetricsGroup
+labels:
+  - namespace
+  - containerName

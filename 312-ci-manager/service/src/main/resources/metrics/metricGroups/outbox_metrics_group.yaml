@@ -1,0 +1,5 @@
+name: Outbox Metrics Group
+identifier: outbox_metrics_group
+labels:
+  - serviceId
+  - eventType

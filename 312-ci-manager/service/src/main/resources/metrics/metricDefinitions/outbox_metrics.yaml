@@ -1,0 +1,12 @@
+name: Outbox Metrics
+identifier: outbox_metrics
+metricGroup: outbox_metrics_group
+metrics:
+  - metricName: outbox_queue_size
+    metricDefinition: queue size of the outbox
+    type: LastValue
+    unit: "1"
+  - metricName: outbox_blocked_queue_size
+    metricDefinition: blocked queue size of the outbox
+    type: LastValue
+    unit: "1"

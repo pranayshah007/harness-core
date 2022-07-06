@@ -1,0 +1,41 @@
+name: Aggregator Steaming Metrics
+identifier: aggregatorStreamingMetrics
+metricGroup: aggregatorMetricsGroup
+metrics:
+  - metricName: aggregator_streaming_numberOfDisconnects
+    metricDefinition: Number of Disconnects of Debezium Engine
+    type: LastValue
+    unit: count
+  - metricName: aggregator_streaming_numberOfPrimaryElections
+    metricDefinition: Number of Primary elections of MongoDB cluster
+    type: LastValue
+    unit: count
+  - metricName: aggregator_streaming_millisBehindSource
+    metricDefinition: Milliseconds behind source
+    type: LastValue
+    unit: count
+  - metricName: aggregator_streaming_connected
+    metricDefinition: Is Debezium connected to MongoDB cluster?
+    type: LastValue
+    unit: count
+  - metricName: aggregator_streaming_millisSinceLastEvent
+    metricDefinition: Milliseconds since last event
+    type: LastValue
+    unit: count
+  - metricName: aggregator_streaming_queueTotalCapacity
+    metricDefinition: Total capacity of queue of Debezium engine
+    type: LastValue
+    unit: count
+  - metricName: aggregator_streaming_queueRemainingCapacity
+    metricDefinition: Remanining capacity of queue of Debezium engine
+    type: LastValue
+    unit: count
+  - metricName: aggregator_streaming_totalNumberOfEventsSeen
+    metricDefinition: Total number of events seen by Debezium engine so far
+    type: LastValue
+    unit: count
+  - metricName: aggregator_streaming_currentQueueSizeInBytes
+    metricDefinition: Current size of Debezium engine queue in bytes
+    type: LastValue
+    unit: count
+

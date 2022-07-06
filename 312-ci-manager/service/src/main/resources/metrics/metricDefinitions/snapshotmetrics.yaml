@@ -1,0 +1,37 @@
+name: Aggregator Snapshot Metrics
+identifier: aggregatorSnapshotMetrics
+metricGroup: aggregatorMetricsGroup
+metrics:
+  - metricName: aggregator_snapshot_millisSinceLastEvent
+    metricDefinition: Milliseconds since last event
+    type: LastValue
+    unit: count
+  - metricName: aggregator_snapshot_queueTotalCapacity
+    metricDefinition: Total Queue capacity of Debezium engine
+    type: LastValue
+    unit: count
+  - metricName: aggregator_snapshot_queueRemainingCapacity
+    metricDefinition: Remaining Queue capacity of Debezium engine
+    type: LastValue
+    unit: count
+  - metricName: aggregator_snapshot_totalNumberOfEventsSeen
+    metricDefinition: Total number of events seen by Debezium engine so far
+    type: LastValue
+    unit: count
+  - metricName: aggregator_snapshot_currentQueueSizeInBytes
+    metricDefinition: Current queue size of Debezium engine in bytes
+    type: LastValue
+    unit: count
+  - metricName: aggregator_snapshot_snapshotRunning
+    metricDefinition: Whether snapshot is currently running
+    type: LastValue
+    unit: count
+  - metricName: aggregator_snapshot_snapshotCompleted
+    metricDefinition: Whether snapshot is completed
+    type: LastValue
+    unit: count
+  - metricName: aggregator_snapshot_snapshotDurationInSeconds
+    metricDefinition: Snapshot duration in seconds for the last snapshot that ran
+    type: LastValue
+    unit: count
+
