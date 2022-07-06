@@ -132,7 +132,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
 import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.filesystem.FileIo;
-import io.harness.grpc.DelegateServiceGrpcAgentClient;
+import io.harness.delegate.DelegateServiceAgentClient;
 import io.harness.grpc.util.RestartableServiceManager;
 import io.harness.logging.AutoLogContext;
 import io.harness.logstreaming.LogStreamingClient;
@@ -357,7 +357,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @Inject(optional = true) @Nullable private PerpetualTaskWorker perpetualTaskWorker;
   @Inject(optional = true) @Nullable private LogStreamingClient logStreamingClient;
   @Inject DelegateTaskFactory delegateTaskFactory;
-  @Inject(optional = true) @Nullable private DelegateServiceGrpcAgentClient delegateServiceGrpcAgentClient;
+  @Inject(optional = true) @Nullable private DelegateServiceAgentClient delegateServiceAgentClient;
   @Inject private KryoSerializer kryoSerializer;
   @Nullable @Inject(optional = true) private ChronicleEventTailer chronicleEventTailer;
   @Inject HarnessMetricRegistry metricRegistry;
@@ -2118,12 +2118,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             .appId(appId)
             .activityId(activityId);
 
-    if (isNotBlank(delegateTaskPackage.getDelegateCallbackToken()) && delegateServiceGrpcAgentClient != null) {
+    if (isNotBlank(delegateTaskPackage.getDelegateCallbackToken()) && delegateServiceAgentClient != null) {
       taskClientBuilder.taskProgressClient(TaskProgressClient.builder()
                                                .accountId(delegateTaskPackage.getAccountId())
                                                .taskId(delegateTaskPackage.getDelegateTaskId())
                                                .delegateCallbackToken(delegateTaskPackage.getDelegateCallbackToken())
-                                               .delegateServiceGrpcAgentClient(delegateServiceGrpcAgentClient)
+                                               .delegateServiceAgentClient(delegateServiceAgentClient)
                                                .kryoSerializer(kryoSerializer)
                                                .build());
     }

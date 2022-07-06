@@ -38,7 +38,7 @@ import io.harness.delegate.task.http.HttpTaskParameters;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.functional.AbstractFunctionalTest;
-import io.harness.grpc.DelegateServiceGrpcAgentClient;
+import io.harness.delegate.DelegateServiceAgentClient;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -385,8 +385,8 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
 
     DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(
         delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
-    DelegateServiceGrpcAgentClient delegateServiceGrpcAgentClient =
-        new DelegateServiceGrpcAgentClient(delegateServiceBlockingStub);
+    DelegateServiceAgentClient delegateServiceAgentClient =
+        new DelegateServiceAgentClient(delegateServiceBlockingStub);
 
     DelegateCallbackToken callbackToken = delegateServiceGrpcClient.registerCallback(
         DelegateCallback.newBuilder()
@@ -408,9 +408,9 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
 
     waitNotifyEngine.waitForAllOn("general", new TestNotifyCallback(), new TestProgressCallback(), taskUuid);
 
-    delegateServiceGrpcAgentClient.sendTaskProgressUpdate(
+    delegateServiceAgentClient.sendTaskProgressUpdate(
         AccountId.newBuilder().setId(getAccount().getUuid()).build(), taskId, callbackToken, testDataBytes);
-    delegateServiceGrpcAgentClient.sendTaskProgressUpdate(
+    delegateServiceAgentClient.sendTaskProgressUpdate(
         AccountId.newBuilder().setId(getAccount().getUuid()).build(), taskId, callbackToken, testDataBytes2);
 
     Poller.pollFor(Duration.ofMinutes(5), Duration.ofSeconds(5), () -> { return progressCallCount.get() == 2; });
