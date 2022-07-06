@@ -142,9 +142,6 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
     configuration.getPortal().setJwtNextGenManagerSecret("dummy_key");
     configuration.setNgManagerServiceHttpClientConfig(
         ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build());
-    configuration.getPortal().setJwtManagerServiceSecret("dummy_key");
-    configuration.setManagerServiceHttpClientConfig(
-        ServiceHttpClientConfig.builder().baseUrl("http://localhost:3457/").build());
     configuration.setMongoConnectionFactory(
         MongoConfig.builder().uri(System.getProperty("mongoUri", "mongodb://localhost:27017/" + dbName)).build());
     configuration.getBackgroundSchedulerConfig().setAutoStart(System.getProperty("setupScheduler", "false"));
