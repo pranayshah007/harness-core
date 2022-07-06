@@ -395,7 +395,8 @@ public enum FeatureName {
   ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM,
   QUEUED_COUNT_FOR_QUEUEKEY("Used to display the count of the queue in CG git sync", HarnessTeam.SPG),
   NG_EMAIL_STEP,
-  PRUNE_KUBERNETES_RESOURCES_NG;
+  PRUNE_KUBERNETES_RESOURCES_NG,
+  CI_STEP_GROUP_ENABLED;
 
   @Deprecated
   FeatureName() {
