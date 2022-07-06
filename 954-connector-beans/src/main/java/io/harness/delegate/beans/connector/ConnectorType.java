@@ -59,7 +59,9 @@ public enum ConnectorType implements EntitySubtype {
   @JsonProperty("Pdc") PDC("Pdc"),
   @JsonProperty("AzureRepo") AZURE_REPO("AzureRepo"),
   @JsonProperty("Jenkins") JENKINS("Jenkins"),
-  @JsonProperty("OciHelmRepo") OCI_HELM_REPO("OciHelmRepo");
+  @JsonProperty("OciHelmRepo") OCI_HELM_REPO("OciHelmRepo"),
+
+  @JsonProperty("CustomSecretManager") CUSTOM_SECRET_MANAGER("CustomSecretManager");
   private final String displayName;
 
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)

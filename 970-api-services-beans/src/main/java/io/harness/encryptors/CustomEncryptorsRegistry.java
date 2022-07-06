@@ -37,6 +37,7 @@ public class CustomEncryptorsRegistry {
     this.injector = injector;
     registeredEncryptors = new EnumMap<>(EncryptionType.class);
     registeredEncryptors.put(CUSTOM, CUSTOM_ENCRYPTOR);
+    //    registeredEncryptors.put(CUSTOM_NG, CUSTOM_ENCRYPTOR);
   }
 
   public CustomEncryptor getCustomEncryptor(EncryptionType encryptionType) {
