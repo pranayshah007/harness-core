@@ -63,17 +63,8 @@ public abstract class QueueListener<T extends Queuable> implements Runnable {
           sleep(ofSeconds(1));
         }
 
-        if (threadName.contains("DelayEvent")) {
-          log.info("modox reached here inside do");
-          int a = 1;
-        }
-
         if (!execute()) {
-          log.info("modox reached here break");
           break;
-        }
-        if (threadName.contains("DelayEvent")) {
-          int a = 1;
         }
 
       } while (!runOnce && !shouldStop.get());
