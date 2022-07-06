@@ -298,7 +298,6 @@ ngManagerServiceHttpClientConfig:
   readTimeOutSeconds: 15
   enableHttpLogging: ${ENABLE_HTTP_LOGGING:-false}
 
-
 eventsFramework:
   redis:
     sentinel: false

@@ -114,7 +114,6 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
-import com.google.inject.multibindings.OptionalBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import java.io.Closeable;
@@ -181,7 +180,6 @@ public class GitSyncTestRule implements InjectorRuleMixin, MethodRule, MongoRule
         bind(WebhookEventService.class).toInstance(mock(WebhookEventService.class));
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
         bind(NGEncryptorService.class).toInstance(mock(NGEncryptorServiceImpl.class));
-        OptionalBinder.newOptionalBinder(binder(), AccountClient.class);
         bind(FeatureFlagService.class).toInstance(mock(FeatureFlagServiceImpl.class));
         bind(YamlChangeSetService.class).toInstance(mock(YamlChangeSetServiceImpl.class));
         bind(YamlChangeSetLifeCycleManagerService.class)
