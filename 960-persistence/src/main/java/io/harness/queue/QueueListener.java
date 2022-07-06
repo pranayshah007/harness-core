@@ -57,16 +57,30 @@ public abstract class QueueListener<T extends Queuable> implements Runnable {
     log.debug("Setting thread name to {}", threadName);
     Thread.currentThread().setName(threadName);
 
-    do {
-      while (getMaintenanceFlag() || (primaryOnly && queueController.isNotPrimary())) {
-        sleep(ofSeconds(1));
-      }
+    try {
+      do {
+        while (getMaintenanceFlag() || (primaryOnly && queueController.isNotPrimary())) {
+          sleep(ofSeconds(1));
+        }
 
-      if (!execute()) {
-        break;
-      }
+        if (threadName.contains("DelayEvent")) {
+          log.info("modox reached here inside do");
+          int a = 1;
+        }
 
-    } while (!runOnce && !shouldStop.get());
+        if (!execute()) {
+          log.info("modox reached here break");
+          break;
+        }
+        if (threadName.contains("DelayEvent")) {
+          int a = 1;
+        }
+
+      } while (!runOnce && !shouldStop.get());
+    } catch (Throwable e) {
+      log.error("Unexpected error on listener at thread: [{}]", threadName, e);
+      throw e;
+    }
   }
 
   public boolean execute() {
