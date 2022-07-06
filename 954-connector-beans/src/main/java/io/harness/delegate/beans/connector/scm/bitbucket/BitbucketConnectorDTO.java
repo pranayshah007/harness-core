@@ -158,6 +158,9 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
     final String HOST_URL_AND_ORG_SEPARATOR = "scm";
     String repoName = GitClientHelper.getGitRepo(url);
     String orgName = GitClientHelper.getGitOwner(url, true);
+    if (GitAuthType.SSH.equals(authentication.getAuthType())) {
+      return GitRepositoryDTO.builder().org(orgName).name(repoName).build();
+    }
     String[] parts = new String[0];
     if (orgName.equals(HOST_URL_AND_ORG_SEPARATOR)) {
       parts = repoName.split(FILE_PATH_SEPARATOR);
@@ -176,6 +179,9 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
 
   private String getFileUrlForBitbucketServer(String repoUrl, String branchName, String filePath) {
     String hostUrl = "";
+    if (GitAuthType.SSH.equals(authentication.getAuthType())) {
+      return filePath;
+    }
     try {
       URL url1 = new URL(repoUrl);
       hostUrl = url1.getProtocol() + "://" + url1.getHost();
