@@ -234,6 +234,7 @@ Returns:
 func (r *runTestsTask) createDotNetConfigFile() (string, error) {
 	// Create config file
 	dir := filepath.Join(r.tmpFilePath, outDir)
+	cgdir := filepath.Join(r.tmpFilePath, cgDir)
 	err := r.fs.MkdirAll(dir, os.ModePerm)
 	if err != nil {
 		r.log.Errorw(fmt.Sprintf("could not create nested directory %s", dir), zap.Error(err))
@@ -254,7 +255,7 @@ func (r *runTestsTask) createDotNetConfigFile() (string, error) {
 	data = fmt.Sprintf(`outDir: '%s'
 logLevel: 0
 writeTo: [COVERAGE_JSON]
-instrPackages: [%s]`, dir, strings.Join(namespaceArray, ","))
+instrPackages: [%s]`, cgdir, strings.Join(namespaceArray, ","))
 
 	r.log.Infow(fmt.Sprintf("attempting to write %s to %s", data, outputFile))
 	f, err := r.fs.Create(outputFile)
