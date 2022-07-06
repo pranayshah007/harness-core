@@ -335,7 +335,7 @@ func downloadFile(ctx context.Context, path, url string, fs filesystem.FileSyste
 }
 
 func unzipSource(source, destination string, log *zap.SugaredLogger, fs filesystem.FileSystem) error {
-	log.Infow("unzipping from %s to %s", source, destination)
+	log.Infow(fmt.Sprintf("unzipping from %s to %s", source, destination))
 	reader, err := zip.OpenReader(source)
 	if err != nil {
 		return err
