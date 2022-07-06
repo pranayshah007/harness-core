@@ -36,6 +36,12 @@ if [[ "${ENABLE_APPDYNAMICS}" == "true" ]]; then
     echo "Using Appdynamics java agent"
 fi
 
+if [[ "${ENABLE_MONITORING}" == "true" ]] ; then
+    echo "Monitoring  is enabled"
+    JAVA_OPTS="$JAVA_OPTS ${MONITORING_FLAGS}"
+    echo "Using inspectIT Java Agent"
+fi
+
 JAVA_OPTS=$JAVA_OPTS" -Xbootclasspath/p:/opt/harness/alpn-boot-8.1.13.v20181017.jar"
 
 if [[ "${DEPLOY_MODE}" == "KUBERNETES" ]] || [[ "${DEPLOY_MODE}" == "KUBERNETES_ONPREM" ]]; then
