@@ -24,6 +24,7 @@ import io.harness.callback.MongoDatabase;
 import io.harness.category.element.FunctionalTests;
 import io.harness.data.algorithm.HashGenerator;
 import io.harness.delegate.AccountId;
+import io.harness.delegate.DelegateServiceAgentClient;
 import io.harness.delegate.TaskDetails;
 import io.harness.delegate.TaskId;
 import io.harness.delegate.TaskLogAbstractions;
@@ -38,7 +39,6 @@ import io.harness.delegate.task.http.HttpTaskParameters;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.functional.AbstractFunctionalTest;
-import io.harness.delegate.DelegateServiceAgentClient;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -385,8 +385,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
 
     DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(
         delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
-    DelegateServiceAgentClient delegateServiceAgentClient =
-        new DelegateServiceAgentClient(delegateServiceBlockingStub);
+    DelegateServiceAgentClient delegateServiceAgentClient = new DelegateServiceAgentClient(delegateServiceBlockingStub);
 
     DelegateCallbackToken callbackToken = delegateServiceGrpcClient.registerCallback(
         DelegateCallback.newBuilder()

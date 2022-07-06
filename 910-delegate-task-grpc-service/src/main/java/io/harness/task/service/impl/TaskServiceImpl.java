@@ -10,6 +10,7 @@ package io.harness.task.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.CI;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.DelegateServiceAgentClient;
 import io.harness.delegate.TaskExecutionStage;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadata;
@@ -18,7 +19,6 @@ import io.harness.delegate.task.stepstatus.artifact.DockerArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.DockerArtifactMetadata;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactMetadata;
-import io.harness.delegate.DelegateServiceAgentClient;
 import io.harness.serializer.KryoSerializer;
 import io.harness.task.converters.ResponseDataConverterRegistry;
 import io.harness.task.service.SendTaskProgressRequest;
@@ -47,7 +47,7 @@ public class TaskServiceImpl extends TaskServiceGrpc.TaskServiceImplBase {
 
   @Inject
   public TaskServiceImpl(DelegateServiceAgentClient delegateServiceAgentClient, KryoSerializer kryoSerializer,
-                         ResponseDataConverterRegistry responseDataConverterRegistry) {
+      ResponseDataConverterRegistry responseDataConverterRegistry) {
     this.delegateServiceAgentClient = delegateServiceAgentClient;
     this.kryoSerializer = kryoSerializer;
     this.responseDataConverterRegistry = responseDataConverterRegistry;

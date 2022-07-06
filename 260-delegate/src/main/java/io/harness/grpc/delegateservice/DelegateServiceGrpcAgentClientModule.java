@@ -11,8 +11,8 @@ import static io.harness.delegate.DelegateServiceGrpc.newBlockingStub;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.delegate.DelegateServiceGrpc.DelegateServiceBlockingStub;
 import io.harness.delegate.DelegateServiceAgentClient;
+import io.harness.delegate.DelegateServiceGrpc.DelegateServiceBlockingStub;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
