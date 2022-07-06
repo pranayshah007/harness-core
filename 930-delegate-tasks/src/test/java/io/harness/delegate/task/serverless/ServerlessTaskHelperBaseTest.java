@@ -262,7 +262,8 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
         .downloadArtifacts(artifactoryConfigRequest, repositoryName, artifactMetadata, ARTIFACTORY_ARTIFACT_PATH,
             ARTIFACTORY_ARTIFACT_NAME);
     ServerlessInfraConfig serverlessInfraConfig = ServerlessAwsLambdaInfraConfig.builder().region("us-east-1").build();
-    serverlessTaskHelperBase.fetchArtifact(serverlessArtifactConfig, logCallback, ARTIFACT_DIRECTORY, serverlessInfraConfig);
+    serverlessTaskHelperBase.fetchArtifact(
+        serverlessArtifactConfig, logCallback, ARTIFACT_DIRECTORY, serverlessInfraConfig);
     verify(logCallback)
         .saveExecutionLog("Failed to download artifact from artifactory.ø", ERROR, CommandExecutionStatus.FAILURE);
     Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(new Exception("HintException"));
@@ -280,7 +281,8 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
     ServerlessArtifactConfig serverlessArtifactConfig =
         ServerlessArtifactoryArtifactConfig.builder().repositoryName(repositoryName).build();
     ServerlessInfraConfig serverlessInfraConfig = ServerlessAwsLambdaInfraConfig.builder().region("us-east-1").build();
-    serverlessTaskHelperBase.fetchArtifact(serverlessArtifactConfig, logCallback, ARTIFACT_DIRECTORY, serverlessInfraConfig);
+    serverlessTaskHelperBase.fetchArtifact(
+        serverlessArtifactConfig, logCallback, ARTIFACT_DIRECTORY, serverlessInfraConfig);
   }
 
   @Test

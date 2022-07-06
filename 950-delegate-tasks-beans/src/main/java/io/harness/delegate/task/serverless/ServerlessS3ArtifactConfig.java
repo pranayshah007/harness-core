@@ -7,19 +7,19 @@
 
 package io.harness.delegate.task.serverless;
 
+import static io.harness.expression.Expression.ALLOW_SECRETS;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.security.encryption.EncryptedDataDetail;
+
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
-
-import java.util.List;
-
-import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 @OwnedBy(HarnessTeam.CDP)
 @Value

@@ -33,14 +33,14 @@ public class ServerlessExceptionConstants {
       + " Artifactory: %s";
 
   public final String DOWNLOAD_FROM_S3_FAILED = "Failed while trying to download artifact from s3"
-          + " with identifier: %s";
+      + " with identifier: %s";
 
   public final String DOWNLOAD_FROM_S3_HINT = "Please review the Artifact Details and check the File/Folder "
-          + "Path to the artifact. We recommend also checking for the artifact in the given path in your"
-          + " S3 Repository. ";
+      + "Path to the artifact. We recommend also checking for the artifact in the given path in your"
+      + " S3 Repository. ";
 
   public final String DOWNLOAD_FROM_S3_EXPLANATION = "Failed to download artifact: %s from"
-          + " S3 bucket: %s";
+      + " S3 bucket: %s";
 
   public final String BLANK_ARTIFACT_PATH = "not able to find artifact path";
 

@@ -40,7 +40,6 @@ import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
-import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -255,8 +254,7 @@ public class ServerlessTaskHelperBase {
     } else if (serverlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
       logCallback.saveExecutionLog(color("Skipping downloading artifact step as it is not needed..", White, Bold));
     } else if (serverlessArtifactConfig instanceof ServerlessS3ArtifactConfig) {
-      ServerlessS3ArtifactConfig serverlessS3ArtifactConfig =
-              (ServerlessS3ArtifactConfig) serverlessArtifactConfig;
+      ServerlessS3ArtifactConfig serverlessS3ArtifactConfig = (ServerlessS3ArtifactConfig) serverlessArtifactConfig;
       String s3Directory = Paths.get(workingDirectory, ARTIFACT_DIR_NAME).toString();
       createDirectoryIfDoesNotExist(s3Directory);
       waitForDirectoryToBeAccessibleOutOfProcess(s3Directory, 10);
@@ -341,49 +339,49 @@ public class ServerlessTaskHelperBase {
     }
   }
 
-  public void fetchS3Artifact(ServerlessS3ArtifactConfig s3ArtifactConfig,
-                                       LogCallback executionLogCallback, String s3Directory, ServerlessInfraConfig serverlessInfraConfig) throws IOException {
+  public void fetchS3Artifact(ServerlessS3ArtifactConfig s3ArtifactConfig, LogCallback executionLogCallback,
+      String s3Directory, ServerlessInfraConfig serverlessInfraConfig) throws IOException {
     if (EmptyPredicate.isEmpty(s3ArtifactConfig.getFilePath())) {
       executionLogCallback.saveExecutionLog(
-              "artifactPath or artifactPathFilter is blank", ERROR, CommandExecutionStatus.FAILURE);
+          "artifactPath or artifactPathFilter is blank", ERROR, CommandExecutionStatus.FAILURE);
       throw NestedExceptionUtils.hintWithExplanationException(BLANK_ARTIFACT_PATH_HINT,
-              String.format(BLANK_ARTIFACT_PATH_EXPLANATION, s3ArtifactConfig.getIdentifier()),
-              new ServerlessCommandExecutionException(BLANK_ARTIFACT_PATH));
+          String.format(BLANK_ARTIFACT_PATH_EXPLANATION, s3ArtifactConfig.getIdentifier()),
+          new ServerlessCommandExecutionException(BLANK_ARTIFACT_PATH));
     }
 
-    String artifactPath =
-            Paths.get(s3ArtifactConfig.getBucketName(), s3ArtifactConfig.getFilePath())
-                    .toString();
+    String artifactPath = Paths.get(s3ArtifactConfig.getBucketName(), s3ArtifactConfig.getFilePath()).toString();
     String artifactFilePath = Paths.get(s3Directory, ARTIFACT_FILE_NAME).toAbsolutePath().toString();
     File artifactFile = new File(artifactFilePath);
     if (!artifactFile.createNewFile()) {
       log.error("Failed to create new file");
       executionLogCallback.saveExecutionLog(
-              "Failed to create a file for s3 object", ERROR, CommandExecutionStatus.FAILURE);
+          "Failed to create a file for s3 object", ERROR, CommandExecutionStatus.FAILURE);
       throw new FileCreationException("Failed to create file " + artifactFile.getCanonicalPath(), null,
-              ErrorCode.FILE_CREATE_ERROR, Level.ERROR, USER, null);
+          ErrorCode.FILE_CREATE_ERROR, Level.ERROR, USER, null);
     }
     executionLogCallback.saveExecutionLog(
-            color(format("Downloading %s artifact with identifier: %s",
-                            s3ArtifactConfig.getServerlessArtifactType(), s3ArtifactConfig.getIdentifier()),
-                    White, Bold));
+        color(format("Downloading %s artifact with identifier: %s", s3ArtifactConfig.getServerlessArtifactType(),
+                  s3ArtifactConfig.getIdentifier()),
+            White, Bold));
     executionLogCallback.saveExecutionLog("S3 Object Path: " + artifactPath);
-    ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig = (ServerlessAwsLambdaInfraConfig) serverlessInfraConfig;
+    ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig =
+        (ServerlessAwsLambdaInfraConfig) serverlessInfraConfig;
     String region = serverlessAwsLambdaInfraConfig.getRegion();
     AwsInternalConfig awsConfig =
-            awsNgConfigMapper.createAwsInternalConfig(serverlessAwsLambdaInfraConfig.getAwsConnectorDTO());
-    try (InputStream artifactInputStream = awsApiHelperService.getObjectFromS3(awsConfig,
-            region, s3ArtifactConfig.getBucketName(), s3ArtifactConfig.getFilePath()).getObjectContent();
+        awsNgConfigMapper.createAwsInternalConfig(serverlessAwsLambdaInfraConfig.getAwsConnectorDTO());
+    try (InputStream artifactInputStream =
+             awsApiHelperService
+                 .getObjectFromS3(awsConfig, region, s3ArtifactConfig.getBucketName(), s3ArtifactConfig.getFilePath())
+                 .getObjectContent();
          FileOutputStream outputStream = new FileOutputStream(artifactFile)) {
       if (artifactInputStream == null) {
         log.error("Failure in downloading artifact from S3");
         executionLogCallback.saveExecutionLog(
-                "Failed to download artifact from S3.ø", ERROR, CommandExecutionStatus.FAILURE);
+            "Failed to download artifact from S3.ø", ERROR, CommandExecutionStatus.FAILURE);
         throw NestedExceptionUtils.hintWithExplanationException(DOWNLOAD_FROM_S3_HINT,
-                String.format(
-                        DOWNLOAD_FROM_S3_EXPLANATION, s3ArtifactConfig.getBucketName(), s3ArtifactConfig.getFilePath()),
-                new ServerlessCommandExecutionException(
-                        format(DOWNLOAD_FROM_S3_FAILED, s3ArtifactConfig.getIdentifier())));
+            String.format(
+                DOWNLOAD_FROM_S3_EXPLANATION, s3ArtifactConfig.getBucketName(), s3ArtifactConfig.getFilePath()),
+            new ServerlessCommandExecutionException(format(DOWNLOAD_FROM_S3_FAILED, s3ArtifactConfig.getIdentifier())));
       }
       IOUtils.copy(artifactInputStream, outputStream);
       executionLogCallback.saveExecutionLog(color("Successfully downloaded artifact..", White, Bold));
@@ -391,13 +389,12 @@ public class ServerlessTaskHelperBase {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Failure in downloading artifact from s3", sanitizedException);
       executionLogCallback.saveExecutionLog(
-              "Failed to download artifact from s3. " + ExceptionUtils.getMessage(sanitizedException), ERROR,
-              CommandExecutionStatus.FAILURE);
+          "Failed to download artifact from s3. " + ExceptionUtils.getMessage(sanitizedException), ERROR,
+          CommandExecutionStatus.FAILURE);
       throw NestedExceptionUtils.hintWithExplanationException(DOWNLOAD_FROM_S3_HINT,
-              String.format(
-                      DOWNLOAD_FROM_S3_EXPLANATION, s3ArtifactConfig.getBucketName(), s3ArtifactConfig.getFilePath()),
-              new ServerlessCommandExecutionException(
-                      format(DOWNLOAD_FROM_S3_FAILED, s3ArtifactConfig.getIdentifier()), sanitizedException));
+          String.format(DOWNLOAD_FROM_S3_EXPLANATION, s3ArtifactConfig.getBucketName(), s3ArtifactConfig.getFilePath()),
+          new ServerlessCommandExecutionException(
+              format(DOWNLOAD_FROM_S3_FAILED, s3ArtifactConfig.getIdentifier()), sanitizedException));
     }
   }
 

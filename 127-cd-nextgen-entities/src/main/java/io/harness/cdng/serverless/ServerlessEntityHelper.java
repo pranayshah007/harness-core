@@ -146,14 +146,14 @@ public class ServerlessEntityHelper {
       S3ArtifactOutcome s3ArtifactOutcome = (S3ArtifactOutcome) artifactOutcome;
       connectorDTO = getConnectorInfoDTO(s3ArtifactOutcome.getConnectorRef(), ngAccess);
       return ServerlessS3ArtifactConfig.builder()
-              .bucketName(s3ArtifactOutcome.getBucketName())
-              .filePath(s3ArtifactOutcome.getFilePath())
-              .identifier(s3ArtifactOutcome.getIdentifier())
-              .connectorDTO(connectorDTO)
-              .encryptedDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
-              .primaryArtifact(s3ArtifactOutcome.isPrimaryArtifact())
-              .type(s3ArtifactOutcome.getType())
-              .build();
+          .bucketName(s3ArtifactOutcome.getBucketName())
+          .filePath(s3ArtifactOutcome.getFilePath())
+          .identifier(s3ArtifactOutcome.getIdentifier())
+          .connectorDTO(connectorDTO)
+          .encryptedDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
+          .primaryArtifact(s3ArtifactOutcome.isPrimaryArtifact())
+          .type(s3ArtifactOutcome.getType())
+          .build();
     } else {
       throw new UnsupportedOperationException(
           format("Unsupported Artifact type: [%s]", artifactOutcome.getArtifactType()));

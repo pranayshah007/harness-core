@@ -695,14 +695,13 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void renderManifestContentTestWhenManifestFileContentNotEmptyAndContainsPrimaryS3ReplacementExpression() {
     String manifestFileContent = PRIMARY_ARTIFACT_PATH_FOR_S3;
-    ServerlessArtifactConfig serverlessArtifactConfig =
-            ServerlessS3ArtifactConfig.builder().build();
+    ServerlessArtifactConfig serverlessArtifactConfig = ServerlessS3ArtifactConfig.builder().build();
     Map<String, ServerlessArtifactConfig> sidecarArtifactMap = new HashMap<>();
     sidecarArtifactMap.put("sidecar1", serverlessArtifactConfig);
     sidecarArtifactMap.put("sidecar2", serverlessArtifactConfig);
     doReturn(ARTIFACT_ACTUAL_PATH).when(engineExpressionService).renderExpression(ambiance, ARTIFACT_ACTUAL_PATH);
     assertThat(serverlessStepCommonHelper.renderManifestContent(
-            ambiance, manifestFileContent, serverlessArtifactConfig, sidecarArtifactMap))
-            .isEqualTo(ARTIFACT_ACTUAL_PATH);
+                   ambiance, manifestFileContent, serverlessArtifactConfig, sidecarArtifactMap))
+        .isEqualTo(ARTIFACT_ACTUAL_PATH);
   }
 }
