@@ -19,7 +19,6 @@ import io.harness.cdng.visitor.helpers.deploymentstage.DeploymentStageVisitorHel
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.validation.OneOfSet;
 import io.harness.walktree.beans.VisitableChild;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -48,10 +47,6 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonTypeName("Deployment")
-@OneOfSet(fields = {"serviceConfig, infrastructure", "service, deploymentType, gitOpsEnabled, environment",
-              "service, deploymentType, gitOpsEnabled, environmentGroup"},
-    requiredFieldNames = {"service", "serviceConfig", "deploymentType", "infrastructure", "environment",
-        "environmentGroup"})
 @TypeAlias("deploymentStageConfig")
 @SimpleVisitorHelper(helperClass = DeploymentStageVisitorHelper.class)
 public class DeploymentStageConfig implements StageInfoConfig, Visitable {

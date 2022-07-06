@@ -36,8 +36,8 @@ public class StrategyFunctor implements LateBindingValue {
     Map<String, String> matrixValuesMap = new HashMap<>();
     for (Level level : levelsWithStrategyMetadata) {
       matrixValuesMap.putAll(level.getStrategyMetadata().getMatrixMetadata().getMatrixValuesMap());
-      strategyObjectMap.put("currentIteration", level.getStrategyMetadata().getCurrentIteration());
-      strategyObjectMap.put("totalIteration", level.getStrategyMetadata().getTotalIterations());
+      strategyObjectMap.put("iteration", level.getStrategyMetadata().getCurrentIteration());
+      strategyObjectMap.put("iterations", level.getStrategyMetadata().getTotalIterations());
     }
     strategyObjectMap.put(MATRIX, matrixValuesMap);
 

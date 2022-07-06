@@ -187,7 +187,7 @@ public enum EntityType {
   FEATURE_FLAGS(
       ModuleType.CF, EntityTypeConstants.FEATURE_FLAGS, IdentifierRef.class, EntityYamlRootNames.FEATURE_FLAGS),
   @JsonProperty(EntityTypeConstants.SERVICENOW_APPROVAL)
-  SERVICENOW_APPROVAL_STEP(ModuleType.CD, EntityTypeConstants.SERVICENOW_APPROVAL, IdentifierRef.class,
+  SERVICENOW_APPROVAL_STEP(ModuleType.PMS, EntityTypeConstants.SERVICENOW_APPROVAL, IdentifierRef.class,
       EntityYamlRootNames.SERVICENOW_APPROVAL),
   @JsonProperty(EntityTypeConstants.SERVICENOW_CREATE)
   SERVICENOW_CREATE_STEP(ModuleType.PMS, EntityTypeConstants.SERVICENOW_CREATE, IdentifierRef.class,

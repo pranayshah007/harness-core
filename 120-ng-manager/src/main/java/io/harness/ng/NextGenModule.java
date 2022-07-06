@@ -544,7 +544,8 @@ public class NextGenModule extends AbstractModule {
     install(new io.harness.service.DelegateServiceModule());
     install(NGModule.getInstance());
     install(ExceptionModule.getInstance());
-    install(new EventsFrameworkModule(this.appConfig.getEventsFrameworkConfiguration()));
+    install(new EventsFrameworkModule(
+        this.appConfig.getEventsFrameworkConfiguration(), this.appConfig.getDebeziumConsumerConfigs()));
     install(new SecretManagementModule());
     install(new AccountClientModule(appConfig.getManagerClientConfig(),
         appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.toString()));

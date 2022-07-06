@@ -265,8 +265,8 @@ public class StageStrategyUtils {
       expressionsMap.put(String.format(matrixExpression, entry.getKey()), entry.getValue());
       expressionsMap.put(String.format(strategyMatrixExpression, entry.getKey()), entry.getValue());
     }
-    expressionsMap.put(EXPR_START_ESC + "strategy.currentIteration" + EXPR_END_ESC, String.valueOf(currentIteration));
-    expressionsMap.put(EXPR_START_ESC + "strategy.totalIterations" + EXPR_END, String.valueOf(totalIteration));
+    expressionsMap.put(EXPR_START_ESC + "strategy.iteration" + EXPR_END_ESC, String.valueOf(currentIteration));
+    expressionsMap.put(EXPR_START_ESC + "strategy.iterations" + EXPR_END, String.valueOf(totalIteration));
     return expressionsMap;
   }
 }

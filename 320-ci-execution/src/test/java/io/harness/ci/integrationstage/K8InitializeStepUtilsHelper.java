@@ -32,6 +32,7 @@ import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.stages.IntegrationStageConfigImpl;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
+import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -41,11 +42,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.io.Resources;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class K8InitializeStepUtilsHelper {
   private static final String BUILD_SCRIPT = "mvn clean install";
@@ -89,6 +94,60 @@ public class K8InitializeStepUtilsHelper {
   public static List<ExecutionWrapperConfig> getExecutionWrapperConfigList() {
     return newArrayList(ExecutionWrapperConfig.builder().step(getGitCloneStepElementConfigAsJsonNode()).build(),
         ExecutionWrapperConfig.builder().parallel(getRunAndPluginStepsInParallelAsJsonNode()).build());
+  }
+
+  public static JsonNode getRunStepsInStepGroupAsJsonNode() throws Exception {
+    K8InitializeStepUtilsHelper k8InitializeStepUtilsHelper = new K8InitializeStepUtilsHelper();
+    String step = k8InitializeStepUtilsHelper.readFile("steps/runStepsInStepGroup.json");
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode arrayNode = mapper.readValue(step, JsonNode.class);
+
+    return arrayNode;
+  }
+
+  private static JsonNode getRunStepsInStepGroupAsJsonNode1() throws Exception {
+    K8InitializeStepUtilsHelper k8InitializeStepUtilsHelper = new K8InitializeStepUtilsHelper();
+    String step = k8InitializeStepUtilsHelper.readFile("steps/runStepsInStepGroup1.json");
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode arrayNode = mapper.readValue(step, JsonNode.class);
+
+    return arrayNode;
+  }
+
+  private static JsonNode getRunStepsInStepGroupAsJsonNode2() throws Exception {
+    K8InitializeStepUtilsHelper k8InitializeStepUtilsHelper = new K8InitializeStepUtilsHelper();
+    String step = k8InitializeStepUtilsHelper.readFile("steps/runStepsInStepGroup2.json");
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode arrayNode = mapper.readValue(step, JsonNode.class);
+
+    return arrayNode;
+  }
+
+  private static JsonNode getRunStepsInStepGroupAsJsonNode3() throws Exception {
+    K8InitializeStepUtilsHelper k8InitializeStepUtilsHelper = new K8InitializeStepUtilsHelper();
+    String step = k8InitializeStepUtilsHelper.readFile("steps/runStepsInStepGroup3.json");
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode arrayNode = mapper.readValue(step, JsonNode.class);
+
+    return arrayNode;
+  }
+
+  public static List<ExecutionWrapperConfig> getExecutionWrapperConfigListWithStepGroup() throws Exception {
+    return newArrayList(ExecutionWrapperConfig.builder().step(getGitCloneStepElementConfigAsJsonNode()).build(),
+        ExecutionWrapperConfig.builder().parallel(getRunAndPluginStepsInParallelAsJsonNode()).build(),
+        ExecutionWrapperConfig.builder().parallel(getRunAndStepGroupInParallelAsJsonNode()).build(),
+        ExecutionWrapperConfig.builder().stepGroup(getRunStepsInStepGroupAsJsonNode()).build());
+  }
+
+  public static JsonNode getRunAndStepGroupInParallelAsJsonNode() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    ArrayNode arrayNode = mapper.createArrayNode();
+    JsonNode stepElementConfig = getRunStepElementConfigAsJsonNode();
+    ((ObjectNode) stepElementConfig).put("identifier", "step-4");
+    arrayNode.add(mapper.createObjectNode().set("step", stepElementConfig));
+    arrayNode.add(mapper.createObjectNode().set("stepGroup", getRunStepsInStepGroupAsJsonNode2()));
+
+    return arrayNode;
   }
 
   public static CIExecutionArgs getCIExecutionArgs() {
@@ -140,6 +199,29 @@ public class K8InitializeStepUtilsHelper {
     return stepElementConfig;
   }
 
+  public static JsonNode getDockerStepElementConfigAsJsonNode() {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode stepElementConfig = mapper.createObjectNode();
+    stepElementConfig.put("identifier", PLUGIN_STEP_ID);
+
+    stepElementConfig.put("type", "BuildAndPushDockerRegistry");
+    stepElementConfig.put("name", "docker step");
+
+    ObjectNode stepSpecType = mapper.createObjectNode();
+    stepSpecType.put("identifier", "step-docker");
+    stepSpecType.put("name", "step-docker");
+    stepSpecType.put("image", "plugins/docker");
+    stepSpecType.set("resources",
+        mapper.createObjectNode().set("limits",
+            mapper.createObjectNode()
+                .put("cpu", PLUGIN_STEP_LIMIT_CPU_STRING)
+                .put("memory", PLUGIN_STEP_LIMIT_MEM_STRING)));
+    stepSpecType.set("settings", mapper.createObjectNode().put(PLUGIN_ENV_VAR, PLUGIN_ENV_VAL));
+
+    stepElementConfig.set("spec", stepSpecType);
+    return stepElementConfig;
+  }
+
   public static JsonNode getGitCloneStepElementConfigAsJsonNode() {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode stepElementConfig = mapper.createObjectNode();
@@ -165,6 +247,18 @@ public class K8InitializeStepUtilsHelper {
   public static List<ContainerDefinitionInfo> getStepContainers() {
     Integer index = 1;
     return asList(getGitPluginStepContainer(index), getRunStepContainer(index + 1), getPluginStepContainer(index + 2));
+  }
+
+  public static List<ContainerDefinitionInfo> getStepContainersForStepGroup() {
+    Integer index = 1;
+    ContainerDefinitionInfo step4 = getRunStepContainer(4);
+    ContainerDefinitionInfo step5 = getRunStepContainer(5);
+    ContainerDefinitionInfo step6 = getRunStepContainer(6);
+    ContainerDefinitionInfo step7 = getRunStepContainer(7);
+    ContainerDefinitionInfo step8 = getRunStepContainer(8);
+
+    return asList(getGitPluginStepContainer(index), getRunStepContainer(index + 1), getPluginStepContainer(index + 2),
+        step4, step5, step6, step7, step8);
   }
 
   private static ContainerDefinitionInfo getRunStepContainer(Integer index) {
@@ -243,7 +337,7 @@ public class K8InitializeStepUtilsHelper {
         .build();
   }
 
-  private static JsonNode getRunAndPluginStepsInParallelAsJsonNode() {
+  public static JsonNode getRunAndPluginStepsInParallelAsJsonNode() {
     ObjectMapper mapper = new ObjectMapper();
     ArrayNode arrayNode = mapper.createArrayNode();
     arrayNode.add(mapper.createObjectNode().set("step", getRunStepElementConfigAsJsonNode()));
@@ -342,5 +436,57 @@ public class K8InitializeStepUtilsHelper {
         .stepIdentifier(PLUGIN_STEP_ID)
         .stepName(PLUGIN_STEP_NAME)
         .build();
+  }
+
+  public static StageElementConfig getIntegrationStageElementConfigWithStepGroup() throws Exception {
+    return StageElementConfig.builder()
+        .identifier("ciStage")
+        .type("CI")
+        .stageType(getIntegrationStageConfigWithStepGroup1())
+        .build();
+  }
+
+  public static StageElementConfig getIntegrationStageElementConfigWithStepGroup1() throws Exception {
+    return StageElementConfig.builder()
+        .identifier("ciStage")
+        .type("CI")
+        .stageType(getIntegrationStageConfigWithStepGroup1())
+        .build();
+  }
+
+  public static IntegrationStageConfig getIntegrationStageConfigWithStepGroup1() throws Exception {
+    List<ExecutionWrapperConfig> executionSectionList = getExecutionWrapperConfigListWithStepGroup1();
+    return IntegrationStageConfigImpl.builder()
+        .execution(ExecutionElementConfig.builder().steps(executionSectionList).build())
+        .build();
+  }
+
+  public static List<ExecutionWrapperConfig> getExecutionWrapperConfigListWithStepGroup1() throws Exception {
+    return newArrayList(ExecutionWrapperConfig.builder().parallel(getTwoStepGroupsInParallelAsJsonNode()).build(),
+        ExecutionWrapperConfig.builder().parallel(getRunAndPluginStepsInParallelAsJsonNode()).build(),
+        ExecutionWrapperConfig.builder().parallel(getRunAndStepGroupInParallelAsJsonNode()).build());
+  }
+
+  public static JsonNode getTwoStepGroupsInParallelAsJsonNode() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    ArrayNode arrayNode = mapper.createArrayNode();
+    arrayNode.add(mapper.createObjectNode().set("stepGroup", getRunStepsInStepGroupAsJsonNode()));
+    arrayNode.add(mapper.createObjectNode().set("stepGroup", getRunStepsInStepGroupAsJsonNode1()));
+
+    return arrayNode;
+  }
+
+  public static List<ExecutionWrapperConfig> getExecutionWrapperConfigListWithStepGroup2() throws Exception {
+    return newArrayList(ExecutionWrapperConfig.builder().step(getRunStepElementConfigAsJsonNode()).build(),
+        ExecutionWrapperConfig.builder().stepGroup(getRunStepsInStepGroupAsJsonNode3()).build());
+  }
+
+  private String readFile(String filename) {
+    ClassLoader classLoader = getClass().getClassLoader();
+    try {
+      return Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Could not read resource file: " + filename);
+    }
   }
 }

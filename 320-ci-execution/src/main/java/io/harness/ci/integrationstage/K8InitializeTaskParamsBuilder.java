@@ -26,6 +26,7 @@ import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.environment.K8BuildJobEnvInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
@@ -44,6 +45,7 @@ import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.SecretUtils;
 import io.harness.ci.buildstate.providers.InternalContainerParamsProvider;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.ci.utils.LiteEngineSecretEvaluator;
 import io.harness.ci.utils.PortFinder;
@@ -92,6 +94,7 @@ public class K8InitializeTaskParamsBuilder {
   @Inject private HarnessImageUtils harnessImageUtils;
   @Inject private InternalContainerParamsProvider internalContainerParamsProvider;
   @Inject private SecretUtils secretUtils;
+  @Inject private CIFeatureFlagService featureFlagService;
 
   @Inject CodebaseUtils codebaseUtils;
 
@@ -398,9 +401,24 @@ public class K8InitializeTaskParamsBuilder {
                                           .build();
     List<ContainerDefinitionInfo> serviceCtrDefinitionInfos =
         k8InitializeServiceUtils.createServiceContainerDefinitions(stageElementConfig, portFinder, os);
-    List<ContainerDefinitionInfo> stepCtrDefinitionInfos =
-        k8InitializeStepUtils.createStepContainerDefinitions(initializeStepInfo.getExecutionElementConfig().getSteps(),
-            stageElementConfig, ciExecutionArgs, portFinder, AmbianceUtils.getAccountId(ambiance), os);
+    List<ContainerDefinitionInfo> stepCtrDefinitionInfos;
+
+    // We have introduced support of step groups in CI stage. This feature flag is to ensure an easy and quick rollback
+    // in case the code breaks functionality.
+    // With this feature flag turned off, the code will behave as it is.
+    // Once the release is done and step groups are working as expected, we will refactor this code and remove
+    // the feature flag
+    if (featureFlagService.isEnabled(FeatureName.CI_STEP_GROUP_ENABLED, AmbianceUtils.getAccountId(ambiance))) {
+      log.info("Feature Flag CI_STEP_GROUP_ENABLED is enabled for this account");
+      stepCtrDefinitionInfos = k8InitializeStepUtils.createStepContainerDefinitionsStepGroupWithFF(
+          initializeStepInfo.getExecutionElementConfig().getSteps(), stageElementConfig, ciExecutionArgs, portFinder,
+          AmbianceUtils.getAccountId(ambiance), os, 0);
+    } else {
+      log.info("Feature Flag CI_STEP_GROUP_ENABLED is not enabled for this account");
+      stepCtrDefinitionInfos = k8InitializeStepUtils.createStepContainerDefinitions(
+          initializeStepInfo.getExecutionElementConfig().getSteps(), stageElementConfig, ciExecutionArgs, portFinder,
+          AmbianceUtils.getAccountId(ambiance), os);
+    }
 
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     containerDefinitionInfos.addAll(serviceCtrDefinitionInfos);

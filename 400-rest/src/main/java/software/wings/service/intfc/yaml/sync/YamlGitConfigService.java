@@ -16,4 +16,6 @@ public interface YamlGitConfigService {
   List<YamlGitConfig> getYamlGitConfigAccessibleToUserWithEntityName(String accountId);
 
   Set<String> getAppIdsForYamlGitConfig(List<String> yamlGitConfigIds);
+
+  YamlGitConfig getYamlGitConfigFromAppId(String appId, String accountId);
 }

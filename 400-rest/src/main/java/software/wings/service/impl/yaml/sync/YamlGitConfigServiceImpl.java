@@ -153,4 +153,12 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
     }
     return yamlGitConfigs.stream().map(config -> config.getAppId()).collect(Collectors.toSet());
   }
+
+  @Override
+  public YamlGitConfig getYamlGitConfigFromAppId(String appId, String accountId) {
+    return wingsPersistence.createQuery(YamlGitConfig.class)
+        .filter(YamlGitConfigKeys.accountId, accountId)
+        .filter(YamlGitConfigKeys.appId, appId)
+        .get();
+  }
 }

@@ -21,6 +21,7 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
+import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -119,9 +120,22 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
       } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
         ParallelStepElementConfig parallelStepElementConfig = getParallelStepElementConfig(executionWrapper);
         parallelStepElementConfig.getSections().forEach(section -> addStepIdentifier(section, stepIdentifiers));
+      } else if (executionWrapper.getStepGroup() != null && !executionWrapper.getStepGroup().isNull()) {
+        StepGroupElementConfig stepGroupElementConfig = getStepGroupElementConfig(executionWrapper);
+        for (ExecutionWrapperConfig wrapper : stepGroupElementConfig.getSteps()) {
+          addStepIdentifier(wrapper, stepIdentifiers);
+        }
       } else {
-        throw new InvalidRequestException("Only Parallel or StepElement is supported");
+        throw new InvalidRequestException("Only Parallel, StepElement and StepGroup are supported");
       }
+    }
+  }
+
+  public static StepGroupElementConfig getStepGroupElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
+    try {
+      return YamlUtils.read(executionWrapperConfig.getStepGroup().toString(), StepGroupElementConfig.class);
+    } catch (Exception ex) {
+      throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
     }
   }
 

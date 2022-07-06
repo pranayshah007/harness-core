@@ -39,6 +39,7 @@ import io.harness.ng.opa.entities.secret.OpaSecretService;
 import io.harness.ng.opa.entities.secret.OpaSecretServiceImpl;
 import io.harness.opaclient.OpaServiceClient;
 import io.harness.outbox.api.OutboxService;
+import io.harness.pms.redisConsumer.DebeziumConsumerConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.repositories.ConnectorRepository;
@@ -197,9 +198,12 @@ public class SecretManagementModuleTest extends CategoryTest {
         return mock(FeatureFlagService.class);
       }
     });
+    List<DebeziumConsumerConfig> list = new ArrayList<>();
+    list.add(DebeziumConsumerConfig.builder().build());
     modules.add(new EventsFrameworkModule(EventsFrameworkConfiguration.builder()
                                               .redisConfig(RedisConfig.builder().redisUrl("dummyRedisUrl").build())
-                                              .build()));
+                                              .build(),
+        list));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
