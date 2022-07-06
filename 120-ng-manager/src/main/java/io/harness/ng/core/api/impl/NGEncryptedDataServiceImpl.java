@@ -479,7 +479,8 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
                     getProjectIdentifier(ngAccess.getProjectIdentifier(), secretScope), secretRefData.getIdentifier())
                 .orElse(null);
         if (!GLOBAL_ACCOUNT_ID.equals(ngAccess.getAccountIdentifier())
-            || !SERVICE.equals(SecurityContextBuilder.getPrincipal().getType())) {
+            && (SecurityContextBuilder.getPrincipal() != null
+                && !SERVICE.equals(SecurityContextBuilder.getPrincipal().getType()))) {
           secretPermissionValidator.checkForAccessOrThrow(
               ResourceScope.of(ngAccess.getAccountIdentifier(),
                   getOrgIdentifier(ngAccess.getOrgIdentifier(), secretScope),
@@ -487,7 +488,6 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
               Resource.of(SECRET_RESOURCE_TYPE, secretRefData.getIdentifier()), SECRET_ACCESS_PERMISSION,
               secret != null ? secret.getSecret().getOwner() : null);
         }
-
       } catch (IllegalAccessException illegalAccessException) {
         log.error("Error while checking access permission for secret: {}", field, illegalAccessException);
       }
