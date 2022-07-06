@@ -94,7 +94,7 @@ public class CDDashboardApisTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetHealthDeploymentDashboard() {
     long startInterval = 1619568000000L;
-    long endInterval = 1619913600000L;
+    long endInterval = 1620000000000L;
     long previousInterval = 1619136000000L;
 
     List<String> status = Arrays.asList(ExecutionStatus.SUCCESS.name(), ExecutionStatus.EXPIRED.name(),
@@ -239,7 +239,7 @@ public class CDDashboardApisTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetExecutionDeploymentDashboard() {
     long startInterval = 1619136000000L;
-    long endInterval = 1619913600000L;
+    long endInterval = 1620000000000L;
 
     List<String> status = Arrays.asList(ExecutionStatus.SUCCESS.name(), ExecutionStatus.EXPIRED.name(),
         ExecutionStatus.RUNNING.name(), ExecutionStatus.ABORTED.name(), ExecutionStatus.SUCCESS.name(),
@@ -521,7 +521,7 @@ public class CDDashboardApisTest extends CategoryTest {
   public void testGetDeploymentsExecutionInfo() throws Exception {
     long prevStartInterval = 1619136000000L;
     long startInterval = 1619568000000L;
-    long endInterval = 1619913600000L;
+    long endInterval = 1620000000000L;
 
     Callable<DeploymentChangeRates> getDeploymentChangeRates = ()
         -> DeploymentChangeRates.builder()
@@ -592,7 +592,7 @@ public class CDDashboardApisTest extends CategoryTest {
 
     doReturn(serviceDeploymentListWrap)
         .when(cdOverviewDashboardServiceImpl)
-        .getServiceDeployments("acc", "org", "pro", startInterval, getStartTimeOfNextDay(endInterval), null, 1);
+        .getServiceDeployments("acc", "org", "pro", startInterval, endInterval, null, 1);
     doReturn(prevExecutionDeploymentWrap)
         .when(cdOverviewDashboardServiceImpl)
         .getServiceDeployments("acc", "org", "pro", prevStartInterval, startInterval, null, 1);
@@ -610,8 +610,7 @@ public class CDDashboardApisTest extends CategoryTest {
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testGetDeploymentActiveFailedRunningInfo() {
-    Long endInterval = 1622650432000L;
-    endInterval = endInterval + cdOverviewDashboardServiceImpl.getTimeUnitToGroupBy(DAY);
+    Long endInterval = 1622678400000L;
     List<String> objectIdListFailure = Arrays.asList("11", "12", "13", "14", "15", "16", "17", "18");
     List<String> namePipelineListFailure =
         Arrays.asList("name1", "name2", "name3", "name4", "name5", "name1", "name2", "name3");
@@ -709,19 +708,19 @@ public class CDDashboardApisTest extends CategoryTest {
                                                                    .build();
 
     String queryFailed = cdOverviewDashboardServiceImpl.queryBuilderStatus(
-        "acc", "orgId", "pro", 10, failedStatusList, 1619626802000L, endInterval);
+        "acc", "orgId", "pro", 10, failedStatusList, 1619568000000l, endInterval);
     String queryIdFailed = cdOverviewDashboardServiceImpl.queryBuilderSelectIdLimitTimeCdTable(
-        "acc", "orgId", "pro", 10, failedStatusList, 1619626802000L, endInterval);
+        "acc", "orgId", "pro", 10, failedStatusList, 1619568000000l, endInterval);
 
     String queryActive = cdOverviewDashboardServiceImpl.queryBuilderStatus(
-        "acc", "orgId", "pro", 10, activeStatusList, 1619626802000L, endInterval);
+        "acc", "orgId", "pro", 10, activeStatusList, 1619568000000l, endInterval);
     String queryIdActive = cdOverviewDashboardServiceImpl.queryBuilderSelectIdLimitTimeCdTable(
-        "acc", "orgId", "pro", 10, activeStatusList, 1619626802000L, endInterval);
+        "acc", "orgId", "pro", 10, activeStatusList, 1619568000000l, endInterval);
 
     String queryPending = cdOverviewDashboardServiceImpl.queryBuilderStatus(
-        "acc", "orgId", "pro", 10, pendingStatusList, 1619626802000L, endInterval);
+        "acc", "orgId", "pro", 10, pendingStatusList, 1619568000000l, endInterval);
     String queryIdPending = cdOverviewDashboardServiceImpl.queryBuilderSelectIdLimitTimeCdTable(
-        "acc", "orgId", "pro", 10, pendingStatusList, 1619626802000L, endInterval);
+        "acc", "orgId", "pro", 10, pendingStatusList, 1619568000000l, endInterval);
 
     // failure
     doReturn(deploymentStatusInfoListFailure)
@@ -785,7 +784,7 @@ public class CDDashboardApisTest extends CategoryTest {
 
     DashboardExecutionStatusInfo dashboardExecutionStatusInfo =
         cdOverviewDashboardServiceImpl.getDeploymentActiveFailedRunningInfo(
-            "acc", "orgId", "pro", 10, 1619626802000L, 1622650432000L);
+            "acc", "orgId", "pro", 10, 1619568000000L, 1622678400000L);
 
     // failure
 
