@@ -9,6 +9,7 @@ package io.harness.steps.approval.step.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
@@ -22,6 +23,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @OwnedBy(CDC)
 @Value
 @Builder
+@RecasterAlias("io.harness.steps.approval.step.bean.Condition")
 public class Condition {
   @NotNull String key;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @NotEmpty ParameterField<String> value;

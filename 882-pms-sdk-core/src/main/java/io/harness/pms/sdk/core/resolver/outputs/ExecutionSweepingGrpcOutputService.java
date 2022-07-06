@@ -7,6 +7,7 @@
 
 package io.harness.pms.sdk.core.resolver.outputs;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -32,6 +33,7 @@ import java.util.List;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
+@RecasterAlias("io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingGrpcOutputService")
 public class ExecutionSweepingGrpcOutputService implements ExecutionSweepingOutputService {
   private final SweepingOutputServiceBlockingStub sweepingOutputServiceBlockingStub;
 

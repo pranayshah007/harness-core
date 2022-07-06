@@ -9,6 +9,7 @@ package io.harness.steps.approval.step.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -18,6 +19,7 @@ import lombok.experimental.FieldDefaults;
 
 @OwnedBy(CDC)
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@RecasterAlias("io.harness.steps.approval.step.beans.Operator")
 public enum Operator {
   @JsonProperty("equals") EQ("equals"),
   @JsonProperty("not equals") NOT_EQ("not equals"),

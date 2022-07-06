@@ -9,10 +9,12 @@ package io.harness.steps.shellscript;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.shell.ScriptType;
 
 @OwnedBy(PIPELINE)
+@RecasterAlias("io.harness.steps.shellscript")
 public enum ShellType {
   Bash(ScriptType.BASH);
 

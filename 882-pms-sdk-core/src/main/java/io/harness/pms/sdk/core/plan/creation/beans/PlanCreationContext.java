@@ -7,6 +7,7 @@
 
 package io.harness.pms.sdk.core.plan.creation.beans;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.async.AsyncCreatorContext;
@@ -36,6 +37,7 @@ import lombok.Singular;
 @Builder
 @EqualsAndHashCode
 @JsonIgnoreProperties(ignoreUnknown = true)
+@RecasterAlias("io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext")
 public class PlanCreationContext implements AsyncCreatorContext {
   YamlField currentField;
   @Singular("globalContext") Map<String, PlanCreationContextValue> globalContext;

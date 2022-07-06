@@ -9,6 +9,7 @@ package io.harness.steps.approval.step.harness.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.Date;
@@ -25,6 +26,7 @@ import lombok.experimental.FieldNameConstants;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @FieldNameConstants(innerTypeName = "HarnessApprovalActivityKeys")
+@RecasterAlias("io.harness.steps.approval.step.harness.beans.HarnessApprovalActivityDTO")
 public class HarnessApprovalActivityDTO {
   @NotNull EmbeddedUserDTO user;
   @NotNull HarnessApprovalAction action;

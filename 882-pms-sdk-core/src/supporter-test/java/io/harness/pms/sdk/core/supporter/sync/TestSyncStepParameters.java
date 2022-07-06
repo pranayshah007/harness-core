@@ -9,6 +9,7 @@ package io.harness.pms.sdk.core.supporter.sync;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
@@ -20,6 +21,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Value
 @Builder
 @TypeAlias("dummyStepParameters")
+@RecasterAlias("io.harness.pms.sdk.core.supporter.sync.TestSyncStepParameters")
 public class TestSyncStepParameters implements StepParameters {
   String logExpression;
 }
