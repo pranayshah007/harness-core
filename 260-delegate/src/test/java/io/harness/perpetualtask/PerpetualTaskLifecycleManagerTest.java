@@ -76,7 +76,7 @@ public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
     PerpetualTaskExecutionContext taskContext =
         PerpetualTaskExecutionContext.newBuilder().setTaskParams(params).build();
     perpetualTaskLifecycleManager = new PerpetualTaskLifecycleManager(perpetualTaskId, taskContext, factoryMap,
-            perpetualTaskServiceAgentClient, timeLimiter, currentlyExecutingPerpetualTasksCount);
+        perpetualTaskServiceAgentClient, timeLimiter, currentlyExecutingPerpetualTasksCount);
   }
 
   @Test
