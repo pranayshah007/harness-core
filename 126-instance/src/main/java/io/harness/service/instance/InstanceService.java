@@ -16,6 +16,7 @@ import io.harness.models.InstancesByBuildId;
 
 import java.util.List;
 import java.util.Optional;
+import javax.validation.constraints.NotEmpty;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 
@@ -31,7 +32,8 @@ public interface InstanceService {
 
   void deleteAll(List<InstanceDTO> instanceDTOList);
 
-  Optional<InstanceDTO> softDelete(String instanceKey);
+  Optional<InstanceDTO> delete(@NotEmpty String instanceKey, @NotEmpty String accountIdentifier,
+      @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier, @NotEmpty String infrastructureMappingId);
 
   Optional<InstanceDTO> findAndReplace(InstanceDTO instanceDTO);
 
