@@ -5,14 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.grpc;
+package io.harness.delegate;
 
-public class DelegateServiceGrpcClientException extends RuntimeException {
-  public DelegateServiceGrpcClientException(String message, Throwable cause) {
+public class DelegateServiceClientException extends RuntimeException {
+  public DelegateServiceClientException(String message, Throwable cause) {
     super(message, cause);
   }
 
-  public DelegateServiceGrpcClientException(String message) {
+  public DelegateServiceClientException(String message) {
     super(message);
   }
 }
