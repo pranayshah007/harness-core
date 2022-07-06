@@ -7,8 +7,6 @@
 
 package io.harness.ng.overview;
 
-import static io.harness.NGDateUtils.getStartTimeOfNextDay;
-import static io.harness.ng.core.activityhistory.dto.TimeGroupType.DAY;
 import static io.harness.ng.overview.service.CDOverviewDashboardServiceImpl.INVALID_CHANGE_RATE;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
