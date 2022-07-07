@@ -21,5 +21,5 @@ public interface SlackMessageSender {
   @DelegateTaskType(TaskType.SLACK)
   void send(SlackMessage slackMessage, boolean forceProxyCallForDelegate, boolean isCertValidationRequired);
 
-  @DelegateTaskType(TaskType.SLACK) void sendJSON(SlackMessageJSON slackMessage);
+  @DelegateTaskType(TaskType.SLACK) boolean sendJSON(SlackMessageJSON slackMessage);
 }

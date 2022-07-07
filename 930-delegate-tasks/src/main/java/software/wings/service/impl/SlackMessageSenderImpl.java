@@ -92,7 +92,7 @@ public class SlackMessageSenderImpl implements SlackMessageSender {
   }
 
   @Override
-  public void sendJSON(SlackMessageJSON slackMessage) {
+  public boolean sendJSON(SlackMessageJSON slackMessage) {
     OkHttpClient client = getHttpClient();
     try {
       Request slackRequest =
@@ -102,12 +102,14 @@ public class SlackMessageSenderImpl implements SlackMessageSender {
         String bodyString = (null != response.body()) ? response.body().string() : "null";
 
         log.error("Response not Successful. Response body: {}", bodyString);
-        return;
+        return false;
       }
       log.info("Slack json message response was successful");
+      return true;
     } catch (Exception e) {
       log.error("Error sending post data", e);
     }
+    return false;
   }
 
   SlackWebhookClient getWebhookClient(final String webhookUrl) {
