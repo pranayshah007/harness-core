@@ -335,6 +335,9 @@ if [[ "" != "$jwtNextGenManagerSecret" ]]; then
   yq write -i $CONFIG_FILE portal.jwtNextGenManagerSecret "$jwtNextGenManagerSecret"
 fi
 
+if [[ "" != "$jwtNextGenManagerSecret" ]]; then
+  yq write -i $CONFIG_FILE portal.jwtManagerServiceSecret "$jwtNextGenManagerSecret"
+fi
 
 if [[ "" != "$FEATURES" ]]; then
   yq write -i $CONFIG_FILE featuresEnabled "$FEATURES"
@@ -949,6 +952,10 @@ fi
 
 if [[ "" != "$NG_MANAGER_BASE_URL" ]]; then
   yq write -i $CONFIG_FILE ngManagerServiceHttpClientConfig.baseUrl "$NG_MANAGER_BASE_URL"
+fi
+
+if [[ "" != "$MANAGER_CLIENT_BASEURL" ]]; then
+  yq write -i $CONFIG_FILE managerServiceHttpClientConfig.baseUrl "$MANAGER_CLIENT_BASEURL"
 fi
 
 if [[ "" != "$ENABLE_USER_CHANGESTREAM" ]]; then
