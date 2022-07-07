@@ -11,6 +11,7 @@ import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.SLILogsFilter;
+import io.harness.cvng.core.services.api.DeleteEntityByHandler;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
@@ -25,7 +26,7 @@ import io.harness.ng.beans.PageResponse;
 import java.util.List;
 import java.util.Map;
 
-public interface ServiceLevelObjectiveService {
+public interface ServiceLevelObjectiveService extends DeleteEntityByHandler<ServiceLevelObjective> {
   ServiceLevelObjectiveResponse create(ProjectParams projectParams, ServiceLevelObjectiveDTO serviceLevelObjectiveDTO);
 
   ServiceLevelObjectiveResponse update(

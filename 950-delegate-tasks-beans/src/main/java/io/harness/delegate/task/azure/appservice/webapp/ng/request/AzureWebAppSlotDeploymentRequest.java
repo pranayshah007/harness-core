@@ -40,13 +40,13 @@ public class AzureWebAppSlotDeploymentRequest extends AbstractSlotDataRequest {
   private AzureAppServicePreDeploymentData preDeploymentData;
 
   @Builder
-  public AzureWebAppSlotDeploymentRequest(AzureAppServicePreDeploymentData preDeploymentData,
+  public AzureWebAppSlotDeploymentRequest(String accountId, AzureAppServicePreDeploymentData preDeploymentData,
       CommandUnitsProgress commandUnitsProgress, AzureWebAppInfraDelegateConfig infrastructure, String startupCommand,
       List<AzureAppServiceApplicationSetting> applicationSettings,
       List<AzureAppServiceConnectionString> connectionStrings, AzureArtifactConfig artifact,
       Integer timeoutIntervalInMin) {
-    super(commandUnitsProgress, infrastructure, startupCommand, applicationSettings, connectionStrings, artifact,
-        timeoutIntervalInMin);
+    super(accountId, commandUnitsProgress, infrastructure, startupCommand, applicationSettings, connectionStrings,
+        artifact, timeoutIntervalInMin);
     this.preDeploymentData = preDeploymentData;
   }
 

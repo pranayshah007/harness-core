@@ -65,6 +65,17 @@ public class StageStrategyUtils {
     return planNodeId;
   }
 
+  public String getIdentifierWithExpression(PlanCreationContext ctx, String originalIdentifier) {
+    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
+    // Since strategy is a child of stage but in execution we want to wrap stage around strategy,
+    // we are appending an expression that will be resolved during execution
+    String identifier = originalIdentifier;
+    if (strategyField != null) {
+      identifier = originalIdentifier + "<+strategy.identifierPostFix>";
+    }
+    return identifier;
+  }
+
   public List<AdviserObtainment> getAdviserObtainments(
       YamlField stageField, KryoSerializer kryoSerializer, boolean checkForStrategy) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();

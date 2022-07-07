@@ -63,6 +63,8 @@ public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode
   @SneakyThrows
   @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, T stageNode, List<String> childrenNodeIds) {
+    stageNode.setIdentifier(StageStrategyUtils.getIdentifierWithExpression(ctx, stageNode.getIdentifier()));
+    stageNode.setName(StageStrategyUtils.getIdentifierWithExpression(ctx, stageNode.getName()));
     StageElementParametersBuilder stageParameters = StepParametersUtils.getStageParameters(stageNode);
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));

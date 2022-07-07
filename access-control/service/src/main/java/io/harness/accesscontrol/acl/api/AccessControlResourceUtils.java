@@ -5,23 +5,22 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.accesscontrol.clients;
+package io.harness.accesscontrol.acl.api;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.security.dto.PrincipalType.SERVICE;
 
-import io.harness.accesscontrol.acl.api.AccessControlDTO;
-import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
-import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.PL)
-public class AccessControlClientUtils {
+public class AccessControlResourceUtils {
   public static boolean serviceContextAndNoPrincipalInBody(
       io.harness.security.dto.Principal principalInContext, Principal principalToCheckPermissions) {
     Optional<io.harness.security.dto.Principal> serviceCall =
@@ -53,6 +52,7 @@ public class AccessControlClientUtils {
         .resourceIdentifier(permissionCheckDTO.getResourceIdentifier())
         .resourceScope(permissionCheckDTO.getResourceScope())
         .resourceType(permissionCheckDTO.getResourceType())
+        .resourceAttributes(permissionCheckDTO.getResourceAttributes())
         .permitted(permitted)
         .build();
   }
@@ -70,5 +70,10 @@ public class AccessControlClientUtils {
       return false;
     }
     return true;
+  }
+
+  public static boolean checkResourcePreconditions(List<PermissionCheckDTO> permissions) {
+    return permissions.stream().allMatch(permissionCheckDTO
+        -> isEmpty(permissionCheckDTO.getResourceIdentifier()) || isEmpty(permissionCheckDTO.getResourceAttributes()));
   }
 }

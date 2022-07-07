@@ -5,16 +5,21 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.azure.webapp;
+package io.harness.cdng.azure.webapp.beans;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Value;
 
-@Data
+@Value
 @Builder
-@OwnedBy(HarnessTeam.CDP)
-public class AzureWebAppSwapSlotsOutcome implements ExecutionSweepingOutput {}
+@OwnedBy(CDP)
+public class AzureWebAppSlotDeploymentDataOutput implements ExecutionSweepingOutput {
+  public static final String OUTPUT_NAME = "webAppSlotDeploymentData";
+
+  String deploymentProgressMarker;
+}

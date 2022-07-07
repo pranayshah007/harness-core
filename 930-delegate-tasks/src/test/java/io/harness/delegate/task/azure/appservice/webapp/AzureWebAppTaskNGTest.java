@@ -165,8 +165,11 @@ public class AzureWebAppTaskNGTest extends CategoryTest {
     final AzureWebAppRequestResponse requestResponse = mock(AzureWebAppRequestResponse.class);
     final AzureWebAppInfraDelegateConfig infrastructure = AzureTestUtils.createTestWebAppInfraDelegateConfig();
     final AzureArtifactConfig artifactConfig = AzureTestUtils.createTestAzureContainerConfig();
-    final AzureWebAppTaskRequest taskRequest =
-        AzureWebAppSlotDeploymentRequest.builder().artifact(artifactConfig).infrastructure(infrastructure).build();
+    final AzureWebAppTaskRequest taskRequest = AzureWebAppSlotDeploymentRequest.builder()
+                                                   .accountId("accountId")
+                                                   .artifact(artifactConfig)
+                                                   .infrastructure(infrastructure)
+                                                   .build();
     final AzureClientKeyCertDTO azureClientKeyCert =
         AzureClientKeyCertDTO.builder().clientCertRef(SecretRefData.builder().build()).build();
     final List<EncryptedDataDetail> encryptedDataDetails = emptyList();

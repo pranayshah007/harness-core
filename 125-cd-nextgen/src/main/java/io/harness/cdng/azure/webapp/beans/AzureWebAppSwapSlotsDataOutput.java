@@ -7,19 +7,18 @@
 
 package io.harness.cdng.azure.webapp.beans;
 
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-
+import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
-@Value
+@Data
 @Builder
-@OwnedBy(CDP)
-public class AzureSlotDeploymentDataOutput implements ExecutionSweepingOutput {
-  public static final String OUTPUT_NAME = "webAppSlotDeploymentData";
+@OwnedBy(HarnessTeam.CDP)
+public class AzureWebAppSwapSlotsDataOutput implements ExecutionSweepingOutput {
+  public static final String OUTPUT_NAME = "webAppSwapSlotsData";
 
   String deploymentProgressMarker;
 }

@@ -39,6 +39,9 @@ public interface AzureConstants {
   String ACTIVITY_ID = "activityId";
   int NUMBER_OF_LATEST_VERSIONS_TO_KEEP = 3;
   String STEADY_STATE_TIMEOUT_REGEX = "w|d|h|m|s|ms";
+  String ZIP_EXTENSION = ".zip";
+  String JAR_EXTENSION = ".jar";
+  String FILE_RENAME_FAILURE = "Failed to rename the file - [%s] to [%s]";
 
   // VMSS Tags names and values
   String HARNESS_AUTOSCALING_GROUP_TAG_NAME = "HARNESS_REVISION";
@@ -253,6 +256,7 @@ public interface AzureConstants {
 
   String REQUEST_TRAFFIC_SHIFT = "Sending request to shift [%.2f] traffic to deployment slot: [%s]";
   String SUCCESS_TRAFFIC_SHIFT = "Traffic percentage updated successfully";
+  String NO_TRAFFIC_SHIFT_REQUIRED = "Traffic percentage update not required";
 
   String UPDATE_STARTUP_COMMAND = "Start updating slot configuration with startup command, %n"
       + "App name: [%s]%nSlot name: [%s]";

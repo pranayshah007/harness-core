@@ -3591,12 +3591,29 @@
         "type": {
           "type": "string",
           "enum": [
-            "Token"
+            "Token",
+            "OAuth"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "OAuth"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GitlabOauth"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -3735,7 +3752,8 @@
               "enum": [
                 "UsernamePassword",
                 "UsernameToken",
-                "Kerberos"
+                "Kerberos",
+                "OAuth"
               ]
             }
           }
@@ -3752,6 +3770,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GitlabKerberos"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "OAuth"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GitlabOauth"
               }
             }
           }
@@ -3807,6 +3841,29 @@
           ],
           "properties": {
             "kerberosKeyRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GitlabOauth": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/GitlabHttpCredentialsSpecDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "refreshTokenRef",
+            "tokenRef"
+          ],
+          "properties": {
+            "refreshTokenRef": {
+              "type": "string"
+            },
+            "tokenRef": {
               "type": "string"
             }
           }

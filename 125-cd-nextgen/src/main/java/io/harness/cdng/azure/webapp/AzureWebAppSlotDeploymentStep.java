@@ -25,10 +25,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.model.AzureAppServiceConfiguration;
 import io.harness.cdng.CDStepHelper;
-import io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentDataOutput;
 import io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentPassThroughData;
 import io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentPassThroughData.AzureSlotDeploymentPassThroughDataBuilder;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
+import io.harness.cdng.azure.webapp.beans.AzureWebAppSlotDeploymentDataOutput;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -53,6 +53,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
@@ -170,8 +171,8 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
     stepResponseBuilder.status(Status.SUCCEEDED);
     stepResponseBuilder.unitProgressList(webAppTaskResponse.getCommandUnitsProgress().getUnitProgresses());
 
-    executionSweepingOutputService.consume(ambiance, AzureSlotDeploymentDataOutput.OUTPUT_NAME,
-        AzureSlotDeploymentDataOutput.builder()
+    executionSweepingOutputService.consume(ambiance, AzureWebAppSlotDeploymentDataOutput.OUTPUT_NAME,
+        AzureWebAppSlotDeploymentDataOutput.builder()
             .deploymentProgressMarker(slotDeploymentResponse.getDeploymentProgressMarker())
             .build(),
         StepCategory.STEP.name());
@@ -240,6 +241,7 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
 
     AzureWebAppFetchPreDeploymentDataRequest fetchPreDeploymentDataRequest =
         AzureWebAppFetchPreDeploymentDataRequest.builder()
+            .accountId(AmbianceUtils.getAccountId(ambiance))
             .infraDelegateConfig(
                 azureWebAppStepHelper.getInfraDelegateConfig(ambiance, passThroughData.getInfrastructure()))
             .applicationSettings(appServiceConfiguration.getAppSettings())
@@ -269,6 +271,7 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
 
     AzureWebAppSlotDeploymentRequest slotDeploymentRequest =
         AzureWebAppSlotDeploymentRequest.builder()
+            .accountId(AmbianceUtils.getAccountId(ambiance))
             .preDeploymentData(passThroughData.getPreDeploymentData())
             .applicationSettings(appServiceConfiguration.getAppSettings())
             .connectionStrings(appServiceConfiguration.getConnStrings())

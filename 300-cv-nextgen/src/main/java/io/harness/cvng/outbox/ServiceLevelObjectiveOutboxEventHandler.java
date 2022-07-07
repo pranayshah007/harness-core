@@ -46,11 +46,11 @@ public class ServiceLevelObjectiveOutboxEventHandler implements OutboxEventHandl
     try {
       switch (outboxEvent.getEventType()) {
         case "ServiceLevelObjectiveCreateEvent":
-          return handleMonitoredServiceCreateEvent(outboxEvent, globalContext);
+          return handleServiceLevelObjectiveCreateEvent(outboxEvent, globalContext);
         case "ServiceLevelObjectiveUpdateEvent":
-          return handleMonitoredServiceUpdateEvent(outboxEvent, globalContext);
+          return handleServiceLevelObjectiveUpdateEvent(outboxEvent, globalContext);
         case "ServiceLevelObjectiveDeleteEvent":
-          return handleMonitoredServiceDeleteEvent(outboxEvent, globalContext);
+          return handleServiceLevelObjectiveDeleteEvent(outboxEvent, globalContext);
         default:
           return false;
       }
@@ -59,15 +59,15 @@ public class ServiceLevelObjectiveOutboxEventHandler implements OutboxEventHandl
     }
   }
 
-  private boolean handleMonitoredServiceCreateEvent(OutboxEvent outboxEvent, GlobalContext globalContext)
+  private boolean handleServiceLevelObjectiveCreateEvent(OutboxEvent outboxEvent, GlobalContext globalContext)
       throws IOException {
-    ServiceLevelObjectiveCreateEvent serviceLevelObjectiveCreateEvent =
+    ServiceLevelObjectiveCreateEvent sloCreateEvent =
         objectMapper.readValue(outboxEvent.getEventData(), ServiceLevelObjectiveCreateEvent.class);
     AuditEntry auditEntry =
         AuditEntry.builder()
             .action(Action.CREATE)
             .module(ModuleType.CV)
-            .newYaml(getYamlString(serviceLevelObjectiveCreateEvent.getNewServiceLevelObjectiveDTO()))
+            .newYaml(getYamlString(sloCreateEvent.getNewServiceLevelObjectiveDTO()))
             .timestamp(outboxEvent.getCreatedAt())
             .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
             .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
@@ -76,15 +76,15 @@ public class ServiceLevelObjectiveOutboxEventHandler implements OutboxEventHandl
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
-  private boolean handleMonitoredServiceUpdateEvent(OutboxEvent outboxEvent, GlobalContext globalContext)
+  private boolean handleServiceLevelObjectiveUpdateEvent(OutboxEvent outboxEvent, GlobalContext globalContext)
       throws IOException {
-    ServiceLevelObjectiveUpdateEvent monitoredServiceUpdateEvent =
+    ServiceLevelObjectiveUpdateEvent sloUpdateEvent =
         objectMapper.readValue(outboxEvent.getEventData(), ServiceLevelObjectiveUpdateEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.UPDATE)
                                 .module(ModuleType.CV)
-                                .oldYaml(getYamlString(monitoredServiceUpdateEvent.getOldServiceLevelObjectiveDTO()))
-                                .newYaml(getYamlString(monitoredServiceUpdateEvent.getNewServiceLevelObjectiveDTO()))
+                                .oldYaml(getYamlString(sloUpdateEvent.getOldServiceLevelObjectiveDTO()))
+                                .newYaml(getYamlString(sloUpdateEvent.getNewServiceLevelObjectiveDTO()))
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
                                 .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
@@ -93,14 +93,14 @@ public class ServiceLevelObjectiveOutboxEventHandler implements OutboxEventHandl
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
-  private boolean handleMonitoredServiceDeleteEvent(OutboxEvent outboxEvent, GlobalContext globalContext)
+  private boolean handleServiceLevelObjectiveDeleteEvent(OutboxEvent outboxEvent, GlobalContext globalContext)
       throws IOException {
-    ServiceLevelObjectiveDeleteEvent monitoredServiceDeleteEvent =
+    ServiceLevelObjectiveDeleteEvent sloDeleteEvent =
         objectMapper.readValue(outboxEvent.getEventData(), ServiceLevelObjectiveDeleteEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.DELETE)
                                 .module(ModuleType.CV)
-                                .oldYaml(getYamlString(monitoredServiceDeleteEvent.getOldServiceLevelObjectiveDTO()))
+                                .oldYaml(getYamlString(sloDeleteEvent.getOldServiceLevelObjectiveDTO()))
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
                                 .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
