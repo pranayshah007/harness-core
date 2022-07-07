@@ -23,6 +23,7 @@ import io.harness.cvng.VerificationApplication;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.MonitoredServiceDTOBuilder;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.CVConfig;
@@ -179,7 +180,7 @@ public class ProjectChangeEventMessageProcessorTest extends CvNextGenTestBase {
                                                         .orgIdentifier(orgIdentifier)
                                                         .accountIdentifier(accountId)
                                                         .build();
-    assertThat(monitoredServiceService.getMonitoredServiceDTO((monitoredServiceParams))).isNull();
+    assertThat(monitoredServiceService.getMonitoredServiceDTO(monitoredServiceParams)).isNull();
   }
 
   @Test
@@ -238,7 +239,7 @@ public class ProjectChangeEventMessageProcessorTest extends CvNextGenTestBase {
   }
 
   MonitoredServiceDTO createMonitoredServiceDTO(String orgIdentifier, String projectIdentifier) {
-    MonitoredServiceDTO.MonitoredServiceDTOBuilder monitoredServiceDTOBuilder = MonitoredServiceDTO.builder();
+    MonitoredServiceDTOBuilder monitoredServiceDTOBuilder = MonitoredServiceDTO.builder();
     monitoredServiceDTOBuilder.enabled(false);
     monitoredServiceDTOBuilder.serviceRef(generateUuid());
     monitoredServiceDTOBuilder.environmentRef(generateUuid());
