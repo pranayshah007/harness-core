@@ -42,6 +42,7 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_AGGREGATED_CPU_UT
 import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_AGGREGATED_MEMORY_LIMIT;
 import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_AGGREGATED_MEMORY_REQUEST;
 import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_AGGREGATED_MEMORY_UTILIZATION_VALUE;
+import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_NAME;
 import static io.harness.timescaledb.Tables.ANOMALIES;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -103,6 +104,10 @@ public class ViewsQueryBuilder {
   public static final String ECS_TASK_FARGATE = "ECS_TASK_FARGATE";
   public static final String ECS_TASK_EC2 = "ECS_TASK_EC2";
   public static final String ECS_CONTAINER_INSTANCE = "ECS_CONTAINER_INSTANCE";
+  public static final String UNNESTED_LABEL_KEY_COLUMN = "labelsUnnested.key";
+  public static final String UNNESTED_LABEL_VALUE_COLUMN = "labelsUnnested.value";
+  public static final String LABEL_KEY_ALIAS = "labels_key";
+  public static final String LABEL_VALUE_ALIAS = "labels_value";
   private static final String distinct = " DISTINCT(%s)";
   private static final String count = "COUNT(*)";
   private static final String aliasStartTimeMaxMin = "%s_%s";
@@ -331,6 +336,34 @@ public class ViewsQueryBuilder {
     }
 
     return selectQuery.toString();
+  }
+
+  public SelectQuery getLabelsForWorkloadsQuery(
+      String cloudProviderTableName, List<QLCEViewFilter> filters, List<QLCEViewTimeFilter> timeFilters) {
+    SelectQuery selectQuery = new SelectQuery();
+    selectQuery.addCustomFromTable(cloudProviderTableName);
+
+    selectQuery.addAliasedColumn(new CustomSql(UNNESTED_LABEL_KEY_COLUMN), LABEL_KEY_ALIAS);
+    selectQuery.addAliasedColumn(new CustomSql(UNNESTED_LABEL_VALUE_COLUMN), LABEL_VALUE_ALIAS);
+    selectQuery.addAliasedColumn(new CustomSql(WORKLOAD_NAME), WORKLOAD_NAME);
+
+    selectQuery.addCustomJoin(leftJoinLabels);
+
+    selectQuery.addCustomGroupings(LABEL_KEY_ALIAS);
+    selectQuery.addCustomGroupings(LABEL_VALUE_ALIAS);
+    selectQuery.addCustomGroupings(WORKLOAD_NAME);
+
+    selectQuery.addCondition(new CustomCondition(String.format(searchFilter, UNNESTED_LABEL_KEY_COLUMN, "")));
+
+    if (!filters.isEmpty()) {
+      decorateQueryWithFilters(selectQuery, filters);
+    }
+
+    if (!timeFilters.isEmpty()) {
+      decorateQueryWithTimeFilters(selectQuery, timeFilters, true);
+    }
+
+    return selectQuery;
   }
 
   private List<ViewField> collectFieldListByIdentifier(List<ViewRule> rules, List<QLCEViewFilter> filters,

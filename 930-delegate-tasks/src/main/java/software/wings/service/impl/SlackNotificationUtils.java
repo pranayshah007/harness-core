@@ -25,7 +25,6 @@ public class SlackNotificationUtils {
         .addHeader("Content-Type", "application/json")
         .addHeader("Accept", "*/*")
         .addHeader("Cache-Control", "no-cache")
-        .addHeader("Host", "hooks.slack.com")
         .addHeader("accept-encoding", "gzip, deflate")
         .addHeader("content-length", "798")
         .addHeader("Connection", "keep-alive")

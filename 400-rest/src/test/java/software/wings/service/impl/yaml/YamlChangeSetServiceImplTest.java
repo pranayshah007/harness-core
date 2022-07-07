@@ -17,6 +17,7 @@ import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.SETTING_ID;
 import static software.wings.yaml.gitSync.YamlChangeSet.MAX_RETRY_COUNT_EXCEEDED_CODE;
+import static software.wings.yaml.gitSync.YamlChangeSet.Status.COMPLETED;
 import static software.wings.yaml.gitSync.YamlChangeSet.Status.QUEUED;
 import static software.wings.yaml.gitSync.YamlChangeSet.Status.RUNNING;
 import static software.wings.yaml.gitSync.YamlChangeSet.Status.SKIPPED;
@@ -300,7 +301,7 @@ public class YamlChangeSetServiceImplTest extends WingsBaseTest {
     final YamlChangeSet yamlChangeSet3 = yamlChangeSetService.save(
         YamlChangeSet.builder()
             .fullSync(false)
-            .status(QUEUED)
+            .status(COMPLETED)
             .accountId(accountId)
             .appId(appId)
             .queueKey(queueKey)
@@ -326,6 +327,6 @@ public class YamlChangeSetServiceImplTest extends WingsBaseTest {
     persistence.save(yamlChangeSet3);
     persistence.save(yamlChangeSet4);
     long count = yamlChangeSetService.getItemsInQueueKey(appId, accountId);
-    assertThat(count).isEqualTo(3);
+    assertThat(count).isEqualTo(2);
   }
 }

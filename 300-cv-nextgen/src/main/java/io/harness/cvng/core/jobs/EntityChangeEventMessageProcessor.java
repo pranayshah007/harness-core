@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.jobs;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.core.entities.CVConfig;
@@ -28,12 +29,12 @@ import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.UserJourney;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.persistence.PersistentEntity;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,15 +46,16 @@ public abstract class EntityChangeEventMessageProcessor implements ConsumerMessa
     // Add the service for project level default deletion
     final List<Class<? extends PersistentEntity>> deleteEntitiesWithDefaultHandler =
         Arrays.asList(VerificationJob.class, Activity.class, MetricPack.class, HeatMap.class, TimeSeriesThreshold.class,
-            CVNGStepTask.class, ServiceLevelObjective.class, UserJourney.class, ServiceLevelIndicator.class,
+            CVNGStepTask.class, UserJourney.class, ServiceLevelIndicator.class,
             ChangeSource.class, Webhook.class, ServiceDependency.class, SLOHealthIndicator.class,
             SLOErrorBudgetReset.class, NotificationRule.class);
-    ENTITIES_MAP = new HashMap<>();
+    ENTITIES_MAP = new LinkedHashMap<>();
     deleteEntitiesWithDefaultHandler.forEach(entity -> ENTITIES_MAP.put(entity, DeleteEntityByHandler.class));
 
     // Add the service for project level custom deletion
     ENTITIES_MAP.put(CVConfig.class, CVConfigService.class);
     ENTITIES_MAP.put(MonitoringSourcePerpetualTask.class, MonitoringSourcePerpetualTaskService.class);
+    ENTITIES_MAP.put(ServiceLevelObjective.class, ServiceLevelObjectiveService.class);
     ENTITIES_MAP.put(MonitoredService.class, MonitoredServiceService.class);
   }
 }

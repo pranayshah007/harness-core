@@ -436,13 +436,18 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public long markAllLeavesDiscontinuing(String planExecutionId, EnumSet<Status> statuses) {
+  public long markAllLeavesAndQueuedNodesDiscontinuing(String planExecutionId, EnumSet<Status> statuses) {
     Update ops = new Update();
     ops.set(NodeExecutionKeys.status, DISCONTINUING);
-    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.mode).in(ExecutionModeUtils.leafModes()))
-                      .addCriteria(where(NodeExecutionKeys.status).in(statuses))
-                      .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
+    Criteria leafNodeCriteria = where(NodeExecutionKeys.mode)
+                                    .in(ExecutionModeUtils.leafModes())
+                                    .and(NodeExecutionKeys.status)
+                                    .in(statuses)
+                                    .and(NodeExecutionKeys.oldRetry)
+                                    .is(false);
+    Criteria queuedNodeCriteria = where(NodeExecutionKeys.status).in(Status.QUEUED);
+    Query query = query(
+        where(NodeExecutionKeys.planExecutionId).is(planExecutionId).orOperator(leafNodeCriteria, queuedNodeCriteria));
     UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeExecution.class);
     if (!updateResult.wasAcknowledged()) {
       log.warn("No NodeExecutions could be marked as DISCONTINUING -  planExecutionId: {}", planExecutionId);

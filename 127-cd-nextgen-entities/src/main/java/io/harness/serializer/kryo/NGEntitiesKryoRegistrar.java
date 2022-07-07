@@ -36,6 +36,7 @@ import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig;
+import io.harness.cdng.manifest.yaml.AzureRepoStore;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.GitLabStore;
@@ -196,5 +197,6 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(ReleaseRepoManifest.class, 12598);
     kryo.register(AzureWebAppServiceSpec.class, 12599);
     kryo.register(AmazonS3ArtifactConfig.class, 12569);
+    kryo.register(AzureRepoStore.class, 12570);
   }
 }

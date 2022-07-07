@@ -174,7 +174,8 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   List<InfrastructureMapping> getResolvedInfraMappings(Workflow workflow, WorkflowExecution workflowExecution);
 
-  List<InfrastructureDefinition> getResolvedInfraDefinitions(Workflow workflow, WorkflowExecution workflowExecution);
+  List<InfrastructureDefinition> getResolvedInfraDefinitions(
+      Workflow workflow, WorkflowExecution workflowExecution, String envId);
 
   List<ElementExecutionSummary> getElementsSummary(
       String appId, String executionUuid, String parentStateExecutionInstanceId);

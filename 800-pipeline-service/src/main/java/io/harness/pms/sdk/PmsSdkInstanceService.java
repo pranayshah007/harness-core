@@ -89,8 +89,8 @@ public class PmsSdkInstanceService extends PmsServiceImplBase {
       throw new InvalidRequestException("Name is empty");
     }
 
-    try (AcquiredLock<?> lock =
-             persistentLocker.tryToAcquireLock(LOCK_NAME_PREFIX + request.getName(), Duration.ofMinutes(2))) {
+    try (AcquiredLock<?> lock = persistentLocker.waitToAcquireLock(
+             LOCK_NAME_PREFIX + request.getName(), Duration.ofMinutes(1), Duration.ofMinutes(2))) {
       if (lock == null) {
         throw new InitializeSdkException("Could not acquire lock");
       }
@@ -98,7 +98,7 @@ public class PmsSdkInstanceService extends PmsServiceImplBase {
       schemaFetcher.invalidateAllCache();
       ephemeralCacheService.getDistributedSet(SDK_STEP_SET_NAME).clear();
     } catch (Exception ex) {
-      log.error("Exception occurred while registering sdk with name: [{}]", request.getName());
+      log.error(String.format("Exception occurred while registering sdk with name: [%s]", request.getName()), ex);
       throw new InitializeSdkException(ex.getMessage());
     }
     responseObserver.onNext(InitializeSdkResponse.newBuilder().build());

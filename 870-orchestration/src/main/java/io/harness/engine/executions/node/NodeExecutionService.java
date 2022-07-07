@@ -82,7 +82,7 @@ public interface NodeExecutionService {
 
   long markLeavesDiscontinuing(String planExecutionId, List<String> leafInstanceIds);
 
-  long markAllLeavesDiscontinuing(String planExecutionId, EnumSet<Status> statuses);
+  long markAllLeavesAndQueuedNodesDiscontinuing(String planExecutionId, EnumSet<Status> statuses);
 
   List<NodeExecution> findAllNodeExecutionsTrimmed(String planExecutionId);
 

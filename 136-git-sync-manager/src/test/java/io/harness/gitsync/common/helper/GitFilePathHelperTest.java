@@ -22,6 +22,7 @@ import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.exception.ExceptionUtils;
@@ -192,7 +193,11 @@ public class GitFilePathHelperTest extends CategoryTest {
   public void testGetFileUrlForBitbucketServer() {
     String repoUrl = "https://bitbucket.dev.harness.io/scm/harness/repoName";
     BitbucketConnectorDTO bitbucketConnectorDTO =
-        BitbucketConnectorDTO.builder().connectionType(GitConnectionType.REPO).url(repoUrl).build();
+        BitbucketConnectorDTO.builder()
+            .connectionType(GitConnectionType.REPO)
+            .authentication(BitbucketAuthenticationDTO.builder().authType(GitAuthType.HTTP).build())
+            .url(repoUrl)
+            .build();
     doReturn(bitbucketConnectorDTO)
         .when(gitSyncConnectorHelper)
         .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), anyString());

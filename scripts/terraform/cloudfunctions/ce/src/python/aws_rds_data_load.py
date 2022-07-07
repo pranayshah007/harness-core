@@ -47,7 +47,7 @@ def update_rds_state(jsonData):
     :return: None
     """
     lastUpdatedAt = datetime.date.today()  # - timedelta(days = 1)
-    query = "UPDATE `%s` set DBInstanceStatus='deleted' WHERE DBInstanceStatus NOT IN ('deleted') lastUpdatedAt < '%s';" % (
+    query = "UPDATE `%s` set DBInstanceStatus='deleted' WHERE DBInstanceStatus NOT IN ('deleted') and lastUpdatedAt < '%s';" % (
         jsonData["targetTableId"], lastUpdatedAt)
 
     try:
@@ -64,7 +64,7 @@ def load_into_main_table(jsonData):
     lastUpdatedAt = datetime.datetime.utcnow()
     query = """MERGE `%s` T
                 USING `%s` S
-                ON T.DBInstanceIdentifier = S.DBInstanceIdentifier and T.linkedAccountIdPartition = s.linkedAccountIdPartition
+                ON T.DBInstanceIdentifier = S.DBInstanceIdentifier and T.linkedAccountIdPartition = s.linkedAccountIdPartition and T.AvailabilityZone = S.AvailabilityZone
                 WHEN MATCHED THEN
                   UPDATE SET EngineVersion = s.EngineVersion, DBInstanceStatus = s.DBInstanceStatus, lastUpdatedAt = '%s', 
                     AllocatedStorage = s.AllocatedStorage, Iops = s.Iops, AvailabilityZone = s.AvailabilityZone, MultiAZ = s.MultiAZ,
