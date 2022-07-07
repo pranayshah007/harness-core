@@ -33,6 +33,7 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.MergeTemplateInputsInObject;
 import io.harness.template.helpers.TemplateInputsValidator;
 import io.harness.template.helpers.TemplateMergeHelper;
+import io.harness.template.helpers.TemplateMergeServiceHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -55,6 +56,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
   @Inject private NGTemplateService templateService;
   @Inject private TemplateMergeHelper templateMergeHelper;
   @Inject private TemplateInputsValidator templateInputsValidator;
+  @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
 
   @Override
   public String getTemplateInputs(String accountId, String orgIdentifier, String projectIdentifier,
@@ -173,12 +175,13 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
           fqnList.add(FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(TEMPLATE_VERSION_LABEL).build());
           JsonNode versionLabelNode = (JsonNode) fqnToValueMap.get(FQN.builder().fqnList(fqnList).build());
           String versionLabel = "";
-          Optional<TemplateEntity> templateEntity = templateService.getOrThrowExceptionIfInvalid(
-              templateIdentifierRef.getAccountIdentifier(), templateIdentifierRef.getOrgIdentifier(),
-              templateIdentifierRef.getProjectIdentifier(), templateIdentifierRef.getIdentifier(), versionLabel, false);
+          Optional<TemplateEntity> templateEntity = Optional.ofNullable(
+              templateMergeServiceHelper.getLinkedTemplateEntity(templateIdentifierRef.getAccountIdentifier(),
+                  templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
+                  templateIdentifierRef.getIdentifier(), versionLabel, templateCacheMap));
           Set<String> moduleInfo = new HashSet<>();
           if (templateEntity.isPresent()) {
-            moduleInfo = isNotEmpty(templateEntity.get().getModule()) ? templateEntity.get().getModule() : moduleInfo;
+            moduleInfo = isNotEmpty(templateEntity.get().getModules()) ? templateEntity.get().getModules() : moduleInfo;
           }
           boolean isStableTemplate = false;
           if (versionLabelNode == null) {

@@ -74,6 +74,36 @@ public class TemplateMergeServiceHelper {
     return template;
   }
 
+  // Gets the Template Entity linked to a YAML
+  public TemplateEntity getLinkedTemplateEntity(String accountId, String orgId, String projectId, String identifier,
+      String versionLabel, Map<String, TemplateEntity> templateCacheMap) {
+    String versionMarker = STABLE_VERSION;
+    if (versionLabel != null && !versionLabel.equals("")) {
+      versionMarker = versionLabel;
+    }
+
+    IdentifierRef templateIdentifierRef = IdentifierRefHelper.getIdentifierRef(identifier, accountId, orgId, projectId);
+
+    String templateUniqueIdentifier = generateUniqueTemplateIdentifier(templateIdentifierRef.getAccountIdentifier(),
+        templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
+        templateIdentifierRef.getIdentifier(), versionMarker);
+    if (templateCacheMap.containsKey(templateUniqueIdentifier)) {
+      return templateCacheMap.get(templateUniqueIdentifier);
+    }
+
+    Optional<TemplateEntity> templateEntity = templateService.getOrThrowExceptionIfInvalid(
+        templateIdentifierRef.getAccountIdentifier(), templateIdentifierRef.getOrgIdentifier(),
+        templateIdentifierRef.getProjectIdentifier(), templateIdentifierRef.getIdentifier(), versionLabel, false);
+    if (!templateEntity.isPresent()) {
+      throw new NGTemplateException(String.format(
+          "The template identifier %s and version label %s does not exist. Could not replace this template",
+          templateIdentifierRef.getIdentifier(), versionLabel));
+    }
+    TemplateEntity template = templateEntity.get();
+    templateCacheMap.put(templateUniqueIdentifier, template);
+    return template;
+  }
+
   // Checks if the current Json node is a Template node with fieldName as TEMPLATE and Non-null Value
   public boolean isTemplatePresent(String fieldName, JsonNode templateValue) {
     return TEMPLATE.equals(fieldName) && templateValue.isObject() && templateValue.get(TEMPLATE_REF) != null;

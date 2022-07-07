@@ -93,7 +93,7 @@ public class TemplateEntity
   @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate long createdAt;
   @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
 
-  @Setter @NonFinal Set<String> module;
+  @Setter @NonFinal Set<String> modules;
 
   @Wither @Setter @NonFinal String objectIdOfYaml;
   @Setter @NonFinal Boolean isFromDefaultBranch;
