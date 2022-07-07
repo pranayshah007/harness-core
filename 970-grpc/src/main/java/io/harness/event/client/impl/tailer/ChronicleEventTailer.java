@@ -7,21 +7,34 @@
 
 package io.harness.event.client.impl.tailer;
 
+import static io.harness.grpc.IdentifierKeys.DELEGATE_ID;
+import static io.harness.perpetualtask.k8s.watch.NodeEvent.EventType.EVENT_TYPE_STOP;
+
 import static com.google.common.base.Verify.verify;
 import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
 
+import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.message.Message;
 import io.harness.event.EventPublisherGrpc.EventPublisherBlockingStub;
 import io.harness.event.PublishMessage;
 import io.harness.event.PublishRequest;
 import io.harness.flow.BackoffScheduler;
+import io.harness.grpc.utils.HTimestamps;
 import io.harness.logging.LoggingListener;
+import io.harness.perpetualtask.k8s.watch.NodeEvent;
 
 import com.google.common.util.concurrent.AbstractScheduledService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.protobuf.Any;
+import com.google.protobuf.Timestamp;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import net.openhft.chronicle.queue.ExcerptTailer;
@@ -115,53 +128,71 @@ public class ChronicleEventTailer extends AbstractScheduledService {
       sampler.updateTime();
       sampler.sampled(() -> log.info("Checking for messages to publish"));
       Batch batchToSend = new Batch(MAX_BATCH_BYTES, MAX_BATCH_COUNT);
-      while (!batchToSend.isFull()) {
-        long endIndex = queue.createTailer().toEnd().index();
-        try (DocumentContext dc = readTailer.readingDocument()) {
-          if (!dc.isPresent()) {
-            sampler.sampled(() -> log.info("Reached end of queue"));
-            long readIndex = readTailer.index();
-            if (readIndex < endIndex) {
-              readTailer.moveToIndex(endIndex);
-              fileDeletionManager.setSentIndex(endIndex);
-              log.warn(
-                  "Observed readTailer not at end with no document context. Moved from {} to {}", readIndex, endIndex);
-            }
-            break;
-          }
-          try {
-            verify(dc.wire() != null, "Null wire with document context present");
-            byte[] bytes = requireNonNull(dc.wire()).read().bytes();
-            if (bytes != null) {
-              PublishMessage message = PublishMessage.parseFrom(bytes);
-              batchToSend.add(message);
-            } else {
-              // could happen in case of an error during append with document context open.
-              log.warn("Read NULL message. Skipping");
-            }
-          } catch (Exception e) {
-            log.error("Exception while parsing message", e);
-          }
-        }
-      }
+      //      while (!batchToSend.isFull()) {
+      //        long endIndex = queue.createTailer().toEnd().index();
+      //        try (DocumentContext dc = readTailer.readingDocument()) {
+      //          if (!dc.isPresent()) {
+      //            sampler.sampled(() -> log.info("Reached end of queue"));
+      //            long readIndex = readTailer.index();
+      //            if (readIndex < endIndex) {
+      //              readTailer.moveToIndex(endIndex);
+      //              fileDeletionManager.setSentIndex(endIndex);
+      //              log.warn(
+      //                  "Observed readTailer not at end with no document context. Moved from {} to {}", readIndex,
+      //                  endIndex);
+      //            }
+      //            break;
+      //          }
+      //          try {
+      //            verify(dc.wire() != null, "Null wire with document context present");
+      //            byte[] bytes = requireNonNull(dc.wire()).read().bytes();
+      //            if (bytes != null) {
+      //              PublishMessage message = PublishMessage.parseFrom(bytes);
+      //              batchToSend.add(message);
+      //            } else {
+      //              // could happen in case of an error during append with document context open.
+      //              log.warn("Read NULL message. Skipping");
+      //            }
+      //          } catch (Exception e) {
+      //            log.error("Exception while parsing message", e);
+      //          }
+      //        }
+      //      }
       if (batchToSend.isFull()) {
         log.info("Batch is full");
       }
-      if (!batchToSend.isEmpty()) {
-        PublishRequest publishRequest = PublishRequest.newBuilder().addAllMessages(batchToSend.getMessages()).build();
-        try {
-          blockingStub.withDeadlineAfter(30, TimeUnit.SECONDS).publish(publishRequest);
-          log.info("Published {} messages successfully", batchToSend.size());
-          fileDeletionManager.setSentIndex(readTailer.index());
-          scheduler.recordSuccess();
-        } catch (Exception e) {
-          log.warn("Exception during message publish", e);
-          QueueUtils.moveToIndex(readTailer, fileDeletionManager.getSentIndex());
-          scheduler.recordFailure();
-        }
-      } else {
-        sampler.sampled(() -> log.info("Skipping message publish as batch is empty"));
+      //      if (!batchToSend.isEmpty()) {
+
+      Instant instant = Instant.now();
+
+      NodeEvent nodeEvent =
+          NodeEvent
+              .newBuilder(NodeEvent.newBuilder()
+                              .setCloudProviderId("cloudProvider")
+                              .setClusterId("clusterId")
+                              .setKubeSystemUid(UUIDGenerator.generateUuid())
+                              .build())
+              .setNodeUid(UUIDGenerator.generateUuid())
+              .setNodeName("Nodedsiokl")
+              .setType(EVENT_TYPE_STOP)
+              .setTimestamp(
+                  Timestamp.newBuilder().setSeconds(instant.getEpochSecond()).setNanos(instant.getNano()).build())
+              .build();
+      PublishRequest publishRequest = PublishRequest.newBuilder().addAllMessages(getPublishMessageList()).build();
+      try {
+        log.info("Publishing {} messages successfully", publishMessageList.size());
+        blockingStub.withDeadlineAfter(30, TimeUnit.SECONDS).publish(publishRequest);
+        log.info("Published {} messages successfully", publishMessageList.size());
+        fileDeletionManager.setSentIndex(readTailer.index());
+        scheduler.recordSuccess();
+      } catch (Exception e) {
+        log.warn("Exception during message publish", e);
+        QueueUtils.moveToIndex(readTailer, fileDeletionManager.getSentIndex());
+        scheduler.recordFailure();
       }
+      //      } else {
+      //        sampler.sampled(() -> log.info("Skipping message publish as batch is empty"));
+      //      }
     } catch (Exception e) {
       log.error("Encountered exception", e);
     } finally {
@@ -172,6 +203,22 @@ public class ChronicleEventTailer extends AbstractScheduledService {
         log.error("Encountered exception in finally", e);
       }
     }
+  }
+
+  private List<PublishMessage> getPublishMessageList() {
+    Instant instant = Instant.now();
+    List<PublishMessage> publishMessageList = new ArrayList<>();
+    publishMessageList.add(
+        PublishMessage.newBuilder()
+            .setMessageId(UUIDGenerator.generateUuid())
+            //            .setPayload(Any.pack(message))
+            .setOccurredAt(
+                Timestamp.newBuilder().setSeconds(instant.getEpochSecond()).setNanos(instant.getNano()).build())
+            .setCategory("")
+            //            .putAllAttributes(attributes)
+            //            .putAttributes(DELEGATE_ID, delegateIdSupplier.get())
+            .build());
+    return publishMessageList;
   }
 
   @Override
