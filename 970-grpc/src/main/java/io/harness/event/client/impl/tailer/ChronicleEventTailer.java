@@ -8,21 +8,18 @@
 package io.harness.event.client.impl.tailer;
 
 import static io.harness.grpc.IdentifierKeys.DELEGATE_ID;
-import static io.harness.perpetualtask.k8s.watch.NodeEvent.EventType.EVENT_TYPE_STOP;
 
 import static com.google.common.base.Verify.verify;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.delegate.message.Message;
 import io.harness.event.EventPublisherGrpc.EventPublisherBlockingStub;
 import io.harness.event.PublishMessage;
 import io.harness.event.PublishRequest;
 import io.harness.flow.BackoffScheduler;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.logging.LoggingListener;
-import io.harness.perpetualtask.k8s.watch.NodeEvent;
 
 import com.google.common.util.concurrent.AbstractScheduledService;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -165,20 +162,21 @@ public class ChronicleEventTailer extends AbstractScheduledService {
 
       Instant instant = Instant.now();
 
-      NodeEvent nodeEvent =
-          NodeEvent
-              .newBuilder(NodeEvent.newBuilder()
-                              .setCloudProviderId("cloudProvider")
-                              .setClusterId("clusterId")
-                              .setKubeSystemUid(UUIDGenerator.generateUuid())
-                              .build())
-              .setNodeUid(UUIDGenerator.generateUuid())
-              .setNodeName("Nodedsiokl")
-              .setType(EVENT_TYPE_STOP)
-              .setTimestamp(
-                  Timestamp.newBuilder().setSeconds(instant.getEpochSecond()).setNanos(instant.getNano()).build())
-              .build();
-      PublishRequest publishRequest = PublishRequest.newBuilder().addAllMessages(getPublishMessageList()).build();
+      //      NodeEvent nodeEvent =
+      //          NodeEvent
+      //              .newBuilder(NodeEvent.newBuilder()
+      //                              .setCloudProviderId("cloudProvider")
+      //                              .setClusterId("clusterId")
+      //                              .setKubeSystemUid(UUIDGenerator.generateUuid())
+      //                              .build())
+      //              .setNodeUid(UUIDGenerator.generateUuid())
+      //              .setNodeName("Nodedsiokl")
+      //              .setType(EVENT_TYPE_STOP)
+      //              .setTimestamp(
+      //                  Timestamp.newBuilder().setSeconds(instant.getEpochSecond()).setNanos(instant.getNano()).build())
+      //              .build();
+      List<PublishMessage> publishMessageList = getPublishMessageList();
+      PublishRequest publishRequest = PublishRequest.newBuilder().addAllMessages(publishMessageList).build();
       try {
         log.info("Publishing {} messages successfully", publishMessageList.size());
         blockingStub.withDeadlineAfter(30, TimeUnit.SECONDS).publish(publishRequest);
