@@ -85,6 +85,9 @@ import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
@@ -216,10 +219,23 @@ public class CDStepHelper {
                .equals(GithubHttpAuthenticationType.USERNAME_AND_TOKEN);
   }
 
+  public boolean isAzureRepoUsernameTokenAuth(AzureRepoConnectorDTO azureRepoConnectorDTO) {
+    return azureRepoConnectorDTO.getAuthentication().getCredentials() instanceof AzureRepoHttpCredentialsDTO
+        && ((AzureRepoHttpCredentialsDTO) azureRepoConnectorDTO.getAuthentication().getCredentials())
+               .getType()
+               .equals(AzureRepoHttpAuthenticationType.USERNAME_AND_TOKEN);
+  }
+
   public boolean isGithubTokenAuth(ScmConnector scmConnector) {
     return scmConnector instanceof GithubConnectorDTO
         && (((GithubConnectorDTO) scmConnector).getApiAccess() != null
             || isGithubUsernameTokenAuth((GithubConnectorDTO) scmConnector));
+  }
+
+  public boolean isAzureRepoTokenAuth(ScmConnector scmConnector) {
+    return scmConnector instanceof AzureRepoConnectorDTO
+        && (((AzureRepoConnectorDTO) scmConnector).getApiAccess() != null
+            || isAzureRepoUsernameTokenAuth((AzureRepoConnectorDTO) scmConnector));
   }
 
   public SSHKeySpecDTO getSshKeySpecDTO(GitConfigDTO gitConfigDTO, Ambiance ambiance) {
@@ -229,8 +245,9 @@ public class CDStepHelper {
 
   public boolean isOptimizedFilesFetch(@Nonnull ConnectorInfoDTO connectorDTO, String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, OPTIMIZED_GIT_FETCH_FILES)
-        && (isGithubTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())
-            || isGitlabTokenAuth((ScmConnector) connectorDTO.getConnectorConfig()));
+        && ((isGithubTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())
+                || isGitlabTokenAuth((ScmConnector) connectorDTO.getConnectorConfig()))
+            || (isAzureRepoTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())));
   }
 
   public void addApiAuthIfRequired(ScmConnector scmConnector) {
