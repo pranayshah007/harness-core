@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.azure.appservice.webapp.handler;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.azure.model.AzureConstants.SLOT_TRAFFIC_PERCENTAGE;
 import static io.harness.delegate.task.azure.AzureTestUtils.DEPLOYMENT_SLOT;
 import static io.harness.rule.OwnerRule.ANIL;
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 
 import io.harness.CategoryTest;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.azure.AzureTestUtils;
@@ -40,6 +42,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+@OwnedBy(CDP)
 public class AzureWebAppTrafficShiftRequestHandlerTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private AzureAppServiceDeploymentService azureAppServiceDeploymentService;
@@ -59,6 +62,7 @@ public class AzureWebAppTrafficShiftRequestHandlerTest extends CategoryTest {
 
     AzureWebAppTrafficShiftRequest trafficShiftRequest =
         AzureWebAppTrafficShiftRequest.builder()
+            .accountId("accountId")
             .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
             .trafficPercentage(trafficPercent)
             .build();
@@ -82,6 +86,7 @@ public class AzureWebAppTrafficShiftRequestHandlerTest extends CategoryTest {
 
     AzureWebAppTrafficShiftRequest trafficShiftRequest =
         AzureWebAppTrafficShiftRequest.builder()
+            .accountId("accountId")
             .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
             .trafficPercentage(trafficPercent)
             .build();

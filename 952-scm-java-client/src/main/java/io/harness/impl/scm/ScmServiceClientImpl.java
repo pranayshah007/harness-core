@@ -327,7 +327,8 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     return listMoreBranches(scmConnector, listBranchesWithDefaultResponse, pageRequest.getPageSize(), scmBlockingStub);
   }
 
-  private ListBranchesWithDefaultResponse listMoreBranches(ScmConnector scmConnector,
+  @VisibleForTesting
+  ListBranchesWithDefaultResponse listMoreBranches(ScmConnector scmConnector,
       ListBranchesWithDefaultResponse listBranchesWithDefaultResponse, int pageSize,
       SCMGrpc.SCMBlockingStub scmBlockingStub) {
     final String slug = scmGitProviderHelper.getSlug(scmConnector);

@@ -294,7 +294,7 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
     return DISPLAY_TIME_FORMAT.format(time);
   }
 
-  private static String formatDuration(long durationMillis) {
+  public static String formatDuration(long durationMillis) {
     long elapsedDays = durationMillis / TimeUnit.DAYS.toMillis(1);
     durationMillis = durationMillis % TimeUnit.DAYS.toMillis(1);
 

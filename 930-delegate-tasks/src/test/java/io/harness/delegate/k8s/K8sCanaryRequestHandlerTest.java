@@ -28,6 +28,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -51,6 +52,7 @@ import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.delegate.task.k8s.KustomizeManifestDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
 import io.harness.delegate.task.k8s.OpenshiftManifestDelegateConfig;
+import io.harness.delegate.task.k8s.client.K8sClient;
 import io.harness.delegate.task.k8s.data.K8sCanaryDataException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
@@ -58,9 +60,9 @@ import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
-import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.model.Release;
 import io.harness.k8s.model.ReleaseHistory;
 import io.harness.logging.LogCallback;
@@ -255,12 +257,12 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     k8sCanaryHandlerConfig.setTargetInstances(3);
     k8sCanaryHandlerConfig.setKubernetesConfig(kubernetesConfig);
 
+    K8sClient k8sClient = mock(K8sClient.class);
+    doReturn(k8sClient).when(k8sTaskHelperBase).getKubernetesClient(anyBoolean());
+    doReturn(true).when(k8sClient).performSteadyStateCheck(any(K8sSteadyStateDTO.class));
+
     doNothing().when(spyRequestHandler).init(canaryDeployRequest, delegateTaskParams, logCallback);
     doNothing().when(spyRequestHandler).prepareForCanary(canaryDeployRequest, delegateTaskParams, logCallback);
-    doReturn(true)
-        .when(k8sTaskHelperBase)
-        .doStatusCheck(nullable(Kubectl.class), eq(k8sCanaryHandlerConfig.getCanaryWorkload().getResourceId()),
-            eq(delegateTaskParams), eq(logCallback));
     doReturn(Arrays.asList(K8sPod.builder().build()))
         .when(k8sCanaryBaseHandler)
         .getAllPods(k8sCanaryHandlerConfig, releaseName, timeoutIntervalInMillis);
@@ -423,6 +425,10 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
         K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
     ReleaseHistory releaseHist = ReleaseHistory.createNew();
     releaseHist.setReleases(asList(Release.builder().number(2).build()));
+    K8sClient k8sClient = mock(K8sClient.class);
+    doReturn(k8sClient).when(k8sTaskHelperBase).getKubernetesClient(anyBoolean());
+    doReturn(true).when(k8sClient).performSteadyStateCheck(any(K8sSteadyStateDTO.class));
+
     doReturn(releaseHist.getAsYaml())
         .when(k8sTaskHelperBase)
         .getReleaseHistoryDataFromConfigMap(kubernetesConfig, "success");
@@ -503,6 +509,9 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
                                                .build();
     final K8sDelegateTaskParams delegateTaskParams =
         K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
+    K8sClient k8sClient = mock(K8sClient.class);
+    doReturn(k8sClient).when(k8sTaskHelperBase).getKubernetesClient(anyBoolean());
+
     ReleaseHistory releaseHist = ReleaseHistory.createNew();
     releaseHist.setReleases(asList(Release.builder().number(2).build()));
     doReturn(releaseHist.getAsYaml())
@@ -519,10 +528,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
           .applyManifests(
               any(Kubectl.class), eq(emptyList()), eq(delegateTaskParams), eq(logCallback), eq(true), eq(true));
     } else if (statusCheckThrowable != null) {
-      doThrow(statusCheckThrowable)
-          .when(k8sTaskHelperBase)
-          .doStatusCheck(
-              any(Kubectl.class), any(KubernetesResourceId.class), eq(delegateTaskParams), eq(logCallback), eq(true));
+      doThrow(statusCheckThrowable).when(k8sClient).performSteadyStateCheck(any(K8sSteadyStateDTO.class));
     }
 
     Exception thrown = applyThrowable != null ? applyThrowable : statusCheckThrowable;

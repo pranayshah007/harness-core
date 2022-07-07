@@ -10,6 +10,7 @@ package software.wings.service.impl.yaml.sync;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static software.wings.beans.Account.Builder.anAccount;
 import static software.wings.beans.Application.Builder.anApplication;
@@ -104,5 +105,26 @@ public class YamlGitConfigServiceImplTest extends WingsBaseTest {
       assertThat(accountLevelGitDetail.getEntityName()).isEqualTo(accountName);
       assertThat(appLevelGitDetail.getEntityName()).isEqualTo(applicationName);
     }
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_getYamlGitConfigFromAppId() {
+    String appId = "appId";
+    String gitConnectorId = "gitConnectorId";
+    final YamlGitConfig yamlGitConfig = YamlGitConfig.builder()
+                                            .accountId(accountId)
+                                            .branchName("branchName")
+                                            .enabled(true)
+                                            .appId(appId)
+                                            .gitConnectorId(gitConnectorId)
+                                            .build();
+
+    persistence.save(yamlGitConfig);
+    YamlGitConfig yamlGitConfigTest = yamlGitConfigService.getYamlGitConfigFromAppId(appId, accountId);
+    YamlGitConfig yamlGitConfigTest1 = yamlGitConfigService.getYamlGitConfigFromAppId("appId1", accountId);
+    assertThat(yamlGitConfigTest).isEqualTo(yamlGitConfig);
+    assertThat(yamlGitConfigTest1).isNull();
   }
 }

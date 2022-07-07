@@ -30,6 +30,9 @@ public class AwsTaskParams extends ConnectorTaskParams implements TaskParameters
   AwsTaskType awsTaskType;
   List<EncryptedDataDetail> encryptionDetails;
   String region;
+  String bucketName;
+  String filePathRegex;
+  String filePath;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

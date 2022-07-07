@@ -54,4 +54,8 @@ public class ResourceTypeConstants {
   public static final String PERSPECTIVE_REPORT = "PERSPECTIVE_REPORT";
   public static final String COST_CATEGORY = "COST_CATEGORY";
   public static final String SMTP = "SMTP";
+  public static final String PERSPECTIVE_FOLDER = "PERSPECTIVE_FOLDER";
+  public static final String AUTOSTOPPING_RULE = "AUTOSTOPPING_RULE";
+  public static final String AUTOSTOPPING_LB = "AUTOSTOPPING_LB";
+  public static final String AUTOSTOPPING_STARTSTOP = "AUTOSTOPPING_STARTSTOP";
 }

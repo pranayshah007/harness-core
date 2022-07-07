@@ -8,9 +8,12 @@
 package io.harness.cdng.serverless;
 
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -20,6 +23,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
+import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
@@ -27,13 +32,17 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.ServerlessAwsLambdaServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaDeployResult;
+import io.harness.delegate.beans.serverless.ServerlessAwsLambdaPrepareRollbackDataResult;
 import io.harness.delegate.exception.ServerlessNGException;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.request.ServerlessDeployRequest;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
+import io.harness.delegate.task.serverless.response.ServerlessPrepareRollbackDataResponse;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
@@ -51,9 +60,9 @@ import org.mockito.Mock;
 
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessAwsLambdaDeployStepTest extends AbstractServerlessStepExecutorTestBase {
-  @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
-  @InjectMocks private ServerlessAwsLambdaDeployStep serverlessAwsLambdaDeployStep;
   @Mock private InstanceInfoService instanceInfoService;
+
+  @InjectMocks private ServerlessAwsLambdaDeployStep serverlessAwsLambdaDeployStep;
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
@@ -236,5 +245,54 @@ public class ServerlessAwsLambdaDeployStepTest extends AbstractServerlessStepExe
   @Category(UnitTests.class)
   public void validateResources() {
     // no code written
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void executeServerlessPrepareRollbackTaskTest() {
+    ManifestOutcome manifestOutcome =
+        ServerlessAwsLambdaManifestOutcome.builder().identifier("adsf").store(storeConfig).build();
+    ServerlessAwsLambdaPrepareRollbackDataResult serverlessRollbackDataResult =
+        ServerlessAwsLambdaPrepareRollbackDataResult.builder()
+            .isFirstDeployment(true)
+            .previousVersionTimeStamp("123")
+            .build();
+    ServerlessPrepareRollbackDataResponse responseData =
+        ServerlessPrepareRollbackDataResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .errorMessage("error")
+            .serverlessPrepareRollbackDataResult(serverlessRollbackDataResult)
+            .unitProgressData(UnitProgressData.builder().build())
+            .build();
+    ServerlessAwsLambdaDeployStepParameters serverlessSpecParameters =
+        ServerlessAwsLambdaDeployStepParameters.infoBuilder().build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                      .spec(serverlessSpecParameters)
+                                                      .timeout(ParameterField.createValueField("10m"))
+                                                      .build();
+    ServerlessStepPassThroughData serverlessStepPassThroughData = ServerlessStepPassThroughData.builder()
+                                                                      .serverlessManifestOutcome(manifestOutcome)
+                                                                      .infrastructureOutcome(infrastructureOutcome)
+                                                                      .build();
+    ServerlessExecutionPassThroughData serverlessExecutionPassThroughData =
+        ServerlessExecutionPassThroughData.builder()
+            .infrastructure(serverlessStepPassThroughData.getInfrastructureOutcome())
+            .lastActiveUnitProgressData(responseData.getUnitProgressData())
+            .build();
+    TaskChainResponse expectedTaskChainResponse = TaskChainResponse.builder()
+                                                      .chainEnd(false)
+                                                      .passThroughData(serverlessExecutionPassThroughData)
+                                                      .taskRequest(TaskRequest.newBuilder().build())
+                                                      .build();
+
+    doReturn(expectedTaskChainResponse)
+        .when(serverlessStepHelper)
+        .queueServerlessTask(any(), any(), any(), any(), anyBoolean());
+    TaskChainResponse taskChainResponse =
+        serverlessAwsLambdaDeployStep.executeServerlessPrepareRollbackTask(manifestOutcome, ambiance,
+            stepElementParameters, serverlessStepPassThroughData, unitProgressData, serverlessStepExecutorParams);
+    assertThat(taskChainResponse.isChainEnd()).isFalse();
+    assertThat(taskChainResponse).isEqualTo(expectedTaskChainResponse);
   }
 }

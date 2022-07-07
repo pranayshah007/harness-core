@@ -63,7 +63,7 @@ public class Scope {
   }
 
   // orderedFields must be in next order accountIdentifier, orgIdentifier, projectIdentifier
-  private static void verifyFieldExistence(io.harness.encryption.Scope scope, String... orderedFields) {
+  public static void verifyFieldExistence(io.harness.encryption.Scope scope, String... orderedFields) {
     final String[] fieldNames = {"accountIdentifier", "orgIdentifier", "projectIdentifier"};
     final int fieldsNum = orderedFields.length;
 

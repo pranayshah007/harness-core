@@ -41,6 +41,7 @@ import software.wings.service.intfc.yaml.EntityUpdateService;
 import software.wings.service.intfc.yaml.YamlChangeSetService;
 import software.wings.service.intfc.yaml.YamlGitService;
 import software.wings.service.intfc.yaml.YamlSuccessfulChangeService;
+import software.wings.service.intfc.yaml.sync.YamlGitConfigService;
 import software.wings.yaml.gitSync.GitSyncMetadata;
 import software.wings.yaml.gitSync.GitSyncMetadata.GitSyncMetadataKeys;
 import software.wings.yaml.gitSync.YamlChangeSet;
@@ -79,6 +80,7 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
   @Inject private EntityUpdateService entityUpdateService;
   @Inject private YamlGitService yamlGitService;
   @Inject private YamlSuccessfulChangeService yamlSuccessfulChangeService;
+  @Inject private YamlGitConfigService yamlGitConfigService;
   private static final Integer MAX_RETRY_COUNT = 3;
 
   @Override
@@ -167,6 +169,24 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
 
   private boolean isGitSyncConfiguredForChangeSet(YamlChangeSet yamlChangeSet) {
     return yamlChangeSet.getGitSyncMetadata() != null;
+  }
+
+  @Override
+  public long getItemsInQueueKey(String appId, String accountId) {
+    YamlGitConfig yamlGitConfig = yamlGitConfigService.getYamlGitConfigFromAppId(appId, accountId);
+    if (yamlGitConfig == null) {
+      throw NoResultFoundException.newBuilder()
+          .message(format(
+              "Unable to find yamlGitConfig for account = {}, appId = {}. Git Sync might not have been configured",
+              accountId, appId))
+          .build();
+    }
+    String queueKey = buildQueueKey(yamlGitConfig);
+    return wingsPersistence.createQuery(YamlChangeSet.class)
+        .filter(YamlChangeSetKeys.accountId, yamlGitConfig.getAccountId())
+        .filter(YamlChangeSetKeys.queueKey, queueKey)
+        .filter(YamlChangeSetKeys.status, QUEUED)
+        .count();
   }
 
   @Override

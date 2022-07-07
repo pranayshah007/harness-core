@@ -13,6 +13,7 @@ shared_dependencies = [
     "//490-ce-commons:module",
     "//959-psql-database-models:module",
     "//970-ng-commons:module",
+    "//970-telemetry-beans:module",
     "@maven//:com_google_code_gson_gson",
     "@maven//:com_google_inject_guice",
     "@maven//:io_leangen_graphql_spqr",

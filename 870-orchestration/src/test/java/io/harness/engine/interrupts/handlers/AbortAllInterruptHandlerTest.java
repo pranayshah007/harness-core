@@ -9,6 +9,7 @@ package io.harness.engine.interrupts.handlers;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.PRASHANT;
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -53,7 +54,8 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
                               .build();
 
     mongoTemplate.save(interrupt);
-    when(nodeExecutionService.markAllLeavesDiscontinuing(planExecutionId, StatusUtils.finalizableStatuses()))
+    when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
+             planExecutionId, StatusUtils.finalizableStatuses()))
         .thenReturn(0L);
     Interrupt handledInterrupt = abortAllInterruptHandler.handleInterrupt(interrupt);
     assertThat(handledInterrupt).isNotNull();
@@ -76,11 +78,99 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
                               .build();
 
     mongoTemplate.save(interrupt);
-    when(nodeExecutionService.markAllLeavesDiscontinuing(planExecutionId, StatusUtils.abortAndExpireStatuses()))
+    when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
+             planExecutionId, StatusUtils.abortAndExpireStatuses()))
         .thenReturn(-1L);
     Interrupt handledInterrupt = abortAllInterruptHandler.handleInterrupt(interrupt);
     assertThat(handledInterrupt).isNotNull();
     assertThat(handledInterrupt.getUuid()).isEqualTo(interruptUuid);
     assertThat(handledInterrupt.getState()).isEqualTo(State.PROCESSED_UNSUCCESSFULLY);
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void shouldTestRegisterInterrupt() {
+    String planExecutionId = generateUuid();
+    String interruptUuid = generateUuid();
+    Interrupt interrupt = Interrupt.builder()
+                              .uuid(interruptUuid)
+                              .type(InterruptType.ABORT_ALL)
+                              .interruptConfig(InterruptConfig.newBuilder().build())
+                              .planExecutionId(planExecutionId)
+                              .state(State.REGISTERED)
+                              .build();
+
+    when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
+             planExecutionId, StatusUtils.finalizableStatuses()))
+        .thenReturn(0L);
+    Interrupt handledInterrupt = abortAllInterruptHandler.registerInterrupt(interrupt);
+    assertThat(handledInterrupt).isNotNull();
+    assertThat(handledInterrupt.getUuid()).isEqualTo(interruptUuid);
+    assertThat(handledInterrupt.getState()).isEqualTo(State.PROCESSING);
+
+    // Interrupt with node execution id
+    planExecutionId = generateUuid();
+    interruptUuid = generateUuid();
+    Interrupt interruptWithNodeExecutionId = Interrupt.builder()
+                                                 .uuid(interruptUuid)
+                                                 .nodeExecutionId("nodeExecutionId")
+                                                 .type(InterruptType.ABORT_ALL)
+                                                 .interruptConfig(InterruptConfig.newBuilder().build())
+                                                 .planExecutionId(planExecutionId)
+                                                 .state(State.REGISTERED)
+                                                 .build();
+
+    when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
+             planExecutionId, StatusUtils.finalizableStatuses()))
+        .thenReturn(0L);
+    handledInterrupt = abortAllInterruptHandler.registerInterrupt(interruptWithNodeExecutionId);
+    assertThat(handledInterrupt).isNotNull();
+    assertThat(handledInterrupt.getUuid()).isEqualTo(interruptUuid);
+    assertThat(handledInterrupt.getState()).isEqualTo(State.PROCESSING);
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testHandleAllNodes() {
+    String planExecutionId = generateUuid();
+    String interruptUuid = generateUuid();
+    Interrupt interrupt = Interrupt.builder()
+                              .uuid(interruptUuid)
+                              .type(InterruptType.ABORT_ALL)
+                              .interruptConfig(InterruptConfig.newBuilder().build())
+                              .planExecutionId(planExecutionId)
+                              .state(State.REGISTERED)
+                              .build();
+
+    mongoTemplate.save(interrupt);
+
+    // case1: updatedCount = 0
+    when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
+             planExecutionId, StatusUtils.finalizableStatuses()))
+        .thenReturn(0L);
+    Interrupt handledInterrupt = abortAllInterruptHandler.handleAllNodes(interrupt);
+    assertThat(handledInterrupt).isNotNull();
+    assertThat(handledInterrupt.getUuid()).isEqualTo(interruptUuid);
+    assertThat(handledInterrupt.getState()).isEqualTo(State.PROCESSING);
+
+    // case2: updatedCount < 0
+    when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
+             planExecutionId, StatusUtils.abortAndExpireStatuses()))
+        .thenReturn(-1L);
+    handledInterrupt = abortAllInterruptHandler.handleAllNodes(interrupt);
+    assertThat(handledInterrupt).isNotNull();
+    assertThat(handledInterrupt.getUuid()).isEqualTo(interruptUuid);
+    assertThat(handledInterrupt.getState()).isEqualTo(State.PROCESSED_UNSUCCESSFULLY);
+
+    // case3: updatedCount > 0
+    when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
+             planExecutionId, StatusUtils.abortAndExpireStatuses()))
+        .thenReturn(1L);
+    handledInterrupt = abortAllInterruptHandler.handleAllNodes(interrupt);
+    assertThat(handledInterrupt).isNotNull();
+    assertThat(handledInterrupt.getUuid()).isEqualTo(interruptUuid);
+    assertThat(handledInterrupt.getState()).isEqualTo(State.PROCESSED_SUCCESSFULLY);
   }
 }

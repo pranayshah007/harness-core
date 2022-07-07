@@ -14,11 +14,15 @@ import io.harness.serializer.JsonUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.Collections;
 import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class AzureAppServiceConfiguration {
   private String appSettingsJSON;
   private String connStringsJSON;

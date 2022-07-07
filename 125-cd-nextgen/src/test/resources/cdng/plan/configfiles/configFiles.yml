@@ -18,5 +18,6 @@
         type: Harness
         spec:
           files:
-            - path: /folder/config.yml,
-              scope: account
+            - account:/folder/config.yml
+            - org:/folder/service.yml
+            - /folder1/minfests

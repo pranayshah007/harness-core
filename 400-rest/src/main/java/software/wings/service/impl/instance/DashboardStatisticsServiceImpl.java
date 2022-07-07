@@ -826,7 +826,6 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
       String accountId, String appId, String serviceId, PageRequest<WorkflowExecution> pageRequest) {
     List<CurrentActiveInstances> currentActiveInstances = getCurrentActiveInstances(accountId, appId, serviceId);
     List<DeploymentHistory> deploymentHistoryList = getDeploymentHistory(accountId, appId, serviceId, pageRequest);
-    updateActiveInstanceArtifactDetails(currentActiveInstances, deploymentHistoryList);
     Service service = serviceResourceService.getWithDetails(appId, serviceId);
     notNullCheck("Service not found", service, USER);
     EntitySummary serviceSummary = getEntitySummary(service.getName(), serviceId, EntityType.SERVICE.name());
@@ -835,35 +834,6 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         .currentActiveInstancesList(currentActiveInstances)
         .deploymentHistoryList(deploymentHistoryList)
         .build();
-  }
-
-  private boolean shouldUpdate(ArtifactSummary artifact1, ArtifactSummary artifact2) {
-    // artifact2 -- from service definition
-    if (artifact1 == null || artifact2 == null) {
-      return false;
-    }
-    if (artifact1.getBuildNo() == null || artifact2.getBuildNo() == null) {
-      return false;
-    }
-    return !artifact1.getBuildNo().equals(artifact2.getBuildNo());
-  }
-
-  private void updateActiveInstanceArtifactDetails(
-      List<CurrentActiveInstances> currentActiveInstances, List<DeploymentHistory> deploymentHistoryList) {
-    for (CurrentActiveInstances instance : currentActiveInstances) {
-      for (DeploymentHistory deploymentHistory : deploymentHistoryList) {
-        if (instance.getLastWorkflowExecution() == null || deploymentHistory.getWorkflow() == null
-            || instance.getLastWorkflowExecutionDate() == null) {
-          return;
-        }
-        if (instance.getLastWorkflowExecution().getId().equals(deploymentHistory.getWorkflow().getId())
-            && instance.getLastWorkflowExecutionDate().equals(deploymentHistory.getDeployedAt())
-            && shouldUpdate(instance.getArtifact(), deploymentHistory.getArtifact())) {
-          instance.setArtifactSummaryFromSvc(deploymentHistory.getArtifact());
-          break;
-        }
-      }
-    }
   }
 
   @VisibleForTesting

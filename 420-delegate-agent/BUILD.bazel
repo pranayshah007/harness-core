@@ -16,6 +16,7 @@ java_library(
         "//950-log-client:module",
         "//960-expression-service:module",
         "//999-annotations:module",
+        "@maven//:com_squareup_retrofit2_converter_protobuf",
     ],
 )
 

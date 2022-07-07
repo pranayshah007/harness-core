@@ -16,11 +16,16 @@ import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
 import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
 import static io.harness.ccm.remote.resources.TelemetryConstants.PERSPECTIVE_CREATED;
 import static io.harness.ccm.remote.resources.TelemetryConstants.PERSPECTIVE_ID;
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.audittrails.events.PerspectiveCreateEvent;
+import io.harness.ccm.audittrails.events.PerspectiveDeleteEvent;
+import io.harness.ccm.audittrails.events.PerspectiveUpdateEvent;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.commons.utils.BigQueryHelper;
@@ -41,6 +46,7 @@ import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.outbox.api.OutboxService;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
@@ -49,6 +55,7 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.cloud.bigquery.BigQuery;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -75,8 +82,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Api("perspective")
 @Path("perspective")
@@ -104,11 +114,16 @@ public class PerspectiveResource {
   private final AwsAccountFieldHelper awsAccountFieldHelper;
   private final TelemetryReporter telemetryReporter;
 
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final TransactionTemplate transactionTemplate;
+  private final OutboxService outboxService;
+
   @Inject
   public PerspectiveResource(CEViewService ceViewService, CEReportScheduleService ceReportScheduleService,
       ViewCustomFieldService viewCustomFieldService, BigQueryService bigQueryService, BigQueryHelper bigQueryHelper,
       BudgetCostService budgetCostService, BudgetService budgetService, CCMNotificationService notificationService,
-      AwsAccountFieldHelper awsAccountFieldHelper, TelemetryReporter telemetryReporter) {
+      AwsAccountFieldHelper awsAccountFieldHelper, TelemetryReporter telemetryReporter,
+      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService) {
     this.ceViewService = ceViewService;
     this.ceReportScheduleService = ceReportScheduleService;
     this.viewCustomFieldService = viewCustomFieldService;
@@ -119,6 +134,8 @@ public class PerspectiveResource {
     this.notificationService = notificationService;
     this.awsAccountFieldHelper = awsAccountFieldHelper;
     this.telemetryReporter = telemetryReporter;
+    this.transactionTemplate = transactionTemplate;
+    this.outboxService = outboxService;
   }
 
   @GET
@@ -267,7 +284,11 @@ public class PerspectiveResource {
     properties.put(PERSPECTIVE_ID, clone ? ceViewCheck.getUuid() : ceView.getUuid());
     telemetryReporter.sendTrackEvent(
         PERSPECTIVE_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(ceViewCheck);
+    return ResponseDTO.newResponse(
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          outboxService.save(new PerspectiveCreateEvent(accountId, ceViewCheck.toDTO()));
+          return ceViewCheck;
+        })));
   }
 
   private CEView updateTotalCost(CEView ceView) {
@@ -343,10 +364,15 @@ public class PerspectiveResource {
   update(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @Valid @RequestBody(required = true, description = "Perspective's CEView object") CEView ceView) {
+    CEView oldPerspective = ceViewService.get(ceView.getUuid());
     ceView.setAccountId(accountId);
     log.info(ceView.toString());
-
-    return ResponseDTO.newResponse(updateTotalCost(ceViewService.update(ceView)));
+    CEView newPerspective = updateTotalCost(ceViewService.update(ceView));
+    return ResponseDTO.newResponse(
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          outboxService.save(new PerspectiveUpdateEvent(accountId, newPerspective.toDTO(), oldPerspective.toDTO()));
+          return newPerspective;
+        })));
   }
 
   @DELETE
@@ -367,6 +393,7 @@ public class PerspectiveResource {
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @QueryParam("perspectiveId") @Parameter(required = true,
           description = "Unique identifier for the Perspective") @NotNull @Valid String perspectiveId) {
+    CEView perspective = ceViewService.get(perspectiveId);
     ceViewService.delete(perspectiveId, accountId);
 
     ceReportScheduleService.deleteAllByView(perspectiveId, accountId);
@@ -374,7 +401,11 @@ public class PerspectiveResource {
     budgetService.deleteBudgetsForPerspective(accountId, perspectiveId);
     notificationService.delete(perspectiveId, accountId);
 
-    return ResponseDTO.newResponse("Successfully deleted the view");
+    return ResponseDTO.newResponse(
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          outboxService.save(new PerspectiveDeleteEvent(accountId, perspective.toDTO()));
+          return "Successfully deleted the view";
+        })));
   }
 
   @POST

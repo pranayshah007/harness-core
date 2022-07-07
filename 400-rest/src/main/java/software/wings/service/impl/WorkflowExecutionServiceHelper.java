@@ -182,7 +182,8 @@ public class WorkflowExecutionServiceHelper {
       }
     }
 
-    workflowExecution.setInfraDefinitionIds(workflowService.getResolvedInfraDefinitionIds(workflow, workflowVariables));
+    workflowExecution.setInfraDefinitionIds(
+        workflowService.getResolvedInfraDefinitionIds(workflow, workflowVariables, resolveEnvId));
     workflowExecution.setCloudProviderIds(infrastructureDefinitionService.fetchCloudProviderIds(
         workflow.getAppId(), workflowExecution.getInfraDefinitionIds()));
     return workflowExecution;

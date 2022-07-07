@@ -924,6 +924,11 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     if (workflowExecution == null || workflowExecution.getPipelineExecution() == null) {
       return;
     }
+
+    if (workflowExecution.getPipelineExecution().getPipelineStageExecutions() == null) {
+      workflowExecution.getPipelineExecution().setPipelineStageExecutions(new ArrayList<>());
+    }
+
     if (ExecutionStatus.isFinalStatus(workflowExecution.getPipelineExecution().getStatus())
         && workflowExecution.getPipelineExecution()
                .getPipelineStageExecutions()
@@ -1124,6 +1129,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             stageExecution.setTriggeredBy(workflowExecution2.getTriggeredBy());
           }
           stageExecution.setMessage(envStateExecutionDataLooped.getErrorMsg());
+        }
+        if (stateExecutionDataLooped instanceof ForkStateExecutionData) {
+          stageExecution.setMessage(stateExecutionDataLooped.getErrorMsg());
         }
         appendSkipCondition(pipelineStageElement, stageExecution, stateExecutionInstanceId);
         stageExecutionDataList.add(stageExecution);
@@ -4652,9 +4660,12 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     Workflow workflow = workflowService.readWorkflow(workflowExecution.getAppId(), workflowExecution.getWorkflowId());
     if (workflow != null && workflow.getOrchestrationWorkflow() != null) {
       List<Service> services = getResolvedServices(workflow, workflowExecution);
+      String envId = workflowService.resolveEnvironmentId(workflow,
+          workflowExecution.getExecutionArgs() != null ? workflowExecution.getExecutionArgs().getWorkflowVariables()
+                                                       : null);
       List<InfrastructureMapping> infrastructureMappings = null;
       List<InfrastructureDefinition> infrastructureDefinitions = null;
-      infrastructureDefinitions = getResolvedInfraDefinitions(workflow, workflowExecution);
+      infrastructureDefinitions = getResolvedInfraDefinitions(workflow, workflowExecution, envId);
 
       if (services != null) {
         List<InfrastructureDefinition> finalInfrastructureDefinitions = infrastructureDefinitions;
@@ -4714,11 +4725,11 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   @Override
   public List<InfrastructureDefinition> getResolvedInfraDefinitions(
-      Workflow workflow, WorkflowExecution workflowExecution) {
+      Workflow workflow, WorkflowExecution workflowExecution, String envId) {
     Map<String, String> workflowVariables = workflowExecution.getExecutionArgs() != null
         ? workflowExecution.getExecutionArgs().getWorkflowVariables()
         : null;
-    return workflowService.getResolvedInfraDefinitions(workflow, workflowVariables);
+    return workflowService.getResolvedInfraDefinitions(workflow, workflowVariables, envId);
   }
 
   private void populateServiceSummary(
@@ -5203,6 +5214,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             .filter(StateExecutionInstanceKeys.appId, appId)
             .filter(StateExecutionInstanceKeys.executionUuid, executionUuid)
             .filter(StateExecutionInstanceKeys.stateType, ARTIFACT_COLLECTION.name())
+            .filter(StateExecutionInstanceKeys.status, SUCCESS)
             .asList();
 
     if (isEmpty(allStateExecutionInstances)) {
@@ -5217,7 +5229,14 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
       AppManifestCollectionExecutionData executionData =
           (AppManifestCollectionExecutionData) stateExecutionInstance.fetchStateExecutionData();
-      helmCharts.add(helmChartService.get(appId, executionData.getChartId()));
+      if (EmptyPredicate.isNotEmpty(executionData.getChartId())) {
+        HelmChart helmChart = helmChartService.get(appId, executionData.getChartId());
+        if (helmChart != null) {
+          helmCharts.add(helmChart);
+        } else {
+          log.warn("StateExecutionData has helm chart id, but helm chart doesn't exist in database. Please check!");
+        }
+      }
     });
     return helmCharts;
   }
@@ -5229,6 +5248,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             .filter(StateExecutionInstanceKeys.appId, appId)
             .filter(StateExecutionInstanceKeys.executionUuid, executionUuid)
             .filter(StateExecutionInstanceKeys.stateType, ARTIFACT_COLLECTION.name())
+            .filter(StateExecutionInstanceKeys.status, SUCCESS)
             .asList();
 
     if (isEmpty(allStateExecutionInstances)) {
@@ -5243,7 +5263,14 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
       ArtifactCollectionExecutionData artifactCollectionExecutionData =
           (ArtifactCollectionExecutionData) stateExecutionInstance.fetchStateExecutionData();
-      artifacts.add(artifactService.get(artifactCollectionExecutionData.getArtifactId()));
+      if (EmptyPredicate.isNotEmpty(artifactCollectionExecutionData.getArtifactId())) {
+        Artifact artifact = artifactService.get(artifactCollectionExecutionData.getArtifactId());
+        if (artifact != null) {
+          artifacts.add(artifact);
+        } else {
+          log.warn("StateExecutionData has artifact id, but artifact doesn't exist in database. Please check!");
+        }
+      }
     });
     return artifacts;
   }

@@ -1496,6 +1496,7 @@
 19550:io.harness.delegate.beans.executioncapability.GitInstallationCapability
 19551:io.harness.delegate.beans.connector.ConnectorValidationParameterResponse
 19552:io.harness.delegate.beans.connector.scm.github.GithubOauthDTO
+19553:io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO
 19630:io.harness.delegate.beans.connector.helm.OciHelmValidationParams
 19640:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams
 19641:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse
@@ -1561,6 +1562,8 @@
 19701:io.harness.delegate.task.k8s.OpenshiftManifestDelegateConfig
 19702:io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig
 19703:io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig
+19704:io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse
+19705:io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest
 19800:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType
 19801:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO
 19802:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoCredentialsDTO
@@ -1715,6 +1718,8 @@
 55332:io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSwapSlotsRequest
 55333:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSwapSlotsResponseNG
 55334:io.harness.delegate.task.ssh.config.SecretConfigFile
+55335:io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig
+55336:io.harness.delegate.task.shell.WinrmTaskParameters
 55401:io.harness.delegate.beans.SerializedResponseData
 55402:software.wings.beans.SerializationFormat
 55403:io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse
@@ -2135,6 +2140,7 @@
 563533:io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse
 563534:io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig
 563535:io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability
+563536:io.harness.delegate.task.serverless.ServerlessArtifactsConfig
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO
@@ -2228,5 +2234,3 @@
 980029:io.harness.exception.runtime.SshCommandExecutionException
 980030:io.harness.exception.InterruptedRuntimeException
 9800001:io.harness.beans.RecasterMap
-
-
