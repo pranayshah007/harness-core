@@ -7,6 +7,8 @@
 
 package io.harness.batch.processing.writer;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import static software.wings.beans.SettingAttribute.SettingCategory.CE_CONNECTOR;
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
 import static software.wings.settings.SettingVariableTypes.CE_AWS;
@@ -148,15 +150,21 @@ public class S3SyncEventWriter extends EventWriter implements ItemWriter<Setting
             }
           }
           AwsCurAttributesDTO curAttributes = ceAwsConnectorDTO.getCurAttributes();
-          if (curAttributes.getS3Prefix() == null || curAttributes.getRegion() == null) {
+          if (isEmpty(curAttributes.getS3Prefix()) || isEmpty(curAttributes.getRegion())) {
+            log.info("S3-Prefix or Region was found to be null/empty, fetching values from Report Definition..");
             Optional<ReportDefinition> report = ceAwsDTOToEntity.getReportDefinition(ceAwsConnectorDTO);
             if (report.isPresent()) {
+              log.info("Report Definition found. s3Prefix: '{}', region: '{}'",
+                  Objects.toString(report.get().getS3Prefix(), ""),
+                  Objects.toString(report.get().getS3Region(), AWS_DEFAULT_REGION));
               curAttributes.setRegion(Objects.toString(report.get().getS3Region(), AWS_DEFAULT_REGION));
               curAttributes.setS3Prefix(Objects.toString(report.get().getS3Prefix(), ""));
             } else {
+              log.info(
+                  "Report Definition not found for Connector: {}, setting default values - s3Prefix: '', region: '{}'",
+                  ceAwsConnectorDTO, AWS_DEFAULT_REGION);
               curAttributes.setRegion(AWS_DEFAULT_REGION);
               curAttributes.setS3Prefix("");
-              log.info("Report Definition not found for Connector: {}", ceAwsConnectorDTO);
             }
           }
           CrossAccountAccessDTO crossAccountAccess = ceAwsConnectorDTO.getCrossAccountAccess();
