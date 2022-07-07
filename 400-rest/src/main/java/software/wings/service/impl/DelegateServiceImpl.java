@@ -2657,6 +2657,7 @@ public class DelegateServiceImpl implements DelegateService {
                                   .ceEnabled(delegateParams.isCeEnabled())
                                   .delegateTokenName(delegateTokenName.orElse(null))
                                   .heartbeatAsObject(delegateParams.isHeartbeatAsObject())
+                                  .immutable(delegateParams.isImmutable())
                                   .build();
 
     if (ECS.equals(delegateParams.getDelegateType())) {

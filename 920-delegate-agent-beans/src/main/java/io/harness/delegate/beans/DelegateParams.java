@@ -50,6 +50,7 @@ public class DelegateParams {
   boolean proxy;
   boolean ceEnabled;
   boolean heartbeatAsObject;
+  boolean immutable;
 
   List<String> supportedTaskTypes;
 

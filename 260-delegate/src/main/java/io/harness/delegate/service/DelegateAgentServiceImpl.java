@@ -573,6 +573,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
               .sampleDelegate(isSample)
               .location(Paths.get("").toAbsolutePath().toString())
               .heartbeatAsObject(true)
+              .immutable(isImmutableDelegate)
               .ceEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CE")));
 
       delegateId = registerDelegate(builder);
@@ -2422,10 +2423,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private String getVersion() {
-    if (isImmutableDelegate) {
-      return versionInfoManager.getVersionInfo().getDelegateVersion();
-    }
-    return versionInfoManager.getVersionInfo().getVersion();
+    return isImmutableDelegate ? versionInfoManager.getVersionInfo().getDelegateVersion()
+                               : versionInfoManager.getVersionInfo().getVersion();
   }
 
   private String getVersionWithPatch() {
