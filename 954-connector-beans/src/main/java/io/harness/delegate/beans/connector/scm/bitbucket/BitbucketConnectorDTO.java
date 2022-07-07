@@ -116,12 +116,12 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
       String linkedRepo = getGitRepositoryDetails().getName();
       if (!linkedRepo.equals(gitRepositoryDTO.getName())) {
         throw new InvalidRequestException(
-            String.format("Provided repoName [%s] does not match with the repoName [%s] provided in connector.",
+            String.format("Provided repoName [%s] does not match with thte repoName [%s] provided in connector.",
                 gitRepositoryDTO.getName(), linkedRepo));
       }
-      return getUrl();
+      return url;
     }
-    return FilePathUtils.addEndingSlashIfMissing(getUrl()) + gitRepositoryDTO.getName();
+    return FilePathUtils.addEndingSlashIfMissing(url) + gitRepositoryDTO.getName();
   }
 
   @Override

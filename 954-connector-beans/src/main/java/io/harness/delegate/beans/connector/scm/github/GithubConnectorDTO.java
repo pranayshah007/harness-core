@@ -119,9 +119,9 @@ public class GithubConnectorDTO
             String.format("Provided repoName [%s] does not match with the repoName [%s] provided in connector.",
                 gitRepositoryDTO.getName(), linkedRepo));
       }
-      return getUrl();
+      return url;
     }
-    return FilePathUtils.addEndingSlashIfMissing(getUrl()) + gitRepositoryDTO.getName();
+    return FilePathUtils.addEndingSlashIfMissing(url) + gitRepositoryDTO.getName();
   }
 
   @Override
