@@ -136,6 +136,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Override
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, DeploymentStageNode stageNode, List<String> childrenNodeIds) {
+    stageNode.setIdentifier(StageStrategyUtils.getIdentifierWithExpression(ctx, stageNode.getIdentifier()));
+    stageNode.setName(StageStrategyUtils.getIdentifierWithExpression(ctx, stageNode.getName()));
+
     StageElementParametersBuilder stageParameters = CdStepParametersUtils.getStageParameters(stageNode);
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));

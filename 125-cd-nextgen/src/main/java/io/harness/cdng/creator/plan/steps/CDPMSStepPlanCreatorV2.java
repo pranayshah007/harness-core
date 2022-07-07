@@ -105,7 +105,8 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
     if (YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null) {
       isStepInsideRollback = true;
     }
-
+    stepElement.setIdentifier(StageStrategyUtils.getIdentifierWithExpression(ctx, stepElement.getIdentifier()));
+    stepElement.setName(StageStrategyUtils.getIdentifierWithExpression(ctx, stepElement.getName()));
     List<AdviserObtainment> adviserObtainmentFromMetaData = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();

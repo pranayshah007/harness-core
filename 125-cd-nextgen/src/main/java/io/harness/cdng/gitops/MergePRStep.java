@@ -120,18 +120,6 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
 
     ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
 
-    GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig(ambiance, releaseRepoOutcome);
-    String repoOwner = null, repoName = null;
-    switch (gitStoreDelegateConfig.getGitConfigDTO().getConnectorType()) {
-      case GITHUB:
-        GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
-        repoOwner = githubConnectorDTO.getGitRepositoryDetails().getOrg();
-        repoName = githubConnectorDTO.getGitRepositoryDetails().getName();
-        break;
-      default:
-        throw new InvalidRequestException("Connector not supported", USER);
-    }
-
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.CREATE_PR_OUTCOME));
     int prNumber;
@@ -144,10 +132,10 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
       throw new InvalidRequestException("Pull Request Details are missing", USER);
     }
 
-    String accountId = AmbianceUtils.getAccountId(ambiance);
-
     ConnectorInfoDTO connectorInfoDTO =
         cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
+
+    String accountId = AmbianceUtils.getAccountId(ambiance);
 
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRefFromEntityIdentifiers(connectorInfoDTO.getIdentifier(), accountId,
@@ -156,14 +144,26 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
     ConnectorDetails connectorDetails =
         connectorUtils.getConnectorDetails(identifierRef, identifierRef.buildScopedIdentifier());
 
-    GitApiTaskParams gitApiTaskParams = GitApiTaskParams.builder()
-                                            .gitRepoType(GitRepoType.GITHUB)
-                                            .requestType(GitApiRequestType.MERGE_PR)
-                                            .connectorDetails(connectorDetails)
-                                            .prNumber(String.valueOf(prNumber))
-                                            .owner(repoOwner)
-                                            .repo(repoName)
-                                            .build();
+    GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig(ambiance, releaseRepoOutcome);
+    String repoOwner, repoName;
+    GitApiTaskParams gitApiTaskParams;
+    switch (gitStoreDelegateConfig.getGitConfigDTO().getConnectorType()) {
+      case GITHUB:
+        GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
+        repoOwner = githubConnectorDTO.getGitRepositoryDetails().getOrg();
+        repoName = githubConnectorDTO.getGitRepositoryDetails().getName();
+        gitApiTaskParams = GitApiTaskParams.builder()
+                               .gitRepoType(GitRepoType.GITHUB)
+                               .requestType(GitApiRequestType.MERGE_PR)
+                               .connectorDetails(connectorDetails)
+                               .prNumber(String.valueOf(prNumber))
+                               .owner(repoOwner)
+                               .repo(repoName)
+                               .build();
+        break;
+      default:
+        throw new InvalidRequestException("Failed to run MergePR Step. Connector not supported", USER);
+    }
 
     NGGitOpsTaskParams ngGitOpsTaskParams = NGGitOpsTaskParams.builder()
                                                 .gitOpsTaskType(GitOpsTaskType.MERGE_PR)

@@ -7,11 +7,10 @@
 
 package io.harness.delegate.task.azure.appservice.webapp.handler;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.azure.AzureTestUtils.APP_NAME;
-import static io.harness.delegate.task.azure.AzureTestUtils.DEPLOYMENT_SLOT;
 import static io.harness.delegate.task.azure.AzureTestUtils.RESOURCE_GROUP;
 import static io.harness.delegate.task.azure.AzureTestUtils.SUBSCRIPTION_ID;
-import static io.harness.delegate.task.azure.AzureTestUtils.TARGET_SLOT;
 import static io.harness.rule.OwnerRule.ANIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,13 +22,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.azure.model.AzureConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.azure.AzureTestUtils;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceResourceUtilities;
-import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
-import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDeploymentContext;
+import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSwapSlotsRequest;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.rule.Owner;
@@ -44,9 +43,9 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+@OwnedBy(CDP)
 public class AzureWebAppSlotSwapRequestHandlerTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
-  @Mock private AzureAppServiceDeploymentService azureAppServiceDeploymentService;
   @Mock private AzureAppServiceResourceUtilities azureAppServiceResourceUtilities;
   @Mock private AzureLogCallbackProvider logCallbackProvider;
   @InjectMocks AzureWebAppSlotSwapRequestHandler requestHandler;
@@ -56,28 +55,25 @@ public class AzureWebAppSlotSwapRequestHandlerTest extends CategoryTest {
   @Owner(developers = ANIL)
   @Category(UnitTests.class)
   public void testExecuteSwapSlots() {
-    AzureWebAppSwapSlotsRequest swapSlotsRequest =
-        AzureWebAppSwapSlotsRequest.builder()
-            .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
-            .targetSlot(TARGET_SLOT)
-            .timeoutIntervalInMin(timeout)
-            .build();
+    AzureWebAppInfraDelegateConfig azureWebAppInfraDelegateConfig =
+        AzureTestUtils.createTestWebAppInfraDelegateConfig();
+    AzureWebAppSwapSlotsRequest swapSlotsRequest = AzureWebAppSwapSlotsRequest.builder()
+                                                       .accountId("accountId")
+                                                       .infrastructure(azureWebAppInfraDelegateConfig)
+                                                       .timeoutIntervalInMin(timeout)
+                                                       .build();
 
     requestHandler.execute(swapSlotsRequest, AzureTestUtils.createTestAzureConfig(), logCallbackProvider);
 
-    ArgumentCaptor<AzureAppServiceDeploymentContext> deploymentContextArgumentCaptor =
-        ArgumentCaptor.forClass(AzureAppServiceDeploymentContext.class);
-    ArgumentCaptor<String> targetSlot = ArgumentCaptor.forClass(String.class);
-    verify(azureAppServiceDeploymentService, times(1))
-        .swapSlotsUsingCallback(
-            deploymentContextArgumentCaptor.capture(), targetSlot.capture(), eq(logCallbackProvider));
+    ArgumentCaptor<AzureWebClientContext> azureWebClientContextArgumentCaptor =
+        ArgumentCaptor.forClass(AzureWebClientContext.class);
 
-    AzureAppServiceDeploymentContext contextArgumentCaptorValue = deploymentContextArgumentCaptor.getValue();
-    assertThat(contextArgumentCaptorValue.getSlotName()).isEqualTo(DEPLOYMENT_SLOT);
-    assertThat(contextArgumentCaptorValue.getSteadyStateTimeoutInMin()).isEqualTo(timeout);
-    assertThat(targetSlot.getValue()).isEqualTo(TARGET_SLOT);
+    verify(azureAppServiceResourceUtilities, times(1))
+        .swapSlots(azureWebClientContextArgumentCaptor.capture(), eq(logCallbackProvider),
+            eq(azureWebAppInfraDelegateConfig.getDeploymentSlot()), eq(azureWebAppInfraDelegateConfig.getTargetSlot()),
+            eq(timeout));
 
-    AzureWebClientContext azureWebClientContext = contextArgumentCaptorValue.getAzureWebClientContext();
+    AzureWebClientContext azureWebClientContext = azureWebClientContextArgumentCaptor.getValue();
     assertThat(azureWebClientContext.getSubscriptionId()).isEqualTo(SUBSCRIPTION_ID);
     assertThat(azureWebClientContext.getResourceGroupName()).isEqualTo(RESOURCE_GROUP);
     assertThat(azureWebClientContext.getAppName()).isEqualTo(APP_NAME);
@@ -93,13 +89,13 @@ public class AzureWebAppSlotSwapRequestHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteSwapSlotsFailure() {
     doThrow(new RuntimeException("Failed to swap slot"))
-        .when(azureAppServiceDeploymentService)
-        .swapSlotsUsingCallback(any(AzureAppServiceDeploymentContext.class), eq(TARGET_SLOT), eq(logCallbackProvider));
+        .when(azureAppServiceResourceUtilities)
+        .swapSlots(any(), any(), any(), any(), any());
 
     AzureWebAppSwapSlotsRequest swapSlotsRequest =
         AzureWebAppSwapSlotsRequest.builder()
+            .accountId("accountId")
             .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
-            .targetSlot(TARGET_SLOT)
             .timeoutIntervalInMin(timeout)
             .build();
 

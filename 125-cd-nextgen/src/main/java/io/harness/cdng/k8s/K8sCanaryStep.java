@@ -127,6 +127,7 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
             .useLatestKustomizeVersion(k8sStepHelper.isUseLatestKustomizeVersion(accountId))
             .useNewKubectlVersion(k8sStepHelper.isUseNewKubectlVersion(accountId))
             .cleanUpIncompleteCanaryDeployRelease(k8sStepHelper.shouldCleanUpIncompleteCanaryDeployRelease(accountId))
+            .useK8sApiForSteadyStateCheck(k8sStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);

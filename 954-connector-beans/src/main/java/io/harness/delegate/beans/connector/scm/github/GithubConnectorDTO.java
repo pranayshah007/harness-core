@@ -119,9 +119,9 @@ public class GithubConnectorDTO
             String.format("Provided repoName [%s] does not match with the repoName [%s] provided in connector.",
                 gitRepositoryDTO.getName(), linkedRepo));
       }
-      return getUrl();
+      return url;
     }
-    return FilePathUtils.addEndingSlashIfMissing(getUrl()) + gitRepositoryDTO.getName();
+    return FilePathUtils.addEndingSlashIfMissing(url) + gitRepositoryDTO.getName();
   }
 
   @Override
@@ -139,8 +139,9 @@ public class GithubConnectorDTO
   public String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
     ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
     String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
+    String httpRepoUrl = GitClientHelper.getCompleteHTTPUrlForGithub(repoUrl);
     filePath = removeStartingAndEndingSlash(filePath);
-    return String.format("%s/blob/%s/%s", repoUrl, branchName, filePath);
+    return String.format("%s/blob/%s/%s", httpRepoUrl, branchName, filePath);
   }
 
   @Override

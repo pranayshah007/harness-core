@@ -7,7 +7,6 @@
 
 package io.harness.cdng.creator.filters;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
@@ -211,12 +210,12 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     }
 
     if (gitOpsEnabled) {
-      if (env.isDeployToAll() && isNotEmpty(env.getGitOpsClusters().getValue())) {
+      if (env.isDeployToAll() && env.getGitOpsClusters().fetchFinalValue() != null) {
         throw new InvalidYamlRuntimeException(format(
             "When deploying to all, individual gitops clusters must not be provided in stage [%s]. Please remove the gitOpsClusters property and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
       }
-      if (!env.isDeployToAll() && isEmpty(env.getGitOpsClusters().getValue())) {
+      if (!env.isDeployToAll() && env.getGitOpsClusters().fetchFinalValue() == null) {
         throw new InvalidYamlRuntimeException(format(
             "When deploy to all is false, list of gitops clusters must be provided  in stage [%s].  Please specify the gitOpsClusters property and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));

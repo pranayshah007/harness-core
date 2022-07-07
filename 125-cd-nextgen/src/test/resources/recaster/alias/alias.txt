@@ -75,6 +75,7 @@ io.harness.cdng.manifest.yaml.HttpStoreConfig
 io.harness.cdng.manifest.yaml.InheritFromManifestStoreConfig
 io.harness.cdng.manifest.yaml.KustomizeManifestOutcome
 io.harness.cdng.manifest.yaml.GitLabStore
+io.harness.cdng.manifest.yaml.AzureRepoStore
 io.harness.cdng.provision.terraform.TerraformPlanExecutionDataParameters
 io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome
 io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome

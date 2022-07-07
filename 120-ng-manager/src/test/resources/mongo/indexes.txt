@@ -362,6 +362,7 @@ gcsFileMetadata {"name": "gcsFileId_1", "background": true} {"gcsFileId": 1}
 genericEvent {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 genericEvent {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 gitBranches {"name": "unique_accountIdentifier_repoURL_branchName_idx", "unique": true} {"accountIdentifier": 1, "repoURL": 1, "branchName": 1}
+gitCommitNG {"name": "accountIdentifier_repoURL_branchName_gitsyncdirection_createdAtSort", "background": true} {"accountIdentifier": 1, "repoURL": 1, "branchName": 1, "gitSyncDirection": 1, "createdAt": -1}
 gitCommitNG {"name": "commitId_1", "background": true} {"commitId": 1}
 gitCommitNG {"name": "status_1", "background": true} {"status": 1}
 gitCommitNG {"name": "unique_commitId_repoURL_gitSyncDirection_idx", "unique": true} {"commitId": 1, "repoURL": 1, "gitSyncDirection": 1}

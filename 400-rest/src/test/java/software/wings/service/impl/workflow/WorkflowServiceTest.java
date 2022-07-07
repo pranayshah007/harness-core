@@ -298,6 +298,7 @@ import io.harness.beans.SearchFilter.Operator;
 import io.harness.beans.WorkflowType;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.FailureType;
+import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
@@ -3340,7 +3341,7 @@ public class WorkflowServiceTest extends WingsBaseTest {
     Workflow savedWorkflow = workflowService.createWorkflow(workflow1);
     assertThat(savedWorkflow).isNotNull().hasFieldOrProperty("uuid");
     List<InfrastructureDefinition> resolvedInfraDefinitions =
-        workflowService.getResolvedInfraDefinitions(savedWorkflow, null);
+        workflowService.getResolvedInfraDefinitions(savedWorkflow, null, null);
     assertThat(resolvedInfraDefinitions)
         .isNotEmpty()
         .extracting(InfrastructureDefinition::getUuid)
@@ -3394,8 +3395,11 @@ public class WorkflowServiceTest extends WingsBaseTest {
     when(serviceResourceService.fetchServicesByUuids(APP_ID, java.util.Arrays.asList(SERVICE_ID)))
         .thenReturn(java.util.Arrays.asList(service));
 
+    when(infrastructureDefinitionService.getInfraDefById(workflow3.getAccountId(), INFRA_DEFINITION_ID))
+        .thenReturn(InfrastructureDefinition.builder().uuid(INFRA_DEFINITION_ID).build());
+
     List<InfrastructureDefinition> resolvedInfraDefinitions = workflowService.getResolvedInfraDefinitions(
-        workflow3, ImmutableMap.of("Service", SERVICE_ID, "InfraDef_SSH", INFRA_DEFINITION_ID));
+        workflow3, ImmutableMap.of("Service", SERVICE_ID, "InfraDef_SSH", INFRA_DEFINITION_ID), null);
 
     assertThat(resolvedInfraDefinitions)
         .isNotEmpty()
@@ -5440,5 +5444,42 @@ public class WorkflowServiceTest extends WingsBaseTest {
     assertThat(artifactVariable2.getArtifactInput()).isNotNull();
     assertThat(artifactVariable2.getArtifactInput())
         .isEqualTo(ArtifactInput.builder().buildNo(BUILD_NO + "1").artifactStreamId(ARTIFACT_STREAM_ID + "1").build());
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void shouldThrowExceptionWhenResolvedTemplatizedInfraInvalid() {
+    mockAwsInfraDef(INFRA_DEFINITION_ID);
+    when(infrastructureDefinitionService.getInfraStructureDefinitionByUuids(
+             APP_ID, java.util.Arrays.asList(INFRA_DEFINITION_ID)))
+        .thenReturn(java.util.Arrays.asList(buildAwsSshInfraDef(INFRA_DEFINITION_ID)));
+
+    Workflow workflow1 = createCanaryWorkflow();
+    WorkflowPhase workflowPhase = aWorkflowPhase().infraDefinitionId(INFRA_DEFINITION_ID).serviceId(SERVICE_ID).build();
+    workflowPhase.setTemplateExpressions(asList(getServiceTemplateExpression(), prepareInfraDefTemplateExpression()));
+    workflowService.createWorkflowPhase(workflow1.getAppId(), workflow1.getUuid(), workflowPhase);
+
+    Workflow workflow3 = workflowService.readWorkflow(workflow1.getAppId(), workflow1.getUuid());
+
+    when(serviceResourceService.fetchServicesByUuids(APP_ID, java.util.Arrays.asList(SERVICE_ID)))
+        .thenReturn(java.util.Arrays.asList(service));
+
+    assertThatThrownBy(()
+                           -> workflowService.getResolvedInfraDefinitions(workflow3,
+                               ImmutableMap.of("Service", SERVICE_ID, "InfraDef_SSH", INFRA_DEFINITION_ID), null))
+        .isInstanceOf(GeneralException.class)
+        .hasMessage("Infra definition INFRA_DEFINITION_ID is invalid");
+
+    when(infrastructureDefinitionService.getInfraByName(workflow3.getAccountId(), INFRA_DEFINITION_ID, null))
+        .thenReturn(InfrastructureDefinition.builder().uuid(INFRA_DEFINITION_ID).build());
+
+    List<InfrastructureDefinition> resolvedInfraDefinitions = workflowService.getResolvedInfraDefinitions(
+        workflow3, ImmutableMap.of("Service", SERVICE_ID, "InfraDef_SSH", INFRA_DEFINITION_ID), null);
+
+    assertThat(resolvedInfraDefinitions)
+        .isNotEmpty()
+        .extracting(InfrastructureDefinition::getUuid)
+        .contains(INFRA_DEFINITION_ID);
   }
 }

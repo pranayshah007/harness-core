@@ -323,10 +323,12 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       yamlSchemaWithDetailsList = fetchSchemaWithDetailsFromModules(accountId, enabledModules);
       yamlSchemaWithDetailsList =
           filterYamlSchemaDetailsByModule(yamlSchemaWithDetailsList, entityType.getEntityProduct());
+      // Hack to handle proper schema generation for stage
       for (YamlSchemaWithDetails yamlSchemaWithDetails : yamlSchemaWithDetailsList) {
         String nameSpace = yamlSchemaWithDetails.getYamlSchemaMetadata().getNamespace();
         JsonNode definition = yamlSchemaWithDetails.getSchema().get(DEFINITIONS_NODE);
         nameSpaces.add(nameSpace);
+        // Creating a map of all definitions corresponding to all namespace
         if (EmptyPredicate.isEmpty(nameSpace)) {
           if (mergedDefinition == null) {
             mergedDefinition = definition;
@@ -343,6 +345,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
           }
         }
       }
+      // Multiple schemas might have same namespace. Mergint them into one
       for (Map.Entry<String, List<JsonNode>> entry : nameSpaceToDefinitionMap.entrySet()) {
         JsonNode nameSpaceDefinition = null;
         for (JsonNode jsonNode : entry.getValue()) {
@@ -358,7 +361,6 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     JsonNode jsonNode = schemaFetcher.fetchStepYamlSchema(
         accountId, projectIdentifier, orgIdentifier, scope, entityType, yamlGroup, yamlSchemaWithDetailsList);
 
-    // TODO: hack to remove v2 steps from stage yamls. Fix it properly
     if (StepCategory.STAGE.toString().equals(yamlGroup)) {
       String stepNameSpace = null;
       if (jsonNode.get(DEFINITIONS_NODE).fields().hasNext()) {
@@ -368,12 +370,21 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
         }
       }
 
+      // Merging definitions fetched from different modules with stage schema
       JsonNodeUtils.merge(jsonNode.get(DEFINITIONS_NODE), mergedDefinition);
       for (Map.Entry<String, JsonNode> entry : finalNameSpaceToDefinitionMap.entrySet()) {
         if (!stepNameSpace.equals(entry.getKey())) {
+          // Adding definitions to individual namespace and the root definition
+          if (jsonNode.get(DEFINITIONS_NODE).get(entry.getKey()) == null) {
+            ((ObjectNode) jsonNode.get(DEFINITIONS_NODE)).putIfAbsent(entry.getKey(), entry.getValue());
+          } else {
+            JsonNodeUtils.merge(jsonNode.get(DEFINITIONS_NODE).get(entry.getKey()), entry.getValue());
+          }
           JsonNodeUtils.merge(jsonNode.get(DEFINITIONS_NODE), entry.getValue());
         }
       }
+
+      // TODO: hack to remove v2 steps from stage yamls. Fix it properly
       for (String nameSpace : nameSpaces) {
         if (jsonNode.get(DEFINITIONS_NODE).get(nameSpace) != null) {
           YamlSchemaTransientHelper.removeV2StepEnumsFromStepElementConfig(
