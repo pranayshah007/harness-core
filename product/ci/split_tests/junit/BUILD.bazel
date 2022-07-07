@@ -2,10 +2,18 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "junit",
-    srcs = ["junit.go"],
+    srcs = [
+      "junit.go",
+      "ti_helper.go"
+    ],
     importpath = "github.com/harness/harness-core/product/ci/split_tests/junit",
     visibility = ["//visibility:public"],
     deps = [
         "@com_github_bmatcuk_doublestar//:doublestar",
+        "//product/ci/engine/consts",
+        "//product/ci/engine/grpc/client",
+        "//product/ci/engine/proto",
+        "//product/ci/ti-service/types",
+        "@org_uber_go_zap//:zap",
     ],
 )

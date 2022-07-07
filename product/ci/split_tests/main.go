@@ -7,14 +7,16 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	arg "github.com/alexflint/go-arg"
+	"go.uber.org/zap"
 	"io"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/alexflint/go-arg"
 	"github.com/bmatcuk/doublestar"
 
 	junit "github.com/harness/harness-core/product/ci/split_tests/junit"
@@ -248,6 +250,17 @@ func processFiles(fileTimesMap map[string]float64, currentFileSet map[string]boo
 }
 
 func main() {
+	config := zap.NewProductionConfig()
+	config.OutputPaths = []string{"stdout"}
+	zapLogger, err := config.Build()
+
+	res, err := junit.GetTestTimes(context.Background(), zapLogger.Sugar())
+	if err == nil {
+		fmt.Println(res)
+		return
+	} else {
+		fmt.Println(err)
+	}
 	parseArgs()
 
 	// We are not using filepath.Glob,

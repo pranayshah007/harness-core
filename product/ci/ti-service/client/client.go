@@ -33,4 +33,7 @@ type Client interface {
 
 	// DownloadLink returns a list of links where the relevant agent artifacts can be downloaded
 	DownloadLink(ctx context.Context, language, os, arch, framework, version, env string) ([]types.DownloadLink, error)
+
+	// GetTestTimes returns a list of maps where the key in each map is a string and value is a float
+	GetTestTimes(ctx context.Context, org, project, pipeline, build, repo, reqBody string) (types.GetTestTimesResp, error)
 }

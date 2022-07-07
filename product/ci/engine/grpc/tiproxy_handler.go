@@ -308,3 +308,50 @@ func (h *tiProxyHandler) getEncodedData(req *pb.UploadCgRequest) ([]byte, error)
 	}
 	return encCg, nil
 }
+
+// GetTestTimes gets the test time data
+func (h *tiProxyHandler) GetTestTimes(ctx context.Context, req *pb.GetTestTimesRequest) (*pb.GetTestTimesResponse, error) {
+	// Create a TI client
+	var err error
+	tc, err := remoteTiClient()
+	if err != nil {
+		h.log.Errorw("could not create a client to the TI service", zap.Error(err))
+		return nil, err
+	}
+
+	// Arguments for TI API
+	org, err := getOrgId()
+	if err != nil {
+		return nil, err
+	}
+	project, err := getProjectId()
+	if err != nil {
+		return nil, err
+	}
+	pipeline, err := getPipelineId()
+	if err != nil {
+		return nil, err
+	}
+	build, err := getBuildId()
+	if err != nil {
+		return nil, err
+	}
+	repo := req.GetRepo()
+	reqBody := req.GetBody()
+
+	// Call TI API
+	timeMap, err := tc.GetTestTimes(ctx, org, project, pipeline, build, repo, reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	// Serialize the API output to a string and add
+	// it to the response
+	jsonMapList, err := json.Marshal(timeMap)
+	if err != nil {
+		return &pb.GetTestTimesResponse{}, err
+	}
+	return &pb.GetTestTimesResponse{
+		MapList: string(jsonMapList),
+	}, nil
+}
