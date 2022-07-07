@@ -33,6 +33,7 @@ public class AzureAppServiceDeploymentContext {
   private String targetSlotName;
   private String startupCommand;
   private int steadyStateTimeoutInMin;
+  private boolean isBasicDeployment;
 
   public void deploy(
       AzureAppServiceDeploymentService deploymentService, AzureAppServicePreDeploymentData preDeploymentData) {

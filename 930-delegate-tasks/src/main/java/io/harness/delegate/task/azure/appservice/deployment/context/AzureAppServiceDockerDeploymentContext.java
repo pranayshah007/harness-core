@@ -33,9 +33,10 @@ public class AzureAppServiceDockerDeploymentContext extends AzureAppServiceDeplo
       Map<String, AzureAppServiceConnectionString> connSettingsToAdd,
       Map<String, AzureAppServiceConnectionString> connSettingsToRemove,
       Map<String, AzureAppServiceApplicationSetting> dockerSettings, String imagePathAndTag, String slotName,
-      String targetSlotName, String startupCommand, int steadyStateTimeoutInMin, boolean skipTargetSlotValidation) {
+      String targetSlotName, String startupCommand, int steadyStateTimeoutInMin, boolean skipTargetSlotValidation,
+      boolean isBasicDeployment) {
     super(azureWebClientContext, logCallbackProvider, appSettingsToAdd, appSettingsToRemove, connSettingsToAdd,
-        connSettingsToRemove, slotName, targetSlotName, startupCommand, steadyStateTimeoutInMin);
+        connSettingsToRemove, slotName, targetSlotName, startupCommand, steadyStateTimeoutInMin, isBasicDeployment);
     this.dockerSettings = dockerSettings;
     this.imagePathAndTag = imagePathAndTag;
     this.skipTargetSlotValidation = skipTargetSlotValidation;

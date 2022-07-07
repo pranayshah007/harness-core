@@ -8,6 +8,7 @@
 package io.harness.azure.deployment;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_NAME;
 import static io.harness.azure.model.AzureConstants.FAIL_DEPLOYMENT_ERROR_MSG;
 import static io.harness.azure.model.AzureConstants.TIME_PATTERN;
 import static io.harness.azure.model.AzureConstants.TIME_STAMP_REGEX;
@@ -26,6 +27,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.logging.LogCallback;
 
 import com.microsoft.azure.management.appservice.DeploymentSlot;
+import com.microsoft.azure.management.appservice.WebApp;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -83,11 +85,20 @@ public class SlotContainerLogStreamer {
   }
 
   public void readContainerLogs() {
-    Optional<DeploymentSlot> slot = azureWebClient.getDeploymentSlotByName(azureWebClientContext, slotName);
-    if (!slot.isPresent()) {
-      throw new IllegalArgumentException("Slot not found - " + slotName);
+    String containerLogs;
+    if (DEPLOYMENT_SLOT_PRODUCTION_NAME.equalsIgnoreCase(slotName)) {
+      Optional<WebApp> azureApp = azureWebClient.getWebAppByName(azureWebClientContext);
+      if (!azureApp.isPresent()) {
+        throw new IllegalArgumentException("WebApp not found - " + azureWebClientContext.getAppName());
+      }
+      containerLogs = new String(azureApp.get().getContainerLogs());
+    } else {
+      Optional<DeploymentSlot> slot = azureWebClient.getDeploymentSlotByName(azureWebClientContext, slotName);
+      if (!slot.isPresent()) {
+        throw new IllegalArgumentException("Slot not found - " + slotName);
+      }
+      containerLogs = new String(slot.get().getContainerLogs());
     }
-    String containerLogs = new String(slot.get().getContainerLogs());
 
     Pattern timePattern = Pattern.compile(TIME_STAMP_REGEX);
     Matcher matcher = timePattern.matcher(containerLogs);

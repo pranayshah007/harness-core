@@ -64,7 +64,8 @@ public class AzureAppServiceService {
     return getAzureAppServicePreDeploymentDataAndLog(dockerDeploymentContext.getAzureWebClientContext(),
         dockerDeploymentContext.getSlotName(), dockerDeploymentContext.getTargetSlotName(),
         dockerDeploymentContext.getAppSettingsToAdd(), dockerDeploymentContext.getConnSettingsToAdd(), true,
-        dockerDeploymentContext.getLogCallbackProvider(), dockerDeploymentContext.isSkipTargetSlotValidation());
+        dockerDeploymentContext.getLogCallbackProvider(), dockerDeploymentContext.isSkipTargetSlotValidation(),
+        dockerDeploymentContext.isBasicDeployment());
   }
 
   public AzureAppServicePreDeploymentData getPackageDeploymentPreDeploymentData(
@@ -72,7 +73,7 @@ public class AzureAppServiceService {
     return getAzureAppServicePreDeploymentDataAndLog(packageDeploymentContext.getAzureWebClientContext(),
         packageDeploymentContext.getSlotName(), packageDeploymentContext.getTargetSlotName(),
         packageDeploymentContext.getAppSettingsToAdd(), packageDeploymentContext.getConnSettingsToAdd(), false,
-        packageDeploymentContext.getLogCallbackProvider(), false);
+        packageDeploymentContext.getLogCallbackProvider(), false, packageDeploymentContext.isBasicDeployment());
   }
 
   @VisibleForTesting
@@ -80,13 +81,13 @@ public class AzureAppServiceService {
       AzureWebClientContext azureWebClientContext, final String slotName, String targetSlotName,
       Map<String, AzureAppServiceApplicationSetting> userAddedAppSettings,
       Map<String, AzureAppServiceConnectionString> userAddedConnStrings, boolean includeDockerSettings,
-      AzureLogCallbackProvider logCallbackProvider, boolean skipTargetSlotValidation) {
+      AzureLogCallbackProvider logCallbackProvider, boolean skipTargetSlotValidation, boolean isBasicDeployment) {
     LogCallback logCallback = logCallbackProvider.obtainLogCallback(SAVE_EXISTING_CONFIGURATIONS);
     logCallback.saveExecutionLog(String.format("Saving existing configurations for slot - [%s] of App Service - [%s]",
         slotName, azureWebClientContext.getAppName()));
 
     try {
-      if (!skipTargetSlotValidation) {
+      if (!skipTargetSlotValidation && !isBasicDeployment) {
         validateSlotStatus(azureWebClientContext, slotName, targetSlotName, logCallback);
       }
 
@@ -101,7 +102,9 @@ public class AzureAppServiceService {
       if (includeDockerSettings) {
         saveDockerSettings(azureWebClientContext, slotName, preDeploymentDataBuilder, logCallback);
       }
-      saveTrafficWeight(azureWebClientContext, slotName, preDeploymentDataBuilder, logCallback);
+      if (!isBasicDeployment) {
+        saveTrafficWeight(azureWebClientContext, slotName, preDeploymentDataBuilder, logCallback);
+      }
       logCallback.saveExecutionLog(
           String.format("All configurations saved successfully for slot - [%s] of App Service - [%s]", slotName,
               azureWebClientContext.getAppName()),

@@ -297,7 +297,7 @@ public interface AzureWebClient {
    * @param slotName
    * @param appSettingsToRemove
    */
-  DeploymentSlot deleteDeploymentSlotAppSettings(AzureWebClientContext context, String slotName,
+  void deleteDeploymentSlotAppSettings(AzureWebClientContext context, String slotName,
       Map<String, AzureAppServiceApplicationSetting> appSettingsToRemove);
 
   /**
@@ -306,9 +306,8 @@ public interface AzureWebClient {
    * @param context
    * @param slotName
    * @param connSettingsToRemove
-   * @return
    */
-  DeploymentSlot deleteDeploymentSlotConnectionStrings(AzureWebClientContext context, String slotName,
+  void deleteDeploymentSlotConnectionStrings(AzureWebClientContext context, String slotName,
       Map<String, AzureAppServiceConnectionString> connSettingsToRemove);
 
   /**
