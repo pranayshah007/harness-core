@@ -37,6 +37,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
@@ -72,6 +73,7 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -232,6 +234,14 @@ public class PMSPipelineServiceHelper {
         pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, checkAgainstOPAPolicies);
     String resolveTemplateRefsInPipeline = templateMergeResponseDTO.getMergedPipelineYaml();
     pmsYamlSchemaService.validateYamlSchema(accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipeline);
+
+    // Add Template Module Info temporarily to Pipeline Entity
+    HashSet<String> templateModuleInfo = new HashSet<>();
+    for (TemplateReferenceSummary templateReferenceSummary : templateMergeResponseDTO.getTemplateReferenceSummaries()) {
+      templateModuleInfo.addAll(templateReferenceSummary.getModuleInfo());
+    }
+    pipelineEntity.setTemplateModules(templateModuleInfo);
+
     // validate unique fqn in resolveTemplateRefsInPipeline
     pmsYamlSchemaService.validateUniqueFqn(resolveTemplateRefsInPipeline);
     if (checkAgainstOPAPolicies) {

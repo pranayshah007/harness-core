@@ -37,6 +37,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -100,6 +101,8 @@ public class PipelineEntity
   @NotEmpty String orgIdentifier;
   @Trimmed @NotEmpty String projectIdentifier;
   @NotEmpty String identifier;
+
+  @Setter @NonFinal Set<String> templateModules;
 
   @Wither @NotEmpty @NonFinal @Setter String yaml;
 
