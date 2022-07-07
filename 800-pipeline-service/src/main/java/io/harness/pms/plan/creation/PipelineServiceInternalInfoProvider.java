@@ -25,6 +25,8 @@ import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.steps.NGStageStepsPlanCreator;
 import io.harness.plancreator.steps.StepGroupPMSPlanCreator;
 import io.harness.plancreator.steps.barrier.BarrierStepPlanCreator;
+import io.harness.plancreator.steps.email.EmailStepPlanCreator;
+import io.harness.plancreator.steps.email.EmailStepVariableCreator;
 import io.harness.plancreator.steps.http.HTTPStepVariableCreator;
 import io.harness.plancreator.steps.http.HttpStepPlanCreator;
 import io.harness.plancreator.steps.internal.FlagConfigurationStepPlanCreator;
@@ -92,6 +94,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new ParallelPlanCreator());
     planCreators.add(new PMSStepPlanCreator());
     planCreators.add(new HttpStepPlanCreator());
+    planCreators.add(new EmailStepPlanCreator());
     planCreators.add(new JiraCreateStepPlanCreator());
     planCreators.add(new JiraUpdateStepPlanCreator());
     planCreators.add(new ShellScriptStepPlanCreator());
@@ -140,6 +143,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     List<VariableCreator> variableCreators = new ArrayList<>();
     variableCreators.add(new PipelineVariableCreator());
     variableCreators.add(new HTTPStepVariableCreator());
+    variableCreators.add(new EmailStepVariableCreator());
     variableCreators.add(new StepGroupVariableCreator());
     variableCreators.add(new ShellScriptStepVariableCreator());
     variableCreators.add(new JiraStepVariableCreator());

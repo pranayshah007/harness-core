@@ -98,22 +98,22 @@ public class NexusArtifactResource {
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
       NexusRegistryArtifactConfig nexusRegistryArtifactConfig = (NexusRegistryArtifactConfig) artifactSpecFromService;
       if (isEmpty(repository)) {
-        repository = nexusRegistryArtifactConfig.getRepository().getValue();
+        repository = (String) nexusRegistryArtifactConfig.getRepository().fetchFinalValue();
       }
       if (isEmpty(repositoryPort)) {
-        repositoryPort = nexusRegistryArtifactConfig.getRepositoryPort().getValue();
+        repositoryPort = (String) nexusRegistryArtifactConfig.getRepositoryPort().fetchFinalValue();
       }
 
       if (isEmpty(artifactPath)) {
-        artifactPath = nexusRegistryArtifactConfig.getArtifactPath().getValue();
+        artifactPath = (String) nexusRegistryArtifactConfig.getArtifactPath().fetchFinalValue();
       }
 
       if (isEmpty(repositoryFormat)) {
-        repositoryFormat = nexusRegistryArtifactConfig.getRepositoryFormat().getValue();
+        repositoryFormat = (String) nexusRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue();
       }
 
       if (isEmpty(artifactRepositoryUrl)) {
-        artifactRepositoryUrl = nexusRegistryArtifactConfig.getRepositoryUrl().getValue();
+        artifactRepositoryUrl = (String) nexusRegistryArtifactConfig.getRepositoryUrl().fetchFinalValue();
       }
 
       if (isEmpty(nexusConnectorIdentifier)) {
@@ -124,7 +124,7 @@ public class NexusArtifactResource {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     artifactPath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo);
+        pipelineIdentifier, runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo, serviceRef);
     NexusResponseDTO buildDetails = nexusResourceService.getBuildDetails(connectorRef, repository, repositoryPort,
         artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);

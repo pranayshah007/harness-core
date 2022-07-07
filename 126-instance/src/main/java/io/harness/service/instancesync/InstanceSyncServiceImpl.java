@@ -499,7 +499,10 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
 
   private void deleteInstances(List<InstanceDTO> instancesToBeDeleted) {
     logInstances(OperationsOnInstances.DELETE.name(), instancesToBeDeleted);
-    instancesToBeDeleted.forEach(instanceDTO -> instanceService.softDelete(instanceDTO.getInstanceKey()));
+    instancesToBeDeleted.forEach(instanceDTO
+        -> instanceService.delete(instanceDTO.getInstanceKey(), instanceDTO.getAccountIdentifier(),
+            instanceDTO.getOrgIdentifier(), instanceDTO.getProjectIdentifier(),
+            instanceDTO.getInfrastructureMappingId()));
   }
 
   private void saveInstances(List<InstanceDTO> instancesToBeSaved) {

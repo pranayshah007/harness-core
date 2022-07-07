@@ -20,9 +20,10 @@ import org.apache.groovy.util.Maps;
 public class PipelineReferredEntityPermissionHelper {
   private final String PERMISSION_PLACE_HOLDER = "core_%s_%s";
 
-  public final Map<EntityType, String> coreEntityTypeToPermissionEntityName = Maps.of(EntityType.CONNECTORS,
-      NGResourceType.CONNECTOR, EntityType.SECRETS, NGResourceType.SECRETS, EntityType.SERVICE, NGResourceType.SERVICE,
-      EntityType.ENVIRONMENT, NGResourceType.ENVIRONMENT, EntityType.FILES, NGResourceType.FILE);
+  public final Map<EntityType, String> coreEntityTypeToPermissionEntityName =
+      Maps.of(EntityType.CONNECTORS, NGResourceType.CONNECTOR, EntityType.SECRETS, NGResourceType.SECRETS,
+          EntityType.SERVICE, NGResourceType.SERVICE, EntityType.ENVIRONMENT, NGResourceType.ENVIRONMENT,
+          EntityType.FILES, NGResourceType.FILE, EntityType.ENVIRONMENT_GROUP, NGResourceType.ENVIRONMENT_GROUP);
 
   public String getPermissionForGivenType(EntityType entityType, boolean isNew) {
     String permission = "access";

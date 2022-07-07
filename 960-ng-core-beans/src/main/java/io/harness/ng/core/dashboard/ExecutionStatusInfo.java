@@ -28,4 +28,5 @@ public class ExecutionStatusInfo {
   private String triggerType;
   private AuthorInfo author;
   private List<ServiceDeploymentInfo> serviceInfoList;
+  private List<EnvironmentDeploymentsInfo> environmentInfoList;
 }

@@ -64,7 +64,7 @@ public class VerificationManagerClientFactory implements Provider<VerificationMa
 
       return Http.getOkHttpClientWithProxyAuthSetup()
           .connectionPool(new ConnectionPool(0, 5, TimeUnit.MINUTES))
-          .readTimeout(30, TimeUnit.SECONDS)
+          .readTimeout(60, TimeUnit.SECONDS)
           .retryOnConnectionFailure(true)
           .addInterceptor(new VerificationAuthInterceptor(tokenGenerator))
           .addInterceptor(getCorrelationIdInterceptor())

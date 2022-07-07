@@ -42,6 +42,8 @@ public interface YamlChangeSetService {
 
   void populateGitSyncMetadata(YamlChangeSet yamlChangeSet);
 
+  long getItemsInQueueKey(String appId, String accountId);
+
   /**
    * Get yaml change set.
    *

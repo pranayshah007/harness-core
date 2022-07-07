@@ -33,6 +33,7 @@ import io.harness.serializer.JsonUtils;
 import software.wings.WingsBaseTest;
 import software.wings.exception.WingsExceptionMapper;
 import software.wings.security.annotations.AuthRule;
+import software.wings.service.intfc.yaml.YamlChangeSetService;
 import software.wings.service.intfc.yaml.sync.GitSyncErrorService;
 import software.wings.service.intfc.yaml.sync.GitSyncService;
 import software.wings.utils.ResourceTestRule;
@@ -59,6 +60,7 @@ import org.mockito.Captor;
 public class GitSyncResourceTest extends WingsBaseTest {
   private static final GitSyncService GIT_SYNC_SERVICE = mock(GitSyncService.class);
   private static final GitSyncErrorService GIT_SYNC_ERROR_SERVICE = mock(GitSyncErrorService.class);
+  private static final YamlChangeSetService YAML_CHANGE_SET_SERVICE = mock(YamlChangeSetService.class);
 
   @Captor private ArgumentCaptor<PageRequest<GitSyncError>> pageRequestArgumentCaptor;
 
@@ -68,7 +70,7 @@ public class GitSyncResourceTest extends WingsBaseTest {
   @ClassRule
   public static final ResourceTestRule RESOURCES =
       ResourceTestRule.builder()
-          .instance(new GitSyncResource(GIT_SYNC_SERVICE, GIT_SYNC_ERROR_SERVICE))
+          .instance(new GitSyncResource(GIT_SYNC_SERVICE, GIT_SYNC_ERROR_SERVICE, YAML_CHANGE_SET_SERVICE))
           .type(WingsExceptionMapper.class)
           .build();
   private static final GitToHarnessErrorDetails gitToHarnessErrorDetails =

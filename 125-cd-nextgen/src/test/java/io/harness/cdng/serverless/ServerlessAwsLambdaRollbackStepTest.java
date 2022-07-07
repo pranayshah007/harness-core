@@ -7,6 +7,7 @@
 
 package io.harness.cdng.serverless;
 
+import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -170,6 +171,35 @@ public class ServerlessAwsLambdaRollbackStepTest {
             .build();
     TaskRequest taskRequest = serverlessAwsLambdaRollbackStep.obtainTaskAfterRbac(
         ambiance, stepElementParametersWithNoRollbackFnSpec, stepInputPackage);
+    assertThat(taskRequest.getSkipTaskRequest()).isEqualTo(skipTaskRequest);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void obtainTaskAfterRbacIfNoServerlessRollbackDataOptionalOutputTest() {
+    OptionalSweepingOutput serverlessGitFetchOptionalOutput =
+        OptionalSweepingOutput.builder().output(serverlessGitFetchOutcome).found(false).build();
+    OptionalSweepingOutput serverlessRollbackDataOptionalOutput =
+        OptionalSweepingOutput.builder().output(serverlessAwsLambdaRollbackDataOutcome).found(false).build();
+    doReturn(serverlessRollbackDataOptionalOutput)
+        .when(executionSweepingOutputService)
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                ((ServerlessAwsLambdaRollbackStepParameters) specParameters).getServerlessAwsLambdaRollbackFnq() + "."
+                + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME));
+    doReturn(serverlessGitFetchOptionalOutput)
+        .when(executionSweepingOutputService)
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                ((ServerlessAwsLambdaRollbackStepParameters) specParameters).getServerlessAwsLambdaRollbackFnq() + "."
+                + OutcomeExpressionConstants.SERVERLESS_GIT_FETCH_OUTCOME));
+    TaskRequest taskRequest =
+        serverlessAwsLambdaRollbackStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
+    SkipTaskRequest skipTaskRequest =
+        SkipTaskRequest.newBuilder()
+            .setMessage("Serverless Aws Lambda Deploy step was not executed. Skipping rollback.")
+            .build();
     assertThat(taskRequest.getSkipTaskRequest()).isEqualTo(skipTaskRequest);
   }
 

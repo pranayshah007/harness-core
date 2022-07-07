@@ -11,16 +11,19 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.TMACARI;
 
+import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.harness.HarnessStoreFile;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.connector.ConnectorInfoDTO;
@@ -42,6 +45,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -64,8 +68,14 @@ public class AzureHelperServiceTest extends CDNGTestBase {
 
   @Mock private ConnectorService connectorService;
   @Mock private FileStoreService fileStoreService;
+  @Mock private CDExpressionResolver cdExpressionResolver;
 
   @InjectMocks private AzureHelperService azureHelperService;
+
+  @Before
+  public void prepare() {
+    doNothing().when(cdExpressionResolver).updateStoreConfigExpressions(any(), any());
+  }
 
   @Test
   @Owner(developers = {TMACARI, ABOSII})
@@ -161,15 +171,12 @@ public class AzureHelperServiceTest extends CDNGTestBase {
         .build();
   }
 
-  private ParameterField<List<HarnessStoreFile>> getFiles() {
+  private ParameterField<List<String>> getFiles() {
     return ParameterField.createValueField(Collections.singletonList(getHarnessFile()));
   }
 
-  private HarnessStoreFile getHarnessFile() {
-    return HarnessStoreFile.builder()
-        .path(ParameterField.createValueField(FILE_PATH))
-        .scope(ParameterField.createValueField(Scope.ACCOUNT))
-        .build();
+  private String getHarnessFile() {
+    return format("%s:%s", Scope.ACCOUNT.getYamlRepresentation(), FILE_PATH);
   }
 
   private FileStoreNodeDTO getFileStoreNode() {

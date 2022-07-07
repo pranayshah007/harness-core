@@ -35,6 +35,7 @@ import io.harness.callback.MongoDatabase;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.AccountId;
 import io.harness.delegate.Capability;
+import io.harness.delegate.DelegateServiceAgentClient;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.delegate.ExecuteParkedTaskResponse;
 import io.harness.delegate.FetchParkedTaskStatusResponse;
@@ -106,7 +107,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   public static final String TASK_DESCRIPTION = "taskDescription";
 
   private DelegateServiceGrpcClient delegateServiceGrpcClient;
-  private DelegateServiceGrpcAgentClient delegateServiceGrpcAgentClient;
+  private DelegateServiceAgentClient delegateServiceAgentClient;
   private DelegateServiceGrpcImpl delegateServiceGrpcImpl;
 
   private DelegateCallbackRegistry delegateCallbackRegistry;
@@ -136,7 +137,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
         DelegateServiceGrpc.newBlockingStub(channel);
     delegateServiceGrpcClient = new DelegateServiceGrpcClient(
         delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
-    delegateServiceGrpcAgentClient = new DelegateServiceGrpcAgentClient(delegateServiceBlockingStub);
+    delegateServiceAgentClient = new DelegateServiceAgentClient(delegateServiceBlockingStub);
     delegateSyncService = mock(DelegateSyncService.class);
 
     delegateCallbackRegistry = mock(DelegateCallbackRegistry.class);
@@ -312,7 +313,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     String taskId = generateUuid();
     when(delegateTaskServiceClassic.queueParkedTask(accountId, taskId)).thenReturn(taskId);
 
-    ExecuteParkedTaskResponse executeParkedTaskResponse = delegateServiceGrpcAgentClient.executeParkedTask(
+    ExecuteParkedTaskResponse executeParkedTaskResponse = delegateServiceAgentClient.executeParkedTask(
         AccountId.newBuilder().setId(accountId).build(), TaskId.newBuilder().setId(taskId).build());
     assertThat(executeParkedTaskResponse).isNotNull();
     assertThat(executeParkedTaskResponse)
@@ -321,7 +322,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     doThrow(InvalidRequestException.class).when(delegateTaskServiceClassic).queueParkedTask(accountId, taskId);
     assertThatThrownBy(
         ()
-            -> delegateServiceGrpcAgentClient.executeParkedTask(
+            -> delegateServiceAgentClient.executeParkedTask(
                 AccountId.newBuilder().setId(accountId).build(), TaskId.newBuilder().setId(taskId).build()))
         .isInstanceOf(DelegateServiceLiteException.class)
         .hasMessage("Unexpected error occurred while executing parked task.");
@@ -338,7 +339,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     when(delegateTaskServiceClassic.getParkedTaskResults(accountId, taskId, driverId)).thenReturn(bytes);
 
     FetchParkedTaskStatusResponse fetchParkedTaskStatusResponse =
-        delegateServiceGrpcAgentClient.fetchParkedTaskStatus(AccountId.newBuilder().setId(accountId).build(),
+        delegateServiceAgentClient.fetchParkedTaskStatus(AccountId.newBuilder().setId(accountId).build(),
             TaskId.newBuilder().setId(taskId).build(), DelegateCallbackToken.newBuilder().setToken(driverId).build());
 
     assertThat(fetchParkedTaskStatusResponse).isNotNull();
@@ -353,7 +354,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
         .getParkedTaskResults(accountId, taskId, driverId);
     assertThatThrownBy(
         ()
-            -> delegateServiceGrpcAgentClient.fetchParkedTaskStatus(AccountId.newBuilder().setId(accountId).build(),
+            -> delegateServiceAgentClient.fetchParkedTaskStatus(AccountId.newBuilder().setId(accountId).build(),
                 TaskId.newBuilder().setId(taskId).build(),
                 DelegateCallbackToken.newBuilder().setToken(driverId).build()))
         .isInstanceOf(DelegateServiceLiteException.class)
@@ -394,7 +395,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
 
     ProgressData testData = DelegateStringProgressData.builder().data("Example").build();
     byte[] testDataBytes = kryoSerializer.asDeflatedBytes(testData);
-    assertThat(delegateServiceGrpcAgentClient.sendTaskProgressUpdate(AccountId.newBuilder().setId(accountId).build(),
+    assertThat(delegateServiceAgentClient.sendTaskProgressUpdate(AccountId.newBuilder().setId(accountId).build(),
                    TaskId.newBuilder().setId(taskId).build(), token, testDataBytes))
         .isEqualTo(true);
   }

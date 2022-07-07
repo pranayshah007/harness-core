@@ -25,7 +25,7 @@ public class DebeziumEngineModule extends AbstractModule {
 
   private final DebeziumEngineModuleConfig config;
 
-  private DebeziumEngineModule(DebeziumEngineModuleConfig config) {
+  DebeziumEngineModule(DebeziumEngineModuleConfig config) {
     this.config = config;
   }
 

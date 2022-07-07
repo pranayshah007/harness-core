@@ -1022,8 +1022,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:T5Ngw9u8u8o8OIJV2cwxqV6NZpSWZAy4umQzh07auxs=",
-    version = "v1.25.1-0.20220628104200-71ecc3b1545f",
+    sum = "h1:ydIzFACT2VH9euHfBZuHxFu7AGN21xStbernowJvlHY=",
+    version = "v1.26.0",
 )
 
 go_repository(
@@ -4659,7 +4659,7 @@ plain_artifacts = [
     "io.grpc:grpc-services:1.33.1",
     "io.grpc:grpc-stub:1.33.1",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.37-RELEASE",
+    "io.harness.cv:data-collection-dsl:0.38-RELEASE",
     "io.harness:ff-java-server-sdk:1.0.5.1",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:11.0.2",
@@ -5494,4 +5494,11 @@ go_repository(
     importpath = "github.com/robinjoseph08/redisqueue/v2",
     sum = "h1:GactHlrxS8YSCJc4CbP1KbTObo14pieNmNWSUlquTGI=",
     version = "v2.1.0",
+)
+
+go_repository(
+    name = "com_github_bmatcuk_doublestar",
+    importpath = "github.com/bmatcuk/doublestar",
+    sum = "h1:1jLE2y0VpSrOn/QR9G4f2RmrCtkM3AuATcWradjHUvM=",
+    version = "v1.3.0",
 )

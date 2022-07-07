@@ -44,6 +44,10 @@ public class ExecutionModeUtils {
     return LEAF_MODES;
   }
 
+  public Set<ExecutionMode> parentModes() {
+    return PARENT_MODES;
+  }
+
   public boolean isParentMode(ExecutionMode mode) {
     return PARENT_MODES.contains(mode);
   }

@@ -17,6 +17,7 @@ import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.plan.NodeType;
+import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.ExecutionStatus;
@@ -90,7 +91,12 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
         List<NodeExecution> childrenNodeExecution = nodeExecutions.stream()
                                                         .filter(o -> o.getParentId().equals(nodeExecution.getUuid()))
                                                         .collect(Collectors.toList());
-        updateStrategyNodeFields(nodeExecution, update);
+        if (!pipelineExecutionSummaryEntity.getLayoutNodeMap()
+                 .get(nodeExecution.getNodeId())
+                 .getNodeType()
+                 .equals(StrategyType.PARALLELISM.name())) {
+          updateStrategyNodeFields(nodeExecution, update, true);
+        }
 
         String stageSetupId = getStageSetupId(childrenNodeExecution, graphLayoutNode, nodeExecution);
 
@@ -188,18 +194,26 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY
         && AmbianceUtils.isCurrentStrategyLevelAtStage(nodeExecution.getAmbiance())
         && nodeExecution.getNode().getNodeType() != NodeType.IDENTITY_PLAN_NODE) {
-      updateStrategyNodeFields(nodeExecution, update);
+      updateStrategyNodeFields(nodeExecution, update, false);
     }
   }
 
-  private void updateStrategyNodeFields(NodeExecution nodeExecution, Update update) {
+  private void updateStrategyNodeFields(
+      NodeExecution nodeExecution, Update update, boolean isStrategyTypeAlreadyChecked) {
     ConcurrentChildInstance concurrentChildInstance =
         pmsGraphStepDetailsService.fetchConcurrentChildInstance(nodeExecution.getUuid());
     if (concurrentChildInstance != null) {
       if (!nodeExecution.getExecutableResponses().isEmpty()) {
-        update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "."
-                + nodeExecution.getNodeId() + ".moduleInfo.maxConcurrency.value",
-            nodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency());
+        if (isStrategyTypeAlreadyChecked
+            || nodeExecution.getNode().getStepParameters().containsKey("strategyType")
+                && !nodeExecution.getNode()
+                        .getStepParameters()
+                        .get("strategyType")
+                        .equals(StrategyType.PARALLELISM.name())) {
+          update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "."
+                  + nodeExecution.getNodeId() + ".moduleInfo.maxConcurrency.value",
+              nodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency());
+        }
       }
     }
   }

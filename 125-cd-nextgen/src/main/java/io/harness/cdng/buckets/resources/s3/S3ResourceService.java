@@ -12,10 +12,16 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 
+import software.wings.helpers.ext.jenkins.BuildDetails;
+
+import java.util.List;
 import java.util.Map;
 
 @OwnedBy(CDP)
 public interface S3ResourceService {
   Map<String, String> getBuckets(
       IdentifierRef awsConnectorRef, String region, String orgIdentifier, String projectIdentifier);
+
+  List<BuildDetails> getFilePaths(IdentifierRef awsConnectorRef, String region, String bucketName, String filePathRegex,
+      String orgIdentifier, String projectIdentifier);
 }

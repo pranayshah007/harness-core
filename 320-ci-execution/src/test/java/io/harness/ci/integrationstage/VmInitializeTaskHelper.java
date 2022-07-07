@@ -23,6 +23,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml.VmPoolYamlSpec;
+import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -33,7 +34,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.io.Resources;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 
 public class VmInitializeTaskHelper {
   public static final String POOL_NAME = "test";
@@ -67,6 +72,24 @@ public class VmInitializeTaskHelper {
     return IntegrationStageConfigImpl.builder()
         .execution(ExecutionElementConfig.builder().steps(executionSectionList).build())
         .build();
+  }
+
+  public static IntegrationStageConfig getIntegrationStageConfigWithStepGroup() throws Exception {
+    List<ExecutionWrapperConfig> executionSectionList =
+        newArrayList(ExecutionWrapperConfig.builder().step(getGitCloneStepElementConfigAsJsonNode()).build(),
+            ExecutionWrapperConfig.builder().stepGroup(getStepGroupAsJsonNode()).build());
+    return IntegrationStageConfigImpl.builder()
+        .execution(ExecutionElementConfig.builder().steps(executionSectionList).build())
+        .build();
+  }
+
+  private static JsonNode getStepGroupAsJsonNode() throws Exception {
+    VmInitializeTaskHelper vmInitializeTaskHelper = new VmInitializeTaskHelper();
+    String step = vmInitializeTaskHelper.readFile("steps/runStepsInStepGroup3.json");
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode arrayNode = mapper.readValue(step, JsonNode.class);
+
+    return arrayNode;
   }
 
   public static List<ExecutionWrapperConfig> getExecutionWrapperConfigList() {
@@ -182,5 +205,14 @@ public class VmInitializeTaskHelper {
                   .identifier(poolId)
                   .build())
         .build();
+  }
+
+  private String readFile(String filename) {
+    ClassLoader classLoader = getClass().getClassLoader();
+    try {
+      return Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Could not read resource file: " + filename);
+    }
   }
 }

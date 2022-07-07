@@ -32,6 +32,7 @@ import static io.harness.rule.OwnerRule.VARDAN_BANSAL;
 import static io.harness.rule.OwnerRule.VIKAS;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.rule.OwnerRule.VOJIN;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static software.wings.beans.Account.Builder.anAccount;
 import static software.wings.beans.User.Builder.anUser;
@@ -92,6 +93,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.PageResponse;
+import io.harness.beans.SearchFilter;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.config.CCMSettingService;
 import io.harness.data.structure.EmptyPredicate;
@@ -533,6 +535,39 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
     assertThat(userGroupList).isNotNull();
     assertThat(userGroupList).hasSize(2);
     assertThat(userGroupList).containsExactlyInAnyOrder(savedUserGroup1, savedUserGroup2);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testSearchListByContainOp() {
+    UserGroup userGroup1 =
+        UserGroup.builder().uuid("uuid1").accountId(accountId).name("usergroup").description(description).build();
+    UserGroup userGroup2 =
+        UserGroup.builder().uuid("uuid2").accountId(accountId).name("groupuser").description(description).build();
+    UserGroup userGroup3 =
+        UserGroup.builder().uuid("uuid3").accountId(accountId).name("user group test").description(description).build();
+    UserGroup userGroup4 =
+        UserGroup.builder().uuid("uuid4").accountId(accountId).name("user").description(description).build();
+
+    userGroup1 = userGroupService.save(userGroup1);
+    userGroup2 = userGroupService.save(userGroup2);
+    userGroup3 = userGroupService.save(userGroup3);
+    userGroup4 = userGroupService.save(userGroup4);
+
+    SearchFilter searchFilter = SearchFilter.builder()
+                                    .fieldName(UserGroupKeys.name)
+                                    .op(SearchFilter.Operator.CONTAINS)
+                                    .fieldValues(new String[] {"group"})
+                                    .build();
+
+    PageResponse pageResponse = userGroupService.list(
+        accountId, PageRequestBuilder.aPageRequest().addFilter(searchFilter).build(), true, null, null);
+    assertThat(pageResponse).isNotNull();
+    List<UserGroup> userGroupList = pageResponse.getResponse();
+    assertThat(userGroupList).isNotNull();
+    assertThat(userGroupList).hasSize(3);
+    assertThat(userGroupList).containsExactlyInAnyOrder(userGroup1, userGroup2, userGroup3);
   }
 
   @Test

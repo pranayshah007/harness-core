@@ -65,6 +65,17 @@ public class StageStrategyUtils {
     return planNodeId;
   }
 
+  public String getIdentifierWithExpression(PlanCreationContext ctx, String originalIdentifier) {
+    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
+    // Since strategy is a child of stage but in execution we want to wrap stage around strategy,
+    // we are appending an expression that will be resolved during execution
+    String identifier = originalIdentifier;
+    if (strategyField != null) {
+      identifier = originalIdentifier + "<+strategy.identifierPostFix>";
+    }
+    return identifier;
+  }
+
   public List<AdviserObtainment> getAdviserObtainments(
       YamlField stageField, KryoSerializer kryoSerializer, boolean checkForStrategy) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
@@ -265,8 +276,8 @@ public class StageStrategyUtils {
       expressionsMap.put(String.format(matrixExpression, entry.getKey()), entry.getValue());
       expressionsMap.put(String.format(strategyMatrixExpression, entry.getKey()), entry.getValue());
     }
-    expressionsMap.put(EXPR_START_ESC + "strategy.currentIteration" + EXPR_END_ESC, String.valueOf(currentIteration));
-    expressionsMap.put(EXPR_START_ESC + "strategy.totalIterations" + EXPR_END, String.valueOf(totalIteration));
+    expressionsMap.put(EXPR_START_ESC + "strategy.iteration" + EXPR_END_ESC, String.valueOf(currentIteration));
+    expressionsMap.put(EXPR_START_ESC + "strategy.iterations" + EXPR_END, String.valueOf(totalIteration));
     return expressionsMap;
   }
 }

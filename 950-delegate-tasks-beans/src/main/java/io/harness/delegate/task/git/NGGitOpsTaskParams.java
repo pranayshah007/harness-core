@@ -15,6 +15,7 @@ import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
+import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
@@ -37,18 +38,20 @@ public class NGGitOpsTaskParams implements TaskParameters, ExecutionCapabilityDe
   private String activityId;
   ConnectorInfoDTO connectorInfoDTO;
   GitOpsTaskType gitOpsTaskType;
+  private String prLink;
+  private GitApiTaskParams gitApiTaskParams;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilities = new ArrayList<>();
-
-    GitStoreDelegateConfig gitStoreDelegateConfig = gitFetchFilesConfig.getGitStoreDelegateConfig();
-    capabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
-        ScmConnectorMapper.toGitConfigDTO(gitFetchFilesConfig.getGitStoreDelegateConfig().getGitConfigDTO()),
-        gitStoreDelegateConfig.getEncryptedDataDetails(), gitStoreDelegateConfig.getSshKeySpecDTO()));
-    capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
-        gitStoreDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));
-
+    if (gitOpsTaskType.equals(GitOpsTaskType.CREATE_PR)) {
+      GitStoreDelegateConfig gitStoreDelegateConfig = gitFetchFilesConfig.getGitStoreDelegateConfig();
+      capabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
+          ScmConnectorMapper.toGitConfigDTO(gitFetchFilesConfig.getGitStoreDelegateConfig().getGitConfigDTO()),
+          gitStoreDelegateConfig.getEncryptedDataDetails(), gitStoreDelegateConfig.getSshKeySpecDTO()));
+      capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+          gitStoreDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));
+    }
     return capabilities;
   }
 }

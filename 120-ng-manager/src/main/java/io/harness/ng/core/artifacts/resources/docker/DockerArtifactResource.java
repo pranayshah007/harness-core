@@ -96,7 +96,7 @@ public class DockerArtifactResource {
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
       DockerHubArtifactConfig dockerHubArtifactConfig = (DockerHubArtifactConfig) artifactSpecFromService;
       if (isEmpty(imagePath)) {
-        imagePath = dockerHubArtifactConfig.getImagePath().getValue();
+        imagePath = (String) dockerHubArtifactConfig.getImagePath().fetchFinalValue();
       }
       if (isEmpty(dockerConnectorIdentifier)) {
         dockerConnectorIdentifier = dockerHubArtifactConfig.getConnectorRef().getValue();
@@ -104,7 +104,7 @@ public class DockerArtifactResource {
     }
 
     imagePath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo);
+        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
 
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(dockerConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);

@@ -26,7 +26,6 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
-import io.harness.pms.merger.helpers.InputSetYamlHelper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
@@ -43,7 +42,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
@@ -59,24 +57,6 @@ public class ValidateAndMergeHelper {
   private final PMSInputSetService pmsInputSetService;
   private final PMSPipelineTemplateHelper pipelineTemplateHelper;
   private final GitSyncSdkService gitSyncSdkService;
-
-  public InputSetErrorWrapperDTOPMS validateInputSet(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String yaml, String pipelineBranch, String pipelineRepoID) {
-    String identifier = InputSetYamlHelper.getStringField(yaml, "identifier", "inputSet");
-    if (EmptyPredicate.isEmpty(identifier)) {
-      throw new InvalidRequestException("Identifier cannot be empty");
-    }
-    if (identifier.length() > 63) {
-      throw new InvalidRequestException("Input Set identifier length cannot be more that 63 characters.");
-    }
-    InputSetYamlHelper.confirmPipelineIdentifierInInputSet(yaml, pipelineIdentifier);
-    InputSetYamlHelper.confirmOrgAndProjectIdentifier(yaml, "inputSet", orgIdentifier, projectIdentifier);
-
-    String pipelineYaml = getPipelineYaml(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, true);
-
-    return InputSetErrorsHelper.getErrorMap(pipelineYaml, yaml);
-  }
 
   public String getPipelineYaml(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String pipelineBranch, String pipelineRepoID, boolean checkForStoreType) {
@@ -135,55 +115,6 @@ public class ValidateAndMergeHelper {
       throw new InvalidRequestException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
           orgIdentifier, projectIdentifier, pipelineIdentifier));
     }
-  }
-
-  public Map<String, String> validateOverlayInputSet(
-      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String yaml) {
-    String identifier = InputSetYamlHelper.getStringField(yaml, "identifier", "overlayInputSet");
-    if (EmptyPredicate.isEmpty(identifier)) {
-      throw new InvalidRequestException("Identifier cannot be empty");
-    }
-    if (identifier.length() > 63) {
-      throw new InvalidRequestException("Overlay Input Set identifier length cannot be more that 63 characters.");
-    }
-    List<String> inputSetReferences = InputSetYamlHelper.getReferencesFromOverlayInputSetYaml(yaml);
-    if (inputSetReferences.isEmpty()) {
-      throw new InvalidRequestException("Input Set References can't be empty");
-    }
-
-    InputSetYamlHelper.confirmPipelineIdentifierInOverlayInputSet(yaml, pipelineIdentifier);
-    InputSetYamlHelper.confirmOrgAndProjectIdentifier(yaml, "overlayInputSet", orgIdentifier, projectIdentifier);
-
-    List<Optional<InputSetEntity>> inputSets;
-    if (GitContextHelper.isUpdateToNewBranch()) {
-      String baseBranch = Objects.requireNonNull(GitContextHelper.getGitEntityInfo()).getBaseBranch();
-      String repoIdentifier = GitContextHelper.getGitEntityInfo().getYamlGitConfigId();
-      GitSyncBranchContext branchContext =
-          GitSyncBranchContext.builder()
-              .gitBranchInfo(GitEntityInfo.builder().branch(baseBranch).yamlGitConfigId(repoIdentifier).build())
-              .build();
-      try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
-        inputSets = findAllReferredInputSets(
-            inputSetReferences, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
-      }
-    } else {
-      inputSets =
-          findAllReferredInputSets(inputSetReferences, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
-    }
-    return InputSetErrorsHelper.getInvalidInputSetReferences(inputSets, inputSetReferences);
-  }
-
-  private List<Optional<InputSetEntity>> findAllReferredInputSets(List<String> referencesInOverlay, String accountId,
-      String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
-    List<Optional<InputSetEntity>> inputSets = new ArrayList<>();
-    referencesInOverlay.forEach(identifier -> {
-      if (EmptyPredicate.isEmpty(identifier)) {
-        throw new InvalidRequestException("Empty Input Set Identifier not allowed in Input Set References");
-      }
-      inputSets.add(
-          pmsInputSetService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false));
-    });
-    return inputSets;
   }
 
   public InputSetTemplateResponseDTOPMS getInputSetTemplateResponseDTO(String accountId, String orgIdentifier,

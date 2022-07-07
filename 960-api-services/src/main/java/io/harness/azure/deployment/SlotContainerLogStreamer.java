@@ -100,6 +100,9 @@ public class SlotContainerLogStreamer {
       containerLogs = new String(slot.get().getContainerLogs());
     }
 
+    logCallback.saveExecutionLog("Fetching latest container logs ... ");
+    boolean noNewContainerLogFound = true;
+
     Pattern timePattern = Pattern.compile(TIME_STAMP_REGEX);
     Matcher matcher = timePattern.matcher(containerLogs);
     int timeStampBeginIndex = 0;
@@ -114,6 +117,7 @@ public class SlotContainerLogStreamer {
         String logLine = containerLogs.substring(timeStampBeginIndex, matcher.start());
         logCallback.saveExecutionLog(logLine.replaceAll("[\\n]+", " "));
         verifyContainerLogLine(logLine);
+        noNewContainerLogFound = false;
       }
       dateTime = withZoneUTC.parseDateTime(matcher.group().trim());
       timeStampBeginIndex = matcher.start();
@@ -123,6 +127,10 @@ public class SlotContainerLogStreamer {
       String logLine = containerLogs.substring(timeStampBeginIndex);
       logCallback.saveExecutionLog(logLine);
       verifyContainerLogLine(logLine);
+      noNewContainerLogFound = false;
+    }
+    if (noNewContainerLogFound) {
+      logCallback.saveExecutionLog("No new container log found ... ");
     }
     lastTime = dateTime;
   }

@@ -97,6 +97,8 @@ public class GitClientHelper {
   private static final String AZURE_REPO_GIT_LABEL = "/_git/";
   private static final String AZURE_SSH_PROTOCOl = "git@ssh";
   private static final String AZURE_SSH_API_VERSION = "v3";
+  private static final String HTTPS = "https";
+  private static final String BITBUCKET_SAAS_GIT_LABEL = "scm";
 
   static {
     try {
@@ -524,5 +526,29 @@ public class GitClientHelper {
     String completeUrl = StringUtils.join(AZURE_SSH_PROTOCOl, DOT_SEPARATOR, scmGroup, COLON_SEPARATOR,
         AZURE_SSH_API_VERSION, PATH_SEPARATOR, gitOwner, PATH_SEPARATOR, gitRepo);
     return completeUrl.replaceFirst(AZURE_REPO_GIT_LABEL, PATH_SEPARATOR);
+  }
+
+  public static String getCompleteHTTPUrlForGithub(String url) {
+    String scmGroup = getGitSCM(url);
+    String gitOwner = getGitOwner(url, true);
+    String gitRepo = getGitRepo(url);
+    return StringUtils.join(HTTPS, COLON_SEPARATOR, PATH_SEPARATOR, PATH_SEPARATOR, scmGroup, PATH_SEPARATOR, gitOwner,
+        PATH_SEPARATOR, gitRepo);
+  }
+
+  public static String getCompleteHTTPUrlForBitbucketSaas(String url) {
+    String scmGroup = getGitSCM(url);
+    String gitOwner = getGitOwner(url, true);
+    String gitRepo = getGitRepo(url);
+    return StringUtils.join(HTTPS, COLON_SEPARATOR, PATH_SEPARATOR, PATH_SEPARATOR, scmGroup, PATH_SEPARATOR, gitOwner,
+        PATH_SEPARATOR, gitRepo);
+  }
+
+  public static String getCompleteHTTPUrlFromSSHUrlForBitbucketServer(String url) {
+    String scmGroup = getGitSCM(url);
+    String gitOwner = getGitOwner(url, true);
+    String gitRepo = getGitRepo(url);
+    return StringUtils.join(HTTPS, COLON_SEPARATOR, PATH_SEPARATOR, PATH_SEPARATOR, scmGroup, PATH_SEPARATOR,
+        BITBUCKET_SAAS_GIT_LABEL, PATH_SEPARATOR, gitOwner, PATH_SEPARATOR, gitRepo);
   }
 }

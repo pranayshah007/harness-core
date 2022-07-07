@@ -365,4 +365,103 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
         .containsExactly("service.identifier", "service.name", "service.description", "service.type", "service.tags",
             "service.gitOpsEnabled");
   }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void createVariablesForServiceEnvByRef_OnlyServiceInfraRuntime() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("pipelineWithV2ServiceEnv_ServiceInfraRuntime.yaml");
+    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
+    String pipelineJson = YamlUtils.injectUuid(pipelineYaml);
+
+    final URL serviceYamlFile = classLoader.getResource("serviceV2.yaml");
+    String serviceYaml = Resources.toString(serviceYamlFile, Charsets.UTF_8);
+    ServiceEntity serviceEntity = ServiceEntity.builder()
+                                      .name("variableTestSvc")
+                                      .identifier("variableTestSvc")
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .projectIdentifier(PROJ_IDENTIFIER)
+                                      .description("sample service")
+                                      .tags(Arrays.asList(NGTag.builder().key("k1").value("v1").build()))
+                                      .yaml(serviceYaml)
+                                      .build();
+
+    final URL envYamlFile = classLoader.getResource("environmentV2.yaml");
+    String environmentYaml = Resources.toString(envYamlFile, Charsets.UTF_8);
+
+    Environment environmentEntity = Environment.builder()
+                                        .name(ENV_IDENTIFIER)
+                                        .yaml(environmentYaml)
+                                        .identifier(ENV_IDENTIFIER)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .type(EnvironmentType.Production)
+                                        .build();
+
+    final URL infraYamlFile = classLoader.getResource("k8sDirectInfrastructure.yaml");
+    String infraYaml = Resources.toString(infraYamlFile, Charsets.UTF_8);
+
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .accountId(ACCOUNT_ID)
+                                                    .orgIdentifier(ORG_IDENTIFIER)
+                                                    .projectIdentifier(PROJ_IDENTIFIER)
+                                                    .envIdentifier(ENV_IDENTIFIER)
+                                                    .type(InfrastructureType.KUBERNETES_DIRECT)
+                                                    .yaml(infraYaml)
+                                                    .build();
+
+    // mocks
+    when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(serviceEntity));
+    when(environmentService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(environmentEntity));
+    when(infrastructureEntityService.get(any(), any(), any(), any(), any()))
+        .thenReturn(Optional.of(infrastructureEntity));
+    when(serviceOverrideService.get(any(), any(), any(), any(), any())).thenReturn(Optional.empty());
+
+    YamlField fullYamlField = YamlUtils.readTree(pipelineJson);
+
+    // Pipeline Node
+    YamlField stageField = fullYamlField.getNode()
+                               .getField("pipeline")
+                               .getNode()
+                               .getField("stages")
+                               .getNode()
+                               .asArray()
+                               .get(0)
+                               .getField("stage");
+
+    VariableCreationContext creationContext = VariableCreationContext.builder().currentField(stageField).build();
+    creationContext.put(NGCommonEntityConstants.ACCOUNT_KEY, ACCOUNT_ID);
+    creationContext.put(NGCommonEntityConstants.ORG_KEY, ORG_IDENTIFIER);
+    creationContext.put(NGCommonEntityConstants.PROJECT_KEY, PROJ_IDENTIFIER);
+
+    LinkedHashMap<String, VariableCreationResponse> variablesForChildrenNodesV2 =
+        deploymentStageVariableCreator.createVariablesForChildrenNodesV2(
+            creationContext, YamlUtils.read(stageField.getNode().toString(), DeploymentStageNode.class));
+
+    // linked hashmap so ordered entries: env, infra, service expressions
+    List<VariableCreationResponse> variableCreationResponseList = new ArrayList<>(variablesForChildrenNodesV2.values());
+    List<String> keys = new ArrayList<>(variablesForChildrenNodesV2.keySet());
+
+    // env
+    List<YamlProperties> envOutputProperties =
+        variableCreationResponseList.get(0).getYamlExtraProperties().get(keys.get(0)).getOutputPropertiesList();
+    List<String> envFqnPropertiesList =
+        envOutputProperties.stream().map(YamlProperties::getLocalName).collect(Collectors.toList());
+
+    assertThat(envFqnPropertiesList)
+        .containsExactly("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
+            "env.variables.envVar1", "env.variables.svar1");
+
+    // no infra vars
+    // service variables include serviceVariables generated from env vars
+    List<YamlProperties> serviceOutputProperties =
+        variableCreationResponseList.get(1).getYamlExtraProperties().get(keys.get(1)).getOutputPropertiesList();
+    List<String> serviceFqnPropertiesList =
+        serviceOutputProperties.stream().map(YamlProperties::getLocalName).collect(Collectors.toList());
+
+    assertThat(serviceFqnPropertiesList)
+        .containsExactly("service.identifier", "service.name", "service.description", "service.type", "service.tags",
+            "service.gitOpsEnabled", "serviceVariables.envVar1", "serviceVariables.svar1");
+  }
 }

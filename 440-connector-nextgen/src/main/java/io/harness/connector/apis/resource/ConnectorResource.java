@@ -32,6 +32,7 @@ import io.harness.connector.ConnectorCatalogueResponseDTO;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
+import io.harness.connector.ConnectorRegistryFactory;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.accesscontrol.ResourceTypes;
@@ -73,6 +74,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -292,18 +294,23 @@ public class ConnectorResource {
       @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo) {
-    accessControlClient.checkForAccessOrThrow(
-        ResourceScope.of(accountIdentifier, connector.getConnectorInfo().getOrgIdentifier(),
-            connector.getConnectorInfo().getProjectIdentifier()),
-        Resource.of(ResourceTypes.CONNECTOR, null), EDIT_CONNECTOR_PERMISSION);
-
     if (HARNESS_SECRET_MANAGER_IDENTIFIER.equals(connector.getConnectorInfo().getIdentifier())) {
       throw new InvalidRequestException(
           String.format("%s cannot be used as connector identifier", HARNESS_SECRET_MANAGER_IDENTIFIER), USER);
     }
+    if (connector.getConnectorInfo().getConnectorType() == null) {
+      throw new InvalidRequestException("Connector type cannot be null");
+    }
     if (connector.getConnectorInfo().getConnectorType() == ConnectorType.LOCAL) {
       throw new InvalidRequestException("Local Secret Manager creation not supported", USER);
     }
+    Map<String, String> connectorAttributes = new HashMap<>();
+    connectorAttributes.put("category",
+        ConnectorRegistryFactory.getConnectorCategory(connector.getConnectorInfo().getConnectorType()).toString());
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountIdentifier, connector.getConnectorInfo().getOrgIdentifier(),
+            connector.getConnectorInfo().getProjectIdentifier()),
+        Resource.of(ResourceTypes.CONNECTOR, null, connectorAttributes), EDIT_CONNECTOR_PERMISSION);
     return ResponseDTO.newResponse(connectorService.create(connector, accountIdentifier));
   }
 
