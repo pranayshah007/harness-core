@@ -220,6 +220,7 @@ public class AzureWebAppSlotSetupTaskHandler extends AbstractAzureWebAppTaskHand
         .artifactFile(artifactFile)
         .artifactType(artifactType)
         .steadyStateTimeoutInMin(slotSetupParameters.getTimeoutIntervalInMin())
+        .isBasicDeployment(slotSetupParameters.isBasicDeployment())
         .build();
   }
 }
