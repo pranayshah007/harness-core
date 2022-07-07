@@ -5,12 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.serializer.json;
+package io.harness.pms.serializer.json.serializers;
 
-import io.harness.logging.UnitProgress;
+import io.harness.pms.contracts.steps.StepType;
 
-public class UnitProgressDeserializer extends ProtoJsonDeserializer<UnitProgress> {
-  public UnitProgressDeserializer() {
-    super(UnitProgress.class);
+public class StepTypeDeserializer extends ProtoJsonDeserializer<StepType> {
+  public StepTypeDeserializer() {
+    super(StepType.class);
   }
 }

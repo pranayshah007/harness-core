@@ -5,13 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.serializer.json;
+package io.harness.pms.serializer.json.serializers;
 
-import io.harness.pms.contracts.execution.skip.SkipInfo;
-import io.harness.pms.serializer.json.serializers.ProtoJsonSerializer;
+import io.harness.pms.contracts.execution.run.NodeRunInfo;
 
-public class SkipInfoSerializer extends ProtoJsonSerializer<SkipInfo> {
-  public SkipInfoSerializer() {
-    super(SkipInfo.class);
+public class NodeRunInfoSerializer extends ProtoJsonSerializer<NodeRunInfo> {
+  public NodeRunInfoSerializer() {
+    super(NodeRunInfo.class);
   }
 }
