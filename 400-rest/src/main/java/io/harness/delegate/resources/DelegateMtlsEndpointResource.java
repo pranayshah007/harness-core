@@ -21,7 +21,6 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
-import io.harness.exception.WingsException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.rest.RestResponse;
@@ -208,7 +207,7 @@ public class DelegateMtlsEndpointResource {
 
     if (!this.harnessUserGroupService.isHarnessSupportUser(user.getUuid())) {
       throw new AccessDeniedException(
-          "Only Harness Support Group Users can access this endpoint.", ErrorCode.ACCESS_DENIED, WingsException.USER);
+          "Only Harness Support Group Users can access this endpoint.", ErrorCode.ACCESS_DENIED, USER);
     }
   }
 }

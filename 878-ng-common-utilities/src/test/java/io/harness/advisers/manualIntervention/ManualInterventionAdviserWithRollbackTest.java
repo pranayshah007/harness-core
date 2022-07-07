@@ -11,6 +11,8 @@ import static io.harness.pms.contracts.commons.RepairActionCode.CUSTOM_FAILURE;
 import static io.harness.pms.contracts.commons.RepairActionCode.STAGE_ROLLBACK;
 import static io.harness.pms.contracts.commons.RepairActionCode.STEP_GROUP_ROLLBACK;
 import static io.harness.pms.contracts.execution.Status.FAILED;
+import static io.harness.pms.contracts.execution.Status.INTERVENTION_WAITING;
+import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
 import static io.harness.rule.OwnerRule.BRIJESH;
 
 import static junit.framework.TestCase.assertEquals;
@@ -120,5 +122,14 @@ public class ManualInterventionAdviserWithRollbackTest extends CategoryTest {
         .when(kryoSerializer)
         .asObject((byte[]) any());
     assertTrue(manualInterventionAdviserWithRollback.canAdvise(advisingEvent));
+
+    // with status as INTERVENTION_WAITING
+    advisingEvent = AdvisingEvent.builder()
+                        .adviserParameters(null)
+                        .isPreviousAdviserExpired(true)
+                        .fromStatus(INTERVENTION_WAITING)
+                        .toStatus(SUCCEEDED)
+                        .build();
+    assertFalse(manualInterventionAdviserWithRollback.canAdvise(advisingEvent));
   }
 }

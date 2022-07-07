@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
@@ -23,6 +24,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.dashboard.AuthorInfo;
 import io.harness.ng.core.dashboard.DashboardExecutionStatusInfo;
+import io.harness.ng.core.dashboard.EnvironmentDeploymentsInfo;
 import io.harness.ng.core.dashboard.ExecutionStatusInfo;
 import io.harness.ng.core.dashboard.GitInfo;
 import io.harness.ng.core.dashboard.ServiceDeploymentInfo;
@@ -56,8 +58,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
@@ -358,6 +362,11 @@ public class CDDashboardApisTest extends CategoryTest {
     hashMap.put("ServiceId1", "Service1");
     hashMap.put("ServiceId2", "Service2");
     hashMap.put("ServiceId3", "Service3");
+
+    Map<String, Pair<String, AuthorInfo>> temp = new HashMap<>();
+    doReturn(temp)
+        .when(cdOverviewDashboardServiceImpl)
+        .getPipelineExecutionIdToTriggerTypeAndAuthorInfoMapping(anyList());
 
     DashboardWorkloadDeployment dashboardWorkloadDeployment =
         cdOverviewDashboardServiceImpl.getWorkloadDeploymentInfoCalculation(workloadsId, status, timeInterval,
@@ -722,6 +731,7 @@ public class CDDashboardApisTest extends CategoryTest {
     String serviveTagQueryFailure = cdOverviewDashboardServiceImpl.queryBuilderServiceTag(queryIdFailed);
 
     HashMap<String, List<ServiceDeploymentInfo>> serviceTagMapFailure = new HashMap<>();
+    HashMap<String, List<EnvironmentDeploymentsInfo>> pipelineToEnvMapFailure = new HashMap<>();
     serviceTagMapFailure.put("11",
         Arrays.asList(ServiceDeploymentInfo.builder().serviceName("serviceF1").serviceTag("tagF1").build(),
             ServiceDeploymentInfo.builder().serviceName("serviceF2").serviceTag(null).build()));
@@ -733,7 +743,14 @@ public class CDDashboardApisTest extends CategoryTest {
         Arrays.asList(ServiceDeploymentInfo.builder().serviceName("serviceF1").serviceTag("tagF1").build(),
             ServiceDeploymentInfo.builder().serviceName("serviceF2").serviceTag("tagF2").build()));
 
-    doReturn(serviceTagMapFailure)
+    pipelineToEnvMapFailure.put("11",
+        Arrays.asList(EnvironmentDeploymentsInfo.builder().envId("1").envName("a").envType("prod").build(),
+            EnvironmentDeploymentsInfo.builder().envId("2").envName("b").envType("prod").build()));
+    pipelineToEnvMapFailure.put(
+        "13", Arrays.asList(EnvironmentDeploymentsInfo.builder().envId("1").envName("a").envType("prod").build()));
+    pipelineToEnvMapFailure.put(
+        "15", Arrays.asList(EnvironmentDeploymentsInfo.builder().envId("1").envName("a").envType("prod").build()));
+    doReturn(new MutablePair<>(serviceTagMapFailure, pipelineToEnvMapFailure))
         .when(cdOverviewDashboardServiceImpl)
         .queryCalculatorServiceTagMag(serviveTagQueryFailure);
 
@@ -746,8 +763,9 @@ public class CDDashboardApisTest extends CategoryTest {
     String serviveTagQueryActive = cdOverviewDashboardServiceImpl.queryBuilderServiceTag(queryIdActive);
 
     HashMap<String, List<ServiceDeploymentInfo>> serviceTagMapActive = new HashMap<>();
+    HashMap<String, List<EnvironmentDeploymentsInfo>> pipelineToEnvMapActive = new HashMap<>();
 
-    doReturn(serviceTagMapActive)
+    doReturn(new MutablePair<>(serviceTagMapActive, pipelineToEnvMapActive))
         .when(cdOverviewDashboardServiceImpl)
         .queryCalculatorServiceTagMag(serviveTagQueryActive);
 
@@ -759,8 +777,9 @@ public class CDDashboardApisTest extends CategoryTest {
     String serviveTagQueryPending = cdOverviewDashboardServiceImpl.queryBuilderServiceTag(queryIdPending);
 
     HashMap<String, List<ServiceDeploymentInfo>> serviceTagMapPending = new HashMap<>();
+    HashMap<String, List<EnvironmentDeploymentsInfo>> pipelineToEnvMapPending = new HashMap<>();
 
-    doReturn(serviceTagMapPending)
+    doReturn(new MutablePair<>(serviceTagMapPending, pipelineToEnvMapPending))
         .when(cdOverviewDashboardServiceImpl)
         .queryCalculatorServiceTagMag(serviveTagQueryPending);
 
@@ -782,6 +801,7 @@ public class CDDashboardApisTest extends CategoryTest {
                               .triggerType(triggerTypeList.get(0))
                               .author(authorInfoList.get(0))
                               .serviceInfoList(serviceTagMapFailure.get("11"))
+                              .environmentInfoList(pipelineToEnvMapFailure.get("11"))
                               .build());
     failureStatusInfo.add(ExecutionStatusInfo.builder()
                               .pipelineName("name2")
@@ -805,6 +825,7 @@ public class CDDashboardApisTest extends CategoryTest {
                               .author(authorInfoList.get(0))
                               .status(failedStatusList.get(0))
                               .serviceInfoList(serviceTagMapFailure.get("13"))
+                              .environmentInfoList(pipelineToEnvMapFailure.get("13"))
                               .build());
     failureStatusInfo.add(ExecutionStatusInfo.builder()
                               .pipelineName("name4")
@@ -828,6 +849,7 @@ public class CDDashboardApisTest extends CategoryTest {
                               .author(authorInfoList.get(0))
                               .status(failedStatusList.get(0))
                               .serviceInfoList(serviceTagMapFailure.get("15"))
+                              .environmentInfoList(pipelineToEnvMapFailure.get("15"))
                               .build());
     failureStatusInfo.add(ExecutionStatusInfo.builder()
                               .pipelineName("name1")

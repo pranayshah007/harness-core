@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.ng.core.template.TemplateEntityConstants.MONITORED_SERVICE;
 import static io.harness.ng.core.template.TemplateEntityConstants.PIPELINE;
+import static io.harness.ng.core.template.TemplateEntityConstants.SCRIPT;
 import static io.harness.ng.core.template.TemplateEntityConstants.STAGE;
 import static io.harness.ng.core.template.TemplateEntityConstants.STEP;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
@@ -64,6 +65,8 @@ import io.harness.template.services.NGTemplateSchemaService;
 import io.harness.template.services.NGTemplateSchemaServiceImpl;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceImpl;
+import io.harness.template.services.TemplateMergeService;
+import io.harness.template.services.TemplateMergeServiceImpl;
 import io.harness.template.services.TemplateRefreshService;
 import io.harness.template.services.TemplateRefreshServiceImpl;
 import io.harness.time.TimeModule;
@@ -172,6 +175,7 @@ public class TemplateServiceModule extends AbstractModule {
     bind(NGTemplateService.class).to(NGTemplateServiceImpl.class);
     bind(NGTemplateSchemaService.class).to(NGTemplateSchemaServiceImpl.class);
     bind(TemplateRefreshService.class).to(TemplateRefreshServiceImpl.class);
+    bind(TemplateMergeService.class).to(TemplateMergeServiceImpl.class).in(Singleton.class);
 
     install(EnforcementClientModule.getInstance(templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId(),
@@ -271,6 +275,7 @@ public class TemplateServiceModule extends AbstractModule {
         PIPELINE, injector.getInstance(PipelineTemplateYamlConversionHandler.class));
     templateYamlConversionHandlerRegistry.register(
         MONITORED_SERVICE, injector.getInstance(TemplateYamlConversionHandler.class));
+    templateYamlConversionHandlerRegistry.register(SCRIPT, injector.getInstance(TemplateYamlConversionHandler.class));
     return templateYamlConversionHandlerRegistry;
   }
 

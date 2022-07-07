@@ -11,6 +11,7 @@ import static io.harness.beans.EnvironmentType.ALL;
 import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.PARDHA;
+import static io.harness.rule.OwnerRule.SHUBHAM_MAHESHWARI;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
@@ -63,6 +64,7 @@ import software.wings.api.ShellScriptProvisionerOutputElement;
 import software.wings.api.shellscript.provision.ShellScriptProvisionExecutionData;
 import software.wings.beans.Activity;
 import software.wings.beans.Application;
+import software.wings.beans.CloudFormationInfrastructureProvisioner;
 import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureProvisionerType;
 import software.wings.beans.shellscript.provisioner.ShellScriptInfrastructureProvisioner;
@@ -141,6 +143,37 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = SHUBHAM_MAHESHWARI)
+  @Category(UnitTests.class)
+  public void testProvisionerAsInvalidExpression() {
+    when(activityService.save(any())).thenReturn(mock(Activity.class));
+    when(executionContext.getApp()).thenReturn(mock(Application.class));
+    when(executionContext.getEnv()).thenReturn(mock(Environment.class));
+    when(executionContext.getAppId()).thenReturn(APP_ID);
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn("Provisioner Name");
+    when(infrastructureProvisionerService.getByName(APP_ID, "Provisioner Name")).thenReturn(null);
+    assertThatThrownBy(() -> state.execute(executionContext))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("Could not find a Shell Script Provisioner with resolved name: Provisioner Name");
+  }
+
+  @Test
+  @Owner(developers = SHUBHAM_MAHESHWARI)
+  @Category(UnitTests.class)
+  public void testProvisionerAsExpressionInvalidName() {
+    when(activityService.save(any())).thenReturn(mock(Activity.class));
+    when(executionContext.getApp()).thenReturn(mock(Application.class));
+    when(executionContext.getEnv()).thenReturn(mock(Environment.class));
+    when(executionContext.getAppId()).thenReturn(APP_ID);
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn("Provisioner Name");
+    when(infrastructureProvisionerService.getByName(APP_ID, "Provisioner Name"))
+        .thenReturn(CloudFormationInfrastructureProvisioner.builder().build());
+    assertThatThrownBy(() -> state.execute(executionContext))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("Resolved Provisioner with name: Provisioner Name, is not of type Shell Script");
+  }
+
+  @Test
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
   public void testValidation() {
@@ -164,6 +197,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
     when(infrastructureProvisionerService.getShellScriptProvisioner(any(), any()))
         .thenReturn(mock(ShellScriptInfrastructureProvisioner.class));
     when(executionContext.getWorkflowExecutionId()).thenReturn("workflow-execution-id");
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
     state.execute(executionContext);
 
     verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
@@ -251,6 +285,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
     doReturn(APP_ID).when(executionContext).getAppId();
     doReturn(WorkflowType.ORCHESTRATION).when(executionContext).getWorkflowType();
     doReturn(WORKFLOW_EXECUTION_ID).when(executionContext).getWorkflowExecutionId();
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
     doReturn(WORKFLOW_NAME).when(executionContext).getWorkflowExecutionName();
     doReturn(Application.Builder.anApplication().uuid(APP_ID).build()).when(executionContext).getApp();
     doAnswer(invocation -> invocation.getArgument(0, Activity.class)).when(activityService).save(any(Activity.class));
@@ -300,6 +335,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
     when(infrastructureProvisionerService.getShellScriptProvisioner(any(), any()))
         .thenReturn(mock(ShellScriptInfrastructureProvisioner.class));
     when(executionContext.renderExpression(any())).thenReturn(runTimeValueAbc);
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
     state.execute(executionContext);
 
     verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());

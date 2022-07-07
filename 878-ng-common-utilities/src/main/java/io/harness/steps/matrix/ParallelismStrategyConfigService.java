@@ -7,12 +7,18 @@
 
 package io.harness.steps.matrix;
 
+import io.harness.plancreator.strategy.StageStrategyUtils;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.serializer.JsonUtils;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import io.fabric8.utils.Lists;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class ParallelismStrategyConfigService implements StrategyConfigService {
@@ -31,5 +37,21 @@ public class ParallelismStrategyConfigService implements StrategyConfigService {
                        .build());
     }
     return children;
+  }
+
+  @Override
+  public List<JsonNode> expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode) {
+    Integer parallelism = 0;
+    if (!ParameterField.isBlank(strategyConfig.getParallelism())) {
+      parallelism = strategyConfig.getParallelism().getValue();
+    }
+    List<JsonNode> jsonNodes = new ArrayList<>();
+    for (int i = 0; i < parallelism; i++) {
+      JsonNode clonedJsonNode = JsonPipelineUtils.asTree(JsonUtils.asMap(
+          StageStrategyUtils.replaceExpressions(jsonNode.deepCopy().toString(), new HashMap<>(), i, parallelism)));
+      StageStrategyUtils.modifyJsonNode(clonedJsonNode, Lists.newArrayList(String.valueOf(i)));
+      jsonNodes.add(clonedJsonNode);
+    }
+    return jsonNodes;
   }
 }

@@ -58,7 +58,7 @@ import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsume
 import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
-import io.harness.pms.serializer.jackson.PmsBeansJacksonModule;
+import io.harness.pms.serializer.json.PmsBeansJacksonModule;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
 import io.harness.resource.VersionInfoResource;
@@ -68,7 +68,6 @@ import io.harness.serializer.CiBeansRegistrars;
 import io.harness.serializer.ConnectorNextGenRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.OrchestrationRegistrars;
 import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.serializer.StoBeansRegistrars;
 import io.harness.serializer.YamlBeansModuleRegistrars;
@@ -215,17 +214,13 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
       @Provides
       @Singleton
       Set<Class<? extends TypeConverter>> morphiaConverters() {
-        return ImmutableSet.<Class<? extends TypeConverter>>builder()
-            .addAll(OrchestrationRegistrars.morphiaConverters)
-            .build();
+        return ImmutableSet.<Class<? extends TypeConverter>>builder().build();
       }
 
       @Provides
       @Singleton
       List<Class<? extends Converter<?, ?>>> springConverters() {
-        return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
-            .addAll(OrchestrationRegistrars.springConverters)
-            .build();
+        return ImmutableList.<Class<? extends Converter<?, ?>>>builder().build();
       }
       @Provides
       @Singleton

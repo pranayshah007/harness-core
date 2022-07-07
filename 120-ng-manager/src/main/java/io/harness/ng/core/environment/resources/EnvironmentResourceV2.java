@@ -87,6 +87,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -208,13 +209,15 @@ public class EnvironmentResourceV2 {
       @Parameter(description = "Details of the Environment to be created")
       @Valid EnvironmentRequestDTO environmentRequestDTO) {
     throwExceptionForNoRequestDTO(environmentRequestDTO);
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
-                                                  environmentRequestDTO.getProjectIdentifier()),
-        Resource.of(ENVIRONMENT, null), ENVIRONMENT_CREATE_PERMISSION);
     if (environmentRequestDTO.getType() == null) {
       throw new InvalidRequestException(
           "Type for an environment cannot be empty. Possible values: " + Arrays.toString(EnvironmentType.values()));
     }
+    Map<String, String> environmentAttributes = new HashMap<>();
+    environmentAttributes.put("type", environmentRequestDTO.getType().toString());
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
+                                                  environmentRequestDTO.getProjectIdentifier()),
+        Resource.of(ENVIRONMENT, null, environmentAttributes), ENVIRONMENT_CREATE_PERMISSION);
     Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(environmentEntity.getOrgIdentifier(),
         environmentEntity.getProjectIdentifier(), environmentEntity.getAccountId());

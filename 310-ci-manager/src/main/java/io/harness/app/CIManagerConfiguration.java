@@ -23,7 +23,6 @@ import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.mongo.MongoConfig;
-import io.harness.opaclient.OpaServiceConfiguration;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
@@ -101,7 +100,6 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
   private LogServiceConfig logServiceConfig;
   private TIServiceConfig tiServiceConfig;
   private STOServiceConfig stoServiceConfig;
-  private OpaServiceConfiguration opaServerConfig;
 
   private String managerServiceSecret;
   private String jwtAuthSecret;

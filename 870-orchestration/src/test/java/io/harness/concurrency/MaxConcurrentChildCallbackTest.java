@@ -25,6 +25,7 @@ import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.lock.PersistentLocker;
 import io.harness.lock.redis.RedisAcquiredLock;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.rule.Owner;
 import io.harness.waiter.WaitNotifyEngine;
@@ -87,7 +88,7 @@ public class MaxConcurrentChildCallbackTest extends OrchestrationTestBase {
                         .build());
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(PLAN_EXECUTION_ID).build();
     when(nodeExecutionService.getWithFieldsIncluded("b", NodeProjectionUtils.withAmbianceAndStatus))
-        .thenReturn(NodeExecution.builder().ambiance(ambiance).uuid("b").build());
+        .thenReturn(NodeExecution.builder().ambiance(ambiance).status(Status.QUEUED).uuid("b").build());
 
     maxConcurrentChildCallback.notify(new HashMap<>());
 

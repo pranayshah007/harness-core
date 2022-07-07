@@ -97,6 +97,7 @@ import io.harness.configuration.DeployMode;
 import io.harness.data.structure.NullSafeImmutableMap;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.DelegateAgentCommonVariables;
+import io.harness.delegate.DelegateServiceAgentClient;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateInstanceStatus;
@@ -132,7 +133,6 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
 import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.filesystem.FileIo;
-import io.harness.grpc.DelegateServiceGrpcAgentClient;
 import io.harness.grpc.util.RestartableServiceManager;
 import io.harness.logging.AutoLogContext;
 import io.harness.logstreaming.LogStreamingClient;
@@ -323,6 +323,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       : 0;
   public static final String JAVA_VERSION = "java.version";
   private final double RESOURCE_USAGE_THRESHOLD = 0.75;
+  private String MANAGER_PROXY_CURL = System.getenv().get("MANAGER_PROXY_CURL");
+  private String MANAGER_HOST_AND_PORT = System.getenv().get("MANAGER_HOST_AND_PORT");
 
   private static volatile String delegateId;
   private static final String delegateInstanceId = generateUuid();
@@ -358,7 +360,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @Inject(optional = true) @Nullable private PerpetualTaskWorker perpetualTaskWorker;
   @Inject(optional = true) @Nullable private LogStreamingClient logStreamingClient;
   @Inject DelegateTaskFactory delegateTaskFactory;
-  @Inject(optional = true) @Nullable private DelegateServiceGrpcAgentClient delegateServiceGrpcAgentClient;
+  @Inject(optional = true) @Nullable private DelegateServiceAgentClient delegateServiceAgentClient;
   @Inject private KryoSerializer kryoSerializer;
   @Nullable @Inject(optional = true) private ChronicleEventTailer chronicleEventTailer;
   @Inject HarnessMetricRegistry metricRegistry;
@@ -609,6 +611,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                 new Function<Exception>() { // Do not change this, wasync doesn't like lambdas
                   @Override
                   public void on(Exception e) {
+                    log.error("Exception on websocket", e);
                     handleError(e);
                   }
                 })
@@ -631,6 +634,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
               public void on(IOException ioe) {
                 log.error("Error occured while starting Delegate", ioe);
               }
+            })
+            .on(new Function<TransportNotSupported>() {
+              public void on(TransportNotSupported ex) {
+                log.error("Connection was terminated forcefully (most likely), trying to reconnect", ex);
+                trySocketReconnect();
+              }
             });
 
         socket.open(requestBuilder.build());
@@ -647,6 +656,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
 
       startMonitoringWatcher();
+      checkForSSLCertVerification(accountId);
 
       if (!multiVersion) {
         startUpgradeCheck(getVersion());
@@ -756,6 +766,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             }
           })
           .transport(TRANSPORT.WEBSOCKET);
+
+      // send accountId + delegateId as header for delegate gateway to log websocket connection with account.
+      requestBuilder.header("accountId", this.delegateConfiguration.getAccountId());
+      requestBuilder.header("delegateId", DelegateAgentCommonVariables.getDelegateId());
+
       return requestBuilder;
     } catch (URISyntaxException e) {
       throw new UnexpectedException("Unable to prepare uri", e);
@@ -802,61 +817,63 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void handleClose(Object o) {
-    log.info("Event:{}, message:[{}]", Event.CLOSE.name(), o.toString());
+    log.info("Event:{}, message:[{}] trying to reconnect", Event.CLOSE.name(), o.toString());
     // TODO(brett): Disabling the fallback to poll for tasks as it can cause too much traffic to ingress controller
     // pollingForTasks.set(true);
-    if (!closingSocket.get() && reconnectingSocket.compareAndSet(false, true)) {
-      try {
-        trySocketReconnect();
-      } finally {
-        reconnectingSocket.set(false);
-      }
-    }
+    trySocketReconnect();
   }
 
   private void handleError(final Exception e) {
     log.info("Event:{}, message:[{}]", Event.ERROR.name(), e.getMessage());
-    if (reconnectingSocket.compareAndSet(false, true)) {
-      try {
-        if (e instanceof SSLException || e instanceof TransportNotSupported) {
-          log.warn("Reopening connection to manager because of exception", e);
-          try {
-            socket.close();
-          } catch (final Exception ex) {
-            log.error("Failed closing the socket!", ex);
-          }
-          trySocketReconnect();
-        } else if (e instanceof ConnectException) {
-          log.warn("Failed to connect.", e);
-          restartNeeded.set(true);
-        } else if (e instanceof ConcurrentModificationException) {
-          log.warn("ConcurrentModificationException on WebSocket ignoring");
-          log.debug("ConcurrentModificationException on WebSocket.", e);
-        } else {
-          log.error("Exception: ", e);
-          try {
-            finalizeSocket();
-          } catch (final Exception ex) {
-            log.error("Failed closing the socket!", ex);
-          }
-          restartNeeded.set(true);
+    if (!reconnectingSocket.get()) { // Don't restart if we are trying to reconnect
+      if (e instanceof SSLException || e instanceof TransportNotSupported) {
+        log.warn("Reopening connection to manager because of exception", e);
+        trySocketReconnect();
+      } else if (e instanceof ConnectException) {
+        log.warn("Failed to connect.", e);
+        restartNeeded.set(true);
+      } else if (e instanceof ConcurrentModificationException) {
+        log.warn("ConcurrentModificationException on WebSocket ignoring");
+        log.debug("ConcurrentModificationException on WebSocket.", e);
+      } else {
+        log.error("Exception: ", e);
+        try {
+          finalizeSocket();
+        } catch (final Exception ex) {
+          log.error("Failed closing the socket!", ex);
         }
-      } finally {
-        reconnectingSocket.set(false);
+        restartNeeded.set(true);
       }
     }
   }
 
   private void trySocketReconnect() {
-    try {
-      FibonacciBackOff.executeForEver(() -> {
-        RequestBuilder requestBuilder = prepareRequestBuilder();
-        Socket skt = socket.open(requestBuilder.build());
-        log.info("Socket status: {}", socket.status().toString());
-        return skt;
-      });
-    } catch (IOException ex) {
-      log.error("Unable to open socket", ex);
+    if (!closingSocket.get() && reconnectingSocket.compareAndSet(false, true)) {
+      try {
+        log.info("Starting socket reconnecting");
+        FibonacciBackOff.executeForEver(() -> {
+          final RequestBuilder requestBuilder = prepareRequestBuilder();
+          try {
+            final Socket skt = socket.open(requestBuilder.build(), 15, TimeUnit.SECONDS);
+            log.info("Socket status: {}", socket.status().toString());
+            if (socket.status() == STATUS.CLOSE || socket.status() == STATUS.ERROR) {
+              throw new IllegalStateException("Socket not opened");
+            }
+            return skt;
+          } catch (Exception e) {
+            log.error("Failed to reconnect to socket, trying again: ", e);
+            throw new IOException("Try reconnect again");
+          }
+        });
+      } catch (IOException ex) {
+        log.error("Unable to open socket", ex);
+      } finally {
+        reconnectingSocket.set(false);
+        log.info("Finished socket reconnecting");
+      }
+    } else {
+      log.warn("Socket already reconnecting {} or closing {}, will not start the reconnect procedure again",
+          closingSocket.get(), reconnectingSocket.get());
     }
   }
 
@@ -2123,12 +2140,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             .appId(appId)
             .activityId(activityId);
 
-    if (isNotBlank(delegateTaskPackage.getDelegateCallbackToken()) && delegateServiceGrpcAgentClient != null) {
+    if (isNotBlank(delegateTaskPackage.getDelegateCallbackToken()) && delegateServiceAgentClient != null) {
       taskClientBuilder.taskProgressClient(TaskProgressClient.builder()
                                                .accountId(delegateTaskPackage.getAccountId())
                                                .taskId(delegateTaskPackage.getDelegateTaskId())
                                                .delegateCallbackToken(delegateTaskPackage.getDelegateCallbackToken())
-                                               .delegateServiceGrpcAgentClient(delegateServiceGrpcAgentClient)
+                                               .delegateServiceAgentClient(delegateServiceAgentClient)
                                                .kryoSerializer(kryoSerializer)
                                                .build());
     }
@@ -2701,6 +2718,33 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
     } catch (Exception e) {
       log.error("Unable to send response to manager", e);
+    }
+  }
+
+  // TODO: ARPIT remove this after 1-2 months when we have communicated with the customers.
+  private void checkForSSLCertVerification(String accountId) {
+    if (isBlank(MANAGER_PROXY_CURL)) {
+      MANAGER_PROXY_CURL = EMPTY;
+    }
+    if (isBlank(MANAGER_HOST_AND_PORT)) {
+      MANAGER_HOST_AND_PORT = EMPTY;
+    }
+
+    try {
+      String commandToCheckAccountStatus =
+          "curl " + MANAGER_PROXY_CURL + " -s " + MANAGER_HOST_AND_PORT + "/api/account/" + accountId + "/status";
+      log.info("Checking for SSL cert verification with command {}", commandToCheckAccountStatus);
+      ProcessExecutor processExecutor =
+          new ProcessExecutor().timeout(10, TimeUnit.SECONDS).command("/bin/bash", "-c", commandToCheckAccountStatus);
+
+      int exitcode = processExecutor.execute().getExitValue();
+      if (exitcode != 0) {
+        log.error("SSL cert verification command failed with exitCode {}", exitcode);
+      } else {
+        log.info("SSL cert verification successful.");
+      }
+    } catch (Exception e) {
+      log.error("SSL Cert Verification failed with exception ", e);
     }
   }
 }

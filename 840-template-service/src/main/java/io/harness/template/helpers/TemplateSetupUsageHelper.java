@@ -97,7 +97,7 @@ public class TemplateSetupUsageHelper {
           Message.newBuilder()
               .putAllMetadata(ImmutableMap.of("accountId", accountId,
                   EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, entry.getKey(),
-                  EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.CREATE_ACTION))
+                  EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
               .setData(entityReferenceDTO.toByteString())
               .build());
     }

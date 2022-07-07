@@ -28,10 +28,12 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("azureWebAppTrafficShiftStepParameters")
 @RecasterAlias("io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepParameters")
 public class AzureWebAppTrafficShiftStepParameters
-    extends AzureWebAppTrafficShiftBaseStepInfo implements SpecParameters {
-  String traffic;
+    extends AzureWebAppTrafficShiftBaseStepInfo implements SpecParameters, AzureWebAppStepParameters {
+  private ParameterField<String> traffic;
   @Builder(builderMethodName = "infoBuilder")
-  public AzureWebAppTrafficShiftStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+  public AzureWebAppTrafficShiftStepParameters(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<String> traffic) {
     super(delegateSelectors);
+    this.traffic = traffic;
   }
 }

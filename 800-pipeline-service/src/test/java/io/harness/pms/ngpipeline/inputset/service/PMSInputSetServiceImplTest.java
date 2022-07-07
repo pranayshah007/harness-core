@@ -235,9 +235,10 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
           ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, entity.getIdentifier(), 1L);
       assertThat(delete).isTrue();
 
-      Optional<InputSetEntity> deletedInputSet = pmsInputSetService.get(
-          ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, entity.getIdentifier(), false);
-      assertThat(deletedInputSet.isPresent()).isFalse();
+      assertThatThrownBy(()
+                             -> pmsInputSetService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
+                                 entity.getIdentifier(), false))
+          .isInstanceOf(InvalidRequestException.class);
     }
     mockSettings.close();
   }

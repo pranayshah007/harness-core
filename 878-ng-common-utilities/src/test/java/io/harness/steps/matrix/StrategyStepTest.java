@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.NGCommonUtilitiesTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -49,6 +50,7 @@ public class StrategyStepTest extends NGCommonUtilitiesTestBase {
   @Mock MatrixConfigService matrixConfigService;
   @Mock ForLoopStrategyConfigService forLoopStrategyConfigService;
   @Mock ParallelismStrategyConfigService parallelismStrategyConfigService;
+  @Mock EnforcementClientService enforcementClient;
 
   @InjectMocks StrategyStep strategyStep;
 
@@ -56,6 +58,7 @@ public class StrategyStepTest extends NGCommonUtilitiesTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testObtainChildrenForLoop() throws IOException {
+    when(enforcementClient.isEnforcementEnabled()).thenReturn(false);
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource("pipeline-with-strategy.yaml");
     assertThat(testFile).isNotNull();
@@ -93,6 +96,8 @@ public class StrategyStepTest extends NGCommonUtilitiesTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testObtainChildrenParallelism() throws IOException {
+    when(enforcementClient.isEnforcementEnabled()).thenReturn(false);
+
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource("pipeline-with-strategy.yaml");
     assertThat(testFile).isNotNull();
@@ -122,6 +127,7 @@ public class StrategyStepTest extends NGCommonUtilitiesTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testObtainChildrenMatrix() throws IOException {
+    when(enforcementClient.isEnforcementEnabled()).thenReturn(false);
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource("pipeline-with-strategy.yaml");
     assertThat(testFile).isNotNull();

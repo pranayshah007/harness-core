@@ -102,9 +102,9 @@ public class EnvGroupPlanCreatorHelper {
         }
 
         String mergedEnvYaml = originalEnvYaml;
-        if (isNotEmpty(envYaml.getEnvironmentInputs())) {
-          mergedEnvYaml =
-              EnvironmentPlanCreatorHelper.mergeEnvironmentInputs(originalEnvYaml, envYaml.getEnvironmentInputs());
+        if (isNotEmpty(envYaml.getEnvironmentInputs().getValue())) {
+          mergedEnvYaml = EnvironmentPlanCreatorHelper.mergeEnvironmentInputs(
+              originalEnvYaml, envYaml.getEnvironmentInputs().getValue());
         }
         envConfigs.add(
             EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(mergedEnvYaml, envYaml, null));

@@ -23,7 +23,9 @@ import static io.harness.beans.ExecutionInterruptType.RESUME;
 import static io.harness.beans.ExecutionInterruptType.RESUME_ALL;
 import static io.harness.beans.ExecutionInterruptType.RETRY;
 import static io.harness.beans.ExecutionInterruptType.ROLLBACK;
+import static io.harness.beans.ExecutionInterruptType.ROLLBACK_ON_APPROVAL;
 import static io.harness.beans.ExecutionInterruptType.ROLLBACK_PROVISIONER_AFTER_PHASES;
+import static io.harness.beans.ExecutionInterruptType.ROLLBACK_PROVISIONER_AFTER_PHASES_ON_APPROVAL;
 import static io.harness.beans.ExecutionStatus.ABORTED;
 import static io.harness.beans.ExecutionStatus.DISCONTINUING;
 import static io.harness.beans.ExecutionStatus.ERROR;
@@ -237,7 +239,9 @@ public class ExecutionInterruptManager {
       case MARK_FAILED:
       case MARK_SUCCESS:
       case ROLLBACK:
+      case ROLLBACK_ON_APPROVAL:
       case ROLLBACK_PROVISIONER_AFTER_PHASES:
+      case ROLLBACK_PROVISIONER_AFTER_PHASES_ON_APPROVAL:
       case END_EXECUTION:
       case ROLLBACK_DONE:
         noop();
@@ -266,7 +270,9 @@ public class ExecutionInterruptManager {
         case RETRY:
         case IGNORE:
         case ROLLBACK:
+        case ROLLBACK_ON_APPROVAL:
         case ROLLBACK_PROVISIONER_AFTER_PHASES:
+        case ROLLBACK_PROVISIONER_AFTER_PHASES_ON_APPROVAL:
         case ABORT:
         case MARK_EXPIRED:
         case RESUME_ALL:
@@ -450,7 +456,8 @@ public class ExecutionInterruptManager {
                                               .addFilter("appId", EQ, appId)
                                               .addFilter("executionUuid", EQ, executionUuid)
                                               .addFilter("executionInterruptType", IN, ABORT_ALL, PAUSE_ALL, RESUME_ALL,
-                                                  ROLLBACK, ROLLBACK_PROVISIONER_AFTER_PHASES, CONTINUE_PIPELINE_STAGE)
+                                                  ROLLBACK, ROLLBACK_PROVISIONER_AFTER_PHASES, CONTINUE_PIPELINE_STAGE,
+                                                  ROLLBACK_ON_APPROVAL, ROLLBACK_PROVISIONER_AFTER_PHASES_ON_APPROVAL)
                                               .addFilter("seized", EQ, false)
                                               .addOrder(ExecutionInterrupt.CREATED_AT_KEY, OrderType.DESC)
                                               .build();

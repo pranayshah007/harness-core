@@ -25,6 +25,7 @@ import io.harness.cd.NGPipelineSummaryCDConstants;
 import io.harness.cd.NGServiceConstants;
 import io.harness.event.timeseries.processor.utils.DateUtils;
 import io.harness.exception.UnknownEnumTypeException;
+import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstanceDetailsByBuildId;
 import io.harness.models.constants.TimescaleConstants;
@@ -34,6 +35,7 @@ import io.harness.ng.core.activityhistory.dto.TimeGroupType;
 import io.harness.ng.core.dashboard.AuthorInfo;
 import io.harness.ng.core.dashboard.DashboardExecutionStatusInfo;
 import io.harness.ng.core.dashboard.DeploymentsInfo;
+import io.harness.ng.core.dashboard.EnvironmentDeploymentsInfo;
 import io.harness.ng.core.dashboard.ExecutionStatusInfo;
 import io.harness.ng.core.dashboard.GitInfo;
 import io.harness.ng.core.dashboard.ServiceDeploymentInfo;
@@ -60,6 +62,7 @@ import io.harness.ng.overview.dto.ExecutionDeployment;
 import io.harness.ng.overview.dto.ExecutionDeploymentInfo;
 import io.harness.ng.overview.dto.HealthDeploymentDashboard;
 import io.harness.ng.overview.dto.HealthDeploymentInfo;
+import io.harness.ng.overview.dto.InstanceGroupedByArtifactList;
 import io.harness.ng.overview.dto.InstancesByBuildIdList;
 import io.harness.ng.overview.dto.LastWorkloadInfo;
 import io.harness.ng.overview.dto.ServiceDeployment;
@@ -103,6 +106,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -291,8 +295,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   }
 
   public String queryBuilderServiceTag(String queryIdCdTable) {
-    String selectStatusQuery =
-        "select service_name,tag,pipeline_execution_summary_cd_id from " + tableNameServiceAndInfra + " where ";
+    String selectStatusQuery = "select service_name,tag,env_id,env_name,env_type,pipeline_execution_summary_cd_id from "
+        + tableNameServiceAndInfra + " where ";
     StringBuilder totalBuildSqlBuilder = new StringBuilder(20480);
 
     totalBuildSqlBuilder.append(String.format(
@@ -513,8 +517,10 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         .build();
   }
 
-  public HashMap<String, List<ServiceDeploymentInfo>> queryCalculatorServiceTagMag(String queryServiceTag) {
+  public Pair<HashMap<String, List<ServiceDeploymentInfo>>, HashMap<String, List<EnvironmentDeploymentsInfo>>>
+  queryCalculatorServiceTagMag(String queryServiceTag) {
     HashMap<String, List<ServiceDeploymentInfo>> serviceTagMap = new HashMap<>();
+    HashMap<String, List<EnvironmentDeploymentsInfo>> pipelineToEnvMap = new HashMap<>();
 
     int totalTries = 0;
     boolean successfulOperation = false;
@@ -527,6 +533,9 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           String pipeline_execution_summary_cd_id = resultSet.getString("pipeline_execution_summary_cd_id");
           String service_name = resultSet.getString("service_name");
           String tag = resultSet.getString("tag");
+          String envId = resultSet.getString("env_id");
+          String envName = resultSet.getString("env_name");
+          String envType = resultSet.getString("env_type");
           if (serviceTagMap.containsKey(pipeline_execution_summary_cd_id)) {
             serviceTagMap.get(pipeline_execution_summary_cd_id).add(getServiceDeployment(service_name, tag));
           } else {
@@ -534,6 +543,9 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
             serviceDeploymentInfos.add(getServiceDeployment(service_name, tag));
             serviceTagMap.put(pipeline_execution_summary_cd_id, serviceDeploymentInfos);
           }
+          pipelineToEnvMap.putIfAbsent(pipeline_execution_summary_cd_id, new ArrayList<>());
+          pipelineToEnvMap.get(pipeline_execution_summary_cd_id)
+              .add(EnvironmentDeploymentsInfo.builder().envId(envId).envName(envName).envType(envType).build());
         }
         successfulOperation = true;
       } catch (SQLException ex) {
@@ -542,7 +554,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         DBUtils.close(resultSet);
       }
     }
-    return serviceTagMap;
+    return new MutablePair<>(serviceTagMap, pipelineToEnvMap);
   }
 
   @Override
@@ -781,6 +793,42 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       }
     }
     return pipelineExecutionDetailsMap;
+  }
+
+  public Map<String, Pair<String, AuthorInfo>> getPipelineExecutionIdToTriggerTypeAndAuthorInfoMapping(
+      List<String> pipelineExecutionIdList) {
+    Map<String, Pair<String, AuthorInfo>> triggerAndAuthorInfoMap = new HashMap<>();
+
+    int totalTries = 0;
+    boolean successfulOperation = false;
+    String sql =
+        "select id, moduleinfo_author_id, author_avatar, trigger_type from " + tableNameCD + " where id = any (?);";
+    while (!successfulOperation && totalTries <= MAX_RETRY_COUNT) {
+      ResultSet resultSet = null;
+      try (Connection connection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = connection.prepareStatement(sql)) {
+        final Array array = connection.createArrayOf("VARCHAR", pipelineExecutionIdList.toArray());
+        statement.setArray(1, array);
+        resultSet = statement.executeQuery();
+        while (resultSet != null && resultSet.next()) {
+          String pipelineExecutionId = resultSet.getString(NGPipelineSummaryCDConstants.ID);
+          String authorId = resultSet.getString(NGPipelineSummaryCDConstants.AUTHOR_ID);
+          String authorAvatar = resultSet.getString(NGPipelineSummaryCDConstants.AUTHOR_AVATAR);
+          String triggerType = resultSet.getString(NGPipelineSummaryCDConstants.TRIGGER_TYPE);
+          if (!triggerAndAuthorInfoMap.containsKey(pipelineExecutionId)) {
+            triggerAndAuthorInfoMap.put(pipelineExecutionId,
+                new MutablePair<>(triggerType, AuthorInfo.builder().name(authorId).url(authorAvatar).build()));
+          }
+        }
+        successfulOperation = true;
+      } catch (SQLException ex) {
+        log.error("%s after total tries = %s", ex, totalTries);
+        totalTries++;
+      } finally {
+        DBUtils.close(resultSet);
+      }
+    }
+    return triggerAndAuthorInfoMap;
   }
 
   @Override
@@ -1145,6 +1193,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<AuthorInfo> author = new ArrayList<>();
 
     HashMap<String, List<ServiceDeploymentInfo>> serviceTagMap = new HashMap<>();
+    HashMap<String, List<EnvironmentDeploymentsInfo>> pipelineToEnvMap = new HashMap<>();
 
     DeploymentStatusInfoList deploymentStatusInfoList = queryCalculatorDeploymentInfo(queryStatus);
     deploymentStatus = deploymentStatusInfoList.getDeploymentStatus();
@@ -1161,7 +1210,10 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
     String queryServiceTag = queryBuilderServiceTag(queryServiceNameTagId);
 
-    serviceTagMap = queryCalculatorServiceTagMag(queryServiceTag);
+    Pair<HashMap<String, List<ServiceDeploymentInfo>>, HashMap<String, List<EnvironmentDeploymentsInfo>>>
+        deploymentInfo = queryCalculatorServiceTagMag(queryServiceTag);
+    serviceTagMap = deploymentInfo.getKey();
+    pipelineToEnvMap = deploymentInfo.getValue();
 
     List<ExecutionStatusInfo> statusInfo = new ArrayList<>();
     for (int i = 0; i < objectIdList.size(); i++) {
@@ -1172,7 +1224,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       String planExecutionId = planExecutionIdList.get(i);
       statusInfo.add(this.getDeploymentStatusInfoObject(namePipelineList.get(i), pipelineIdentifier, planExecutionId,
           startTime, endTime, deploymentStatus.get(i), gitInfoList.get(i), triggerType.get(i), author.get(i),
-          serviceTagMap.get(objectId)));
+          serviceTagMap.get(objectId), pipelineToEnvMap.get(objectId)));
     }
     return statusInfo;
   }
@@ -1206,7 +1258,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
   private ExecutionStatusInfo getDeploymentStatusInfoObject(String name, String identfier, String planExecutionId,
       Long startTime, Long endTime, String status, GitInfo gitInfo, String triggerType, AuthorInfo authorInfo,
-      List<ServiceDeploymentInfo> serviceDeploymentInfos) {
+      List<ServiceDeploymentInfo> serviceDeploymentInfos,
+      List<EnvironmentDeploymentsInfo> environmentDeploymentsInfos) {
     return ExecutionStatusInfo.builder()
         .pipelineName(name)
         .pipelineIdentifier(identfier)
@@ -1218,6 +1271,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         .triggerType(triggerType)
         .author(authorInfo)
         .serviceInfoList(serviceDeploymentInfos)
+        .environmentInfoList(environmentDeploymentsInfos)
         .build();
   }
 
@@ -1270,6 +1324,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       List<Pair<Long, Long>> timeInterval, List<String> deploymentTypeList,
       HashMap<String, String> uniqueWorkloadNameAndId, long startDate, long endDate,
       List<String> pipelineExecutionIdList) {
+    Map<String, Pair<String, AuthorInfo>> pipelineExecutionIdToTriggerAndAuthorInfoMap =
+        getPipelineExecutionIdToTriggerTypeAndAuthorInfoMapping(pipelineExecutionIdList);
     List<WorkloadDeploymentInfo> workloadDeploymentInfoList = new ArrayList<>();
     long numberOfDays = NGDateUtils.getNumberOfDays(startDate, endDate);
     for (String workloadId : uniqueWorkloadNameAndId.keySet()) {
@@ -1348,12 +1404,19 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
                             .build());
           startDateCopy = startDateCopy + DAY_IN_MS;
         }
-        LastWorkloadInfo lastWorkloadInfo = LastWorkloadInfo.builder()
-                                                .startTime(lastExecutedStartTs)
-                                                .endTime(lastExecutedEndTs == -1L ? null : lastExecutedEndTs)
-                                                .status(lastStatus)
-                                                .deploymentType(deploymentType)
-                                                .build();
+        LastWorkloadInfo lastWorkloadInfo =
+            LastWorkloadInfo.builder()
+                .startTime(lastExecutedStartTs)
+                .endTime(lastExecutedEndTs == -1L ? null : lastExecutedEndTs)
+                .status(lastStatus)
+                .triggerType(pipelineExecutionIdToTriggerAndAuthorInfoMap.get(pipelineExecutionId) == null
+                        ? null
+                        : pipelineExecutionIdToTriggerAndAuthorInfoMap.get(pipelineExecutionId).getKey())
+                .authorInfo(pipelineExecutionIdToTriggerAndAuthorInfoMap.get(pipelineExecutionId) == null
+                        ? null
+                        : pipelineExecutionIdToTriggerAndAuthorInfoMap.get(pipelineExecutionId).getValue())
+                .deploymentType(deploymentType)
+                .build();
         WorkloadDeploymentInfo workloadDeploymentInfo =
             WorkloadDeploymentInfo.builder()
                 .serviceName(uniqueWorkloadNameAndId.get(workloadId))
@@ -1451,7 +1514,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Returns a list of buildId and instance counts for various environments for given account+org+project+service
   */
   @Override
-  public io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfoList getEnvBuildInstanceCountByServiceId(
+  public EnvBuildIdAndInstanceCountInfoList getEnvBuildInstanceCountByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     Map<String, List<BuildIdAndInstanceCount>> envIdToBuildMap = new HashMap<>();
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
@@ -1487,6 +1550,85 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     return EnvBuildIdAndInstanceCountInfoList.builder()
         .envBuildIdAndInstanceCountInfoList(envBuildIdAndInstanceCountInfoList)
         .build();
+  }
+
+  @Override
+  public InstanceGroupedByArtifactList getInstanceGroupedByArtifactList(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+    Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> buildEnvInfraMap =
+        new HashMap<>();
+    Map<String, String> envIdToEnvNameMap = new HashMap<>();
+    List<ActiveServiceInstanceInfo> activeServiceInstanceInfoList =
+        instanceDashboardService.getActiveServiceInstanceInfo(
+            accountIdentifier, orgIdentifier, projectIdentifier, serviceId, getCurrentTime());
+    activeServiceInstanceInfoList.forEach(activeServiceInstanceInfo -> {
+      final String infraIdentifier = activeServiceInstanceInfo.getInfraIdentifier();
+      final String infraName = activeServiceInstanceInfo.getInfraName();
+      final String lastPipelineExecutionId = activeServiceInstanceInfo.getLastPipelineExecutionId();
+      final String lastPipelineExecutionName = activeServiceInstanceInfo.getLastPipelineExecutionName();
+      final String lastDeployedAt = activeServiceInstanceInfo.getLastDeployedAt();
+      final String envId = activeServiceInstanceInfo.getEnvIdentifier();
+      final String envName = activeServiceInstanceInfo.getEnvName();
+      final String buildId = activeServiceInstanceInfo.getTag();
+      final int count = activeServiceInstanceInfo.getCount();
+      buildEnvInfraMap.putIfAbsent(buildId, new HashMap<>());
+      buildEnvInfraMap.get(buildId).putIfAbsent(envId, new ArrayList<>());
+
+      buildEnvInfraMap.get(buildId).get(envId).add(
+          InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure.builder()
+              .infraIdentifier(infraIdentifier)
+              .infraName(infraName)
+              .count(count)
+              .lastDeployedAt(lastDeployedAt)
+              .lastPipelineExecutionId(lastPipelineExecutionId)
+              .lastPipelineExecutionName(lastPipelineExecutionName)
+              .build());
+      envIdToEnvNameMap.putIfAbsent(envId, envName);
+    });
+    List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> instanceGroupedByArtifactList =
+        groupedByArtifacts(buildEnvInfraMap, envIdToEnvNameMap);
+
+    return InstanceGroupedByArtifactList.builder().instanceGroupedByArtifactList(instanceGroupedByArtifactList).build();
+  }
+
+  private List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> groupedByArtifacts(
+      Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> buildEnvInfraMap,
+      Map<String, String> envIdToEnvNameMap) {
+    List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> instanceGroupedByArtifactList = new ArrayList<>();
+
+    for (Map.Entry<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> entry :
+        buildEnvInfraMap.entrySet()) {
+      String buildId = entry.getKey();
+      List<InstanceGroupedByArtifactList.InstanceGroupedByEnvironment> instanceGroupedByEnvironmentList =
+          groupedByEnvironments(entry.getValue(), envIdToEnvNameMap);
+      instanceGroupedByArtifactList.add(InstanceGroupedByArtifactList.InstanceGroupedByArtifact.builder()
+                                            .artifactVersion(buildId)
+                                            .instanceGroupedByEnvironmentList(instanceGroupedByEnvironmentList)
+                                            .build());
+    }
+
+    return instanceGroupedByArtifactList;
+  }
+
+  private List<InstanceGroupedByArtifactList.InstanceGroupedByEnvironment> groupedByEnvironments(
+      Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>> envInfraMap,
+      Map<String, String> envIdToEnvNameMap) {
+    List<InstanceGroupedByArtifactList.InstanceGroupedByEnvironment> instanceGroupedByEnvironmentList =
+        new ArrayList<>();
+
+    for (Map.Entry<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>> entry :
+        envInfraMap.entrySet()) {
+      String envId = entry.getKey();
+      String envName = envIdToEnvNameMap.get(envId);
+      List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure> instanceGroupedByInfrastructureList =
+          entry.getValue();
+      instanceGroupedByEnvironmentList.add(InstanceGroupedByArtifactList.InstanceGroupedByEnvironment.builder()
+                                               .envId(envId)
+                                               .envName(envName)
+                                               .instanceGroupedByInfraList(instanceGroupedByInfrastructureList)
+                                               .build());
+    }
+    return instanceGroupedByEnvironmentList;
   }
 
   /*

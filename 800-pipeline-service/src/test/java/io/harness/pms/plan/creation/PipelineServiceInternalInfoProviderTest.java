@@ -47,6 +47,7 @@ import io.harness.pms.sdk.core.pipeline.variables.ApprovalStageVariableCreator;
 import io.harness.pms.sdk.core.pipeline.variables.PipelineVariableCreator;
 import io.harness.pms.sdk.core.pipeline.variables.StepGroupVariableCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
+import io.harness.pms.sdk.core.variables.StrategyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
 import io.harness.rule.Owner;
@@ -105,7 +106,7 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
             .stream()
             .map(e -> e.getClass())
             .collect(Collectors.toSet());
-    assertThat(planCreatorClasses).hasSize(27);
+    assertThat(planCreatorClasses).hasSize(28);
     assertThat(planCreatorClasses.contains(CustomApprovalStepPlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(NGPipelinePlanCreator.class)).isTrue();
     assertThat(planCreatorClasses.contains(StagesPlanCreator.class)).isTrue();
@@ -165,7 +166,7 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
             .stream()
             .map(e -> e.getClass())
             .collect(Collectors.toSet());
-    assertThat(variableCreatorClasses).hasSize(17);
+    assertThat(variableCreatorClasses).hasSize(19);
     assertThat(variableCreatorClasses.contains(CustomApprovalStepVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(PipelineVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(HTTPStepVariableCreator.class)).isTrue();
@@ -183,6 +184,7 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
     assertThat(variableCreatorClasses.contains(ServiceNowUpdateStepVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(CustomStageVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(QueueStepVariableCreator.class)).isTrue();
+    assertThat(variableCreatorClasses.contains(StrategyVariableCreator.class)).isTrue();
   }
 
   @Test

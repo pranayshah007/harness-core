@@ -20,6 +20,7 @@ import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
 import static io.harness.ccm.views.graphql.QLCEViewAggregateOperation.MAX;
 import static io.harness.ccm.views.graphql.QLCEViewAggregateOperation.MIN;
+import static io.harness.ccm.views.graphql.QLCEViewFilterOperator.IN;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantClusterCost;
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantCost;
@@ -32,6 +33,8 @@ import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_NODE;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_POD;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_POD_FARGATE;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_PV;
+import static io.harness.ccm.views.graphql.ViewsQueryBuilder.LABEL_KEY_ALIAS;
+import static io.harness.ccm.views.graphql.ViewsQueryBuilder.LABEL_VALUE_ALIAS;
 import static io.harness.ccm.views.utils.ClusterTableKeys.ACTUAL_IDLE_COST;
 import static io.harness.ccm.views.utils.ClusterTableKeys.AVG_CPU_UTILIZATION_VALUE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.AVG_MEMORY_UTILIZATION_VALUE;
@@ -568,6 +571,51 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     }
     return (isGroupByEntityEmpty && defaultFieldCheck)
         || viewsQueryHelper.isGroupByFieldPresent(groupBy, AWS_ACCOUNT_FIELD);
+  }
+
+  @Override
+  public Map<String, Map<String, String>> getLabelsForWorkloads(
+      BigQuery bigQuery, Set<String> workloads, String cloudProviderTableName, List<QLCEViewFilterWrapper> filters) {
+    List<QLCEViewFilter> idFilters = filters != null ? getIdFilters(filters) : new ArrayList<>();
+    if (!workloads.isEmpty()) {
+      idFilters.add(QLCEViewFilter.builder()
+                        .field(QLCEViewFieldInput.builder()
+                                   .fieldId(WORKLOAD_NAME_FIELD_ID)
+                                   .fieldName("Workload")
+                                   .identifier(CLUSTER)
+                                   .build())
+                        .operator(IN)
+                        .values(workloads.toArray(new String[0]))
+                        .build());
+    }
+    List<QLCEViewTimeFilter> timeFilters = filters != null ? getTimeFilters(filters) : new ArrayList<>();
+    SelectQuery query = viewsQueryBuilder.getLabelsForWorkloadsQuery(cloudProviderTableName, idFilters, timeFilters);
+    return getLabelsForWorkloadsData(bigQuery, query);
+  }
+
+  private Map<String, Map<String, String>> getLabelsForWorkloadsData(BigQuery bigQuery, SelectQuery query) {
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
+    TableResult result;
+    try {
+      result = bigQuery.query(queryConfig);
+    } catch (InterruptedException e) {
+      log.error("Failed to getLabelsForWorkloadsData. {}", e);
+      Thread.currentThread().interrupt();
+      return null;
+    }
+    Map<String, Map<String, String>> workloadToLabelsMapping = new HashMap<>();
+    for (FieldValueList row : result.iterateAll()) {
+      String workload = row.get(WORKLOAD_NAME).getValue().toString();
+      String labelKey = row.get(LABEL_KEY_ALIAS).getValue().toString();
+      String labelValue = row.get(LABEL_VALUE_ALIAS).getValue().toString();
+      Map<String, String> labels = new HashMap<>();
+      if (workloadToLabelsMapping.containsKey(workload)) {
+        labels = workloadToLabelsMapping.get(workload);
+      }
+      labels.put(labelKey, labelValue);
+      workloadToLabelsMapping.put(workload, labels);
+    }
+    return workloadToLabelsMapping;
   }
 
   private boolean isClusterTableQuery(List<QLCEViewFilterWrapper> filters, ViewQueryParams queryParams) {
@@ -1751,7 +1799,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
 
     return QLCEViewFilter.builder()
         .field(QLCEViewFieldInput.builder().fieldId(INSTANCE_TYPE).fieldName(INSTANCE_TYPE).identifier(CLUSTER).build())
-        .operator(QLCEViewFilterOperator.IN)
+        .operator(IN)
         .values(values)
         .build();
   }
@@ -1789,7 +1837,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
                                                  .fieldName(field.toLowerCase())
                                                  .identifier(CLUSTER)
                                                  .build())
-                                      .operator(QLCEViewFilterOperator.IN)
+                                      .operator(IN)
                                       .values(values.toArray(new String[0]))
                                       .build())
                         .build());

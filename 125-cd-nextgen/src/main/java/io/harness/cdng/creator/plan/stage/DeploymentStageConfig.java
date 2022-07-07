@@ -55,43 +55,23 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
   @ApiModelProperty(hidden = true)
   String uuid;
 
-  @NotNull ServiceConfig serviceConfig;
-  /*
-  Have added Getter Annotation for service and deployment type since we do not want current users to get these fields as
-  suggestion from schema.
-  TODO: Need to remove this getter method along with hidden=true once we completely get rid of serviceConfig
+  ServiceConfig serviceConfig;
 
-  Yaml for these fields
-
-       spec:
-         deploymentType: Kubernetes
-         gitOpsEnabled: false
-         service:
-            serviceConfigRef: ref
-   */
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) ServiceYamlV2 service;
-
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(hidden = true)
+  // For new service yaml
+  // skipping variable creation from framework since these are supported through outcomes
+  @VariableExpression(skipVariableExpression = true) ServiceYamlV2 service;
   ServiceDefinitionType deploymentType;
+  Boolean gitOpsEnabled;
 
-  public boolean getGitOpsEnabled() {
-    return gitOpsEnabled == Boolean.TRUE;
-  }
+  // New Environment Yaml
+  // skipping variable creation from framework since these are supported through outcomes
+  @VariableExpression(skipVariableExpression = true) EnvironmentYamlV2 environment;
 
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) Boolean gitOpsEnabled;
+  // Environment Group yaml
+  // todo: add expressions from env group outcomes
+  @VariableExpression(skipVariableExpression = true) EnvironmentGroupYaml environmentGroup;
 
-  // TODO: need to remove infraStructure from here after multi-infra feature rollout. Need to keep environment instead
-  // of infraStructure
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(hidden = true)
-  EnvironmentYamlV2 environment;
-
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(hidden = true)
-  EnvironmentGroupYaml environmentGroup;
-
-  @NotNull PipelineInfrastructure infrastructure;
+  PipelineInfrastructure infrastructure;
   @NotNull @VariableExpression(skipVariableExpression = true) ExecutionElementConfig execution;
 
   // For Visitor Framework Impl
@@ -108,6 +88,13 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
     if (environment != null) {
       children.add(VisitableChild.builder().value(environment).fieldName("environment").build());
     }
+    if (environmentGroup != null) {
+      children.add(VisitableChild.builder().value(environmentGroup).fieldName("environmentGroup").build());
+    }
     return VisitableChildren.builder().visitableChildList(children).build();
+  }
+
+  public boolean getGitOpsEnabled() {
+    return gitOpsEnabled == Boolean.TRUE;
   }
 }

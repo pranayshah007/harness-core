@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.infra.beans.AzureWebAppInfraMapping;
 import io.harness.cdng.infra.beans.InfraMapping;
+import io.harness.cdng.infra.beans.InfrastructureDetailsAbstract;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -40,7 +41,8 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("azureWebAppInfrastructure")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.yaml.AzureWebAppInfrastructure")
-public class AzureWebAppInfrastructure implements Infrastructure, Visitable, WithConnectorRef {
+public class AzureWebAppInfrastructure
+    extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef {
   @NotNull
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)

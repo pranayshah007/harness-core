@@ -251,6 +251,16 @@ public class ServerlessTaskHelperBase {
     }
   }
 
+  public void fetchArtifacts(ServerlessArtifactsConfig serverlessArtifactsConfig, LogCallback logCallback,
+      String workingDirectory) throws IOException {
+    ServerlessArtifactConfig primaryServerlessArtifactConfig = serverlessArtifactsConfig.getPrimary();
+    fetchArtifact(primaryServerlessArtifactConfig, logCallback, workingDirectory);
+
+    for (Map.Entry<String, ServerlessArtifactConfig> entry : serverlessArtifactsConfig.getSidecars().entrySet()) {
+      fetchArtifact(entry.getValue(), logCallback, workingDirectory);
+    }
+  }
+
   public void fetchArtifactoryArtifact(ServerlessArtifactoryArtifactConfig artifactoryArtifactConfig,
       LogCallback executionLogCallback, String artifactoryDirectory) throws IOException {
     if (EmptyPredicate.isEmpty(artifactoryArtifactConfig.getArtifactPath())) {

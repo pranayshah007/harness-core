@@ -47,7 +47,6 @@ import io.harness.cvng.core.services.api.DataCollectionTaskService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
-import io.harness.cvng.dashboard.services.api.HealthVerificationHeatMapService;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
@@ -96,7 +95,6 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
   @Inject private VerificationJobInstanceAnalysisService verificationJobInstanceAnalysisService;
   @Inject private OrchestrationService orchestrationService;
   @Inject private Clock clock;
-  @Inject private HealthVerificationHeatMapService healthVerificationHeatMapService;
   @Inject private NextGenService nextGenService;
   @Inject private MonitoringSourcePerpetualTaskService monitoringSourcePerpetualTaskService;
   @Inject private MetricService metricService;
@@ -347,8 +345,6 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
             accountId, verificationJobInstance);
       case TEST:
         return verificationJobInstanceAnalysisService.getLoadTestAdditionalInfo(accountId, verificationJobInstance);
-      case HEALTH:
-        return verificationJobInstanceAnalysisService.getHealthAdditionInfo(accountId, verificationJobInstance);
       default:
         throw new IllegalStateException(
             "Failed to get additional info due to unknown type: " + verificationJobInstance.getResolvedJob().getType());
@@ -385,13 +381,8 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
     if (ExecutionStatus.noAnalysisStatuses().contains(verificationJobInstance.getExecutionStatus())) {
       return Optional.empty();
     }
-    if (verificationJobInstance.getResolvedJob().getType() == VerificationJobType.HEALTH) {
-      return healthVerificationHeatMapService.getVerificationRisk(
-          verificationJobInstance.getAccountId(), verificationJobInstance.getUuid());
-    } else {
-      return verificationJobInstanceAnalysisService.getLatestRiskScore(
-          verificationJobInstance.getAccountId(), verificationJobInstance.getUuid());
-    }
+    return verificationJobInstanceAnalysisService.getLatestRiskScore(
+        verificationJobInstance.getAccountId(), verificationJobInstance.getUuid());
   }
 
   @Override

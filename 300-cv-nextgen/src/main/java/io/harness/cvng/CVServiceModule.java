@@ -241,26 +241,32 @@ import io.harness.cvng.core.utils.monitoredService.SplunkMetricHealthSourceSpecT
 import io.harness.cvng.core.utils.monitoredService.StackdriverLogHealthSourceSpecTransformer;
 import io.harness.cvng.core.utils.monitoredService.StackdriverMetricHealthSourceSpecTransformer;
 import io.harness.cvng.dashboard.services.api.ErrorTrackingDashboardService;
-import io.harness.cvng.dashboard.services.api.HealthVerificationHeatMapService;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
 import io.harness.cvng.dashboard.services.api.LogDashboardService;
 import io.harness.cvng.dashboard.services.api.ServiceDependencyGraphService;
 import io.harness.cvng.dashboard.services.api.TimeSeriesDashboardService;
 import io.harness.cvng.dashboard.services.impl.ErrorTrackingDashboardServiceImpl;
-import io.harness.cvng.dashboard.services.impl.HealthVerificationHeatMapServiceImpl;
 import io.harness.cvng.dashboard.services.impl.HeatMapServiceImpl;
 import io.harness.cvng.dashboard.services.impl.LogDashboardServiceImpl;
 import io.harness.cvng.dashboard.services.impl.ServiceDependencyGraphServiceImpl;
 import io.harness.cvng.dashboard.services.impl.TimeSeriesDashboardServiceImpl;
 import io.harness.cvng.migration.impl.CVNGMigrationServiceImpl;
 import io.harness.cvng.migration.service.CVNGMigrationService;
+import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceNotificationRuleUpdatableEntity;
 import io.harness.cvng.notification.entities.NotificationRule.NotificationRuleUpdatableEntity;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLONotificationRuleUpdatableEntity;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
+import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
+import io.harness.cvng.notification.services.impl.BurnRateTemplateDataGenerator;
+import io.harness.cvng.notification.services.impl.ChangeImpactTemplateDataGenerator;
+import io.harness.cvng.notification.services.impl.ChangeObservedTemplateDataGenerator;
+import io.harness.cvng.notification.services.impl.HealthScoreTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.NotificationRuleServiceImpl;
+import io.harness.cvng.notification.services.impl.RemainingMinutesTemplateDataGenerator;
+import io.harness.cvng.notification.services.impl.RemainingPercentageTemplateDataGenerator;
 import io.harness.cvng.notification.transformer.EmailNotificationMethodTransformer;
 import io.harness.cvng.notification.transformer.MSTeamsNotificationMethodTransformer;
 import io.harness.cvng.notification.transformer.MonitoredServiceNotificationRuleConditionTransformer;
@@ -582,7 +588,6 @@ public class CVServiceModule extends AbstractModule {
     bind(KubernetesActivitySourceService.class).to(KubernetesActivitySourceServiceImpl.class);
     bind(DeploymentLogAnalysisService.class).to(DeploymentLogAnalysisServiceImpl.class);
     bind(VerificationJobInstanceAnalysisService.class).to(VerificationJobInstanceAnalysisServiceImpl.class);
-    bind(HealthVerificationHeatMapService.class).to(HealthVerificationHeatMapServiceImpl.class);
     bind(OnboardingService.class).to(OnboardingServiceImpl.class);
     bind(CVNGMigrationService.class).to(CVNGMigrationServiceImpl.class).in(Singleton.class);
     bind(TimeLimiter.class).toInstance(HTimeLimiter.create());
@@ -864,6 +869,33 @@ public class CVServiceModule extends AbstractModule {
     channelTypeNotificationMethodTransformerMapBinder.addBinding(CVNGNotificationChannelType.MSTEAMS)
         .to(MSTeamsNotificationMethodTransformer.class)
         .in(Scopes.SINGLETON);
+
+    MapBinder<NotificationRuleConditionType, NotificationRuleTemplateDataGenerator>
+        notificationRuleConditionTypeTemplateDataGeneratorMapBinder = MapBinder.newMapBinder(
+            binder(), NotificationRuleConditionType.class, NotificationRuleTemplateDataGenerator.class);
+    notificationRuleConditionTypeTemplateDataGeneratorMapBinder
+        .addBinding(NotificationRuleConditionType.CHANGE_OBSERVED)
+        .to(ChangeObservedTemplateDataGenerator.class)
+        .in(Scopes.SINGLETON);
+    notificationRuleConditionTypeTemplateDataGeneratorMapBinder.addBinding(NotificationRuleConditionType.CHANGE_IMPACT)
+        .to(ChangeImpactTemplateDataGenerator.class)
+        .in(Scopes.SINGLETON);
+    notificationRuleConditionTypeTemplateDataGeneratorMapBinder.addBinding(NotificationRuleConditionType.HEALTH_SCORE)
+        .to(HealthScoreTemplateDataGenerator.class)
+        .in(Scopes.SINGLETON);
+    notificationRuleConditionTypeTemplateDataGeneratorMapBinder
+        .addBinding(NotificationRuleConditionType.ERROR_BUDGET_REMAINING_PERCENTAGE)
+        .to(RemainingPercentageTemplateDataGenerator.class)
+        .in(Scopes.SINGLETON);
+    notificationRuleConditionTypeTemplateDataGeneratorMapBinder
+        .addBinding(NotificationRuleConditionType.ERROR_BUDGET_REMAINING_MINUTES)
+        .to(RemainingMinutesTemplateDataGenerator.class)
+        .in(Scopes.SINGLETON);
+    notificationRuleConditionTypeTemplateDataGeneratorMapBinder
+        .addBinding(NotificationRuleConditionType.ERROR_BUDGET_BURN_RATE)
+        .to(BurnRateTemplateDataGenerator.class)
+        .in(Scopes.SINGLETON);
+
     ServiceHttpClientConfig serviceHttpClientConfig = this.verificationConfiguration.getAuditClientConfig();
     String secret = this.verificationConfiguration.getTemplateServiceSecret();
     String serviceId = CV_NEXT_GEN.getServiceId();

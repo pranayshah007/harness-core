@@ -18,9 +18,10 @@ import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
 import io.harness.cdng.azure.webapp.StartupScriptParameters;
 import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
-import io.harness.cdng.gitops.CreatePRPassThroughData;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.CreatePRStepParams;
+import io.harness.cdng.gitops.MergePRStepInfo;
+import io.harness.cdng.gitops.MergePRStepParams;
 import io.harness.cdng.helm.HelmDeployStepInfo;
 import io.harness.cdng.helm.HelmDeployStepParams;
 import io.harness.cdng.helm.NativeHelmStepPassThroughData;
@@ -93,7 +94,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
   public void register(Kryo kryo) {
     kryo.register(CreatePRStepInfo.class, 13007);
     kryo.register(CreatePRStepParams.class, 13008);
-    kryo.register(CreatePRPassThroughData.class, 13009);
 
     kryo.register(ArtifactStepParameters.class, 8001);
     kryo.register(ServiceStepParameters.class, 8008);
@@ -178,5 +178,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(ApplicationSettingsParameters.class, 12602);
     kryo.register(ConnectionStringsParameters.class, 12603);
     kryo.register(JenkinsBuildStepInfo.class, 12700);
+    kryo.register(MergePRStepParams.class, 12604);
+    kryo.register(MergePRStepInfo.class, 12605);
   }
 }

@@ -9,6 +9,7 @@ package io.harness.app;
 
 import static io.harness.AuthorizationServiceHeader.CI_MANAGER;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
 import io.harness.AccessControlClientModule;
 import io.harness.account.AccountClientModule;
@@ -50,8 +51,8 @@ import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
-import io.harness.opaclient.OpaClientModule;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ClientMode;
@@ -68,6 +69,8 @@ import io.harness.timescaledb.TimeScaleDBService;
 import io.harness.timescaledb.TimeScaleDBServiceImpl;
 import io.harness.token.TokenClientModule;
 import io.harness.user.UserClientModule;
+import io.harness.waiter.AsyncWaitEngineImpl;
+import io.harness.waiter.WaitNotifyEngine;
 import io.harness.yaml.core.StepSpecType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -156,6 +159,12 @@ public class CIManagerServiceModule extends AbstractModule {
 
   @Provides
   @Singleton
+  public AsyncWaitEngine asyncWaitEngine(WaitNotifyEngine waitNotifyEngine) {
+    return new AsyncWaitEngineImpl(waitNotifyEngine, NG_ORCHESTRATION);
+  }
+
+  @Provides
+  @Singleton
   public TimeLimiter timeLimiter(ExecutorService executorService) {
     return HTimeLimiter.create(executorService);
   }
@@ -188,6 +197,13 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(BitbucketService.class).to(BitbucketServiceImpl.class);
     bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
     bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("ciTelemetryPublisherExecutor"))
+        .toInstance(new ScheduledThreadPoolExecutor(1,
+            new ThreadFactoryBuilder()
+                .setNameFormat("ci-telemetry-publisher-Thread-%d")
+                .setPriority(Thread.NORM_PRIORITY)
+                .build()));
 
     try {
       bind(TimeScaleDBService.class)
@@ -264,8 +280,6 @@ public class CIManagerServiceModule extends AbstractModule {
     install(new SecretNGManagerClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), "CIManager"));
     install(new CILogServiceClientModule(ciManagerConfiguration.getLogServiceConfig()));
-    install(new OpaClientModule(
-        ciManagerConfiguration.getOpaServerConfig().getBaseUrl(), ciManagerConfiguration.getJwtAuthSecret()));
     install(UserClientModule.getInstance(ciManagerConfiguration.getManagerClientConfig(),
         ciManagerConfiguration.getManagerServiceSecret(), CI_MANAGER.getServiceId()));
     install(new TIServiceClientModule(ciManagerConfiguration.getTiServiceConfig()));

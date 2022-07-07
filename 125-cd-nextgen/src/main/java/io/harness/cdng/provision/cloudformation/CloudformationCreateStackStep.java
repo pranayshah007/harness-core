@@ -161,33 +161,42 @@ public class CloudformationCreateStackStep
       return cloudformationStepHelper.getFailureResponse(e.getCommandUnitsProgress().getUnitProgresses(), errorMessage);
     }
 
-    if (cloudformationTaskNGResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
-      return cloudformationStepHelper.getFailureResponse(
-          cloudformationTaskNGResponse.getUnitProgressData().getUnitProgresses(),
-          cloudformationTaskNGResponse.getErrorMessage());
-    }
-    CloudFormationCreateStackNGResponse cloudFormationCreateStackNGResponse =
-        (CloudFormationCreateStackNGResponse) cloudformationTaskNGResponse.getCloudFormationCommandNGResponse();
+    try {
+      CloudFormationCreateStackNGResponse cloudFormationCreateStackNGResponse =
+          (CloudFormationCreateStackNGResponse) cloudformationTaskNGResponse.getCloudFormationCommandNGResponse();
 
-    cloudformationStepHelper.saveCloudFormationInheritOutput(stepConfiguration,
-        getParameterFieldValue(cloudformationCreateStackStepParameters.getProvisionerIdentifier()), ambiance,
-        cloudFormationCreateStackNGResponse.isExistentStack());
-    if (!cloudformationTaskNGResponse.isUpdatedNotPerformed()) {
-      CloudformationConfig cloudformationConfig = cloudformationStepHelper.getCloudformationConfig(
-          ambiance, stepParameters, (CloudFormationCreateStackPassThroughData) passThroughData);
-      cloudformationConfigDAL.saveCloudformationConfig(cloudformationConfig);
+      if (cloudformationTaskNGResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+        return cloudformationStepHelper.getFailureResponse(
+            cloudformationTaskNGResponse.getUnitProgressData().getUnitProgresses(),
+            cloudformationTaskNGResponse.getErrorMessage());
+      }
+
+      cloudformationStepHelper.saveCloudFormationInheritOutput(stepConfiguration,
+          getParameterFieldValue(cloudformationCreateStackStepParameters.getProvisionerIdentifier()), ambiance,
+          cloudFormationCreateStackNGResponse.isExistentStack());
+      if (!cloudformationTaskNGResponse.isUpdatedNotPerformed()) {
+        CloudformationConfig cloudformationConfig = cloudformationStepHelper.getCloudformationConfig(
+            ambiance, stepParameters, (CloudFormationCreateStackPassThroughData) passThroughData);
+        cloudformationConfigDAL.saveCloudformationConfig(cloudformationConfig);
+      }
+      return StepResponse.builder()
+          .unitProgressList(cloudformationTaskNGResponse.getUnitProgressData().getUnitProgresses())
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(OutcomeExpressionConstants.OUTPUT)
+                           .outcome(new CloudformationCreateStackOutcome(
+                               isNotEmpty(cloudFormationCreateStackNGResponse.getCloudFormationOutputMap())
+                                   ? cloudFormationCreateStackNGResponse.getCloudFormationOutputMap()
+                                   : new HashMap<>()))
+                           .build())
+          .status(Status.SUCCEEDED)
+          .build();
+    } catch (Exception e) {
+      String errorMessage =
+          String.format("Exception while executing Cloudformation Create Stack step: %s", e.getMessage());
+      log.error(errorMessage, e);
+      return cloudformationStepHelper.getFailureResponse(
+          cloudformationTaskNGResponse.getUnitProgressData().getUnitProgresses(), errorMessage);
     }
-    return StepResponse.builder()
-        .unitProgressList(cloudformationTaskNGResponse.getUnitProgressData().getUnitProgresses())
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(OutcomeExpressionConstants.OUTPUT)
-                         .outcome(new CloudformationCreateStackOutcome(
-                             isNotEmpty(cloudFormationCreateStackNGResponse.getCloudFormationOutputMap())
-                                 ? cloudFormationCreateStackNGResponse.getCloudFormationOutputMap()
-                                 : new HashMap<>()))
-                         .build())
-        .status(Status.SUCCEEDED)
-        .build();
   }
 
   @Override

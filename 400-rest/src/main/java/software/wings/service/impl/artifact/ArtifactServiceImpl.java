@@ -91,13 +91,17 @@ import software.wings.utils.RepositoryFormat;
 import software.wings.utils.RepositoryType;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterators;
 import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.mongodb.BasicDBObject;
+import com.mongodb.BulkWriteOperation;
+import com.mongodb.DBCollection;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -124,6 +128,7 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 @ValidateOnExecution
 @Slf4j
 public class ArtifactServiceImpl implements ArtifactService {
+  public static final int DELETE_BATCH_SIZE = 100;
   /**
    * The Auto downloaded.
    */
@@ -563,11 +568,12 @@ public class ArtifactServiceImpl implements ArtifactService {
     return true;
   }
 
-  @Override
   public void deleteArtifacts(List<Artifact> artifacts) {
     List<String> artifactIds = new ArrayList<>();
     List<String> artifactIdsWithFiles = new ArrayList<>();
     List<String> artifactFileIds = new ArrayList<>();
+    List<String> allArtifactIds = new ArrayList<>();
+
     for (Artifact artifact : artifacts) {
       if (isNotEmpty(artifact.getArtifactFiles())) {
         artifactIdsWithFiles.add(artifact.getUuid());
@@ -579,12 +585,10 @@ public class ArtifactServiceImpl implements ArtifactService {
         artifactIds.add(artifact.getUuid());
       }
     }
-    if (isNotEmpty(artifactIds)) {
-      wingsPersistence.getCollection(DEFAULT_STORE, "artifacts")
-          .remove(new BasicDBObject("_id", new BasicDBObject("$in", artifactIds.toArray())));
-    }
-    if (isNotEmpty(artifactIdsWithFiles)) {
-      deleteArtifacts(artifactIdsWithFiles.toArray(), artifactFileIds);
+    allArtifactIds.addAll(artifactIdsWithFiles);
+    allArtifactIds.addAll(artifactIds);
+    if (isNotEmpty(allArtifactIds)) {
+      deleteArtifacts(allArtifactIds.toArray(), artifactFileIds);
     }
   }
 
@@ -600,6 +604,8 @@ public class ArtifactServiceImpl implements ArtifactService {
     List<String> artifactIds = new ArrayList<>();
     List<String> artifactIdsWithFiles = new ArrayList<>();
     List<String> artifactFileIds = new ArrayList<>();
+    List<String> allArtifactIds = new ArrayList<>();
+
     try (HIterator<Artifact> iterator = new HIterator<>(artifactQuery.fetch())) {
       for (Artifact artifact : iterator) {
         if (isNotEmpty(artifact.getArtifactFiles())) {
@@ -613,12 +619,10 @@ public class ArtifactServiceImpl implements ArtifactService {
         }
       }
     }
-    if (isNotEmpty(artifactIds)) {
-      wingsPersistence.getCollection(DEFAULT_STORE, "artifacts")
-          .remove(new BasicDBObject("_id", new BasicDBObject("$in", artifactIds.toArray())));
-    }
-    if (isNotEmpty(artifactIdsWithFiles)) {
-      deleteArtifacts(artifactIdsWithFiles.toArray(), artifactFileIds);
+    allArtifactIds.addAll(artifactIdsWithFiles);
+    allArtifactIds.addAll(artifactIds);
+    if (isNotEmpty(allArtifactIds)) {
+      deleteArtifacts(allArtifactIds.toArray(), artifactFileIds);
     }
   }
 
@@ -863,8 +867,21 @@ public class ArtifactServiceImpl implements ArtifactService {
 
   private void deleteArtifacts(Object[] artifactIds, List<String> artifactFileIds) {
     log.info("Deleting artifactIds of artifacts {}", artifactIds);
-    wingsPersistence.getCollection(DEFAULT_STORE, "artifacts")
-        .remove(new BasicDBObject("_id", new BasicDBObject("$in", artifactIds)));
+
+    final DBCollection dbCollection = wingsPersistence.getCollection(DEFAULT_STORE, "artifacts");
+    Iterator<Object> artifactListIterator = Arrays.stream(artifactIds).iterator();
+    Iterator<List<Object>> chunksOfArtifactIds = Iterators.partition(artifactListIterator, DELETE_BATCH_SIZE);
+    while (chunksOfArtifactIds.hasNext()) {
+      BulkWriteOperation bulkWriteOperation = dbCollection.initializeUnorderedBulkOperation();
+      bulkWriteOperation
+          .find(wingsPersistence.createQuery(Artifact.class)
+                    .field(ArtifactKeys.uuid)
+                    .in(chunksOfArtifactIds.next())
+                    .getQueryObject())
+          .remove();
+      bulkWriteOperation.execute();
+    }
+
     deleteArtifactFiles(artifactFileIds);
   }
 

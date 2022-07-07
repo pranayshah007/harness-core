@@ -15,8 +15,8 @@ import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.CommandTaskResponse;
-import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.UnitProgress;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -65,8 +65,8 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     CommandStepParameters executeCommandStepParameters = (CommandStepParameters) stepParameters.getSpec();
 
-    SshCommandTaskParameters taskParameters =
-        sshCommandStepHelper.buildSshCommandTaskParameters(ambiance, executeCommandStepParameters);
+    CommandTaskParameters taskParameters =
+        sshCommandStepHelper.buildCommandTaskParameters(ambiance, executeCommandStepParameters);
 
     TaskData taskData =
         TaskData.builder()

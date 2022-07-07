@@ -4,6 +4,7 @@ load("//:tools/bazel/macros.bzl", "run_analysis")
 
 shared_dependencies = [
     "//955-delegate-beans:module",
+    "//870-orchestration/contracts:module",
     "//876-orchestration-beans:module",
     "//874-orchestration-delay:module",
     "//878-ng-common-utilities:module",
@@ -61,6 +62,7 @@ java_library(
         "@maven//:org_awaitility_awaitility",
         "@maven//:org_jooq_joor",
         "@maven//:org_mockito_mockito_core",
+        "@maven//:org_mockito_mockito_inline",
         "@maven//:org_powermock_powermock_api_mockito2",
         "@maven//:org_powermock_powermock_module_junit4",
         "@maven//:org_reflections_reflections",

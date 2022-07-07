@@ -80,4 +80,22 @@ public final class CEReportSchedule implements PersistentEntity, UuidAware, Crea
   EmbeddedUser createdBy;
   EmbeddedUser lastUpdatedBy;
   Date nextExecution;
+
+  public CEReportSchedule toDTO() {
+    return CEReportSchedule.builder()
+        .uuid(getUuid())
+        .name(getName())
+        .description(getDescription())
+        .viewsId(getViewsId())
+        .userCron(getUserCron())
+        .recipients(getRecipients())
+        .accountId(getAccountId())
+        .createdAt(getCreatedAt())
+        .lastUpdatedAt(getLastUpdatedAt())
+        .userCronTimeZone(getUserCronTimeZone())
+        .createdBy(getCreatedBy())
+        .lastUpdatedBy(getLastUpdatedBy())
+        .nextExecution(getNextExecution())
+        .build();
+  }
 }

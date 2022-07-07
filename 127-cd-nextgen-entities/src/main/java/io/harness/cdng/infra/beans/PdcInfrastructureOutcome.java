@@ -28,7 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("cdng.infra.beans.PdcInfrastructureOutcome")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.beans.PdcInfrastructureOutcome")
-public class PdcInfrastructureOutcome implements InfrastructureOutcome {
+public class PdcInfrastructureOutcome extends InfrastructureDetailsAbstract implements InfrastructureOutcome {
   String credentialsRef;
   List<String> hosts;
   String connectorRef;

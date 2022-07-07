@@ -8,6 +8,7 @@ io.harness.steps.jira.update.beans.TransitionTo
 barrierSpecParameters
 io.harness.steps.shellscript.K8sInfraDelegateConfigOutput
 io.harness.steps.shellscript.SshInfraDelegateConfigOutput
+io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput
 io.harness.steps.common.pipeline.PipelineSetupStepParameters
 io.harness.when.beans.StepWhenCondition
 io.harness.plancreator.steps.common.StepElementParameters
@@ -125,3 +126,8 @@ io.harness.steps.approval.step.custom.CustomApprovalStepInfo
 io.harness.steps.approval.step.custom.CustomApprovalStepNode
 io.harness.steps.approval.step.custom.CustomApprovalOutcome
 io.harness.steps.policy.step.outcome.PolicyStepOutcome
+io.harness.steps.resourcerestraint.QueueSpecParameters
+io.harness.steps.email.EmailOutcome
+io.harness.plancreator.steps.email.EmailStepInfo
+io.harness.plancreator.steps.email.EmailStepNode
+io.harness.steps.email.EmailStepParameters

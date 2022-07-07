@@ -17,8 +17,7 @@ pipeline:
                   environment:
                       environmentRef: <+input>
                       deployToAll: false
-                      infrastructureDefinitions:
-                          - identifier: <+input>
+                      infrastructureDefinitions: <+input>
                   execution:
                       steps:
                           - step:

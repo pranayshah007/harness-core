@@ -25,7 +25,8 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(InfrastructureKind.SERVERLESS_AWS_LAMBDA)
 @TypeAlias("cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome")
 @RecasterAlias("io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome")
-public class ServerlessAwsLambdaInfrastructureOutcome implements InfrastructureOutcome {
+public class ServerlessAwsLambdaInfrastructureOutcome
+    extends InfrastructureDetailsAbstract implements InfrastructureOutcome {
   @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
   String infrastructureKey;
   String connectorRef;

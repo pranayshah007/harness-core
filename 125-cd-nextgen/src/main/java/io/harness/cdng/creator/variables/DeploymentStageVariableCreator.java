@@ -7,6 +7,9 @@
 
 package io.harness.cdng.creator.variables;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
@@ -29,7 +32,6 @@ import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
@@ -112,6 +114,17 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
               .build());
     }
 
+    YamlField strategyField = config.getNode().getField(STRATEGY);
+
+    if (strategyField != null) {
+      Map<String, YamlField> strategyDependencyMap = new HashMap<>();
+      strategyDependencyMap.put(strategyField.getNode().getUuid(), strategyField);
+      responseMap.put(strategyField.getNode().getUuid(),
+          VariableCreationResponse.builder()
+              .dependencies(DependenciesUtils.toDependenciesProto(strategyDependencyMap))
+              .build());
+    }
+
     return responseMap;
   }
 
@@ -158,6 +171,16 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
               .dependencies(DependenciesUtils.toDependenciesProto(executionDependencyMap))
               .build());
     }
+    YamlField strategyField = currentField.getNode().getField(STRATEGY);
+
+    if (strategyField != null) {
+      Map<String, YamlField> strategyDependencyMap = new HashMap<>();
+      strategyDependencyMap.put(strategyField.getNode().getUuid(), strategyField);
+      responseMap.put(strategyField.getNode().getUuid(),
+          VariableCreationResponse.builder()
+              .dependencies(DependenciesUtils.toDependenciesProto(strategyDependencyMap))
+              .build());
+    }
     return responseMap;
   }
 
@@ -167,7 +190,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     try {
       final ParameterField<String> serviceRef = getServiceRef(config);
       final ParameterField<String> environmentRef = getEnvironmentRef(config);
-      final List<ParameterField<String>> infraDefinitionRefs = getInfraDefinitionRefs(config);
+      final List<String> infraDefinitionRefs = getInfraDefinitionRefs(config);
       // for collecting service variables from service/env/service overrides
       Set<String> serviceVariables = new HashSet<>();
 
@@ -202,7 +225,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     YamlField serviceField =
         currentField.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YamlTypes.SERVICE_ENTITY);
 
-    if (!serviceRef.isExpression()) {
+    if (isNotEmpty(serviceRef.getValue()) && !serviceRef.isExpression()) {
       outputProperties.addAll(handleServiceStepOutcome());
       Optional<ServiceEntity> optionalService =
           serviceEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef.getValue(), false);
@@ -219,6 +242,8 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       outputProperties.addAll(handleServiceVariables(serviceVariables, ngServiceConfig));
     } else {
       outputProperties.addAll(handleServiceStepOutcome());
+      // handle serviceVariables from env
+      outputProperties.addAll(handleServiceVariables(serviceVariables, null));
     }
     yamlPropertiesMap.put(serviceField.getNode().getUuid(),
         YamlExtraProperties.newBuilder().addAllOutputProperties(outputProperties).build());
@@ -227,15 +252,15 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
   }
 
   private void createVariablesForInfraDefinitions(VariableCreationContext ctx, ParameterField<String> environmentRef,
-      List<ParameterField<String>> infraDefinitionRefs, LinkedHashMap<String, VariableCreationResponse> responseMap) {
-    ParameterField<String> infraRef = infraDefinitionRefs.get(0);
+      List<String> infraDefinitionRefs, LinkedHashMap<String, VariableCreationResponse> responseMap) {
+    String infraRef = infraDefinitionRefs.get(0);
     final String accountIdentifier = ctx.get(NGCommonEntityConstants.ACCOUNT_KEY);
     final String orgIdentifier = ctx.get(NGCommonEntityConstants.ORG_KEY);
     final String projectIdentifier = ctx.get(NGCommonEntityConstants.PROJECT_KEY);
 
-    if (infraRef != null && !infraRef.isExpression()) {
+    if (infraRef != null) {
       Optional<InfrastructureEntity> infrastructureEntity = infrastructureEntityService.get(
-          accountIdentifier, orgIdentifier, projectIdentifier, environmentRef.getValue(), infraRef.getValue());
+          accountIdentifier, orgIdentifier, projectIdentifier, environmentRef.getValue(), infraRef);
 
       infrastructureEntity.ifPresent(entity -> handleInfrastructureOutcome(entity, ctx, responseMap));
     }
@@ -304,7 +329,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     YamlField environmentField =
         currentField.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YamlTypes.ENVIRONMENT_YAML);
 
-    if (!environmentRef.isExpression()) {
+    if (isNotEmpty(environmentRef.getValue()) && !environmentRef.isExpression()) {
       Optional<Environment> optionalEnvironment =
           environmentService.get(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef.getValue(), false);
       NGEnvironmentConfig ngEnvironmentConfig = null;
@@ -314,7 +339,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       outputProperties.addAll(handleEnvironmentOutcome(ngEnvironmentConfig));
       // all env.variables also accessed by serviceVariables
       List<NGVariable> envVariables = ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables();
-      if (EmptyPredicate.isNotEmpty(envVariables)) {
+      if (isNotEmpty(envVariables)) {
         serviceVariables.addAll(envVariables.stream().map(NGVariable::getName).collect(Collectors.toSet()));
       }
     } else {
@@ -334,7 +359,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
         : ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables();
     EnvironmentOutcome environmentOutcome =
         EnvironmentOutcome.builder()
-            .variables(EmptyPredicate.isNotEmpty(envVariables)
+            .variables(isNotEmpty(envVariables)
                     ? envVariables.stream().collect(Collectors.toMap(NGVariable::getName, NGVariable::getCurrentValue))
                     : null)
             .build();
@@ -363,12 +388,12 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     return null;
   }
 
-  private List<ParameterField<String>> getInfraDefinitionRefs(DeploymentStageNode stageNode) {
+  private List<String> getInfraDefinitionRefs(DeploymentStageNode stageNode) {
     EnvironmentYamlV2 environmentYamlV2 = stageNode.getDeploymentStageConfig().getEnvironment();
     if (environmentYamlV2 != null) {
       List<InfraStructureDefinitionYaml> infraStructureDefinitionYamls =
-          environmentYamlV2.getInfrastructureDefinitions();
-      if (EmptyPredicate.isNotEmpty(infraStructureDefinitionYamls)) {
+          environmentYamlV2.getInfrastructureDefinitions().getValue();
+      if (isNotEmpty(infraStructureDefinitionYamls)) {
         return infraStructureDefinitionYamls.stream()
             .map(InfraStructureDefinitionYaml::getIdentifier)
             .collect(Collectors.toList());
@@ -427,19 +452,21 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
           ngServiceConfig.getNgServiceV2InfoConfig().getServiceDefinition().getServiceSpec().getArtifacts();
       if (artifactListConfig != null) {
         List<SidecarArtifactWrapper> sidecarArtifactWrapperList = artifactListConfig.getSidecars();
-        for (SidecarArtifactWrapper sideCarArtifact : sidecarArtifactWrapperList) {
-          SidecarArtifact sidecar = sideCarArtifact.getSidecar();
-          String identifier = sidecar.getIdentifier();
-          ArtifactOutcome sideCarArtifactOutcome =
-              ArtifactResponseToOutcomeMapper.toArtifactOutcome(sidecar.getSpec(), null, false);
-          List<String> sideCarOutputExpressions =
-              VariableCreatorHelper.getExpressionsInObject(sideCarArtifactOutcome, identifier);
+        if (isNotEmpty(sidecarArtifactWrapperList)) {
+          for (SidecarArtifactWrapper sideCarArtifact : sidecarArtifactWrapperList) {
+            SidecarArtifact sidecar = sideCarArtifact.getSidecar();
+            String identifier = sidecar.getIdentifier();
+            ArtifactOutcome sideCarArtifactOutcome =
+                ArtifactResponseToOutcomeMapper.toArtifactOutcome(sidecar.getSpec(), null, false);
+            List<String> sideCarOutputExpressions =
+                VariableCreatorHelper.getExpressionsInObject(sideCarArtifactOutcome, identifier);
 
-          for (String outputExpression : sideCarOutputExpressions) {
-            outputProperties.add(YamlProperties.newBuilder()
-                                     .setLocalName(SIDECARS_PREFIX + "." + outputExpression)
-                                     .setVisible(true)
-                                     .build());
+            for (String outputExpression : sideCarOutputExpressions) {
+              outputProperties.add(YamlProperties.newBuilder()
+                                       .setLocalName(SIDECARS_PREFIX + "." + outputExpression)
+                                       .setVisible(true)
+                                       .build());
+            }
           }
         }
         PrimaryArtifact primaryArtifact = artifactListConfig.getPrimary();
@@ -467,19 +494,21 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       List<ManifestConfigWrapper> manifestConfigWrappers =
           ngServiceConfig.getNgServiceV2InfoConfig().getServiceDefinition().getServiceSpec().getManifests();
 
-      for (ManifestConfigWrapper manifestWrapper : manifestConfigWrappers) {
-        ManifestConfig manifestConfig = manifestWrapper.getManifest();
-        String identifier = manifestConfig.getIdentifier();
+      if (isNotEmpty(manifestConfigWrappers)) {
+        for (ManifestConfigWrapper manifestWrapper : manifestConfigWrappers) {
+          ManifestConfig manifestConfig = manifestWrapper.getManifest();
+          String identifier = manifestConfig.getIdentifier();
 
-        ManifestOutcome outcome = ManifestOutcomeMapper.toManifestOutcome(manifestConfig.getSpec(), 0);
+          ManifestOutcome outcome = ManifestOutcomeMapper.toManifestOutcome(manifestConfig.getSpec(), 0);
 
-        List<String> manifestOutputExpressions = VariableCreatorHelper.getExpressionsInObject(outcome, identifier);
+          List<String> manifestOutputExpressions = VariableCreatorHelper.getExpressionsInObject(outcome, identifier);
 
-        for (String outputExpression : manifestOutputExpressions) {
-          outputProperties.add(YamlProperties.newBuilder()
-                                   .setLocalName(OutcomeExpressionConstants.MANIFESTS + "." + outputExpression)
-                                   .setVisible(true)
-                                   .build());
+          for (String outputExpression : manifestOutputExpressions) {
+            outputProperties.add(YamlProperties.newBuilder()
+                                     .setLocalName(OutcomeExpressionConstants.MANIFESTS + "." + outputExpression)
+                                     .setVisible(true)
+                                     .build());
+          }
         }
       }
     }
@@ -492,10 +521,11 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     if (ngServiceConfig != null) {
       List<NGVariable> ngVariableList =
           ngServiceConfig.getNgServiceV2InfoConfig().getServiceDefinition().getServiceSpec().getVariables();
-      if (EmptyPredicate.isNotEmpty(ngVariableList)) {
+      if (isNotEmpty(ngVariableList)) {
         existingServiceVariables.addAll(ngVariableList.stream().map(NGVariable::getName).collect(Collectors.toSet()));
       }
-
+    }
+    if (isNotEmpty(existingServiceVariables)) {
       List<String> outputExpressions = existingServiceVariables.stream()
                                            .map(entry -> YAMLFieldNameConstants.SERVICE_VARIABLES + '.' + entry)
                                            .collect(Collectors.toList());

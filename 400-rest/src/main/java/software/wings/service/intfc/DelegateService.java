@@ -30,6 +30,7 @@ import io.harness.delegate.beans.DelegateProfileParams;
 import io.harness.delegate.beans.DelegateRegisterResponse;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateScripts;
+import io.harness.delegate.beans.DelegateSelector;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateSizeDetails;
 import io.harness.delegate.beans.DelegateTags;
@@ -64,6 +65,8 @@ public interface DelegateService extends OwnedByAccount {
   Set<String> getAllDelegateSelectors(String accountId);
 
   Set<String> getAllDelegateSelectorsUpTheHierarchy(String accountId, String orgId, String projectId);
+
+  List<DelegateSelector> getAllDelegateSelectorsUpTheHierarchyV2(String accountId, String orgId, String projectId);
 
   DelegateStatus getDelegateStatus(String accountId);
 

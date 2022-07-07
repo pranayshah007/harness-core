@@ -162,4 +162,69 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
     assertThat(serviceFieldForV2).isNotNull();
     assertThat(serviceFieldForV2.getNode().getField(YamlTypes.SERVICE_DEFINITION)).isNotNull();
   }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testGetResolvedServiceFieldForV2WithServiceInputAsRuntime() throws IOException {
+    DeploymentStageNode stageNode =
+        DeploymentStageNode.builder()
+            .type(StepType.Deployment)
+            .deploymentStageConfig(
+                DeploymentStageConfig.builder()
+                    .service(ServiceYamlV2.builder()
+                                 .serviceRef(ParameterField.createValueField("service1"))
+                                 .serviceInputs(ParameterField.createExpressionField(true, "<+input>", null, true))
+                                 .build())
+                    .build())
+            .build();
+    stageNode.setIdentifier("stage1");
+    Map<String, PlanCreationContextValue> globalContext = new HashMap<>();
+    globalContext.put("metadata",
+        PlanCreationContextValue.newBuilder()
+            .setAccountIdentifier(ACCOUNT_ID)
+            .setOrgIdentifier(ORG_IDENTIFIER)
+            .setProjectIdentifier(PROJ_IDENTIFIER)
+            .build());
+    PlanCreationContext context = PlanCreationContext.builder().globalContext(globalContext).build();
+
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("cdng/serviceV2WithServiceInputAsRuntime.yaml");
+    String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
+    YamlField yamlField = YamlUtils.readTree(YamlUtils.injectUuid(yamlContent));
+    // Pipeline Node
+    YamlNode pipelineNode = yamlField.getNode().getField("pipeline").getNode();
+    // Stages Node
+    YamlField stagesNode = pipelineNode.getField("stages");
+    // Stage1 Node
+    YamlNode stage1Node = stagesNode.getNode().asArray().get(0).getField("stage").getNode();
+    // Stage1 spec Node
+    YamlField specField = stage1Node.getField("spec");
+
+    String serviceYaml = "service:\n"
+        + "    name: service1\n"
+        + "    identifier: service1\n"
+        + "    tags: {}\n"
+        + "    gitOpsEnabled: false\n"
+        + "    serviceDefinition:\n"
+        + "        spec:\n"
+        + "            variables:\n"
+        + "                - name: var1\n"
+        + "                  type: String\n"
+        + "                  value: value1\n"
+        + "                - name: var2\n"
+        + "                  type: String\n"
+        + "                  value: value2\n"
+        + "        type: Kubernetes\n"
+        + "    description: \"\"\n";
+
+    ServiceEntity serviceEntity =
+        ServiceEntity.builder().name(SERVICE_IDENTIFIER).name(SERVICE_IDENTIFIER).yaml(serviceYaml).build();
+    when(serviceEntityService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, SERVICE_IDENTIFIER, false))
+        .thenReturn(Optional.of(serviceEntity));
+    YamlField serviceFieldForV2 =
+        ServicePlanCreatorHelper.getResolvedServiceFieldForV2(stageNode, serviceEntityService, specField, context);
+    assertThat(serviceFieldForV2).isNotNull();
+    assertThat(serviceFieldForV2.getNode().getField(YamlTypes.SERVICE_DEFINITION)).isNotNull();
+  }
 }

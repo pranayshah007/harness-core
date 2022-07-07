@@ -66,7 +66,8 @@ public class CVNGStepResource {
       @NotNull @QueryParam("accountId") String accountId, InputSetTemplateRequest inputSetTemplateRequest) {
     return ResponseDTO.newResponse(
         InputSetTemplateResponse.builder()
-            .inputSetTemplateYaml(cvngStepService.getUpdatedInputSetTemplate(inputSetTemplateRequest.getPipelineYaml()))
+            .inputSetTemplateYaml(cvngStepService.getUpdatedInputSetTemplate(
+                inputSetTemplateRequest.getPipelineYaml(), inputSetTemplateRequest.getTemplateYaml()))
             .build());
   }
 

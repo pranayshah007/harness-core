@@ -81,7 +81,9 @@ public class S3FetchFilesTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public DelegateResponseData run(TaskParameters parameters) {
     final AwsS3FetchFilesTaskParams params = (AwsS3FetchFilesTaskParams) parameters;
-    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    CommandUnitsProgress commandUnitsProgress = params.getCommandUnitsProgress() != null
+        ? params.getCommandUnitsProgress()
+        : CommandUnitsProgress.builder().build();
     LogCallback executionLogCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(),
         K8sCommandUnitConstants.FetchFiles, params.isShouldOpenLogStream(), commandUnitsProgress);
 

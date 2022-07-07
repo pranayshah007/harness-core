@@ -9,8 +9,6 @@ package io.harness.pms.ngpipeline.inputset.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.removeRuntimeInputFromYaml;
-import static io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType.INPUT_SET;
-import static io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType.OVERLAY_INPUT_SET;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static java.lang.Long.parseLong;
@@ -29,12 +27,12 @@ import io.harness.apiexamples.PipelineAPIConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
-import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.gitsync.interceptor.GitImportInfoDTO;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -45,6 +43,7 @@ import io.harness.pms.inputset.InputSetSchemaConstants;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.inputset.MergeInputSetTemplateRequestDTO;
+import io.harness.pms.inputset.OverlayInputSetErrorWrapperDTOPMS;
 import io.harness.pms.merger.helpers.InputSetYamlHelper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
@@ -57,6 +56,7 @@ import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSummaryResponse
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateRequestDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.exceptions.InvalidInputSetException;
+import io.harness.pms.ngpipeline.inputset.exceptions.InvalidOverlayInputSetException;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
@@ -64,6 +64,7 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
 import io.harness.pms.pipeline.PipelineResourceConstants;
+import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.utils.PageUtils;
 
@@ -83,7 +84,6 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -137,6 +137,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Slf4j
 public class InputSetResourcePMS {
   private final PMSInputSetService pmsInputSetService;
+  private final PMSPipelineService pipelineService;
+  private final GitSyncSdkService gitSyncSdkService;
   private final ValidateAndMergeHelper validateAndMergeHelper;
 
   @GET
@@ -165,8 +167,14 @@ public class InputSetResourcePMS {
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     log.info(String.format("Retrieving input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
-    Optional<InputSetEntity> optionalInputSetEntity = pmsInputSetService.get(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false);
+    Optional<InputSetEntity> optionalInputSetEntity;
+    try {
+      optionalInputSetEntity = pmsInputSetService.get(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false);
+    } catch (InvalidInputSetException e) {
+      return ResponseDTO.newResponse(PMSInputSetElementMapper.toInputSetResponseDTOPMSWithErrors(
+          e.getInputSetEntity(), (InputSetErrorWrapperDTOPMS) e.getMetadata()));
+    }
     if (!optionalInputSetEntity.isPresent()) {
       throw new InvalidRequestException(
           String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
@@ -174,19 +182,7 @@ public class InputSetResourcePMS {
     InputSetEntity inputSetEntity = optionalInputSetEntity.get();
     InputSetResponseDTOPMS inputSet = PMSInputSetElementMapper.toInputSetResponseDTOPMS(inputSetEntity);
 
-    if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
-      // todo: move the business logic to service layer, and in service layer make use of helpers as required.
-      InputSetErrorWrapperDTOPMS errorWrapperDTOPMS = validateAndMergeHelper.validateInputSet(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetEntity.getYaml(), null, null);
-      if (errorWrapperDTOPMS != null) {
-        return ResponseDTO.newResponse(
-            PMSInputSetElementMapper.toInputSetResponseDTOPMSWithErrors(inputSetEntity, errorWrapperDTOPMS));
-      }
-    }
-
-    String version = inputSetEntity.getVersion().toString();
-
-    return ResponseDTO.newResponse(version, inputSet);
+    return ResponseDTO.newResponse(inputSetEntity.getVersion().toString(), inputSet);
   }
 
   @GET
@@ -216,8 +212,14 @@ public class InputSetResourcePMS {
     log.info(String.format(
         "Retrieving overlay input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
-    Optional<InputSetEntity> optionalInputSetEntity = pmsInputSetService.get(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false);
+    Optional<InputSetEntity> optionalInputSetEntity;
+    try {
+      optionalInputSetEntity = pmsInputSetService.get(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, false);
+    } catch (InvalidOverlayInputSetException e) {
+      return ResponseDTO.newResponse(PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(
+          e.getInputSetEntity(), true, ((OverlayInputSetErrorWrapperDTOPMS) e.getMetadata()).getInvalidReferences()));
+    }
     if (!optionalInputSetEntity.isPresent()) {
       throw new InvalidRequestException(
           String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
@@ -226,19 +228,7 @@ public class InputSetResourcePMS {
     OverlayInputSetResponseDTOPMS overlayInputSet =
         PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(inputSetEntity);
 
-    if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
-      // todo: move the business logic to service layer, and in service layer make use of helpers as required.
-      Map<String, String> overlayInputSetErrorResponse = validateAndMergeHelper.validateOverlayInputSet(
-          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetEntity.getYaml());
-      if (!overlayInputSetErrorResponse.isEmpty()) {
-        return ResponseDTO.newResponse(PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(
-            inputSetEntity, true, overlayInputSetErrorResponse));
-      }
-    }
-
-    String version = inputSetEntity.getVersion().toString();
-
-    return ResponseDTO.newResponse(version, overlayInputSet);
+    return ResponseDTO.newResponse(inputSetEntity.getVersion().toString(), overlayInputSet);
   }
 
   @POST
@@ -485,27 +475,14 @@ public class InputSetResourcePMS {
         pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
     Criteria criteria = PMSInputSetFilterHelper.createCriteriaForGetList(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetListType, searchTerm, false);
-
     Pageable pageRequest =
         PageUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, InputSetEntityKeys.createdAt));
+    Page<InputSetEntity> inputSetEntities =
+        pmsInputSetService.list(criteria, pageRequest, accountId, orgIdentifier, projectIdentifier);
 
     Page<InputSetSummaryResponseDTOPMS> inputSetList =
-        pmsInputSetService.list(criteria, pageRequest, accountId, orgIdentifier, projectIdentifier)
-            .map(inputSetEntity -> {
-              InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS = null;
-              if (inputSetEntity.getIsInvalid() && inputSetEntity.getInputSetEntityType() == INPUT_SET) {
-                inputSetErrorWrapperDTOPMS = validateAndMergeHelper.validateInputSet(accountId, orgIdentifier,
-                    projectIdentifier, pipelineIdentifier, inputSetEntity.getYaml(), gitEntityBasicInfo.getBranch(),
-                    gitEntityBasicInfo.getYamlGitConfigId());
-              }
-              Map<String, String> overlaySetErrorDetails = null;
-              if (inputSetEntity.getIsInvalid() && inputSetEntity.getInputSetEntityType() == OVERLAY_INPUT_SET) {
-                overlaySetErrorDetails = validateAndMergeHelper.validateOverlayInputSet(
-                    accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetEntity.getYaml());
-              }
-              return PMSInputSetElementMapper.toInputSetSummaryResponseDTOPMS(
-                  inputSetEntity, inputSetErrorWrapperDTOPMS, overlaySetErrorDetails);
-            });
+        PMSInputSetElementMapper.toInputSetSummaryResponseDTOPMSList(pmsInputSetService, pipelineService,
+            gitSyncSdkService, accountId, orgIdentifier, projectIdentifier, inputSetEntities);
     return ResponseDTO.newResponse(getNGPageResponse(inputSetList));
   }
 

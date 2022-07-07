@@ -15,7 +15,6 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.engine.executions.node.NodeExecutionServiceImpl;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
@@ -32,7 +31,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class PipelineExecutionUpdateEventHandlerTest extends CategoryTest {
-  @Mock private NodeExecutionServiceImpl nodeExecutionService;
   @Mock private GitBuildStatusUtility gitBuildStatusUtility;
   @InjectMocks private PipelineExecutionUpdateEventHandler pipelineExecutionUpdateEventHandler;
 

@@ -24,6 +24,7 @@ import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,6 +36,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 
 @OwnedBy(PIPELINE)
@@ -47,6 +49,10 @@ public class MatrixConfig implements MatrixConfigInterface {
   private static String EXCLUDE_KEYWORD = "exclude";
   private static String BATCH_SIZE = "batchSize";
 
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  String uuid;
   @ApiModelProperty(hidden = true) @Builder.Default Map<String, AxisConfig> axes = new LinkedHashMap<>();
   @YamlSchemaTypes(value = {runtime, list}) ParameterField<List<ExcludeConfig>> exclude;
 
@@ -81,5 +87,13 @@ public class MatrixConfig implements MatrixConfigInterface {
     } catch (Exception ex) {
       throw new InvalidYamlException("Unable to parse Matrix yaml. Please ensure that it is in correct format", ex);
     }
+  }
+
+  @JsonValue
+  public Map<String, Object> getJsonValue() {
+    Map<String, Object> jsonMap = new HashMap<>(axes);
+    jsonMap.put("exclude", exclude);
+    jsonMap.put("maxConcurrency", maxConcurrency);
+    return jsonMap;
   }
 }

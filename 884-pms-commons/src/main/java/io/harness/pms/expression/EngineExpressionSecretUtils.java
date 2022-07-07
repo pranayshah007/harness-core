@@ -61,8 +61,8 @@ public class EngineExpressionSecretUtils {
 
     @Override
     public String resolve(String expression) {
-      JexlExpression jexlExpression = engine.createExpression(expression);
       try {
+        JexlExpression jexlExpression = engine.createExpression(expression);
         Object value = jexlExpression.evaluate(ctx);
         return String.valueOf(value);
       } catch (Exception ex) {

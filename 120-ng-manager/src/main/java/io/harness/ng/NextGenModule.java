@@ -33,6 +33,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_E
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_SCOPE_RECONCILIATION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.VARIABLE_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
 import static java.lang.Boolean.TRUE;
 
@@ -112,6 +113,7 @@ import io.harness.ng.accesscontrol.migrations.AccessControlMigrationModule;
 import io.harness.ng.accesscontrol.user.AggregateUserService;
 import io.harness.ng.accesscontrol.user.AggregateUserServiceImpl;
 import io.harness.ng.authenticationsettings.AuthenticationSettingsModule;
+import io.harness.ng.chaos.ChaosModule;
 import io.harness.ng.core.AccountOrgProjectHelper;
 import io.harness.ng.core.AccountOrgProjectHelperImpl;
 import io.harness.ng.core.CoreModule;
@@ -180,8 +182,6 @@ import io.harness.ng.core.user.service.NgUserService;
 import io.harness.ng.core.user.service.impl.LastAdminCheckServiceImpl;
 import io.harness.ng.core.user.service.impl.NgUserServiceImpl;
 import io.harness.ng.core.user.service.impl.UserEntityCrudStreamListener;
-import io.harness.ng.core.variable.services.VariableService;
-import io.harness.ng.core.variable.services.impl.VariableServiceImpl;
 import io.harness.ng.eventsframework.EventsFrameworkModule;
 import io.harness.ng.feedback.services.FeedbackService;
 import io.harness.ng.feedback.services.impls.FeedbackServiceImpl;
@@ -223,6 +223,9 @@ import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.persistence.UserProvider;
 import io.harness.pipeline.remote.PipelineRemoteClientModule;
+import io.harness.pms.expression.EngineExpressionService;
+import io.harness.pms.expression.NoopEngineExpressionServiceImpl;
+import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.polling.service.impl.PollingPerpetualTaskServiceImpl;
 import io.harness.polling.service.impl.PollingServiceImpl;
 import io.harness.polling.service.intfc.PollingPerpetualTaskService;
@@ -264,6 +267,8 @@ import io.harness.tracing.AbstractPersistenceTracerModule;
 import io.harness.user.UserClientModule;
 import io.harness.version.VersionModule;
 import io.harness.waiter.AbstractWaiterModule;
+import io.harness.waiter.AsyncWaitEngineImpl;
+import io.harness.waiter.WaitNotifyEngine;
 import io.harness.waiter.WaiterConfiguration;
 import io.harness.yaml.YamlSdkModule;
 import io.harness.yaml.core.StepSpecType;
@@ -433,6 +438,12 @@ public class NextGenModule extends AbstractModule {
     return this.appConfig.getCeGcpSetupConfig();
   }
 
+  @Provides
+  @Singleton
+  public AsyncWaitEngine asyncWaitEngine(WaitNotifyEngine waitNotifyEngine) {
+    return new AsyncWaitEngineImpl(waitNotifyEngine, NG_ORCHESTRATION);
+  }
+
   @Override
   protected void configure() {
     install(VersionModule.getInstance());
@@ -534,7 +545,8 @@ public class NextGenModule extends AbstractModule {
     install(new io.harness.service.DelegateServiceModule());
     install(NGModule.getInstance());
     install(ExceptionModule.getInstance());
-    install(new EventsFrameworkModule(this.appConfig.getEventsFrameworkConfiguration()));
+    install(new EventsFrameworkModule(
+        this.appConfig.getEventsFrameworkConfiguration(), this.appConfig.getDebeziumConsumerConfigs()));
     install(new SecretManagementModule());
     install(new AccountClientModule(appConfig.getManagerClientConfig(),
         appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.toString()));
@@ -625,6 +637,7 @@ public class NextGenModule extends AbstractModule {
       }
     });
     install(new NGLdapModule(appConfig));
+    install(new NgVariableModule(appConfig));
     install(EntitySetupUsageModule.getInstance());
     install(PersistentLockModule.getInstance());
     install(new TransactionOutboxModule(
@@ -659,7 +672,7 @@ public class NextGenModule extends AbstractModule {
         return appConfig.getAccountConfig();
       }
     });
-
+    install(ChaosModule.getInstance());
     install(LicenseModule.getInstance());
     install(SubscriptionModule.createInstance(appConfig.getSubscriptionConfig()));
     bind(AggregateUserService.class).to(AggregateUserServiceImpl.class);
@@ -708,6 +721,9 @@ public class NextGenModule extends AbstractModule {
     bind(PollingService.class).to(PollingServiceImpl.class);
     bind(PollingPerpetualTaskService.class).to(PollingPerpetualTaskServiceImpl.class);
     bind(JenkinsBuildStepHelperService.class).to(JenkinsBuildStepHelperServiceImpl.class);
+    if (!appConfig.getShouldConfigureWithPMS().equals(TRUE)) {
+      bind(EngineExpressionService.class).to(NoopEngineExpressionServiceImpl.class);
+    }
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("ngTelemetryPublisherExecutor"))
         .toInstance(new ScheduledThreadPoolExecutor(1,
@@ -727,7 +743,6 @@ public class NextGenModule extends AbstractModule {
     registerEventsFrameworkMessageListeners();
     registerEncryptors();
 
-    bind(VariableService.class).to(VariableServiceImpl.class);
     bindExceptionHandlers();
   }
 

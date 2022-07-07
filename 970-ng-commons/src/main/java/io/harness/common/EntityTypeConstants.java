@@ -39,9 +39,11 @@ public interface EntityTypeConstants {
   String TRIGGERS = "Triggers";
   String MONITORED_SERVICE = "MonitoredService";
   String TEMPLATE = "Template";
+  String TEMPLATE_STAGE = "TemplateStage";
   String GIT_REPOSITORIES = "GitRepositories";
   String FEATURE_FLAGS = "FeatureFlags";
   String HTTP = "Http";
+  String EMAIL = "Email";
   String JIRA_CREATE = "JiraCreate";
   String JIRA_UPDATE = "JiraUpdate";
   String SHELL_SCRIPT = "ShellScript";

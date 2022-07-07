@@ -9,6 +9,7 @@ package io.harness.app;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.app.CIManagerConfiguration.HARNESS_RESOURCE_CLASSES;
+import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.pms.contracts.plan.ExpansionRequestType.KEY;
@@ -74,7 +75,7 @@ import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsume
 import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
-import io.harness.pms.serializer.jackson.PmsBeansJacksonModule;
+import io.harness.pms.serializer.json.PmsBeansJacksonModule;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
@@ -85,13 +86,13 @@ import io.harness.serializer.CiBeansRegistrars;
 import io.harness.serializer.ConnectorNextGenRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.OrchestrationRegistrars;
 import io.harness.serializer.PersistenceRegistrars;
 import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
+import io.harness.telemetry.CiTelemetryRecordsJob;
 import io.harness.token.remote.TokenClient;
 import io.harness.waiter.NotifierScheduledExecutorService;
 import io.harness.waiter.NotifyEvent;
@@ -220,16 +221,13 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
       Set<Class<? extends TypeConverter>> morphiaConverters() {
         return ImmutableSet.<Class<? extends TypeConverter>>builder()
             .addAll(PersistenceRegistrars.morphiaConverters)
-            .addAll(OrchestrationRegistrars.morphiaConverters)
             .build();
       }
 
       @Provides
       @Singleton
       List<Class<? extends Converter<?, ?>>> springConverters() {
-        return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
-            .addAll(OrchestrationRegistrars.springConverters)
-            .build();
+        return ImmutableList.<Class<? extends Converter<?, ?>>>builder().build();
       }
       @Provides
       @Singleton
@@ -280,6 +278,8 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     registerQueueListener(injector);
     registerPmsSdkEvents(injector);
     initializeEnforcementFramework(injector);
+    log.info("CIManagerApplication DEPLOY_VERSION = " + System.getenv().get(DEPLOY_VERSION));
+    initializeCiManagerMonitoring(injector);
     registerOasResource(configuration, environment, injector);
     log.info("Starting app done");
     MaintenanceController.forceMaintenance(false);
@@ -500,5 +500,10 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
             .build();
     injector.getInstance(EnforcementSdkRegisterService.class)
         .initialize(restrictionUsageRegisterConfiguration, customConfig);
+  }
+
+  private void initializeCiManagerMonitoring(Injector injector) {
+    log.info("Initializing CI Manager Monitoring");
+    injector.getInstance(CiTelemetryRecordsJob.class).scheduleTasks();
   }
 }

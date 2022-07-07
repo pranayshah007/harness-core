@@ -35,7 +35,6 @@ import io.harness.cvng.migration.list.DeleteSLISLOMigration;
 import io.harness.cvng.migration.list.EnableExistingCVConfigs;
 import io.harness.cvng.migration.list.FixOrchestratorStatusMigration;
 import io.harness.cvng.migration.list.FixRuntimeParamInCanaryBlueGreenVerificationJob;
-import io.harness.cvng.migration.list.FixRuntimeParamsInDefaultHealthJob;
 import io.harness.cvng.migration.list.NewRelicCustomPackForExistingProjects;
 import io.harness.cvng.migration.list.NoOppMigration;
 import io.harness.cvng.migration.list.PrometheusConnectorAuthenticationPerpetualTaskMigration;
@@ -72,7 +71,7 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(8, NoOppMigration.class))
         .add(Pair.of(9, AddDeploymentMonitoringSourcePerpetualTask.class))
         .add(Pair.of(10, RecoverMonitoringSourceWorkerId.class))
-        .add(Pair.of(11, FixRuntimeParamsInDefaultHealthJob.class))
+        .add(Pair.of(11, NoOppMigration.class))
         .add(Pair.of(12, NoOppMigration.class))
         .add(Pair.of(13, FixRuntimeParamInCanaryBlueGreenVerificationJob.class))
         .add(Pair.of(14, UpdateApdexMetricCriteria.class))

@@ -5,25 +5,37 @@
 
 # To be used when building in CIE
 
-FROM us.gcr.io/platform-205701/ubi/ubi-java:latest
+FROM us.gcr.io/platform-205701/ubi/ubi-java:latest as base
 USER root
-# Add the capsule JAR and config.yml
+## Add the capsule JAR and config.yml
 COPY --chown=65534:65534 event-server-capsule.jar /opt/harness/
 COPY --chown=65534:65534 event-service-config.yml /opt/harness/
 COPY --chown=65534:65534 key.pem /opt/harness/
 COPY --chown=65534:65534 cert.pem /opt/harness/
 COPY --chown=65534:65534 protocol.info /opt/harness/
 
-COPY scripts /opt/harness
+COPY --chown=65534:65534 scripts /opt/harness
 
 RUN GRPC_HEALTH_PROBE_VERSION=v0.3.0 \
     && curl -Lso /bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 \
     && chmod +x /bin/grpc_health_probe
 
-RUN curl -L https://github.com/inspectIT/inspectit-ocelot/releases/download/1.16.0/inspectit-ocelot-agent-1.16.0.jar > /opt/harness/inspectit-ocelot-agent-1.16.0.jar \
-    && chmod 755 /opt/harness/inspectit-ocelot-agent-1.16.0.jar \
-    && chown 65534:65534 /opt/harness/inspectit-ocelot-agent-1.16.0.jar
-
 CMD [ "./run.sh" ]
 
 USER 65534
+
+WORKDIR /opt/harness
+
+
+############################ON PREM#########################
+FROM base as onprem
+
+COPY --chown=65534:65534 inject-onprem-apm-bins-into-dockerimage.sh /opt/harness
+RUN /opt/harness/inject-onprem-apm-bins-into-dockerimage.sh && rm /opt/harness/inject-onprem-apm-bins-into-dockerimage.sh
+
+
+############################SAAS#########################
+FROM base as saas
+
+COPY --chown=65534:65534 inject-saas-apm-bins-into-dockerimage.sh /opt/harness
+RUN /opt/harness/inject-saas-apm-bins-into-dockerimage.sh && rm -rf /opt/harness/inject-saas-apm-bins-into-dockerimage.sh

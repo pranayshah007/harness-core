@@ -193,6 +193,7 @@ delegateGroups {"name": "byAcctNgOwner", "background": true} {"accountId": 1, "n
 delegateGroups {"name": "unique_identification", "unique": true} {"accountId": 1, "owner": 1, "identifier": 1}
 delegateGroups {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 delegateInsightsSummary {"name": "byAcctGrpTimeType", "background": true} {"accountId": 1, "delegateGroupId": 1, "periodStartTime": 1, "insightsType": 1}
+delegateInsightsSummary {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 delegateMtlsEndpoint {"name": "accountId_1", "unique": true} {"accountId": 1}
 delegateMtlsEndpoint {"name": "fqdn_1", "unique": true} {"fqdn": 1}
 delegatePerpetualTaskUsageInsights {"name": "timestamp_1", "background": true} {"timestamp": 1}
@@ -361,6 +362,7 @@ gcsFileMetadata {"name": "gcsFileId_1", "background": true} {"gcsFileId": 1}
 genericEvent {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 genericEvent {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 gitBranches {"name": "unique_accountIdentifier_repoURL_branchName_idx", "unique": true} {"accountIdentifier": 1, "repoURL": 1, "branchName": 1}
+gitCommitNG {"name": "accountIdentifier_repoURL_branchName_gitsyncdirection_createdAtSort", "background": true} {"accountIdentifier": 1, "repoURL": 1, "branchName": 1, "gitSyncDirection": 1, "createdAt": -1}
 gitCommitNG {"name": "commitId_1", "background": true} {"commitId": 1}
 gitCommitNG {"name": "status_1", "background": true} {"status": 1}
 gitCommitNG {"name": "unique_commitId_repoURL_gitSyncDirection_idx", "unique": true} {"commitId": 1, "repoURL": 1, "gitSyncDirection": 1}

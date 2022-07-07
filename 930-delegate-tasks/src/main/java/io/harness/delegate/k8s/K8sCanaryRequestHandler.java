@@ -35,6 +35,7 @@ import io.harness.delegate.task.k8s.K8sCanaryDeployResponse;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.client.K8sClient;
 import io.harness.delegate.task.k8s.data.K8sCanaryDataException;
 import io.harness.delegate.task.k8s.data.K8sCanaryDataException.K8sCanaryDataExceptionBuilder;
 import io.harness.exception.InvalidArgumentsException;
@@ -42,6 +43,7 @@ import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
@@ -53,6 +55,7 @@ import software.wings.beans.LogWeight;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -109,8 +112,20 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     LogCallback steadyStateLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress);
     KubernetesResource canaryWorkload = k8sCanaryHandlerConfig.getCanaryWorkload();
-    k8sTaskHelperBase.doStatusCheck(k8sCanaryHandlerConfig.getClient(), canaryWorkload.getResourceId(),
-        k8sDelegateTaskParams, steadyStateLogCallback, true);
+
+    K8sSteadyStateDTO k8sSteadyStateDTO = K8sSteadyStateDTO.builder()
+                                              .request(k8sDeployRequest)
+                                              .resourceIds(Collections.singletonList(canaryWorkload.getResourceId()))
+                                              .executionLogCallback(steadyStateLogCallback)
+                                              .k8sDelegateTaskParams(k8sDelegateTaskParams)
+                                              .namespace(canaryWorkload.getResourceId().getNamespace())
+                                              .denoteOverallSuccess(true)
+                                              .isErrorFrameworkEnabled(true)
+                                              .build();
+
+    K8sClient k8sClient =
+        k8sTaskHelperBase.getKubernetesClient(k8sCanaryDeployRequest.isUseK8sApiForSteadyStateCheck());
+    k8sClient.performSteadyStateCheck(k8sSteadyStateDTO);
 
     LogCallback wrapUpLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WrapUp, true, commandUnitsProgress);

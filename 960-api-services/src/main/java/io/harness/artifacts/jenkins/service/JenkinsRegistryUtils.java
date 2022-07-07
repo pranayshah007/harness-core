@@ -34,8 +34,9 @@ import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
-import io.harness.exception.InvalidCredentialsException;
+import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
 import io.harness.serializer.JsonUtils;
@@ -101,6 +102,11 @@ public class JenkinsRegistryUtils {
   private final String ORGANIZATION_FOLDER_CLASS_NAME = "jenkins.branch.OrganizationFolder";
   private final String SERVER_ERROR = "Server Error";
   private static final int MAX_RETRY = 5;
+  public static final String ERROR_MESSAGE = "Could not reach Jenkins Server at :%s";
+  public static final String ERROR_HINT = "Check if the Server is reachable from delegate";
+  public static final String ERROR_MESSAGE_ARTIFACT_PATH = "Error in artifact paths from jenkins server";
+  public static final String ERROR_HINT_ARTIFACT_PATH =
+      "Check if the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Builds";
 
   @Inject private ExecutorService executorService;
   @Inject private TimeLimiter timeLimiter;
@@ -280,8 +286,9 @@ public class JenkinsRegistryUtils {
         }
       });
     } catch (Exception e) {
-      throw new ArtifactServerException(
-          "Failure in fetching job with details: " + ExceptionUtils.getMessage(e), e, USER);
+      throw NestedExceptionUtils.hintWithExplanationException("Failure in fetching job with details",
+          "Check if the Job exist, the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Job details",
+          new InvalidArtifactServerException("Failure in fetching job with details:", USER));
     }
   }
 
@@ -297,7 +304,8 @@ public class JenkinsRegistryUtils {
         }
       });
     } catch (Exception e) {
-      throw new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER);
+      throw NestedExceptionUtils.hintWithExplanationException("Failure in fetching Jobs", ERROR_HINT_ARTIFACT_PATH,
+          new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER));
     }
   }
 
@@ -364,8 +372,9 @@ public class JenkinsRegistryUtils {
     } catch (WingsException e) {
       throw e;
     } catch (Exception ex) {
-      throw new ArtifactServerException(
-          "Error in fetching builds from jenkins server. Reason:" + ExceptionUtils.getMessage(ex), ex, USER);
+      throw NestedExceptionUtils.hintWithExplanationException("Error in fetching builds from jenkins server",
+          "Check if the Builds exist, permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Builds",
+          new InvalidArtifactServerException(ExceptionUtils.getMessage(ex), USER));
     }
   }
 
@@ -420,7 +429,9 @@ public class JenkinsRegistryUtils {
         }
       });
     } catch (Exception e) {
-      throw new ArtifactServerException("Failure in fetching job: " + ExceptionUtils.getMessage(e), e, USER);
+      throw NestedExceptionUtils.hintWithExplanationException("Failure in fetching job",
+          "Check if the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Builds",
+          new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER));
     }
   }
 
@@ -466,9 +477,13 @@ public class JenkinsRegistryUtils {
   private WingsException prepareWingsException(IOException e) {
     if (e instanceof HttpResponseException) {
       if (((HttpResponseException) e).getStatusCode() == 401) {
-        throw new ArtifactServerException("Invalid Jenkins credentials", USER);
+        throw NestedExceptionUtils.hintWithExplanationException("Invalid Jenkins credentials",
+            "Check if the Username/Password or Token is correct",
+            new ArtifactServerException("Invalid Jenkins credentials :", USER));
       } else if (((HttpResponseException) e).getStatusCode() == 403) {
-        throw new ArtifactServerException("User not authorized to access jenkins", USER);
+        throw NestedExceptionUtils.hintWithExplanationException("User not authorized to access jenkins",
+            "Check if the User has the sufficient permission to grant access",
+            new ArtifactServerException("User not authorized to access jenkins : ", USER));
       }
     }
     throw new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER);
@@ -501,7 +516,9 @@ public class JenkinsRegistryUtils {
       return new JobPathDetails(parentJobUrl, parentJobName, childJobName);
 
     } catch (UnsupportedEncodingException e) {
-      throw new ArtifactServerException("Failure in decoding job name: " + ExceptionUtils.getMessage(e), e, USER);
+      throw NestedExceptionUtils.hintWithExplanationException("Failure in decoding job name",
+          "Check if the Job name is correct",
+          new ArtifactServerException("Failure in decoding job name: " + ExceptionUtils.getMessage(e), e, USER));
     }
   }
 
@@ -540,15 +557,16 @@ public class JenkinsRegistryUtils {
       return queueReference;
     } catch (HttpResponseException e) {
       if (e.getStatusCode() == 400 && isEmpty(parameters)) {
-        throw new InvalidRequestException(
-            format(
-                "Failed to trigger job %s with url %s.%nThis might be because the Jenkins job requires parameters but none were provided in the Jenkins step.",
-                jobName, job.getUrl()),
-            USER);
+        String message = String.format("Failed to trigger job %s with url %s", jobName, job.getUrl());
+        throw NestedExceptionUtils.hintWithExplanationException(message,
+            "This might be because the Jenkins job requires parameters but none were provided in the Jenkins step.",
+            new InvalidRequestException(message, USER));
       }
       throw e;
     } catch (IOException e) {
-      throw new IOException(format("Failed to trigger job %s with url %s", jobName, job.getUrl()), e);
+      throw NestedExceptionUtils.hintWithExplanationException("Failed to trigger job %s with url: " + job.getUrl(),
+          "Check if the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Builds",
+          new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER));
     }
   }
 
@@ -569,9 +587,13 @@ public class JenkinsRegistryUtils {
         log.error("Error occurred while waiting for Job to start execution.", e);
         if (e instanceof HttpResponseException) {
           if (((HttpResponseException) e).getStatusCode() == 401) {
-            throw new InvalidCredentialsException("Invalid Jenkins credentials", WingsException.USER);
+            throw NestedExceptionUtils.hintWithExplanationException("Invalid Jenkins credentials",
+                "Check if the Username/Password or Token is correct",
+                new InvalidRequestException("Invalid Jenkins credentials", USER));
           } else if (((HttpResponseException) e).getStatusCode() == 403) {
-            throw new UnauthorizedException("User not authorized to access jenkins", WingsException.USER);
+            throw NestedExceptionUtils.hintWithExplanationException("User not authorized to access jenkins",
+                "Check if the User has sufficient permission to grant the access",
+                new UnauthorizedException("User not authorized to access jenkins", USER));
           } else if (((HttpResponseException) e).getStatusCode() == 500) {
             log.info("Failed to retrieve job details at url {}, Retrying (retry count {})  ",
                 queueReference.getQueueItemUrlPart(), retry);
@@ -579,8 +601,11 @@ public class JenkinsRegistryUtils {
               retry++;
               continue;
             } else {
-              throw new GeneralException(String.format(
-                  "Error retrieving job details at url %s: %s", queueReference.getQueueItemUrlPart(), e.getMessage()));
+              throw NestedExceptionUtils.hintWithExplanationException(
+                  String.format("Error retrieving job details at url %s: %s", queueReference.getQueueItemUrlPart(),
+                      e.getMessage()),
+                  "Check if the Job is correct, the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Job details",
+                  new UnauthorizedException("Error retrieving job details at url", USER));
             }
           }
           throw new GeneralException(e.getMessage());
@@ -666,9 +691,10 @@ public class JenkinsRegistryUtils {
               sleep(ofSeconds(1L));
               continue;
             } else {
-              throw new InvalidRequestException("Failed to collect environment variables from Jenkins: " + path
-                      + ".\nThis might be because 'Capture environment variables' is enabled in Jenkins step but EnvInject plugin is not installed in the Jenkins instance.",
-                  USER);
+              throw NestedExceptionUtils.hintWithExplanationException(
+                  "Failed to collect environment variables from Jenkins: " + path,
+                  "This might be because 'Capture environment variables' is enabled in Jenkins step but EnvInject plugin is not installed in the Jenkins instance.",
+                  new UnauthorizedException("Failed to collect environment variables from Jenkins", USER));
             }
           }
 
@@ -691,8 +717,9 @@ public class JenkinsRegistryUtils {
         }
       });
     } catch (Exception e) {
-      throw new ArtifactServerException(
-          "Failure in fetching environment variables for job: " + ExceptionUtils.getMessage(e), e, USER);
+      throw NestedExceptionUtils.hintWithExplanationException("Failure in fetching environment variables for job ",
+          "This might be because 'Capture environment variables' is enabled in Jenkins step but EnvInject plugin is not installed in the Jenkins instance.",
+          new UnauthorizedException("Failure in fetching environment variables for job", USER));
     }
   }
 

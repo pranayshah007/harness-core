@@ -31,7 +31,6 @@ import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.morphia.MorphiaRegistrar;
-import io.harness.opaclient.OpaServiceConfiguration;
 import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkModule;
 import io.harness.pms.sdk.core.SdkDeployMode;
@@ -41,7 +40,6 @@ import io.harness.rule.InjectorRuleMixin;
 import io.harness.serializer.CiBeansRegistrars;
 import io.harness.serializer.ConnectorNextGenRegistrars;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.OrchestrationBeansRegistrars;
 import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.sto.beans.entities.STOServiceConfig;
@@ -107,9 +105,7 @@ public class STOManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleM
       @Provides
       @Singleton
       Set<Class<? extends TypeConverter>> morphiaConverters() {
-        return ImmutableSet.<Class<? extends TypeConverter>>builder()
-            .addAll(OrchestrationBeansRegistrars.morphiaConverters)
-            .build();
+        return ImmutableSet.<Class<? extends TypeConverter>>builder().build();
       }
 
       @Provides
@@ -152,7 +148,6 @@ public class STOManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleM
             .asyncDelegateResponseConsumption(ThreadPoolConfig.builder().corePoolSize(1).build())
             .logServiceConfig(
                 LogServiceConfig.builder().baseUrl("http://localhost-inc:8079").globalToken("global-token").build())
-            .opaServerConfig(OpaServiceConfiguration.builder().baseUrl("http://localhost:3000").build())
             .tiServiceConfig(
                 TIServiceConfig.builder().baseUrl("http://localhost-inc:8078").globalToken("global-token").build())
             .stoServiceConfig(

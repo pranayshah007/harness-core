@@ -28,7 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("azureWebAppSlotDeploymentStepParameters")
 @RecasterAlias("io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepParameters")
 public class AzureWebAppSlotDeploymentStepParameters
-    extends AzureWebAppSlotDeploymentBaseStepInfo implements SpecParameters {
+    extends AzureWebAppSlotDeploymentBaseStepInfo implements SpecParameters, AzureWebAppStepParameters {
   @Builder(builderMethodName = "infoBuilder")
   public AzureWebAppSlotDeploymentStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     super(delegateSelectors);

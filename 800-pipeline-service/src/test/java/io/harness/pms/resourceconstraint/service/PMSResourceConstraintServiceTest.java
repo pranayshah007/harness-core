@@ -325,6 +325,96 @@ public class PMSResourceConstraintServiceTest extends PipelineServiceTestBase {
     verify(pipelineService, Mockito.times(1)).get("A", "B", "C", "pipeline-id", false);
   }
 
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldGetResourceConstraintExecutionInfoListWhenParallelExecution() {
+    ResourceRestraint resourceConstraint = getResourceConstraint();
+    List<ResourceRestraintInstance> restraintInstanceList =
+        Lists.newArrayList(ResourceRestraintInstance.builder()
+                               .state(State.BLOCKED)
+                               .uuid(generateUuid())
+                               .resourceRestraintId(resourceConstraint.getUuid())
+                               .resourceUnit(RESOURCE_UNIT)
+                               .releaseEntityType(HoldingScope.PIPELINE.name())
+                               .releaseEntityId(PLAN_EXECUTION_ID)
+                               .order(2)
+                               .build(),
+            ResourceRestraintInstance.builder()
+                .state(State.ACTIVE)
+                .uuid(generateUuid())
+                .resourceRestraintId(resourceConstraint.getUuid())
+                .resourceUnit(RESOURCE_UNIT)
+                .releaseEntityType(HoldingScope.PIPELINE.name())
+                .releaseEntityId(PLAN_EXECUTION_ID + "1")
+                .order(1)
+                .build(),
+            ResourceRestraintInstance.builder()
+                .state(State.BLOCKED)
+                .uuid(generateUuid())
+                .resourceRestraintId(resourceConstraint.getUuid())
+                .resourceUnit(RESOURCE_UNIT)
+                .releaseEntityType(HoldingScope.PIPELINE.name())
+                .releaseEntityId(PLAN_EXECUTION_ID)
+                .order(3)
+                .build());
+    Map<String, String> setupAbstractions = new HashMap<>();
+    List<PlanExecution> planExecutionList =
+        Lists.newArrayList(PlanExecution.builder()
+                               .uuid(PLAN_EXECUTION_ID)
+                               .setupAbstractions(setupAbstractions)
+                               .startTs(20L)
+                               .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("k8s").build())
+                               .build(),
+            PlanExecution.builder()
+                .uuid(PLAN_EXECUTION_ID + "1")
+                .setupAbstractions(setupAbstractions)
+                .startTs(10L)
+                .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("rc-pipeline").build())
+                .build());
+
+    when(resourceRestraintService.getByNameAndAccountId(PmsConstants.QUEUING_RC_NAME, ACCOUNT_ID))
+        .thenReturn(resourceConstraint);
+    when(resourceRestraintInstanceService.getAllByRestraintIdAndResourceUnitAndStates(
+             resourceConstraint.getUuid(), RESOURCE_UNIT, Arrays.asList(ACTIVE, BLOCKED)))
+        .thenReturn(restraintInstanceList);
+    when(planExecutionService.findAllByPlanExecutionIdIn(any())).thenReturn(planExecutionList);
+
+    ResourceConstraintExecutionInfoDTO response =
+        pmsResourceConstraintService.getResourceConstraintExecutionInfo(ACCOUNT_ID, RESOURCE_UNIT);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getCapacity()).isEqualTo(resourceConstraint.getCapacity());
+    assertThat(response.getName()).isEqualTo(resourceConstraint.getName());
+    assertThat(response.getResourceConstraints()).isNotEmpty();
+    assertThat(response.getResourceConstraints().size()).isEqualTo(3);
+    assertThat(response.getResourceConstraints())
+        .containsExactly(ResourceConstraintDetailDTO.builder()
+                             .pipelineIdentifier("rc-pipeline")
+                             .planExecutionId(PLAN_EXECUTION_ID + "1")
+                             .state(ACTIVE)
+                             .startTs(10L)
+                             .build(),
+            ResourceConstraintDetailDTO.builder()
+                .pipelineIdentifier("k8s")
+                .planExecutionId(PLAN_EXECUTION_ID)
+                .state(BLOCKED)
+                .startTs(20L)
+                .build(),
+            ResourceConstraintDetailDTO.builder()
+                .pipelineIdentifier("k8s")
+                .planExecutionId(PLAN_EXECUTION_ID)
+                .state(BLOCKED)
+                .startTs(20L)
+                .build());
+
+    verify(resourceRestraintService).getByNameAndAccountId(PmsConstants.QUEUING_RC_NAME, ACCOUNT_ID);
+    verify(resourceRestraintInstanceService)
+        .getAllByRestraintIdAndResourceUnitAndStates(
+            resourceConstraint.getUuid(), RESOURCE_UNIT, Arrays.asList(ACTIVE, BLOCKED));
+    verify(planExecutionService).findAllByPlanExecutionIdIn(any());
+  }
+
   private ResourceRestraint getResourceConstraint() {
     return ResourceRestraint.builder()
         .accountId(ACCOUNT_ID)

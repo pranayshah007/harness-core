@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.MATT;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
+import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -80,12 +81,18 @@ public class NGTriggerResourceTest extends CategoryTest {
   private final String PROJ_IDENTIFIER = "projId";
   private String ngTriggerYaml;
   private String ngTriggerYamlWithGitSync;
+  private String ngTriggerYamlGitlabMRComment;
+  private String ngTriggerYamlBitbucketPRComment;
 
   private NGTriggerDetailsResponseDTO ngTriggerDetailsResponseDTO;
   private NGTriggerResponseDTO ngTriggerResponseDTO;
   private NGTriggerResponseDTO ngTriggerResponseDTOGitSync;
+  private NGTriggerResponseDTO ngTriggerResponseDTOGitlabMRComment;
+  private NGTriggerResponseDTO ngTriggerResponseDTOBitbucketPRComment;
   private NGTriggerEntity ngTriggerEntity;
   private NGTriggerEntity ngTriggerEntityGitSync;
+  private NGTriggerEntity ngTriggerEntityGitlabMRComment;
+  private NGTriggerEntity ngTriggerEntityBitbucketPRComment;
   private NGTriggerConfigV2 ngTriggerConfig;
   private MergeInputSetResponseDTOPMS mergeInputSetResponseDTOPMS;
 
@@ -100,7 +107,9 @@ public class NGTriggerResourceTest extends CategoryTest {
         Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
     ngTriggerYamlWithGitSync =
         Resources.toString(Objects.requireNonNull(classLoader.getResource(filenameGitSync)), StandardCharsets.UTF_8);
-
+    ngTriggerYamlGitlabMRComment =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-gitlab-mr-comment-v2.yaml")),
+            StandardCharsets.UTF_8);
     ngTriggerConfig = YamlPipelineUtils.read(ngTriggerYaml, NGTriggerConfigV2.class);
     WebhookTriggerConfigV2 webhookTriggerConfig = (WebhookTriggerConfigV2) ngTriggerConfig.getSource().getSpec();
     WebhookMetadata metadata = WebhookMetadata.builder().type(webhookTriggerConfig.getType().getValue()).build();
@@ -129,6 +138,30 @@ public class NGTriggerResourceTest extends CategoryTest {
                                       .type(NGTriggerType.WEBHOOK)
                                       .version(0L)
                                       .build();
+
+    ngTriggerResponseDTOGitlabMRComment = NGTriggerResponseDTO.builder()
+                                              .accountIdentifier(ACCOUNT_ID)
+                                              .orgIdentifier(ORG_IDENTIFIER)
+                                              .projectIdentifier(PROJ_IDENTIFIER)
+                                              .targetIdentifier(PIPELINE_IDENTIFIER)
+                                              .identifier(IDENTIFIER)
+                                              .name(NAME)
+                                              .yaml(ngTriggerYamlGitlabMRComment)
+                                              .type(NGTriggerType.WEBHOOK)
+                                              .version(0L)
+                                              .build();
+
+    ngTriggerResponseDTOBitbucketPRComment = NGTriggerResponseDTO.builder()
+                                                 .accountIdentifier(ACCOUNT_ID)
+                                                 .orgIdentifier(ORG_IDENTIFIER)
+                                                 .projectIdentifier(PROJ_IDENTIFIER)
+                                                 .targetIdentifier(PIPELINE_IDENTIFIER)
+                                                 .identifier(IDENTIFIER)
+                                                 .name(NAME)
+                                                 .yaml(ngTriggerYamlBitbucketPRComment)
+                                                 .type(NGTriggerType.WEBHOOK)
+                                                 .version(0L)
+                                                 .build();
 
     ngTriggerDetailsResponseDTO =
         NGTriggerDetailsResponseDTO.builder()
@@ -172,6 +205,34 @@ public class NGTriggerResourceTest extends CategoryTest {
                                  .yaml(ngTriggerYamlWithGitSync)
                                  .version(0L)
                                  .build();
+
+    ngTriggerEntityGitlabMRComment = NGTriggerEntity.builder()
+                                         .accountId(ACCOUNT_ID)
+                                         .orgIdentifier(ORG_IDENTIFIER)
+                                         .projectIdentifier(PROJ_IDENTIFIER)
+                                         .targetIdentifier(PIPELINE_IDENTIFIER)
+                                         .identifier(IDENTIFIER)
+                                         .name(NAME)
+                                         .targetType(TargetType.PIPELINE)
+                                         .type(NGTriggerType.WEBHOOK)
+                                         .metadata(ngTriggerMetadata)
+                                         .yaml(ngTriggerYamlGitlabMRComment)
+                                         .version(0L)
+                                         .build();
+
+    ngTriggerEntityBitbucketPRComment = NGTriggerEntity.builder()
+                                            .accountId(ACCOUNT_ID)
+                                            .orgIdentifier(ORG_IDENTIFIER)
+                                            .projectIdentifier(PROJ_IDENTIFIER)
+                                            .targetIdentifier(PIPELINE_IDENTIFIER)
+                                            .identifier(IDENTIFIER)
+                                            .name(NAME)
+                                            .targetType(TargetType.PIPELINE)
+                                            .type(NGTriggerType.WEBHOOK)
+                                            .metadata(ngTriggerMetadata)
+                                            .yaml(ngTriggerYamlBitbucketPRComment)
+                                            .version(0L)
+                                            .build();
 
     mergeInputSetResponseDTOPMS =
         MergeInputSetResponseDTOPMS.builder().isErrorResponse(false).pipelineYaml("pipelineYaml").build();
@@ -351,5 +412,43 @@ public class NGTriggerResourceTest extends CategoryTest {
     ScheduledTriggerConfig scheduledTriggerConfig = (ScheduledTriggerConfig) ngTriggerConfig.getSource().getSpec();
     CronTriggerSpec cronTriggerSpec = (CronTriggerSpec) scheduledTriggerConfig.getSpec();
     assertThat(cronTriggerSpec.getExpression()).isEqualTo("20 4 * * *");
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testCreateGitlabMRComment() throws Exception {
+    doReturn(ngTriggerEntityGitlabMRComment).when(ngTriggerService).create(any());
+    when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntity)).thenReturn(ngTriggerResponseDTOGitlabMRComment);
+    TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntityGitlabMRComment).build();
+    doReturn(triggerDetails)
+        .when(ngTriggerElementMapper)
+        .toTriggerDetails(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, ngTriggerYaml);
+    when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntityGitlabMRComment))
+        .thenReturn(ngTriggerResponseDTOGitlabMRComment);
+
+    NGTriggerResponseDTO responseDTO =
+        ngTriggerResource.create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, ngTriggerYaml, false)
+            .getData();
+    assertThat(responseDTO).isEqualTo(ngTriggerResponseDTOGitlabMRComment);
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testCreateBitbucketPRComment() throws Exception {
+    doReturn(ngTriggerEntityBitbucketPRComment).when(ngTriggerService).create(any());
+    when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntity)).thenReturn(ngTriggerResponseDTOBitbucketPRComment);
+    TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntityBitbucketPRComment).build();
+    doReturn(triggerDetails)
+        .when(ngTriggerElementMapper)
+        .toTriggerDetails(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, ngTriggerYaml);
+    when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntityBitbucketPRComment))
+        .thenReturn(ngTriggerResponseDTOBitbucketPRComment);
+
+    NGTriggerResponseDTO responseDTO =
+        ngTriggerResource.create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, ngTriggerYaml, false)
+            .getData();
+    assertThat(responseDTO).isEqualTo(ngTriggerResponseDTOBitbucketPRComment);
   }
 }

@@ -43,7 +43,7 @@ public abstract class InterruptPropagatorHandler {
   public Interrupt handleAllNodes(Interrupt interrupt) {
     Interrupt updatedInterrupt = interruptService.markProcessing(interrupt.getUuid());
     // Marking all finalizable leaf nodes as DISCONTINUING
-    long updatedCount = nodeExecutionService.markAllLeavesDiscontinuing(
+    long updatedCount = nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
         interrupt.getPlanExecutionId(), StatusUtils.abortAndExpireStatuses());
     return handleDiscontinuingNodes(updatedInterrupt, updatedCount);
   }

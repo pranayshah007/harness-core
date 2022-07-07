@@ -7,7 +7,6 @@
 
 package io.harness.cdng.creator.filters;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
@@ -76,10 +75,67 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
 
     final DeploymentStageConfig deploymentStageConfig = yamlField.getDeploymentStageConfig();
 
+    validate(filterCreationContext, deploymentStageConfig);
     addServiceFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
     addInfraFilters(filterCreationContext, filterBuilder, deploymentStageConfig);
 
     return filterBuilder.build();
+  }
+
+  // This validation is added due to limitations of oneof wherein it introduces strict yaml checking breaking old
+  // pipelines with extra fields
+  private void validate(FilterCreationContext filterCreationContext, DeploymentStageConfig deploymentStageConfig) {
+    if (deploymentStageConfig.getServiceConfig() != null) {
+      validateV1(filterCreationContext, deploymentStageConfig);
+    } else if (deploymentStageConfig.getService() != null) {
+      validateV2(filterCreationContext, deploymentStageConfig);
+    }
+  }
+
+  private void validateV1(FilterCreationContext filterCreationContext, DeploymentStageConfig deploymentStageConfig) {
+    if (deploymentStageConfig.getInfrastructure() == null) {
+      throw new InvalidYamlRuntimeException(
+          format("infrastructure should be present in stage [%s]. Please add it and try again",
+              YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+    }
+
+    if (deploymentStageConfig.getEnvironment() != null) {
+      throw new InvalidYamlRuntimeException(
+          format("environment should not be present in stage [%s]. Please add infrastructure instead",
+              YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+    }
+
+    if (deploymentStageConfig.getEnvironmentGroup() != null) {
+      throw new InvalidYamlRuntimeException(
+          format("environmentGroup should not be present in stage [%s]. Please add infrastructure instead",
+              YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+    }
+
+    if (deploymentStageConfig.getDeploymentType() != null) {
+      throw new InvalidYamlRuntimeException(
+          format("deploymentType should not be present in stage [%s]. Please remove and try again",
+              YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+    }
+
+    if (deploymentStageConfig.getGitOpsEnabled()) {
+      throw new InvalidYamlRuntimeException(
+          format("gitOpsEnabled should not be set in stage [%s]. Please remove and try again",
+              YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+    }
+  }
+
+  private void validateV2(FilterCreationContext filterCreationContext, DeploymentStageConfig deploymentStageConfig) {
+    if (deploymentStageConfig.getInfrastructure() != null) {
+      throw new InvalidYamlRuntimeException(format(
+          "infrastructure should not be present in stage [%s]. Please add environment or environment group instead",
+          YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+    }
+
+    if (deploymentStageConfig.getDeploymentType() == null) {
+      throw new InvalidYamlRuntimeException(
+          format("deploymentType should be present in stage [%s]. Please add it and try again",
+              YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+    }
   }
 
   private void addServiceFilters(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
@@ -135,7 +191,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
         final Environment entity = environmentEntityOptional.get();
         filterBuilder.environmentName(entity.getName());
 
-        List<InfraStructureDefinitionYaml> infraList = env.getInfrastructureDefinitions();
+        List<InfraStructureDefinitionYaml> infraList = env.getInfrastructureDefinitions().getValue();
         if (isNotEmpty(infraList)) {
           if (infraList.size() > 1) {
             throw new InvalidYamlRuntimeException(format(
@@ -146,7 +202,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
               infraService.get(filterCreationContext.getSetupMetadata().getAccountId(),
                   filterCreationContext.getSetupMetadata().getOrgId(),
                   filterCreationContext.getSetupMetadata().getProjectId(), entity.getIdentifier(),
-                  infraList.get(0).getIdentifier().getValue());
+                  infraList.get(0).getIdentifier());
           infrastructureEntity.ifPresent(
               ie -> filterBuilder.infrastructureType(infrastructureEntity.get().getType().getDisplayName()));
         }
@@ -154,12 +210,12 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     }
 
     if (gitOpsEnabled) {
-      if (env.isDeployToAll() && isNotEmpty(env.getGitOpsClusters())) {
+      if (env.isDeployToAll() && env.getGitOpsClusters().fetchFinalValue() != null) {
         throw new InvalidYamlRuntimeException(format(
             "When deploying to all, individual gitops clusters must not be provided in stage [%s]. Please remove the gitOpsClusters property and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
       }
-      if (!env.isDeployToAll() && isEmpty(env.getGitOpsClusters())) {
+      if (!env.isDeployToAll() && env.getGitOpsClusters().fetchFinalValue() == null) {
         throw new InvalidYamlRuntimeException(format(
             "When deploy to all is false, list of gitops clusters must be provided  in stage [%s].  Please specify the gitOpsClusters property and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
