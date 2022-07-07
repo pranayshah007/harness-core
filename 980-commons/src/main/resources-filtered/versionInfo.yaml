@@ -8,3 +8,4 @@ gitBranch : ${gitBranch}
 timestamp : ${buildTimeStamp}
 patch     : ${build.patch}
 fullVersionWithPatch : ${build.fullVersionWithPatch}
+delegateVersion:  ${build.delegateVersion}

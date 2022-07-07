@@ -2422,6 +2422,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private String getVersion() {
+    if (isImmutableDelegate) {
+      return versionInfoManager.getVersionInfo().getDelegateVersion();
+    }
     return versionInfoManager.getVersionInfo().getVersion();
   }
 

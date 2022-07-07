@@ -23,4 +23,6 @@ public class VersionInfo {
   private String gitBranch;
   private String timestamp;
   private String patch;
+  // this version is only valid for immutable delegates.
+  private String delegateVersion;
 }

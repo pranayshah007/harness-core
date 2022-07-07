@@ -21,6 +21,7 @@ buildNo=$1
 buildPropertiesFile=${2:-build.properties}
 buildMajorVersion=$(getProperty "${buildPropertiesFile}" "build.majorVersion")
 buildMinorVersion=$(getProperty "${buildPropertiesFile}" "build.minorVersion")
+delegateVersion=$(getProperty "${buildPropertiesFile}" "delegate.version")
 patch=$(getProperty "${buildPropertiesFile}" "build.patch")
 timestamp=$( date +'%y%m%d-%H%M')
 
@@ -36,3 +37,4 @@ sed -i.bak "s|\${build.patch}|${patch}|g"  "980-commons/src/main/resources-filte
 sed -i.bak "s|\${build.fullVersionWithPatch}|${buildMajorVersion}.${buildMinorVersion}.${buildNo}-${patch}|g"  "980-commons/src/main/resources-filtered/versionInfo.yaml"
 
 sed -i.bak "s|\${build.fullVersion}|${buildMajorVersion}.${buildMinorVersion}.${buildNo}|g"  "980-commons/src/main/resources-filtered/versionInfo.yaml"
+sed -i.bak "s|\${build.delegateVersion}|${delegateVersion}|g"  "980-commons/src/main/resources-filtered/versionInfo.yaml"
