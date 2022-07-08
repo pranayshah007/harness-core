@@ -143,6 +143,18 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   @Override
   @RestrictedApi(SamlFeature.class)
   public SamlSettings saveSamlSettings(@GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings) {
+    return saveSSOSettingsInternal(settings);
+  }
+
+  // This function is meant to be called for ng sso settings, as the license check is already done in NG Service
+  @Override
+  public SamlSettings saveSamlSettingsWithoutCGLicenseCheck(
+      @GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings) {
+    return saveSSOSettingsInternal(settings);
+  }
+
+  private SamlSettings saveSSOSettingsInternal(
+      @GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings) {
     SamlSettings queriedSettings = getSamlSettingsByAccountId(settings.getAccountId());
     SamlSettings savedSettings;
     if (queriedSettings != null) {
