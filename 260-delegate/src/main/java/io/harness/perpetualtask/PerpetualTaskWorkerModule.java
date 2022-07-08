@@ -28,6 +28,7 @@ import io.harness.perpetualtask.instancesync.AwsLambdaInstanceSyncPerpetualTaskP
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AzureVmssInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AzureWebAppInstanceSyncPerpetualProtoTaskParams;
+import io.harness.perpetualtask.instancesync.AzureWebAppNGInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.ContainerInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.CustomDeploymentInstanceSyncTaskParams;
 import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParams;
@@ -110,6 +111,8 @@ public class PerpetualTaskWorkerModule extends AbstractModule {
         .to(ArtifactPerpetualTaskExecutorNg.class);
     mapBinder.addBinding(ServerlessAwsLambdaInstanceSyncPerpetualTaskParams.class.getSimpleName())
         .to(ServerlessAwsLambdaInstanceSyncPerpetualTaskExecutor.class);
+    mapBinder.addBinding(AzureWebAppNGInstanceSyncPerpetualTaskParams.class.getSimpleName())
+        .to(AzureWebAppInstanceSyncPerpetualTaskExecutor.class);
 
     install(new FactoryModuleBuilder()
                 .implement(PodWatcher.class, PodWatcher.class)

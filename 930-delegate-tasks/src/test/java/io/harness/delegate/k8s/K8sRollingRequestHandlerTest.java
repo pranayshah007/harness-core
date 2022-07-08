@@ -45,10 +45,12 @@ import io.harness.delegate.task.k8s.K8sRollingDeployRequest;
 import io.harness.delegate.task.k8s.K8sRollingDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.delegate.task.k8s.KustomizeManifestDelegateConfig;
+import io.harness.delegate.task.k8s.client.K8sClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -135,6 +137,9 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
             .build();
     K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
     InvalidRequestException thrownException = new InvalidRequestException("Failed to get pods");
+    K8sClient k8sClient = mock(K8sClient.class);
+    doReturn(k8sClient).when(taskHelperBase).getKubernetesClient(anyBoolean());
+    doReturn(true).when(k8sClient).performSteadyStateCheck(any(K8sSteadyStateDTO.class));
 
     doReturn(singletonList(deployment()))
         .when(taskHelperBase)

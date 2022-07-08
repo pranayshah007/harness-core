@@ -13,12 +13,16 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.KubernetesCliTaskRuntimeException;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.k8s.ProcessResponse;
+import io.harness.k8s.exception.KubernetesExceptionExplanation;
+import io.harness.k8s.exception.KubernetesExceptionHints;
+import io.harness.k8s.exception.KubernetesExceptionMessages;
 
 import com.google.common.collect.ImmutableSet;
 import java.util.ArrayList;
@@ -172,34 +176,41 @@ public class KubernetesCliRuntimeExceptionHandler implements ExceptionHandler {
   private WingsException handleSteadyStateCheckFailure(KubernetesCliTaskRuntimeException kubernetesTaskException) {
     String cliErrorMessage = kubernetesTaskException.getProcessResponse().getErrorMessage();
     String consolidatedError = format(KUBECTL_STEADY_STATE_CONSOLE_ERROR, cliErrorMessage);
+    String commandSummary = getExecutedCommandWithOutputWithExitCode(kubernetesTaskException);
 
     if (cliErrorMessage.contains(STEADY_STATE_FAILURE_MISSING_OBJECT_ERROR)) {
       return getExplanationExceptionWithCommand(KubernetesExceptionHints.MISSING_OBJECT_ERROR,
-          KubernetesExceptionExplanation.MISSING_OBJECT_ERROR,
-          getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError);
+          KubernetesExceptionExplanation.MISSING_OBJECT_ERROR, commandSummary, consolidatedError);
     }
 
     if (cliErrorMessage.contains(STEADY_STATE_FAILURE_DEADLINE_ERROR)) {
       String hint = KubernetesExceptionHints.WAIT_FOR_STEADY_STATE_FAILED
           + KubernetesExceptionHints.DEPLOYMENT_PROGRESS_DEADLINE_DOC_REFERENCE;
-      return getExplanationExceptionWithCommand(hint, KubernetesExceptionExplanation.WAIT_FOR_STEADY_STATE_FAILED,
-          getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError);
+      return getExplanationExceptionWithCommand(
+          hint, KubernetesExceptionExplanation.WAIT_FOR_STEADY_STATE_FAILED, commandSummary, consolidatedError);
     }
 
-    return getExplanationException(KubernetesExceptionHints.WAIT_FOR_STEADY_STATE_FAILED,
-        getExecutedCommandWithOutputWithExitCode(kubernetesTaskException), consolidatedError);
+    if (EmptyPredicate.isEmpty(commandSummary)) {
+      commandSummary = KubernetesExceptionExplanation.WAIT_FOR_STEADY_STATE_FAILED;
+    }
+    return getExplanationException(
+        KubernetesExceptionHints.WAIT_FOR_STEADY_STATE_FAILED, commandSummary, consolidatedError);
   }
 
   private String getExecutedCommandWithOutputWithExitCode(KubernetesCliTaskRuntimeException exception) {
     ProcessResponse processResponse = exception.getProcessResponse();
     ProcessResult processResult = processResponse.getProcessResult();
-    String kubectlPath = getRelativeKubectlClientPath(processResponse.getKubectlPath());
-    if (isNotEmpty(processResult.outputUTF8())) {
-      return format(KubernetesExceptionExplanation.FAILED_COMMAND_WITH_EXITCODE_AND_OUTPUT,
-          processResponse.getPrintableCommand(), processResult.getExitValue(), processResult.outputUTF8(), kubectlPath);
+    if (processResult != null) {
+      String kubectlPath = getRelativeKubectlClientPath(processResponse.getKubectlPath());
+      if (isNotEmpty(processResult.outputUTF8())) {
+        return format(KubernetesExceptionExplanation.FAILED_COMMAND_WITH_EXITCODE_AND_OUTPUT,
+            processResponse.getPrintableCommand(), processResult.getExitValue(), processResult.outputUTF8(),
+            kubectlPath);
+      }
+      return format(KubernetesExceptionExplanation.FAILED_COMMAND_WITH_EXITCODE, processResponse.getPrintableCommand(),
+          processResult.getExitValue(), kubectlPath);
     }
-    return format(KubernetesExceptionExplanation.FAILED_COMMAND_WITH_EXITCODE, processResponse.getPrintableCommand(),
-        processResult.getExitValue(), kubectlPath);
+    return "";
   }
 
   private List<String> extractValuesFromFirstMatch(String errorMessage, Pattern pattern, int valuesToExtract) {
@@ -230,8 +241,11 @@ public class KubernetesCliRuntimeExceptionHandler implements ExceptionHandler {
 
   private WingsException getExplanationExceptionWithCommand(
       String hint, String explanation, String command, String errorMessage) {
-    return NestedExceptionUtils.hintWithExplanationAndCommandException(
-        hint, explanation, command, new KubernetesTaskException(errorMessage));
+    if (EmptyPredicate.isNotEmpty(command)) {
+      return NestedExceptionUtils.hintWithExplanationAndCommandException(
+          hint, explanation, command, new KubernetesTaskException(errorMessage));
+    }
+    return getExplanationException(hint, explanation, errorMessage);
   }
 
   private String getRelativeKubectlClientPath(String kubectlPath) {

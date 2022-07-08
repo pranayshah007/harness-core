@@ -25,7 +25,7 @@ resource "google_monitoring_alert_policy" "ce_delegate_health_monitoring_alert_p
   notification_channels = ((var.deployment == "prod" || var.deployment == "freemium" || var.deployment == "prod_failover") ? ["${local.slack_prod_channel}"] :
     ((var.deployment == "qa" || var.deployment == "qa_free" || var.deployment == "stress") ? ["${local.slack_qa_channel}"] :
   ["${local.slack_dev_channel}"]))
-
+  enabled = false
   display_name = join("_", [local.name_prefix, "ce_delegate_health_monitoring"])
   combiner     = "OR"
   conditions {

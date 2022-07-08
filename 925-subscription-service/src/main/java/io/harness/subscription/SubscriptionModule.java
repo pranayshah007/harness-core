@@ -7,6 +7,9 @@
 
 package io.harness.subscription;
 
+import static io.harness.AuthorizationServiceHeader.SUBSCRIPTION_SERVICE;
+
+import io.harness.AccessControlClientModule;
 import io.harness.subscription.handlers.InvoicePaymentSucceedHandler;
 import io.harness.subscription.handlers.StripeEventHandler;
 import io.harness.subscription.handlers.SubscriptionDeleteHandler;
@@ -34,6 +37,8 @@ public class SubscriptionModule extends AbstractModule {
 
   @Override
   protected void configure() {
+    install(AccessControlClientModule.getInstance(
+        subscriptionConfig.getAccessControlClientConfiguration(), SUBSCRIPTION_SERVICE.getServiceId()));
     install(SubscriptionSdkModule.createInstance(subscriptionConfig));
     bind(SubscriptionService.class).to(SubscriptionServiceImpl.class);
 

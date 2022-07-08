@@ -113,7 +113,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   private static final String ARTIFACT_ACTUAL_PATH = "harnessArtifact/artifactFile";
   private static final String SIDECAR_ARTIFACT_PATH_PREFIX = "<+sidecar.artifact.";
-  private static final String SIDECAR_ARTIFACT_FILE_NAME_PREFIX = "sidecar-artifact-";
+  private static final String SIDECAR_ARTIFACT_FILE_NAME_PREFIX = "harnessArtifact/sidecar-artifact-";
 
   public TaskChainResponse startChainLink(
       Ambiance ambiance, StepElementParameters stepElementParameters, ServerlessStepHelper serverlessStepHelper) {
@@ -253,11 +253,13 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
       if (artifactsOutcome.get().getPrimary() != null) {
         serverlessArtifactConfig = getArtifactConfig(artifactsOutcome.get().getPrimary(), ambiance);
       }
-      artifactsOutcome.get().getSidecars().forEach((key, value) -> {
-        if (value != null) {
-          sidecarServerlessArtifactConfigMap.put(key, getArtifactConfig(value, ambiance));
-        }
-      });
+      if (artifactsOutcome.get().getSidecars() != null) {
+        artifactsOutcome.get().getSidecars().forEach((key, value) -> {
+          if (value != null) {
+            sidecarServerlessArtifactConfigMap.put(key, getArtifactConfig(value, ambiance));
+          }
+        });
+      }
     }
 
     String manifestFileOverrideContent = renderManifestContent(ambiance, manifestFilePathContent.get().getValue(),

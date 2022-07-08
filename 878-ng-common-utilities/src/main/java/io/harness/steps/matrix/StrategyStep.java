@@ -13,6 +13,7 @@ import io.harness.enforcement.beans.metadata.RestrictionMetadataDTO;
 import io.harness.enforcement.beans.metadata.StaticLimitRestrictionMetadataDTO;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.enforcement.constants.RestrictionType;
 import io.harness.enforcement.exceptions.EnforcementServiceConnectionException;
 import io.harness.enforcement.exceptions.WrongFeatureStateException;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
@@ -55,7 +56,8 @@ public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> 
       if (enforcementClientService.isEnforcementEnabled()) {
         Optional<RestrictionMetadataDTO> restrictionMetadataDTO = enforcementClientService.getRestrictionMetadata(
             FeatureRestrictionName.STRATEGY_MAX_CONCURRENT, AmbianceUtils.getAccountId(ambiance));
-        if (restrictionMetadataDTO.isPresent()) {
+        if (restrictionMetadataDTO.isPresent()
+            && restrictionMetadataDTO.get().getRestrictionType() == RestrictionType.STATIC_LIMIT) {
           StaticLimitRestrictionMetadataDTO staticLimitRestrictionDTO =
               (StaticLimitRestrictionMetadataDTO) restrictionMetadataDTO.get();
           maxConcurrencyLimitBasedOnPlan = staticLimitRestrictionDTO.getLimit().intValue();

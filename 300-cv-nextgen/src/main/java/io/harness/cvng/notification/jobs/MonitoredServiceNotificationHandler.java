@@ -18,6 +18,6 @@ public class MonitoredServiceNotificationHandler implements Handler<MonitoredSer
 
   @Override
   public void handle(MonitoredService entity) {
-    monitoredServiceService.sendNotification(entity);
+    monitoredServiceService.handleNotification(entity);
   }
 }

@@ -87,6 +87,8 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
       PlanCreationContext ctx, StepGroupElementConfig config, List<String> childrenNodeIds) {
     YamlField stepsField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STEPS));
+    config.setIdentifier(StageStrategyUtils.getIdentifierWithExpression(ctx, config.getIdentifier()));
+    config.setName(StageStrategyUtils.getIdentifierWithExpression(ctx, config.getName()));
     StepParameters stepParameters = StepGroupStepParameters.getStepParameters(config, stepsField.getNode().getUuid());
 
     boolean isStepGroupInsideRollback = false;

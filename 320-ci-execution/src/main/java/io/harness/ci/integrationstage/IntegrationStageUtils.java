@@ -27,6 +27,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.DOCKER;
 import static io.harness.delegate.beans.connector.ConnectorType.GIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
+import static io.harness.delegate.beans.connector.scm.adapter.AzureRepoToGitMapper.mapToGitConnectionType;
 
 import static java.lang.String.format;
 import static org.springframework.util.StringUtils.trimLeadingCharacter;
@@ -338,7 +339,8 @@ public class IntegrationStageUtils {
       return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == AZURE_REPO) {
       AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
-      return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      GitConnectionType gitConnectionType = mapToGitConnectionType(gitConfigDTO.getConnectionType());
+      return getGitURL(ciCodebase, gitConnectionType, gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == GITLAB) {
       GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
       return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());

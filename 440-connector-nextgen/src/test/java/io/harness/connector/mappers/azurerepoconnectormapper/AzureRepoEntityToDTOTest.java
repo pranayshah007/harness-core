@@ -9,6 +9,7 @@ package io.harness.connector.mappers.azurerepoconnectormapper;
 
 import static io.harness.delegate.beans.connector.scm.GitAuthType.HTTP;
 import static io.harness.delegate.beans.connector.scm.GitAuthType.SSH;
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.MANKRIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,16 +17,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoConnectionType;
 import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoConnector;
 import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoHttpAuthentication;
 import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoSshAuthentication;
 import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoTokenApiAccess;
 import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoUsernameToken;
 import io.harness.connector.mappers.azurerepomapper.AzureRepoEntityToDTO;
-import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
@@ -59,7 +61,6 @@ public class AzureRepoEntityToDTOTest extends CategoryTest {
     final String url = "url";
     final String usernameRef = "usernameRef";
     final String tokenRef = "tokenRef";
-    final String validationProject = "validationProject";
     final String validationRepo = "validationRepo";
 
     final AzureRepoAuthenticationDTO azureRepoAuthenticationDTO =
@@ -81,9 +82,8 @@ public class AzureRepoEntityToDTOTest extends CategoryTest {
             .build();
     final AzureRepoConnectorDTO azureRepoConnectorDTO = AzureRepoConnectorDTO.builder()
                                                             .url(url)
-                                                            .validationProject(validationProject)
                                                             .validationRepo(validationRepo)
-                                                            .connectionType(GitConnectionType.ACCOUNT)
+                                                            .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
                                                             .authentication(azureRepoAuthenticationDTO)
                                                             .apiAccess(azureRepoApiAccessDTO)
                                                             .build();
@@ -92,11 +92,10 @@ public class AzureRepoEntityToDTOTest extends CategoryTest {
         AzureRepoConnector.builder()
             .hasApiAccess(true)
             .url(url)
-            .validationProject(validationProject)
             .validationRepo(validationRepo)
             .azureRepoApiAccess(AzureRepoTokenApiAccess.builder().tokenRef(tokenRef).build())
             .apiAccessType(AzureRepoApiAccessType.TOKEN)
-            .connectionType(GitConnectionType.ACCOUNT)
+            .connectionType(AzureRepoConnectionType.PROJECT)
             .authType(HTTP)
             .authenticationDetails(
                 AzureRepoHttpAuthentication.builder()
@@ -116,7 +115,6 @@ public class AzureRepoEntityToDTOTest extends CategoryTest {
   public void testToConnectorEntitySSH() throws IOException {
     final String url = "url";
     final String tokenRef = "tokenRef";
-    final String validationProject = "validationProject";
     final String validationRepo = "validationRepo";
     final String sshKeyRef = "sshKeyRef";
 
@@ -134,9 +132,8 @@ public class AzureRepoEntityToDTOTest extends CategoryTest {
             .build();
     final AzureRepoConnectorDTO azureRepoConnectorDTO = AzureRepoConnectorDTO.builder()
                                                             .url(url)
-                                                            .validationProject(validationProject)
                                                             .validationRepo(validationRepo)
-                                                            .connectionType(GitConnectionType.ACCOUNT)
+                                                            .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
                                                             .authentication(azureRepoAuthenticationDTO)
                                                             .apiAccess(azureRepoApiAccessDTO)
                                                             .build();
@@ -145,11 +142,10 @@ public class AzureRepoEntityToDTOTest extends CategoryTest {
         AzureRepoConnector.builder()
             .hasApiAccess(true)
             .url(url)
-            .validationProject(validationProject)
             .validationRepo(validationRepo)
             .azureRepoApiAccess(AzureRepoTokenApiAccess.builder().tokenRef(tokenRef).build())
             .apiAccessType(AzureRepoApiAccessType.TOKEN)
-            .connectionType(GitConnectionType.ACCOUNT)
+            .connectionType(AzureRepoConnectionType.PROJECT)
             .authType(SSH)
             .authenticationDetails(AzureRepoSshAuthentication.builder().sshKeyRef(sshKeyRef).build())
             .build();
@@ -181,7 +177,7 @@ public class AzureRepoEntityToDTOTest extends CategoryTest {
             .validationRepo(validationRepo)
             .azureRepoApiAccess(AzureRepoTokenApiAccess.builder().tokenRef(tokenRef).build())
             .apiAccessType(AzureRepoApiAccessType.TOKEN)
-            .connectionType(GitConnectionType.ACCOUNT)
+            .connectionType(AzureRepoConnectionType.PROJECT)
             .authenticationDetails(AzureRepoHttpAuthentication.builder()
                                        .type(AzureRepoHttpAuthenticationType.USERNAME_AND_TOKEN)
                                        .auth(AzureRepoUsernameToken.builder().tokenRef(tokenRef).build())
@@ -200,7 +196,7 @@ public class AzureRepoEntityToDTOTest extends CategoryTest {
             .authType(HTTP)
             .azureRepoApiAccess(AzureRepoTokenApiAccess.builder().tokenRef(tokenRef).build())
             .apiAccessType(AzureRepoApiAccessType.TOKEN)
-            .connectionType(GitConnectionType.ACCOUNT)
+            .connectionType(AzureRepoConnectionType.PROJECT)
             .authenticationDetails(AzureRepoHttpAuthentication.builder()
                                        .auth(AzureRepoUsernameToken.builder().tokenRef(tokenRef).build())
                                        .build())
@@ -217,7 +213,7 @@ public class AzureRepoEntityToDTOTest extends CategoryTest {
             .validationRepo(validationRepo)
             .authType(HTTP)
             .azureRepoApiAccess(AzureRepoTokenApiAccess.builder().tokenRef(tokenRef).build())
-            .connectionType(GitConnectionType.ACCOUNT)
+            .connectionType(AzureRepoConnectionType.PROJECT)
             .authenticationDetails(AzureRepoHttpAuthentication.builder()
                                        .type(AzureRepoHttpAuthenticationType.USERNAME_AND_TOKEN)
                                        .auth(AzureRepoUsernameToken.builder().tokenRef(tokenRef).build())
@@ -226,5 +222,13 @@ public class AzureRepoEntityToDTOTest extends CategoryTest {
     assertThatThrownBy(() -> azureRepoEntityToDTO.createConnectorDTO(azureRepoConnector3))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("AzureRepo Api Access Type not found");
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetAzureRepoConnectionTypeDTO() {
+    assertThat(azureRepoEntityToDTO.getAzureRepoConnectionTypeDTO(AzureRepoConnectionType.REPO))
+        .isEqualTo(AzureRepoConnectionTypeDTO.REPO);
   }
 }

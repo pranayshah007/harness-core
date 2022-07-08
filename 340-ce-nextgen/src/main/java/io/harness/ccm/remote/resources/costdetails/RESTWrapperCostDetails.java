@@ -10,6 +10,7 @@ package io.harness.ccm.remote.resources.costdetails;
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.graphql.utils.GraphQLUtils.DEFAULT_LIMIT;
+import static io.harness.ccm.graphql.utils.GraphQLUtils.DEFAULT_LIMIT_CLUSTER_DATA;
 import static io.harness.ccm.graphql.utils.GraphQLUtils.DEFAULT_OFFSET;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
@@ -17,12 +18,15 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.commons.entities.ClusterCostDetails;
 import io.harness.ccm.graphql.dto.common.StatsInfo;
+import io.harness.ccm.graphql.dto.perspectives.ClusterCostDetailsQueryParamsDTO;
 import io.harness.ccm.graphql.dto.perspectives.CostDetailsQueryParamsDTO;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveEntityStatsData;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveTimeSeriesData;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveTrendStats;
 import io.harness.ccm.graphql.query.perspectives.PerspectivesQuery;
+import io.harness.ccm.helper.CostDetailsQueryHelper;
 import io.harness.ccm.remote.utils.GraphQLToRESTHelper;
 import io.harness.ccm.remote.utils.RESTToGraphQLHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
@@ -51,6 +55,8 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -78,7 +84,9 @@ import org.springframework.stereotype.Service;
     content = { @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ErrorDTO.class)) })
 public class RESTWrapperCostDetails {
   @Inject private PerspectivesQuery perspectivesQuery;
+  @Inject private CostDetailsQueryHelper costDetailsQueryHelper;
   private final String COST_DETAILS_BODY_DESCRIPTION = "Cost details query parameters.";
+  private final String CLUSTER_COST_DETAILS_BODY_DESCRIPTION = "Cluster cost details query parameters.";
   private static final String DATETIME_DESCRIPTION =
       "Should use org.joda.time.DateTime parsable format. Example, '2022-01-31', '2022-01-31T07:54Z' or '2022-01-31T07:54:51.264Z'. ";
 
@@ -143,6 +151,7 @@ public class RESTWrapperCostDetails {
     PerspectiveEntityStatsData perspectiveGridData = perspectivesQuery.perspectiveGrid(aggregationList, filters,
         groupBy, sortList, firstNonNull(limit, (int) DEFAULT_LIMIT), firstNonNull(offset, (int) DEFAULT_OFFSET), false,
         skipRoundOff != null && skipRoundOff, env);
+
     return ResponseDTO.newResponse(perspectiveGridData);
   }
 
@@ -264,5 +273,81 @@ public class RESTWrapperCostDetails {
     PerspectiveTrendStats perspectiveTrendStats =
         perspectivesQuery.perspectiveTrendStats(filters, aggregationList, false, env);
     return ResponseDTO.newResponse(perspectiveTrendStats.getCost());
+  }
+
+  @POST
+  @Path("clusterData")
+  @Timed
+  @LogAccountIdentifier
+  @ExceptionMetered
+  @Consumes(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Return cluster data", nickname = "clusterData")
+  @Operation(operationId = "clusterData", description = "Returns cluster data based on the specified query parameters.",
+      summary = "Returns cluster data in a tabular format",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Returns cluster data in a tabular format based on the specified query parameters.",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<List<ClusterCostDetails>>
+  tabularCostDetail(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @Parameter(description = "Start time of the cost details. " + DATETIME_DESCRIPTION
+              + " Defaults to Today - 7days") @QueryParam("startTime") @Valid String from,
+      @Parameter(description = "End time of the cost details. " + DATETIME_DESCRIPTION
+              + " Defaults to Today") @QueryParam("endTime") @Valid String to,
+      @NotNull @Valid @RequestBody(
+          required = true, description = COST_DETAILS_BODY_DESCRIPTION) ClusterCostDetailsQueryParamsDTO queryParams) {
+    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
+
+    DateTime endTime = DateTime.now().withTimeAtStartOfDay();
+    DateTime startTime = endTime.minusDays(7);
+
+    if (from != null) {
+      startTime = DateTime.parse(from);
+    }
+    if (to != null) {
+      endTime = DateTime.parse(to);
+    }
+
+    Boolean skipRoundOff = queryParams.getSkipRoundOff();
+    Integer limit = queryParams.getLimit();
+    Integer offset = queryParams.getOffset();
+    List<QLCEViewAggregation> aggregationList = RESTToGraphQLHelper.getAggregations(queryParams.getAggregations());
+    log.info("Aggregations : {}", aggregationList);
+    List<QLCEViewSortCriteria> sortList = RESTToGraphQLHelper.getClusterCostSortingCriteria(queryParams.getSortOrder());
+    List<QLCEViewFilterWrapper> filters;
+    try {
+      filters = RESTToGraphQLHelper.convertFilters(queryParams.getFilters(), startTime, endTime);
+    } catch (Exception e) {
+      throw new InvalidArgumentsException(e.getMessage());
+    }
+
+    List<QLCEViewGroupBy> groupBy;
+    try {
+      groupBy = RESTToGraphQLHelper.convertGroupBy(queryParams.getGroupBy());
+    } catch (Exception e) {
+      throw new InvalidArgumentsException(e.getMessage());
+    }
+
+    PerspectiveEntityStatsData perspectiveGridData = perspectivesQuery.perspectiveGrid(aggregationList, filters,
+        groupBy, sortList, firstNonNull(limit, (int) DEFAULT_LIMIT_CLUSTER_DATA),
+        firstNonNull(offset, (int) DEFAULT_OFFSET), true, skipRoundOff != null && skipRoundOff, env);
+
+    // List of workloads in case data is grouped by workload
+    Set<String> workloads = costDetailsQueryHelper.getWorkloadsFromCostDetailsResponse(perspectiveGridData, groupBy);
+    Map<String, Map<String, String>> workloadLabels = perspectivesQuery.workloadLabels(workloads, filters, env);
+
+    List<String> selectedLabels = queryParams.getSelectedLabels();
+    List<ClusterCostDetails> clusterCostDetails =
+        costDetailsQueryHelper.getClusterCostDataFromGridResponse(perspectiveGridData);
+
+    if (selectedLabels != null && !workloads.isEmpty()) {
+      clusterCostDetails = costDetailsQueryHelper.updateGridResponseWithSelectedLabels(
+          clusterCostDetails, selectedLabels, workloadLabels);
+    }
+
+    return ResponseDTO.newResponse(clusterCostDetails);
   }
 }

@@ -10,6 +10,7 @@ package io.harness.mappers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
+import io.harness.dtos.instanceinfo.AzureWebAppInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ServerlessAwsLambdaInstanceInfoDTO;
@@ -63,6 +64,8 @@ public class InstanceDetailsMapper {
       return ServiceSpecType.SERVERLESS_AWS_LAMBDA;
     } else if (instanceDTO.getInstanceInfoDTO() instanceof NativeHelmInstanceInfoDTO) {
       return ServiceSpecType.NATIVE_HELM;
+    } else if (instanceDTO.getInstanceInfoDTO() instanceof AzureWebAppInstanceInfoDTO) {
+      return ServiceSpecType.AZURE_WEBAPPS;
     }
     return null;
   }

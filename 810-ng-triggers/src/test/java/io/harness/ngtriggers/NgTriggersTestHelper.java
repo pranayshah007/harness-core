@@ -20,9 +20,9 @@ import io.harness.beans.Repository;
 import io.harness.beans.WebhookBaseAttributes;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
-import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitUrlType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
@@ -246,7 +246,7 @@ public class NgTriggersTestHelper {
     return ConnectorResponseDTO.builder()
         .connector(ConnectorInfoDTO.builder()
                        .connectorConfig(AzureRepoConnectorDTO.builder()
-                                            .connectionType(GitConnectionType.ACCOUNT)
+                                            .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
                                             .url("https://dev.azure.com/org/")
                                             .build())
                        .orgIdentifier("org")
@@ -260,7 +260,7 @@ public class NgTriggersTestHelper {
     return ConnectorResponseDTO.builder()
         .connector(ConnectorInfoDTO.builder()
                        .connectorConfig(AzureRepoConnectorDTO.builder()
-                                            .connectionType(GitConnectionType.ACCOUNT)
+                                            .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
                                             .url("git@ssh.dev.azure.com:v3/org/")
                                             .build())
                        .orgIdentifier("org")

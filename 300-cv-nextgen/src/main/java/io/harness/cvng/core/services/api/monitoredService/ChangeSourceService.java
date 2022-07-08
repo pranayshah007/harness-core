@@ -14,12 +14,13 @@ import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.entities.changeSource.ChangeSource;
 import io.harness.cvng.core.entities.changeSource.HarnessCDCurrentGenChangeSource;
 import io.harness.cvng.core.entities.changeSource.KubernetesChangeSource;
+import io.harness.cvng.core.services.api.DeleteEntityByHandler;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
-public interface ChangeSourceService {
+public interface ChangeSourceService extends DeleteEntityByHandler<ChangeSource> {
   void create(MonitoredServiceParams monitoredServiceParams, Set<ChangeSourceDTO> changeSourceDTOs);
   Set<ChangeSourceDTO> get(MonitoredServiceParams monitoredServiceParams, List<String> identifiers);
   ChangeSource get(MonitoredServiceParams monitoredServiceParams, String identifier);

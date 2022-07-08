@@ -237,9 +237,13 @@ public class AzureAppServiceService {
 
   private void saveTrafficWeight(AzureWebClientContext azureWebClientContext, String slotName,
       AzureAppServicePreDeploymentDataBuilder preDeploymentDataBuilder, LogCallback logCallback) {
-    double slotTrafficWeight = azureWebClient.getDeploymentSlotTrafficWeight(azureWebClientContext, slotName);
+    double slotTrafficWeight = getSlotTrafficWeight(azureWebClientContext, slotName);
     logCallback.saveExecutionLog(String.format("Saved existing Traffic percentage for slot - [%s]", slotName));
     preDeploymentDataBuilder.trafficWeight(slotTrafficWeight);
+  }
+
+  public double getSlotTrafficWeight(AzureWebClientContext azureWebClientContext, String slotName) {
+    return azureWebClient.getDeploymentSlotTrafficWeight(azureWebClientContext, slotName);
   }
 
   @NotNull

@@ -54,7 +54,8 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
                               .build();
 
     mongoTemplate.save(interrupt);
-    when(nodeExecutionService.markAllLeavesDiscontinuing(planExecutionId, StatusUtils.finalizableStatuses()))
+    when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
+             planExecutionId, StatusUtils.finalizableStatuses()))
         .thenReturn(0L);
     Interrupt handledInterrupt = abortAllInterruptHandler.handleInterrupt(interrupt);
     assertThat(handledInterrupt).isNotNull();
@@ -77,7 +78,8 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
                               .build();
 
     mongoTemplate.save(interrupt);
-    when(nodeExecutionService.markAllLeavesDiscontinuing(planExecutionId, StatusUtils.abortAndExpireStatuses()))
+    when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
+             planExecutionId, StatusUtils.abortAndExpireStatuses()))
         .thenReturn(-1L);
     Interrupt handledInterrupt = abortAllInterruptHandler.handleInterrupt(interrupt);
     assertThat(handledInterrupt).isNotNull();
@@ -99,7 +101,8 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
                               .state(State.REGISTERED)
                               .build();
 
-    when(nodeExecutionService.markAllLeavesDiscontinuing(planExecutionId, StatusUtils.finalizableStatuses()))
+    when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
+             planExecutionId, StatusUtils.finalizableStatuses()))
         .thenReturn(0L);
     Interrupt handledInterrupt = abortAllInterruptHandler.registerInterrupt(interrupt);
     assertThat(handledInterrupt).isNotNull();
@@ -118,7 +121,8 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
                                                  .state(State.REGISTERED)
                                                  .build();
 
-    when(nodeExecutionService.markAllLeavesDiscontinuing(planExecutionId, StatusUtils.finalizableStatuses()))
+    when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
+             planExecutionId, StatusUtils.finalizableStatuses()))
         .thenReturn(0L);
     handledInterrupt = abortAllInterruptHandler.registerInterrupt(interruptWithNodeExecutionId);
     assertThat(handledInterrupt).isNotNull();
@@ -143,7 +147,8 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
     mongoTemplate.save(interrupt);
 
     // case1: updatedCount = 0
-    when(nodeExecutionService.markAllLeavesDiscontinuing(planExecutionId, StatusUtils.finalizableStatuses()))
+    when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
+             planExecutionId, StatusUtils.finalizableStatuses()))
         .thenReturn(0L);
     Interrupt handledInterrupt = abortAllInterruptHandler.handleAllNodes(interrupt);
     assertThat(handledInterrupt).isNotNull();
@@ -151,7 +156,8 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
     assertThat(handledInterrupt.getState()).isEqualTo(State.PROCESSING);
 
     // case2: updatedCount < 0
-    when(nodeExecutionService.markAllLeavesDiscontinuing(planExecutionId, StatusUtils.abortAndExpireStatuses()))
+    when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
+             planExecutionId, StatusUtils.abortAndExpireStatuses()))
         .thenReturn(-1L);
     handledInterrupt = abortAllInterruptHandler.handleAllNodes(interrupt);
     assertThat(handledInterrupt).isNotNull();
@@ -159,7 +165,8 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
     assertThat(handledInterrupt.getState()).isEqualTo(State.PROCESSED_UNSUCCESSFULLY);
 
     // case3: updatedCount > 0
-    when(nodeExecutionService.markAllLeavesDiscontinuing(planExecutionId, StatusUtils.abortAndExpireStatuses()))
+    when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
+             planExecutionId, StatusUtils.abortAndExpireStatuses()))
         .thenReturn(1L);
     handledInterrupt = abortAllInterruptHandler.handleAllNodes(interrupt);
     assertThat(handledInterrupt).isNotNull();

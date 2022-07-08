@@ -344,6 +344,88 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AzureRepoStore": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StoreConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "gitFetchType"
+          ],
+          "properties": {
+            "branch": {
+              "type": "string"
+            },
+            "commitId": {
+              "type": "string"
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "folderPath": {
+              "type": "string"
+            },
+            "gitFetchType": {
+              "type": "string",
+              "enum": [
+                "Branch",
+                "Commit"
+              ]
+            },
+            "paths": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "repoName": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "commitId"
+              ]
+            },
+            {
+              "required": [
+                "branch"
+              ]
+            }
+          ]
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "folderPath"
+              ]
+            },
+            {
+              "required": [
+                "paths"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AzureWebAppInfrastructure": {
       "allOf": [
         {
@@ -1854,7 +1936,16 @@
       ],
       "properties": {
         "deployToAll": {
-          "type": "boolean"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "minLength": 1
+            }
+          ]
         },
         "environmentInputs": {
           "oneOf": [
@@ -3024,6 +3115,35 @@
           }
         }
       ]
+    },
+    "JenkinsArtifactConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ArtifactConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "jobName"
+          ],
+          "properties": {
+            "artifactPath": {
+              "type": "string"
+            },
+            "build": {
+              "type": "string"
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "jobName": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "JenkinsBuildStepInfo": {
       "allOf": [
@@ -5178,6 +5298,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "Jenkins"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JenkinsArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Nexus3Registry"
               }
             }
@@ -6080,6 +6216,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GcrArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Jenkins"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JenkinsArtifactConfig"
               }
             }
           }
@@ -7070,7 +7222,8 @@
             "S3Url",
             "InheritFromManifest",
             "Harness",
-            "OciHelmChart"
+            "OciHelmChart",
+            "AzureRepo"
           ]
         }
       },
@@ -7088,6 +7241,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ArtifactoryStoreConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AzureRepo"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureRepoStore"
               }
             }
           }

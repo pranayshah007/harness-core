@@ -18,7 +18,6 @@ import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
-import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.utils.ScmConnectorHelper;
 import io.harness.exception.InvalidRequestException;
@@ -57,11 +56,9 @@ import org.hibernate.validator.constraints.NotBlank;
 public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable {
   @NotNull
   @JsonProperty("type")
-  @Schema(description = "Account | Repository connector type")
-  GitConnectionType connectionType;
+  @Schema(description = "Project | Repository connector type")
+  AzureRepoConnectionTypeDTO connectionType;
   @NotBlank @NotNull @Schema(description = "SSH | HTTP URL based on type of connection") String url;
-  @Schema(description = "The project to validate AzureRepo credentials. Only valid for Account type connector")
-  String validationProject;
   @Schema(description = "The repo to validate AzureRepo credentials. Only valid for Account type connector")
   String validationRepo;
   @Valid
@@ -76,12 +73,11 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
   private static final String AZURE_REPO_NAME_SEPARATOR = "/_git/";
 
   @Builder
-  public AzureRepoConnectorDTO(GitConnectionType connectionType, String url, String validationProject,
-      String validationRepo, AzureRepoAuthenticationDTO authentication, AzureRepoApiAccessDTO apiAccess,
-      Set<String> delegateSelectors, boolean executeOnDelegate) {
+  public AzureRepoConnectorDTO(AzureRepoConnectionTypeDTO connectionType, String url, String validationRepo,
+      AzureRepoAuthenticationDTO authentication, AzureRepoApiAccessDTO apiAccess, Set<String> delegateSelectors,
+      boolean executeOnDelegate) {
     this.connectionType = connectionType;
     this.url = url;
-    this.validationProject = validationProject;
     this.validationRepo = validationRepo;
     this.authentication = authentication;
     this.apiAccess = apiAccess;
@@ -125,7 +121,7 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
 
   @Override
   public String getGitConnectionUrl(GitRepositoryDTO gitRepositoryDTO) {
-    if (connectionType == GitConnectionType.REPO) {
+    if (connectionType == AzureRepoConnectionTypeDTO.REPO) {
       String linkedRepo = getGitRepositoryDetails().getName();
       if (!linkedRepo.equals(gitRepositoryDTO.getName())) {
         throw new InvalidRequestException(
@@ -155,7 +151,7 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
             .org(GitClientHelper.getAzureRepoOrg(orgAndProject))
             .projectName(GitClientHelper.getAzureRepoProject(orgAndProject));
 
-    if (GitConnectionType.REPO.equals(connectionType)) {
+    if (AzureRepoConnectionTypeDTO.REPO.equals(connectionType)) {
       String repoName = GitClientHelper.getGitRepo(url);
       repoName = StringUtils.substringAfterLast(repoName, "/");
       return gitRepositoryDTOBuilder.name(repoName).build();

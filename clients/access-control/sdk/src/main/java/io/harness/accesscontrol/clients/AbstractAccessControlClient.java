@@ -51,18 +51,18 @@ public abstract class AbstractAccessControlClient implements AccessControlClient
   }
 
   @Override
+  public boolean hasAccess(ResourceScope resourceScope, Resource resource, String permission) {
+    return hasAccess(null, resourceScope, resource, permission);
+  }
+
+  @Override
   public boolean hasAccess(Principal principal, ResourceScope resourceScope, Resource resource, String permission) {
     try {
-      checkForAccessOrThrowInternal(principal, resourceScope, resource, permission, "");
+      checkForAccessOrThrowInternal(principal, resourceScope, resource, permission, null);
       return true;
     } catch (AccessDeniedException accessDeniedException) {
       return false;
     }
-  }
-
-  @Override
-  public boolean hasAccess(ResourceScope resourceScope, Resource resource, String permission) {
-    return hasAccess(null, resourceScope, resource, permission);
   }
 
   private PermissionCheckDTO getPermissionCheckDTOForScope(ResourceScope resourceScope, String permission) {
@@ -102,6 +102,12 @@ public abstract class AbstractAccessControlClient implements AccessControlClient
     checkForAccessOrThrowInternal(null, resourceScope, resource, permission, exceptionMessage);
   }
 
+  @Override
+  public void checkForAccessOrThrow(
+      Principal principal, ResourceScope resourceScope, Resource resource, String permission, String exceptionMessage) {
+    checkForAccessOrThrowInternal(principal, resourceScope, resource, permission, exceptionMessage);
+  }
+
   private void checkForAccessOrThrowInternal(
       Principal principal, ResourceScope resourceScope, Resource resource, String permission, String exceptionMessage) {
     PermissionCheckDTO permissionCheckDTO;
@@ -116,6 +122,7 @@ public abstract class AbstractAccessControlClient implements AccessControlClient
                                .resourceType(resource.getResourceType())
                                .resourceIdentifier(resource.getResourceIdentifier())
                                .resourceScope(resourceScope)
+                               .resourceAttributes(resource.getResourceAttributes())
                                .build();
     }
     AccessCheckResponseDTO accessCheckResponseDTO =
@@ -135,11 +142,5 @@ public abstract class AbstractAccessControlClient implements AccessControlClient
     if (!accessControlDTO.isPermitted()) {
       throw new NGAccessDeniedException(finalMessage, USER, Collections.singletonList(permissionCheckDTO));
     }
-  }
-
-  @Override
-  public void checkForAccessOrThrow(
-      Principal principal, ResourceScope resourceScope, Resource resource, String permission, String exceptionMessage) {
-    checkForAccessOrThrowInternal(principal, resourceScope, resource, permission, exceptionMessage);
   }
 }

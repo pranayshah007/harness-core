@@ -72,7 +72,7 @@ public class CustomApprovalInstance extends ApprovalInstance implements Persiste
         CustomApprovalInstance.builder()
             .shellType(specParameters.getShellType())
             .source(specParameters.getSource())
-            .retryInterval(specParameters.getRetryInterval())
+            .retryInterval(getTimeout("retryInterval", specParameters.getRetryInterval().getValue()))
             .delegateSelectors(specParameters.getDelegateSelectors())
             .environmentVariables(specParameters.getEnvironmentVariables())
             .outputVariables(specParameters.getOutputVariables())
@@ -80,7 +80,7 @@ public class CustomApprovalInstance extends ApprovalInstance implements Persiste
                 CriteriaSpecWrapperDTO.fromCriteriaSpecWrapper(specParameters.getApprovalCriteria(), false))
             .rejectionCriteria(
                 CriteriaSpecWrapperDTO.fromCriteriaSpecWrapper(specParameters.getRejectionCriteria(), true))
-            .scriptTimeout(specParameters.getScriptTimeout())
+            .scriptTimeout(getTimeout("scriptTimeout", specParameters.getScriptTimeout().getValue()))
             .build();
     instance.updateFromStepParameters(ambiance, stepParameters);
     instance.setNextIterations(instance.recalculateNextIterations());
@@ -101,6 +101,16 @@ public class CustomApprovalInstance extends ApprovalInstance implements Persiste
         .source(getSource())
         .uuid(getUuid())
         .build();
+  }
+
+  private static ParameterField<Timeout> getTimeout(String fieldName, Object objectParameterField) {
+    if (objectParameterField instanceof String) {
+      return ParameterField.createValueField(Timeout.fromString(objectParameterField.toString()));
+    }
+    if (objectParameterField instanceof Timeout) {
+      return ParameterField.createValueField((Timeout) objectParameterField);
+    }
+    throw new IllegalArgumentException(String.format("Invalid value for %s", fieldName));
   }
 
   private long getGap() {

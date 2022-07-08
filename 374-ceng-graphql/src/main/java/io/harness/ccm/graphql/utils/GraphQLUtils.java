@@ -24,6 +24,7 @@ import lombok.NonNull;
 public class GraphQLUtils {
   public static final long DEFAULT_OFFSET = 0L;
   public static final long DEFAULT_LIMIT = 10L;
+  public static final long DEFAULT_LIMIT_CLUSTER_DATA = 1000L;
 
   public String getAccountIdentifier(@NonNull ResolutionEnvironment env) {
     return getContextValue(env, NGCommonEntityConstants.ACCOUNT_KEY);
