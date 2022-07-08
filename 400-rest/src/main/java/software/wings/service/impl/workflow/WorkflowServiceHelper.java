@@ -994,11 +994,15 @@ public class WorkflowServiceHelper {
     switch (orchestrationWorkflowType) {
       case BASIC:
         generateAppServiceBasicPhaseSteps(phaseSteps, commandMap);
-        return;
+        break;
       case CANARY:
         generateAppServiceCanaryPhaseSteps(isFirstPhase, phaseSteps, commandMap);
+        break;
       case BLUE_GREEN:
         generateAppServiceBlueGreenPhaseSteps(phaseSteps, commandMap);
+        break;
+      default:
+        return;
     }
   }
 

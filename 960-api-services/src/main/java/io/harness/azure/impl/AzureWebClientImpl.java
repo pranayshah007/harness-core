@@ -295,10 +295,6 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
 
   private void updateWebAppAppSettings(
       AzureWebClientContext context, Map<String, AzureAppServiceApplicationSetting> appSettings) {
-    if (appSettings.isEmpty()) {
-      log.info("WebApp settings list is empty, context: {}", context);
-      return;
-    }
     WebApp azureApp = getWebApp(context);
     log.debug("Start updating app settings, context: {}", context);
     WebApp.Update update = azureApp.update();
@@ -389,11 +385,6 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
 
   private void updateWebAppConnectionStrings(
       AzureWebClientContext context, Map<String, AzureAppServiceConnectionString> connectionStrings) {
-    if (connectionStrings.isEmpty()) {
-      log.info("Slot connection settings list is empty, context: {}", context);
-      return;
-    }
-
     WebApp azureApp = getWebApp(context);
     WebApp.Update update = azureApp.update();
     connectionStrings.values().forEach(connString -> {

@@ -59,13 +59,22 @@ public class SlotContainerLogStreamer {
   }
 
   private void initializeLastTime() {
-    Optional<DeploymentSlot> deploymentSlotByName =
-        azureWebClient.getDeploymentSlotByName(azureWebClientContext, slotName);
-    deploymentSlotByName.ifPresent(slot -> {
-      byte[] containerLogs = slot.getContainerLogs();
-      String log = new String(containerLogs);
-      parseLastTime(log);
-    });
+    if (DEPLOYMENT_SLOT_PRODUCTION_NAME.equals(slotName)) {
+      Optional<WebApp> azureWebApp = azureWebClient.getWebAppByName(azureWebClientContext);
+      azureWebApp.ifPresent(app -> {
+        byte[] containerLogs = app.getContainerLogs();
+        String log = new String(containerLogs);
+        parseLastTime(log);
+      });
+    } else {
+      Optional<DeploymentSlot> deploymentSlotByName =
+          azureWebClient.getDeploymentSlotByName(azureWebClientContext, slotName);
+      deploymentSlotByName.ifPresent(slot -> {
+        byte[] containerLogs = slot.getContainerLogs();
+        String log = new String(containerLogs);
+        parseLastTime(log);
+      });
+    }
   }
 
   private void parseLastTime(String log) {
