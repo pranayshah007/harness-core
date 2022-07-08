@@ -409,7 +409,13 @@ public class GitSyncErrorServiceImpl implements GitSyncErrorService {
   public void removeScope(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     Update update =
         new Update().pull(GitSyncErrorKeys.scopes, Scope.of(accountIdentifier, orgIdentifier, projectIdentifier));
-    gitSyncErrorRepository.updateError(new Criteria(), update);
+    Criteria criteriaForProject = Criteria.where(GitSyncErrorKeys.accountIdentifier)
+                                      .is(accountIdentifier)
+                                      .and(GitSyncErrorKeys.orgIdentifier)
+                                      .is(orgIdentifier)
+                                      .and(GitSyncErrorKeys.projectIdentifier)
+                                      .is(projectIdentifier);
+    gitSyncErrorRepository.updateError(criteriaForProject, update);
     Criteria criteria = Criteria.where(GitSyncErrorKeys.scopes).size(0);
     gitSyncErrorRepository.deleteAll(criteria);
   }

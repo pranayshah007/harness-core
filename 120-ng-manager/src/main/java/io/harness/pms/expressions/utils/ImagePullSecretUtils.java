@@ -24,6 +24,7 @@ import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.azure.AzureHelperService;
@@ -52,6 +53,9 @@ import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsConstant;
+import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusAuthType;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusUsernamePasswordAuthDTO;
@@ -122,6 +126,9 @@ public class ImagePullSecretUtils {
         break;
       case ArtifactSourceConstants.ACR_NAME:
         getImageDetailsFromAcr((AcrArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
+        break;
+      case ArtifactSourceConstants.JENKINS_NAME:
+        getBuildDetailsFromJenkins((JenkinsArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
         break;
       default:
         throw new UnsupportedOperationException(
@@ -362,6 +369,24 @@ public class ImagePullSecretUtils {
 
     imageDetailsBuilder.username(ACR_DUMMY_DOCKER_USERNAME);
     imageDetailsBuilder.password(token);
+  }
+
+  private void getBuildDetailsFromJenkins(
+      JenkinsArtifactOutcome artifactOutcome, ImageDetailsBuilder imageDetailsBuilder, Ambiance ambiance) {
+    String connectorRef = artifactOutcome.getConnectorRef();
+    ConnectorInfoDTO connectorDTO = getConnector(connectorRef, ambiance);
+    JenkinsConnectorDTO connectorConfig = (JenkinsConnectorDTO) connectorDTO.getConnectorConfig();
+    if (connectorConfig.getAuth().getCredentials() != null
+        && connectorConfig.getAuth().getAuthType().getDisplayName() == JenkinsConstant.USERNAME_PASSWORD) {
+      JenkinsUserNamePasswordDTO credentials = (JenkinsUserNamePasswordDTO) connectorConfig.getAuth().getCredentials();
+      String passwordRef = credentials.getPasswordRef().toSecretRefStringValue();
+      if (credentials.getUsernameRef() != null) {
+        imageDetailsBuilder.usernameRef(
+            getPasswordExpression(credentials.getUsernameRef().toSecretRefStringValue(), ambiance));
+      }
+      imageDetailsBuilder.username(credentials.getUsername());
+      imageDetailsBuilder.password(getPasswordExpression(passwordRef, ambiance));
+    }
   }
 
   private String imageUrlToRegistryUrl(String imageUrl) {

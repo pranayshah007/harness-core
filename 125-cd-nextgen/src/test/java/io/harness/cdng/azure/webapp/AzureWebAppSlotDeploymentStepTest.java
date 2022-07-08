@@ -27,6 +27,7 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -37,6 +38,7 @@ import io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentPassThroughData;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppSlotDeploymentDataOutput;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
@@ -93,6 +95,7 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
   @Mock private AzureWebAppStepHelper azureWebAppStepHelper;
   @Mock private CDStepHelper cdStepHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Mock private InstanceInfoService instanceInfoService;
 
   @InjectMocks private AzureWebAppSlotDeploymentStep slotDeploymentStep;
 
@@ -403,6 +406,7 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
     assertThat(stepResponse.getUnitProgressList()).isEqualTo(unitProgresses);
     AzureWebAppSlotDeploymentDataOutput slotDeploymentDataOutput = slotDeploymentDataOutputArgumentCaptor.getValue();
     assertThat(slotDeploymentDataOutput.getDeploymentProgressMarker()).isEqualTo(deploymentProgressMarker);
+    verify(instanceInfoService, times(1)).saveServerInstancesIntoSweepingOutput(any(), anyList());
   }
 
   private StepElementParameters createTestStepElementParameters() {

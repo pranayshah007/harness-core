@@ -130,7 +130,7 @@ public class JenkinsResourceServiceImpl implements JenkinsResourceService {
             encryptionDetails, ArtifactSourceType.JENKINS, null, null, jobName, artifactPath);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(
-          jenkinsRequest, ArtifactTaskType.GET_BUILDS, baseNGAccess, "Jenkins Get Job task failure due to error");
+          jenkinsRequest, ArtifactTaskType.GET_BUILDS, baseNGAccess, "Jenkins Get Builds task failure due to error");
       return artifactTaskExecutionResponse.getBuildDetails();
     } catch (DelegateServiceDriverException ex) {
       throw new HintException(

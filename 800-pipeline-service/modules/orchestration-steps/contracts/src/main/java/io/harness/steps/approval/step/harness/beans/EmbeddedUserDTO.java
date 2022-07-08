@@ -7,6 +7,7 @@
 
 package io.harness.steps.approval.step.harness.beans;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -21,6 +22,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@RecasterAlias("io.harness.steps.approval.step.harness.beans.EmbeddedUserDTO")
 public class EmbeddedUserDTO {
   private String name;
   private String email;

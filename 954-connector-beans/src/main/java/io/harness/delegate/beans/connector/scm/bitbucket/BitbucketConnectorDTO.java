@@ -57,7 +57,10 @@ import org.hibernate.validator.constraints.NotBlank;
 @OwnedBy(HarnessTeam.DX)
 @Schema(name = "BitbucketConnector", description = "This contains details of Bitbucket connectors")
 public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable {
-  @NotNull @JsonProperty("type") private GitConnectionType connectionType;
+  @NotNull
+  @JsonProperty("type")
+  @Schema(type = "string", allowableValues = {"Account", "Repo"})
+  private GitConnectionType connectionType;
   @NotNull @NotBlank private String url;
   private String validationRepo;
   @Valid @NotNull private BitbucketAuthenticationDTO authentication;

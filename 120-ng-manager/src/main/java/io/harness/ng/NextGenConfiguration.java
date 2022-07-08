@@ -138,6 +138,7 @@ public class NextGenConfiguration extends Configuration {
   public static final String OAUTH_RESOURCE_PACKAGE = "io.harness.ng.oauth";
   public static final String LDAP_PACKAGE = "io.harness.ldap.resource";
   public static final String CHAOS_PACKAGE = "io.harness.ng.chaos";
+  public static final String SETTINGS_RESOURCE_PACKAGE = "io.harness.ngsettings.remote";
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
@@ -183,6 +184,8 @@ public class NextGenConfiguration extends Configuration {
   @ConfigSecret
   private LogStreamingServiceConfiguration logStreamingServiceConfig;
   private OpaServiceConfiguration opaServerConfig;
+  private String policyManagerSecret;
+  private ServiceHttpClientConfig opaClientConfig;
   @JsonProperty("gitSyncServerConfig") private GrpcServerConfig gitSyncGrpcServerConfig;
   @JsonProperty("gitGrpcClientConfigs") private Map<Microservice, GrpcClientConfig> gitGrpcClientConfigs;
   @JsonProperty("shouldDeployWithGitSync") private Boolean shouldDeployWithGitSync;
@@ -269,7 +272,8 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.VARIABLE_RESOURCE_PACKAGE, NextGenConfiguration.FILE_STORE_RESOURCE_PACKAGE,
                 NextGenConfiguration.GITOPS_RESOURCE_PACKAGE, NextGenConfiguration.INFRA_RESOURCE_PACKAGE,
                 NextGenConfiguration.AWS_PACKAGE, NextGenConfiguration.OAUTH_RESOURCE_PACKAGE,
-                NextGenConfiguration.LDAP_PACKAGE, NextGenConfiguration.CHAOS_PACKAGE))
+                NextGenConfiguration.LDAP_PACKAGE, NextGenConfiguration.CHAOS_PACKAGE,
+                NextGenConfiguration.SETTINGS_RESOURCE_PACKAGE))
         .collect(Collectors.toSet());
   }
 

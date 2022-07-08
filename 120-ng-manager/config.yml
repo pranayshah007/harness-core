@@ -436,9 +436,17 @@ basePathPrefix: ${BASE_PATH_PREFIX:-""}
 enforcementClientConfiguration:
   enforcementCheckEnabled: false
 
+# remove in a few cycles
 opaServerConfig:
   baseUrl: http://localhost:3000
   secret: secret
+
+policyManagerSecret: secret
+
+opaClientConfig:
+  baseUrl: http://localhost:3000
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
 
 secretsConfiguration:
   secretResolutionEnabled: false

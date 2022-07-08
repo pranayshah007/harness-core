@@ -23,6 +23,7 @@ import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.strategy.StrategyValidationUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,6 +51,9 @@ public abstract class GenericStepPMSFilterJsonCreator implements FilterJsonCreat
 
   @Override
   public FilterCreationResponse handleNode(FilterCreationContext filterCreationContext, StepElementConfig yamlField) {
+    if (yamlField.getStrategy() != null) {
+      StrategyValidationUtils.validateStrategyNode(yamlField.getStrategy());
+    }
     if (WithConnectorRef.class.isAssignableFrom(yamlField.getStepSpecType().getClass())) {
       String accountIdentifier = filterCreationContext.getSetupMetadata().getAccountId();
       String orgIdentifier = filterCreationContext.getSetupMetadata().getOrgId();

@@ -221,6 +221,10 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       throw new InvalidRequestException("Infrastructure Or Environment or Environment Group section is missing");
     }
 
+    if (environmentV2 != null && environmentV2.getDeployToAll().isExpression()) {
+      throw new InvalidRequestException("Value for deploy to all must be provided");
+    }
+
     if (infraField != null) {
       // Adding infrastructure node
       PlanNode infraStepNode = InfrastructurePmsPlanCreator.getInfraStepPlanNode(

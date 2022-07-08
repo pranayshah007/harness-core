@@ -27,7 +27,6 @@ import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
-import io.harness.delegate.task.serverless.ServerlessArtifactsConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
@@ -38,6 +37,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -49,13 +49,15 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
   ServerlessInfraConfig getServerlessInfraConfig();
   ServerlessManifestConfig getServerlessManifestConfig();
   Integer getTimeoutIntervalInMin();
-  ServerlessArtifactsConfig getServerlessArtifactsConfig();
+  ServerlessArtifactConfig getServerlessArtifactConfig();
+  Map<String, ServerlessArtifactConfig> getSidecarServerlessArtifactConfigs();
 
   @Override
   default List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     ServerlessInfraConfig serverlessInfraConfig = getServerlessInfraConfig();
     ServerlessManifestConfig serverlessManifestConfig = getServerlessManifestConfig();
-    ServerlessArtifactsConfig serverlessArtifactsConfig = getServerlessArtifactsConfig();
+    ServerlessArtifactConfig serverlessArtifactConfig = getServerlessArtifactConfig();
+    Map<String, ServerlessArtifactConfig> sidecarServerlessArtifactConfigs = getSidecarServerlessArtifactConfigs();
     List<EncryptedDataDetail> cloudProviderEncryptionDetails = serverlessInfraConfig.getEncryptionDataDetails();
 
     List<ExecutionCapability> capabilities =
@@ -83,21 +85,21 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
         }
       }
     }
-    if (serverlessArtifactsConfig != null) {
-      ServerlessArtifactConfig primaryArtifact = serverlessArtifactsConfig.getPrimary();
-      if (primaryArtifact instanceof ServerlessArtifactoryArtifactConfig) {
-        capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
-            ((ServerlessArtifactoryArtifactConfig) primaryArtifact).getConnectorDTO().getConnectorConfig(),
-            maskingEvaluator));
-      }
 
-      if (serverlessArtifactsConfig.getSidecars() != null) {
-        for (ServerlessArtifactConfig serverlessArtifactConfig : serverlessArtifactsConfig.getSidecars().values()) {
-          if (serverlessArtifactConfig instanceof ServerlessArtifactoryArtifactConfig) {
-            capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
-                ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getConnectorDTO().getConnectorConfig(),
-                maskingEvaluator));
-          }
+    if (serverlessArtifactConfig instanceof ServerlessArtifactoryArtifactConfig) {
+      capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
+          ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getConnectorDTO().getConnectorConfig(),
+          maskingEvaluator));
+    }
+
+    if (sidecarServerlessArtifactConfigs != null) {
+      for (ServerlessArtifactConfig sidecarServerlessArtifactConfig : sidecarServerlessArtifactConfigs.values()) {
+        if (sidecarServerlessArtifactConfig instanceof ServerlessArtifactoryArtifactConfig) {
+          capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
+              ((ServerlessArtifactoryArtifactConfig) sidecarServerlessArtifactConfig)
+                  .getConnectorDTO()
+                  .getConnectorConfig(),
+              maskingEvaluator));
         }
       }
     }
