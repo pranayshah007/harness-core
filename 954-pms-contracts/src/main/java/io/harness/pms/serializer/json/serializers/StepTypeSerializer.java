@@ -5,10 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.serializer.json;
+package io.harness.pms.serializer.json.serializers;
 
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.serializer.json.serializers.ProtoJsonSerializer;
 
 public class StepTypeSerializer extends ProtoJsonSerializer<StepType> {
   public StepTypeSerializer(Class<StepType> t) {

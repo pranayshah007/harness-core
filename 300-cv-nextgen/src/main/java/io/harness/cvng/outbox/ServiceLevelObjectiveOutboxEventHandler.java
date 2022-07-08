@@ -63,16 +63,15 @@ public class ServiceLevelObjectiveOutboxEventHandler implements OutboxEventHandl
       throws IOException {
     ServiceLevelObjectiveCreateEvent sloCreateEvent =
         objectMapper.readValue(outboxEvent.getEventData(), ServiceLevelObjectiveCreateEvent.class);
-    AuditEntry auditEntry =
-        AuditEntry.builder()
-            .action(Action.CREATE)
-            .module(ModuleType.CV)
-            .newYaml(getYamlString(sloCreateEvent.getNewServiceLevelObjectiveDTO()))
-            .timestamp(outboxEvent.getCreatedAt())
-            .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
-            .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
-            .insertId(outboxEvent.getId())
-            .build();
+    AuditEntry auditEntry = AuditEntry.builder()
+                                .action(Action.CREATE)
+                                .module(ModuleType.CV)
+                                .newYaml(getYamlString(sloCreateEvent.getNewServiceLevelObjectiveDTO()))
+                                .timestamp(outboxEvent.getCreatedAt())
+                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+                                .insertId(outboxEvent.getId())
+                                .build();
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 

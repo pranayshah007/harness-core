@@ -5,10 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.serializer.json;
+package io.harness.pms.serializer.json.serializers;
 
 import io.harness.pms.contracts.execution.ExecutableResponse;
-import io.harness.pms.serializer.json.serializers.ProtoJsonSerializer;
 
 public class ExecutableResponseSerializer extends ProtoJsonSerializer<ExecutableResponse> {
   public ExecutableResponseSerializer(Class<ExecutableResponse> t) {

@@ -5,17 +5,16 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.serializer.json;
+package io.harness.pms.serializer.json.serializers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
-import io.harness.pms.serializer.json.serializers.ProtoJsonSerializer;
+import io.harness.pms.contracts.interrupts.InterruptEffectProto;
 
 @OwnedBy(PIPELINE)
-public class ExecutionPrincipalInfoSerializer extends ProtoJsonSerializer<ExecutionPrincipalInfo> {
-  public ExecutionPrincipalInfoSerializer() {
-    super(ExecutionPrincipalInfo.class);
+public class InterruptEffectJsonSerializer extends ProtoJsonSerializer<InterruptEffectProto> {
+  public InterruptEffectJsonSerializer() {
+    super(InterruptEffectProto.class);
   }
 }

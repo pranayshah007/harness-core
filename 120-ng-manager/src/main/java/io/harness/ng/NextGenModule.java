@@ -113,6 +113,7 @@ import io.harness.ng.accesscontrol.migrations.AccessControlMigrationModule;
 import io.harness.ng.accesscontrol.user.AggregateUserService;
 import io.harness.ng.accesscontrol.user.AggregateUserServiceImpl;
 import io.harness.ng.authenticationsettings.AuthenticationSettingsModule;
+import io.harness.ng.chaos.ChaosModule;
 import io.harness.ng.core.AccountOrgProjectHelper;
 import io.harness.ng.core.AccountOrgProjectHelperImpl;
 import io.harness.ng.core.CoreModule;
@@ -671,7 +672,7 @@ public class NextGenModule extends AbstractModule {
         return appConfig.getAccountConfig();
       }
     });
-
+    install(ChaosModule.getInstance());
     install(LicenseModule.getInstance());
     install(SubscriptionModule.createInstance(appConfig.getSubscriptionConfig()));
     bind(AggregateUserService.class).to(AggregateUserServiceImpl.class);

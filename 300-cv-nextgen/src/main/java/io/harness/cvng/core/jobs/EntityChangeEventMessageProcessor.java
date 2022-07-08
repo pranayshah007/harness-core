@@ -7,7 +7,6 @@
 
 package io.harness.cvng.core.jobs;
 
-import com.google.common.annotations.VisibleForTesting;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.core.entities.CVConfig;
@@ -33,6 +32,7 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveS
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.persistence.PersistentEntity;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -46,9 +46,8 @@ public abstract class EntityChangeEventMessageProcessor implements ConsumerMessa
     // Add the service for project level default deletion
     final List<Class<? extends PersistentEntity>> deleteEntitiesWithDefaultHandler =
         Arrays.asList(VerificationJob.class, Activity.class, MetricPack.class, HeatMap.class, TimeSeriesThreshold.class,
-            CVNGStepTask.class, UserJourney.class, ServiceLevelIndicator.class,
-            ChangeSource.class, Webhook.class, ServiceDependency.class, SLOHealthIndicator.class,
-            SLOErrorBudgetReset.class, NotificationRule.class);
+            CVNGStepTask.class, UserJourney.class, ServiceLevelIndicator.class, ChangeSource.class, Webhook.class,
+            ServiceDependency.class, SLOHealthIndicator.class, SLOErrorBudgetReset.class, NotificationRule.class);
     ENTITIES_MAP = new LinkedHashMap<>();
     deleteEntitiesWithDefaultHandler.forEach(entity -> ENTITIES_MAP.put(entity, DeleteEntityByHandler.class));
 

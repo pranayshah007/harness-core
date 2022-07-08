@@ -5,16 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.serializer.json;
+package io.harness.pms.serializer.json.serializers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.contracts.governance.PolicyMetadata;
-import io.harness.pms.serializer.json.serializers.ProtoJsonSerializer;
+import io.harness.pms.contracts.governance.GovernanceMetadata;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public class PolicyMetadataSerializer extends ProtoJsonSerializer<PolicyMetadata> {
-  public PolicyMetadataSerializer() {
-    super(PolicyMetadata.class);
+public class GovernanceMetadataSerializer extends ProtoJsonSerializer<GovernanceMetadata> {
+  public GovernanceMetadataSerializer() {
+    super(GovernanceMetadata.class);
   }
 }

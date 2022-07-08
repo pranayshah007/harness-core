@@ -5,13 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.serializer.json;
+package io.harness.pms.serializer.json.serializers;
 
-import io.harness.pms.contracts.plan.GraphLayoutInfo;
-import io.harness.pms.serializer.json.serializers.ProtoJsonSerializer;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 
-public class LayoutNodeInfoSerializer extends ProtoJsonSerializer<GraphLayoutInfo> {
-  public LayoutNodeInfoSerializer() {
-    super(GraphLayoutInfo.class);
+public class FailureInfoSerializer extends ProtoJsonSerializer<FailureInfo> {
+  public FailureInfoSerializer() {
+    super(FailureInfo.class);
   }
 }
