@@ -31,6 +31,10 @@ public interface ManifestType {
   String KustomizePatches = "KustomizePatches";
   String ServerlessAwsLambda = "ServerlessAwsLambda";
   String ReleaseRepo = "ReleaseRepo";
+  String EcsTaskDefinition = "EcsTaskDefinition";
+  String EcsServiceDefinition = "EcsServiceDefinition";
+  String EcsScalingPolicyDefinition = "EcsScalingPolicyDefinition";
+  String EcsScalableTargetDefinition = "EcsScalableTargetDefinition";
 
   static HashSet<String> getAllManifestTypes() {
     return new HashSet<>(Arrays.asList(ManifestType.K8Manifest, ManifestType.VALUES, ManifestType.OpenshiftTemplate,

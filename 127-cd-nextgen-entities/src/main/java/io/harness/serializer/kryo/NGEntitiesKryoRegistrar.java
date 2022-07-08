@@ -40,6 +40,10 @@ import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig;
 import io.harness.cdng.manifest.yaml.AzureRepoStore;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
+import io.harness.cdng.manifest.yaml.EcsScalableTargetDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.EcsScalingPolicyDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.EcsServiceDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.EcsTaskDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.GitLabStore;
 import io.harness.cdng.manifest.yaml.GitStore;
@@ -65,6 +69,10 @@ import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.kinds.EcsScalableTargetDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.EcsScalingPolicyDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.EcsServiceDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.EcsTaskDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.manifest.yaml.kinds.KustomizeManifest;
@@ -201,6 +209,17 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(AzureWebAppServiceSpec.class, 12599);
     kryo.register(AmazonS3ArtifactConfig.class, 12569);
     kryo.register(AzureRepoStore.class, 12570);
+
     kryo.register(JenkinsArtifactConfig.class, 130012);
+
+    kryo.register(EcsScalableTargetDefinitionManifest.class,12571);
+    kryo.register(EcsScalingPolicyDefinitionManifest.class,12572);
+    kryo.register(EcsServiceDefinitionManifest.class,12573);
+    kryo.register(EcsTaskDefinitionManifest.class,12574);
+    kryo.register(EcsTaskDefinitionManifestOutcome.class,12575);
+    kryo.register(EcsServiceDefinitionManifestOutcome.class,12576);
+    kryo.register(EcsScalingPolicyDefinitionManifestOutcome.class,12577);
+    kryo.register(EcsScalableTargetDefinitionManifestOutcome.class,12578);
+
   }
 }
