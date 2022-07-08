@@ -83,8 +83,7 @@ public interface HPersistence extends HealthMonitor {
    */
 
   default AdvancedDatastore getDatastore(Class cls) {
-    Map<Class, Store> classStores = new HashMap<>(getClassStores());
-    return getDatastore(classStores.computeIfAbsent(cls, klass -> {
+    return getDatastore(getClassStores().computeIfAbsent(cls, klass -> {
       return Arrays.stream(cls.getDeclaredAnnotations())
           .filter(annotation -> annotation.annotationType().equals(StoreIn.class))
           .map(annotation -> ((StoreIn) annotation).value())
