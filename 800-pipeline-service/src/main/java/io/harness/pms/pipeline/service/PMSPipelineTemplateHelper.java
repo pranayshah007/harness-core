@@ -24,6 +24,7 @@ import io.harness.ng.core.template.RefreshRequestDTO;
 import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.ng.core.template.exception.NGTemplateResolveException;
 import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -34,7 +35,6 @@ import io.harness.template.remote.TemplateResourceClient;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -110,23 +110,20 @@ public class PMSPipelineTemplateHelper {
             System.currentTimeMillis() - start, projectId, orgId, accountId);
       }
     }
-    return TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
+    return TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).mergedPipelineYamlWithTemplateRef(yaml).build();
   }
 
   public List<EntityDetailProtoDTO> getTemplateReferencesForGivenYaml(
       String accountId, String orgId, String projectId, String yaml) {
-    if (pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_TEMPLATE_REFERENCES_SUPPORT)) {
-      GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-      if (gitEntityInfo != null) {
-        return NGRestUtils.getResponse(templateResourceClient.getTemplateReferenceForGivenYaml(accountId, orgId,
-            projectId, gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
-            gitEntityInfo.getYamlGitConfigId(), true, yaml));
-      }
-
-      return NGRestUtils.getResponse(
-          templateResourceClient.getTemplateReferenceForGivenYaml(accountId, orgId, projectId, null, null, null, yaml));
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    if (gitEntityInfo != null) {
+      return NGRestUtils.getResponse(templateResourceClient.getTemplateReferenceForGivenYaml(accountId, orgId,
+          projectId, gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
+          gitEntityInfo.getYamlGitConfigId(), true, TemplateReferenceRequestDTO.builder().yaml(yaml).build()));
     }
-    return new ArrayList<>();
+
+    return NGRestUtils.getResponse(templateResourceClient.getTemplateReferenceForGivenYaml(
+        accountId, orgId, projectId, null, null, null, TemplateReferenceRequestDTO.builder().yaml(yaml).build()));
   }
 
   public RefreshResponseDTO getRefreshedYaml(String accountId, String orgId, String projectId, String yaml) {

@@ -29,6 +29,7 @@ public class K8sCCMConstants {
   public static final String UNALLOCATED = "Unallocated";
   public static final String DEFAULT_DEPLOYMENT_TYPE = "Pod";
   public static final String AWS_FARGATE_COMPUTE_TYPE = "fargate";
+  public static final String NODE_POOL_NAME_KEY = "node-pool-name";
 
   private K8sCCMConstants() {}
 }

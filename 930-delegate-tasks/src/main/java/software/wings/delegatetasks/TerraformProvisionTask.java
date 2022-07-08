@@ -62,6 +62,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.TerraformCommandExecutionException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.git.model.GitRepositoryType;
 import io.harness.logging.CommandExecutionStatus;
@@ -216,12 +217,14 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
     EncryptedRecordData encryptedTfPlan = parameters.getEncryptedTfPlan();
     try {
       encryptionService.decrypt(gitConfig, parameters.getSourceRepoEncryptionDetails(), false);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(gitConfig, parameters.getSourceRepoEncryptionDetails());
       gitClient.ensureRepoLocallyClonedAndUpdated(gitOperationContext);
     } catch (RuntimeException ex) {
-      log.error("Exception in processing git operation", ex);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+      log.error("Exception in processing git operation", sanitizedException);
       return TerraformExecutionData.builder()
           .executionStatus(ExecutionStatus.FAILED)
-          .errorMessage(TerraformTaskUtils.getGitExceptionMessageIfExists(ex))
+          .errorMessage(TerraformTaskUtils.getGitExceptionMessageIfExists(sanitizedException))
           .build();
     }
 
@@ -241,11 +244,12 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
     try {
       copyFilesToWorkingDirectory(gitClientHelper.getRepoDirectory(gitOperationContext), workingDir);
     } catch (Exception ex) {
-      log.error("Exception in copying files to provisioner specific directory", ex);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+      log.error("Exception in copying files to provisioner specific directory", sanitizedException);
       FileUtils.deleteQuietly(new File(baseDir));
       return TerraformExecutionData.builder()
           .executionStatus(ExecutionStatus.FAILED)
-          .errorMessage(ExceptionUtils.getMessage(ex))
+          .errorMessage(ExceptionUtils.getMessage(sanitizedException))
           .build();
     }
     String scriptDirectory = terraformBaseHelper.resolveScriptDirectory(workingDir, parameters.getScriptPath());
@@ -270,7 +274,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
         try {
           awsAuthEnvVariables = getAwsAuthVariables(parameters);
         } catch (Exception e) {
-          throw new InvalidRequestException(e.getMessage());
+          throw new InvalidRequestException(ExceptionMessageSanitizer.sanitizeException(e).getMessage());
         }
       }
 
@@ -331,7 +335,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
           code = executeWithTerraformClient(parameters, tfBackendConfigsFile, tfOutputsFile, scriptDirectory,
               workingDir, tfVarDirectory, inlineVarParams, uiLogs, envVars, logCallback, planJsonLogOutputStream);
         } catch (TerraformCommandExecutionException exception) {
-          log.warn(exception.getMessage());
+          log.warn(ExceptionMessageSanitizer.sanitizeException(exception).getMessage());
           code = 0;
         }
       } else {
@@ -464,9 +468,17 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
         }
       }
 
+      if (code != 0) {
+        saveExecutionLog("Script execution finished with status: " + CommandExecutionStatus.FAILURE,
+            CommandExecutionStatus.FAILURE, INFO, logCallback);
+        return TerraformExecutionData.builder()
+            .executionStatus(ExecutionStatus.FAILED)
+            .errorMessage("The terraform command exited with code " + code)
+            .build();
+      }
+
       String tfPlanJsonFileId = null;
-      if (code == 0 && parameters.isSaveTerraformJson() && parameters.isUseOptimizedTfPlanJson()
-          && version.minVersion(0, 12)) {
+      if (parameters.isSaveTerraformJson() && parameters.isUseOptimizedTfPlanJson() && version.minVersion(0, 12)) {
         String planName = getPlanName(parameters);
         saveExecutionLog(format("Uploading terraform %s json representation", planName), CommandExecutionStatus.RUNNING,
             INFO, logCallback);
@@ -484,18 +496,15 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
             CommandExecutionStatus.RUNNING, INFO, logCallback);
       }
 
-      if (code == 0 && !parameters.isRunPlanOnly()) {
+      if (!parameters.isRunPlanOnly()) {
         saveExecutionLog(
             format("Waiting: [%s] seconds for resources to be ready", String.valueOf(RESOURCE_READY_WAIT_TIME_SECONDS)),
             CommandExecutionStatus.RUNNING, INFO, logCallback);
         sleep(ofSeconds(RESOURCE_READY_WAIT_TIME_SECONDS));
       }
 
-      CommandExecutionStatus commandExecutionStatus =
-          code == 0 ? CommandExecutionStatus.SUCCESS : CommandExecutionStatus.FAILURE;
-
-      saveExecutionLog("Script execution finished with status: " + commandExecutionStatus, commandExecutionStatus, INFO,
-          logCallback);
+      saveExecutionLog("Script execution finished with status: " + CommandExecutionStatus.SUCCESS,
+          CommandExecutionStatus.SUCCESS, INFO, logCallback);
 
       final DelegateFile delegateFile = aDelegateFile()
                                             .withAccountId(parameters.getAccountId())
@@ -561,23 +570,22 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
               .tfVarFiles(parameters.getTfVarFiles())
               .tfVarSource(parameters.getTfVarSource())
               .delegateTag(parameters.getDelegateTag())
-              .executionStatus(code == 0 ? ExecutionStatus.SUCCESS : ExecutionStatus.FAILED)
-              .errorMessage(code == 0 ? null : "The terraform command exited with code " + code)
+              .executionStatus(ExecutionStatus.SUCCESS)
               .workspace(parameters.getWorkspace())
               .encryptedTfPlan(encryptedTfPlan)
               .awsConfigId(parameters.getAwsConfigId())
               .awsRoleArn(parameters.getAwsRoleArn())
               .awsRegion(parameters.getAwsRegion());
 
-      if (parameters.getCommandUnit() != TerraformCommandUnit.Destroy
-          && commandExecutionStatus == CommandExecutionStatus.SUCCESS && !parameters.isRunPlanOnly()) {
+      if (parameters.getCommandUnit() != TerraformCommandUnit.Destroy && !parameters.isRunPlanOnly()) {
         terraformExecutionDataBuilder.outputs(new String(Files.readAllBytes(tfOutputsFile.toPath()), Charsets.UTF_8));
       }
 
       return terraformExecutionDataBuilder.build();
 
     } catch (WingsException ex) {
-      return logErrorAndGetFailureResponse(ex, ExceptionUtils.getMessage(ex), logCallback);
+      return logErrorAndGetFailureResponse(
+          ex, ExceptionUtils.getMessage(ExceptionMessageSanitizer.sanitizeException(ex)), logCallback);
     } catch (IOException ex) {
       return logErrorAndGetFailureResponse(ex, "IO Failure occurred while performing Terraform Task", logCallback);
     } catch (InterruptedException ex) {
@@ -602,13 +610,14 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
             log.info("Terraform Plan has been safely deleted from vault");
           }
         } catch (Exception ex) {
+          Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
           saveExecutionLog(color(format("Failed to delete secret: [%s] from vault: [%s], please clean it up",
                                      parameters.getEncryptedTfPlan().getEncryptionKey(),
                                      parameters.getSecretManagerConfig().getName()),
                                Yellow, Bold),
               CommandExecutionStatus.RUNNING, WARN, logCallback);
-          saveExecutionLog(ex.getMessage(), CommandExecutionStatus.RUNNING, WARN, logCallback);
-          log.error("Exception occurred while deleting Terraform Plan from vault", ex);
+          saveExecutionLog(sanitizedException.getMessage(), CommandExecutionStatus.RUNNING, WARN, logCallback);
+          log.error("Exception occurred while deleting Terraform Plan from vault", sanitizedException);
         }
       }
     }
@@ -616,6 +625,8 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
 
   private Map<String, String> getAwsAuthVariables(TerraformProvisionParameters parameters) {
     encryptionService.decrypt(parameters.getAwsConfig(), parameters.getAwsConfigEncryptionDetails(), false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+        parameters.getAwsConfig(), parameters.getAwsConfigEncryptionDetails());
     Map<String, String> awsAuthEnvVariables = new HashMap<>();
     if (isNotEmpty(parameters.getAwsRoleArn())) {
       String region = isNotEmpty(parameters.getAwsRegion()) ? parameters.getAwsRegion() : AWS_DEFAULT_REGION;
@@ -702,6 +713,8 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
           CommandExecutionStatus.RUNNING, INFO, logCallback);
 
       encryptionService.decrypt(tfVarGitSource.getGitConfig(), tfVarGitSource.getEncryptedDataDetails(), false);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+          tfVarGitSource.getGitConfig(), tfVarGitSource.getEncryptedDataDetails());
       gitClient.downloadFiles(tfVarGitSource.getGitConfig(),
           GitFetchFilesRequest.builder()
               .branch(tfVarGitSource.getGitFileConfig().getBranch())
@@ -797,8 +810,9 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
   }
 
   private TerraformExecutionData logErrorAndGetFailureResponse(Exception ex, String message, LogCallback logCallback) {
+    Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
     saveExecutionLog(message, CommandExecutionStatus.FAILURE, ERROR, logCallback);
-    log.error("Exception in processing terraform operation", ex);
+    log.error("Exception in processing terraform operation", sanitizedException);
     return TerraformExecutionData.builder().executionStatus(ExecutionStatus.FAILED).errorMessage(message).build();
   }
 

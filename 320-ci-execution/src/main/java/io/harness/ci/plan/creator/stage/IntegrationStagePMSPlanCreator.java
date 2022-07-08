@@ -25,9 +25,13 @@ import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
+import io.harness.beans.steps.StepSpecTypeConstants;
+import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.CIIntegrationStageModifier;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.plan.creator.codebase.CodebasePlanCreator;
+import io.harness.ci.states.CISpecStep;
+import io.harness.ci.states.IntegrationStageStepPMS;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.stages.GenericStagePlanCreator;
@@ -51,10 +55,6 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
-import io.harness.states.CISpecStep;
-import io.harness.states.IntegrationStageStepPMS;
-import io.harness.stateutils.buildstate.ConnectorUtils;
-import io.harness.steps.StepSpecTypeConstants;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -247,6 +247,7 @@ public class IntegrationStagePMSPlanCreator extends GenericStagePlanCreator {
       return BuildStatusUpdateParameter.builder()
           .sha(sha)
           .connectorIdentifier(codeBase.getConnectorRef().getValue())
+          .projectName(codeBase.getProjectName().getValue())
           .repoName(codeBase.getRepoName().getValue())
           .name(stageElementConfig.getName())
           .identifier(stageElementConfig.getIdentifier())
@@ -254,6 +255,7 @@ public class IntegrationStagePMSPlanCreator extends GenericStagePlanCreator {
     } else {
       return BuildStatusUpdateParameter.builder()
           .connectorIdentifier(codeBase.getConnectorRef().getValue())
+          .projectName(codeBase.getProjectName().getValue())
           .repoName(codeBase.getRepoName().getValue())
           .name(stageElementConfig.getName())
           .identifier(stageElementConfig.getIdentifier())

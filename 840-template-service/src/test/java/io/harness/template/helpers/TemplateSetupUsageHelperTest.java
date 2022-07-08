@@ -134,7 +134,8 @@ public class TemplateSetupUsageHelperTest extends TemplateServiceTestBase {
         EntityDetailProtoDTO.newBuilder()
             .setTemplateRef(TemplateReferenceProtoUtils.createTemplateReferenceProto(templateEntity.getAccountId(),
                 templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
-                templateEntity.getIdentifier(), templateEntity.getTemplateScope(), templateEntity.getVersionLabel()))
+                templateEntity.getIdentifier(), templateEntity.getTemplateScope(), templateEntity.getVersionLabel(),
+                null))
             .setType(EntityTypeProtoEnum.TEMPLATE)
             .setName(templateEntity.getName())
             .build();
@@ -181,9 +182,10 @@ public class TemplateSetupUsageHelperTest extends TemplateServiceTestBase {
     String accountId = templateEntity.getAccountId();
     EntityDetailProtoDTO templateDetails =
         EntityDetailProtoDTO.newBuilder()
-            .setTemplateRef(TemplateReferenceProtoUtils.createTemplateReferenceProto(accountId,
-                templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
-                templateEntity.getIdentifier(), templateEntity.getTemplateScope(), templateEntity.getVersionLabel()))
+            .setTemplateRef(
+                TemplateReferenceProtoUtils.createTemplateReferenceProto(accountId, templateEntity.getOrgIdentifier(),
+                    templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(),
+                    templateEntity.getTemplateScope(), templateEntity.getVersionLabel(), null))
             .setType(EntityTypeProtoEnum.TEMPLATE)
             .build();
     EntitySetupUsageCreateV2DTO entityReferenceDTO = EntitySetupUsageCreateV2DTO.newBuilder()

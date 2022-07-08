@@ -99,6 +99,8 @@ import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.PrometheusCVConfig.PrometheusCVConfigBuilder;
 import io.harness.cvng.core.entities.SplunkCVConfig;
 import io.harness.cvng.core.entities.SplunkCVConfig.SplunkCVConfigBuilder;
+import io.harness.cvng.core.entities.SplunkMetricCVConfig;
+import io.harness.cvng.core.entities.SplunkMetricCVConfig.SplunkMetricCVConfigBuilder;
 import io.harness.cvng.core.entities.StackdriverCVConfig;
 import io.harness.cvng.core.entities.StackdriverCVConfig.StackdriverCVConfigBuilder;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig;
@@ -154,10 +156,14 @@ import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHeal
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.RollingSLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.ServiceLevelObjectiveBuilder;
+import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
+import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob.BlueGreenVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob.CanaryBlueGreenVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.CanaryVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
+import io.harness.cvng.verificationjob.entities.TestVerificationJob.TestVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
+import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceBuilder;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthMethod;
@@ -430,6 +436,17 @@ public class BuilderFactory {
         .category(CVMonitoringCategory.PERFORMANCE);
   }
 
+  public SplunkMetricCVConfigBuilder splunkMetricCVConfigBuilder() {
+    return SplunkMetricCVConfig.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .connectorIdentifier("connectorRef")
+        .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
+        .category(CVMonitoringCategory.PERFORMANCE);
+  }
+
   public ErrorTrackingCVConfigBuilder errorTrackingCVConfigBuilder() {
     return ErrorTrackingCVConfig.builder()
         .accountId(context.getAccountId())
@@ -492,11 +509,15 @@ public class BuilderFactory {
         .productName(generateUuid());
   }
 
-  public CustomHealthSourceMetricSpec customHealthMetricSourceSpecBuilder(String metricValueJSONPath, String groupName,
-      String metricName, String identifier, HealthSourceQueryType queryType, CVMonitoringCategory monitoringCategory,
-      boolean isDeploymentEnabled, boolean isLiveMonitoringEnabled, boolean isSliEnabled) {
-    MetricResponseMapping responseMapping =
-        MetricResponseMapping.builder().metricValueJsonPath(metricValueJSONPath).build();
+  public CustomHealthSourceMetricSpec customHealthMetricSourceSpecBuilder(String metricValueJSONPath,
+      String timestampJsonPath, String serviceInstanceJsonPath, String groupName, String metricName, String identifier,
+      HealthSourceQueryType queryType, CVMonitoringCategory monitoringCategory, boolean isDeploymentEnabled,
+      boolean isLiveMonitoringEnabled, boolean isSliEnabled) {
+    MetricResponseMapping responseMapping = MetricResponseMapping.builder()
+                                                .metricValueJsonPath(metricValueJSONPath)
+                                                .timestampJsonPath(timestampJsonPath)
+                                                .serviceInstanceJsonPath(serviceInstanceJsonPath)
+                                                .build();
 
     CustomHealthMetricDefinition metricDefinition =
         CustomHealthMetricDefinition.builder()
@@ -535,6 +556,45 @@ public class BuilderFactory {
             .liveMonitoring(AnalysisInfo.LiveMonitoring.builder().enabled(isLiveMonitoringEnabled).build())
             .metricResponseMapping(responseMapping)
             .requestDefinition(CustomHealthRequestDefinition.builder().method(method).requestBody(requestBody).build())
+            .build();
+
+    return CustomHealthMetricCVConfig.builder()
+        .metricDefinitions(new ArrayList<CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition>() {
+          { add(metricDefinition); }
+        })
+        .groupName(group)
+        .queryType(queryType)
+        .category(category)
+        .build();
+  }
+
+  public CustomHealthMetricCVConfig customHealthMetricCVConfigBuilderForAppd(String metricName,
+      boolean isDeploymentEnabled, boolean isLiveMonitoringEnabled, boolean isSliEnabled,
+      MetricResponseMapping responseMapping, String group, HealthSourceQueryType queryType, CustomHealthMethod method,
+      CVMonitoringCategory category, String requestBody) {
+    CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition metricDefinition =
+        CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition.builder()
+            .metricName(metricName)
+            .identifier(metricName)
+            .sli(AnalysisInfo.SLI.builder().enabled(isSliEnabled).build())
+            .deploymentVerification(AnalysisInfo.DeploymentVerification.builder().enabled(isDeploymentEnabled).build())
+            .liveMonitoring(AnalysisInfo.LiveMonitoring.builder().enabled(isLiveMonitoringEnabled).build())
+            .metricResponseMapping(responseMapping)
+            .requestDefinition(
+                CustomHealthRequestDefinition.builder()
+                    .startTimeInfo(TimestampInfo.builder()
+                                       .placeholder("start_time")
+                                       .timestampFormat(TimestampInfo.TimestampFormat.MILLISECONDS)
+                                       .build())
+                    .endTimeInfo(TimestampInfo.builder()
+                                     .placeholder("end_time")
+                                     .timestampFormat(TimestampInfo.TimestampFormat.MILLISECONDS)
+                                     .build())
+                    .method(method)
+                    .urlPath(
+                        "rest/applications/cv-app/metric-data?metric-path=Overall Application Performance|docker-tier|Individual Nodes|*|Errors per Minute&time-range-type=BETWEEN_TIMES&start-time=start_time&end-time=end_time&rollup=false&output=json")
+                    .requestBody(requestBody)
+                    .build())
             .build();
 
     return CustomHealthMetricCVConfig.builder()
@@ -1018,11 +1078,39 @@ public class BuilderFactory {
         .projectIdentifier(context.getProjectIdentifier())
         .identifier("identifier")
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
-        .serviceIdentifier(VerificationJob.RuntimeParameter.builder().value(context.getServiceIdentifier()).build())
-        .envIdentifier(VerificationJob.RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
+        .serviceIdentifier(RuntimeParameter.builder().value(context.getServiceIdentifier()).build())
+        .envIdentifier(RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
         .monitoringSources(Collections.singletonList(context.getMonitoredServiceIdentifier() + "/" + generateUuid()))
-        .sensitivity(VerificationJob.RuntimeParameter.builder().value("High").build())
-        .duration(VerificationJob.RuntimeParameter.builder().value("10m").build());
+        .sensitivity(RuntimeParameter.builder().value("High").build())
+        .duration(RuntimeParameter.builder().value("10m").build());
+  }
+  public BlueGreenVerificationJobBuilder blueGreenVerificationJobBuilder() {
+    return BlueGreenVerificationJob.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .identifier("identifier")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .serviceIdentifier(RuntimeParameter.builder().value(context.getServiceIdentifier()).build())
+        .envIdentifier(RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
+        .monitoringSources(Collections.singletonList(context.getMonitoredServiceIdentifier() + "/" + generateUuid()))
+        .sensitivity(RuntimeParameter.builder().value("High").build())
+        .trafficSplitPercentage(10)
+        .duration(RuntimeParameter.builder().value("10m").build());
+  }
+  public TestVerificationJobBuilder testVerificationJobBuilder() {
+    return TestVerificationJob.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .identifier("identifier")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .serviceIdentifier(RuntimeParameter.builder().value(context.getServiceIdentifier()).build())
+        .envIdentifier(RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
+        .monitoringSources(Collections.singletonList(context.getMonitoredServiceIdentifier() + "/" + generateUuid()))
+        .sensitivity(RuntimeParameter.builder().value("Medium").build())
+        .baselineVerificationJobInstanceId(generateUuid())
+        .duration(RuntimeParameter.builder().value("15m").build());
   }
   public static class BuilderFactoryBuilder {
     public BuilderFactory build() {

@@ -10,6 +10,7 @@ package io.harness.cvng.migration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.migration.list.AddDeploymentMonitoringSourcePerpetualTask;
+import io.harness.cvng.migration.list.AddEnabledFlagToSLISLOMigration;
 import io.harness.cvng.migration.list.AddEnvRefsToMonitoredServiceMigration;
 import io.harness.cvng.migration.list.AddMetricIdentifierInCVConfigsAndMetricPacks;
 import io.harness.cvng.migration.list.AddMetricIdentifierToTimeSeriesThreshold;
@@ -34,9 +35,9 @@ import io.harness.cvng.migration.list.DeleteSLISLOMigration;
 import io.harness.cvng.migration.list.EnableExistingCVConfigs;
 import io.harness.cvng.migration.list.FixOrchestratorStatusMigration;
 import io.harness.cvng.migration.list.FixRuntimeParamInCanaryBlueGreenVerificationJob;
-import io.harness.cvng.migration.list.FixRuntimeParamsInDefaultHealthJob;
 import io.harness.cvng.migration.list.NewRelicCustomPackForExistingProjects;
 import io.harness.cvng.migration.list.NoOppMigration;
+import io.harness.cvng.migration.list.PrometheusConnectorAuthenticationPerpetualTaskMigration;
 import io.harness.cvng.migration.list.RecoverMonitoringSourceWorkerId;
 import io.harness.cvng.migration.list.RecreateMetricPackAndThresholdMigration;
 import io.harness.cvng.migration.list.SetNotRequiredActivityAnalysisStatusToIgnored;
@@ -70,7 +71,7 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(8, NoOppMigration.class))
         .add(Pair.of(9, AddDeploymentMonitoringSourcePerpetualTask.class))
         .add(Pair.of(10, RecoverMonitoringSourceWorkerId.class))
-        .add(Pair.of(11, FixRuntimeParamsInDefaultHealthJob.class))
+        .add(Pair.of(11, NoOppMigration.class))
         .add(Pair.of(12, NoOppMigration.class))
         .add(Pair.of(13, FixRuntimeParamInCanaryBlueGreenVerificationJob.class))
         .add(Pair.of(14, UpdateApdexMetricCriteria.class))
@@ -109,6 +110,8 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(46, AddMetricIdentifierToTimeSeriesThreshold.class))
         .add(Pair.of(47, AppDCVConfigCompleteMetricPathMigration.class))
         .add(Pair.of(48, SetNotRequiredActivityAnalysisStatusToIgnored.class))
+        .add(Pair.of(49, PrometheusConnectorAuthenticationPerpetualTaskMigration.class))
+        .add(Pair.of(50, AddEnabledFlagToSLISLOMigration.class))
         .build();
   }
 }

@@ -12,9 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_CONNECTOR;
 
-import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
@@ -25,6 +23,7 @@ import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.strategy.StrategyValidationUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,7 +32,6 @@ import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(PIPELINE)
-@TargetModule(HarnessModule._882_PMS_SDK_CORE)
 public abstract class GenericStepPMSFilterJsonCreator implements FilterJsonCreator<StepElementConfig> {
   public abstract Set<String> getSupportedStepTypes();
 
@@ -53,6 +51,9 @@ public abstract class GenericStepPMSFilterJsonCreator implements FilterJsonCreat
 
   @Override
   public FilterCreationResponse handleNode(FilterCreationContext filterCreationContext, StepElementConfig yamlField) {
+    if (yamlField.getStrategy() != null) {
+      StrategyValidationUtils.validateStrategyNode(yamlField.getStrategy());
+    }
     if (WithConnectorRef.class.isAssignableFrom(yamlField.getStepSpecType().getClass())) {
       String accountIdentifier = filterCreationContext.getSetupMetadata().getAccountId();
       String orgIdentifier = filterCreationContext.getSetupMetadata().getOrgId();

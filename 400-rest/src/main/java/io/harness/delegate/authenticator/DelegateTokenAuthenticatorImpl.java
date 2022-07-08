@@ -9,6 +9,7 @@ package io.harness.delegate.authenticator;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.data.encoding.EncodingUtils.decodeBase64ToString;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
 import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
@@ -16,6 +17,8 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_ADMIN;
 import static io.harness.manage.GlobalContextManager.initGlobalContextGuard;
 import static io.harness.manage.GlobalContextManager.upsertGlobalContextRecord;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_CACHE_HIT;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_CACHE_MISS;
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
 
@@ -26,6 +29,8 @@ import io.harness.context.GlobalContext;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenStatus;
+import io.harness.delegate.utils.DelegateJWTCache;
+import io.harness.delegate.utils.DelegateJWTCacheValue;
 import io.harness.delegate.utils.DelegateTokenCacheHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidTokenException;
@@ -33,6 +38,7 @@ import io.harness.exception.RevokedTokenException;
 import io.harness.exception.WingsException;
 import io.harness.globalcontex.DelegateTokenGlobalContextData;
 import io.harness.manage.GlobalContextManager;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.security.DelegateTokenAuthenticator;
@@ -63,6 +69,7 @@ import javax.crypto.spec.SecretKeySpec;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.mongodb.morphia.query.Query;
 
 @Slf4j
@@ -72,6 +79,8 @@ import org.mongodb.morphia.query.Query;
 public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticator {
   @Inject private HPersistence persistence;
   @Inject private DelegateTokenCacheHelper delegateTokenCacheHelper;
+  @Inject private DelegateJWTCache delegateJWTCache;
+  @Inject private DelegateMetricsService delegateMetricsService;
 
   private final LoadingCache<String, String> keyCache =
       Caffeine.newBuilder()
@@ -82,17 +91,31 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
                      .map(Account::getAccountKey)
                      .orElse(null));
 
+  // TODO: ARPIT clean this class to validate from JWTCache only and remove older delegate token cache method after 3-4
+  // weeks.
+
   // we should set global context data only for rest calls, because we unset the global context thread only for rest
   // calls.
+  // We can use delegateTokenName variable to determine whether the delegate is reusing the same jwt or not. And remove
+  // it after 1-2 months.
   @Override
-  public void validateDelegateToken(
-      String accountId, String tokenString, String delegateId, boolean shouldSetTokenNameInGlobalContext) {
+  public void validateDelegateToken(String accountId, String tokenString, String delegateId, String delegateTokenName,
+      boolean shouldSetTokenNameInGlobalContext) {
+    final String tokenHash = DigestUtils.md5Hex(tokenString);
+    // first validate it from DelegateJWTCache
+    if (validateDelegateJWTFromCache(accountId, tokenHash, shouldSetTokenNameInGlobalContext)) {
+      return;
+    } else if (isEmpty(delegateTokenName)) {
+      log.warn("Delegate token name is empty.");
+    }
+
     EncryptedJWT encryptedJWT;
     try {
       encryptedJWT = EncryptedJWT.parse(tokenString);
     } catch (ParseException e) {
       throw new InvalidTokenException("Invalid delegate token format", USER_ADMIN);
     }
+
     DelegateToken delegateTokenFromCache = delegateTokenCacheHelper.getDelegateToken(delegateId);
     boolean decryptedWithTokenFromCache =
         decryptWithTokenFromCache(encryptedJWT, delegateTokenFromCache, shouldSetTokenNameInGlobalContext);
@@ -119,6 +142,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       } catch (ParseException e) {
         log.warn("Couldn't parse token", e);
       }
+      delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L, null));
       log.error("Delegate {} is using REVOKED delegate token. DelegateId: {}", delegateHostName, delegateId);
       throw new RevokedTokenException("Invalid delegate token. Delegate is using revoked token", USER_ADMIN);
     }
@@ -129,11 +153,17 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
 
     try {
       JWTClaimsSet jwtClaimsSet = encryptedJWT.getJWTClaimsSet();
-      if (System.currentTimeMillis() > jwtClaimsSet.getExpirationTime().getTime()) {
+      final long expiryInMillis = jwtClaimsSet.getExpirationTime().getTime();
+      if (System.currentTimeMillis() > expiryInMillis) {
         log.error("Delegate {} is using EXPIRED delegate token. DelegateId: {}", jwtClaimsSet.getIssuer(), delegateId);
+        delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L, null));
         throw new InvalidRequestException("Unauthorized", EXPIRED_TOKEN, null);
+      } else {
+        delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName,
+            new DelegateJWTCacheValue(true, expiryInMillis, getDelegateTokenNameFromGlobalContext().orElse(null)));
       }
     } catch (Exception ex) {
+      delegateJWTCache.setDelegateJWTCache(tokenHash, delegateTokenName, new DelegateJWTCacheValue(false, 0L, null));
       throw new InvalidRequestException("Unauthorized", ex, EXPIRED_TOKEN, null);
     }
   }
@@ -248,7 +278,9 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
           } else {
             decryptDelegateToken(encryptedJWT, delegateToken.getValue());
           }
-          setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateToken);
+          if (DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())) {
+            setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateToken.getName());
+          }
           delegateTokenCacheHelper.setDelegateToken(delegateId, delegateToken);
           return true;
         } catch (Exception e) {
@@ -274,7 +306,9 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       } else {
         decryptDelegateToken(encryptedJWT, delegateToken.getValue());
       }
-      setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateToken);
+      if (DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())) {
+        setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateToken.getName());
+      }
     } catch (Exception e) {
       log.debug("Fail to decrypt Delegate JWT using delegate token {} for the account {}", delegateToken.getName(),
           delegateToken.getAccountId());
@@ -305,12 +339,43 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
     }
   }
 
-  private void setTokenNameInGlobalContext(boolean shouldSetTokenNameInGlobalContext, DelegateToken delegateToken) {
-    if (shouldSetTokenNameInGlobalContext && DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())) {
+  private boolean validateDelegateJWTFromCache(
+      String accountId, String tokenHash, boolean shouldSetTokenNameInGlobalContext) {
+    DelegateJWTCacheValue delegateJWTCacheValue = delegateJWTCache.getDelegateJWTCache(tokenHash);
+
+    // cache miss
+    if (delegateJWTCacheValue == null) {
+      delegateMetricsService.recordDelegateMetricsPerAccount(accountId, DELEGATE_JWT_CACHE_MISS);
+      return false;
+    }
+
+    // cache hit
+    delegateMetricsService.recordDelegateMetricsPerAccount(accountId, DELEGATE_JWT_CACHE_HIT);
+
+    if (!delegateJWTCacheValue.isValid()) {
+      throw new RevokedTokenException("Invalid delegate token. Delegate is using invalid token", USER_ADMIN);
+    } else if (delegateJWTCacheValue.getExpiryInMillis() < System.currentTimeMillis()) {
+      throw new InvalidRequestException("Unauthorized", EXPIRED_TOKEN, null);
+    }
+    setTokenNameInGlobalContext(shouldSetTokenNameInGlobalContext, delegateJWTCacheValue.getDelegateTokenName());
+    return true;
+  }
+
+  private void setTokenNameInGlobalContext(boolean shouldSetTokenNameInGlobalContext, String delegateTokenName) {
+    if (shouldSetTokenNameInGlobalContext && delegateTokenName != null) {
       if (!GlobalContextManager.isAvailable()) {
         initGlobalContextGuard(new GlobalContext());
       }
-      upsertGlobalContextRecord(DelegateTokenGlobalContextData.builder().tokenName(delegateToken.getName()).build());
+      upsertGlobalContextRecord(DelegateTokenGlobalContextData.builder().tokenName(delegateTokenName).build());
     }
+  }
+
+  private Optional<String> getDelegateTokenNameFromGlobalContext() {
+    DelegateTokenGlobalContextData delegateTokenGlobalContextData =
+        GlobalContextManager.get(DelegateTokenGlobalContextData.TOKEN_NAME);
+    if (delegateTokenGlobalContextData != null) {
+      return Optional.ofNullable(delegateTokenGlobalContextData.getTokenName());
+    }
+    return Optional.empty();
   }
 }

@@ -13,9 +13,9 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParam
 import static io.harness.beans.sweepingoutputs.ContainerPortDetails.PORT_DETAILS;
 import static io.harness.beans.sweepingoutputs.PodCleanupDetails.CLEANUP_DETAILS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
-import static io.harness.common.CIExecutionConstants.HARNESS_SERVICE_LOG_KEY_VARIABLE;
-import static io.harness.common.CIExecutionConstants.POD_MAX_WAIT_UNTIL_READY_SECS;
-import static io.harness.common.CIExecutionConstants.PORT_STARTING_RANGE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_SERVICE_LOG_KEY_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.POD_MAX_WAIT_UNTIL_READY_SECS;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PORT_STARTING_RANGE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.KubernetesConvention.getAccountIdentifier;
 
@@ -26,6 +26,7 @@ import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.environment.K8BuildJobEnvInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
@@ -40,6 +41,14 @@ import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.ci.buildstate.CodebaseUtils;
+import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.buildstate.SecretUtils;
+import io.harness.ci.buildstate.providers.InternalContainerParamsProvider;
+import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.ci.utils.HarnessImageUtils;
+import io.harness.ci.utils.LiteEngineSecretEvaluator;
+import io.harness.ci.utils.PortFinder;
 import io.harness.delegate.beans.ci.k8s.CIK8InitializeTaskParams;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.CIK8ContainerParams;
@@ -58,13 +67,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
-import io.harness.stateutils.buildstate.CodebaseUtils;
-import io.harness.stateutils.buildstate.ConnectorUtils;
-import io.harness.stateutils.buildstate.SecretUtils;
-import io.harness.stateutils.buildstate.providers.InternalContainerParamsProvider;
-import io.harness.util.HarnessImageUtils;
-import io.harness.util.LiteEngineSecretEvaluator;
-import io.harness.util.PortFinder;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
@@ -92,6 +94,7 @@ public class K8InitializeTaskParamsBuilder {
   @Inject private HarnessImageUtils harnessImageUtils;
   @Inject private InternalContainerParamsProvider internalContainerParamsProvider;
   @Inject private SecretUtils secretUtils;
+  @Inject private CIFeatureFlagService featureFlagService;
 
   @Inject CodebaseUtils codebaseUtils;
 
@@ -398,9 +401,24 @@ public class K8InitializeTaskParamsBuilder {
                                           .build();
     List<ContainerDefinitionInfo> serviceCtrDefinitionInfos =
         k8InitializeServiceUtils.createServiceContainerDefinitions(stageElementConfig, portFinder, os);
-    List<ContainerDefinitionInfo> stepCtrDefinitionInfos =
-        k8InitializeStepUtils.createStepContainerDefinitions(initializeStepInfo.getExecutionElementConfig().getSteps(),
-            stageElementConfig, ciExecutionArgs, portFinder, AmbianceUtils.getAccountId(ambiance), os);
+    List<ContainerDefinitionInfo> stepCtrDefinitionInfos;
+
+    // We have introduced support of step groups in CI stage. This feature flag is to ensure an easy and quick rollback
+    // in case the code breaks functionality.
+    // With this feature flag turned off, the code will behave as it is.
+    // Once the release is done and step groups are working as expected, we will refactor this code and remove
+    // the feature flag
+    if (featureFlagService.isEnabled(FeatureName.CI_STEP_GROUP_ENABLED, AmbianceUtils.getAccountId(ambiance))) {
+      log.info("Feature Flag CI_STEP_GROUP_ENABLED is enabled for this account");
+      stepCtrDefinitionInfos = k8InitializeStepUtils.createStepContainerDefinitionsStepGroupWithFF(
+          initializeStepInfo.getExecutionElementConfig().getSteps(), stageElementConfig, ciExecutionArgs, portFinder,
+          AmbianceUtils.getAccountId(ambiance), os, 0);
+    } else {
+      log.info("Feature Flag CI_STEP_GROUP_ENABLED is not enabled for this account");
+      stepCtrDefinitionInfos = k8InitializeStepUtils.createStepContainerDefinitions(
+          initializeStepInfo.getExecutionElementConfig().getSteps(), stageElementConfig, ciExecutionArgs, portFinder,
+          AmbianceUtils.getAccountId(ambiance), os);
+    }
 
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     containerDefinitionInfos.addAll(serviceCtrDefinitionInfos);

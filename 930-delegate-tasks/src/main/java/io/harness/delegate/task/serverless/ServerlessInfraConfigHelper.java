@@ -12,8 +12,10 @@ import static io.harness.utils.FieldWithPlainTextOrSecretValueHelper.getSecretAs
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -60,14 +62,16 @@ public class ServerlessInfraConfigHelper {
   public ServerlessConfig createServerlessAwsConfig(ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig) {
     AwsCredentialType awsCredentialType =
         serverlessAwsLambdaInfraConfig.getAwsConnectorDTO().getCredential().getAwsCredentialType();
+    ServerlessConfig serverlessConfig = null;
     switch (awsCredentialType) {
       case MANUAL_CREDENTIALS:
-        return getServerlessAwsConfigFromManualCreds(
+        serverlessConfig = getServerlessAwsConfigFromManualCreds(
             (AwsManualConfigSpecDTO) serverlessAwsLambdaInfraConfig.getAwsConnectorDTO().getCredential().getConfig());
+        break;
       default:
-        throw new UnsupportedOperationException(
-            String.format("Unsupported Serverless Aws Credential type: [%s]", awsCredentialType));
+        break;
     }
+    return serverlessConfig;
   }
 
   public ServerlessConfig getServerlessAwsConfigFromManualCreds(AwsManualConfigSpecDTO awsManualConfigSpecDTO) {
@@ -77,5 +81,19 @@ public class ServerlessInfraConfigHelper {
         awsManualConfigSpecDTO.getAccessKey(), awsManualConfigSpecDTO.getAccessKeyRef()));
     serverlessAwsConfigBuilder.secretKey(String.valueOf(awsManualConfigSpecDTO.getSecretKeyRef().getDecryptedValue()));
     return serverlessAwsConfigBuilder.build();
+  }
+
+  public String getServerlessAwsLambdaCredentialType(ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig) {
+    AwsCredentialDTO awsCredentialDTO = serverlessAwsLambdaInfraConfig.getAwsConnectorDTO().getCredential();
+    return awsCredentialDTO.getAwsCredentialType().name();
+  }
+
+  public boolean getAwsCrossAccountFlag(ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig) {
+    AwsCredentialDTO awsCredentialDTO = serverlessAwsLambdaInfraConfig.getAwsConnectorDTO().getCredential();
+    CrossAccountAccessDTO crossAccountAccess = awsCredentialDTO.getCrossAccountAccess();
+    if (crossAccountAccess != null && crossAccountAccess.getCrossAccountRoleArn() != null) {
+      return true;
+    }
+    return false;
   }
 }

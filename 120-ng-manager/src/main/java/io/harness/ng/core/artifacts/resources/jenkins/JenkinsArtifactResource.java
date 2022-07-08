@@ -21,12 +21,15 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.utils.IdentifierRefHelper;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.helpers.ext.jenkins.JobDetails;
+import software.wings.helpers.ext.jenkins.JobDetails.JobParameter;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import java.util.Arrays;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
@@ -91,12 +94,29 @@ public class JenkinsArtifactResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @NotNull @PathParam("jobName") String jobName, @NotNull @QueryParam("artifactPaths") List<String> artifactPath,
+      @NotNull @PathParam("jobName") String jobName, @QueryParam("artifactPath") String artifactPath,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(jenkinsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
-    return ResponseDTO.newResponse(
-        jenkinsResourceService.getBuildForJob(connectorRef, orgIdentifier, projectIdentifier, jobName, artifactPath));
+    return ResponseDTO.newResponse(jenkinsResourceService.getBuildForJob(
+        connectorRef, orgIdentifier, projectIdentifier, jobName, Arrays.asList(artifactPath)));
+  }
+
+  @GET
+  @Path("job/{jobName}/details")
+  @ApiOperation(value = "Gets Jenkins Job paramter", nickname = "getJobParameters for Jenkins")
+  public ResponseDTO<List<JobParameter>> getJobParameters(@QueryParam("connectorRef") String jenkinsConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @PathParam("jobName") String jobName, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(jenkinsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    List<JobDetails> jobDetails =
+        jenkinsResourceService.getJobParameters(connectorRef, orgIdentifier, projectIdentifier, jobName);
+    List<JobParameter> jobParameters = jobDetails.get(0).getParameters();
+
+    return ResponseDTO.newResponse(jobParameters);
   }
 }

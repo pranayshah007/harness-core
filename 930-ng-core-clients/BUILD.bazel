@@ -21,8 +21,33 @@ java_library(
         "//970-ng-commons:module",
         "//980-commons:module",
         "//999-annotations:module",
+        "//clients/notification:module",
         "//platform-service/modules/resource-group-service/contracts:module",
     ],
 )
+
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/**/*.java"]),
+    data = [
+        "//930-ng-core-clients/src/test/resources:resource",
+    ],
+    resources = [
+        "//930-ng-core-clients/src/test/resources:resource",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":module",
+        "//:lombok",
+        "//980-commons:tests",
+        "//990-commons-test:module",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)
+
+run_tests()
 
 run_analysis()

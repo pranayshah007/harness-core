@@ -28,6 +28,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.ci.pod.SecretVariableDTO;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.FunctorException;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -48,8 +49,9 @@ import org.mockito.Mock;
 @OwnedBy(CDP)
 public class NgSecretManagerFunctorTest extends WingsBaseTest {
   @Mock private SecretManagerClientService ngSecretService;
+  @Mock private DelegateMetricsService delegateMetricsService;
   @Inject private SecretManager secretManager;
-
+  @Mock private javax.cache.Cache<String, EncryptedDataDetails> secretsCache;
   private static String ORG_ID = "orgId";
   private static String PROJECT_ID = "projectId";
 
@@ -59,8 +61,10 @@ public class NgSecretManagerFunctorTest extends WingsBaseTest {
         .accountId(ACCOUNT_ID)
         .orgId(ORG_ID)
         .projectId(PROJECT_ID)
+        .secretsCache(secretsCache)
         .expressionFunctorToken(token)
         .ngSecretService(ngSecretService)
+        .delegateMetricsService(delegateMetricsService)
         .build();
   }
 

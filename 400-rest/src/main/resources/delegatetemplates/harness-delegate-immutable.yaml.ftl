@@ -1,6 +1,7 @@
 <#import "common/delegate-environment.ftl" as delegateEnvironment>
 <#import "common/delegate-role.ftl" as delegateRole>
 <#import "common/delegate-service.ftl" as delegateService>
+<#import "common/mtls.ftl" as mtls>
 <#import "common/upgrader.ftl" as upgrader>
 <#import "common/secret.ftl" as secret>
 <#global accountTokenName=delegateName + "-account-token">
@@ -22,6 +23,12 @@ metadata:
 <@secret.accountToken base64Secret/>
 
 ---
+<#if mtlsEnabled == "true">
+
+   <@mtls.secret fullDelegateName=delegateName + "-" + kubernetesAccountLabel />
+
+---
+</#if>
 
 # If delegate needs to use a proxy, please follow instructions available in the documentation
 # https://docs.harness.io/article/pfim3oig7o-configure-delegate-proxy-settings
@@ -82,10 +89,17 @@ spec:
         - secretRef:
             name: ${accountTokenName}
         env:
-<@delegateEnvironment.common />
-<@delegateEnvironment.cgSpecific />
-<@delegateEnvironment.cgImmutableSpecific />
-<@delegateEnvironment.immutable />
+        <@delegateEnvironment.common />
+        <@delegateEnvironment.cgSpecific />
+        <@delegateEnvironment.cgImmutableSpecific />
+        <@delegateEnvironment.immutable />
+<#if mtlsEnabled == "true">
+        <@mtls.delegateEnv />
+        volumeMounts:
+        <@mtls.delegateVolumeMount />
+      volumes:
+      <@mtls.delegateVolume fullDelegateName=delegateName + "-" + kubernetesAccountLabel />
+</#if>
 
 <#if ciEnabled == "true">
 ---
@@ -95,4 +109,4 @@ spec:
 
 ---
 
-<@upgrader.cronjob base64Secret=base64Secret fullDelegateName=delegateName + "-" + kubernetesAccountLabel/>
+<@upgrader.cronjob base64Secret=base64Secret fullDelegateName=delegateName + "-" + kubernetesAccountLabel />

@@ -20,6 +20,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -27,6 +28,7 @@ import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackDataOutcome.ServerlessAwsLambdaRollbackDataOutcomeBuilder;
 import io.harness.cdng.serverless.beans.ServerlessAwsLambdaStepExecutorParams;
 import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData;
@@ -38,10 +40,13 @@ import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.serverless.ServerlessAwsLambdaPrepareRollbackDataResult;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessArtifactType;
 import io.harness.delegate.task.serverless.ServerlessDeployConfig;
+import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessGitFetchFileConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
@@ -50,11 +55,13 @@ import io.harness.delegate.task.serverless.request.ServerlessGitFetchRequest;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
 import io.harness.delegate.task.serverless.response.ServerlessGitFetchResponse;
+import io.harness.delegate.task.serverless.response.ServerlessPrepareRollbackDataResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.git.model.FetchFilesResult;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -69,7 +76,10 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -84,6 +94,7 @@ import software.wings.beans.TaskType;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -97,8 +108,12 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   @Inject private ServerlessEntityHelper serverlessEntityHelper;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
-  private static final String ARTIFACT_PATH = "<+artifact.path>";
+  private static final String PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY = "<+artifact.path>";
+  private static final String PRIMARY_ARTIFACT_PATH_FOR_ECR = "<+artifact.image>";
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   private static final String ARTIFACT_ACTUAL_PATH = "harnessArtifact/artifactFile";
+  private static final String SIDECAR_ARTIFACT_PATH_PREFIX = "<+sidecar.artifact.";
+  private static final String SIDECAR_ARTIFACT_FILE_NAME_PREFIX = "sidecar-artifact-";
 
   public TaskChainResponse startChainLink(
       Ambiance ambiance, StepElementParameters stepElementParameters, ServerlessStepHelper serverlessStepHelper) {
@@ -117,13 +132,20 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   public TaskChainResponse executeNextLink(ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance,
       StepElementParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier, ServerlessStepHelper serverlessStepHelper) throws Exception {
-    ServerlessStepPassThroughData serverlessStepPassThroughData = (ServerlessStepPassThroughData) passThroughData;
     ResponseData responseData = responseDataSupplier.get();
+    ServerlessStepPassThroughData serverlessStepPassThroughData = (ServerlessStepPassThroughData) passThroughData;
     UnitProgressData unitProgressData = null;
     try {
-      ServerlessGitFetchResponse serverlessGitFetchResponse = (ServerlessGitFetchResponse) responseData;
-      return handleServerlessGitFetchFilesResponse(serverlessGitFetchResponse, serverlessStepExecutor, ambiance,
-          stepElementParameters, serverlessStepPassThroughData, serverlessStepHelper);
+      if (responseData instanceof ServerlessGitFetchResponse) {
+        ServerlessGitFetchResponse serverlessGitFetchResponse = (ServerlessGitFetchResponse) responseData;
+        return handleServerlessGitFetchFilesResponse(serverlessGitFetchResponse, serverlessStepExecutor, ambiance,
+            stepElementParameters, serverlessStepPassThroughData, serverlessStepHelper);
+      } else {
+        ServerlessPrepareRollbackDataResponse serverlessPrepareRollbackDataResponse =
+            (ServerlessPrepareRollbackDataResponse) responseData;
+        return handleServerlessPrepareRollbackDataResponse(serverlessPrepareRollbackDataResponse,
+            serverlessStepExecutor, ambiance, stepElementParameters, serverlessStepPassThroughData);
+      }
     } catch (Exception e) {
       return TaskChainResponse.builder()
           .chainEnd(true)
@@ -135,7 +157,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     }
   }
 
-  public ServerlessArtifactConfig getArtifactoryConfig(ArtifactOutcome artifactOutcome, Ambiance ambiance) {
+  public ServerlessArtifactConfig getArtifactConfig(ArtifactOutcome artifactOutcome, Ambiance ambiance) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     return serverlessEntityHelper.getServerlessArtifactConfig(artifactOutcome, ngAccess);
   }
@@ -180,8 +202,8 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   public TaskChainResponse queueServerlessTask(StepElementParameters stepElementParameters,
-      ServerlessCommandRequest serverlessCommandRequest, Ambiance ambiance,
-      ServerlessExecutionPassThroughData executionPassThroughData) {
+      ServerlessCommandRequest serverlessCommandRequest, Ambiance ambiance, PassThroughData passThroughData,
+      boolean isChainEnd) {
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {serverlessCommandRequest})
                             .taskType(TaskType.SERVERLESS_COMMAND_TASK.name())
@@ -198,8 +220,8 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
             stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)
-        .chainEnd(true)
-        .passThroughData(executionPassThroughData)
+        .chainEnd(isChainEnd)
+        .passThroughData(passThroughData)
         .build();
   }
 
@@ -223,24 +245,98 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     if (!manifestFilePathContent.isPresent()) {
       throw new GeneralException("Found No Manifest Content from serverless git fetch task");
     }
-    ServerlessExecutionPassThroughData serverlessExecutionPassThroughData =
-        ServerlessExecutionPassThroughData.builder()
-            .infrastructure(serverlessStepPassThroughData.getInfrastructureOutcome())
-            .lastActiveUnitProgressData(serverlessGitFetchResponse.getUnitProgressData())
-            .build();
+
+    ServerlessArtifactConfig serverlessArtifactConfig = null;
+    Optional<ArtifactsOutcome> artifactsOutcome = getArtifactsOutcome(ambiance);
+    Map<String, ServerlessArtifactConfig> sidecarServerlessArtifactConfigMap = new HashMap<>();
+    if (artifactsOutcome.isPresent()) {
+      if (artifactsOutcome.get().getPrimary() != null) {
+        serverlessArtifactConfig = getArtifactConfig(artifactsOutcome.get().getPrimary(), ambiance);
+      }
+      artifactsOutcome.get().getSidecars().forEach((key, value) -> {
+        if (value != null) {
+          sidecarServerlessArtifactConfigMap.put(key, getArtifactConfig(value, ambiance));
+        }
+      });
+    }
+
+    String manifestFileOverrideContent = renderManifestContent(ambiance, manifestFilePathContent.get().getValue(),
+        serverlessArtifactConfig, sidecarServerlessArtifactConfigMap);
+    ServerlessGitFetchOutcome serverlessGitFetchOutcome = ServerlessGitFetchOutcome.builder()
+                                                              .manifestFilePathContent(manifestFilePathContent.get())
+                                                              .manifestFileOverrideContent(manifestFileOverrideContent)
+                                                              .build();
+    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.SERVERLESS_GIT_FETCH_OUTCOME,
+        serverlessGitFetchOutcome, StepOutcomeGroup.STEP.name());
     ServerlessStepExecutorParams serverlessStepExecutorParams;
     if (serverlessStepExecutor instanceof ServerlessAwsLambdaDeployStep) {
       serverlessStepExecutorParams = ServerlessAwsLambdaStepExecutorParams.builder()
                                          .shouldOpenFetchFilesLogStream(false)
                                          .manifestFilePathContent(manifestFilePathContent.get())
+                                         .manifestFileOverrideContent(manifestFileOverrideContent)
                                          .build();
+    } else {
+      throw new UnsupportedOperationException(
+          format("Unsupported serverless step executer: [%s]", serverlessStepExecutor.getClass()));
+    }
+    return serverlessStepExecutor.executeServerlessPrepareRollbackTask(
+        serverlessStepPassThroughData.getServerlessManifestOutcome(), ambiance, stepElementParameters,
+        serverlessStepPassThroughData, serverlessGitFetchResponse.getUnitProgressData(), serverlessStepExecutorParams);
+  }
+
+  private TaskChainResponse handleServerlessPrepareRollbackDataResponse(
+      ServerlessPrepareRollbackDataResponse serverlessPrepareRollbackDataResponse,
+      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      ServerlessStepPassThroughData serverlessStepPassThroughData) {
+    if (serverlessPrepareRollbackDataResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+      ServerlessStepExceptionPassThroughData serverlessStepExceptionPassThroughData =
+          ServerlessStepExceptionPassThroughData.builder()
+              .errorMessage(serverlessPrepareRollbackDataResponse.getErrorMessage())
+              .unitProgressData(serverlessPrepareRollbackDataResponse.getUnitProgressData())
+              .build();
+      return TaskChainResponse.builder().passThroughData(serverlessStepExceptionPassThroughData).chainEnd(true).build();
+    }
+    ServerlessAwsLambdaDeployStepParameters deployStepParameters =
+        (ServerlessAwsLambdaDeployStepParameters) stepElementParameters.getSpec();
+    OptionalSweepingOutput serverlessGitFetchOptionalOutput = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.SERVERLESS_GIT_FETCH_OUTCOME));
+    if (!serverlessGitFetchOptionalOutput.isFound()) {
+      throw new GeneralException("Found Null Manifest Content from last serverless git fetch task");
+    }
+    ServerlessGitFetchOutcome serverlessGitFetchOutcome =
+        (ServerlessGitFetchOutcome) serverlessGitFetchOptionalOutput.getOutput();
+    ServerlessExecutionPassThroughData serverlessExecutionPassThroughData =
+        ServerlessExecutionPassThroughData.builder()
+            .infrastructure(serverlessStepPassThroughData.getInfrastructureOutcome())
+            .lastActiveUnitProgressData(serverlessPrepareRollbackDataResponse.getUnitProgressData())
+            .build();
+    ServerlessStepExecutorParams serverlessStepExecutorParams;
+    if (serverlessStepExecutor instanceof ServerlessAwsLambdaDeployStep) {
+      ServerlessAwsLambdaPrepareRollbackDataResult serverlessAwsLambdaPrepareRollbackDataResult =
+          (ServerlessAwsLambdaPrepareRollbackDataResult)
+              serverlessPrepareRollbackDataResponse.getServerlessPrepareRollbackDataResult();
+      ServerlessAwsLambdaRollbackDataOutcomeBuilder serverlessRollbackDataOutcomeBuilder =
+          ServerlessAwsLambdaRollbackDataOutcome.builder();
+      serverlessRollbackDataOutcomeBuilder.previousVersionTimeStamp(
+          serverlessAwsLambdaPrepareRollbackDataResult.getPreviousVersionTimeStamp());
+      serverlessRollbackDataOutcomeBuilder.isFirstDeployment(
+          serverlessAwsLambdaPrepareRollbackDataResult.isFirstDeployment());
+      executionSweepingOutputService.consume(ambiance,
+          OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME,
+          serverlessRollbackDataOutcomeBuilder.build(), StepOutcomeGroup.STEP.name());
+      serverlessStepExecutorParams =
+          ServerlessAwsLambdaStepExecutorParams.builder()
+              .shouldOpenFetchFilesLogStream(false)
+              .manifestFilePathContent(serverlessGitFetchOutcome.getManifestFilePathContent())
+              .manifestFileOverrideContent(serverlessGitFetchOutcome.getManifestFileOverrideContent())
+              .build();
     } else {
       throw new UnsupportedOperationException(
           format("Unsupported serverless step executer: [%s]", serverlessStepExecutor.getClass()));
     }
     return serverlessStepExecutor.executeServerlessTask(serverlessStepPassThroughData.getServerlessManifestOutcome(),
         ambiance, stepElementParameters, serverlessExecutionPassThroughData,
-        serverlessGitFetchResponse.getUnitProgressData(), serverlessStepExecutorParams);
+        serverlessPrepareRollbackDataResponse.getUnitProgressData(), serverlessStepExecutorParams);
   }
 
   public StepResponse handleGitTaskFailure(ServerlessGitFetchFailurePassThroughData serverlessGitFetchResponse) {
@@ -355,12 +451,31 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
         .build();
   }
 
-  public String renderManifestContent(Ambiance ambiance, String manifestFileContent) {
+  public String renderManifestContent(Ambiance ambiance, String manifestFileContent,
+      ServerlessArtifactConfig serverlessArtifactConfig,
+      Map<String, ServerlessArtifactConfig> sidecarServerlessArtifactConfigMap) {
     if (isEmpty(manifestFileContent)) {
       return manifestFileContent;
     }
-    if (manifestFileContent.contains(ARTIFACT_PATH)) {
-      manifestFileContent = manifestFileContent.replace(ARTIFACT_PATH, ARTIFACT_ACTUAL_PATH);
+    if (serverlessArtifactConfig != null
+        && serverlessArtifactConfig.getServerlessArtifactType().equals(ServerlessArtifactType.ECR)) {
+      manifestFileContent = manifestFileContent.replace(
+          PRIMARY_ARTIFACT_PATH_FOR_ECR, ((ServerlessEcrArtifactConfig) serverlessArtifactConfig).getImage());
+    } else if (manifestFileContent.contains(PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY)) {
+      manifestFileContent = manifestFileContent.replace(PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY, ARTIFACT_ACTUAL_PATH);
+    }
+
+    for (Map.Entry<String, ServerlessArtifactConfig> entry : sidecarServerlessArtifactConfigMap.entrySet()) {
+      String identifier = SIDECAR_ARTIFACT_PATH_PREFIX + entry.getKey() + ">";
+      if (manifestFileContent.contains(identifier)) {
+        if (entry.getValue().getServerlessArtifactType().equals(ServerlessArtifactType.ECR)) {
+          manifestFileContent =
+              manifestFileContent.replace(identifier, ((ServerlessEcrArtifactConfig) entry.getValue()).getImage());
+        } else if (entry.getValue().getServerlessArtifactType().equals(ServerlessArtifactType.ARTIFACTORY)) {
+          manifestFileContent =
+              manifestFileContent.replace(identifier, SIDECAR_ARTIFACT_FILE_NAME_PREFIX + entry.getKey());
+        }
+      }
     }
     return engineExpressionService.renderExpression(ambiance, manifestFileContent);
   }

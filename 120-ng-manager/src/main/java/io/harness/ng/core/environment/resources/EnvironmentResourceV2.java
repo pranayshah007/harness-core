@@ -44,6 +44,7 @@ import io.harness.exception.WingsException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.EnvironmentValidationHelper;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
+import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -68,6 +69,7 @@ import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.rbac.CDNGRbacUtility;
 import io.harness.repositories.UpsertOptions;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.PageUtils;
 
@@ -85,7 +87,9 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
@@ -151,6 +155,7 @@ public class EnvironmentResourceV2 {
   private final ServiceOverrideService serviceOverrideService;
   private final EnvironmentValidationHelper environmentValidationHelper;
   private final ServiceEntityValidationHelper serviceEntityValidationHelper;
+  private final EnvironmentFilterHelper environmentFilterHelper;
 
   public static final String ENVIRONMENT_PARAM_MESSAGE = "Environment Identifier for the entity";
 
@@ -205,13 +210,15 @@ public class EnvironmentResourceV2 {
       @Parameter(description = "Details of the Environment to be created")
       @Valid EnvironmentRequestDTO environmentRequestDTO) {
     throwExceptionForNoRequestDTO(environmentRequestDTO);
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
-                                                  environmentRequestDTO.getProjectIdentifier()),
-        Resource.of(ENVIRONMENT, null), ENVIRONMENT_CREATE_PERMISSION);
     if (environmentRequestDTO.getType() == null) {
       throw new InvalidRequestException(
           "Type for an environment cannot be empty. Possible values: " + Arrays.toString(EnvironmentType.values()));
     }
+    Map<String, String> environmentAttributes = new HashMap<>();
+    environmentAttributes.put("type", environmentRequestDTO.getType().toString());
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
+                                                  environmentRequestDTO.getProjectIdentifier()),
+        Resource.of(ENVIRONMENT, null, environmentAttributes), ENVIRONMENT_CREATE_PERMISSION);
     Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(environmentEntity.getOrgIdentifier(),
         environmentEntity.getProjectIdentifier(), environmentEntity.getAccountId());
@@ -327,7 +334,7 @@ public class EnvironmentResourceV2 {
       @QueryParam("sort") List<String> sort) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
-    Criteria criteria = EnvironmentFilterHelper.createCriteriaForGetList(
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
         accountId, orgIdentifier, projectIdentifier, false, searchTerm);
     Pageable pageRequest;
 
@@ -382,7 +389,7 @@ public class EnvironmentResourceV2 {
       @QueryParam(NGResourceFilterConstants.FILTER_KEY) String filterIdentifier) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
-    Criteria criteria = EnvironmentFilterHelper.createCriteriaForGetList(
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
         accountId, orgIdentifier, projectIdentifier, false, searchTerm, filterIdentifier, filterProperties);
     Pageable pageRequest;
 
@@ -575,7 +582,7 @@ public class EnvironmentResourceV2 {
         Resource.of(ENVIRONMENT, environmentIdentifier), ENVIRONMENT_VIEW_PERMISSION,
         "Unauthorized to view environment");
 
-    Criteria criteria = EnvironmentFilterHelper.createCriteriaForGetServiceOverrides(
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetServiceOverrides(
         accountId, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier);
     Pageable pageRequest;
 
@@ -593,7 +600,7 @@ public class EnvironmentResourceV2 {
   @Path("/runtimeInputs")
   @ApiOperation(value = "This api returns Environment inputs YAML", nickname = "getEnvironmentInputs")
   @Hidden
-  public ResponseDTO<String> getEnvironmentInputs(
+  public ResponseDTO<NGEntityTemplateResponseDTO> getEnvironmentInputs(
       @Parameter(description = ENVIRONMENT_PARAM_MESSAGE) @NotNull @QueryParam(
           "environmentIdentifier") @ResourceIdentifier String environmentIdentifier,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -604,14 +611,16 @@ public class EnvironmentResourceV2 {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
     String environmentInputsYaml = environmentService.createEnvironmentInputsYaml(
         accountId, projectIdentifier, orgIdentifier, environmentIdentifier);
-    return ResponseDTO.newResponse(environmentInputsYaml);
+
+    return ResponseDTO.newResponse(
+        NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(environmentInputsYaml).build());
   }
 
   @GET
   @Path("/serviceOverrides/runtimeInputs")
   @ApiOperation(value = "This api returns Service Override inputs YAML", nickname = "getServiceOverrideInputs")
   @Hidden
-  public ResponseDTO<String> getServiceOverrideInputs(
+  public ResponseDTO<NGEntityTemplateResponseDTO> getServiceOverrideInputs(
       @Parameter(description = ENVIRONMENT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) @ResourceIdentifier String environmentIdentifier,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -622,9 +631,24 @@ public class EnvironmentResourceV2 {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = NGCommonEntityConstants.SERVICE_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY) @ResourceIdentifier String serviceIdentifier) {
-    String environmentInputsYaml = serviceOverrideService.createServiceOverrideInputsYaml(
+    String serviceOverrideInputsYaml = serviceOverrideService.createServiceOverrideInputsYaml(
         accountId, projectIdentifier, orgIdentifier, environmentIdentifier, serviceIdentifier);
-    return ResponseDTO.newResponse(environmentInputsYaml);
+    return ResponseDTO.newResponse(
+        NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(serviceOverrideInputsYaml).build());
+  }
+
+  @GET
+  @Hidden
+  @Path("/attributes")
+  @ApiOperation(hidden = true, value = "Get Environments Attributes", nickname = "getEnvironmentsAttributes")
+  @InternalApi
+  public ResponseDTO<List<Map<String, String>>> getEnvironmentsAttributes(
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("envIdentifiers") List<String> envIdentifiers) {
+    return ResponseDTO.newResponse(
+        environmentService.getAttributes(accountId, orgIdentifier, projectIdentifier, envIdentifiers));
   }
 
   private void checkForServiceOverrideUpdateAccess(

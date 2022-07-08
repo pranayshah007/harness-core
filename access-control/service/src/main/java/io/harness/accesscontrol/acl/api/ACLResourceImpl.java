@@ -7,9 +7,10 @@
 
 package io.harness.accesscontrol.acl.api;
 
-import static io.harness.accesscontrol.clients.AccessControlClientUtils.checkPreconditions;
-import static io.harness.accesscontrol.clients.AccessControlClientUtils.getAccessControlDTO;
-import static io.harness.accesscontrol.clients.AccessControlClientUtils.serviceContextAndNoPrincipalInBody;
+import static io.harness.accesscontrol.acl.api.AccessControlResourceUtils.checkPreconditions;
+import static io.harness.accesscontrol.acl.api.AccessControlResourceUtils.checkResourcePreconditions;
+import static io.harness.accesscontrol.acl.api.AccessControlResourceUtils.getAccessControlDTO;
+import static io.harness.accesscontrol.acl.api.AccessControlResourceUtils.serviceContextAndNoPrincipalInBody;
 import static io.harness.accesscontrol.principals.PrincipalType.API_KEY;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
@@ -18,6 +19,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.accesscontrol.acl.ACLService;
 import io.harness.accesscontrol.acl.PermissionCheck;
 import io.harness.accesscontrol.acl.PermissionCheckResult;
+import io.harness.accesscontrol.acl.ResourceAttributeProvider;
 import io.harness.accesscontrol.preference.services.AccessControlPreferenceService;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.roleassignments.privileged.PrivilegedAccessCheck;
@@ -53,6 +55,7 @@ public class ACLResourceImpl implements ACLResource {
   private final ACLService aclService;
   private final AccessControlPreferenceService accessControlPreferenceService;
   private final PrivilegedRoleAssignmentService privilegedRoleAssignmentService;
+  private final ResourceAttributeProvider resourceAttributeProvider;
 
   private Optional<String> getAccountIdentifier(List<PermissionCheckDTO> permissionCheckDTOList) {
     if (permissionCheckDTOList.isEmpty()) {
@@ -84,6 +87,7 @@ public class ACLResourceImpl implements ACLResource {
                                          .build());
     }
     boolean preconditionsValid = checkPreconditions(contextPrincipal, principalToCheckPermissionsFor);
+    boolean resourcePreconditionsValid = checkResourcePreconditions(permissionChecksDTOs);
 
     if (serviceContextAndNoPrincipalInBody(contextPrincipal, principalToCheckPermissionsFor)) {
       return ResponseDTO.newResponse(
@@ -97,6 +101,7 @@ public class ACLResourceImpl implements ACLResource {
                                                 .resourceScope(permissionCheckDTO.getResourceScope())
                                                 .resourceIdentifier(permissionCheckDTO.getResourceIdentifier())
                                                 .resourceType(permissionCheckDTO.getResourceType())
+                                                .resourceAttributes(permissionCheckDTO.getResourceAttributes())
                                                 .build())
                                      .collect(Collectors.toList()))
               .build());
@@ -106,6 +111,11 @@ public class ACLResourceImpl implements ACLResource {
       throw new InvalidRequestException(
           "Missing principal in context or User doesn't have permission to check access for a different principal",
           WingsException.USER);
+    }
+
+    if (!resourcePreconditionsValid) {
+      throw new InvalidRequestException(
+          "Cannot pass both resource attributes and resource identifier in permission check", WingsException.USER);
     }
 
     Optional<String> accountIdentifierOptional = getAccountIdentifier(permissionChecksDTOs);
@@ -127,7 +137,7 @@ public class ACLResourceImpl implements ACLResource {
     List<PermissionCheck> permissionChecks =
         permissionChecksDTOs.stream().map(PermissionCheckDTOMapper::fromDTO).collect(Collectors.toList());
     List<PermissionCheckResult> permissionCheckResults =
-        aclService.checkAccess(principalToCheckPermissionsFor, permissionChecks);
+        aclService.checkAccess(principalToCheckPermissionsFor, permissionChecks, resourceAttributeProvider);
 
     AccessCheckResponseDTO accessCheckResponseDTO =
         AccessCheckResponseDTO.builder()
@@ -161,7 +171,7 @@ public class ACLResourceImpl implements ACLResource {
     return ResponseDTO.newResponse(accessCheckResponseDTO);
   }
 
-  public static PrincipalType fromSecurityPrincipalType(io.harness.security.dto.PrincipalType principalType) {
+  private static PrincipalType fromSecurityPrincipalType(io.harness.security.dto.PrincipalType principalType) {
     switch (principalType) {
       case SERVICE:
         return SERVICE;

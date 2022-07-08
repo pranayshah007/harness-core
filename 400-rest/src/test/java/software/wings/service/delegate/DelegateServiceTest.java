@@ -28,6 +28,7 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.ANKIT;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.ANUPAM;
 import static io.harness.rule.OwnerRule.ARPIT;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.BRETT;
@@ -118,6 +119,7 @@ import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfileParams;
 import io.harness.delegate.beans.DelegateRegisterResponse;
 import io.harness.delegate.beans.DelegateScripts;
+import io.harness.delegate.beans.DelegateSelector;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateSize;
 import io.harness.delegate.beans.DelegateSizeDetails;
@@ -274,6 +276,7 @@ public class DelegateServiceTest extends WingsBaseTest {
   private static final String UNIQUE_DELEGATE_NAME_ERROR_MESSAGE =
       "Delegate with same name exists. Delegate name must be unique across account.";
   private static final String DELEGATE_TOKEN_ERROR_MESSAGE = "Delegate Token must be provided.";
+  private static final String HARNESS_NG_DELEGATE = "harness-ng-delegate";
 
   @Mock private AccountService accountService;
   @Mock private LicenseService licenseService;
@@ -338,8 +341,10 @@ public class DelegateServiceTest extends WingsBaseTest {
     when(mainConfiguration.getCdnConfig()).thenReturn(cdnConfig);
     HashMap<String, JreConfig> jreConfigMap = new HashMap<>();
     jreConfigMap.put("openjdk8u242", getOpenjdkJreConfig());
+    jreConfigMap.put("openjdk11014_9", getOpenjdk11JreConfig());
     when(mainConfiguration.getCurrentJre()).thenReturn("openjdk8u242");
     when(mainConfiguration.getJreConfigs()).thenReturn(jreConfigMap);
+    when(mainConfiguration.getMigrateToJre()).thenReturn("openjdk11014_9");
     when(subdomainUrlHelper.getWatcherMetadataUrl(any(), any(), any()))
         .thenReturn("http://localhost:" + port + "/watcherci.txt");
     FileUploadLimit fileUploadLimit = new FileUploadLimit();
@@ -2985,6 +2990,61 @@ public class DelegateServiceTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void shouldGetAllDelegateSelectorsInSortedOrder() {
+    String accountId = generateUuid();
+
+    final DelegateGroup acctGrpPartiallyConnected =
+        DelegateGroup.builder().name("acctGrpPartiallyConnected").accountId(accountId).ng(true).build();
+    final DelegateGroup acctGrpDisconnected =
+        DelegateGroup.builder().name("acctGrpDisconnected").accountId(accountId).ng(true).build();
+    final DelegateGroup acctGrpConnected =
+        DelegateGroup.builder().name("acctGrpConnected").accountId(accountId).ng(true).build();
+
+    persistence.saveBatch(Arrays.asList(acctGrpPartiallyConnected, acctGrpDisconnected, acctGrpConnected));
+
+    // Add delegates to acctGrpPartiallyConnected group.
+    Delegate delegate1 = createDelegateBuilder().build();
+    delegate1.setDelegateGroupId(acctGrpPartiallyConnected.getUuid());
+    delegate1.setLastHeartBeat(System.currentTimeMillis());
+    delegate1.setAccountId(accountId);
+    delegate1.setNg(true);
+    persistence.save(delegate1);
+
+    Delegate delegate2 = createDelegateBuilder().build();
+    delegate2.setDelegateGroupId(acctGrpPartiallyConnected.getUuid());
+    delegate2.setLastHeartBeat(0);
+    delegate2.setAccountId(accountId);
+    delegate2.setNg(true);
+    persistence.save(delegate2);
+
+    // Add delegates to acctGrpDisconnected group.
+    Delegate delegate3 = createDelegateBuilder().build();
+    delegate3.setDelegateGroupId(acctGrpDisconnected.getUuid());
+    delegate3.setLastHeartBeat(0);
+    delegate3.setAccountId(accountId);
+    delegate3.setNg(true);
+    persistence.save(delegate3);
+
+    // Add delegates to acctGrpConnected group
+    Delegate delegate4 = createDelegateBuilder().build();
+    delegate4.setDelegateGroupId(acctGrpConnected.getUuid());
+    delegate4.setLastHeartBeat(System.currentTimeMillis());
+    delegate4.setAccountId(accountId);
+    delegate4.setNg(true);
+    persistence.save(delegate4);
+
+    final List<DelegateSelector> delegateSelectors =
+        delegateService.getAllDelegateSelectorsUpTheHierarchyV2(accountId, null, null);
+
+    DelegateSelector expectedSelector1 = new DelegateSelector("acctgrpconnected", true);
+    DelegateSelector expectedSelector2 = new DelegateSelector("acctgrppartiallyconnected", true);
+    DelegateSelector expectedSelector3 = new DelegateSelector("acctgrpdisconnected", false);
+    assertThat(delegateSelectors).containsExactly(expectedSelector1, expectedSelector2, expectedSelector3);
+  }
+
+  @Test
   @Owner(developers = BRETT)
   @Category(UnitTests.class)
   public void shouldGetAllDelegateSelectors() {
@@ -3577,7 +3637,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                            -> delegateService.generateKubernetesYaml(accountId, setupDetails, "https://localhost:9090",
                                "https://localhost:7070", MediaType.MULTIPART_FORM_DATA_TYPE))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Delegate type must be KUBERNETES.");
+        .hasMessage("Delegate type must be KUBERNETES OR HELM_DELEGATE.");
   }
 
   @Test
@@ -3731,6 +3791,39 @@ public class DelegateServiceTest extends WingsBaseTest {
                 ACCOUNT_ID, UNIQUE_DELEGATE_NAME, DELEGATE_PROFILE_ID, TOKEN_NAME))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(UNIQUE_DELEGATE_NAME_ERROR_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void shouldGenerateNgHelmValuesYamlFile() throws IOException {
+    when(accountService.get(ACCOUNT_ID))
+        .thenReturn(anAccount().withAccountKey("ACCOUNT_KEY").withUuid(ACCOUNT_ID).build());
+    when(delegateVersionService.getDelegateImageTagForNgHelmDelegates(ACCOUNT_ID)).thenReturn(DELEGATE_IMAGE_TAG);
+    when(delegateVersionService.getUpgraderImageTag(ACCOUNT_ID, HELM_DELEGATE)).thenReturn(UPGRADER_IMAGE_TAG);
+    DelegateSetupDetails setupDetails =
+        DelegateSetupDetails.builder()
+            .delegateConfigurationId("delConfigId")
+            .name("harness-delegate")
+            .identifier("_delegateGroupId1")
+            .size(DelegateSize.LAPTOP)
+            .delegateType(HELM_DELEGATE)
+            .k8sConfigDetails(K8sConfigDetails.builder().k8sPermissionType(CLUSTER_ADMIN).build())
+            .tokenName(TOKEN_NAME)
+            .build();
+    when(delegateProfileService.get(ACCOUNT_ID, "delConfigId")).thenReturn(DelegateProfile.builder().build());
+
+    File yamlFile = delegateService.generateNgHelmValuesYaml(
+        ACCOUNT_ID, setupDetails, "https://localhost:9090", "https://localhost:7070");
+
+    byte[] buffer = new byte[(int) yamlFile.length()];
+    FileInputStream fileInputStream = new FileInputStream(yamlFile);
+    IOUtils.read(fileInputStream, buffer);
+    assertThat(new String(buffer))
+        .isEqualTo(
+            CharStreams
+                .toString(new InputStreamReader(getClass().getResourceAsStream("/expectedNgHelmDelegateValues.yaml")))
+                .replaceAll("8888", "" + port));
   }
 
   @Test
@@ -4220,6 +4313,15 @@ public class DelegateServiceTest extends WingsBaseTest {
         .jreMacDirectory("jdk8u242-b08-jre")
         .jreTarPath("jre/openjdk-8u242/jre_x64_${OS}_8u242b08.tar.gz")
         .alpnJarPath("tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar")
+        .build();
+  }
+
+  public static JreConfig getOpenjdk11JreConfig() {
+    return JreConfig.builder()
+        .version("11.0.14")
+        .jreDirectory("jdk-11.0.14+9-jre")
+        .jreMacDirectory("jdk-11.0.14+9-jre")
+        .jreTarPath("jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.14_9.tar.gz")
         .build();
   }
 

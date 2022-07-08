@@ -8,6 +8,7 @@
 package io.harness.subscription.resource;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
+import static io.harness.licensing.accesscontrol.LicenseAccessControlPermissions.EDIT_LICENSE_PERMISSION;
 import static io.harness.licensing.accesscontrol.LicenseAccessControlPermissions.VIEW_LICENSE_PERMISSION;
 
 import io.harness.ModuleType;
@@ -27,6 +28,7 @@ import io.harness.subscription.dto.FfSubscriptionDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
 import io.harness.subscription.dto.PaymentMethodCollectionDTO;
 import io.harness.subscription.dto.PriceCollectionDTO;
+import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
 import io.harness.subscription.services.SubscriptionService;
@@ -81,6 +83,7 @@ import javax.ws.rs.QueryParam;
 @NextGenManagerAuth
 public class SubscriptionResource {
   private static final String SUBSCRIPTION_ID = "subscriptionId";
+  private static final String INVOICE_ID = "invoiceId";
   private static final String CUSTOMER_ID = "customerId";
   @Inject private SubscriptionService subscriptionService;
 
@@ -93,13 +96,12 @@ public class SubscriptionResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns product prices")
       })
-  // TODO define new resource type and permission for billing functions, define new role e.g. "Billing Admin" and have
-  // proper pemission assgined
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<PriceCollectionDTO>
   retrieveProductPrices(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(required = true, description = "Module Type") @NotNull @QueryParam("moduleType") ModuleType moduleType) {
+      @Parameter(required = true, description = "Module Type") @NotNull @QueryParam(
+          "moduleType") ModuleType moduleType) {
     return ResponseDTO.newResponse(subscriptionService.listPrices(accountIdentifier, moduleType));
   }
 
@@ -111,7 +113,7 @@ public class SubscriptionResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns subscription details")
       })
-  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = EDIT_LICENSE_PERMISSION)
   public ResponseDTO<InvoiceDetailDTO>
   createFfSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -148,7 +150,7 @@ public class SubscriptionResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns subscription details")
       })
-  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = EDIT_LICENSE_PERMISSION)
   public ResponseDTO<SubscriptionDetailDTO>
   updateSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -170,7 +172,7 @@ public class SubscriptionResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns subscription details")
       })
-  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = EDIT_LICENSE_PERMISSION)
   public ResponseDTO<Void>
   cancelSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -243,7 +245,7 @@ public class SubscriptionResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns customer details")
       })
-  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = EDIT_LICENSE_PERMISSION)
   public ResponseDTO<CustomerDetailDTO>
   createCustomer(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -262,7 +264,7 @@ public class SubscriptionResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns customer details")
       })
-  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = EDIT_LICENSE_PERMISSION)
   public ResponseDTO<CustomerDetailDTO>
   updateCustomer(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -273,6 +275,25 @@ public class SubscriptionResource {
       @Valid CustomerDTO customerDTO) {
     return ResponseDTO.newResponse(
         subscriptionService.updateStripeCustomer(accountIdentifier, customerId, customerDTO));
+  }
+
+  @PUT
+  @Path("/billing")
+  @ApiOperation(value = "Updates the customer's billing information", nickname = "updateBilling")
+  @Operation(operationId = "updateBilling", summary = "Update the customer's billing information",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns customer details")
+      })
+  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = EDIT_LICENSE_PERMISSION)
+  public ResponseDTO<CustomerDetailDTO>
+  updateCustomer(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                     NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String AccountIdentifier,
+      @io.swagger.v3.oas.annotations.parameters.RequestBody(
+          required = true, description = "This is the information of the Stripe Billing Request.") @NotNull
+      @Valid StripeBillingDTO stripeBillingDTO) {
+    return ResponseDTO.newResponse(subscriptionService.updateStripeBilling(AccountIdentifier, stripeBillingDTO));
   }
 
   @GET
@@ -339,6 +360,15 @@ public class SubscriptionResource {
   @PublicApi
   public RestResponse<Void> syncStripeEvent(@NotNull String stripeEvent) {
     subscriptionService.syncStripeEvent(stripeEvent);
+    return new RestResponse();
+  }
+
+  @POST
+  @Path("/pay_invoice")
+  @PublicApi
+  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = EDIT_LICENSE_PERMISSION)
+  public RestResponse<Void> payInvoice(@NotNull @QueryParam(INVOICE_ID) String invoiceId) {
+    subscriptionService.payInvoice(invoiceId);
     return new RestResponse();
   }
 }

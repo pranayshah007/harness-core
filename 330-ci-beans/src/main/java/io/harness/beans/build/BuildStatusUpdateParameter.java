@@ -31,5 +31,6 @@ public class BuildStatusUpdateParameter implements BuildUpdateParameters {
   private String identifier;
   private String name;
   private String connectorIdentifier;
+  private String projectName;
   private String repoName;
 }

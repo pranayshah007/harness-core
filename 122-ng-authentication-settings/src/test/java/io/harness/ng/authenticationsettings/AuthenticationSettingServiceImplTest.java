@@ -8,24 +8,32 @@
 package io.harness.ng.authenticationsettings;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
+import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.authenticationsettings.dtos.mechanisms.LDAPSettings;
 import io.harness.ng.authenticationsettings.impl.AuthenticationSettingsServiceImpl;
 import io.harness.ng.authenticationsettings.remote.AuthSettingsManagerClient;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
+import software.wings.beans.sso.LdapConnectionSettings;
 import software.wings.beans.sso.SamlSettings;
 import software.wings.security.authentication.SSOConfig;
 
@@ -109,5 +117,93 @@ public class AuthenticationSettingServiceImplTest extends CategoryTest {
       assertThat(e.getMessage())
           .isEqualTo("Deleting Saml provider with linked user groups is not allowed. Unlink the user groups first");
     }
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testGetLdapSettings() throws IOException {
+    final String displayName = "NG_LDAP";
+    Call<RestResponse<software.wings.beans.sso.LdapSettings>> request = mock(Call.class);
+    doReturn(request).when(managerClient).getLdapSettings(ACCOUNT_ID);
+    RestResponse<software.wings.beans.sso.LdapSettings> mockResponse =
+        new RestResponse<>(software.wings.beans.sso.LdapSettings.builder()
+                               .displayName(displayName)
+                               .connectionSettings(new LdapConnectionSettings())
+                               .build());
+    doReturn(Response.success(mockResponse)).when(request).execute();
+    LDAPSettings ngLdapSettings = authenticationSettingsServiceImpl.getLdapSettings(ACCOUNT_ID);
+    assertNotNull(ngLdapSettings);
+    assertThat(ngLdapSettings.getDisplayName()).isEqualTo(displayName);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testCreateLdapSettings() throws IOException {
+    final String displayName = "NG_LDAP";
+    final String cronExpr = "0 0/30 * 1/1 * ? *";
+    LDAPSettings settings = LDAPSettings.builder()
+                                .displayName(displayName)
+                                .connectionSettings(new LdapConnectionSettings())
+                                .userSettingsList(new ArrayList<>())
+                                .groupSettingsList(new ArrayList<>())
+                                .cronExpression(cronExpr)
+                                .build();
+    Call<RestResponse<software.wings.beans.sso.LdapSettings>> request = mock(Call.class);
+    doReturn(request).when(managerClient).createLdapSettings(anyString(), any());
+    software.wings.beans.sso.LdapSettings builtSettings = software.wings.beans.sso.LdapSettings.builder()
+                                                              .displayName(displayName)
+                                                              .accountId(ACCOUNT_ID)
+                                                              .connectionSettings(new LdapConnectionSettings())
+                                                              .build();
+    builtSettings.setCronExpression(cronExpr);
+    RestResponse<software.wings.beans.sso.LdapSettings> mockResponse = new RestResponse<>(builtSettings);
+    doReturn(Response.success(mockResponse)).when(request).execute();
+    LDAPSettings createdLDAPSettings = authenticationSettingsServiceImpl.createLdapSettings(ACCOUNT_ID, settings);
+    assertNotNull(createdLDAPSettings);
+    assertThat(createdLDAPSettings.getDisplayName()).isEqualTo(displayName);
+    assertThat(createdLDAPSettings.getCronExpression()).isEqualTo(cronExpr);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testUpdateLdapSettings() throws IOException {
+    final String displayName = "NG_LDAP_NEW";
+    final String cronExpr = "0 0/30 * 1/1 * ? *";
+    LDAPSettings settings = LDAPSettings.builder()
+                                .displayName(displayName)
+                                .connectionSettings(new LdapConnectionSettings())
+                                .userSettingsList(new ArrayList<>())
+                                .groupSettingsList(new ArrayList<>())
+                                .cronExpression(cronExpr)
+                                .build();
+    Call<RestResponse<software.wings.beans.sso.LdapSettings>> request = mock(Call.class);
+    doReturn(request).when(managerClient).updateLdapSettings(anyString(), any());
+    software.wings.beans.sso.LdapSettings builtSettings = software.wings.beans.sso.LdapSettings.builder()
+                                                              .displayName(displayName)
+                                                              .accountId(ACCOUNT_ID)
+                                                              .connectionSettings(new LdapConnectionSettings())
+                                                              .build();
+    builtSettings.setCronExpression(cronExpr);
+    RestResponse<software.wings.beans.sso.LdapSettings> mockResponse = new RestResponse<>(builtSettings);
+    doReturn(Response.success(mockResponse)).when(request).execute();
+    LDAPSettings createdLDAPSettings = authenticationSettingsServiceImpl.updateLdapSettings(ACCOUNT_ID, settings);
+    assertNotNull(createdLDAPSettings);
+    assertThat(createdLDAPSettings.getDisplayName()).isEqualTo(displayName);
+    assertThat(createdLDAPSettings.getCronExpression()).isEqualTo(cronExpr);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testDeleteLdapSettings() throws IOException {
+    Call<RestResponse<software.wings.beans.sso.LdapSettings>> request = mock(Call.class);
+    doReturn(request).when(managerClient).deleteLdapSettings(ACCOUNT_ID);
+    RestResponse<Boolean> mockResponse = new RestResponse<>(true);
+    doReturn(Response.success(mockResponse)).when(request).execute();
+    authenticationSettingsServiceImpl.deleteLdapSettings(ACCOUNT_ID);
+    verify(managerClient, times(1)).deleteLdapSettings(ACCOUNT_ID);
   }
 }

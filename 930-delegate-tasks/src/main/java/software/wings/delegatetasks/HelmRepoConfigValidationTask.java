@@ -56,7 +56,7 @@ import org.apache.commons.lang3.NotImplementedException;
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class HelmRepoConfigValidationTask extends AbstractDelegateRunnableTask {
   private static final String WORKING_DIR_BASE = "./repository/helm-validation/";
-  private static final HelmVersion defaultHelmVersion = HelmVersion.V3;
+  private HelmVersion helmVersion = HelmVersion.V3;
   // We do not want to generate index when validating a helm repo, so a dummy path serves the purpose by checking if the
   // s3/gcs bucket is accessible or not
   private static final String DUMMY_BASE_PATH = generateUuid();
@@ -78,6 +78,10 @@ public class HelmRepoConfigValidationTask extends AbstractDelegateRunnableTask {
     try {
       log.info("Running HelmRepoConfigValidationTask for account {} app {}", taskParams.getAccountId(),
           taskParams.getAppId());
+
+      if (taskParams.isUseNewHelmBinary()) {
+        helmVersion = HelmVersion.V380;
+      }
 
       tryAddingHelmRepo(taskParams);
 
@@ -103,7 +107,7 @@ public class HelmRepoConfigValidationTask extends AbstractDelegateRunnableTask {
 
     String workingDirectory = helmTaskHelper.createNewDirectoryAtPath(Paths.get(WORKING_DIR_BASE).toString());
 
-    helmTaskHelper.initHelm(workingDirectory, defaultHelmVersion, DEFAULT_TIMEOUT_IN_MILLIS);
+    helmTaskHelper.initHelm(workingDirectory, helmVersion, DEFAULT_TIMEOUT_IN_MILLIS);
     String repoName = convertBase64UuidToCanonicalForm(generateUuid());
 
     if (helmRepoConfig instanceof AmazonS3HelmRepoConfig) {
@@ -140,7 +144,7 @@ public class HelmRepoConfigValidationTask extends AbstractDelegateRunnableTask {
         throw new WingsException("Unhandled type of helm repo config. Type : " + helmRepoConfig.getSettingType());
     }
 
-    helmTaskHelper.removeRepo(repoName, workingDirectory, defaultHelmVersion, DEFAULT_TIMEOUT_IN_MILLIS);
+    helmTaskHelper.removeRepo(repoName, workingDirectory, helmVersion, DEFAULT_TIMEOUT_IN_MILLIS);
     helmTaskHelper.cleanup(workingDirectory);
   }
 
@@ -156,7 +160,7 @@ public class HelmRepoConfigValidationTask extends AbstractDelegateRunnableTask {
     encryptionService.decrypt(gcpConfig, connectorEncryptedDataDetails, false);
 
     helmTaskHelper.addHelmRepo(helmRepoConfig, gcpConfig, repoName, taskParams.getRepoDisplayName(), workingDirectory,
-        DUMMY_BASE_PATH, defaultHelmVersion, ((GCSHelmRepoConfig) helmRepoConfig).isUseLatestChartMuseumVersion());
+        DUMMY_BASE_PATH, helmVersion, ((GCSHelmRepoConfig) helmRepoConfig).isUseLatestChartMuseumVersion());
   }
 
   private void tryAddingHttpHelmRepo(HelmRepoConfig helmRepoConfig, String repoName, String repoDisplayName,
@@ -164,7 +168,7 @@ public class HelmRepoConfigValidationTask extends AbstractDelegateRunnableTask {
     HttpHelmRepoConfig httpHelmRepoConfig = (HttpHelmRepoConfig) helmRepoConfig;
 
     helmTaskHelper.addRepo(repoName, repoDisplayName, httpHelmRepoConfig.getChartRepoUrl(),
-        httpHelmRepoConfig.getUsername(), httpHelmRepoConfig.getPassword(), workingDirectory, defaultHelmVersion,
+        httpHelmRepoConfig.getUsername(), httpHelmRepoConfig.getPassword(), workingDirectory, helmVersion,
         DEFAULT_TIMEOUT_IN_MILLIS);
   }
 
@@ -175,6 +179,6 @@ public class HelmRepoConfigValidationTask extends AbstractDelegateRunnableTask {
     encryptionService.decrypt(awsConfig, connectorEncryptedDataDetails, false);
 
     helmTaskHelper.addHelmRepo(helmRepoConfig, awsConfig, repoName, taskParams.getRepoDisplayName(), workingDirectory,
-        DUMMY_BASE_PATH, defaultHelmVersion, ((AmazonS3HelmRepoConfig) helmRepoConfig).isUseLatestChartMuseumVersion());
+        DUMMY_BASE_PATH, helmVersion, ((AmazonS3HelmRepoConfig) helmRepoConfig).isUseLatestChartMuseumVersion());
   }
 }

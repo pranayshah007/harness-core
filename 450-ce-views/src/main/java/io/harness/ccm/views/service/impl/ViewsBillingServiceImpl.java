@@ -20,6 +20,7 @@ import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
 import static io.harness.ccm.views.graphql.QLCEViewAggregateOperation.MAX;
 import static io.harness.ccm.views.graphql.QLCEViewAggregateOperation.MIN;
+import static io.harness.ccm.views.graphql.QLCEViewFilterOperator.IN;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantClusterCost;
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantCost;
@@ -32,6 +33,8 @@ import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_NODE;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_POD;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_POD_FARGATE;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.K8S_PV;
+import static io.harness.ccm.views.graphql.ViewsQueryBuilder.LABEL_KEY_ALIAS;
+import static io.harness.ccm.views.graphql.ViewsQueryBuilder.LABEL_VALUE_ALIAS;
 import static io.harness.ccm.views.utils.ClusterTableKeys.ACTUAL_IDLE_COST;
 import static io.harness.ccm.views.utils.ClusterTableKeys.AVG_CPU_UTILIZATION_VALUE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.AVG_MEMORY_UTILIZATION_VALUE;
@@ -236,7 +239,12 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
 
     List<ViewRule> viewRuleList = new ArrayList<>();
     Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
-    List<QLCEViewFilter> idFilters = getIdFilters(filters);
+
+    // In case of AWS Account filter, we might get multiple values for QLCEViewFilter if user is filtering on AWS
+    // Account name
+    // First value is the original filter string, the others are awsAccountIds
+    List<QLCEViewFilter> idFilters =
+        awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(getIdFilters(filters), queryParams.getAccountId());
 
     List<QLCEViewRule> rules = getRuleFilters(filters);
     if (!rules.isEmpty()) {
@@ -420,7 +428,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName, ViewQueryParams queryParams) {
     boolean isClusterTableQuery = isClusterTableQuery(filters, queryParams);
     List<ViewRule> viewRuleList = new ArrayList<>();
-    List<QLCEViewFilter> idFilters = removeAccountNameFromAWSAccountIdFilter(getIdFilters(filters));
+    List<QLCEViewFilter> idFilters =
+        AwsAccountFieldHelper.removeAccountNameFromAWSAccountIdFilter(getIdFilters(filters));
     List<QLCEViewTimeFilter> timeFilters = getTimeFilters(filters);
     SelectQuery query = getTrendStatsQuery(
         filters, idFilters, timeFilters, aggregateFunction, viewRuleList, cloudProviderTableName, queryParams);
@@ -562,6 +571,51 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     }
     return (isGroupByEntityEmpty && defaultFieldCheck)
         || viewsQueryHelper.isGroupByFieldPresent(groupBy, AWS_ACCOUNT_FIELD);
+  }
+
+  @Override
+  public Map<String, Map<String, String>> getLabelsForWorkloads(
+      BigQuery bigQuery, Set<String> workloads, String cloudProviderTableName, List<QLCEViewFilterWrapper> filters) {
+    List<QLCEViewFilter> idFilters = filters != null ? getIdFilters(filters) : new ArrayList<>();
+    if (!workloads.isEmpty()) {
+      idFilters.add(QLCEViewFilter.builder()
+                        .field(QLCEViewFieldInput.builder()
+                                   .fieldId(WORKLOAD_NAME_FIELD_ID)
+                                   .fieldName("Workload")
+                                   .identifier(CLUSTER)
+                                   .build())
+                        .operator(IN)
+                        .values(workloads.toArray(new String[0]))
+                        .build());
+    }
+    List<QLCEViewTimeFilter> timeFilters = filters != null ? getTimeFilters(filters) : new ArrayList<>();
+    SelectQuery query = viewsQueryBuilder.getLabelsForWorkloadsQuery(cloudProviderTableName, idFilters, timeFilters);
+    return getLabelsForWorkloadsData(bigQuery, query);
+  }
+
+  private Map<String, Map<String, String>> getLabelsForWorkloadsData(BigQuery bigQuery, SelectQuery query) {
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
+    TableResult result;
+    try {
+      result = bigQuery.query(queryConfig);
+    } catch (InterruptedException e) {
+      log.error("Failed to getLabelsForWorkloadsData. {}", e);
+      Thread.currentThread().interrupt();
+      return null;
+    }
+    Map<String, Map<String, String>> workloadToLabelsMapping = new HashMap<>();
+    for (FieldValueList row : result.iterateAll()) {
+      String workload = row.get(WORKLOAD_NAME).getValue().toString();
+      String labelKey = row.get(LABEL_KEY_ALIAS).getValue().toString();
+      String labelValue = row.get(LABEL_VALUE_ALIAS).getValue().toString();
+      Map<String, String> labels = new HashMap<>();
+      if (workloadToLabelsMapping.containsKey(workload)) {
+        labels = workloadToLabelsMapping.get(workload);
+      }
+      labels.put(labelKey, labelValue);
+      workloadToLabelsMapping.put(workload, labels);
+    }
+    return workloadToLabelsMapping;
   }
 
   private boolean isClusterTableQuery(List<QLCEViewFilterWrapper> filters, ViewQueryParams queryParams) {
@@ -877,7 +931,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     List<QLCEViewGroupBy> modifiedGroupBy = groupBy != null ? new ArrayList<>(groupBy) : new ArrayList<>();
     Optional<QLCEViewFilterWrapper> viewMetadataFilter = getViewMetadataFilter(filters);
 
-    List<QLCEViewRule> rules = removeAccountNameFromAWSAccountRuleFilter(getRuleFilters(filters));
+    List<QLCEViewRule> rules = AwsAccountFieldHelper.removeAccountNameFromAWSAccountRuleFilter(getRuleFilters(filters));
     if (!rules.isEmpty()) {
       for (QLCEViewRule rule : rules) {
         viewRuleList.add(convertQLCEViewRuleToViewRule(rule));
@@ -902,7 +956,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         }
       }
     }
-    List<QLCEViewFilter> idFilters = removeAccountNameFromAWSAccountIdFilter(getIdFilters(filters));
+    List<QLCEViewFilter> idFilters =
+        AwsAccountFieldHelper.removeAccountNameFromAWSAccountIdFilter(getIdFilters(filters));
     List<QLCEViewTimeFilter> timeFilters = getTimeFilters(filters);
 
     // account id is not passed in current gen queries
@@ -930,54 +985,6 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
 
     return viewsQueryBuilder.getQuery(viewRuleList, idFilters, timeFilters, modifiedGroupBy, aggregateFunction, sort,
         cloudProviderTableName, queryParams.getTimeOffsetInDays());
-  }
-
-  private static List<QLCEViewRule> removeAccountNameFromAWSAccountRuleFilter(final List<QLCEViewRule> ruleFilters) {
-    final List<QLCEViewRule> updatedRuleFilters = new ArrayList<>();
-    ruleFilters.forEach(ruleFilter -> {
-      if (Objects.nonNull(ruleFilter.getConditions())) {
-        final List<QLCEViewFilter> updatedConditions = new ArrayList<>();
-        ruleFilter.getConditions().forEach(condition -> {
-          if (Objects.nonNull(condition.getField()) && AWS_ACCOUNT_FIELD.equals(condition.getField().getFieldName())
-              && Objects.nonNull(condition.getValues())) {
-            final String[] updatedValues = Arrays.stream(condition.getValues())
-                                               .map(AwsAccountFieldHelper::removeAwsAccountNameFromValue)
-                                               .toArray(String[] ::new);
-            updatedConditions.add(QLCEViewFilter.builder()
-                                      .field(condition.getField())
-                                      .operator(condition.getOperator())
-                                      .values(updatedValues)
-                                      .build());
-          } else {
-            updatedConditions.add(condition);
-          }
-        });
-        updatedRuleFilters.add(QLCEViewRule.builder().conditions(updatedConditions).build());
-      } else {
-        updatedRuleFilters.add(ruleFilter);
-      }
-    });
-    return updatedRuleFilters;
-  }
-
-  private static List<QLCEViewFilter> removeAccountNameFromAWSAccountIdFilter(final List<QLCEViewFilter> idFilters) {
-    final List<QLCEViewFilter> updatedIdFilters = new ArrayList<>();
-    idFilters.forEach(idFilter -> {
-      if (Objects.nonNull(idFilter.getField()) && AWS_ACCOUNT_FIELD.equals(idFilter.getField().getFieldName())
-          && Objects.nonNull(idFilter.getValues())) {
-        final String[] updatedValues = Arrays.stream(idFilter.getValues())
-                                           .map(AwsAccountFieldHelper::removeAwsAccountNameFromValue)
-                                           .toArray(String[] ::new);
-        updatedIdFilters.add(QLCEViewFilter.builder()
-                                 .field(idFilter.getField())
-                                 .operator(idFilter.getOperator())
-                                 .values(updatedValues)
-                                 .build());
-      } else {
-        updatedIdFilters.add(idFilter);
-      }
-    });
-    return updatedIdFilters;
   }
 
   public static List<ViewRule> convertQLCEViewRuleToViewRule(@NotNull List<QLCEViewRule> ruleList) {
@@ -1792,7 +1799,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
 
     return QLCEViewFilter.builder()
         .field(QLCEViewFieldInput.builder().fieldId(INSTANCE_TYPE).fieldName(INSTANCE_TYPE).identifier(CLUSTER).build())
-        .operator(QLCEViewFilterOperator.IN)
+        .operator(IN)
         .values(values)
         .build();
   }
@@ -1830,7 +1837,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
                                                  .fieldName(field.toLowerCase())
                                                  .identifier(CLUSTER)
                                                  .build())
-                                      .operator(QLCEViewFilterOperator.IN)
+                                      .operator(IN)
                                       .values(values.toArray(new String[0]))
                                       .build())
                         .build());

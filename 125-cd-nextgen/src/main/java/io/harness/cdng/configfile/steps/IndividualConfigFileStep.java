@@ -7,19 +7,22 @@
 
 package io.harness.cdng.configfile.steps;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.configfile.validator.IndividualConfigFileStepValidator.validateConfigFileAttributes;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.mapper.ConfigFileOutcomeMapper;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.harness.HarnessStoreFile;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorResponseDTO;
@@ -53,7 +56,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
-@OwnedBy(CDC)
+@OwnedBy(CDP)
 @Singleton
 @Slf4j
 public class IndividualConfigFileStep implements SyncExecutable<ConfigFileStepParameters> {
@@ -64,6 +67,7 @@ public class IndividualConfigFileStep implements SyncExecutable<ConfigFileStepPa
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Inject private FileStoreService fileStoreService;
   @Inject private NGEncryptedDataService ngEncryptedDataService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   @Override
   public Class<ConfigFileStepParameters> getStepParametersClass() {
@@ -74,7 +78,9 @@ public class IndividualConfigFileStep implements SyncExecutable<ConfigFileStepPa
   public StepResponse executeSync(Ambiance ambiance, ConfigFileStepParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     ConfigFileAttributes finalConfigFile = applyConfigFileOverrides(stepParameters);
-    validateStoreReferences(stepParameters.getIdentifier(), finalConfigFile, ambiance);
+    cdExpressionResolver.updateStoreConfigExpressions(ambiance, finalConfigFile.getStore().getValue());
+    validateConfigFileAttributes(stepParameters.getIdentifier(), finalConfigFile, true);
+    verifyConfigFileReference(stepParameters.getIdentifier(), finalConfigFile, ambiance);
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
         .stepOutcome(StepResponse.StepOutcome.builder()
@@ -96,7 +102,7 @@ public class IndividualConfigFileStep implements SyncExecutable<ConfigFileStepPa
     }
 
     if (isEmpty(configFileAttributesList)) {
-      throw new InvalidArgumentsException("No found config file defined");
+      throw new InvalidArgumentsException("No found config file attributes");
     }
 
     ConfigFileAttributes resultantConfigFile = configFileAttributesList.get(0);
@@ -108,75 +114,78 @@ public class IndividualConfigFileStep implements SyncExecutable<ConfigFileStepPa
     return resultantConfigFile;
   }
 
-  private void validateStoreReferences(
-      String configFileIdentifier, ConfigFileAttributes configFileAttributes, Ambiance ambiance) {
+  private void verifyConfigFileReference(
+      final String configFileIdentifier, ConfigFileAttributes configFileAttributes, Ambiance ambiance) {
     StoreConfig storeConfig = configFileAttributes.getStore().getValue().getSpec();
     String storeKind = storeConfig.getKind();
     if (HARNESS_STORE_TYPE.equals(storeKind)) {
-      validateFileRefs(configFileIdentifier, (HarnessStore) storeConfig, ambiance);
+      HarnessStore harnessStore = (HarnessStore) storeConfig;
+      verifyFilesByPathAndScope(configFileIdentifier, harnessStore.getFiles(), ambiance);
+      verifySecretFilesByRef(configFileIdentifier, harnessStore.getSecretFiles(), ambiance);
     } else {
-      validateConnectorByRef(configFileIdentifier, storeConfig, ambiance);
+      verifyConnectorByRef(configFileIdentifier, storeConfig, ambiance);
     }
   }
 
-  private void validateFileRefs(String configFileIdentifier, HarnessStore harnessStore, Ambiance ambiance) {
-    List<ParameterField<String>> fileReferences = harnessStore.getFileReferences();
-
-    if (isEmpty(fileReferences)) {
-      throw new InvalidRequestException(
-          format("Cannot find any file reference for ConfigFile with identifier: %s, store kind: %s",
-              configFileIdentifier, harnessStore.getKind()));
-    }
-
-    harnessStore.getFiles().getValue().forEach(
-        file -> validateFileByRef(harnessStore, ambiance, file, configFileIdentifier));
+  private void verifyFilesByPathAndScope(
+      final String configFileIdentifier, ParameterField<List<String>> parameterFiles, Ambiance ambiance) {
+    List<String> files = ParameterFieldHelper.getParameterFieldListValue(parameterFiles, true);
+    files.forEach(file -> verifyFileByPathAndScope(ambiance, file, configFileIdentifier));
   }
 
-  private void validateFileByRef(
-      HarnessStore harnessStore, Ambiance ambiance, HarnessStoreFile file, final String configFileIdentifier) {
-    if (ParameterField.isNull(file.getRef())) {
+  private void verifyFileByPathAndScope(Ambiance ambiance, String scopedFilePath, final String configFileIdentifier) {
+    if (isBlank(scopedFilePath)) {
       throw new InvalidRequestException(
-          format("File ref not found for one of files, ConfigFile identifier: %s, store kind: %s", configFileIdentifier,
-              harnessStore.getKind()));
-    }
-
-    if (file.getRef().isExpression()) {
-      return;
+          format("Config file reference cannot be null or empty, ConfigFile identifier: %s", configFileIdentifier));
     }
 
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    IdentifierRef fileRef = IdentifierRefHelper.getIdentifierRef(file.getRef().getValue(),
-        ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    FileReference fileReference = FileReference.of(
+        scopedFilePath, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
-    if (ParameterFieldHelper.getBooleanParameterFieldValue(file.getIsEncrypted()) == Boolean.TRUE) {
-      NGEncryptedData ngEncryptedData = ngEncryptedDataService.get(fileRef.getAccountIdentifier(),
-          fileRef.getOrgIdentifier(), fileRef.getProjectIdentifier(), fileRef.getIdentifier());
-      if (ngEncryptedData == null) {
-        throw new InvalidRequestException(
-            format("ConfigFile not found in Encrypted Store with identifier : [%s]", file));
-      }
-    } else {
-      Optional<FileStoreNodeDTO> configFile = fileStoreService.get(fileRef.getAccountIdentifier(),
-          fileRef.getOrgIdentifier(), fileRef.getProjectIdentifier(), fileRef.getIdentifier(), false);
+    Optional<FileStoreNodeDTO> configFile = fileStoreService.getWithChildrenByPath(fileReference.getAccountIdentifier(),
+        fileReference.getOrgIdentifier(), fileReference.getProjectIdentifier(), fileReference.getPath(), false);
 
-      if (!configFile.isPresent()) {
-        throw new InvalidRequestException(format("ConfigFile not found in File Store with identifier : [%s]", file));
-      }
+    if (!configFile.isPresent()) {
+      throw new InvalidRequestException(
+          format("Config file not found in File Store with path: [%s], scope: [%s], ConfigFile identifier: [%s]",
+              fileReference.getPath(), fileReference.getScope(), configFileIdentifier));
     }
   }
 
-  private void validateConnectorByRef(String configFileIdentifier, StoreConfig storeConfig, Ambiance ambiance) {
-    if (ParameterField.isNull(storeConfig.getConnectorReference())) {
+  private void verifySecretFilesByRef(
+      final String configFileIdentifier, ParameterField<List<String>> parameterSecretFiles, Ambiance ambiance) {
+    List<String> secretFiles = ParameterFieldHelper.getParameterFieldListValue(parameterSecretFiles, true);
+    secretFiles.forEach(secretFileRef -> verifySecretFileByRef(ambiance, secretFileRef, configFileIdentifier));
+  }
+
+  private void verifySecretFileByRef(Ambiance ambiance, final String fileRef, final String configFileIdentifier) {
+    if (isBlank(fileRef)) {
+      throw new InvalidRequestException(format(
+          "Config file secret reference cannot be null or empty, ConfigFile identifier: %s", configFileIdentifier));
+    }
+
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    IdentifierRef secretFileRef = IdentifierRefHelper.getIdentifierRef(
+        fileRef, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    NGEncryptedData ngEncryptedData = ngEncryptedDataService.get(secretFileRef.getAccountIdentifier(),
+        secretFileRef.getOrgIdentifier(), secretFileRef.getProjectIdentifier(), secretFileRef.getIdentifier());
+
+    if (ngEncryptedData == null) {
       throw new InvalidRequestException(
-          format("Connector ref field not present in ConfigFile with identifier: %s, store kind: %s ",
-              configFileIdentifier, storeConfig.getKind()));
+          format("Config file not found in Encrypted Store with secretFQN: [%s], ConfigFile identifier: [%s]",
+              secretFileRef.getFullyQualifiedName(), configFileIdentifier));
     }
+  }
 
-    if (storeConfig.getConnectorReference().isExpression()) {
-      return;
-    }
+  private void verifyConnectorByRef(final String configFileIdentifier, StoreConfig storeConfig, Ambiance ambiance) {
+    String connectorIdentifierRef =
+        ParameterFieldHelper.getParameterFieldFinalValue(storeConfig.getConnectorReference())
+            .orElseThrow(()
+                             -> new InvalidRequestException(
+                                 format("Config file connector ref cannot be null or empty, ConfigFile identifier: %s",
+                                     configFileIdentifier)));
 
-    String connectorIdentifierRef = storeConfig.getConnectorReference().getValue();
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(connectorIdentifierRef,
         ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());

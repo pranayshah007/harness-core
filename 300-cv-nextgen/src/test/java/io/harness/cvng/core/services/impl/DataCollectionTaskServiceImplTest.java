@@ -43,9 +43,6 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.SplunkDataCollectionInfo;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
-import io.harness.cvng.beans.job.Sensitivity;
-import io.harness.cvng.beans.job.TestVerificationJobDTO;
-import io.harness.cvng.beans.job.VerificationJobDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
@@ -64,12 +61,9 @@ import io.harness.cvng.core.services.api.DataCollectionTaskService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
-import io.harness.cvng.verificationjob.entities.TestVerificationJob;
-import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.ExecutionStatus;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
-import io.harness.cvng.verificationjob.services.api.VerificationJobService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
@@ -106,7 +100,6 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
   @Inject private MetricPackService metricPackService;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private Clock clock;
-  @Inject private VerificationJobService verificationJobService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private MonitoringSourcePerpetualTaskService monitoringSourcePerpetualTaskService;
   @Inject private CVNGLogService cvngLogService;
@@ -1083,40 +1076,16 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
   }
 
   private VerificationJobInstance createVerificationJobInstance() {
-    VerificationJobDTO verificationJobDTO = newVerificationJobDTO();
-    verificationJobService.create(accountId, verificationJobDTO);
-    VerificationJob verificationJob = verificationJobService.getVerificationJob(
-        accountId, orgIdentifier, projectIdentifier, verificationJobDTO.getIdentifier());
     VerificationJobInstance verificationJobInstance =
-        VerificationJobInstance.builder()
-            .accountId(accountId)
+        builderFactory.verificationJobInstanceBuilder()
             .executionStatus(ExecutionStatus.QUEUED)
             .deploymentStartTime(Instant.ofEpochMilli(clock.millis()))
-            .resolvedJob(verificationJob)
             .startTime(Instant.ofEpochMilli(clock.millis() + Duration.ofMinutes(2).toMillis()))
             .build();
-
-    verificationJobInstance.setUuid(((TestVerificationJob) verificationJob).getBaselineVerificationJobInstanceId());
-
     verificationJobInstanceService.create(verificationJobInstance);
     verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
         accountId, cvConfigId, verificationJobInstance.getUuid(), APP_DYNAMICS);
     return verificationJobInstance;
-  }
-  private VerificationJobDTO newVerificationJobDTO() {
-    TestVerificationJobDTO testVerificationJob = new TestVerificationJobDTO();
-    testVerificationJob.setIdentifier(generateUuid());
-    testVerificationJob.setJobName(generateUuid());
-    testVerificationJob.setDataSources(Lists.newArrayList(DataSourceType.SPLUNK));
-    testVerificationJob.setMonitoringSources(Arrays.asList(generateUuid()));
-    testVerificationJob.setServiceIdentifier(generateUuid());
-    testVerificationJob.setOrgIdentifier(orgIdentifier);
-    testVerificationJob.setProjectIdentifier(projectIdentifier);
-    testVerificationJob.setEnvIdentifier(generateUuid());
-    testVerificationJob.setSensitivity(Sensitivity.MEDIUM.name());
-    testVerificationJob.setDuration("15m");
-    testVerificationJob.setBaselineVerificationJobInstanceId(generateUuid());
-    return testVerificationJob;
   }
 
   private void markRunning(String uuid) {

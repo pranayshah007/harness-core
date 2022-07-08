@@ -8,6 +8,7 @@
 package io.harness.cdng.serverless;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,12 +23,18 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
+import io.harness.delegate.beans.instancesync.info.ServerlessAwsLambdaServerInstanceInfo;
+import io.harness.delegate.beans.serverless.ServerlessAwsLambdaDeployResult;
+import io.harness.delegate.beans.serverless.ServerlessAwsLambdaFunction;
+import io.harness.delegate.beans.serverless.ServerlessDeployResult;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
 import io.harness.exception.InvalidRequestException;
+import io.harness.git.model.FetchFilesResult;
+import io.harness.git.model.GitFile;
 import io.harness.logging.LogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
@@ -37,6 +44,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Rule;
@@ -59,7 +68,6 @@ public class ServerlessAwsLambdaStepHelperTest extends CategoryTest {
                                         .build();
 
   @Mock private ServerlessStepCommonHelper serverlessStepCommonHelper;
-
   @Mock private LogCallback mockLogCallback;
 
   private static final String SOME_URL = "https://url.com/owner/repo.git";
@@ -164,5 +172,51 @@ public class ServerlessAwsLambdaStepHelperTest extends CategoryTest {
   public void getServerlessManifestConfigFailureTest() {
     ManifestOutcome manifestOutcome = K8sManifestOutcome.builder().build();
     serverlessAwsLambdaStepHelper.getServerlessManifestConfig(manifestOutcome, ambiance, new HashMap<>());
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void getManifestFileContentTest() {
+    GitStoreConfig gitStoreConfig = GitStore.builder().build();
+    ManifestOutcome manifestOutcome = ServerlessAwsLambdaManifestOutcome.builder()
+                                          .configOverridePath(ParameterField.createValueField("adsf"))
+                                          .store(gitStoreConfig)
+                                          .identifier("identifier")
+                                          .build();
+    GitFile gitFile = GitFile.builder().filePath("filePath").fileContent("fileContent").build();
+    List<GitFile> gitFileList = Arrays.asList(gitFile);
+    FetchFilesResult fetchFilesResult = FetchFilesResult.builder().files(gitFileList).build();
+    Map<String, FetchFilesResult> fetchFilesResultMap = new HashMap<String, FetchFilesResult>() {
+      { put("identifier", fetchFilesResult); }
+    };
+    Optional<Pair<String, String>> manifestFileContent = Optional.of(new MutablePair<>("adsf", "fileContent"));
+
+    assertThat(serverlessAwsLambdaStepHelper.getManifestFileContent(fetchFilesResultMap, manifestOutcome))
+        .isEqualTo(manifestFileContent);
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void getServerlessDeployFunctionInstanceInfoTest() {
+    ServerlessAwsLambdaFunction serverlessAwsLambdaFunction =
+        ServerlessAwsLambdaFunction.builder().timeout(10).memorySize("1024").handler("handler").build();
+    ServerlessDeployResult serverlessDeployResult = ServerlessAwsLambdaDeployResult.builder()
+                                                        .functions(Arrays.asList(serverlessAwsLambdaFunction))
+                                                        .stage("stage")
+                                                        .region("us-east-2")
+                                                        .build();
+
+    ServerlessAwsLambdaServerInstanceInfo serverlessAwsLambdaInstanceInfo =
+        (ServerlessAwsLambdaServerInstanceInfo) serverlessAwsLambdaStepHelper
+            .getServerlessDeployFunctionInstanceInfo(serverlessDeployResult, "infraKey")
+            .get(0);
+
+    assertThat(serverlessAwsLambdaInstanceInfo.getInfraStructureKey()).isEqualTo("infraKey");
+    assertThat(serverlessAwsLambdaInstanceInfo.getRegion()).isEqualTo("us-east-2");
+    assertThat(serverlessAwsLambdaInstanceInfo.getTimeout()).isEqualTo(10);
+    assertThat(serverlessAwsLambdaInstanceInfo.getMemorySize()).isEqualTo("1024");
+    assertThat(serverlessAwsLambdaInstanceInfo.getHandler()).isEqualTo("handler");
   }
 }

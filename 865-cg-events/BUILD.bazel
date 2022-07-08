@@ -67,7 +67,7 @@ java_library(
         "@maven//:org_eclipse_jgit_org_eclipse_jgit",
         "@maven//:org_eclipse_jgit_org_eclipse_jgit_http_apache",
         "@maven//:org_eclipse_jgit_org_eclipse_jgit_ssh_jsch",
-        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_hibernate_validator_hibernate_validator",
         "@maven//:org_jfrog_artifactory_client_artifactory_java_client_api",
         "@maven//:org_jfrog_artifactory_client_artifactory_java_client_httpClient",
         "@maven//:org_jfrog_artifactory_client_artifactory_java_client_services",

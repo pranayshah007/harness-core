@@ -7,23 +7,92 @@
 
 package io.harness.http;
 
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.AGORODETKI;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.ApiServiceTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
+import io.harness.http.beans.HttpInternalConfig;
+import io.harness.http.beans.HttpInternalResponse;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.manage.GlobalContextManager;
+import io.harness.network.Http;
 import io.harness.rule.Owner;
 
-import com.google.inject.Inject;
+import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.List;
+import org.apache.http.HttpHost;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.InjectMocks;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import wiremock.org.apache.http.conn.ConnectTimeoutException;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Http.class, GlobalContextManager.class, HttpServiceImpl.class})
 public class HttpServiceImplTest extends ApiServiceTestBase {
-  @Inject HttpServiceImpl httpService;
+  @InjectMocks HttpServiceImpl httpService;
+
+  HttpInternalConfig httpInternalConfig_Proxy_T_CertValid_F_Error_T;
+  HttpInternalConfig httpInternalConfig_Proxy_T_CertValid_T_Error_T;
+  HttpInternalConfig httpInternalConfig_Proxy_F_CertValid_F_Error_T;
+
+  @Before
+  public void setup() {
+    httpInternalConfig_Proxy_T_CertValid_F_Error_T = HttpInternalConfig.builder()
+                                                         .method("GET")
+                                                         .body(null)
+                                                         .headers(null)
+                                                         .socketTimeoutMillis(5000)
+                                                         .url("https://tempUrl")
+                                                         .useProxy(true)
+                                                         .isCertValidationRequired(false)
+                                                         .throwErrorIfNoProxySetWithDelegateProxy(true)
+                                                         .build();
+
+    httpInternalConfig_Proxy_T_CertValid_T_Error_T = HttpInternalConfig.builder()
+                                                         .method("GET")
+                                                         .body(null)
+                                                         .headers(null)
+                                                         .socketTimeoutMillis(5000)
+                                                         .url("https://tempUrl")
+                                                         .useProxy(true)
+                                                         .isCertValidationRequired(true)
+                                                         .throwErrorIfNoProxySetWithDelegateProxy(true)
+                                                         .build();
+
+    httpInternalConfig_Proxy_F_CertValid_F_Error_T = HttpInternalConfig.builder()
+                                                         .method("GET")
+                                                         .body(null)
+                                                         .headers(null)
+                                                         .socketTimeoutMillis(5000)
+                                                         .url("https://tempUrl")
+                                                         .useProxy(false)
+                                                         .isCertValidationRequired(false)
+                                                         .throwErrorIfNoProxySetWithDelegateProxy(true)
+                                                         .build();
+  }
 
   @Test
   @Owner(developers = AGORODETKI)
@@ -34,5 +103,319 @@ public class HttpServiceImplTest extends ApiServiceTestBase {
       HttpUriRequest request = httpService.getMethodSpecificHttpRequest(method, "url", "body");
       assertThat(request.getMethod()).isEqualTo(method);
     }
+  }
+
+  // Should throw InvalidRequestException when UseProxy is true, Http return true to shouldUseNonProxy and throwing
+  // error is allowed when No Proxy Set With Delegate Proxy
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void executeUrl_IsUseProxy_Error() throws IOException {
+    PowerMockito.mockStatic(Http.class);
+    when(Http.shouldUseNonProxy(httpInternalConfig_Proxy_T_CertValid_F_Error_T.getUrl())).thenReturn(true);
+
+    assertThatThrownBy(() -> httpService.executeUrl(httpInternalConfig_Proxy_T_CertValid_F_Error_T))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Delegate is configured not to use proxy for the given url: "
+            + httpInternalConfig_Proxy_T_CertValid_F_Error_T.getUrl());
+  }
+
+  // Check for Successful completion when proxy Host is set and executeHttpStep return Positive response
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void executeUrl_checkWhenProxy() throws Exception {
+    HttpServiceImpl spyHttpService = spy(httpService);
+
+    PowerMockito.mockStatic(Http.class);
+    when(Http.shouldUseNonProxy(httpInternalConfig_Proxy_T_CertValid_T_Error_T.getUrl())).thenReturn(false);
+
+    HttpHost myHttpHost = new HttpHost("MyHost");
+    when(Http.getHttpProxyHost()).thenReturn(myHttpHost);
+
+    when(Http.getProxyUserName()).thenReturn("username");
+    when(Http.getProxyPassword()).thenReturn("password");
+
+    doReturn(new HttpGet(httpInternalConfig_Proxy_T_CertValid_T_Error_T.getUrl()))
+        .when(spyHttpService)
+        .getMethodSpecificHttpRequest(httpInternalConfig_Proxy_T_CertValid_T_Error_T.getMethod(),
+            httpInternalConfig_Proxy_T_CertValid_T_Error_T.getUrl(),
+            httpInternalConfig_Proxy_T_CertValid_T_Error_T.getBody());
+
+    doReturn(new HttpInternalResponse())
+        .when(spyHttpService)
+        .executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
+            ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
+            ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+    spyHttpService.executeUrl(httpInternalConfig_Proxy_T_CertValid_T_Error_T);
+
+    PowerMockito.verifyStatic(Http.class, times(1));
+    Http.shouldUseNonProxy(httpInternalConfig_Proxy_T_CertValid_T_Error_T.getUrl());
+
+    PowerMockito.verifyStatic(Http.class, times(1));
+    Http.getHttpProxyHost();
+
+    PowerMockito.verifyStatic(Http.class, times(2));
+    Http.getProxyUserName();
+
+    PowerMockito.verifyStatic(Http.class, times(1));
+    Http.getProxyPassword();
+
+    verify(spyHttpService, times(1));
+    spyHttpService.executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
+        ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
+        ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+
+    verify(spyHttpService, times(1));
+    spyHttpService.getMethodSpecificHttpRequest(httpInternalConfig_Proxy_T_CertValid_T_Error_T.getMethod(),
+        httpInternalConfig_Proxy_T_CertValid_T_Error_T.getUrl(),
+        httpInternalConfig_Proxy_T_CertValid_T_Error_T.getBody());
+  }
+
+  // Check for Successful completion when proxy Host is set but username is empty and executeHttpStep return Positive
+  // response
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void executeUrl_checkWhenProxyButUsername_Null() throws Exception {
+    HttpServiceImpl spyHttpService = spy(httpService);
+
+    PowerMockito.mockStatic(Http.class);
+    when(Http.shouldUseNonProxy(httpInternalConfig_Proxy_T_CertValid_T_Error_T.getUrl())).thenReturn(false);
+
+    HttpHost myHttpHost = new HttpHost("MyHost");
+    when(Http.getHttpProxyHost()).thenReturn(myHttpHost);
+
+    when(Http.getProxyUserName()).thenReturn("");
+    when(Http.getProxyPassword()).thenReturn("password");
+
+    doReturn(new HttpGet(httpInternalConfig_Proxy_T_CertValid_T_Error_T.getUrl()))
+        .when(spyHttpService)
+        .getMethodSpecificHttpRequest(httpInternalConfig_Proxy_T_CertValid_T_Error_T.getMethod(),
+            httpInternalConfig_Proxy_T_CertValid_T_Error_T.getUrl(),
+            httpInternalConfig_Proxy_T_CertValid_T_Error_T.getBody());
+
+    doReturn(new HttpInternalResponse())
+        .when(spyHttpService)
+        .executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
+            ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
+            ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+    spyHttpService.executeUrl(httpInternalConfig_Proxy_T_CertValid_T_Error_T);
+
+    PowerMockito.verifyStatic(Http.class, times(1));
+    Http.shouldUseNonProxy(httpInternalConfig_Proxy_T_CertValid_T_Error_T.getUrl());
+
+    PowerMockito.verifyStatic(Http.class, times(1));
+    Http.getHttpProxyHost();
+
+    PowerMockito.verifyStatic(Http.class, times(1));
+    Http.getProxyUserName();
+
+    PowerMockito.verifyStatic(Http.class, times(0));
+    Http.getProxyPassword();
+
+    verify(spyHttpService, times(1));
+    spyHttpService.executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
+        ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
+        ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+
+    verify(spyHttpService, times(1));
+    spyHttpService.getMethodSpecificHttpRequest(httpInternalConfig_Proxy_T_CertValid_T_Error_T.getMethod(),
+        httpInternalConfig_Proxy_T_CertValid_T_Error_T.getUrl(),
+        httpInternalConfig_Proxy_T_CertValid_T_Error_T.getBody());
+  }
+
+  // Check for Successful completion when proxy Host is set null and executeHttpStep return Positive response
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void executeUrl_checkWhenProxyHostNull() throws Exception {
+    HttpServiceImpl spyHttpService = spy(httpService);
+    PowerMockito.mockStatic(Http.class);
+    when(Http.shouldUseNonProxy(httpInternalConfig_Proxy_T_CertValid_F_Error_T.getUrl())).thenReturn(false);
+
+    when(Http.getHttpProxyHost()).thenReturn(null);
+
+    doReturn(new HttpGet(httpInternalConfig_Proxy_T_CertValid_F_Error_T.getUrl()))
+        .when(spyHttpService)
+        .getMethodSpecificHttpRequest(httpInternalConfig_Proxy_T_CertValid_F_Error_T.getMethod(),
+            httpInternalConfig_Proxy_T_CertValid_F_Error_T.getUrl(),
+            httpInternalConfig_Proxy_T_CertValid_F_Error_T.getBody());
+
+    doReturn(new HttpInternalResponse())
+        .when(spyHttpService)
+        .executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
+            ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
+            ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+    spyHttpService.executeUrl(httpInternalConfig_Proxy_T_CertValid_F_Error_T);
+
+    PowerMockito.verifyStatic(Http.class, times(1));
+    Http.shouldUseNonProxy(httpInternalConfig_Proxy_T_CertValid_F_Error_T.getUrl());
+
+    PowerMockito.verifyStatic(Http.class, times(1));
+    Http.getHttpProxyHost();
+
+    verify(spyHttpService, times(1));
+    spyHttpService.executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
+        ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
+        ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+
+    verify(spyHttpService, times(1));
+    spyHttpService.getMethodSpecificHttpRequest(httpInternalConfig_Proxy_T_CertValid_F_Error_T.getMethod(),
+        httpInternalConfig_Proxy_T_CertValid_F_Error_T.getUrl(),
+        httpInternalConfig_Proxy_T_CertValid_F_Error_T.getBody());
+  }
+
+  // Check for Successful completion when globalContextData is null and executeHttpStep return Positive response
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void executeUrl_checkWhenGlobalContextDataNull_Positive() throws Exception {
+    HttpServiceImpl spyHttpService = spy(httpService);
+
+    PowerMockito.mockStatic(GlobalContextManager.class);
+
+    when(GlobalContextManager.get(ArgumentMatchers.any(String.class))).thenReturn(null);
+
+    doReturn(new HttpGet(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl()))
+        .when(spyHttpService)
+        .getMethodSpecificHttpRequest(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getMethod(),
+            httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl(),
+            httpInternalConfig_Proxy_F_CertValid_F_Error_T.getBody());
+
+    doReturn(new HttpInternalResponse())
+        .when(spyHttpService)
+        .executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
+            ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
+            ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+    HttpInternalResponse output = spyHttpService.executeUrl(httpInternalConfig_Proxy_F_CertValid_F_Error_T);
+
+    assertThat(output.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+
+    verify(spyHttpService, times(1));
+    spyHttpService.executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
+        ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
+        ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+
+    verify(spyHttpService, times(1));
+    spyHttpService.getMethodSpecificHttpRequest(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getMethod(),
+        httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl(),
+        httpInternalConfig_Proxy_F_CertValid_F_Error_T.getBody());
+  }
+
+  // Check for Successful completion and SocketTimeoutException is handled when globalContextData is null and
+  // executeHttpStep throws SocketTimeoutException
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void executeUrl_checkWhenGlobalContextDataNull_SocketTimeoutExceptionCase() throws Exception {
+    HttpServiceImpl spyHttpService = spy(httpService);
+
+    PowerMockito.mockStatic(GlobalContextManager.class);
+
+    when(GlobalContextManager.get(ArgumentMatchers.any(String.class))).thenReturn(null);
+
+    doReturn(new HttpGet(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl()))
+        .when(spyHttpService)
+        .getMethodSpecificHttpRequest(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getMethod(),
+            httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl(),
+            httpInternalConfig_Proxy_F_CertValid_F_Error_T.getBody());
+
+    doThrow(new SocketTimeoutException())
+        .when(spyHttpService)
+        .executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
+            ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
+            ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+    spyHttpService.executeUrl(httpInternalConfig_Proxy_F_CertValid_F_Error_T);
+
+    verify(spyHttpService, times(1));
+    spyHttpService.executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
+        ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
+        ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+
+    verify(spyHttpService, times(1));
+    spyHttpService.getMethodSpecificHttpRequest(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getMethod(),
+        httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl(),
+        httpInternalConfig_Proxy_F_CertValid_F_Error_T.getBody());
+  }
+
+  // Check for Successful completion and ConnectTimeoutException is handled when globalContextData is null and
+  // executeHttpStep throws ConnectTimeoutException
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void executeUrl_checkWhenGlobalContextDataNull_ConnectTimeoutExceptionCase() throws Exception {
+    HttpServiceImpl spyHttpService = spy(httpService);
+
+    PowerMockito.mockStatic(GlobalContextManager.class);
+
+    when(GlobalContextManager.get(ArgumentMatchers.any(String.class))).thenReturn(null);
+
+    doReturn(new HttpGet(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl()))
+        .when(spyHttpService)
+        .getMethodSpecificHttpRequest(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getMethod(),
+            httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl(),
+            httpInternalConfig_Proxy_F_CertValid_F_Error_T.getBody());
+
+    doThrow(new ConnectTimeoutException())
+        .when(spyHttpService)
+        .executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
+            ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
+            ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+    spyHttpService.executeUrl(httpInternalConfig_Proxy_F_CertValid_F_Error_T);
+
+    verify(spyHttpService, times(1));
+    spyHttpService.executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
+        ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
+        ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+
+    verify(spyHttpService, times(1));
+    spyHttpService.getMethodSpecificHttpRequest(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getMethod(),
+        httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl(),
+        httpInternalConfig_Proxy_F_CertValid_F_Error_T.getBody());
+  }
+
+  // Check for Successful completion and IOException is handled when globalContextData is null and executeHttpStep
+  // throws IOException
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void executeUrl_checkWhenGlobalContextDataNull_IOExceptionCase() throws Exception {
+    HttpServiceImpl spyHttpService = spy(httpService);
+
+    PowerMockito.mockStatic(GlobalContextManager.class);
+
+    when(GlobalContextManager.get(ArgumentMatchers.any(String.class))).thenReturn(null);
+
+    doReturn(new HttpGet(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl()))
+        .when(spyHttpService)
+        .getMethodSpecificHttpRequest(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getMethod(),
+            httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl(),
+            httpInternalConfig_Proxy_F_CertValid_F_Error_T.getBody());
+
+    doThrow(new IOException())
+        .when(spyHttpService)
+        .executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
+            ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
+            ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+    spyHttpService.executeUrl(httpInternalConfig_Proxy_F_CertValid_F_Error_T);
+
+    verify(spyHttpService, times(1));
+    spyHttpService.executeHttpStep(ArgumentMatchers.any(CloseableHttpClient.class),
+        ArgumentMatchers.any(HttpInternalResponse.class), ArgumentMatchers.any(HttpUriRequest.class),
+        ArgumentMatchers.any(HttpInternalConfig.class), anyBoolean());
+
+    verify(spyHttpService, times(1));
+    spyHttpService.getMethodSpecificHttpRequest(httpInternalConfig_Proxy_F_CertValid_F_Error_T.getMethod(),
+        httpInternalConfig_Proxy_F_CertValid_F_Error_T.getUrl(),
+        httpInternalConfig_Proxy_F_CertValid_F_Error_T.getBody());
   }
 }

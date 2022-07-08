@@ -29,6 +29,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.resourcegroup.beans.ValidatorType;
 import io.harness.resourcegroup.framework.v1.service.Resource;
 import io.harness.resourcegroup.framework.v1.service.ResourceInfo;
+import io.harness.resourcegroup.v2.model.AttributeFilter;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -41,8 +42,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import io.harness.resourcegroup.v2.model.AttributeFilter;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -117,6 +116,6 @@ public class ConnectorResourceImpl implements Resource {
 
   @Override
   public boolean isValidAttributeFilter(AttributeFilter attributeFilter) {
-    return attributeFilter.getAttributeName().equals("type") && !attributeFilter.getAttributeValues().isEmpty();
+    return attributeFilter.getAttributeName().equals("category") && !attributeFilter.getAttributeValues().isEmpty();
   }
 }

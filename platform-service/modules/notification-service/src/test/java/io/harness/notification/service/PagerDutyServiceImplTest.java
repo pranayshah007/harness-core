@@ -159,7 +159,7 @@ public class PagerDutyServiceImplTest extends CategoryTest {
                                                 .build())
                               .build();
     notificationExpectedResponse =
-        NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
+        NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
@@ -212,7 +212,7 @@ public class PagerDutyServiceImplTest extends CategoryTest {
                                                 .build())
                               .build();
     notificationExpectedResponse =
-        NotificationProcessingResponse.builder().result(Arrays.asList(true, true)).shouldRetry(false).build();
+        NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
@@ -269,7 +269,7 @@ public class PagerDutyServiceImplTest extends CategoryTest {
                                                 .build())
                               .build();
     notificationExpectedResponse =
-        NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
+        NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);

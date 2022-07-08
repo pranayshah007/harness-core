@@ -7,6 +7,7 @@
 
 package io.harness.pms.sdk.core.resolver.outputs;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
@@ -17,4 +18,5 @@ import lombok.Data;
 @Data
 @Builder
 @OwnedBy(HarnessTeam.PIPELINE)
+@RecasterAlias("io.harness.pms.sdk.core.resolver.outputs.TestExecutionSweepingOutput")
 public class TestExecutionSweepingOutput implements ExecutionSweepingOutput {}

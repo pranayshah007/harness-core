@@ -48,7 +48,6 @@ public class DebeziumConfiguration {
     props.setProperty(CONNECTOR_NAME, debeziumConfig.getConnectorName());
     props.setProperty(OFFSET_STORAGE, RedisOffsetBackingStore.class.getName());
     props.setProperty(OFFSET_STORAGE_FILE_FILENAME, JsonUtils.asJson(redisLockConfig));
-    props.setProperty(OFFSET_STORAGE_KEY, debeziumConfig.getOffsetStorageTopic());
     props.setProperty(KEY_CONVERTER_SCHEMAS_ENABLE, debeziumConfig.getKeyConverterSchemasEnable());
     props.setProperty(VALUE_CONVERTER_SCHEMAS_ENABLE, debeziumConfig.getValueConverterSchemasEnable());
     props.setProperty(OFFSET_FLUSH_INTERVAL_MS, debeziumConfig.getOffsetFlushIntervalMillis());
@@ -65,7 +64,6 @@ public class DebeziumConfiguration {
         .ifPresent(x -> props.setProperty(MONGODB_PASSWORD, x));
     props.setProperty(MONGODB_SSL_ENABLED, debeziumConfig.getSslEnabled());
     props.setProperty(DATABASE_INCLUDE_LIST, debeziumConfig.getDatabaseIncludeList());
-    props.setProperty(COLLECTION_INCLUDE_LIST, debeziumConfig.getCollectionIncludeList());
     props.setProperty(TRANSFORMS, "unwrap");
     props.setProperty(TRANSFORMS_UNWRAP_TYPE, DEBEZIUM_CONNECTOR_MONGODB_TRANSFORMS_EXTRACT_NEW_DOCUMENT_STATE);
     props.setProperty(TRANSFORMS_UNWRAP_DROP_TOMBSTONES, "false");
@@ -75,5 +73,14 @@ public class DebeziumConfiguration {
     props.setProperty(CONNECT_MAX_ATTEMPTS, debeziumConfig.getConnectMaxAttempts());
     props.setProperty(SNAPSHOT_FETCH_SIZE, debeziumConfig.getSnapshotFetchSize());
     return props;
+  }
+
+  public static Properties getDebeziumProperties(
+      DebeziumConfig debeziumConfig, RedisConfig redisLockConfig, String monitoredCollection) {
+    Properties debeziumProperties = getDebeziumProperties(debeziumConfig, redisLockConfig);
+    debeziumProperties.setProperty(DebeziumConfiguration.OFFSET_STORAGE_KEY,
+        DebeziumConstants.DEBEZIUM_OFFSET_PREFIX + debeziumConfig.getConnectorName() + "-" + monitoredCollection);
+    debeziumProperties.setProperty(DebeziumConfiguration.COLLECTION_INCLUDE_LIST, monitoredCollection);
+    return debeziumProperties;
   }
 }

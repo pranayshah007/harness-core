@@ -2069,35 +2069,10 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
-  public void testAssignSelectorsWithEmptySelectorOrigin() throws ExecutionException {
-    Delegate delegate = createNGDelegate();
-    delegate.setTags(Arrays.asList("sel1", "sel2"));
-    persistence.save(delegate);
-
-    when(featureFlagService.isEnabled(any(), anyString())).thenReturn(true);
-
-    Set<String> selectors1 = Stream.of("sel1").collect(Collectors.toSet());
-    Set<String> selectors2 = Stream.of("sel2").collect(Collectors.toSet());
-
-    SelectorCapability selectorCapability1 =
-        SelectorCapability.builder().selectors(selectors1).selectorOrigin("stage").build();
-    SelectorCapability selectorCapability2 = SelectorCapability.builder().selectors(selectors2).build();
-    List<ExecutionCapability> executionCapabilityList = asList(selectorCapability1, selectorCapability2);
-
-    when(delegateService.retrieveDelegateSelectors(delegate, true)).thenReturn(Sets.newHashSet(delegate.getTags()));
-
-    assertThat(assignDelegateService.canAssignSelectors(delegate, executionCapabilityList)).isTrue();
-  }
-
-  @Test
-  @Owner(developers = JENNY)
-  @Category(UnitTests.class)
   public void testAssignSelectorsWithOnlyConnectorSelector() throws ExecutionException {
     Delegate delegate = createNGDelegate();
     delegate.setTags(Arrays.asList("sel1"));
     persistence.save(delegate);
-
-    when(featureFlagService.isEnabled(any(), anyString())).thenReturn(true);
 
     Set<String> selectors1 = Stream.of("sel1").collect(Collectors.toSet());
 
@@ -2143,7 +2118,6 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
 
     assertThat(assignDelegateService.canAssignSelectors(delegate, executionCapabilityList)).isTrue();
   }
-
   @Test
   @Owner(developers = JENNY)
   @Category(UnitTests.class)

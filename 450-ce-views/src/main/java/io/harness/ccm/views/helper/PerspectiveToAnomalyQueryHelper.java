@@ -11,6 +11,9 @@ import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FI
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_INSTANCE_TYPE_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_SERVICE_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_USAGE_TYPE_ID;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.AZURE_METER_CATEGORY;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.AZURE_RESOURCE_GROUP;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.AZURE_SUBSCRIPTION_GUID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.CLUSTER_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.GCP_PRODUCT_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.GCP_PROJECT_FIELD_ID;
@@ -86,6 +89,15 @@ public class PerspectiveToAnomalyQueryHelper {
           case AWS_USAGE_TYPE_ID:
             convertedGroupByList.add(CCMGroupBy.builder().groupByField(CCMField.AWS_USAGE_TYPE).build());
             break;
+          case AZURE_SUBSCRIPTION_GUID:
+            convertedGroupByList.add(CCMGroupBy.builder().groupByField(CCMField.AZURE_SUBSCRIPTION_GUID).build());
+            break;
+          case AZURE_RESOURCE_GROUP:
+            convertedGroupByList.add(CCMGroupBy.builder().groupByField(CCMField.AZURE_RESOURCE_GROUP_NAME).build());
+            break;
+          case AZURE_METER_CATEGORY:
+            convertedGroupByList.add(CCMGroupBy.builder().groupByField(CCMField.AZURE_METER_CATEGORY).build());
+            break;
           case REGION_FIELD_ID:
             convertedGroupByList.add(CCMGroupBy.builder().groupByField(CCMField.REGION).build());
             break;
@@ -144,6 +156,18 @@ public class PerspectiveToAnomalyQueryHelper {
           case AWS_USAGE_TYPE_ID:
             stringFilters.add(buildStringFilter(
                 CCMField.AWS_USAGE_TYPE, filter.getIdFilter().getValues(), filter.getIdFilter().getOperator()));
+            break;
+          case AZURE_SUBSCRIPTION_GUID:
+            stringFilters.add(buildStringFilter(CCMField.AZURE_SUBSCRIPTION_GUID, filter.getIdFilter().getValues(),
+                filter.getIdFilter().getOperator()));
+            break;
+          case AZURE_RESOURCE_GROUP:
+            stringFilters.add(buildStringFilter(CCMField.AZURE_RESOURCE_GROUP_NAME, filter.getIdFilter().getValues(),
+                filter.getIdFilter().getOperator()));
+            break;
+          case AZURE_METER_CATEGORY:
+            stringFilters.add(buildStringFilter(
+                CCMField.AZURE_METER_CATEGORY, filter.getIdFilter().getValues(), filter.getIdFilter().getOperator()));
             break;
           case REGION_FIELD_ID:
             stringFilters.add(buildStringFilter(

@@ -1,0 +1,4 @@
+name: DelegateAccount
+identifier: delegate_account
+labels:
+  - accountId

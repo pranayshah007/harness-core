@@ -50,6 +50,7 @@ import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.delegate.task.pcf.response.CfSetupCommandResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -119,12 +120,14 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
     CfManifestFileData pcfManifestFileData = CfManifestFileData.builder().varFiles(new ArrayList<>()).build();
     CfInternalConfig pcfConfig = cfCommandRequest.getPcfConfig();
     secretDecryptionService.decrypt(pcfConfig, encryptedDataDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(pcfConfig, encryptedDataDetails);
     CfCommandSetupRequest cfCommandSetupRequest = (CfCommandSetupRequest) cfCommandRequest;
     decryptArtifactRepositoryPassword(cfCommandSetupRequest);
     File artifactFile = null;
     File workingDirectory = null;
     Deque<CfAppRenameInfo> renames = new ArrayDeque<>();
     CfRequestConfig cfRequestConfig = null;
+    String newReleaseName = null;
 
     try {
       executionLogCallback = logStreamingTaskClient.obtainLogCallback(CheckExistingApps);
@@ -231,7 +234,7 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
           : previousReleases.get(previousReleases.size() - 1).getRunningInstances();
 
       // New appName to be created
-      String newReleaseName =
+      newReleaseName =
           ServiceVersionConvention.getServiceName(cfCommandSetupRequest.getReleaseNamePrefix(), releaseRevision);
       if (!cfCommandSetupRequest.getArtifactStreamAttributes().isDockerBasedDeployment()) {
         artifactFile = fetchArtifactFileForDeployment(cfCommandSetupRequest, workingDirectory, executionLogCallback);
@@ -300,18 +303,19 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
           .build();
 
     } catch (RuntimeException | PivotalClientApiException | IOException | ExecutionException e) {
-      log.error(
-          PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception in processing PCF Setup task [{}]", cfCommandSetupRequest, e);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception in processing PCF Setup task [{}]", cfCommandSetupRequest,
+          sanitizedException);
       executionLogCallback.saveExecutionLog(
           "\n\n ----------  PCF Setup process failed to complete successfully", ERROR, CommandExecutionStatus.FAILURE);
 
       handleAppRenameRevert(
-          renames, cfRequestConfig, cfCommandSetupRequest.getReleaseNamePrefix(), executionLogCallback);
+          newReleaseName, renames, cfRequestConfig, cfCommandSetupRequest.getReleaseNamePrefix(), executionLogCallback);
 
-      Misc.logAllMessages(e, executionLogCallback);
+      Misc.logAllMessages(sanitizedException, executionLogCallback);
       return CfCommandExecutionResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.FAILURE)
-          .errorMessage(ExceptionUtils.getMessage(e))
+          .errorMessage(ExceptionUtils.getMessage(sanitizedException))
           .build();
     } finally {
       executionLogCallback = logStreamingTaskClient.obtainLogCallback(Wrapup);
@@ -341,11 +345,28 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
         initialInstanceCount != null ? initialInstanceCount : 0, isEmpty(urls) ? Collections.emptyList() : urls);
   }
 
-  private void handleAppRenameRevert(Deque<CfAppRenameInfo> renames, CfRequestConfig cfRequestConfig,
-      String releaseNamePrefix, LogCallback logCallback) {
+  private void deleteNewAppIfExist(CfRequestConfig cfRequestConfig, String releaseNamePrefix, String newReleaseName,
+      LogCallback logCallback) throws PivotalClientApiException {
+    if (EmptyPredicate.isNotEmpty(newReleaseName)) {
+      List<ApplicationSummary> releases = pcfDeploymentManager.getPreviousReleases(cfRequestConfig, releaseNamePrefix);
+      if (releases.stream().anyMatch(release -> release.getName().equals(newReleaseName))) {
+        String cfRequestConfigAppName = cfRequestConfig.getApplicationName();
+        cfRequestConfig.setApplicationName(newReleaseName);
+        logCallback.saveExecutionLog(
+            new StringBuilder().append("\n\n Deleting the newly created App").append(newReleaseName).toString());
+        pcfDeploymentManager.deleteApplication(cfRequestConfig);
+        logCallback.saveExecutionLog("App deleted successfully");
+        cfRequestConfig.setApplicationName(cfRequestConfigAppName);
+      }
+    }
+  }
+
+  private void handleAppRenameRevert(String newReleaseName, Deque<CfAppRenameInfo> renames,
+      CfRequestConfig cfRequestConfig, String releaseNamePrefix, LogCallback logCallback) {
     try {
       if (null != cfRequestConfig && !renames.isEmpty()) {
         logCallback.saveExecutionLog("\n\n Reverting App names");
+        deleteNewAppIfExist(cfRequestConfig, releaseNamePrefix, newReleaseName, logCallback);
         List<ApplicationSummary> releases =
             pcfDeploymentManager.getPreviousReleases(cfRequestConfig, releaseNamePrefix);
         Set<String> ids = releases.stream().map(ApplicationSummary::getId).collect(Collectors.toSet());
@@ -357,12 +378,15 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
                 logCallback);
           }
         }
-        logCallback.saveExecutionLog("App names reverted successfully");
+        logCallback.saveExecutionLog("App names reverted successfully", ERROR, CommandExecutionStatus.FAILURE);
       }
     } catch (Exception e) {
       log.error(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception in reverting app names", e);
-      logCallback.saveExecutionLog(
-          "\n\n ----------  Failed to revert app names", ERROR, CommandExecutionStatus.FAILURE);
+      logCallback.saveExecutionLog(new StringBuilder()
+                                       .append("\n\n ----------  Failed to revert app names")
+                                       .append(ExceptionUtils.getMessage(e))
+                                       .toString(),
+          ERROR, CommandExecutionStatus.FAILURE);
     }
   }
 
@@ -517,6 +541,8 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
       List<EncryptedDataDetail> artifactServerEncryptedDataDetails =
           cfCommandSetupRequest.getArtifactStreamAttributes().getArtifactServerEncryptedDataDetails();
       secretDecryptionService.decrypt((EncryptableSetting) settingValue, artifactServerEncryptedDataDetails, false);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+          (EncryptableSetting) settingValue, artifactServerEncryptedDataDetails);
     }
   }
 
@@ -803,7 +829,7 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
             executionLogCallback, log, retryPolicy);
       }
     } catch (PivotalClientApiException exception) {
-      log.warn(exception.getMessage());
+      log.warn(ExceptionMessageSanitizer.sanitizeException(exception).getMessage());
     }
   }
 

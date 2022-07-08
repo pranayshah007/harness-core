@@ -8,9 +8,12 @@
 package io.harness.ng.core.serviceoverride.services.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -170,6 +173,45 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
   }
 
   @Override
+  public boolean deleteAllInEnv(
+      String accountId, String orgIdentifier, String projectIdentifier, String environmentRef) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "orgId must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "projectId must be present");
+    checkArgument(isNotEmpty(environmentRef), "environment ref must be present");
+
+    Criteria criteria =
+        getServiceOverrideEqualityCriteriaForEnv(accountId, orgIdentifier, projectIdentifier, environmentRef);
+    DeleteResult delete = serviceOverrideRepository.delete(criteria);
+    return delete.wasAcknowledged() && delete.getDeletedCount() > 0;
+  }
+
+  @Override
+  public boolean deleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "orgId must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "projectId must be present");
+
+    Criteria criteria = getServiceOverrideEqualityCriteriaForProj(accountId, orgIdentifier, projectIdentifier);
+    DeleteResult delete = serviceOverrideRepository.delete(criteria);
+    return delete.wasAcknowledged() && delete.getDeletedCount() > 0;
+  }
+
+  @Override
+  public boolean deleteAllInProjectForAService(
+      String accountId, String orgIdentifier, String projectIdentifier, String serviceRef) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "orgId must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "projectId must be present");
+    checkArgument(isNotEmpty(serviceRef), "service ref must be present");
+
+    Criteria criteria =
+        getServiceOverrideEqualityCriteriaForService(accountId, orgIdentifier, projectIdentifier, serviceRef);
+    DeleteResult delete = serviceOverrideRepository.delete(criteria);
+    return delete.wasAcknowledged() && delete.getDeletedCount() > 0;
+  }
+
+  @Override
   public String createServiceOverrideInputsYaml(String accountId, String projectIdentifier, String orgIdentifier,
       String environmentIdentifier, String serviceIdentifier) {
     Map<String, Object> yamlInputs = createServiceOverrideInputsYamlInternal(
@@ -222,5 +264,38 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
         .is(requestServiceOverride.getEnvironmentRef())
         .and(NGServiceOverridesEntityKeys.serviceRef)
         .is(requestServiceOverride.getServiceRef());
+  }
+
+  private Criteria getServiceOverrideEqualityCriteriaForEnv(
+      String accountId, String orgId, String projId, String envId) {
+    return Criteria.where(NGServiceOverridesEntityKeys.accountId)
+        .is(accountId)
+        .and(NGServiceOverridesEntityKeys.orgIdentifier)
+        .is(orgId)
+        .and(NGServiceOverridesEntityKeys.projectIdentifier)
+        .is(projId)
+        .and(NGServiceOverridesEntityKeys.environmentRef)
+        .is(envId);
+  }
+
+  private Criteria getServiceOverrideEqualityCriteriaForService(
+      String accountId, String orgId, String projId, String serviceId) {
+    return Criteria.where(NGServiceOverridesEntityKeys.accountId)
+        .is(accountId)
+        .and(NGServiceOverridesEntityKeys.orgIdentifier)
+        .is(orgId)
+        .and(NGServiceOverridesEntityKeys.projectIdentifier)
+        .is(projId)
+        .and(NGServiceOverridesEntityKeys.serviceRef)
+        .is(serviceId);
+  }
+
+  private Criteria getServiceOverrideEqualityCriteriaForProj(String accountId, String orgId, String projId) {
+    return Criteria.where(NGServiceOverridesEntityKeys.accountId)
+        .is(accountId)
+        .and(NGServiceOverridesEntityKeys.orgIdentifier)
+        .is(orgId)
+        .and(NGServiceOverridesEntityKeys.projectIdentifier)
+        .is(projId);
   }
 }

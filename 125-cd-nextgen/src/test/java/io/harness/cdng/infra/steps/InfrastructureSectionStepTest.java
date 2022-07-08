@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ACHYUTH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
@@ -65,7 +66,7 @@ public class InfrastructureSectionStepTest extends CategoryTest {
                                              .build())
                             .build();
     InfraSectionStepParameters stepParameters = InfraSectionStepParameters.builder().build();
-    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), any(), any());
+    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), anyString(), anyString());
 
     assertThatCode(() -> infrastructureSectionStep.validateResources(ambiance, stepParameters))
         .doesNotThrowAnyException();

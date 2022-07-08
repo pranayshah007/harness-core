@@ -30,14 +30,17 @@ import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
+import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.ssh.FileSourceType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +50,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class SshCopyCommandHandler implements CommandHandler {
   @Inject private SshScriptExecutorFactory sshScriptExecutorFactory;
+  @Inject private SecretDecryptionService secretDecryptionService;
 
   @Override
   public CommandExecutionStatus handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
@@ -103,6 +107,14 @@ public class SshCopyCommandHandler implements CommandHandler {
       List<ConfigFileParameters> configFiles = getConfigFileParameters(sshCommandTaskParameters, copyCommandUnit);
       log.info(format("About to copy config %s files", configFiles.size()));
       for (ConfigFileParameters configFile : configFiles) {
+        log.info(format("Copy config file : %s, isEncrypted: %b", configFile.getFileName(), configFile.isEncrypted()));
+        if (configFile.isEncrypted()) {
+          SecretConfigFile secretConfigFile = (SecretConfigFile) secretDecryptionService.decrypt(
+              configFile.getSecretConfigFile(), configFile.getEncryptionDataDetails());
+          String fileData = new String(secretConfigFile.getEncryptedConfigFile().getDecryptedValue());
+          configFile.setFileContent(fileData);
+          configFile.setFileSize(fileData.getBytes(StandardCharsets.UTF_8).length);
+        }
         result = executor.copyConfigFiles(copyCommandUnit.getDestinationPath(), configFile);
         if (result == CommandExecutionStatus.FAILURE) {
           log.info("Failed to copy config file: " + configFile.getFileName());

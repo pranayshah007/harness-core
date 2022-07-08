@@ -4,7 +4,6 @@ java_language_level: 8
 directories:
   800-pipeline-service
   810-ng-triggers
-  860-orchestration-steps
   860-orchestration-visualization
   867-polling-contracts
   870-orchestration
@@ -12,6 +11,7 @@ directories:
   876-orchestration-beans
   878-ng-common-utilities
   879-pms-sdk
+  880-pipeline-cd-commons
   882-pms-sdk-core
   884-pms-commons
   888-pms-client
@@ -80,7 +80,6 @@ derive_targets_from_directories: false
 
 targets:
   800-pipeline-service:module
-  860-orchestration-steps:module
   860-orchestration-visualization:module
   870-orchestration:module
   874-orchestration-delay:module

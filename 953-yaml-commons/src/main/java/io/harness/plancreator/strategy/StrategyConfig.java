@@ -8,25 +8,41 @@
 package io.harness.plancreator.strategy;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.validation.OneOfField;
+import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 
 @OwnedBy(PIPELINE)
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@OneOfField(fields = {"matrix", "for", "parallelism"})
+@OneOfField(fields = {"matrixConfig", "forConfig", "parallelism"})
 @RecasterAlias("io.harness.plancreator.strategy.StrategyConfig")
 public class StrategyConfig {
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  String uuid;
   @JsonProperty("matrix") MatrixConfigInterface matrixConfig;
   @JsonProperty("for") HarnessForConfig forConfig;
-  @JsonProperty("parallelism") int parallelism;
+  @ApiModelProperty(dataType = INTEGER_CLASSPATH)
+  @YamlSchemaTypes(value = {expression})
+  @JsonProperty("parallelism")
+  @Min(value = 0)
+  ParameterField<Integer> parallelism;
 }

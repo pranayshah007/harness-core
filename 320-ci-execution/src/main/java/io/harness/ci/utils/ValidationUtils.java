@@ -8,20 +8,35 @@
 package io.harness.ci.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
 import io.harness.beans.dependencies.CIServiceInfo;
 import io.harness.beans.dependencies.DependencyElement;
+import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.integrationstage.K8InitializeStepUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.plancreator.execution.ExecutionElementConfig;
+import io.harness.plancreator.execution.ExecutionWrapperConfig;
+import io.harness.plancreator.steps.ParallelStepElementConfig;
+import io.harness.plancreator.steps.StepElementConfig;
+import io.harness.plancreator.steps.StepGroupElementConfig;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
-@UtilityClass
+@Slf4j
+@Singleton
 public class ValidationUtils {
+  @Inject K8InitializeStepUtils k8InitializeStepUtils;
+
   private static String serviceRegex = "^[a-zA-Z][a-zA-Z0-9_]*$";
 
   public void validateVmInfraDependencies(List<DependencyElement> dependencyElements) {
@@ -43,5 +58,47 @@ public class ValidationUtils {
         }
       }
     }
+  }
+
+  public void validateWindowsK8Stage(ExecutionElementConfig executionElementConfig) {
+    List<ExecutionWrapperConfig> steps = executionElementConfig.getSteps();
+    if (steps == null) {
+      return;
+    }
+
+    for (ExecutionWrapperConfig executionWrapper : steps) {
+      validateWindowsK8StageUtil(executionWrapper);
+    }
+  }
+
+  public void validateWindowsK8StageUtil(ExecutionWrapperConfig executionWrapper) {
+    if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
+      StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
+      validateWindowsK8Step(stepElementConfig);
+    } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
+      ParallelStepElementConfig parallelStepElementConfig =
+          IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
+      if (isNotEmpty(parallelStepElementConfig.getSections())) {
+        for (ExecutionWrapperConfig executionWrapperInParallel : parallelStepElementConfig.getSections()) {
+          validateWindowsK8StageUtil(executionWrapperInParallel);
+        }
+      }
+    } else {
+      StepGroupElementConfig stepGroupElementConfig = IntegrationStageUtils.getStepGroupElementConfig(executionWrapper);
+      if (isNotEmpty(stepGroupElementConfig.getSteps())) {
+        for (ExecutionWrapperConfig executionWrapperInStepGroup : stepGroupElementConfig.getSteps()) {
+          validateWindowsK8StageUtil(executionWrapperInStepGroup);
+        }
+      }
+    }
+  }
+
+  private void validateWindowsK8Step(StepElementConfig stepElement) {
+    if (!(stepElement.getStepSpecType() instanceof CIStepInfo)) {
+      return;
+    }
+
+    CIStepInfo ciStepInfo = (CIStepInfo) stepElement.getStepSpecType();
+    k8InitializeStepUtils.validateStepType(ciStepInfo.getNonYamlInfo().getStepInfoType(), OSType.Windows);
   }
 }

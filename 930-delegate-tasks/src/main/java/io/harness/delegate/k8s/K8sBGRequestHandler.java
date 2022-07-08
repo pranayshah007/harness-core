@@ -13,6 +13,7 @@ import static io.harness.k8s.K8sCommandUnitConstants.Apply;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
 import static io.harness.k8s.K8sCommandUnitConstants.Init;
 import static io.harness.k8s.K8sCommandUnitConstants.Prepare;
+import static io.harness.k8s.K8sCommandUnitConstants.Prune;
 import static io.harness.k8s.K8sCommandUnitConstants.WaitForSteadyState;
 import static io.harness.k8s.K8sCommandUnitConstants.WrapUp;
 import static io.harness.k8s.K8sConstants.MANIFEST_FILES_DIR;
@@ -33,6 +34,7 @@ import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileData;
@@ -44,20 +46,22 @@ import io.harness.delegate.task.k8s.K8sBGDeployResponse;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionExplanation;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionHints;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionMessages;
+import io.harness.delegate.task.k8s.client.K8sClient;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.KubernetesYamlException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.k8s.KubernetesContainerService;
+import io.harness.k8s.exception.KubernetesExceptionExplanation;
+import io.harness.k8s.exception.KubernetesExceptionHints;
+import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HarnessAnnotations;
 import io.harness.k8s.model.HarnessLabels;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -75,6 +79,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.kubernetes.client.openapi.models.V1Service;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
@@ -103,6 +108,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
   private String stageColor;
   private String releaseName;
   private String manifestFilesDirectory;
+  private PrePruningInfo prePruningInfo;
 
   private boolean shouldSaveReleaseHistory;
 
@@ -133,7 +139,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
     prepareForBlueGreen(k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prepare, true, commandUnitsProgress),
-        k8sBGDeployRequest.isSkipResourceVersioning());
+        k8sBGDeployRequest.isSkipResourceVersioning(), k8sBGDeployRequest.isPruningEnabled());
 
     currentRelease.setManagedWorkload(managedWorkload.getResourceId().cloneInternal());
 
@@ -147,8 +153,20 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     currentRelease.setManagedWorkloadRevision(
         k8sTaskHelperBase.getLatestRevision(client, managedWorkload.getResourceId(), k8sDelegateTaskParams));
 
-    k8sTaskHelperBase.doStatusCheck(client, managedWorkload.getResourceId(), k8sDelegateTaskParams,
-        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress), true);
+    K8sSteadyStateDTO k8sSteadyStateDTO =
+        K8sSteadyStateDTO.builder()
+            .request(k8sDeployRequest)
+            .resourceIds(Collections.singletonList(managedWorkload.getResourceId()))
+            .executionLogCallback(k8sTaskHelperBase.getLogCallback(
+                logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress))
+            .k8sDelegateTaskParams(k8sDelegateTaskParams)
+            .namespace(managedWorkload.getResourceId().getNamespace())
+            .denoteOverallSuccess(true)
+            .isErrorFrameworkEnabled(true)
+            .build();
+
+    K8sClient k8sClient = k8sTaskHelperBase.getKubernetesClient(k8sBGDeployRequest.isUseK8sApiForSteadyStateCheck());
+    k8sClient.performSteadyStateCheck(k8sSteadyStateDTO);
 
     LogCallback wrapUpLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WrapUp, true, commandUnitsProgress);
@@ -171,6 +189,13 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
                                                   .stageColor(stageColor)
                                                   .primaryColor(primaryColor)
                                                   .build();
+
+    if (k8sBGDeployRequest.isPruningEnabled()) {
+      LogCallback pruneExecutionLogCallback =
+          k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prune, true, commandUnitsProgress);
+      k8sBGBaseHandler.pruneForBg(k8sDelegateTaskParams, pruneExecutionLogCallback, primaryColor, stageColor,
+          prePruningInfo, currentRelease, client);
+    }
 
     wrapUpLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
     return K8sDeployResponse.builder()
@@ -236,7 +261,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
   @VisibleForTesting
   void prepareForBlueGreen(K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback,
-      boolean skipResourceVersioning) throws Exception {
+      boolean skipResourceVersioning, boolean isPruningEnabled) throws Exception {
     if (!skipResourceVersioning) {
       markVersionedResources(resources);
     }
@@ -328,10 +353,15 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
     stageColor = k8sBGBaseHandler.getInverseColor(primaryColor);
 
-    currentRelease = releaseHistory.createNewRelease(
-        resources.stream().map(KubernetesResource::getResourceId).collect(Collectors.toList()));
+    if (isPruningEnabled) {
+      currentRelease = releaseHistory.createNewReleaseWithResourceMap(
+          resources.stream().filter(resource -> !resource.isSkipPruning()).collect(toList()));
+    } else {
+      currentRelease = releaseHistory.createNewRelease(
+          resources.stream().map(KubernetesResource::getResourceId).collect(Collectors.toList()));
+    }
 
-    k8sBGBaseHandler.cleanupForBlueGreen(
+    prePruningInfo = k8sBGBaseHandler.cleanupForBlueGreen(
         k8sDelegateTaskParams, releaseHistory, executionLogCallback, primaryColor, stageColor, currentRelease, client);
 
     executionLogCallback.saveExecutionLog("\nCurrent release number is: " + currentRelease.getNumber());

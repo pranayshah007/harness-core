@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.beans.WithIdentifier;
@@ -29,10 +30,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @NoArgsConstructor
 @JsonTypeName("dependency")
+@TypeAlias("dependencyElement")
+@RecasterAlias("io.harness.beans.dependencies.DependencyElement")
 @OwnedBy(CI)
 public class DependencyElement implements WithIdentifier {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)

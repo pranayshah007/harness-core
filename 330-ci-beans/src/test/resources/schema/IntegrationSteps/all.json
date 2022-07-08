@@ -1322,15 +1322,9 @@
         },
         {
           "type": "object",
-          "required": [
-            "connectorRef"
-          ],
           "properties": {
             "baseImageConnectorRefs": {
               "$ref": "#/definitions/ParameterFieldListString"
-            },
-            "connectorRef": {
-              "type": "string"
             },
             "imagePullPolicy": {
               "oneOf": [

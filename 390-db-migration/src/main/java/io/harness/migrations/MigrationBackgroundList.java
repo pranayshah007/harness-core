@@ -48,6 +48,7 @@ import io.harness.migrations.all.AddAppManifestName;
 import io.harness.migrations.all.AddArtifactIdentityMigration;
 import io.harness.migrations.all.AddCeFullTrialLicenseToCurrentAccounts;
 import io.harness.migrations.all.AddClusterNameInGcpTypeInstanceMigration;
+import io.harness.migrations.all.AddDeploymentFreezeReferenceToUserGroups;
 import io.harness.migrations.all.AddEnableIteratorsToGovernanceConfig;
 import io.harness.migrations.all.AddHarnessOwnedToResourceConstraint;
 import io.harness.migrations.all.AddInfraMappingNameToInstanceData;
@@ -85,6 +86,7 @@ import io.harness.migrations.all.DeleteInvalidArtifactStreams;
 import io.harness.migrations.all.DeleteInvalidServiceGuardConfigs;
 import io.harness.migrations.all.DeleteOrphanNotificationGroups;
 import io.harness.migrations.all.DeleteOrphanPerpetualTaskMigration;
+import io.harness.migrations.all.DeleteStaleDelegateInsightsSummaryMigration;
 import io.harness.migrations.all.DeleteStaleSlackConfigs;
 import io.harness.migrations.all.DeleteStaleThirdPartyApiCallLogsMigration;
 import io.harness.migrations.all.DeletedAccountStatusMigration;
@@ -386,6 +388,8 @@ public class MigrationBackgroundList {
         .add(Pair.of(224, UpdateCorruptedInstanceStatsMigration.class))
         .add(Pair.of(225, UpdateCorruptedEmptyClusterNameInstanceStatsMigration.class))
         .add(Pair.of(226, AddClusterNameInGcpTypeInstanceMigration.class))
+        .add(Pair.of(227, AddDeploymentFreezeReferenceToUserGroups.class))
+        .add(Pair.of(228, DeleteStaleDelegateInsightsSummaryMigration.class))
         .build();
   }
 }

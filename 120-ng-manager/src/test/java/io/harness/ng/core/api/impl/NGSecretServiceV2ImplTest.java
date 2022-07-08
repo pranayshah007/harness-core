@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.secrets.SSHConfigValidationTaskResponse;
@@ -65,8 +66,6 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.springframework.data.domain.Page;
-import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -79,7 +78,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
   private OutboxService outboxService;
   private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   private TransactionTemplate transactionTemplate;
-
+  private AccessControlClient accessControlClient;
   @Before
   public void setup() {
     secretRepository = mock(SecretRepository.class);
@@ -88,13 +87,13 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
     outboxService = mock(OutboxService.class);
     transactionTemplate = mock(TransactionTemplate.class);
     taskSetupAbstractionHelper = new TaskSetupAbstractionHelper();
-
+    accessControlClient = mock(AccessControlClient.class);
     SshKeySpecDTOHelper sshKeySpecDTOHelper = mock(SshKeySpecDTOHelper.class);
     WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper = mock(WinRmCredentialsSpecDTOHelper.class);
 
     secretServiceV2 = new NGSecretServiceV2Impl(secretRepository, delegateGrpcClientWrapper, sshKeySpecDTOHelper,
         ngSecretActivityService, outboxService, transactionTemplate, taskSetupAbstractionHelper,
-        winRmCredentialsSpecDTOHelper);
+        winRmCredentialsSpecDTOHelper, accessControlClient);
     secretServiceV2Spy = spy(secretServiceV2);
   }
 
@@ -163,17 +162,6 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
     assertThat(success).isNotNull();
     verify(secretServiceV2Spy).get(any(), any(), any(), any());
     verify(secretRepository, times(0)).save(any());
-  }
-
-  @Test
-  @Owner(developers = PHOENIKX)
-  @Category(UnitTests.class)
-  public void testList() {
-    when(secretRepository.findAll(any(), any())).thenReturn(Page.empty());
-    Page<Secret> secretPage = secretServiceV2Spy.list(Criteria.where("a").is("b"), 0, 100);
-    assertThat(secretPage).isNotNull();
-    assertThat(secretPage.toList()).isEmpty();
-    verify(secretRepository).findAll(any(), any());
   }
 
   @Test

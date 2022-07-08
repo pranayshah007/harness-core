@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -49,6 +50,7 @@ public class CloudFormationListStacksHandler extends CloudFormationCommandTaskHa
     AwsInternalConfig awsInternalConfig =
         AwsConfigToInternalMapper.toAwsInternalConfig(cloudFormationListStacksRequest.getAwsConfig());
     encryptionService.decrypt(awsInternalConfig, details, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsInternalConfig, details);
     try {
       DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest();
       String stackId = cloudFormationListStacksRequest.getStackId();
@@ -73,7 +75,8 @@ public class CloudFormationListStacksHandler extends CloudFormationCommandTaskHa
       builder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
           .commandResponse(CloudFormationListStacksResponse.builder().stackSummaryInfos(summaryInfos).build());
     } catch (Exception ex) {
-      String errorMessage = String.format("Exception: %s while getting stacks list: %s", ExceptionUtils.getMessage(ex),
+      String errorMessage = String.format("Exception: %s while getting stacks list: %s",
+          ExceptionUtils.getMessage(ExceptionMessageSanitizer.sanitizeException(ex)),
           cloudFormationListStacksRequest.getStackId());
       executionLogCallback.saveExecutionLog(errorMessage, LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       builder.errorMessage(errorMessage).commandExecutionStatus(CommandExecutionStatus.FAILURE);

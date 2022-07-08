@@ -21,6 +21,7 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.delegatetasks.DelegateLogService;
@@ -105,7 +106,7 @@ public class AwsAmiAsyncTask extends AbstractDelegateRunnableTask {
     } catch (Exception ex) {
       return AwsAmiServiceSetupResponse.builder()
           .executionStatus(FAILED)
-          .errorMessage(ExceptionUtils.getMessage(ex))
+          .errorMessage(ExceptionUtils.getMessage(ExceptionMessageSanitizer.sanitizeException(ex)))
           .build();
     }
   }

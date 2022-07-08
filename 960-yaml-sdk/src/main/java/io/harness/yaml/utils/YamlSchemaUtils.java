@@ -14,6 +14,7 @@ import static io.harness.yaml.schema.beans.SchemaConstants.EXECUTION_WRAPPER_CON
 import static io.harness.yaml.schema.beans.SchemaConstants.ONE_OF_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.PROPERTIES_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.REF_NODE;
+import static io.harness.yaml.schema.beans.SchemaConstants.STAGE_ELEMENT_CONFIG_REF_VALUE;
 import static io.harness.yaml.schema.beans.SchemaConstants.STAGE_ELEMENT_WRAPPER_CONFIG;
 import static io.harness.yaml.schema.beans.SchemaConstants.STAGE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.STEP_NODE;
@@ -338,6 +339,14 @@ public class YamlSchemaUtils {
     ArrayNode oneOfNode = getOneOfNode(stageElementWrapperConfigProperties, STAGE_NODE);
     JsonNode stepsNode = stageElementWrapperConfigProperties.get(STAGE_NODE);
 
+    ArrayNode oneOfList = new ArrayNode(JsonNodeFactory.instance);
+    for (JsonNode objectNode : oneOfNode) {
+      if (objectNode.get(REF_NODE).asText().equals(STAGE_ELEMENT_CONFIG_REF_VALUE)) {
+        continue;
+      }
+      oneOfList.add(objectNode);
+    }
+    oneOfNode = oneOfList;
     for (YamlSchemaWithDetails schemaWithDetails : stepSchemaWithDetails) {
       String nameSpaceString = getNamespace(schemaWithDetails.getYamlSchemaMetadata().getNamespace());
       oneOfNode.add(JsonNodeUtils.upsertPropertyInObjectNode(new ObjectNode(JsonNodeFactory.instance), REF_NODE,

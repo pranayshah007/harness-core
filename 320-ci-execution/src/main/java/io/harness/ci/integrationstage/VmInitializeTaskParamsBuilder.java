@@ -31,13 +31,17 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
+import io.harness.ci.buildstate.CodebaseUtils;
+import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.ci.logserviceclient.CILogServiceUtils;
+import io.harness.ci.tiserviceclient.TIServiceUtils;
+import io.harness.ci.utils.CIVmSecretEvaluator;
 import io.harness.ci.utils.ValidationUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.steps.VmServiceDependency;
 import io.harness.exception.ngexception.CIStageExecutionException;
-import io.harness.ff.CIFeatureFlagService;
-import io.harness.logserviceclient.CILogServiceUtils;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -48,12 +52,8 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.stateutils.buildstate.CodebaseUtils;
-import io.harness.stateutils.buildstate.ConnectorUtils;
 import io.harness.steps.StepUtils;
 import io.harness.stoserviceclient.STOServiceUtils;
-import io.harness.tiserviceclient.TIServiceUtils;
-import io.harness.util.CIVmSecretEvaluator;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.google.inject.Inject;
@@ -84,6 +84,7 @@ public class VmInitializeTaskParamsBuilder {
   @Inject CIVmSecretEvaluator ciVmSecretEvaluator;
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject private VmInitializeUtils vmInitializeUtils;
+  @Inject ValidationUtils validationUtils;
 
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
@@ -210,7 +211,7 @@ public class VmInitializeTaskParamsBuilder {
     if (integrationStageConfig.getServiceDependencies() != null
         && integrationStageConfig.getServiceDependencies().getValue() != null) {
       dependencyElements = integrationStageConfig.getServiceDependencies().getValue();
-      ValidationUtils.validateVmInfraDependencies(dependencyElements);
+      validationUtils.validateVmInfraDependencies(dependencyElements);
     }
     if (isEmpty(dependencyElements)) {
       return serviceDependencies;

@@ -15,6 +15,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
@@ -50,6 +51,7 @@ public class CloudformationTaskNGParameters
   @Expression(ALLOW_SECRETS) String tags;
   List<StackStatus> stackStatusesToMarkAsSuccess;
   long timeoutInMs;
+  CommandUnitsProgress commandUnitsProgress;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

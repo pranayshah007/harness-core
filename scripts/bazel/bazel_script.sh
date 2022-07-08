@@ -84,6 +84,8 @@ BAZEL_MODULES="\
   //460-capability:module \
   //490-ce-commons:module \
   //800-pipeline-service:module \
+  //800-pipeline-service/modules/orchestration-steps:module \
+  //800-pipeline-service/modules/orchestration-steps/contracts:module \
   //810-ng-triggers:module \
   //815-cg-triggers:module \
   //platform-service/service:module \
@@ -97,17 +99,18 @@ BAZEL_MODULES="\
   //platform-service/modules/notification-service:module \
   //platform-service/modules/resource-group-service:module \
   //840-template-service:module \
-  //860-orchestration-steps:module \
   //860-orchestration-visualization:module \
   //865-cg-events:module \
   //867-polling-contracts:module \
   //870-cg-orchestration:module \
   //870-orchestration:module \
+  //870-orchestration/contracts:module \
   //874-orchestration-delay:module \
   //876-orchestration-beans:module \
   //877-filestore:module \
   //878-ng-common-utilities:module \
   //879-pms-sdk:module \
+  //880-pipeline-cd-commons:module \
   //882-pms-sdk-core:module \
   //884-pms-commons:module \
   //890-sm-core:module \
@@ -124,12 +127,14 @@ BAZEL_MODULES="\
   //930-delegate-tasks:module \
   //930-ng-core-clients:module \
   //932-connector-task:module \
+  //933-scm-commons:module \
   //935-analyser-service:module \
   //937-persistence-tracer:module \
   //940-feature-flag:module \
   //clients/notification:module \
   //clients/notification:module_deploy.jar \
   //940-secret-manager-client:module \
+  //941-filestore-client:module \
   //942-enforcement-sdk:module \
   //943-enforcement-beans:module \
   //945-account-mgmt:module \
@@ -310,7 +315,6 @@ build_bazel_module 490-ce-commons
 build_bazel_module 810-ng-triggers
 build_bazel_module 815-cg-triggers
 build_bazel_module 865-cg-events
-build_bazel_module 860-orchestration-steps
 build_bazel_module 860-orchestration-visualization
 build_bazel_module 867-polling-contracts
 build_bazel_module 870-cg-orchestration
@@ -319,6 +323,7 @@ build_bazel_module 874-orchestration-delay
 build_bazel_module 876-orchestration-beans
 build_bazel_module 878-ng-common-utilities
 build_bazel_module 879-pms-sdk
+build_bazel_module 880-pipeline-cd-commons
 build_bazel_module 882-pms-sdk-core
 build_bazel_module 884-pms-commons
 build_bazel_module 890-sm-core
@@ -330,6 +335,7 @@ build_bazel_module 920-delegate-service-beans
 build_bazel_module 930-delegate-tasks
 build_bazel_module 930-ng-core-clients
 build_bazel_module 932-connector-task
+build_bazel_module 933-scm-commons
 build_bazel_module 940-feature-flag
 build_bazel_module 940-secret-manager-client
 build_bazel_module 947-scim-core

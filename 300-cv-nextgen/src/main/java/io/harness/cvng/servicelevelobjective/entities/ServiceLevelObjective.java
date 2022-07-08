@@ -91,6 +91,7 @@ public class ServiceLevelObjective
   List<NotificationRuleRef> notificationRuleRefs;
   SLOTarget sloTarget;
   ServiceLevelIndicatorType type;
+  private boolean enabled;
   private long lastUpdatedAt;
   private long createdAt;
   private Double sloTargetPercentage;
@@ -314,6 +315,7 @@ public class ServiceLevelObjective
 
     @Override
     public TimePeriod getCurrentTimeRange(LocalDateTime currentDateTime) {
+      currentDateTime = currentDateTime.truncatedTo(ChronoUnit.MINUTES);
       return TimePeriod.createWithLocalTime(
           currentDateTime.minusMinutes(TimeUnit.DAYS.toMinutes(periodLengthDays)), currentDateTime);
     }

@@ -17,6 +17,7 @@ import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.OldNotifyCallback;
 import io.harness.waiter.WaitNotifyEngine;
@@ -44,7 +45,7 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
 
   long maxConcurrency;
   String parentNodeExecutionId;
-  Ambiance ambiance;
+  Ambiance ambiance; // Store only planExecutionId
 
   @Override
   public void notify(Map<String, ResponseData> response) {
@@ -57,11 +58,16 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
       }
       ConcurrentChildInstance childInstance = nodeExecutionInfoService.incrementCursor(parentNodeExecutionId);
       if (childInstance == null) {
+        log.error("[MaxConcurrentCallback]: ChildInstance found null for parentId: " + parentNodeExecutionId);
         nodeExecutionService.errorOutActiveNodes(ambiance.getPlanExecutionId());
         return;
       }
+      log.info("[MaxConcurrentCallback]: MaxConcurrentCallback called for parentId: " + parentNodeExecutionId);
       // We have reached the last child already so ignore this callback as there is no new child to run.
-      if (childInstance.getCursor() == childInstance.getChildrenNodeExecutionIds().size()) {
+      if (childInstance.getCursor() >= childInstance.getChildrenNodeExecutionIds().size()) {
+        log.info(
+            "[MaxConcurrentCallback]: Ignoring the callback as we have traversed all the children for parentExecutionId: "
+            + parentNodeExecutionId);
         return;
       }
       int cursor = childInstance.getCursor();
@@ -73,7 +79,10 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
   private void getAmbianceAndStartExecution(String nodeExecutionToStart) {
     NodeExecution nodeExecution =
         nodeExecutionService.getWithFieldsIncluded(nodeExecutionToStart, NodeProjectionUtils.withAmbianceAndStatus);
-    engine.startNodeExecution(nodeExecution.getAmbiance());
+    if (StatusUtils.resumableStatuses().contains(nodeExecution.getStatus())) {
+      log.info("[MaxConcurrentCallback]: Starting the execution with id: " + nodeExecutionToStart);
+      engine.startNodeExecution(nodeExecution.getAmbiance());
+    }
   }
 
   @Override

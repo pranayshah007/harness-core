@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 26
+version: 30
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -118,6 +118,8 @@ roles:
         - chaos_chaosagent_view
         - chaos_chaosagent_edit
         - chaos_chaosagent_delete
+        - chaos_chaosgitops_view
+        - chaos_chaosgitops_edit
         - chaos_chaosworkflow_view
         - chaos_chaosworkflow_edit
         - chaos_chaosworkflow_delete
@@ -163,6 +165,7 @@ roles:
         - core_variable_view
         - chaos_chaoshub_view
         - chaos_chaosagent_view
+        - chaos_chaosgitops_view
         - chaos_chaosworkflow_view
       allowedScopeLevels:
         - project
@@ -289,6 +292,8 @@ roles:
         - chaos_chaosagent_view
         - chaos_chaosagent_edit
         - chaos_chaosagent_delete
+        - chaos_chaosgitops_view
+        - chaos_chaosgitops_edit
         - chaos_chaosworkflow_view
         - chaos_chaosworkflow_edit
         - chaos_chaosworkflow_delete
@@ -336,6 +341,7 @@ roles:
         - core_variable_view
         - chaos_chaoshub_view
         - chaos_chaosagent_view
+        - chaos_chaosgitops_view
         - chaos_chaosworkflow_view
       allowedScopeLevels:
         - organization
@@ -357,6 +363,9 @@ roles:
         - core_connector_edit
         - core_connector_delete
         - core_connector_access
+        - core_smtp_view
+        - core_smtp_edit
+        - core_smtp_delete
         - core_delegate_view
         - core_delegate_edit
         - core_delegate_delete
@@ -385,6 +394,7 @@ roles:
         - core_resourcegroup_view
         - core_resourcegroup_edit
         - core_resourcegroup_delete
+        - core_license_edit
         - core_license_view
         - core_authsetting_view
         - core_authsetting_edit
@@ -456,6 +466,13 @@ roles:
         - gitops_cert_view
         - gitops_cert_edit
         - gitops_cert_delete
+        - sto_issue_view
+        - sto_scan_view
+        - sto_testtarget_view
+        - sto_testtarget_edit
+        - sto_exemption_view
+        - sto_exemption_create
+        - sto_exemption_approve
         - core_file_view
         - core_file_edit
         - core_file_delete
@@ -469,6 +486,8 @@ roles:
         - chaos_chaosagent_view
         - chaos_chaosagent_edit
         - chaos_chaosagent_delete
+        - chaos_chaosgitops_view
+        - chaos_chaosgitops_edit
         - chaos_chaosworkflow_view
         - chaos_chaosworkflow_edit
         - chaos_chaosworkflow_delete
@@ -481,6 +500,7 @@ roles:
       permissions:
         - core_secret_view
         - core_connector_view
+        - core_smtp_view
         - core_delegate_view
         - core_delegateconfiguration_view
         - core_service_view
@@ -515,10 +535,15 @@ roles:
         - gitops_cluster_view
         - gitops_gpgkey_view
         - gitops_cert_view
+        - sto_issue_view
+        - sto_scan_view
+        - sto_testtarget_view
+        - sto_exemption_view
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
         - chaos_chaosagent_view
+        - chaos_chaosgitops_view
         - chaos_chaosworkflow_view
       allowedScopeLevels:
         - account
@@ -547,6 +572,8 @@ roles:
         - core_file_view
         - core_file_access
         - core_variable_view
+        - core_template_view
+        - core_template_access
       allowedScopeLevels:
         - project
       managed: true
@@ -595,12 +622,48 @@ roles:
         - account
         - organization
         - project
+    - identifier: _sto_developer_role
+      name: Security Testing Developer Role
+      description: Can work with security issues
+      permissions:
+        - sto_issue_view
+        - sto_scan_view
+        - sto_testtarget_view
+        - sto_testtarget_edit
+        - sto_exemption_view
+        - sto_exemption_create
+      managed: true
+      allowedScopeLevels:
+        - account
+    - identifier: _sto_secops_role
+      name: Security Testing SecOps Role
+      description: Can work with security issues and manage security exemptions
+      permissions:
+        - sto_issue_view
+        - sto_scan_view
+        - sto_testtarget_view
+        - sto_testtarget_edit
+        - sto_exemption_view
+        - sto_exemption_create
+        - sto_exemption_approve
+      managed: true
+      allowedScopeLevels:
+        - account
     - identifier: _account_basic
       name: Account Basic
       description: Account Basic
       permissions:
         - core_license_view
         - core_account_view
+      managed: true
+      allowedScopeLevels:
+        - account
+    - identifier: _billing_admin
+      name: Billing Admin
+      description: Billing Admin
+      permissions:
+        - core_license_view
+        - core_license_edit
       managed: true
       allowedScopeLevels:
         - account

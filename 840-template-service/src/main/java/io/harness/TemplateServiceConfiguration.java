@@ -46,7 +46,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -87,6 +86,9 @@ public class TemplateServiceConfiguration extends Configuration {
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
   @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;
   @JsonProperty("pmsGrpcClientConfig") GrpcClientConfig pmsGrpcClientConfig;
+  @JsonProperty("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
+  @JsonProperty("pipelineServiceSecret") private String pipelineServiceSecret;
+  @JsonProperty("allowedParallelStages") private int allowedParallelStages;
 
   private boolean shouldDeployWithGitSync;
   private GitSdkConfiguration gitSdkConfiguration;
@@ -179,7 +181,7 @@ public class TemplateServiceConfiguration extends Configuration {
       baseurl = new URL("https", hostname, basePathPrefix);
       Server server = new Server();
       server.setUrl(baseurl.toString());
-      oas.servers(Collections.singletonList(server));
+      oas.servers(singletonList(server));
     } catch (MalformedURLException e) {
       log.error("failed to set baseurl for server, {}/{}", hostname, basePathPrefix);
     }

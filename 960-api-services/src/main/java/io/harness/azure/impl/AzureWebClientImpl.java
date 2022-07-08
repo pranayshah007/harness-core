@@ -31,6 +31,7 @@ import io.harness.azure.model.AzureAppServiceApplicationSetting;
 import io.harness.azure.model.AzureAppServiceConnectionString;
 import io.harness.azure.model.WebAppHostingOS;
 import io.harness.azure.utility.AzureResourceUtility;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import com.google.inject.Singleton;
 import com.microsoft.azure.PagedList;
@@ -141,7 +142,8 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
     try {
       return Optional.ofNullable(getWebApp(azure, resourceGroupName, webAppName).deploymentSlots().getByName(slotName));
     } catch (NoSuchElementException e) {
-      log.warn(format("Unable to find deployment slot with name: %s, for app name: %s", slotName, webAppName), e);
+      log.warn(format("Unable to find deployment slot with name: %s, for app name: %s", slotName, webAppName),
+          ExceptionMessageSanitizer.sanitizeException(e));
       return Optional.empty();
     }
   }

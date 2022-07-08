@@ -13,11 +13,15 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.template.service.PipelineRefreshService;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
@@ -79,6 +83,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PipelineRefreshResource {
   private final PipelineRefreshService pipelineRefreshService;
+  private final AccessControlClient accessControlClient;
 
   @POST
   @ApiOperation(
@@ -93,6 +98,8 @@ public class PipelineRefreshResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String pipelineIdentifier,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+        Resource.of("PIPELINE", pipelineIdentifier), PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     return ResponseDTO.newResponse(
         pipelineRefreshService.refreshTemplateInputsInPipeline(accountId, orgId, projectId, pipelineIdentifier));
   }
@@ -143,6 +150,8 @@ public class PipelineRefreshResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String pipelineIdentifier,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+        Resource.of("PIPELINE", pipelineIdentifier), PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     return ResponseDTO.newResponse(pipelineRefreshService.recursivelyRefreshAllTemplateInputsInPipeline(
         accountId, orgId, projectId, pipelineIdentifier));
   }

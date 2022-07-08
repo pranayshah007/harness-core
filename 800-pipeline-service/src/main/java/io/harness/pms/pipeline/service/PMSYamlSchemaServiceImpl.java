@@ -10,9 +10,11 @@ package io.harness.pms.pipeline.service;
 import static io.harness.yaml.schema.beans.SchemaConstants.ALL_OF_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.DEFINITIONS_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.ONE_OF_NODE;
+import static io.harness.yaml.schema.beans.SchemaConstants.PIPELINE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.PROPERTIES_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.REF_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.SPEC_NODE;
+import static io.harness.yaml.schema.beans.SchemaConstants.STAGES_NODE;
 
 import static java.lang.String.format;
 
@@ -21,14 +23,14 @@ import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.JsonSchemaException;
-import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
-import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
+import io.harness.exception.JsonSchemaValidationException;
 import io.harness.jackson.JsonNodeUtils;
+import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.manage.ManagedExecutorService;
-import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -40,8 +42,6 @@ import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlSer
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.project.remote.ProjectClient;
-import io.harness.remote.client.NGRestUtils;
 import io.harness.yaml.schema.YamlSchemaGenerator;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.YamlSchemaTransientHelper;
@@ -51,18 +51,23 @@ import io.harness.yaml.utils.JsonPipelineUtils;
 import io.harness.yaml.utils.YamlSchemaUtils;
 import io.harness.yaml.validator.YamlSchemaValidator;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -87,15 +92,15 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   private final ApprovalYamlSchemaService approvalYamlSchemaService;
   private final FeatureFlagYamlService featureFlagYamlService;
   private final SchemaFetcher schemaFetcher;
-  private final ProjectClient projectClient;
+  private final NgLicenseHttpClient ngLicenseHttpClient;
   Integer allowedParallelStages;
 
   @Inject
   public PMSYamlSchemaServiceImpl(YamlSchemaProvider yamlSchemaProvider, YamlSchemaGenerator yamlSchemaGenerator,
       YamlSchemaValidator yamlSchemaValidator, PmsSdkInstanceService pmsSdkInstanceService,
       PmsYamlSchemaHelper pmsYamlSchemaHelper, ApprovalYamlSchemaService approvalYamlSchemaService,
-      FeatureFlagYamlService featureFlagYamlService, SchemaFetcher schemaFetcher, ProjectClient projectClient,
-      @Named("allowedParallelStages") Integer allowedParallelStages) {
+      FeatureFlagYamlService featureFlagYamlService, SchemaFetcher schemaFetcher,
+      NgLicenseHttpClient ngLicenseHttpClient, @Named("allowedParallelStages") Integer allowedParallelStages) {
     this.yamlSchemaProvider = yamlSchemaProvider;
     this.yamlSchemaGenerator = yamlSchemaGenerator;
     this.yamlSchemaValidator = yamlSchemaValidator;
@@ -104,7 +109,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     this.approvalYamlSchemaService = approvalYamlSchemaService;
     this.featureFlagYamlService = featureFlagYamlService;
     this.schemaFetcher = schemaFetcher;
-    this.projectClient = projectClient;
+    this.ngLicenseHttpClient = ngLicenseHttpClient;
     this.allowedParallelStages = allowedParallelStages;
   }
 
@@ -131,18 +136,13 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       String schemaString = JsonPipelineUtils.writeJsonString(schema);
       yamlSchemaValidator.validate(yaml, schemaString,
           pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DONT_RESTRICT_PARALLEL_STAGE_COUNT, accountIdentifier),
-          allowedParallelStages);
+          allowedParallelStages, PIPELINE_NODE + "/" + STAGES_NODE);
     } catch (io.harness.yaml.validator.InvalidYamlException e) {
       log.info("[PMS_SCHEMA] Schema validation took total time {}ms", System.currentTimeMillis() - start);
       throw e;
     } catch (Exception ex) {
       log.error(ex.getMessage(), ex);
-      YamlSchemaErrorWrapperDTO errorWrapperDTO =
-          YamlSchemaErrorWrapperDTO.builder()
-              .schemaErrors(Collections.singletonList(
-                  YamlSchemaErrorDTO.builder().message(ex.getMessage()).fqn("$.pipeline").build()))
-              .build();
-      throw new io.harness.yaml.validator.InvalidYamlException(ex.getMessage(), ex, errorWrapperDTO);
+      throw new JsonSchemaValidationException(ex.getMessage(), ex);
     }
   }
 
@@ -184,7 +184,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
     PmsYamlSchemaHelper.flattenParallelElementConfig(pipelineDefinitions);
 
-    List<ModuleType> enabledModules = obtainEnabledModules(projectIdentifier, accountIdentifier, orgIdentifier);
+    List<ModuleType> enabledModules = obtainEnabledModules(accountIdentifier);
     enabledModules.add(ModuleType.PMS);
     List<YamlSchemaWithDetails> schemaWithDetailsList =
         fetchSchemaWithDetailsFromModules(accountIdentifier, enabledModules);
@@ -264,42 +264,31 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   }
 
   @SuppressWarnings("unchecked")
-  private List<ModuleType> obtainEnabledModules(
-      String projectIdentifier, String accountIdentifier, String orgIdentifier) {
-    try {
-      Optional<ProjectResponse> resp =
-          NGRestUtils.getResponse(projectClient.getProject(projectIdentifier, accountIdentifier, orgIdentifier));
-      if (!resp.isPresent()) {
-        log.warn(
-            "[PMS] Cannot obtain project details for projectIdentifier : {}, accountIdentifier: {}, orgIdentifier: {}",
-            projectIdentifier, accountIdentifier, orgIdentifier);
-        return new ArrayList<>();
-      }
+  private List<ModuleType> obtainEnabledModules(String accountIdentifier) {
+    List<ModuleType> modules = new ArrayList<>();
 
-      List<ModuleType> projectModuleTypes = resp.get()
-                                                .getProject()
-                                                .getModules()
-                                                .stream()
-                                                .filter(moduleType -> !moduleType.isInternal())
-                                                .collect(Collectors.toList());
+    // TODO: Ideally it should be received from accountLicenses but there were some issues observed this part.
+    //    AccountLicenseDTO accountLicense =
+    //        NGRestUtils.getResponse(ngLicenseHttpClient.getAccountLicensesDTO(accountIdentifier));
+    //    accountLicense.getAllModuleLicenses().forEach((moduleType, value) -> {
+    //      if (EmptyPredicate.isNotEmpty(value)) {
+    //        modules.add(moduleType);
+    //      }
+    //    });
 
-      List<ModuleType> instanceModuleTypes = pmsSdkInstanceService.getActiveInstanceNames()
-                                                 .stream()
-                                                 .map(ModuleType::fromString)
-                                                 .collect(Collectors.toList());
+    modules =
+        ModuleType.getModules().stream().filter(moduleType -> !moduleType.isInternal()).collect(Collectors.toList());
 
-      if (instanceModuleTypes.size() != projectModuleTypes.size()) {
-        log.warn(
-            "There is a mismatch of instanceModuleTypes and projectModuleTypes. Please investigate if the sdk is registered or not");
-      }
+    List<ModuleType> instanceModuleTypes = pmsSdkInstanceService.getActiveInstanceNames()
+                                               .stream()
+                                               .map(ModuleType::fromString)
+                                               .collect(Collectors.toList());
 
-      return (List<ModuleType>) CollectionUtils.intersection(projectModuleTypes, instanceModuleTypes);
-    } catch (Exception e) {
+    if (instanceModuleTypes.size() != modules.size()) {
       log.warn(
-          "[PMS] Cannot obtain enabled module details for projectIdentifier : {}, accountIdentifier: {}, orgIdentifier: {}",
-          projectIdentifier, accountIdentifier, orgIdentifier, e);
-      return new ArrayList<>();
+          "There is a mismatch of instanceModuleTypes and projectModuleTypes. Please investigate if the sdk is registered or not");
     }
+    return (List<ModuleType>) CollectionUtils.intersection(modules, instanceModuleTypes);
   }
 
   protected List<YamlSchemaWithDetails> fetchSchemaWithDetailsFromModules(
@@ -320,15 +309,107 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   @Override
   public JsonNode getIndividualYamlSchema(String accountId, String orgIdentifier, String projectIdentifier, Scope scope,
       EntityType entityType, String yamlGroup) {
-    if (yamlGroup.equals(StepCategory.PIPELINE.toString())) {
+    if (StepCategory.PIPELINE.toString().equals(yamlGroup)) {
       return getPipelineYamlSchemaInternal(accountId, projectIdentifier, orgIdentifier, null);
     }
     List<YamlSchemaWithDetails> yamlSchemaWithDetailsList = null;
-    if (yamlGroup.equals(StepCategory.STAGE.toString())) {
-      List<ModuleType> enabledModules = obtainEnabledModules(projectIdentifier, accountId, orgIdentifier);
+    Map<String, List<JsonNode>> nameSpaceToDefinitionMap = new HashMap<>();
+    Set<String> nameSpaces = new HashSet<>();
+    JsonNode mergedDefinition = null;
+    Map<String, JsonNode> finalNameSpaceToDefinitionMap = new HashMap<>();
+    if (StepCategory.STAGE.toString().equals(yamlGroup)) {
+      List<ModuleType> enabledModules = obtainEnabledModules(accountId);
+      enabledModules.add(ModuleType.PMS);
       yamlSchemaWithDetailsList = fetchSchemaWithDetailsFromModules(accountId, enabledModules);
+      yamlSchemaWithDetailsList =
+          filterYamlSchemaDetailsByModule(yamlSchemaWithDetailsList, entityType.getEntityProduct());
+      // Hack to handle proper schema generation for stage
+      for (YamlSchemaWithDetails yamlSchemaWithDetails : yamlSchemaWithDetailsList) {
+        String nameSpace = yamlSchemaWithDetails.getYamlSchemaMetadata().getNamespace();
+        JsonNode definition = yamlSchemaWithDetails.getSchema().get(DEFINITIONS_NODE);
+        nameSpaces.add(nameSpace);
+        // Creating a map of all definitions corresponding to all namespace
+        if (EmptyPredicate.isEmpty(nameSpace)) {
+          if (mergedDefinition == null) {
+            mergedDefinition = definition;
+          } else {
+            JsonNodeUtils.merge(mergedDefinition, definition);
+          }
+        } else {
+          if (nameSpaceToDefinitionMap.containsKey(nameSpace)) {
+            nameSpaceToDefinitionMap.get(nameSpace).add(definition);
+          } else {
+            List<JsonNode> nameSpaceDefinition = new LinkedList<>();
+            nameSpaceDefinition.add(definition);
+            nameSpaceToDefinitionMap.put(nameSpace, nameSpaceDefinition);
+          }
+        }
+      }
+      // Multiple schemas might have same namespace. Mergint them into one
+      for (Map.Entry<String, List<JsonNode>> entry : nameSpaceToDefinitionMap.entrySet()) {
+        JsonNode nameSpaceDefinition = null;
+        for (JsonNode jsonNode : entry.getValue()) {
+          if (nameSpaceDefinition == null) {
+            nameSpaceDefinition = jsonNode;
+          } else {
+            JsonNodeUtils.merge(nameSpaceDefinition, jsonNode);
+          }
+        }
+        finalNameSpaceToDefinitionMap.put(entry.getKey(), nameSpaceDefinition);
+      }
     }
-    return schemaFetcher.fetchStepYamlSchema(
+    JsonNode jsonNode = schemaFetcher.fetchStepYamlSchema(
         accountId, projectIdentifier, orgIdentifier, scope, entityType, yamlGroup, yamlSchemaWithDetailsList);
+
+    if (StepCategory.STAGE.toString().equals(yamlGroup)) {
+      String stepNameSpace = null;
+      if (jsonNode.get(DEFINITIONS_NODE).fields().hasNext()) {
+        String nameSpace = jsonNode.get(DEFINITIONS_NODE).fields().next().getKey();
+        if (nameSpaces.contains(nameSpace)) {
+          stepNameSpace = nameSpace;
+        }
+      }
+
+      // Merging definitions fetched from different modules with stage schema
+      JsonNodeUtils.merge(jsonNode.get(DEFINITIONS_NODE), mergedDefinition);
+      for (Map.Entry<String, JsonNode> entry : finalNameSpaceToDefinitionMap.entrySet()) {
+        if (!stepNameSpace.equals(entry.getKey())) {
+          // Adding definitions to individual namespace and the root definition
+          if (jsonNode.get(DEFINITIONS_NODE).get(entry.getKey()) == null) {
+            ((ObjectNode) jsonNode.get(DEFINITIONS_NODE)).putIfAbsent(entry.getKey(), entry.getValue());
+          } else {
+            JsonNodeUtils.merge(jsonNode.get(DEFINITIONS_NODE).get(entry.getKey()), entry.getValue());
+          }
+          JsonNodeUtils.merge(jsonNode.get(DEFINITIONS_NODE), entry.getValue());
+        }
+      }
+
+      // TODO: hack to remove v2 steps from stage yamls. Fix it properly
+      for (String nameSpace : nameSpaces) {
+        if (jsonNode.get(DEFINITIONS_NODE).get(nameSpace) != null) {
+          YamlSchemaTransientHelper.removeV2StepEnumsFromStepElementConfig(
+              jsonNode.get(DEFINITIONS_NODE).get(nameSpace).get(STEP_ELEMENT_CONFIG));
+        }
+      }
+    } else {
+      JsonNode stepSpecTypeNode = getStepSpecType();
+      JsonNodeUtils.merge(jsonNode.get(DEFINITIONS_NODE), stepSpecTypeNode);
+    }
+    return jsonNode;
+  }
+
+  // TODO: Brijesh to look at the intermittent issue and remove this
+  private JsonNode getStepSpecType() {
+    String stepSpecTypeNodeString = "{\"StepSpecType\": {\n"
+        + "                    \"type\": \"object\",\n"
+        + "                    \"discriminator\": \"type\",\n"
+        + "                    \"$schema\": \"http://json-schema.org/draft-07/schema#\"\n"
+        + "                }}";
+    ObjectMapper mapper = new ObjectMapper();
+    try {
+      return mapper.readTree(stepSpecTypeNodeString);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

@@ -60,7 +60,7 @@ cimanager-mongo:
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
-  aliasDBName: ci-manager
+  aliasDBName: harnessci
 pmsMongo:
   uri: mongodb://localhost:27017/pms-harness
   connectTimeout: 30000
@@ -110,8 +110,8 @@ ciExecutionServiceConfig:
   defaultInternalImageConnector: ''
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.14.2
-  liteEngineImage: harness/ci-lite-engine:1.14.2
+  addonImage: harness/ci-addon:1.14.5
+  liteEngineImage: harness/ci-lite-engine:1.14.5
   isLocal: false
   stepConfig:
     # The below config is for K8 steps
@@ -260,10 +260,6 @@ cacheConfig:
   cacheBackend: REDIS
   cacheNamespace: ""
   disabledCaches: [ ]
-
-opaServerConfig:
-  baseUrl: http://localhost:3000
-  secret: secret
 
 enforcementClientConfiguration:
   enforcementCheckEnabled: false

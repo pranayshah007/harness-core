@@ -24,6 +24,7 @@ import io.harness.template.beans.refresh.TemplateInfo;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -51,6 +52,7 @@ public class TemplateInputsValidator {
                               .versionLabel(templateEntity.getVersionLabel())
                               .templateEntityType(templateEntity.getTemplateEntityType())
                               .build())
+            .templateResponse(NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity))
             .childrenErrorNodes(new ArrayList<>())
             .build();
 
@@ -69,6 +71,17 @@ public class TemplateInputsValidator {
         ValidateTemplateInputsResponseDTO.builder().validYaml(true).errorNodeSummary(errorNodeSummary).build();
     validateNestedTemplateInputsInternal(
         accountId, orgId, projectId, yaml, 0, new HashMap<>(), validateTemplateInputsResponse);
+    return validateTemplateInputsResponse;
+  }
+
+  public ValidateTemplateInputsResponseDTO validateNestedTemplateInputsForGivenYaml(
+      String accountId, String orgId, String projectId, String yaml, Map<String, TemplateEntity> templateCacheMap) {
+    ErrorNodeSummary errorNodeSummary = ErrorNodeSummary.builder().childrenErrorNodes(new ArrayList<>()).build();
+
+    ValidateTemplateInputsResponseDTO validateTemplateInputsResponse =
+        ValidateTemplateInputsResponseDTO.builder().validYaml(true).errorNodeSummary(errorNodeSummary).build();
+    validateNestedTemplateInputsInternal(
+        accountId, orgId, projectId, yaml, 0, templateCacheMap, validateTemplateInputsResponse);
     return validateTemplateInputsResponse;
   }
 
@@ -201,6 +214,7 @@ public class TemplateInputsValidator {
                               .templateEntityType(templateEntity.getTemplateEntityType())
                               .versionLabel(templateEntity.getVersionLabel())
                               .build())
+            .templateResponse(NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity))
             .childrenErrorNodes(new ArrayList<>())
             .build();
     return ValidateTemplateInputsResponseDTO.builder().validYaml(true).errorNodeSummary(childErrorNodeSummary).build();

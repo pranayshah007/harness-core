@@ -9,6 +9,7 @@ package io.harness.engine.interrupts.callback;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.PRASHANT;
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -33,6 +34,7 @@ import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.contracts.interrupts.IssuedBy;
 import io.harness.pms.contracts.interrupts.ManualIssuer;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.rule.Owner;
 import io.harness.waiter.StringNotifyResponseData;
 
@@ -95,6 +97,61 @@ public class FailureInterruptCallbackTest extends OrchestrationTestBase {
     verify(orchestrationEngine)
         .concludeNodeExecution(ambianceArgumentCaptor.capture(), eq(Status.FAILED), eq(Status.INTERVENTION_WAITING),
             eq(EnumSet.noneOf(Status.class)));
+    verify(interruptService).markProcessed(eq(interruptId), eq(Interrupt.State.PROCESSED_SUCCESSFULLY));
+
+    assertThat(ambianceArgumentCaptor.getValue()).isEqualTo(ambiance);
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void shouldTestNotifyWithOriginalStatusNull() {
+    String nodeExecutionId = generateUuid();
+    String interruptId = generateUuid();
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanExecutionId(generateUuid())
+                            .addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build())
+                            .build();
+    NodeExecution ne = NodeExecution.builder()
+                           .uuid(nodeExecutionId)
+                           .status(Status.FAILED)
+                           .parentId(generateUuid())
+                           .planNode(PlanNode.builder().identifier(generateUuid()).build())
+                           .ambiance(ambiance)
+                           .version(1L)
+                           .build();
+    when(nodeExecutionService.update(eq(nodeExecutionId), any())).thenReturn(ne);
+
+    // Setting original status as null
+    FailureInterruptCallback failureInterruptCallback =
+        FailureInterruptCallback.builder()
+            .interruptId(interruptId)
+            .interruptType(InterruptType.CUSTOM_FAILURE)
+            .nodeExecutionId(nodeExecutionId)
+            .originalStatus(null)
+            .interruptConfig(
+                InterruptConfig.newBuilder()
+                    .setIssuedBy(
+                        IssuedBy.newBuilder()
+                            .setManualIssuer(ManualIssuer.newBuilder().setIdentifier("MANUAL").setType("").build())
+                            .build())
+                    .build())
+            .build();
+    Reflect.on(failureInterruptCallback).set("interruptService", interruptService);
+    Reflect.on(failureInterruptCallback).set("nodeExecutionService", nodeExecutionService);
+    Reflect.on(failureInterruptCallback).set("orchestrationEngine", orchestrationEngine);
+
+    when(nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.withStatusAndMode))
+        .thenReturn(ne);
+
+    failureInterruptCallback.notify(
+        ImmutableMap.of(generateUuid(), StringNotifyResponseData.builder().data("SOMEDATA").build()));
+
+    ArgumentCaptor<Ambiance> ambianceArgumentCaptor = ArgumentCaptor.forClass(Ambiance.class);
+    verify(nodeExecutionService).update(eq(nodeExecutionId), any());
+    verify(orchestrationEngine)
+        .concludeNodeExecution(
+            ambianceArgumentCaptor.capture(), eq(Status.FAILED), eq(Status.FAILED), eq(EnumSet.noneOf(Status.class)));
     verify(interruptService).markProcessed(eq(interruptId), eq(Interrupt.State.PROCESSED_SUCCESSFULLY));
 
     assertThat(ambianceArgumentCaptor.getValue()).isEqualTo(ambiance);

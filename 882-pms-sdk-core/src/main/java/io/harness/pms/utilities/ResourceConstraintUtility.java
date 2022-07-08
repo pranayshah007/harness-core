@@ -37,7 +37,7 @@ public class ResourceConstraintUtility {
         + "  resourceUnit: \"" + resourceUnit + "\"\n"
         + "  acquireMode: \"ENSURE\"\n"
         + "  permits: 1\n"
-        + "  holdingScope: PIPELINE";
+        + "  holdingScope: STAGE";
     YamlField resourceConstraintYamlField;
     try {
       String yamlFieldWithUuid = YamlUtils.injectUuid(yamlField);

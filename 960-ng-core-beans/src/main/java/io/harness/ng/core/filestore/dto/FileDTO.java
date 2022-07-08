@@ -60,7 +60,7 @@ public class FileDTO {
   @Schema(description = "Name of the File")
   @FormDataParam("name")
   private String name;
-  @Schema(description = "The path of the File") @FormDataParam("path") private String path;
+
   @Schema(description = "This specifies the file usage") @FormDataParam("fileUsage") private FileUsage fileUsage;
   @ApiModelProperty(required = true)
   @NotNull
@@ -75,12 +75,29 @@ public class FileDTO {
   @Schema(description = "Description of the File") @FormDataParam("description") private String description;
   @Schema(description = "Tags") @Valid private List<NGTag> tags;
   @Schema(description = "Mime type of the File") @FormDataParam("mimeType") private String mimeType;
+
+  // read only properties during serialization(java object -> json)
+  @Schema(description = "The path of the File")
+  @FormDataParam("path")
+  @JsonProperty(access = Access.READ_ONLY)
+  private String path;
+
   @Schema(description = "Whether File is draft or not") @JsonProperty(access = Access.READ_ONLY) private Boolean draft;
-  @Schema(description = "File created by user") @FormDataParam("createdBy") private EmbeddedUserDetailsDTO createdBy;
+
+  @Schema(description = "File created by user")
+  @FormDataParam("createdBy")
+  @JsonProperty(access = Access.READ_ONLY)
+  private EmbeddedUserDetailsDTO createdBy;
+
   @Schema(description = "File updated by user")
   @FormDataParam("lastModifiedBy")
+  @JsonProperty(access = Access.READ_ONLY)
   private EmbeddedUserDetailsDTO lastModifiedBy;
-  @Schema(description = "Last modified time for the File") @FormDataParam("lastModifiedAt") private Long lastModifiedAt;
+
+  @Schema(description = "Last modified time for the File")
+  @FormDataParam("lastModifiedAt")
+  @JsonProperty(access = Access.READ_ONLY)
+  private Long lastModifiedAt;
 
   @JsonIgnore
   public boolean isFile() {

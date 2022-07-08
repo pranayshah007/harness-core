@@ -25,12 +25,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.InputSetReference;
 import io.harness.category.element.UnitTests;
 import io.harness.common.EntityReference;
+import io.harness.context.GlobalContext;
 import io.harness.git.model.ChangeType;
+import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.EntityDetail;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
-import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
@@ -50,7 +53,6 @@ import org.mockito.MockitoAnnotations;
 public class InputSetEntityGitSyncHelperTest extends CategoryTest {
   @Mock private PMSInputSetService pmsInputSetService;
   @InjectMocks InputSetEntityGitSyncHelper inputSetEntityGitSyncHelper;
-  @Mock ValidateAndMergeHelper validateAndMergeHelper;
   static String accountId = "accountId";
   static String orgId = "orgId";
   static String projectId = "projectId";
@@ -116,26 +118,26 @@ public class InputSetEntityGitSyncHelperTest extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testSave() throws IOException {
+    setupGitContext();
     overLayYaml = Resources.toString(this.getClass().getClassLoader().getResource("overlay1.yml"), Charsets.UTF_8);
-    doReturn(InputSetEntity.builder().yaml(inputSetYaml).build()).when(pmsInputSetService).create(any());
+    doReturn(InputSetEntity.builder().yaml(inputSetYaml).build()).when(pmsInputSetService).create(any(), any(), any());
     InputSetYamlDTO inputSetYamlDTO = inputSetEntityGitSyncHelper.save(accountId, inputSetYaml);
-    verify(pmsInputSetService, times(1)).create(any());
+    verify(pmsInputSetService, times(1)).create(any(), any(), any());
     assertEquals(inputSetYamlDTO, YamlUtils.read(inputSetYaml, InputSetYamlDTO.class));
-    doReturn(null).when(validateAndMergeHelper).validateInputSet(any(), any(), any(), any(), any(), any(), any());
-    doReturn(null).when(validateAndMergeHelper).validateOverlayInputSet(any(), any(), any(), any(), any());
     inputSetEntityGitSyncHelper.save(accountId, overLayYaml);
-    verify(pmsInputSetService, times(2)).create(any());
+    verify(pmsInputSetService, times(2)).create(any(), any(), any());
   }
 
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testUpdate() throws IOException {
-    doReturn(InputSetEntity.builder().yaml(inputSetYaml).build()).when(pmsInputSetService).update(any(), any());
-    doReturn(null).when(validateAndMergeHelper).validateInputSet(any(), any(), any(), any(), any(), any(), any());
-    doReturn(null).when(validateAndMergeHelper).validateOverlayInputSet(any(), any(), any(), any(), any());
+    setupGitContext();
+    doReturn(InputSetEntity.builder().yaml(inputSetYaml).build())
+        .when(pmsInputSetService)
+        .update(any(), any(), any(), any());
     InputSetYamlDTO inputSetYamlDTO = inputSetEntityGitSyncHelper.update(accountId, inputSetYaml, ChangeType.NONE);
-    verify(pmsInputSetService, times(1)).update(any(), any());
+    verify(pmsInputSetService, times(1)).update(any(), any(), any(), any());
     assertEquals(inputSetYamlDTO, YamlUtils.read(inputSetYaml, InputSetYamlDTO.class));
   }
 
@@ -164,5 +166,13 @@ public class InputSetEntityGitSyncHelperTest extends CategoryTest {
     assertEquals(inputSetEntityGitSyncHelper.getYamlGitConfigRefKey(), InputSetEntityKeys.yamlGitConfigRef);
     assertEquals(inputSetEntityGitSyncHelper.getUuidKey(), InputSetEntityKeys.uuid);
     assertEquals(inputSetEntityGitSyncHelper.getBranchKey(), InputSetEntityKeys.branch);
+  }
+
+  private void setupGitContext() {
+    if (!GlobalContextManager.isAvailable()) {
+      GlobalContextManager.set(new GlobalContext());
+    }
+    GitEntityInfo gitEntityInfo = GitEntityInfo.builder().branch("someBranch").yamlGitConfigId("someRepoID").build();
+    GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(gitEntityInfo).build());
   }
 }

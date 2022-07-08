@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
@@ -27,14 +28,14 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("cdng.infra.beans.PdcInfrastructureOutcome")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.beans.PdcInfrastructureOutcome")
-public class PdcInfrastructureOutcome implements InfrastructureOutcome {
+public class PdcInfrastructureOutcome extends InfrastructureDetailsAbstract implements InfrastructureOutcome {
   String credentialsRef;
   List<String> hosts;
   String connectorRef;
   List<String> hostFilters;
   Map<String, String> attributeFilters;
 
-  EnvironmentOutcome environment;
+  @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
   String infrastructureKey;
 
   @Override

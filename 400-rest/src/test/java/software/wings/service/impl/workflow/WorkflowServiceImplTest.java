@@ -11,12 +11,15 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.rule.OwnerRule.AGORODETKI;
+import static io.harness.rule.OwnerRule.BUHA;
+import static io.harness.rule.OwnerRule.ERSHAD_MOHAMMAD;
 import static io.harness.rule.OwnerRule.MOUNIK;
 import static io.harness.rule.OwnerRule.PRABU;
 
 import static software.wings.beans.BasicOrchestrationWorkflow.BasicOrchestrationWorkflowBuilder.aBasicOrchestrationWorkflow;
 import static software.wings.beans.CanaryOrchestrationWorkflow.CanaryOrchestrationWorkflowBuilder.aCanaryOrchestrationWorkflow;
 import static software.wings.beans.PhaseStep.PhaseStepBuilder.aPhaseStep;
+import static software.wings.beans.PhaseStepType.PRE_DEPLOYMENT;
 import static software.wings.beans.PhaseStepType.VERIFY_SERVICE;
 import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
 import static software.wings.beans.WorkflowPhase.WorkflowPhaseBuilder.aWorkflowPhase;
@@ -32,6 +35,7 @@ import static software.wings.utils.WingsTestConstants.BUILD_NO;
 import static software.wings.utils.WingsTestConstants.ENV_ID;
 import static software.wings.utils.WingsTestConstants.ENV_ID_CHANGED;
 import static software.wings.utils.WingsTestConstants.HELM_CHART_ID;
+import static software.wings.utils.WingsTestConstants.INFRA_DEFINITION_ID;
 import static software.wings.utils.WingsTestConstants.MANIFEST_ID;
 import static software.wings.utils.WingsTestConstants.PHASE_ID;
 import static software.wings.utils.WingsTestConstants.PIPELINE_EXECUTION_ID;
@@ -50,6 +54,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -66,6 +72,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.limits.LimitEnforcementUtils;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -95,6 +102,7 @@ import software.wings.beans.appmanifest.StoreType;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.deployment.DeploymentMetadata;
+import software.wings.beans.stats.CloneMetadata;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ApplicationManifestService;
@@ -114,6 +122,7 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
@@ -142,6 +151,7 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
   @Mock private ServiceResourceService serviceResourceService;
   @Mock private PipelineService pipelineService;
   @InjectMocks @Inject private WorkflowService workflowService;
+  @Mock private WorkflowServiceHelper workflowServiceHelper;
   @Mock private Query<WorkflowExecution> query;
   @Mock private Query<StateMachine> stateMachineQuery;
   @Mock private Query<Workflow> workflowQuery;
@@ -1042,5 +1052,185 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
     assertThat(manifestVariable.getApplicationManifestSummary().get(0).getDefaultManifest()).isNull();
     assertThat(manifestVariable.getApplicationManifestSummary().get(1).getAppManifestId()).isEqualTo(MANIFEST_ID + 2);
     assertThat(manifestVariable.getApplicationManifestSummary().get(0).getAppManifestId()).isEqualTo(MANIFEST_ID);
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void shouldGenerateDefaultTerragruntRollbackProvisioner() {
+    Map<String, Object> properties = new HashMap<>();
+    properties.put("provisionerId", "some_provisioner_id");
+
+    PhaseStep phaseStep = aPhaseStep(PRE_DEPLOYMENT)
+                              .addAllSteps(Collections.singletonList(GraphNode.builder()
+                                                                         .name("Terragrunt provision step")
+                                                                         .type("TERRAGRUNT_PROVISION")
+                                                                         .properties(properties)
+                                                                         .build()))
+                              .build();
+    phaseStep.setName("Pre-deployment-step");
+
+    PhaseStep rollbackStep = workflowService.generateRollbackProvisioners(
+        phaseStep, PhaseStepType.ROLLBACK_PROVISIONERS, "Rollback provisioners");
+
+    assertThat(rollbackStep).isNotNull();
+    assertThat(rollbackStep.getName()).isEqualTo("Rollback provisioners");
+    assertThat(rollbackStep.isRollback()).isTrue();
+    assertThat(rollbackStep.getSteps()).isNotNull();
+    assertThat(rollbackStep.getSteps().size()).isEqualTo(1);
+
+    GraphNode defaultRollbackStep = rollbackStep.getSteps().get(0);
+    assertThat(defaultRollbackStep.isRollback()).isTrue();
+    assertThat(defaultRollbackStep.getType()).isEqualTo("TERRAGRUNT_ROLLBACK");
+    assertThat(defaultRollbackStep.getName()).isEqualTo("Rollback Terragrunt provision step");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void shouldNotGenerateTerragruntRollbackProvisionerWhenSkipDefaultRollbackIsTrue() {
+    Map<String, Object> properties = new HashMap<>();
+    properties.put("provisionerId", "some_provisioner_id");
+    properties.put("skipRollback", true);
+
+    PhaseStep phaseStep = aPhaseStep(PRE_DEPLOYMENT)
+                              .addAllSteps(Collections.singletonList(GraphNode.builder()
+                                                                         .name("Terragrunt provision step")
+                                                                         .type("TERRAGRUNT_PROVISION")
+                                                                         .properties(properties)
+                                                                         .build()))
+                              .build();
+    phaseStep.setName("Pre-deployment-step");
+
+    PhaseStep rollbackStep = workflowService.generateRollbackProvisioners(
+        phaseStep, PhaseStepType.ROLLBACK_PROVISIONERS, "Rollback provisioners");
+
+    assertThat(rollbackStep).isNotNull();
+    assertThat(rollbackStep.getName()).isEqualTo("Rollback provisioners");
+    assertThat(rollbackStep.isRollback()).isTrue();
+    assertThat(rollbackStep.getSteps()).isNotNull();
+    assertThat(rollbackStep.getSteps().isEmpty()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void shouldGenerateTerragruntRollbackProvisionerWhenSkipDefaultRollbackIsTrueInPlanAndNotSetInInheret() {
+    Map<String, Object> properties1 = new HashMap<>();
+    properties1.put("provisionerId", "some_provisioner_id");
+    properties1.put("runPlanOnly", true);
+
+    Map<String, Object> properties2 = new HashMap<>();
+    properties2.put("provisionerId", "some_provisioner_id");
+    properties2.put("inheritApprovedPlan", true);
+
+    PhaseStep phaseStep = aPhaseStep(PRE_DEPLOYMENT)
+                              .addAllSteps(asList(GraphNode.builder()
+                                                      .name("Terragrunt provision plan step")
+                                                      .type("TERRAGRUNT_PROVISION")
+                                                      .properties(properties1)
+                                                      .build(),
+                                  GraphNode.builder()
+                                      .name("Terragrunt provision apply step")
+                                      .type("TERRAGRUNT_PROVISION")
+                                      .properties(properties2)
+                                      .build()))
+                              .build();
+    phaseStep.setName("Pre-deployment-step");
+
+    PhaseStep rollbackStep = workflowService.generateRollbackProvisioners(
+        phaseStep, PhaseStepType.ROLLBACK_PROVISIONERS, "Rollback provisioners");
+
+    assertThat(rollbackStep).isNotNull();
+    assertThat(rollbackStep.getName()).isEqualTo("Rollback provisioners");
+    assertThat(rollbackStep.isRollback()).isTrue();
+    assertThat(rollbackStep.getSteps()).isNotNull();
+    assertThat(rollbackStep.getSteps().size()).isEqualTo(1);
+
+    GraphNode defaultRollbackStep = rollbackStep.getSteps().get(0);
+    assertThat(defaultRollbackStep.isRollback()).isTrue();
+    assertThat(defaultRollbackStep.getType()).isEqualTo("TERRAGRUNT_ROLLBACK");
+    assertThat(defaultRollbackStep.getName()).isEqualTo("Rollback Terragrunt provision apply step");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void shouldNotGenerateTerragruntRollbackProvisionerWhenSkipDefaultRollbackIsTrueInPlanAndNotSetInInheret() {
+    Map<String, Object> properties1 = new HashMap<>();
+    properties1.put("provisionerId", "some_provisioner_id");
+    properties1.put("runPlanOnly", true);
+    properties1.put("skipRollback", true);
+
+    Map<String, Object> properties2 = new HashMap<>();
+    properties2.put("provisionerId", "some_provisioner_id");
+    properties2.put("inheritApprovedPlan", true);
+
+    PhaseStep phaseStep = aPhaseStep(PRE_DEPLOYMENT)
+                              .addAllSteps(asList(GraphNode.builder()
+                                                      .name("Terragrunt provision plan step")
+                                                      .type("TERRAGRUNT_PROVISION")
+                                                      .properties(properties1)
+                                                      .build(),
+                                  GraphNode.builder()
+                                      .name("Terragrunt provision apply step")
+                                      .type("TERRAGRUNT_PROVISION")
+                                      .properties(properties2)
+                                      .build()))
+                              .build();
+    phaseStep.setName("Pre-deployment-step");
+
+    PhaseStep rollbackStep = workflowService.generateRollbackProvisioners(
+        phaseStep, PhaseStepType.ROLLBACK_PROVISIONERS, "Rollback provisioners");
+
+    assertThat(rollbackStep).isNotNull();
+    assertThat(rollbackStep.getName()).isEqualTo("Rollback provisioners");
+    assertThat(rollbackStep.isRollback()).isTrue();
+    assertThat(rollbackStep.getSteps()).isNotNull();
+    assertThat(rollbackStep.getSteps().isEmpty()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = ERSHAD_MOHAMMAD)
+  @Category(UnitTests.class)
+  public void cloneWorkflowShouldHaveEmptyServiceIdsForPhasesWhenClonedToDifferentApp() {
+    WorkflowServiceImpl workflowServiceImpl = (WorkflowServiceImpl) workflowService;
+    WorkflowPhase workflowPhase =
+        aWorkflowPhase().uuid(PHASE_ID).serviceId(SERVICE_ID).infraDefinitionId(INFRA_DEFINITION_ID).build();
+    CanaryOrchestrationWorkflow canaryOrchestrationWorkflow =
+        aCanaryOrchestrationWorkflow().addWorkflowPhase(workflowPhase).build();
+    Workflow oldWorkflow = aWorkflow()
+                               .name(WORKFLOW_NAME)
+                               .uuid(WORKFLOW_ID)
+                               .accountId(ACCOUNT_ID)
+                               .appId(APP_ID)
+                               .orchestrationWorkflow(canaryOrchestrationWorkflow)
+                               .build();
+    Workflow newWorkflow = aWorkflow().name("Cloned").uuid(WORKFLOW_ID).accountId(ACCOUNT_ID).appId("NewApp").build();
+
+    Map<String, String> serviceMappings = new HashMap<>();
+
+    CloneMetadata cloneMetadata =
+        CloneMetadata.builder().workflow(newWorkflow).serviceMapping(serviceMappings).targetAppId("NewApp").build();
+    doNothing().when(workflowServiceHelper).validateServiceMapping(any(), any(), any());
+    mockStatic(LimitEnforcementUtils.class)
+        .when(() -> LimitEnforcementUtils.withLimitCheck(any(), any()))
+        .thenReturn(newWorkflow);
+    when(wingsPersistence.createUpdateOperations(Workflow.class)).thenReturn(updateOperations);
+    when(wingsPersistence.getWithAppId(any(), anyString(), anyString())).thenReturn(newWorkflow);
+    when(wingsPersistence.createQuery(StateMachine.class)).thenReturn(stateMachineQuery);
+    when(stateMachineQuery.filter(anyString(), any())).thenReturn(stateMachineQuery);
+    when(wingsPersistence.createQuery(Workflow.class)).thenReturn(workflowQuery);
+    when(workflowQuery.filter(anyString(), any())).thenReturn(workflowQuery);
+    when(wingsPersistence.createUpdateOperations(Workflow.class)).thenReturn(updateOperations);
+    when(updateOperations.set(anyString(), any())).thenReturn(updateOperations);
+    Workflow updatedWorkFLow = workflowServiceImpl.cloneWorkflow(APP_ID, oldWorkflow, cloneMetadata);
+
+    CanaryOrchestrationWorkflow canaryWorkflow =
+        (CanaryOrchestrationWorkflow) updatedWorkFLow.getOrchestrationWorkflow();
+    canaryWorkflow.getWorkflowPhases().forEach(updatedWorkflowPhase -> {
+      assertThat(updatedWorkflowPhase.getInfraDefinitionId()).isNull();
+      assertThat(updatedWorkflowPhase.getServiceId()).isNull();
+    });
   }
 }

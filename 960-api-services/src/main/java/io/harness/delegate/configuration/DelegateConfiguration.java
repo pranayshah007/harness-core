@@ -60,6 +60,23 @@ public class DelegateConfiguration {
   private boolean installClientToolsInBackground;
   private boolean dynamicHandlingOfRequestEnabled;
 
+  private String clientCertificateFilePath;
+  private String clientCertificateKeyFilePath;
+
+  /*
+   * If true, the delegate will send the unmodified authority in grpc calls instead of a service specific authority.
+   *
+   * Note: This setting is used for delegates connecting via the delegate-gateway and can be removed after migration.
+   */
+  private boolean grpcAuthorityModificationDisabled;
+
+  /*
+   * If true, the delegate doesn't verify the certificate of the SAAS endpoint.
+   *
+   * Note: This setting is meant for development only.
+   */
+  private boolean trustAllCertificates;
+
   // TODO: This method will get removed once we rolled out new delegate.
   public String getDelegateToken() {
     if (StringUtils.isEmpty(delegateToken)) {

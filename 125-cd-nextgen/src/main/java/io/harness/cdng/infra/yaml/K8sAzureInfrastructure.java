@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.infra.beans.InfraMapping;
+import io.harness.cdng.infra.beans.InfrastructureDetailsAbstract;
 import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
@@ -24,6 +25,7 @@ import io.harness.walktree.visitor.Visitable;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.annotations.ApiParam;
 import java.util.HashMap;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -41,7 +43,8 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("k8sAzureInfrastructure")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.yaml.K8sAzureInfrastructure")
-public class K8sAzureInfrastructure implements Infrastructure, Visitable, WithConnectorRef {
+public class K8sAzureInfrastructure
+    extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef {
   @NotNull
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
@@ -73,6 +76,10 @@ public class K8sAzureInfrastructure implements Infrastructure, Visitable, WithCo
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Wither
   ParameterField<String> resourceGroup;
+  @ApiParam(defaultValue = "false")
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @Wither
+  ParameterField<Boolean> useClusterAdminCredentials;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
@@ -84,6 +91,7 @@ public class K8sAzureInfrastructure implements Infrastructure, Visitable, WithCo
         .cluster(cluster.getValue())
         .subscription(subscriptionId.getValue())
         .resourceGroup(resourceGroup.getValue())
+        .useClusterAdminCredentials(useClusterAdminCredentials.getValue())
         .build();
   }
 
@@ -124,6 +132,9 @@ public class K8sAzureInfrastructure implements Infrastructure, Visitable, WithCo
     }
     if (!ParameterField.isNull(config.getResourceGroup())) {
       resultantInfra = resultantInfra.withResourceGroup(config.getResourceGroup());
+    }
+    if (!ParameterField.isNull(config.getUseClusterAdminCredentials())) {
+      resultantInfra = resultantInfra.withUseClusterAdminCredentials(config.getUseClusterAdminCredentials());
     }
     return resultantInfra;
   }

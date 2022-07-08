@@ -137,6 +137,9 @@ public class Instance {
   private String infrastructureKind;
   private String connectorRef;
 
+  private String infraIdentifier;
+  private String infraName;
+
   private ArtifactDetails primaryArtifact;
 
   private String lastDeployedById;

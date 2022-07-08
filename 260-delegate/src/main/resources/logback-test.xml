@@ -50,6 +50,7 @@
 
     <logger name="software.wings" level="INFO"/>
     <logger name="org.zeroturnaround" level="WARN"/>
+    <logger name="io.harness.pcf" level="${LOGGING_LEVEL_PCF:-INFO}"/>
     <logger name="io.harness.event.client.impl" level="${LOGGING_LEVEL_EVENT_CLIENT:-INFO}"/>
 
     // todo(avmohan): Temporarily added till we root cause the high frequency logging issue

@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.filter.FilterConstants.DELEGATE_FILTER;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterPropertiesDTO;
 
@@ -38,7 +37,7 @@ import lombok.experimental.FieldDefaults;
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(DEL)
 public class DelegateFilterPropertiesDTO extends FilterPropertiesDTO {
-  private DelegateInstanceStatus status;
+  private DelegateInstanceConnectivityStatus status;
   private String description;
   private String hostName;
   private String delegateName;

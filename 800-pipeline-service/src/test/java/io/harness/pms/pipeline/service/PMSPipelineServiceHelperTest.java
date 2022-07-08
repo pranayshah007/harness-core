@@ -77,7 +77,7 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     pmsPipelineServiceHelper = new PMSPipelineServiceHelper(filterService, filterCreatorMergeService, null, null, null,
-        jsonExpander, expansionRequestsExtractor, pmsFeatureFlagService, gitSyncHelper, telemetryReporter);
+        jsonExpander, expansionRequestsExtractor, pmsFeatureFlagService, gitSyncHelper, telemetryReporter, null);
   }
 
   @Test

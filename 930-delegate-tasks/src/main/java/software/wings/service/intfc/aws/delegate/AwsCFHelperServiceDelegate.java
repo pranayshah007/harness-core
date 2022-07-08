@@ -34,4 +34,6 @@ public interface AwsCFHelperServiceDelegate {
   List<String> getCapabilities(AwsInternalConfig awsConfig, String region, String data, String templateType);
 
   String normalizeS3TemplatePath(String s3Path);
+
+  String getPhysicalIdBasedOnLogicalId(AwsInternalConfig awsConfig, String region, String stackName, String logicalId);
 }

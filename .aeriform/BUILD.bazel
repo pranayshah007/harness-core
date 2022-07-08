@@ -196,10 +196,6 @@ aeriform("//840-template-service:module")
 
 aeriform("//840-template-service:tests")
 
-aeriform("//860-orchestration-steps:module")
-
-aeriform("//860-orchestration-steps:tests")
-
 aeriform("//860-orchestration-visualization:module")
 
 aeriform("//860-orchestration-visualization:tests")
@@ -231,6 +227,10 @@ aeriform("//878-ng-common-utilities:tests")
 aeriform("//879-pms-sdk:module")
 
 aeriform("//879-pms-sdk:tests")
+
+aeriform("//880-pipeline-cd-commons:module")
+
+aeriform("//880-pipeline-cd-commons:tests")
 
 aeriform("//882-pms-sdk-core:module")
 
@@ -287,6 +287,8 @@ aeriform("//930-ng-license-manager:module")
 aeriform("//930-ng-license-manager:tests")
 
 aeriform("//932-connector-task:module")
+
+aeriform("//933-scm-commons:module")
 
 aeriform("//935-analyser-service:module")
 

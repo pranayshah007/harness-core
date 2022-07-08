@@ -20,9 +20,13 @@ import lombok.Value;
 @Value
 @Builder
 public class HarnessStoreDTO {
-  List<HarnessStoreFile> files;
+  List<String> files;
+  List<String> secretFiles;
 
   public HarnessStore toHarnessStore() {
-    return HarnessStore.builder().files(ParameterField.createValueField(files)).build();
+    return HarnessStore.builder()
+        .files(ParameterField.createValueField(files))
+        .secretFiles(ParameterField.createValueField(secretFiles))
+        .build();
   }
 }

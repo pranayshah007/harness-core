@@ -187,7 +187,6 @@ public class InfraVariableCreator {
     addVariableForYamlType(YamlTypes.RESOURCE_GROUP, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.APP_SERVICE, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.DEPLOYMENT_SLOT, infraSpecNode, yamlPropertiesMap);
-    addVariableForYamlType(YamlTypes.TARGET_SLOT, infraSpecNode, yamlPropertiesMap);
   }
 
   private static void addVariablesForPhysicalDataCenterInfra(

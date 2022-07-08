@@ -16,8 +16,8 @@ import com.mongodb.client.result.DeleteResult;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.domain.Page;
 
 @OwnedBy(GITOPS)
@@ -40,11 +40,10 @@ public interface ClusterService {
   Cluster create(@NotNull Cluster Cluster);
 
   /**
-   * @param accountId  the account id
    * @param entities cluster entities to be bulk created
-   * @return  clusters created
+   * @return number of clusters linked
    */
-  @NotNull Page<Cluster> bulkCreate(@NotEmpty String accountId, @NotNull List<Cluster> entities);
+  long bulkCreate(@NotNull List<Cluster> entities);
 
   /**
    * @param accountId  the account id

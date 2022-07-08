@@ -11,10 +11,13 @@ import static io.harness.beans.execution.WebhookEvent.Type.BRANCH;
 import static io.harness.beans.execution.WebhookEvent.Type.PR;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
-import static io.harness.common.CIExecutionConstants.AZURE_REPO_BASE_URL;
-import static io.harness.common.CIExecutionConstants.GIT_URL_SUFFIX;
-import static io.harness.common.CIExecutionConstants.IMAGE_PATH_SPLIT_REGEX;
-import static io.harness.common.CIExecutionConstants.PATH_SEPARATOR;
+import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_DIRECT;
+import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_HOSTED;
+import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.VM;
+import static io.harness.ci.commonconstants.CIExecutionConstants.AZURE_REPO_BASE_URL;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_URL_SUFFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.IMAGE_PATH_SPLIT_REGEX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
@@ -42,12 +45,21 @@ import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.pipeline.executions.beans.CIImageDetails;
+import io.harness.ci.pipeline.executions.beans.CIInfraDetails;
+import io.harness.ci.pipeline.executions.beans.CIScmDetails;
+import io.harness.ci.pipeline.executions.beans.TIBuildDetails;
+import io.harness.ci.states.RunStep;
+import io.harness.ci.states.RunTestsStep;
+import io.harness.ci.utils.WebhookTriggerProcessorUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
@@ -63,12 +75,14 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.git.GitClientHelper;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
+import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.TriggerType;
@@ -77,9 +91,6 @@ import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.stateutils.buildstate.CodebaseUtils;
-import io.harness.stateutils.buildstate.ConnectorUtils;
-import io.harness.util.WebhookTriggerProcessorUtils;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
@@ -103,6 +114,9 @@ public class IntegrationStageUtils {
   private static final String BRANCH_EXPRESSION = "<+trigger.branch>";
   public static final String PR_EXPRESSION = "<+trigger.prNumber>";
 
+  private static final String HARNESS_HOSTED = "Harness Hosted";
+  private static final String SELF_HOSTED = "Self Hosted";
+
   public IntegrationStageConfig getIntegrationStageConfig(StageElementConfig stageElementConfig) {
     return (IntegrationStageConfig) stageElementConfig.getStageType();
   }
@@ -118,6 +132,14 @@ public class IntegrationStageUtils {
   public StepElementConfig getStepElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
     try {
       return YamlUtils.read(executionWrapperConfig.getStep().toString(), StepElementConfig.class);
+    } catch (Exception ex) {
+      throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
+    }
+  }
+
+  public StepGroupElementConfig getStepGroupElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
+    try {
+      return YamlUtils.read(executionWrapperConfig.getStepGroup().toString(), StepGroupElementConfig.class);
     } catch (Exception ex) {
       throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
     }
@@ -293,7 +315,7 @@ public class IntegrationStageUtils {
       String repoName = ciCodebase.getRepoName().getValue();
 
       if (isNotEmpty(projectName) && url.contains(AZURE_REPO_BASE_URL)) {
-        gitUrl = CodebaseUtils.getCompleteUrlForAccountLevelAzureConnector(url, projectName, repoName);
+        gitUrl = GitClientHelper.getCompleteUrlForAccountLevelAzureConnector(url, projectName, repoName);
       } else {
         gitUrl = StringUtils.join(StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR,
             StringUtils.stripStart(repoName, PATH_SEPARATOR));
@@ -361,6 +383,79 @@ public class IntegrationStageUtils {
     }
 
     return null;
+  }
+
+  public static List<StepElementConfig> getAllSteps(List<ExecutionWrapperConfig> executionWrapperConfigs) {
+    List<StepElementConfig> stepElementConfigs = new ArrayList<>();
+
+    if (executionWrapperConfigs == null) {
+      return stepElementConfigs;
+    }
+
+    for (ExecutionWrapperConfig executionWrapper : executionWrapperConfigs) {
+      if (executionWrapper == null) {
+        continue;
+      }
+
+      if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
+        stepElementConfigs.add(getStepElementConfig(executionWrapper));
+      } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
+        ParallelStepElementConfig parallelStepElementConfig = getParallelStepElementConfig(executionWrapper);
+        List<StepElementConfig> fromParallel = getAllSteps(parallelStepElementConfig.getSections());
+        stepElementConfigs.addAll(fromParallel);
+      } else if (executionWrapper.getStepGroup() != null && !executionWrapper.getStepGroup().isNull()) {
+        StepGroupElementConfig stepGroupElementConfig = getStepGroupElementConfig(executionWrapper);
+        List<StepElementConfig> fromStepGroup = getAllSteps(stepGroupElementConfig.getSteps());
+        stepElementConfigs.addAll(fromStepGroup);
+      }
+    }
+    return stepElementConfigs;
+  }
+
+  public static List<TIBuildDetails> getTiBuildDetails(InitializeStepInfo initializeStepInfo) {
+    List<TIBuildDetails> tiBuildDetailsList = new ArrayList<>();
+    List<StepElementConfig> stepElementConfigs = getAllSteps(initializeStepInfo.getExecutionElementConfig().getSteps());
+
+    for (StepElementConfig stepElementConfig : stepElementConfigs) {
+      if (!(stepElementConfig.getStepSpecType() instanceof CIStepInfo)) {
+        continue;
+      }
+      CIStepInfo ciStepInfo = (CIStepInfo) stepElementConfig.getStepSpecType();
+      if (ciStepInfo.getStepType() == RunTestsStep.STEP_TYPE) {
+        RunTestsStepInfo runTestsStepInfo = (RunTestsStepInfo) ciStepInfo;
+        TIBuildDetails tiBuildDetails = TIBuildDetails.builder()
+                                            .buildTool(runTestsStepInfo.getBuildTool().getValue().getYamlName())
+                                            .language(runTestsStepInfo.getLanguage().getValue().getYamlName())
+                                            .build();
+        tiBuildDetailsList.add(tiBuildDetails);
+      }
+    }
+    return tiBuildDetailsList;
+  }
+
+  public static List<CIImageDetails> getCiImageDetails(InitializeStepInfo initializeStepInfo) {
+    List<CIImageDetails> imageDetailsList = new ArrayList<>();
+    List<StepElementConfig> stepElementConfigs = getAllSteps(initializeStepInfo.getExecutionElementConfig().getSteps());
+
+    for (StepElementConfig stepElementConfig : stepElementConfigs) {
+      if (!(stepElementConfig.getStepSpecType() instanceof CIStepInfo)) {
+        continue;
+      }
+      CIStepInfo ciStepInfo = (CIStepInfo) stepElementConfig.getStepSpecType();
+      if (ciStepInfo.getStepType() == RunStep.STEP_TYPE) {
+        imageDetailsList.add(getCiImageDetails(((RunStepInfo) ciStepInfo).getImage().getValue()));
+      } else if (ciStepInfo.getStepType() == RunTestsStep.STEP_TYPE) {
+        imageDetailsList.add(getCiImageDetails(((RunTestsStepInfo) ciStepInfo).getImage().getValue()));
+      } else if (ciStepInfo.getStepType() == PluginStepInfo.STEP_TYPE) {
+        imageDetailsList.add(getCiImageDetails(((PluginStepInfo) ciStepInfo).getImage().getValue()));
+      }
+    }
+    return imageDetailsList;
+  }
+
+  public CIImageDetails getCiImageDetails(String image) {
+    ImageDetails imagedetails = getImageInfo(image);
+    return CIImageDetails.builder().imageName(imagedetails.getName()).imageTag(imagedetails.getTag()).build();
   }
 
   public ImageDetails getImageInfo(String image) {
@@ -464,9 +559,9 @@ public class IntegrationStageUtils {
     return resolveOSType(k8sDirectInfraYaml.getSpec().getOs());
   }
 
-  public List<String> getStageConnectorRefs(IntegrationStageConfig integrationStageConfig) {
+  public ArrayList<String> populateConnectorIdentifiers(List<ExecutionWrapperConfig> wrappers) {
     ArrayList<String> connectorIdentifiers = new ArrayList<>();
-    for (ExecutionWrapperConfig executionWrapper : integrationStageConfig.getExecution().getSteps()) {
+    for (ExecutionWrapperConfig executionWrapper : wrappers) {
       if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
         StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
         String identifier = getConnectorIdentifier(stepElementConfig);
@@ -477,20 +572,30 @@ public class IntegrationStageUtils {
         ParallelStepElementConfig parallelStepElementConfig =
             IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
         if (isNotEmpty(parallelStepElementConfig.getSections())) {
-          for (ExecutionWrapperConfig executionWrapperInParallel : parallelStepElementConfig.getSections()) {
-            if (executionWrapperInParallel.getStep() == null || executionWrapperInParallel.getStep().isNull()) {
-              continue;
-            }
-            StepElementConfig stepElementConfig =
-                IntegrationStageUtils.getStepElementConfig(executionWrapperInParallel);
-            String identifier = getConnectorIdentifier(stepElementConfig);
-            if (identifier != null) {
-              connectorIdentifiers.add(identifier);
-            }
+          ArrayList<String> connectorIdentifiersForParallel =
+              populateConnectorIdentifiers(parallelStepElementConfig.getSections());
+          if (connectorIdentifiersForParallel != null && connectorIdentifiersForParallel.size() > 0) {
+            connectorIdentifiers.addAll(connectorIdentifiersForParallel);
+          }
+        }
+      } else {
+        StepGroupElementConfig stepGroupElementConfig =
+            IntegrationStageUtils.getStepGroupElementConfig(executionWrapper);
+        if (isNotEmpty(stepGroupElementConfig.getSteps())) {
+          ArrayList<String> connectorIdentifiersForStepGroup =
+              populateConnectorIdentifiers(stepGroupElementConfig.getSteps());
+          if (connectorIdentifiersForStepGroup != null && connectorIdentifiersForStepGroup.size() > 0) {
+            connectorIdentifiers.addAll(connectorIdentifiersForStepGroup);
           }
         }
       }
     }
+    return connectorIdentifiers;
+  }
+
+  public List<String> getStageConnectorRefs(IntegrationStageConfig integrationStageConfig) {
+    ArrayList<String> connectorIdentifiers = new ArrayList<>();
+    connectorIdentifiers = populateConnectorIdentifiers(integrationStageConfig.getExecution().getSteps());
 
     if (integrationStageConfig.getServiceDependencies() == null
         || isEmpty(integrationStageConfig.getServiceDependencies().getValue())) {
@@ -553,5 +658,32 @@ public class IntegrationStageUtils {
       }
     }
     return null;
+  }
+
+  public static CIInfraDetails getCiInfraDetails(Infrastructure infrastructure) {
+    String infraType = infrastructure.getType().getYamlName();
+    String infraOSType = null;
+    String infraHostType = null;
+
+    if (infrastructure.getType() == KUBERNETES_DIRECT) {
+      infraOSType = getK8OS(infrastructure).toString();
+      infraHostType = SELF_HOSTED;
+    } else if (infrastructure.getType() == VM) {
+      infraOSType = VmInitializeStepUtils.getVmOS(infrastructure).toString();
+      infraHostType = SELF_HOSTED;
+    } else if (infrastructure.getType() == KUBERNETES_HOSTED) {
+      infraOSType = getK8OS(infrastructure).toString();
+      infraHostType = HARNESS_HOSTED;
+    }
+
+    return CIInfraDetails.builder().infraType(infraType).infraOSType(infraOSType).infraHostType(infraHostType).build();
+  }
+
+  public static CIScmDetails getCiScmDetails(ConnectorUtils connectorUtils, ConnectorDetails connectorDetails) {
+    return CIScmDetails.builder()
+        .scmProvider(connectorDetails.getConnectorType().getDisplayName())
+        .scmAuthType(connectorUtils.getScmAuthType(connectorDetails))
+        .scmHostType(connectorUtils.getScmHostType(connectorDetails))
+        .build();
   }
 }

@@ -29,7 +29,6 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.k8s.beans.K8sBlueGreenHandlerConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
@@ -188,15 +187,15 @@ public class K8sBGBaseHandler {
   }
 
   public List<KubernetesResourceId> pruneForBg(K8sDelegateTaskParams k8sDelegateTaskParams,
-      LogCallback executionLogCallback, K8sBlueGreenHandlerConfig k8sBlueGreenHandlerConfig) {
+      LogCallback executionLogCallback, String primaryColor, String stageColor, PrePruningInfo prePruningInfo,
+      Release currentRelease, Kubectl client) {
     // Todo: Investigate when this case is possible
     try {
-      if (StringUtils.equals(k8sBlueGreenHandlerConfig.getPrimaryColor(), k8sBlueGreenHandlerConfig.getStageColor())) {
+      if (StringUtils.equals(primaryColor, stageColor)) {
         executionLogCallback.saveExecutionLog("Primary and secondary service are at same color, No pruning required.");
         return emptyList();
       }
-      ReleaseHistory oldReleaseHistory =
-          k8sBlueGreenHandlerConfig.getPrePruningInfo().getReleaseHistoryBeforeStageCleanUp();
+      ReleaseHistory oldReleaseHistory = prePruningInfo.getReleaseHistoryBeforeStageCleanUp();
 
       if (oldReleaseHistory == null || isEmpty(oldReleaseHistory.getReleases())) {
         executionLogCallback.saveExecutionLog(
@@ -204,28 +203,23 @@ public class K8sBGBaseHandler {
         return emptyList();
       }
 
-      executionLogCallback.saveExecutionLog(
-          "Primary Service is at color: " + encodeColor(k8sBlueGreenHandlerConfig.getPrimaryColor()));
-      executionLogCallback.saveExecutionLog(
-          "Stage Service is at color: " + encodeColor(k8sBlueGreenHandlerConfig.getStageColor()));
+      executionLogCallback.saveExecutionLog("Primary Service is at color: " + encodeColor(primaryColor));
+      executionLogCallback.saveExecutionLog("Stage Service is at color: " + encodeColor(stageColor));
       executionLogCallback.saveExecutionLog("Pruning up resources in non primary releases");
 
-      Set<KubernetesResourceId> resourcesUsedInPrimaryReleases = getResourcesUsedInPrimaryReleases(oldReleaseHistory,
-          k8sBlueGreenHandlerConfig.getCurrentRelease(), k8sBlueGreenHandlerConfig.getPrimaryColor());
-      Set<KubernetesResourceId> resourcesInCurrentRelease =
-          new HashSet<>(k8sBlueGreenHandlerConfig.getCurrentRelease().getResources());
-      Set<KubernetesResourceId> alreadyDeletedResources =
-          new HashSet<>(k8sBlueGreenHandlerConfig.getPrePruningInfo().getDeletedResourcesInStage());
+      Set<KubernetesResourceId> resourcesUsedInPrimaryReleases =
+          getResourcesUsedInPrimaryReleases(oldReleaseHistory, currentRelease, primaryColor);
+      Set<KubernetesResourceId> resourcesInCurrentRelease = new HashSet<>(currentRelease.getResources());
+      Set<KubernetesResourceId> alreadyDeletedResources = new HashSet<>(prePruningInfo.getDeletedResourcesInStage());
       List<KubernetesResourceId> resourcesPruned = new ArrayList<>();
 
       for (int releaseIndex = oldReleaseHistory.getReleases().size() - 1; releaseIndex >= 0; releaseIndex--) {
         // deleting resources per release seems safer and more accountable
         Release release = oldReleaseHistory.getReleases().get(releaseIndex);
-        if (isReleaseAssociatedWithStage(
-                k8sBlueGreenHandlerConfig.getStageColor(), k8sBlueGreenHandlerConfig.getCurrentRelease(), release)) {
-          List<KubernetesResourceId> resourcesDeleted = pruneInternalForStageRelease(k8sDelegateTaskParams,
-              executionLogCallback, k8sBlueGreenHandlerConfig.getClient(), resourcesUsedInPrimaryReleases,
-              resourcesInCurrentRelease, alreadyDeletedResources, release);
+        if (isReleaseAssociatedWithStage(stageColor, currentRelease, release)) {
+          List<KubernetesResourceId> resourcesDeleted =
+              pruneInternalForStageRelease(k8sDelegateTaskParams, executionLogCallback, client,
+                  resourcesUsedInPrimaryReleases, resourcesInCurrentRelease, alreadyDeletedResources, release);
           resourcesPruned.addAll(resourcesDeleted);
           // to handle the case where multiple stage releases have same undesired resources for current release
           alreadyDeletedResources.addAll(resourcesDeleted);

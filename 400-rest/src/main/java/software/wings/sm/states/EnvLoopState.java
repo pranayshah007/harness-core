@@ -15,6 +15,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.ExecutionStatusResponseData;
 import io.harness.beans.RepairActionCode;
+import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
 import io.harness.tasks.ResponseData;
 
@@ -35,6 +36,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,6 +93,23 @@ public class EnvLoopState extends State implements WorkflowState {
     ForkStateExecutionData forkStateExecutionData = new ForkStateExecutionData();
     List<String> forkStateNames = new ArrayList<>();
     forkStateExecutionData.setElements(new ArrayList<>());
+    if (loopedValues.size() == 1 && ExpressionEvaluator.matchesVariablePattern(loopedValues.get(0))
+        && loopedValues.get(0).contains(".")) {
+      String resolvedValue = context.renderExpression(loopedValues.get(0));
+      if (resolvedValue == null || resolvedValue.equals(loopedValues.get(0))) {
+        forkStateExecutionData.setStateType(StateType.ENV_LOOP_STATE.name());
+        forkStateExecutionData.setForkStateNames(Collections.singletonList(getName()));
+        return executionResponseBuilder.stateExecutionData(forkStateExecutionData)
+            .async(false)
+            .executionStatus(ExecutionStatus.FAILED)
+            .errorMessage(
+                "The expression " + loopedValues.get(0) + " provided for the variable doesn't resolve to a valid value")
+            .build();
+      }
+      loopedValues = new ArrayList<>();
+      loopedValues.addAll(Arrays.asList(resolvedValue.trim().split("\\s*,\\s*")));
+    }
+
     int i = 1;
     for (String loopedValue : loopedValues) {
       String state = getName() + "_" + i;

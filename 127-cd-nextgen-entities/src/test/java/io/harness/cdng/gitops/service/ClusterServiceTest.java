@@ -1,15 +1,21 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.gitops.service;
 
 import static io.harness.rule.OwnerRule.YOGESH;
+
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGEntitiesTestBase;
-import io.harness.cdng.gitops.ClusterServiceImpl;
 import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.repositories.gitops.spring.ClusterRepository;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -17,11 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.joor.Reflect;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.springframework.data.domain.Page;
 
 public class ClusterServiceTest extends CDNGEntitiesTestBase {
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -29,13 +32,7 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
   private static final String PROJECT_ID = "PROJECT_ID";
   private static final String ENV_ID = "ENV_ID";
 
-  @Inject private ClusterRepository clusterRepository;
-  private ClusterService clusterService = new ClusterServiceImpl(null);
-
-  @Before
-  public void setUp() throws Exception {
-    Reflect.on(clusterService).set("clusterRepository", clusterRepository);
-  }
+  @Inject private ClusterService clusterService;
 
   @Test
   @Owner(developers = YOGESH)
@@ -55,11 +52,12 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testBulkCreate() {
-    Page<Cluster> clusters =
-        clusterService.bulkCreate(ACCOUNT_ID, asList(getCluster("c1"), getCluster("c2"), getCluster("c3")));
-    assertThat(clusters.getTotalElements()).isEqualTo(3);
-    assertThat(clusters.stream().map(Cluster::getClusterRef).collect(Collectors.toSet()))
-        .containsExactlyInAnyOrder("c1", "c2", "c3");
+    assertThat(clusterService.bulkCreate(asList(getCluster("c1"), getCluster("c2"), getCluster("c3")))).isEqualTo(3);
+    assertThat(
+        clusterService.bulkCreate(asList(getCluster("c1"), getCluster("c2"), getCluster("c3"), getCluster("c4"))))
+        // In memory mongo  does not have indexes, hence we do not get duplicate key exceptions. In real mongo, this
+        // value should be 1
+        .isEqualTo(4);
   }
   @Test
   @Owner(developers = YOGESH)
@@ -76,9 +74,9 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testDeleteFromAllEnv() {
-    clusterService.bulkCreate(ACCOUNT_ID,
+    clusterService.bulkCreate(
         asList(getClusterForEnv("env1", "a1"), getClusterForEnv("env1", "a2"), getClusterForEnv("env1", "a3")));
-    clusterService.bulkCreate(ACCOUNT_ID,
+    clusterService.bulkCreate(
         asList(getClusterForEnv("env2", "a1"), getClusterForEnv("env2", "a2"), getClusterForEnv("env2", "a3")));
 
     clusterService.deleteFromAllEnv(ACCOUNT_ID, ORG_ID, PROJECT_ID, "a1");
@@ -100,9 +98,9 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testDeleteAllFromEnv() {
-    clusterService.bulkCreate(ACCOUNT_ID,
+    clusterService.bulkCreate(
         asList(getClusterForEnv("env1", "a1"), getClusterForEnv("env1", "a2"), getClusterForEnv("env1", "a3")));
-    clusterService.bulkCreate(ACCOUNT_ID,
+    clusterService.bulkCreate(
         asList(getClusterForEnv("env2", "a1"), getClusterForEnv("env2", "a2"), getClusterForEnv("env2", "a3")));
 
     clusterService.deleteAllFromEnv(ACCOUNT_ID, ORG_ID, PROJECT_ID, "env2");
@@ -116,9 +114,9 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testDeleteAllFromProj() {
-    clusterService.bulkCreate(ACCOUNT_ID,
+    clusterService.bulkCreate(
         asList(getClusterForEnv("env1", "y1"), getClusterForEnv("env1", "y2"), getClusterForEnv("env1", "y3")));
-    clusterService.bulkCreate(ACCOUNT_ID,
+    clusterService.bulkCreate(
         asList(getClusterForEnv("env2", "z1"), getClusterForEnv("env2", "z2"), getClusterForEnv("env2", "z3")));
 
     clusterService.deleteAllFromProj(ACCOUNT_ID, ORG_ID, PROJECT_ID);
@@ -132,9 +130,9 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testList() {
-    clusterService.bulkCreate(ACCOUNT_ID,
+    clusterService.bulkCreate(
         asList(getClusterForEnv("env1", "t1"), getClusterForEnv("env1", "t2"), getClusterForEnv("env1", "t13")));
-    clusterService.bulkCreate(ACCOUNT_ID,
+    clusterService.bulkCreate(
         asList(getClusterForEnv("env2", "t1"), getClusterForEnv("env2", "t2"), getClusterForEnv("env2", "t3")));
 
     assertThat(

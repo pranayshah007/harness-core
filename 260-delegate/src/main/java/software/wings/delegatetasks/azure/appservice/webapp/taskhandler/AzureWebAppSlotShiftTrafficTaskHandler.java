@@ -7,12 +7,6 @@
 
 package software.wings.delegatetasks.azure.appservice.webapp.taskhandler;
 
-import static io.harness.azure.model.AzureConstants.SHIFT_TRAFFIC_SLOT_NAME_BLANK_ERROR_MSG;
-import static io.harness.azure.model.AzureConstants.TRAFFIC_WEIGHT_IN_PERCENTAGE_INVALID_ERROR_MSG;
-import static io.harness.azure.model.AzureConstants.WEB_APP_NAME_BLANK_ERROR_MSG;
-
-import static org.apache.commons.lang3.StringUtils.isBlank;
-
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.azure.context.AzureWebClientContext;
@@ -23,7 +17,6 @@ import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskResponse;
 import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppSlotShiftTrafficParameters;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlotShiftTrafficResponse;
-import io.harness.exception.InvalidArgumentsException;
 
 import software.wings.delegatetasks.azure.appservice.webapp.AbstractAzureWebAppTaskHandler;
 
@@ -34,7 +27,11 @@ public class AzureWebAppSlotShiftTrafficTaskHandler extends AbstractAzureWebAppT
       AzureConfig azureConfig, ILogStreamingTaskClient logStreamingTaskClient) {
     AzureWebAppSlotShiftTrafficParameters slotShiftTrafficParameters =
         (AzureWebAppSlotShiftTrafficParameters) azureAppServiceTaskParameters;
-    validateSlotShiftTrafficParameters(slotShiftTrafficParameters);
+
+    String webAppName = slotShiftTrafficParameters.getAppName();
+    String deploymentSlot = slotShiftTrafficParameters.getDeploymentSlot();
+    double trafficPercent = slotShiftTrafficParameters.getTrafficWeightInPercentage();
+    azureAppServiceResourceUtilities.validateSlotShiftTrafficParameters(webAppName, deploymentSlot, trafficPercent);
 
     AzureWebClientContext webClientContext = buildAzureWebClientContext(slotShiftTrafficParameters, azureConfig);
 
@@ -44,23 +41,6 @@ public class AzureWebAppSlotShiftTrafficTaskHandler extends AbstractAzureWebAppT
     return AzureWebAppSlotShiftTrafficResponse.builder()
         .preDeploymentData(slotShiftTrafficParameters.getPreDeploymentData())
         .build();
-  }
-
-  private void validateSlotShiftTrafficParameters(AzureWebAppSlotShiftTrafficParameters slotShiftTrafficParameters) {
-    String webAppName = slotShiftTrafficParameters.getAppName();
-    if (isBlank(webAppName)) {
-      throw new InvalidArgumentsException(WEB_APP_NAME_BLANK_ERROR_MSG);
-    }
-
-    String shiftTrafficSlotName = slotShiftTrafficParameters.getDeploymentSlot();
-    if (isBlank(shiftTrafficSlotName)) {
-      throw new InvalidArgumentsException(SHIFT_TRAFFIC_SLOT_NAME_BLANK_ERROR_MSG);
-    }
-
-    double trafficPercent = slotShiftTrafficParameters.getTrafficWeightInPercentage();
-    if (trafficPercent > 100.0 || trafficPercent < 0) {
-      throw new InvalidArgumentsException(TRAFFIC_WEIGHT_IN_PERCENTAGE_INVALID_ERROR_MSG);
-    }
   }
 
   private void updateSlotTrafficWeight(AzureWebAppSlotShiftTrafficParameters slotShiftTrafficParameters,

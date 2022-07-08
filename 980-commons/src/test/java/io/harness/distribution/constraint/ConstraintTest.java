@@ -12,6 +12,7 @@ import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
 import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
 import static io.harness.distribution.constraint.Consumer.State.FINISHED;
 import static io.harness.distribution.constraint.Consumer.State.REJECTED;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.INDER;
 
@@ -26,6 +27,7 @@ import io.harness.rule.Owner;
 import io.harness.threading.Concurrent;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -284,5 +286,52 @@ public class ConstraintTest extends CategoryTest {
       assertThat(constraint.registerConsumer(unit1, consumer2, 10, constraintContext, registry)).isEqualTo(BLOCKED);
     }
     assertThat(constraint.registerConsumer(unit1, consumer3, 1, constraintContext, registry)).isEqualTo(REJECTED);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldSearchRelatedConsumers() throws UnableToSaveConstraintException {
+    List<Consumer> consumers = new ArrayList<>();
+    consumers.add(createConsumer("A", "entityTypeA", "entityIdA"));
+    consumers.add(createConsumer("B", "entityTypeB", "entityIdB"));
+    consumers.add(createConsumer("C", "entityTypeB", "entityIdB"));
+    consumers.add(createConsumer("D", "entityTypeB", "entityIdB"));
+
+    ConstraintRegistry registry = new InprocConstraintRegistry();
+    Constraint constraint = Constraint.create(id, Spec.builder().strategy(Strategy.FIFO).limits(10).build(), registry);
+
+    List<ConsumerId> consumerIds = constraint.searchRelated(consumers, createConsumer("C", "entityTypeB", "entityIdB"));
+    assertThat(consumerIds).isNotNull();
+    assertThat(consumerIds).containsOnly(new ConsumerId("B"), new ConsumerId("D"));
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldSearchRelatedConsumersNotFound() throws UnableToSaveConstraintException {
+    List<Consumer> consumers = new ArrayList<>();
+    consumers.add(createConsumer("A", "entityTypeA", "entityIdA"));
+    consumers.add(createConsumer("B", "entityTypeB", "entityIdB"));
+    consumers.add(createConsumer("C", "entityTypeC", "entityIdC"));
+    consumers.add(createConsumer("D", "entityTypeD", "entityIdD"));
+
+    ConstraintRegistry registry = new InprocConstraintRegistry();
+    Constraint constraint = Constraint.create(id, Spec.builder().strategy(Strategy.FIFO).limits(10).build(), registry);
+
+    List<ConsumerId> consumerIds = constraint.searchRelated(consumers, createConsumer("C", "entityTypeC", "entityIdC"));
+    assertThat(consumerIds).isNotNull();
+    assertThat(consumerIds).isEmpty();
+  }
+
+  private Consumer createConsumer(String id, String releaseEntityType, String releaseEntityId) {
+    return Consumer.builder().id(new ConsumerId(id)).context(createContext(releaseEntityType, releaseEntityId)).build();
+  }
+
+  private Map<String, Object> createContext(String releaseEntityType, String releaseEntityId) {
+    HashMap<String, Object> context = new HashMap<>();
+    context.put("releaseEntityType", releaseEntityType);
+    context.put("releaseEntityId", releaseEntityId);
+    return context;
   }
 }

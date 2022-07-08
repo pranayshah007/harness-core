@@ -8,6 +8,7 @@
 package io.harness.delegate.service;
 
 import static io.harness.beans.FeatureName.USE_IMMUTABLE_DELEGATE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.DelegateType.CE_KUBERNETES;
 import static io.harness.delegate.beans.DelegateType.KUBERNETES;
 import static io.harness.delegate.beans.VersionOverrideType.DELEGATE_IMAGE_TAG;
@@ -59,6 +60,30 @@ public class DelegateVersionService {
     return DEFAULT_DELEGATE_IMAGE_TAG;
   }
 
+  /**
+   * Separate function to generate delegate image tag for helm delegates in ng. Keeping a separate function for
+   * helm delegates because we don't want to pass igNgDelegate parameter as part of above function.
+   * @param accountId
+   * @return
+   */
+  public String getDelegateImageTagForNgHelmDelegates(final String accountId) {
+    final VersionOverride versionOverride = getVersionOverride(accountId, DELEGATE_IMAGE_TAG);
+    if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
+      return versionOverride.getVersion();
+    }
+
+    final String ringImage = delegateRingService.getDelegateImageTag(accountId);
+    if (isNotBlank(ringImage)) {
+      return ringImage;
+    }
+
+    final String managerConfigImage = mainConfiguration.getPortal().getDelegateDockerImage();
+    if (isNotBlank(managerConfigImage)) {
+      return managerConfigImage;
+    }
+    return DEFAULT_DELEGATE_IMAGE_TAG;
+  }
+
   public String getUpgraderImageTag(final String accountId, final String delegateType) {
     final VersionOverride versionOverride = getVersionOverride(accountId, UPGRADER_IMAGE_TAG);
     if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
@@ -90,6 +115,21 @@ public class DelegateVersionService {
     return Collections.emptyList();
   }
 
+  public List<String> getDelegateJarVersions(final String ringName, final String accountId) {
+    if (isNotEmpty(accountId)) {
+      final VersionOverride versionOverride = getVersionOverride(accountId, DELEGATE_JAR);
+      if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
+        return Collections.singletonList(versionOverride.getVersion());
+      }
+    }
+
+    final List<String> ringVersion = delegateRingService.getDelegateVersionsForRing(ringName);
+    if (!CollectionUtils.isEmpty(ringVersion)) {
+      return ringVersion;
+    }
+    return Collections.emptyList();
+  }
+
   public List<String> getWatcherJarVersions(final String accountId) {
     final VersionOverride versionOverride = getVersionOverride(accountId, WATCHER_JAR);
     if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
@@ -112,6 +152,7 @@ public class DelegateVersionService {
   }
 
   private boolean isImmutableDelegate(final String accountId, final String delegateType) {
+    // helm delegate only supports immutable delegate hence bypassing FF for helm delegates.
     return featureFlagService.isEnabled(USE_IMMUTABLE_DELEGATE, accountId)
         && (KUBERNETES.equals(delegateType) || CE_KUBERNETES.equals(delegateType));
   }

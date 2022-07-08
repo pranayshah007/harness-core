@@ -21,6 +21,7 @@ import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.gitops.steps.ClusterStepParameters;
 import io.harness.cdng.gitops.steps.EnvClusterRefs;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
+import io.harness.cdng.gitops.steps.Metadata;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -71,7 +72,8 @@ public class ClusterPlanCreatorUtils {
     final String envRef = fetchEnvRef(envConfig);
     if (envConfig.isDeployToAll()) {
       return ClusterStepParameters.builder()
-          .envClusterRefs(asList(EnvClusterRefs.builder().envRef(envRef).deployToAll(true).build()))
+          .envClusterRefs(
+              asList(EnvClusterRefs.builder().envRef(envRef).envName(envConfig.getName()).deployToAll(true).build()))
           .build();
     }
 
@@ -79,17 +81,19 @@ public class ClusterPlanCreatorUtils {
         "list of gitops clusterRefs must be provided when not deploying to all clusters");
 
     return ClusterStepParameters.builder()
-        .envClusterRefs(Collections.singletonList(
-            EnvClusterRefs.builder().envRef(envRef).clusterRefs(getClusterRefs(envConfig)).build()))
+        .envClusterRefs(Collections.singletonList(EnvClusterRefs.builder()
+                                                      .envRef(envRef)
+                                                      .envName(envConfig.getName())
+                                                      .clusterRefs(getClusterRefs(envConfig))
+                                                      .build()))
         .build();
   }
 
   private ClusterStepParameters getStepParams(EnvGroupPlanCreatorConfig config) {
     checkNotNull(config, "environment group must be present");
 
-    final String envGroupRef = fetchEnvGroupRef(config);
     if (config.isDeployToAll()) {
-      return ClusterStepParameters.WithEnvGroupRef(envGroupRef);
+      return ClusterStepParameters.WithEnvGroup(new Metadata(config.getIdentifier(), config.getName()));
     }
 
     checkArgument(isNotEmpty(config.getEnvironmentPlanCreatorConfigs()),
@@ -101,6 +105,7 @@ public class ClusterPlanCreatorUtils {
             .map(c
                 -> EnvClusterRefs.builder()
                        .envRef(c.getEnvironmentRef().getValue())
+                       .envName(c.getName())
                        .deployToAll(c.isDeployToAll())
                        .clusterRefs(c.isDeployToAll() ? null : ClusterPlanCreatorUtils.getClusterRefs(c))
                        .build())
@@ -118,12 +123,5 @@ public class ClusterPlanCreatorUtils {
     checkNotNull(environmentRef, "environment ref must be present");
     checkArgument(!environmentRef.isExpression(), "environment ref not resolved yet");
     return (String) environmentRef.fetchFinalValue();
-  }
-
-  private String fetchEnvGroupRef(EnvGroupPlanCreatorConfig config) {
-    final ParameterField<String> ref = config.getEnvironmentGroupRef();
-    checkNotNull(ref, "environment group ref must be present");
-    checkArgument(!ref.isExpression(), "environment group ref not resolved yet");
-    return (String) ref.fetchFinalValue();
   }
 }

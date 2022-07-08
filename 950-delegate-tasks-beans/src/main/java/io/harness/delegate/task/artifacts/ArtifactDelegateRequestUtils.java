@@ -28,11 +28,13 @@ import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.helpers.ext.jenkins.JobDetails;
 
 import java.util.List;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -172,6 +174,37 @@ public class ArtifactDelegateRequestUtils {
         .parentJobName(parentJobName)
         .jobName(jobName)
         .artifactPaths(artifactPath)
+        .build();
+  }
+
+  public JenkinsArtifactDelegateRequest getJenkinsDelegateRequest(String connectorRef,
+      JenkinsConnectorDTO jenkinsConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails,
+      ArtifactSourceType sourceType, List<JobDetails> jobDetails, String parentJobName, String jobName,
+      List<String> artifactPath, Map<String, String> jobParameter) {
+    return JenkinsArtifactDelegateRequest.builder()
+        .connectorRef(connectorRef)
+        .jenkinsConnectorDTO(jenkinsConnectorDTO)
+        .encryptedDataDetails(encryptedDataDetails)
+        .sourceType(sourceType)
+        .jobDetails(jobDetails)
+        .parentJobName(parentJobName)
+        .jobName(jobName)
+        .artifactPaths(artifactPath)
+        .jobParameter(jobParameter)
+        .build();
+  }
+
+  public static S3ArtifactDelegateRequest getAmazonS3DelegateRequest(String bucketName, String filePath,
+      String filePathRegex, Object o, String connectorRef, AwsConnectorDTO connectorDTO,
+      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
+    return S3ArtifactDelegateRequest.builder()
+        .bucketName(trim(bucketName))
+        .filePath(trim(filePath))
+        .filePathRegex(trim(filePathRegex))
+        .connectorRef(connectorRef)
+        .awsConnectorDTO(connectorDTO)
+        .encryptedDataDetails(encryptedDataDetails)
+        .sourceType(sourceType)
         .build();
   }
 

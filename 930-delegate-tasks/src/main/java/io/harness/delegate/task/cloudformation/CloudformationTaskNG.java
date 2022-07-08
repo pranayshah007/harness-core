@@ -54,7 +54,9 @@ public class CloudformationTaskNG extends AbstractDelegateRunnableTask {
   public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
     log.info("Started executing Cloudformation Task NG");
     CloudformationTaskNGParameters taskParameters = (CloudformationTaskNGParameters) parameters;
-    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    CommandUnitsProgress commandUnitsProgress = taskParameters.getCommandUnitsProgress() != null
+        ? taskParameters.getCommandUnitsProgress()
+        : CommandUnitsProgress.builder().build();
     LogCallback logCallback = getLogCallback(
         getLogStreamingTaskClient(), taskParameters.getCfCommandUnit().name(), true, commandUnitsProgress);
     if (!handlersMap.containsKey(taskParameters.getTaskType())) {

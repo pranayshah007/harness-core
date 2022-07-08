@@ -114,6 +114,8 @@ public enum ErrorCode {
 
   SOCKET_CONNECTION_TIMEOUT("Socket Connection timeout"),
 
+  WINRM_COMMAND_EXECUTION_TIMEOUT("WinRM Command execution timed out"),
+
   CONNECTION_TIMEOUT("Connection timeout"),
 
   SSH_CONNECTION_ERROR("Ssh Connection error"),
@@ -385,6 +387,8 @@ public enum ErrorCode {
 
   USER_ALREADY_PRESENT,
 
+  EMAIL_ERROR,
+
   INVALID_USAGE_RESTRICTION("Invalid usage restrictions"),
 
   USAGE_RESTRICTION_ERROR,
@@ -408,6 +412,8 @@ public enum ErrorCode {
   USAGE_LIMITS_EXCEEDED(Status.FORBIDDEN, "Usage Limit Exceeded"),
 
   EVENT_PUBLISH_FAILED("Event published failed"),
+
+  CUSTOM_APPROVAL_ERROR,
 
   JIRA_ERROR,
 
@@ -616,6 +622,7 @@ public enum ErrorCode {
   SCM_INTERNAL_SERVER_ERROR_V2(INTERNAL_SERVER_ERROR),
 
   SCM_UNAUTHORIZED_ERROR_V2,
+  TOO_MANY_REQUESTS,
 
   SPOTINST_NULL_ERROR;
 

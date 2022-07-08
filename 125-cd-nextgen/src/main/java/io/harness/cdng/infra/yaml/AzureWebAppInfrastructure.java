@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.infra.beans.AzureWebAppInfraMapping;
 import io.harness.cdng.infra.beans.InfraMapping;
+import io.harness.cdng.infra.beans.InfrastructureDetailsAbstract;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -40,7 +41,8 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("azureWebAppInfrastructure")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.yaml.AzureWebAppInfrastructure")
-public class AzureWebAppInfrastructure implements Infrastructure, Visitable, WithConnectorRef {
+public class AzureWebAppInfrastructure
+    extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef {
   @NotNull
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
@@ -60,17 +62,14 @@ public class AzureWebAppInfrastructure implements Infrastructure, Visitable, Wit
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Wither
-  ParameterField<String> appService;
+  ParameterField<String> webApp;
   @NotNull
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Wither
   ParameterField<String> deploymentSlot;
-  @NotNull
-  @NotEmpty
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @Wither
-  ParameterField<String> targetSlot;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> targetSlot;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
@@ -80,7 +79,7 @@ public class AzureWebAppInfrastructure implements Infrastructure, Visitable, Wit
         .azureConnector(connectorRef.getValue())
         .subscription(subscriptionId.getValue())
         .resourceGroup(resourceGroup.getValue())
-        .appService(appService.getValue())
+        .webApp(webApp.getValue())
         .deploymentSlot(deploymentSlot.getValue())
         .targetSlot(targetSlot.getValue())
         .build();
@@ -94,7 +93,7 @@ public class AzureWebAppInfrastructure implements Infrastructure, Visitable, Wit
   @Override
   public String[] getInfrastructureKeyValues() {
     return new String[] {connectorRef.getValue(), subscriptionId.getValue(), resourceGroup.getValue(),
-        appService.getValue(), deploymentSlot.getValue(), targetSlot.getValue()};
+        webApp.getValue(), deploymentSlot.getValue()};
   }
 
   @Override
@@ -115,8 +114,8 @@ public class AzureWebAppInfrastructure implements Infrastructure, Visitable, Wit
     if (!ParameterField.isNull(config.getResourceGroup())) {
       resultantInfra = resultantInfra.withResourceGroup(config.getResourceGroup());
     }
-    if (!ParameterField.isNull(config.getAppService())) {
-      resultantInfra = resultantInfra.withAppService(config.getAppService());
+    if (!ParameterField.isNull(config.getWebApp())) {
+      resultantInfra = resultantInfra.withWebApp(config.getWebApp());
     }
     if (!ParameterField.isNull(config.getDeploymentSlot())) {
       resultantInfra = resultantInfra.withDeploymentSlot(config.getDeploymentSlot());

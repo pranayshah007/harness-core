@@ -10,6 +10,7 @@ package io.harness.pms.expressions.utils;
 import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.awsconnector.AwsCredentialType.MANUAL_CREDENTIALS;
 import static io.harness.k8s.model.ImageDetails.ImageDetailsBuilder;
 
 import static java.lang.String.format;
@@ -23,7 +24,9 @@ import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
+import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -33,10 +36,13 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthT
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureAdditionalParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
+import io.harness.delegate.beans.connector.azureconnector.AzureInheritFromDelegateDetailsDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureSecretType;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
@@ -47,6 +53,9 @@ import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsConstant;
+import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusAuthType;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusUsernamePasswordAuthDTO;
@@ -92,13 +101,16 @@ public class ImagePullSecretUtils {
   @Transient
   private static final String DOCKER_REGISTRY_CREDENTIAL_TEMPLATE =
       "{\"%s\":{\"username\":\"%s\",\"password\":\"%s\"}}";
-  private static final String ACR_SP_CERT_DOCKER_USERNAME = "00000000-0000-0000-0000-000000000000";
+  private static final String ACR_DUMMY_DOCKER_USERNAME = "00000000-0000-0000-0000-000000000000";
 
   public String getImagePullSecret(ArtifactOutcome artifactOutcome, Ambiance ambiance) {
     ImageDetailsBuilder imageDetailsBuilder = ImageDetails.builder();
     switch (artifactOutcome.getArtifactType()) {
       case ArtifactSourceConstants.DOCKER_REGISTRY_NAME:
         getImageDetailsFromDocker((DockerArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
+        break;
+      case ArtifactSourceConstants.AMAZON_S3_NAME:
+        getImageDetailsFromS3((S3ArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
         break;
       case ArtifactSourceConstants.GCR_NAME:
         getImageDetailsFromGcr((GcrArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
@@ -115,6 +127,9 @@ public class ImagePullSecretUtils {
       case ArtifactSourceConstants.ACR_NAME:
         getImageDetailsFromAcr((AcrArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
         break;
+      case ArtifactSourceConstants.JENKINS_NAME:
+        getBuildDetailsFromJenkins((JenkinsArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
+        break;
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactOutcome.getArtifactType()));
@@ -128,6 +143,24 @@ public class ImagePullSecretUtils {
       return getArtifactRegistryCredentialsFromUsernameRef(imageDetails);
     }
     return "";
+  }
+
+  private void getImageDetailsFromS3(
+      S3ArtifactOutcome artifactOutcome, ImageDetailsBuilder imageDetailsBuilder, Ambiance ambiance) {
+    String connectorRef = artifactOutcome.getConnectorRef();
+    ConnectorInfoDTO connectorDTO = getConnector(connectorRef, ambiance);
+    AwsConnectorDTO connectorConfig = (AwsConnectorDTO) connectorDTO.getConnectorConfig();
+    if (connectorConfig.getCredential() != null && connectorConfig.getCredential().getConfig() != null
+        && connectorConfig.getCredential().getAwsCredentialType() == MANUAL_CREDENTIALS) {
+      AwsManualConfigSpecDTO credentials = (AwsManualConfigSpecDTO) connectorConfig.getCredential().getConfig();
+      String passwordRef = credentials.getSecretKeyRef().toSecretRefStringValue();
+      if (credentials.getAccessKeyRef() != null) {
+        imageDetailsBuilder.usernameRef(
+            getPasswordExpression(credentials.getAccessKeyRef().toSecretRefStringValue(), ambiance));
+      }
+      imageDetailsBuilder.username(credentials.getAccessKey());
+      imageDetailsBuilder.password(getPasswordExpression(passwordRef, ambiance));
+    }
   }
 
   public static String getArtifactRegistryCredentials(ImageDetails imageDetails) {
@@ -270,50 +303,89 @@ public class ImagePullSecretUtils {
               ((AzureClientSecretKeyDTO) config.getAuthDTO().getCredentials()).getSecretKey().toSecretRefStringValue(),
               ambiance));
         } else {
-          log.info("Generating image pull credentials for SP with certificate");
-          BaseNGAccess baseNGAccess = azureHelperService.getBaseNGAccess(AmbianceUtils.getAccountId(ambiance),
-              AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
-
-          Principal principal = SecurityContextBuilder.getPrincipal();
-          if (principal == null) {
-            principal = new ServicePrincipal(NG_MANAGER.getServiceId());
-            SecurityContextBuilder.setContext(principal);
-          }
-          log.info(format("SecurityContext is %s service", principal.getName()));
-
-          List<EncryptedDataDetail> encryptionDetails =
-              azureHelperService.getEncryptionDetails(connectorConfig, baseNGAccess);
-
-          Map<AzureAdditionalParams, String> additionalParams = new HashMap<>();
-          additionalParams.put(AzureAdditionalParams.CONTAINER_REGISTRY, acrArtifactOutcome.getRegistry());
-
-          AzureTaskParams azureTaskParams = AzureTaskParams.builder()
-                                                .azureTaskType(AzureTaskType.GET_ACR_TOKEN)
-                                                .azureConnector(connectorConfig)
-                                                .encryptionDetails(encryptionDetails)
-                                                .delegateSelectors(connectorConfig.getDelegateSelectors())
-                                                .additionalParams(additionalParams)
-                                                .build();
-
-          AzureAcrTokenTaskResponse accessTokenResponse =
-              (AzureAcrTokenTaskResponse) azureHelperService.executeSyncTask(ambiance, azureTaskParams, baseNGAccess,
-                  "Azure get access token for service principal with certificate task failure due to error");
-
-          String accessToken = format("\"%s\"", accessTokenResponse.getToken());
-
-          if (log.isDebugEnabled()) {
-            log.debug(format("Token for clientId %s for ACR is: %s",
-                ((AzureManualDetailsDTO) connectorConfig.getCredential().getConfig()).getClientId(), accessToken));
-          }
-
-          imageDetailsBuilder.username(ACR_SP_CERT_DOCKER_USERNAME);
-          imageDetailsBuilder.password(accessToken);
+          log.info(format(
+              "Generating image pull credentials for SP with certificate. Fetching access token for clientId: %s",
+              ((AzureManualDetailsDTO) connectorConfig.getCredential().getConfig()).getClientId()));
+          generateAcrImageDetailsBuilder(ambiance, connectorConfig, acrArtifactOutcome, imageDetailsBuilder);
         }
+      } else if (connectorConfig.getCredential() != null
+          && connectorConfig.getCredential().getAzureCredentialType() == AzureCredentialType.INHERIT_FROM_DELEGATE) {
+        AzureInheritFromDelegateDetailsDTO config =
+            (AzureInheritFromDelegateDetailsDTO) connectorConfig.getCredential().getConfig();
+        if (config.getAuthDTO() instanceof AzureMSIAuthUADTO) {
+          log.info(
+              format("Generating image pull credentials for User-Assigned MSI. Fetching access token for clientId: %s",
+                  ((AzureMSIAuthUADTO) config.getAuthDTO()).getCredentials().getClientId()));
+        } else {
+          log.info("Generating image pull credentials for System-Assigned MSI");
+        }
+        generateAcrImageDetailsBuilder(ambiance, connectorConfig, acrArtifactOutcome, imageDetailsBuilder);
       } else {
-        log.info("This is a Managed Identity config. No credentials necessary for image pull.");
+        if (connectorConfig.getCredential() == null) {
+          throw new Exception(format("Connector credentials are missing. Can not generate Image details."));
+        }
+
+        throw new Exception(
+            format("AzureCredentialType [%s] is invalid", connectorConfig.getCredential().getAzureCredentialType()));
       }
     } catch (Exception e) {
-      throw new InvalidRequestException(e.getMessage(), e);
+      throw new RuntimeException(e.getMessage(), e);
+    }
+  }
+
+  private void generateAcrImageDetailsBuilder(Ambiance ambiance, AzureConnectorDTO connectorConfig,
+      AcrArtifactOutcome acrArtifactOutcome, ImageDetailsBuilder imageDetailsBuilder) {
+    log.info("Generating ACR image details");
+    BaseNGAccess baseNGAccess = azureHelperService.getBaseNGAccess(AmbianceUtils.getAccountId(ambiance),
+        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
+
+    Principal principal = SecurityContextBuilder.getPrincipal();
+    if (principal == null) {
+      principal = new ServicePrincipal(NG_MANAGER.getServiceId());
+      SecurityContextBuilder.setContext(principal);
+    }
+    log.info(format("SecurityContext is %s service", principal.getName()));
+
+    List<EncryptedDataDetail> encryptionDetails =
+        azureHelperService.getEncryptionDetails(connectorConfig, baseNGAccess);
+
+    Map<AzureAdditionalParams, String> additionalParams = new HashMap<>();
+    additionalParams.put(AzureAdditionalParams.CONTAINER_REGISTRY, acrArtifactOutcome.getRegistry());
+
+    AzureTaskParams azureTaskParams = AzureTaskParams.builder()
+                                          .azureTaskType(AzureTaskType.GET_ACR_TOKEN)
+                                          .azureConnector(connectorConfig)
+                                          .encryptionDetails(encryptionDetails)
+                                          .delegateSelectors(connectorConfig.getDelegateSelectors())
+                                          .additionalParams(additionalParams)
+                                          .build();
+
+    AzureAcrTokenTaskResponse accessTokenResponse = (AzureAcrTokenTaskResponse) azureHelperService.executeSyncTask(
+        ambiance, azureTaskParams, baseNGAccess, "Azure get ACR access token task failure due to error");
+
+    String token = format("\"%s\"", accessTokenResponse.getToken());
+
+    log.trace(format("Fetched token: %s", token));
+
+    imageDetailsBuilder.username(ACR_DUMMY_DOCKER_USERNAME);
+    imageDetailsBuilder.password(token);
+  }
+
+  private void getBuildDetailsFromJenkins(
+      JenkinsArtifactOutcome artifactOutcome, ImageDetailsBuilder imageDetailsBuilder, Ambiance ambiance) {
+    String connectorRef = artifactOutcome.getConnectorRef();
+    ConnectorInfoDTO connectorDTO = getConnector(connectorRef, ambiance);
+    JenkinsConnectorDTO connectorConfig = (JenkinsConnectorDTO) connectorDTO.getConnectorConfig();
+    if (connectorConfig.getAuth().getCredentials() != null
+        && connectorConfig.getAuth().getAuthType().getDisplayName() == JenkinsConstant.USERNAME_PASSWORD) {
+      JenkinsUserNamePasswordDTO credentials = (JenkinsUserNamePasswordDTO) connectorConfig.getAuth().getCredentials();
+      String passwordRef = credentials.getPasswordRef().toSecretRefStringValue();
+      if (credentials.getUsernameRef() != null) {
+        imageDetailsBuilder.usernameRef(
+            getPasswordExpression(credentials.getUsernameRef().toSecretRefStringValue(), ambiance));
+      }
+      imageDetailsBuilder.username(credentials.getUsername());
+      imageDetailsBuilder.password(getPasswordExpression(passwordRef, ambiance));
     }
   }
 

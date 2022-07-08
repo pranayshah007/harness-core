@@ -21,8 +21,8 @@ import lombok.experimental.SuperBuilder;
 @JsonSubTypes({
   @JsonSubTypes.Type(value = CVNGEmailChannelSpec.class, name = "Email")
   , @JsonSubTypes.Type(value = CVNGSlackChannelSpec.class, name = "Slack"),
-      @JsonSubTypes.Type(value = CVNGPagerDutyChannelSpec.class, name = "Pagerduty"),
-      @JsonSubTypes.Type(value = CVNGMSTeamsChannelSpec.class, name = "Msteams")
+      @JsonSubTypes.Type(value = CVNGPagerDutyChannelSpec.class, name = "PagerDuty"),
+      @JsonSubTypes.Type(value = CVNGMSTeamsChannelSpec.class, name = "MsTeams")
 })
 public abstract class CVNGNotificationChannelSpec {
   @JsonIgnore public abstract CVNGNotificationChannelType getType();

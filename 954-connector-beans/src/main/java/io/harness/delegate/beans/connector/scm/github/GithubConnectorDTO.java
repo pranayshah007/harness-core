@@ -103,7 +103,6 @@ public class GithubConnectorDTO
     return ConnectorType.GITHUB;
   }
 
-  @Override
   public String getUrl() {
     if (isNotEmpty(gitConnectionUrl)) {
       return gitConnectionUrl;
@@ -112,21 +111,17 @@ public class GithubConnectorDTO
   }
 
   @Override
-  public String getGitConnectionUrl(String repoName) {
-    if (isNotEmpty(gitConnectionUrl)) {
-      return gitConnectionUrl;
-    }
-
+  public String getGitConnectionUrl(GitRepositoryDTO gitRepositoryDTO) {
     if (connectionType == GitConnectionType.REPO) {
-      String linkedRepo = GitClientHelper.getGitRepo(url);
-      if (!linkedRepo.equals(repoName)) {
+      String linkedRepo = getGitRepositoryDetails().getName();
+      if (!linkedRepo.equals(gitRepositoryDTO.getName())) {
         throw new InvalidRequestException(
             String.format("Provided repoName [%s] does not match with the repoName [%s] provided in connector.",
-                repoName, linkedRepo));
+                gitRepositoryDTO.getName(), linkedRepo));
       }
-      return getUrl();
+      return url;
     }
-    return FilePathUtils.addEndingSlashIfMissing(getUrl()) + repoName;
+    return FilePathUtils.addEndingSlashIfMissing(url) + gitRepositoryDTO.getName();
   }
 
   @Override
@@ -141,11 +136,12 @@ public class GithubConnectorDTO
   }
 
   @Override
-  public String getFileUrl(String branchName, String filePath, String repoName) {
+  public String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
     ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
-    String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(repoName));
+    String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
+    String httpRepoUrl = GitClientHelper.getCompleteHTTPUrlForGithub(repoUrl);
     filePath = removeStartingAndEndingSlash(filePath);
-    return String.format("%s/blob/%s/%s", repoUrl, branchName, filePath);
+    return String.format("%s/blob/%s/%s", httpRepoUrl, branchName, filePath);
   }
 
   @Override

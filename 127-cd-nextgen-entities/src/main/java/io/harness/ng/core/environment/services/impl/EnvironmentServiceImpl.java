@@ -16,6 +16,7 @@ import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPL
 import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.stream.Collectors.groupingBy;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
@@ -44,6 +45,7 @@ import io.harness.ng.core.events.EnvironmentDeleteEvent;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.events.EnvironmentUpsertEvent;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
@@ -62,6 +64,8 @@ import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
 import com.mongodb.client.result.UpdateResult;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -100,13 +104,14 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final InfrastructureEntityService infrastructureEntityService;
   private final ClusterService clusterService;
+  private final ServiceOverrideService serviceOverrideService;
 
   @Inject
   public EnvironmentServiceImpl(EnvironmentRepository environmentRepository,
       EntitySetupUsageService entitySetupUsageService, @Named(ENTITY_CRUD) Producer eventProducer,
       OutboxService outboxService, TransactionTemplate transactionTemplate,
       NGFeatureFlagHelperService ngFeatureFlagHelperService, InfrastructureEntityService infrastructureEntityService,
-      ClusterService clusterService) {
+      ClusterService clusterService, ServiceOverrideService serviceOverrideService) {
     this.environmentRepository = environmentRepository;
     this.entitySetupUsageService = entitySetupUsageService;
     this.eventProducer = eventProducer;
@@ -115,6 +120,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.infrastructureEntityService = infrastructureEntityService;
     this.clusterService = clusterService;
+    this.serviceOverrideService = serviceOverrideService;
   }
 
   @Override
@@ -269,22 +275,30 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                                .projectIdentifier(projectIdentifier)
                                .environment(environmentOptional.get())
                                .build());
-        processQuietly(()
-                           -> infrastructureEntityService.forceDeleteAllInEnv(
-                               accountId, orgIdentifier, projectIdentifier, environmentIdentifier));
-        processQuietly(
-            () -> clusterService.deleteAllFromEnv(accountId, orgIdentifier, projectIdentifier, environmentIdentifier));
+
         return true;
       }));
       publishEvent(accountId, orgIdentifier, projectIdentifier, environmentIdentifier,
           EventsFrameworkMetadataConstants.DELETE_ACTION);
+      processDownstreamDeletions(accountId, orgIdentifier, projectIdentifier, environmentIdentifier);
       return true;
-
     } else {
       throw new InvalidRequestException(
           String.format("Environment [%s] under Project[%s], Organization [%s] doesn't exist.", environmentIdentifier,
               projectIdentifier, orgIdentifier));
     }
+  }
+
+  private void processDownstreamDeletions(
+      String accountId, String orgIdentifier, String projectIdentifier, String environmentIdentifier) {
+    processQuietly(()
+                       -> infrastructureEntityService.forceDeleteAllInEnv(
+                           accountId, orgIdentifier, projectIdentifier, environmentIdentifier));
+    processQuietly(
+        () -> clusterService.deleteAllFromEnv(accountId, orgIdentifier, projectIdentifier, environmentIdentifier));
+    processQuietly(()
+                       -> serviceOverrideService.deleteAllInEnv(
+                           accountId, orgIdentifier, projectIdentifier, environmentIdentifier));
   }
 
   @Override
@@ -349,7 +363,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
   @Override
   public String createEnvironmentInputsYaml(
-      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+      String accountId, String projectIdentifier, String orgIdentifier, String envIdentifier) {
     Map<String, Object> yamlInputs =
         createEnvironmentInputsYamlInternal(accountId, orgIdentifier, projectIdentifier, envIdentifier);
 
@@ -357,6 +371,26 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       return null;
     }
     return YamlPipelineUtils.writeYamlString(yamlInputs);
+  }
+
+  @Override
+  public List<Map<String, String>> getAttributes(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers) {
+    Map<String, List<Environment>> environments =
+        fetchesNonDeletedEnvironmentFromListOfIdentifiers(accountId, orgIdentifier, projectIdentifier, envIdentifiers)
+            .stream()
+            .collect(groupingBy(Environment::getIdentifier));
+
+    List<Map<String, String>> attributes = new ArrayList<>();
+    for (String envId : envIdentifiers) {
+      if (environments.containsKey(envId)) {
+        attributes.add(ImmutableMap.of("type", environments.get(envId).get(0).getType().name()));
+      } else {
+        attributes.add(Collections.emptyMap());
+      }
+    }
+
+    return attributes;
   }
 
   public Map<String, Object> createEnvironmentInputsYamlInternal(

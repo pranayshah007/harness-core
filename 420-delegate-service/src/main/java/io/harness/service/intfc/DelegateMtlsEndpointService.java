@@ -14,6 +14,8 @@ import io.harness.delegate.beans.DelegateMtlsEndpointRequest;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 
+import javax.annotation.Nullable;
+
 /**
  * An abstraction of a service that allows managing delegate mTLS endpoints.
  */
@@ -65,6 +67,14 @@ public interface DelegateMtlsEndpointService {
    * @throws EntityNotFoundException If there is no existing endpoint for the account.
    */
   DelegateMtlsEndpointDetails getEndpointForAccount(String accountId);
+
+  /**
+   * Returns the delegate mTLS endpoint for the account if it exists.
+   *
+   * @param accountId The account id.
+   * @return The details of the requested delegate mTLS endpoint or null if it doesn't exist.
+   */
+  @Nullable DelegateMtlsEndpointDetails getEndpointForAccountOrNull(String accountId);
 
   /**
    * Removes the delegate mTLS endpoint for the account.
