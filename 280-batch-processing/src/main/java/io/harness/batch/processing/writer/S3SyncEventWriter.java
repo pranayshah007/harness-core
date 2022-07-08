@@ -38,6 +38,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.ce.CEAwsConfig;
 
 import com.amazonaws.services.costandusagereport.model.ReportDefinition;
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,7 +61,7 @@ public class S3SyncEventWriter extends EventWriter implements ItemWriter<Setting
   @Autowired private FeatureFlagService featureFlagService;
   @Autowired private AWSConnectorToBucketMappingDao awsConnectorToBucketMappingDao;
   @Autowired private NGConnectorHelper ngConnectorHelper;
-  @Autowired private CEAwsDTOToEntity ceAwsDTOToEntity;
+  @Autowired @Inject private CEAwsDTOToEntity ceAwsDTOToEntity;
   private JobParameters parameters;
   private static final String MASTER = "MASTER";
 
