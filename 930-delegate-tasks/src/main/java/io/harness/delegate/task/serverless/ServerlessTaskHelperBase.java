@@ -244,7 +244,8 @@ public class ServerlessTaskHelperBase {
   }
 
   public void fetchArtifact(ServerlessArtifactConfig serverlessArtifactConfig, LogCallback logCallback,
-      String workingDirectory, String savedArtifactFileName, ServerlessInfraConfig serverlessInfraConfig) throws IOException {
+      String workingDirectory, String savedArtifactFileName, ServerlessInfraConfig serverlessInfraConfig)
+      throws IOException {
     if (serverlessArtifactConfig instanceof ServerlessArtifactoryArtifactConfig) {
       ServerlessArtifactoryArtifactConfig serverlessArtifactoryArtifactConfig =
           (ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig;
@@ -260,7 +261,8 @@ public class ServerlessTaskHelperBase {
       String s3Directory = Paths.get(workingDirectory, ARTIFACT_DIR_NAME).toString();
       createDirectoryIfDoesNotExist(s3Directory);
       waitForDirectoryToBeAccessibleOutOfProcess(s3Directory, 10);
-      fetchS3Artifact(serverlessS3ArtifactConfig, logCallback, s3Directory, serverlessInfraConfig, savedArtifactFileName);
+      fetchS3Artifact(
+          serverlessS3ArtifactConfig, logCallback, s3Directory, serverlessInfraConfig, savedArtifactFileName);
     }
   }
 
@@ -346,7 +348,8 @@ public class ServerlessTaskHelperBase {
   }
 
   public void fetchS3Artifact(ServerlessS3ArtifactConfig s3ArtifactConfig, LogCallback executionLogCallback,
-      String s3Directory, ServerlessInfraConfig serverlessInfraConfig, String savedArtifactFileName) throws IOException {
+      String s3Directory, ServerlessInfraConfig serverlessInfraConfig, String savedArtifactFileName)
+      throws IOException {
     if (EmptyPredicate.isEmpty(s3ArtifactConfig.getFilePath())) {
       executionLogCallback.saveExecutionLog(
           "artifactPath or artifactPathFilter is blank", ERROR, CommandExecutionStatus.FAILURE);

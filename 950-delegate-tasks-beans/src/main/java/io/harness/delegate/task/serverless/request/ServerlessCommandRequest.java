@@ -92,10 +92,10 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
           ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getConnectorDTO().getConnectorConfig(),
           maskingEvaluator));
     } else if (serverlessArtifactConfig instanceof ServerlessS3ArtifactConfig) {
-      AwsConnectorDTO connectorConfigDTO =
-              (AwsConnectorDTO) ((ServerlessS3ArtifactConfig) serverlessArtifactConfig).getConnectorDTO().getConnectorConfig();
-      capabilities.addAll(
-              AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
+      AwsConnectorDTO connectorConfigDTO = (AwsConnectorDTO) ((ServerlessS3ArtifactConfig) serverlessArtifactConfig)
+                                               .getConnectorDTO()
+                                               .getConnectorConfig();
+      capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
     }
 
     if (sidecarServerlessArtifactConfigs != null) {
@@ -108,11 +108,11 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
               maskingEvaluator));
         } else if (sidecarServerlessArtifactConfig instanceof ServerlessS3ArtifactConfig) {
           AwsConnectorDTO connectorConfigDTO =
-                  (AwsConnectorDTO) ((ServerlessS3ArtifactConfig) sidecarServerlessArtifactConfig)
-                          .getConnectorDTO()
-                          .getConnectorConfig();
+              (AwsConnectorDTO) ((ServerlessS3ArtifactConfig) sidecarServerlessArtifactConfig)
+                  .getConnectorDTO()
+                  .getConnectorConfig();
           capabilities.addAll(
-                  AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
+              AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
         }
       }
     }
