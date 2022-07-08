@@ -10,6 +10,7 @@ package io.harness.cvng.core.services.impl.monitoredService;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ANJAN;
+import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
@@ -19,6 +20,8 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
@@ -59,7 +62,7 @@ public class ChangeSourceServiceImplTest extends CvNextGenTestBase {
   @Inject VerificationManagerService verificationManagerService;
   @Mock ChangeEventService changeEventService;
   BuilderFactory builderFactory;
-
+  ChangeSourceService mockChangeSourceService;
   MonitoredServiceParams monitoredServiceParams;
 
   @Before
@@ -68,6 +71,7 @@ public class ChangeSourceServiceImplTest extends CvNextGenTestBase {
 
     builderFactory = BuilderFactory.getDefault();
     monitoredServiceParams = builderFactory.getContext().getMonitoredServiceParams();
+    mockChangeSourceService = spy(changeSourceService);
   }
 
   @Test
@@ -228,6 +232,45 @@ public class ChangeSourceServiceImplTest extends CvNextGenTestBase {
 
     changeSource = changeSourceService.get(monitoredServiceParams, identifier);
     assertThat(changeSource.getDataCollectionTaskId()).isEqualTo(datacollectionTaskId);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testDeleteByProjectIdentifier() {
+    ChangeSourceDTO changeSourceDto = builderFactory.getHarnessCDChangeSourceDTOBuilder().build();
+    Set<ChangeSourceDTO> dtos = new HashSet<>(Arrays.asList(changeSourceDto));
+    mockChangeSourceService.create(monitoredServiceParams, dtos);
+
+    mockChangeSourceService.deleteByProjectIdentifier(ChangeSource.class, monitoredServiceParams.getAccountIdentifier(),
+        monitoredServiceParams.getOrgIdentifier(), monitoredServiceParams.getProjectIdentifier());
+    verify(mockChangeSourceService, times(1)).delete(any(), any());
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testDeleteByOrgIdentifier() {
+    ChangeSourceDTO changeSourceDto = builderFactory.getHarnessCDChangeSourceDTOBuilder().build();
+    Set<ChangeSourceDTO> dtos = new HashSet<>(Arrays.asList(changeSourceDto));
+    mockChangeSourceService.create(monitoredServiceParams, dtos);
+
+    mockChangeSourceService.deleteByOrgIdentifier(
+        ChangeSource.class, monitoredServiceParams.getAccountIdentifier(), monitoredServiceParams.getOrgIdentifier());
+    verify(mockChangeSourceService, times(1)).delete(any(), any());
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testDeleteByAccountIdentifier() {
+    ChangeSourceDTO changeSourceDto = builderFactory.getHarnessCDChangeSourceDTOBuilder().build();
+    Set<ChangeSourceDTO> dtos = new HashSet<>(Arrays.asList(changeSourceDto));
+    mockChangeSourceService.create(monitoredServiceParams, dtos);
+
+    mockChangeSourceService.deleteByAccountIdentifier(
+        ChangeSource.class, monitoredServiceParams.getAccountIdentifier());
+    verify(mockChangeSourceService, times(1)).delete(any(), any());
   }
 
   private ChangeSource getChangeSourceFromDb(String identifier) {

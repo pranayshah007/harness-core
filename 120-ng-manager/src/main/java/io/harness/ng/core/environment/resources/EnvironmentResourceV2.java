@@ -155,6 +155,7 @@ public class EnvironmentResourceV2 {
   private final ServiceOverrideService serviceOverrideService;
   private final EnvironmentValidationHelper environmentValidationHelper;
   private final ServiceEntityValidationHelper serviceEntityValidationHelper;
+  private final EnvironmentFilterHelper environmentFilterHelper;
 
   public static final String ENVIRONMENT_PARAM_MESSAGE = "Environment Identifier for the entity";
 
@@ -333,7 +334,7 @@ public class EnvironmentResourceV2 {
       @QueryParam("sort") List<String> sort) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
-    Criteria criteria = EnvironmentFilterHelper.createCriteriaForGetList(
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
         accountId, orgIdentifier, projectIdentifier, false, searchTerm);
     Pageable pageRequest;
 
@@ -388,7 +389,7 @@ public class EnvironmentResourceV2 {
       @QueryParam(NGResourceFilterConstants.FILTER_KEY) String filterIdentifier) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
-    Criteria criteria = EnvironmentFilterHelper.createCriteriaForGetList(
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
         accountId, orgIdentifier, projectIdentifier, false, searchTerm, filterIdentifier, filterProperties);
     Pageable pageRequest;
 
@@ -581,7 +582,7 @@ public class EnvironmentResourceV2 {
         Resource.of(ENVIRONMENT, environmentIdentifier), ENVIRONMENT_VIEW_PERMISSION,
         "Unauthorized to view environment");
 
-    Criteria criteria = EnvironmentFilterHelper.createCriteriaForGetServiceOverrides(
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetServiceOverrides(
         accountId, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier);
     Pageable pageRequest;
 

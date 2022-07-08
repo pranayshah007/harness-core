@@ -21,6 +21,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
@@ -213,7 +214,7 @@ public class GitFilePathHelperTest extends CategoryTest {
     String repoUrl = "https://dev.azure.com/org/gitSync/_git/repoName";
     AzureRepoConnectorDTO azureRepoConnectorDTO =
         AzureRepoConnectorDTO.builder()
-            .connectionType(GitConnectionType.REPO)
+            .connectionType(AzureRepoConnectionTypeDTO.REPO)
             .url(repoUrl)
             .authentication(AzureRepoAuthenticationDTO.builder().authType(GitAuthType.HTTP).build())
             .build();
@@ -232,7 +233,7 @@ public class GitFilePathHelperTest extends CategoryTest {
     String repoUrl = "https://dev.azure.com/org";
     String repoProjectName = "repoProjectName";
     AzureRepoConnectorDTO azureRepoConnectorDTO =
-        AzureRepoConnectorDTO.builder().connectionType(GitConnectionType.ACCOUNT).url(repoUrl).build();
+        AzureRepoConnectorDTO.builder().connectionType(AzureRepoConnectionTypeDTO.PROJECT).url(repoUrl).build();
     GitRepositoryDTO gitRepository = GitRepositoryDTO.builder().name(repoName).projectName(repoProjectName).build();
     doReturn(azureRepoConnectorDTO)
         .when(gitSyncConnectorHelper)

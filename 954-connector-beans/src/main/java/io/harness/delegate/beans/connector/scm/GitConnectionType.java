@@ -8,8 +8,10 @@
 package io.harness.delegate.beans.connector.scm;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.Hidden;
 
 public enum GitConnectionType {
   @JsonProperty(GitConfigConstants.ACCOUNT) ACCOUNT,
-  @JsonProperty(GitConfigConstants.REPO) REPO
+  @JsonProperty(GitConfigConstants.REPO) REPO,
+  @Hidden @JsonProperty(GitConfigConstants.PROJECT) PROJECT
 }

@@ -217,7 +217,8 @@ public class ProjectChangeEventMessageProcessorTest extends CvNextGenTestBase {
     Set<Class<? extends PersistentEntity>> withProjectIdentifier = new HashSet<>();
     reflections.getSubTypesOf(PersistentEntity.class).forEach(entity -> {
       if (doesClassContainField(entity, "accountId") && doesClassContainField(entity, "orgIdentifier")
-          && doesClassContainField(entity, "projectIdentifier")) {
+          && doesClassContainField(entity, "projectIdentifier")
+          && !OrganizationChangeEventMessageProcessor.EXCEPTIONS.contains(entity)) {
         withProjectIdentifier.add(entity);
       }
     });

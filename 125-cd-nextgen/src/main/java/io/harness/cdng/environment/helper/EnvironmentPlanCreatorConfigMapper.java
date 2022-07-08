@@ -63,12 +63,12 @@ public class EnvironmentPlanCreatorConfigMapper {
         .variables(config.getVariables())
         .serviceOverrides(serviceOverride)
         .gitOpsClusterRefs(getClusterRefs(envYaml))
-        .deployToAll(envYaml.isDeployToAll())
+        .deployToAll(envYaml.getDeployToAll().getValue())
         .build();
   }
 
   private List<String> getClusterRefs(EnvironmentYamlV2 environmentV2) {
-    if (!environmentV2.isDeployToAll()) {
+    if (!environmentV2.getDeployToAll().getValue()) {
       return environmentV2.getGitOpsClusters()
           .getValue()
           .stream()

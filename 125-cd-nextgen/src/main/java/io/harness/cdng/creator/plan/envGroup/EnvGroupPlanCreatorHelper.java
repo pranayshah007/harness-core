@@ -9,6 +9,7 @@ package io.harness.cdng.creator.plan.envGroup;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
@@ -105,6 +106,11 @@ public class EnvGroupPlanCreatorHelper {
         if (isNotEmpty(envYaml.getEnvironmentInputs().getValue())) {
           mergedEnvYaml = EnvironmentPlanCreatorHelper.mergeEnvironmentInputs(
               originalEnvYaml, envYaml.getEnvironmentInputs().getValue());
+        }
+        if (!envYaml.getDeployToAll().getValue() && isEmpty(envYaml.getGitOpsClusters().getValue())) {
+          throw new InvalidRequestException(
+              "List of Gitops clusters must be provided because deployToAll is false for env "
+              + environment.getIdentifier());
         }
         envConfigs.add(
             EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(mergedEnvYaml, envYaml, null));

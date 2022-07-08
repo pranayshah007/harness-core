@@ -118,7 +118,7 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   private static final String PRIMARY_ARTIFACT_PATH_FOR_ECR = "<+artifact.image>";
   private static final String ARTIFACT_ACTUAL_PATH = "harnessArtifact/artifactFile";
   private static final String SIDECAR_ARTIFACT_PATH_PREFIX = "<+sidecar.artifact.";
-  private static final String SIDECAR_ARTIFACT_FILE_NAME_PREFIX = "sidecar-artifact-";
+  private static final String SIDECAR_ARTIFACT_FILE_NAME_PREFIX = "harnessArtifact/sidecar-artifact-";
 
   @Mock private EngineExpressionService engineExpressionService;
   @Mock private OutcomeService outcomeService;

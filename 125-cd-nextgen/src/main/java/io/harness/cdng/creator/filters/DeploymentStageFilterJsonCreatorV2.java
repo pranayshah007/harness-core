@@ -178,9 +178,12 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
 
-    if (!gitOpsEnabled && env.isDeployToAll()) {
-      throw new InvalidYamlRuntimeException(
-          "Deploy to all environments is not supported yet. Please select a specific infrastructure and try again");
+    final ParameterField<Boolean> deployToAll = env.getDeployToAll();
+    if (!gitOpsEnabled) {
+      if (deployToAll.isExpression() || deployToAll.getValue() == Boolean.TRUE) {
+        throw new InvalidYamlRuntimeException(
+            "Deploy to all environments is not supported yet. Please select a specific infrastructure and try again");
+      }
     }
 
     if (!environmentRef.isExpression()) {
@@ -209,13 +212,13 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       }
     }
 
-    if (gitOpsEnabled) {
-      if (env.isDeployToAll() && env.getGitOpsClusters().fetchFinalValue() != null) {
+    if (gitOpsEnabled && !deployToAll.isExpression()) {
+      if (deployToAll.getValue() && env.getGitOpsClusters().fetchFinalValue() != null) {
         throw new InvalidYamlRuntimeException(format(
             "When deploying to all, individual gitops clusters must not be provided in stage [%s]. Please remove the gitOpsClusters property and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
       }
-      if (!env.isDeployToAll() && env.getGitOpsClusters().fetchFinalValue() == null) {
+      if (!deployToAll.getValue() && env.getGitOpsClusters().fetchFinalValue() == null) {
         throw new InvalidYamlRuntimeException(format(
             "When deploy to all is false, list of gitops clusters must be provided  in stage [%s].  Please specify the gitOpsClusters property and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));

@@ -113,6 +113,7 @@ import io.harness.ng.accesscontrol.migrations.AccessControlMigrationModule;
 import io.harness.ng.accesscontrol.user.AggregateUserService;
 import io.harness.ng.accesscontrol.user.AggregateUserServiceImpl;
 import io.harness.ng.authenticationsettings.AuthenticationSettingsModule;
+import io.harness.ng.chaos.ChaosModule;
 import io.harness.ng.core.AccountOrgProjectHelper;
 import io.harness.ng.core.AccountOrgProjectHelperImpl;
 import io.harness.ng.core.CoreModule;
@@ -447,6 +448,7 @@ public class NextGenModule extends AbstractModule {
   protected void configure() {
     install(VersionModule.getInstance());
     install(PrimaryVersionManagerModule.getInstance());
+    install(new NGSettingModule(appConfig));
     install(new AbstractPersistenceTracerModule() {
       @Override
       protected RedisConfig redisConfigProvider() {
@@ -574,8 +576,8 @@ public class NextGenModule extends AbstractModule {
     install(new InstanceModule());
     install(new TokenClientModule(this.appConfig.getNgManagerClientConfig(),
         this.appConfig.getNextGenConfig().getNgManagerServiceSecret(), NG_MANAGER.getServiceId()));
-    install(
-        new OpaClientModule(appConfig.getOpaServerConfig().getBaseUrl(), appConfig.getOpaServerConfig().getSecret()));
+    install(new OpaClientModule(
+        appConfig.getOpaClientConfig(), appConfig.getPolicyManagerSecret(), NG_MANAGER.getServiceId()));
     install(EnforcementModule.getInstance());
 
     install(EnforcementClientModule.getInstance(appConfig.getNgManagerClientConfig(),
@@ -671,7 +673,7 @@ public class NextGenModule extends AbstractModule {
         return appConfig.getAccountConfig();
       }
     });
-
+    install(ChaosModule.getInstance());
     install(LicenseModule.getInstance());
     install(SubscriptionModule.createInstance(appConfig.getSubscriptionConfig()));
     bind(AggregateUserService.class).to(AggregateUserServiceImpl.class);

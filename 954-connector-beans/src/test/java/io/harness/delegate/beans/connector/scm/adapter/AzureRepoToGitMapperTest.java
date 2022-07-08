@@ -10,7 +10,7 @@ package io.harness.delegate.beans.connector.scm.adapter;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.delegate.beans.connector.scm.GitAuthType.HTTP;
 import static io.harness.delegate.beans.connector.scm.GitAuthType.SSH;
-import static io.harness.delegate.beans.connector.scm.GitConnectionType.ACCOUNT;
+import static io.harness.delegate.beans.connector.scm.GitConnectionType.PROJECT;
 import static io.harness.delegate.beans.connector.scm.GitConnectionType.REPO;
 import static io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType.TOKEN;
 import static io.harness.rule.OwnerRule.MANKRIT;
@@ -22,9 +22,9 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
-import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
@@ -64,9 +64,7 @@ public class AzureRepoToGitMapperTest extends CategoryTest {
     final String usernameRef = "usernameRef";
     final String tokenRef = "tokenRef";
     final String username = "username";
-    final String validationProject = "validationProject";
     final String validationRepo = "validationRepo";
-    final String validationProjAndRepo = validationProject + "/_git/" + validationRepo;
     final AzureRepoAuthenticationDTO azureRepoAuthenticationDTO =
         AzureRepoAuthenticationDTO.builder()
             .authType(HTTP)
@@ -86,9 +84,8 @@ public class AzureRepoToGitMapperTest extends CategoryTest {
             .spec(AzureRepoTokenSpecDTO.builder().tokenRef(SecretRefHelper.createSecretRef(tokenRef)).build())
             .build();
     final AzureRepoConnectorDTO azureRepoConnectorDTO = AzureRepoConnectorDTO.builder()
-                                                            .connectionType(GitConnectionType.ACCOUNT)
+                                                            .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
                                                             .url(url)
-                                                            .validationProject(validationProject)
                                                             .validationRepo(validationRepo)
                                                             .authentication(azureRepoAuthenticationDTO)
                                                             .apiAccess(azureRepoApiAccessDTO)
@@ -99,9 +96,8 @@ public class AzureRepoToGitMapperTest extends CategoryTest {
     assertThat(gitConfigDTO.getGitAuthType()).isEqualTo(HTTP);
     assertThat(gitConfigDTO.getDelegateSelectors()).isEqualTo(delegateSelectors);
     GitHTTPAuthenticationDTO gitAuthentication = (GitHTTPAuthenticationDTO) gitConfigDTO.getGitAuth();
-    assertThat(gitConfigDTO.getGitConnectionType()).isEqualTo(ACCOUNT);
+    assertThat(gitConfigDTO.getGitConnectionType()).isEqualTo(PROJECT);
     assertThat(gitConfigDTO.getUrl()).isEqualTo(url);
-    assertThat(gitConfigDTO.getValidationRepo()).isEqualTo(validationProjAndRepo);
     assertThat(gitAuthentication.getUsername()).isEqualTo(username);
     assertThat(gitAuthentication.getUsernameRef().toSecretRefStringValue()).isEqualTo(usernameRef);
     assertThat(gitAuthentication.getPasswordRef().toSecretRefStringValue()).isEqualTo(tokenRef);
@@ -121,7 +117,7 @@ public class AzureRepoToGitMapperTest extends CategoryTest {
             .build();
 
     final AzureRepoConnectorDTO azureRepoConnectorDTO = AzureRepoConnectorDTO.builder()
-                                                            .connectionType(GitConnectionType.REPO)
+                                                            .connectionType(AzureRepoConnectionTypeDTO.REPO)
                                                             .url(url)
                                                             .authentication(azureRepoAuthenticationDTO)
                                                             .delegateSelectors(delegateSelectors)
@@ -149,7 +145,7 @@ public class AzureRepoToGitMapperTest extends CategoryTest {
             .build();
 
     final AzureRepoConnectorDTO azureRepoConnectorDTO = AzureRepoConnectorDTO.builder()
-                                                            .connectionType(GitConnectionType.REPO)
+                                                            .connectionType(AzureRepoConnectionTypeDTO.REPO)
                                                             .url(url)
                                                             .authentication(azureRepoAuthenticationDTO)
                                                             .delegateSelectors(delegateSelectors)

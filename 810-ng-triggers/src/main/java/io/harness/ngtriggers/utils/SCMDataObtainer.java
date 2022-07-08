@@ -15,6 +15,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.GIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
+import static io.harness.delegate.beans.connector.scm.adapter.AzureRepoToGitMapper.mapToGitConnectionType;
 
 import static software.wings.beans.TaskType.SCM_GIT_REF_TASK;
 
@@ -171,7 +172,7 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
       return gitConfigDTO.getConnectionType();
     } else if (gitConnector.getConnectorType() == AZURE_REPO) {
       AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
-      return gitConfigDTO.getConnectionType();
+      return mapToGitConnectionType(gitConfigDTO.getConnectionType());
     } else if (gitConnector.getConnectorType() == BITBUCKET) {
       BitbucketConnectorDTO gitConfigDTO = (BitbucketConnectorDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getConnectionType();

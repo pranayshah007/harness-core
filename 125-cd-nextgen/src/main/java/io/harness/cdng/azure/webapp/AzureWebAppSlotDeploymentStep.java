@@ -31,11 +31,13 @@ import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppSlotDeploymentDataOutput;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.delegate.beans.instancesync.mapper.AzureWebAppToServerInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppFetchPreDeploymentDataRequest;
@@ -83,6 +85,7 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
   @Inject private AzureWebAppStepHelper azureWebAppStepHelper;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private InstanceInfoService instanceInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
@@ -177,7 +180,11 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
             .build(),
         StepCategory.STEP.name());
 
-    return stepResponseBuilder.build();
+    StepResponse.StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
+        AzureWebAppToServerInstanceInfoMapper.toServerInstanceInfoList(
+            slotDeploymentResponse.getAzureAppDeploymentData()));
+
+    return stepResponseBuilder.stepOutcome(stepOutcome).build();
   }
 
   @Override

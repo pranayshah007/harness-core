@@ -27,9 +27,9 @@ import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
-import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessSpecDTO;
@@ -291,7 +291,7 @@ public class GitStatusCheckHelper {
     if (isNotEmpty(token)) {
       String completeUrl = gitConfigDTO.getUrl();
 
-      if (gitConfigDTO.getConnectionType() == GitConnectionType.ACCOUNT) {
+      if (gitConfigDTO.getConnectionType() == AzureRepoConnectionTypeDTO.PROJECT) {
         completeUrl = StringUtils.join(
             StringUtils.stripEnd(completeUrl, PATH_SEPARATOR), PATH_SEPARATOR, gitStatusCheckParams.getRepo());
       }

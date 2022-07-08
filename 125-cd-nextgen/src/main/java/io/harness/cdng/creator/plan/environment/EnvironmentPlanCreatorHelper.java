@@ -8,6 +8,7 @@
 package io.harness.cdng.creator.plan.environment;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -132,6 +133,9 @@ public class EnvironmentPlanCreatorHelper {
       return EnvironmentPlanCreatorConfigMapper.toEnvironmentPlanCreatorConfig(
           mergedEnvYaml, infrastructureConfigs, serviceOverride);
     } else {
+      if (!environmentV2.getDeployToAll().getValue() && isEmpty(environmentV2.getGitOpsClusters().getValue())) {
+        throw new InvalidRequestException("List of Gitops clusters must be provided because deployToAll is false");
+      }
       return EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(
           mergedEnvYaml, environmentV2, serviceOverride);
     }
@@ -174,7 +178,7 @@ public class EnvironmentPlanCreatorHelper {
     List<InfrastructureEntity> infrastructureEntityList;
     Map<String, Map<String, Object>> refToInputMap = new HashMap<>();
     String envIdentifier = environmentV2.getEnvironmentRef().getValue();
-    if (!environmentV2.isDeployToAll()) {
+    if (!environmentV2.getDeployToAll().getValue()) {
       List<String> infraIdentifierList = new ArrayList<>();
 
       for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions().getValue()) {
