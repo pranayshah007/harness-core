@@ -34,6 +34,7 @@ public class InstanceGroupedByArtifactList {
     String infraIdentifier;
     String infraName;
     int count;
+    String lastPipelinePlanExecutionId;
     String lastPipelineExecutionId;
     String lastPipelineExecutionName;
     String lastDeployedAt;

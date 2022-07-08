@@ -795,6 +795,34 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     return pipelineExecutionDetailsMap;
   }
 
+  private Map<String, String> getPlanExecutionIdToPipelineExecutionIdMap(List<String> planExecutionIdList) {
+    Map<String, String> planExecutionIdToPipelineExecutionIdMap = new HashMap<>();
+    int totalTries = 0;
+    boolean successfulOperation = false;
+    String sql = "select id,planexecutionid from " + tableNameCD + " where planexecutionid = any (?);";
+    while (!successfulOperation && totalTries <= MAX_RETRY_COUNT) {
+      ResultSet resultSet = null;
+      try (Connection connection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = connection.prepareStatement(sql)) {
+        final Array array = connection.createArrayOf("VARCHAR", planExecutionIdList.toArray());
+        statement.setArray(1, array);
+        resultSet = statement.executeQuery();
+        while (resultSet != null && resultSet.next()) {
+          String pipelineExecutionId = resultSet.getString(NGPipelineSummaryCDConstants.ID);
+          String planExecutionId = resultSet.getString(NGPipelineSummaryCDConstants.PLAN_EXECUTION_ID);
+          planExecutionIdToPipelineExecutionIdMap.putIfAbsent(planExecutionId, pipelineExecutionId);
+        }
+        successfulOperation = true;
+      } catch (SQLException ex) {
+        log.error("%s after total tries = %s", ex, totalTries);
+        totalTries++;
+      } finally {
+        DBUtils.close(resultSet);
+      }
+    }
+    return planExecutionIdToPipelineExecutionIdMap;
+  }
+
   public Map<String, Pair<String, AuthorInfo>> getPipelineExecutionIdToTriggerTypeAndAuthorInfoMapping(
       List<String> pipelineExecutionIdList) {
     Map<String, Pair<String, AuthorInfo>> triggerAndAuthorInfoMap = new HashMap<>();
@@ -1558,13 +1586,22 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> buildEnvInfraMap =
         new HashMap<>();
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
+    List<String> lastPipelinePlanExecutionIds = new ArrayList<>();
     List<ActiveServiceInstanceInfo> activeServiceInstanceInfoList =
         instanceDashboardService.getActiveServiceInstanceInfo(
             accountIdentifier, orgIdentifier, projectIdentifier, serviceId, getCurrentTime());
+
+    activeServiceInstanceInfoList.forEach(activeServiceInstanceInfo -> {
+      lastPipelinePlanExecutionIds.add(activeServiceInstanceInfo.getLastPipelineExecutionId());
+    });
+
+    Map<String, String> planExecutionIdToPipelineExecutionIdMap =
+        getPlanExecutionIdToPipelineExecutionIdMap(lastPipelinePlanExecutionIds);
+
     activeServiceInstanceInfoList.forEach(activeServiceInstanceInfo -> {
       final String infraIdentifier = activeServiceInstanceInfo.getInfraIdentifier();
       final String infraName = activeServiceInstanceInfo.getInfraName();
-      final String lastPipelineExecutionId = activeServiceInstanceInfo.getLastPipelineExecutionId();
+      final String lastPipelinePlanExecutionId = activeServiceInstanceInfo.getLastPipelineExecutionId();
       final String lastPipelineExecutionName = activeServiceInstanceInfo.getLastPipelineExecutionName();
       final String lastDeployedAt = activeServiceInstanceInfo.getLastDeployedAt();
       final String envId = activeServiceInstanceInfo.getEnvIdentifier();
@@ -1580,7 +1617,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
               .infraName(infraName)
               .count(count)
               .lastDeployedAt(lastDeployedAt)
-              .lastPipelineExecutionId(lastPipelineExecutionId)
+              .lastPipelinePlanExecutionId(lastPipelinePlanExecutionId)
+              .lastPipelineExecutionId(planExecutionIdToPipelineExecutionIdMap.get(lastPipelinePlanExecutionId))
               .lastPipelineExecutionName(lastPipelineExecutionName)
               .build());
       envIdToEnvNameMap.putIfAbsent(envId, envName);

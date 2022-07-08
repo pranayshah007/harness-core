@@ -141,7 +141,7 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
     activeServiceInstanceInfoAggregationResults.getMappedResults().forEach(activeServiceInstanceInfo -> {
       final String infraIdentifier = activeServiceInstanceInfo.getInfraIdentifier();
       final String infraName = activeServiceInstanceInfo.getInfraName();
-      final String lastPipelineExecutionId = activeServiceInstanceInfo.getLastPipelineExecutionId();
+      final String lastPipelinePlanExecutionId = activeServiceInstanceInfo.getLastPipelineExecutionId();
       final String lastPipelineExecutionName = activeServiceInstanceInfo.getLastPipelineExecutionName();
       final String lastDeployedAt = activeServiceInstanceInfo.getLastDeployedAt();
       final String envId = activeServiceInstanceInfo.getEnvIdentifier();
@@ -149,7 +149,7 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
       final String buildId = activeServiceInstanceInfo.getTag();
       final Integer count = activeServiceInstanceInfo.getCount();
       activeServiceInstanceInfoList.add(new ActiveServiceInstanceInfo(infraIdentifier, infraName,
-          lastPipelineExecutionId, lastPipelineExecutionName, lastDeployedAt, envId, envName, buildId, count));
+          lastPipelinePlanExecutionId, lastPipelineExecutionName, lastDeployedAt, envId, envName, buildId, count));
     });
 
     return activeServiceInstanceInfoList;
