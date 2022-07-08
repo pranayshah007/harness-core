@@ -2041,8 +2041,8 @@ public class WorkflowServiceImpl implements WorkflowService {
 
   @Override
   public List<InfrastructureDefinition> getResolvedInfraDefinitions(
-      Workflow workflow, Map<String, String> workflowVariables) {
-    return workflowServiceHelper.getResolvedInfraDefinitions(workflow, workflowVariables);
+      Workflow workflow, Map<String, String> workflowVariables, String envId) {
+    return workflowServiceHelper.getResolvedInfraDefinitions(workflow, workflowVariables, envId);
   }
 
   @Override
@@ -2051,8 +2051,9 @@ public class WorkflowServiceImpl implements WorkflowService {
   }
 
   @Override
-  public List<String> getResolvedInfraDefinitionIds(Workflow workflow, Map<String, String> workflowVariables) {
-    return workflowServiceHelper.getResolvedInfraDefinitionIds(workflow, workflowVariables);
+  public List<String> getResolvedInfraDefinitionIds(
+      Workflow workflow, Map<String, String> workflowVariables, String resolveEnvId) {
+    return workflowServiceHelper.getResolvedInfraDefinitionIds(workflow, workflowVariables, resolveEnvId);
   }
 
   @Override

@@ -18,6 +18,7 @@ import static software.wings.beans.Log.Builder.aLog;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.artifacts.jenkins.beans.JenkinsInternalConfig;
 import io.harness.artifacts.jenkins.client.JenkinsClient;
 import io.harness.artifacts.jenkins.client.JenkinsCustomServer;
@@ -64,6 +65,7 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -71,6 +73,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -140,7 +143,23 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
     List<BuildDetails> buildDetails =
         jenkinsRegistryService.getBuildsForJob(JenkinsRequestResponseMapper.toJenkinsInternalConfig(attributesRequest),
             attributesRequest.getJobName(), attributesRequest.getArtifactPaths(), ARTIFACT_RETENTION_SIZE);
-    return ArtifactTaskExecutionResponse.builder().buildDetails(buildDetails).build();
+    List<JenkinsArtifactDelegateResponse> jenkinsArtifactDelegateResponseList =
+        buildDetails.stream()
+            .sorted(new BuildDetailsComparatorDescending())
+            .map(build -> JenkinsRequestResponseMapper.toJenkinsArtifactDelegateResponse(build, attributesRequest))
+            .collect(Collectors.toList());
+    return getSuccessTaskExecutionResponse(jenkinsArtifactDelegateResponseList, buildDetails);
+  }
+
+  @Override
+  public ArtifactTaskExecutionResponse getLastSuccessfulBuild(JenkinsArtifactDelegateRequest attributesRequest) {
+    BuildDetails buildDetails = jenkinsRegistryService.getLastSuccessfulBuildForJob(
+        JenkinsRequestResponseMapper.toJenkinsInternalConfig(attributesRequest), attributesRequest.getJobName(),
+        attributesRequest.getArtifactPaths());
+    JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
+        JenkinsRequestResponseMapper.toJenkinsArtifactDelegateResponse(buildDetails, attributesRequest);
+    return getSuccessTaskExecutionResponse(
+        Collections.singletonList(jenkinsArtifactDelegateResponse), Collections.singletonList(buildDetails));
   }
 
   public ArtifactTaskExecutionResponse triggerBuild(
@@ -288,9 +307,10 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
   }
 
   private ArtifactTaskExecutionResponse getSuccessTaskExecutionResponse(
-      List<JenkinsArtifactDelegateResponse> responseList) {
+      List<JenkinsArtifactDelegateResponse> responseList, List<BuildDetails> buildDetails) {
     return ArtifactTaskExecutionResponse.builder()
         .artifactDelegateResponses(responseList)
+        .buildDetails(buildDetails)
         .isArtifactSourceValid(true)
         .isArtifactServerValid(true)
         .build();

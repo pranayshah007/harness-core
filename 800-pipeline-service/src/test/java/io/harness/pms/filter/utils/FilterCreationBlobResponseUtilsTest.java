@@ -9,6 +9,7 @@ package io.harness.pms.filter.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -68,6 +69,18 @@ public class FilterCreationBlobResponseUtilsTest extends CategoryTest {
     FilterCreationBlobResponseUtils.mergeFilters(filterCreationResponseWrapper, filters);
     assertThat(filters.containsKey("pipeline")).isTrue();
     assertThat(filters.get("pipeline")).isEqualTo("filter");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testMergeFiltersWhenFilterDoesNotContainServiceName() {
+    FilterCreationBlobResponse filterCreationResponse = FilterCreationBlobResponse.newBuilder().build();
+    FilterCreationResponseWrapper filterCreationResponseWrapper =
+        FilterCreationResponseWrapper.builder().serviceName("pipeline").response(filterCreationResponse).build();
+    Map<String, String> filters = new HashMap<>();
+    FilterCreationBlobResponseUtils.mergeFilters(filterCreationResponseWrapper, filters);
+    assertThat(filters.containsKey("pipeline")).isTrue();
   }
 
   @Test

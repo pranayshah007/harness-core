@@ -18,9 +18,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
-import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
@@ -75,7 +75,7 @@ public class AzureRepoGitProviderMapperTest extends CategoryTest {
         AzureRepoApiAccessDTO.builder().type(TOKEN).spec(AzureRepoTokenSpecDTO.builder().tokenRef(x).build()).build();
 
     final AzureRepoConnectorDTO azureRepoConnectorDTO = AzureRepoConnectorDTO.builder()
-                                                            .connectionType(GitConnectionType.REPO)
+                                                            .connectionType(AzureRepoConnectionTypeDTO.REPO)
                                                             .url(url)
                                                             .authentication(azureRepoAuthenticationDTO)
                                                             .apiAccess(azureRepoApiAccessDTO)
@@ -97,7 +97,6 @@ public class AzureRepoGitProviderMapperTest extends CategoryTest {
     final String url = "https://mankritsingh@dev.azure.com/org/";
     final String tokenRef = "tokenRef";
     final String username = "username";
-    final String validationProject = "project";
     final String validationRepo = "repo";
     final AzureRepoAuthenticationDTO azureRepoAuthenticationDTO =
         AzureRepoAuthenticationDTO.builder()
@@ -116,9 +115,8 @@ public class AzureRepoGitProviderMapperTest extends CategoryTest {
         AzureRepoApiAccessDTO.builder().type(TOKEN).spec(AzureRepoTokenSpecDTO.builder().tokenRef(x).build()).build();
 
     final AzureRepoConnectorDTO azureRepoConnectorDTO = AzureRepoConnectorDTO.builder()
-                                                            .connectionType(GitConnectionType.ACCOUNT)
+                                                            .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
                                                             .url(url)
-                                                            .validationProject(validationProject)
                                                             .validationRepo(validationRepo)
                                                             .authentication(azureRepoAuthenticationDTO)
                                                             .apiAccess(azureRepoApiAccessDTO)
@@ -152,7 +150,7 @@ public class AzureRepoGitProviderMapperTest extends CategoryTest {
         AzureRepoApiAccessDTO.builder().type(TOKEN).spec(AzureRepoTokenSpecDTO.builder().tokenRef(x).build()).build();
 
     final AzureRepoConnectorDTO azureRepoConnectorDTO = AzureRepoConnectorDTO.builder()
-                                                            .connectionType(GitConnectionType.REPO)
+                                                            .connectionType(AzureRepoConnectionTypeDTO.REPO)
                                                             .url(url)
                                                             .authentication(azureRepoAuthenticationDTO)
                                                             .apiAccess(azureRepoApiAccessDTO)
@@ -173,7 +171,6 @@ public class AzureRepoGitProviderMapperTest extends CategoryTest {
   public void testMapToAzureRepoProviderSSHAcc() {
     final String url = "git@ssh.dev.azure.com:v3/org/";
     String sshKeyRef = "sshKeyRef";
-    String validationProject = "project";
     String validationRepo = "repo";
     String tokenRef = "tokenRef";
     final AzureRepoAuthenticationDTO azureRepoAuthenticationDTO =
@@ -189,9 +186,8 @@ public class AzureRepoGitProviderMapperTest extends CategoryTest {
         AzureRepoApiAccessDTO.builder().type(TOKEN).spec(AzureRepoTokenSpecDTO.builder().tokenRef(x).build()).build();
 
     final AzureRepoConnectorDTO azureRepoConnectorDTO = AzureRepoConnectorDTO.builder()
-                                                            .connectionType(GitConnectionType.ACCOUNT)
+                                                            .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
                                                             .url(url)
-                                                            .validationProject(validationProject)
                                                             .validationRepo(validationRepo)
                                                             .authentication(azureRepoAuthenticationDTO)
                                                             .apiAccess(azureRepoApiAccessDTO)

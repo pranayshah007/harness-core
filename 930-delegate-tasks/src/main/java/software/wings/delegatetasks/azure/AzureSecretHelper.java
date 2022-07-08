@@ -89,7 +89,8 @@ public class AzureSecretHelper {
 
     if (AzureAppServiceTaskType.SLOT_ROLLBACK == azureAppServiceTaskParameters.getCommandType()
         && azureAppServiceTaskParameters instanceof AzureWebAppRollbackParameters) {
-      decryptAzureWebAppRollbackParameters((AzureWebAppRollbackParameters) azureAppServiceTaskParameters);
+      decryptAzureWebAppRollbackParameters(
+          ((AzureWebAppRollbackParameters) azureAppServiceTaskParameters).getPreDeploymentData());
     }
   }
 
@@ -104,8 +105,7 @@ public class AzureSecretHelper {
         credentials -> ExceptionMessageSanitizer.storeAllSecretsForSanitizing(credentials, encryptedDataDetails));
   }
 
-  private void decryptAzureWebAppRollbackParameters(AzureWebAppRollbackParameters azureWebAppRollbackParameters) {
-    AzureAppServicePreDeploymentData preDeploymentData = azureWebAppRollbackParameters.getPreDeploymentData();
+  public void decryptAzureWebAppRollbackParameters(AzureAppServicePreDeploymentData preDeploymentData) {
     decryptSettings(preDeploymentData.getAppSettingsToAdd());
     decryptSettings(preDeploymentData.getAppSettingsToRemove());
     decryptSettings(preDeploymentData.getConnStringsToAdd());
@@ -129,17 +129,20 @@ public class AzureSecretHelper {
     setting.setValue(new String(secretValue));
   }
 
+  public void encryptAzureAppServicePreDeploymentData(
+      AzureAppServicePreDeploymentData azureAppServicePreDeploymentData, final String accountId) {
+    encryptPreDeploymentData(azureAppServicePreDeploymentData, accountId);
+  }
+
   public void encryptAzureTaskResponseParams(
       AzureTaskResponse azureTaskResponse, final String accountId, AzureAppServiceTaskType commandType) {
     if ((azureTaskResponse instanceof AzureWebAppSlotSetupResponse)
         && AzureAppServiceTaskType.SLOT_SETUP == commandType) {
-      encryptAzureWebAppSlotSetupResponseParams((AzureWebAppSlotSetupResponse) azureTaskResponse, accountId);
+      encryptPreDeploymentData(((AzureWebAppSlotSetupResponse) azureTaskResponse).getPreDeploymentData(), accountId);
     }
   }
 
-  private void encryptAzureWebAppSlotSetupResponseParams(
-      AzureWebAppSlotSetupResponse azureTaskResponse, final String accountId) {
-    AzureAppServicePreDeploymentData preDeploymentData = azureTaskResponse.getPreDeploymentData();
+  private void encryptPreDeploymentData(AzureAppServicePreDeploymentData preDeploymentData, final String accountId) {
     if (preDeploymentData != null) {
       encryptSettings(preDeploymentData.getAppSettingsToRemove(), accountId);
       encryptSettings(preDeploymentData.getAppSettingsToAdd(), accountId);

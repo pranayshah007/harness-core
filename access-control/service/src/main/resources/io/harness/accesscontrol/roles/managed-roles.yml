@@ -394,6 +394,7 @@ roles:
         - core_resourcegroup_view
         - core_resourcegroup_edit
         - core_resourcegroup_delete
+        - core_license_edit
         - core_license_view
         - core_authsetting_view
         - core_authsetting_edit
@@ -654,6 +655,15 @@ roles:
       permissions:
         - core_license_view
         - core_account_view
+      managed: true
+      allowedScopeLevels:
+        - account
+    - identifier: _billing_admin
+      name: Billing Admin
+      description: Billing Admin
+      permissions:
+        - core_license_view
+        - core_license_edit
       managed: true
       allowedScopeLevels:
         - account

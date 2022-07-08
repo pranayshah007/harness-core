@@ -15,6 +15,8 @@ import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.exception.runtime.KubernetesApiClientRuntimeException;
+import io.harness.k8s.exception.KubernetesExceptionExplanation;
+import io.harness.k8s.exception.KubernetesExceptionHints;
 
 import com.google.common.collect.ImmutableSet;
 import java.io.IOException;

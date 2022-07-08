@@ -9,6 +9,7 @@ package io.harness.pms.sdk.core.supporter.child;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
@@ -19,6 +20,7 @@ import lombok.Value;
 @OwnedBy(PIPELINE)
 @Value
 @Builder
+@RecasterAlias("io.harness.pms.sdk.core.supporter.child.TestSectionStepParameters")
 public class TestSectionStepParameters implements StepParameters {
   String childNodeId;
   Map<String, String> data;

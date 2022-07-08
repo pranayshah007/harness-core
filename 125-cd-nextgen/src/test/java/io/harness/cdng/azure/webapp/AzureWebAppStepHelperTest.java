@@ -113,6 +113,7 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
   private static final String RESOURCE_GROUP = "resourceGroup";
   private static final String APP_NAME = "appName";
   private static final String DEPLOYMENT_SLOT = "deploymentSlot";
+  private static final String TARGET_SLOT = "targetSlot";
 
   @Mock private OutcomeService outcomeService;
   @Mock private FileStoreService fileStoreService;
@@ -264,7 +265,7 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
   public void testPrepareTaskRequest() {
     final StepElementParameters stepElementParameters = createTestStepElementParameters();
     final AzureWebAppFetchPreDeploymentDataRequest taskParameters =
-        AzureWebAppFetchPreDeploymentDataRequest.builder().build();
+        AzureWebAppFetchPreDeploymentDataRequest.builder().accountId(ACCOUNT_ID).build();
     final List<String> units = singletonList("test unit");
 
     stepHelper.prepareTaskRequest(
@@ -338,6 +339,7 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
                                                                        .resourceGroup(RESOURCE_GROUP)
                                                                        .webApp(APP_NAME)
                                                                        .deploymentSlot(DEPLOYMENT_SLOT)
+                                                                       .targetSlot(TARGET_SLOT)
                                                                        .build();
     final AzureConnectorDTO azureConnectorDTO = AzureConnectorDTO.builder().build();
     final ConnectorInfoDTO connectorInfoDTO =
@@ -354,6 +356,7 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
     assertThat(infraDelegateConfig.getAzureConnectorDTO()).isSameAs(azureConnectorDTO);
     assertThat(infraDelegateConfig.getSubscription()).isEqualTo(SUBSCRIPTION_ID);
     assertThat(infraDelegateConfig.getDeploymentSlot()).isEqualTo(DEPLOYMENT_SLOT);
+    assertThat(infraDelegateConfig.getTargetSlot()).isEqualTo(TARGET_SLOT);
     assertThat(infraDelegateConfig.getAppName()).isEqualTo(APP_NAME);
     assertThat(infraDelegateConfig.getEncryptionDataDetails()).isSameAs(encryptionDetails);
   }

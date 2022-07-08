@@ -21,13 +21,13 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.k8s.exception.KubernetesCliRuntimeExceptionHandler;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionHints;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.KubernetesCliTaskRuntimeException;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.WingsException;
 import io.harness.k8s.ProcessResponse;
+import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.rule.Owner;
 
 import java.nio.charset.StandardCharsets;

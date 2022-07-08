@@ -60,6 +60,7 @@ public class AzureTestUtils {
         .resourceGroup(RESOURCE_GROUP)
         .appName(APP_NAME)
         .deploymentSlot(DEPLOYMENT_SLOT)
+        .targetSlot(TARGET_SLOT)
         .build();
   }
 

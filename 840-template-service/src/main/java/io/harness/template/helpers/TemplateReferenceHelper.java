@@ -47,6 +47,7 @@ import com.google.inject.Singleton;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -99,6 +100,7 @@ public class TemplateReferenceHelper {
     }
     EntityReferenceResponse response =
         entityReferenceServiceBlockingStub.getReferences(entityReferenceRequestBuilder.build());
+    templateEntity.setModules(new HashSet<>(response.getModuleInfoList()));
     List<EntityDetailProtoDTO> referredEntities =
         correctFQNsOfReferredEntities(response.getReferredEntitiesList(), templateEntity.getTemplateEntityType());
     List<EntityDetailProtoDTO> referredEntitiesInLinkedTemplates =

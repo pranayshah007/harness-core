@@ -89,6 +89,7 @@ public class AzureWebAppSlotDeploymentRequestHandlerTest extends CategoryTest {
   public void testExecuteContainerArtifact() {
     final AzureWebAppSlotDeploymentRequest request =
         AzureWebAppSlotDeploymentRequest.builder()
+            .accountId("accountId")
             .preDeploymentData(AzureAppServicePreDeploymentData.builder().deploymentProgressMarker("test").build())
             .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
             .artifact(AzureTestUtils.createTestContainerArtifactConfig())
@@ -122,6 +123,7 @@ public class AzureWebAppSlotDeploymentRequestHandlerTest extends CategoryTest {
   public void testExecuteContainerArtifactFailure() {
     final AzureWebAppSlotDeploymentRequest request =
         AzureWebAppSlotDeploymentRequest.builder()
+            .accountId("accountId")
             .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
             .artifact(AzureTestUtils.createTestContainerArtifactConfig())
             .preDeploymentData(AzureAppServicePreDeploymentData.builder().deploymentProgressMarker("test").build())

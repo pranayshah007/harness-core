@@ -264,6 +264,25 @@ public class AwsApiHelperService {
     }
   }
 
+  public BuildDetails getBuild(AwsInternalConfig awsInternalConfig, String region, String bucketName, String filePath) {
+    BuildDetails buildDetails;
+
+    try {
+      boolean versioningEnabledForBucket = isVersioningEnabledForBucket(awsInternalConfig, bucketName, region);
+
+      buildDetails =
+          getArtifactBuildDetails(awsInternalConfig, bucketName, filePath, versioningEnabledForBucket, 1, region);
+
+    } catch (WingsException e) {
+      e.excludeReportTarget(AWS_ACCESS_DENIED, EVERYBODY);
+      throw new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER);
+    } catch (RuntimeException e) {
+      throw new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER);
+    }
+
+    return buildDetails;
+  }
+
   private boolean isVersioningEnabledForBucket(AwsInternalConfig awsInternalConfig, String bucketName, String region) {
     try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
              new CloseableAmazonWebServiceClient(getAmazonS3Client(awsInternalConfig, region))) {
@@ -547,10 +566,6 @@ public class AwsApiHelperService {
     } else {
       return AWS_DEFAULT_REGION;
     }
-  }
-
-  public S3Object getBuild(AwsInternalConfig awsInternalConfig, String region, String bucketName, String filePath) {
-    return getObjectFromS3(awsInternalConfig, region, bucketName, filePath);
   }
 
   private ListObjectsV2Request getListObjectsV2Request(String bucketName, String artifactpathRegex) {

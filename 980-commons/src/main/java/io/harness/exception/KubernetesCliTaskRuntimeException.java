@@ -22,4 +22,9 @@ import lombok.Data;
 public class KubernetesCliTaskRuntimeException extends RuntimeException {
   private ProcessResponse processResponse;
   private KubernetesCliCommandType commandType;
+
+  public KubernetesCliTaskRuntimeException(String message, KubernetesCliCommandType commandType) {
+    this.processResponse = ProcessResponse.builder().errorMessage(message).build();
+    this.commandType = commandType;
+  }
 }

@@ -261,7 +261,8 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
         .when(artifactoryNgService)
         .downloadArtifacts(artifactoryConfigRequest, repositoryName, artifactMetadata, ARTIFACTORY_ARTIFACT_PATH,
             ARTIFACTORY_ARTIFACT_NAME);
-    serverlessTaskHelperBase.fetchArtifact(serverlessArtifactConfig, logCallback, ARTIFACT_DIRECTORY);
+    serverlessTaskHelperBase.fetchArtifact(
+        serverlessArtifactConfig, logCallback, ARTIFACT_DIRECTORY, ARTIFACTORY_ARTIFACT_NAME);
     verify(logCallback)
         .saveExecutionLog("Failed to download artifact from artifactory.ø", ERROR, CommandExecutionStatus.FAILURE);
     Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(new Exception("HintException"));
@@ -278,7 +279,8 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
   public void fetchArtifactEmptyArtifactPathTest() throws Exception {
     ServerlessArtifactConfig serverlessArtifactConfig =
         ServerlessArtifactoryArtifactConfig.builder().repositoryName(repositoryName).build();
-    serverlessTaskHelperBase.fetchArtifact(serverlessArtifactConfig, logCallback, ARTIFACT_DIRECTORY);
+    serverlessTaskHelperBase.fetchArtifact(
+        serverlessArtifactConfig, logCallback, ARTIFACT_DIRECTORY, ARTIFACTORY_ARTIFACT_NAME);
   }
 
   @Test

@@ -136,6 +136,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Override
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, DeploymentStageNode stageNode, List<String> childrenNodeIds) {
+    stageNode.setIdentifier(StageStrategyUtils.getIdentifierWithExpression(ctx, stageNode.getIdentifier()));
+    stageNode.setName(StageStrategyUtils.getIdentifierWithExpression(ctx, stageNode.getName()));
+
     StageElementParametersBuilder stageParameters = CdStepParametersUtils.getStageParameters(stageNode);
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
@@ -216,6 +219,10 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
     if (infraField == null && environmentV2 == null && envGroupYaml == null) {
       throw new InvalidRequestException("Infrastructure Or Environment or Environment Group section is missing");
+    }
+
+    if (environmentV2 != null && environmentV2.getDeployToAll().isExpression()) {
+      throw new InvalidRequestException("Value for deploy to all must be provided");
     }
 
     if (infraField != null) {
