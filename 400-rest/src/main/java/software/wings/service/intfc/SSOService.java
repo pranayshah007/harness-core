@@ -35,8 +35,8 @@ import org.hibernate.validator.constraints.NotBlank;
 @TargetModule(HarnessModule._950_NG_AUTHENTICATION_SERVICE)
 public interface SSOService {
   SSOConfig uploadSamlConfiguration(String accountId, InputStream inputStream, String displayName,
-                                    String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
-                                    String samlProviderType, String clientId, char[] clientSecret, boolean isNGSSO);
+      String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
+      String samlProviderType, String clientId, char[] clientSecret, boolean isNGSSO);
 
   SSOConfig uploadOauthConfiguration(String accountId, String filter, Set<OauthProviderType> allowedProviders);
 

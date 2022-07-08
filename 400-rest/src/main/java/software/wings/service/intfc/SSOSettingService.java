@@ -44,7 +44,8 @@ public interface SSOSettingService extends OwnedByAccount {
   @ValidationGroups(Create.class) SamlSettings saveSamlSettings(@Valid SamlSettings settings);
 
   // This function is meant to be called for ng sso settings, as the license check is already done in NG Service
-  SamlSettings saveSamlSettingsWithoutCGLicenseCheck(@GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings);
+  SamlSettings saveSamlSettingsWithoutCGLicenseCheck(
+      @GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings);
 
   OauthSettings saveOauthSettings(OauthSettings settings);
 
