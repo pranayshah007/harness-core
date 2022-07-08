@@ -87,6 +87,8 @@ class ContainerStateWriter implements ItemWriter<PublishedMessage> {
       String workloadKind = containerStateProto.getWorkloadKind();
       String workloadName = containerStateProto.getWorkloadName();
 
+      log.info("workloadKind and workloadName: {}, {}", workloadKind, workloadName);
+
       if (StringUtils.isEmpty(podName) && StringUtils.isEmpty(workloadName)) {
         log.warn("At least one of the podName and workloadName must be set.");
         continue;
