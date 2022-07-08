@@ -140,6 +140,14 @@ public class PMSPipelineServiceHelper {
     if (isNotEmpty(filtersAndStageCount.getFilters())) {
       filtersAndStageCount.getFilters().forEach((key, value) -> newEntity.getFilters().put(key, Document.parse(value)));
     }
+
+    if (isNotEmpty(pipelineEntity.getTemplateModules())) {
+      for (String module : pipelineEntity.getTemplateModules()) {
+        if (!newEntity.getFilters().containsKey(module)) {
+          newEntity.getFilters().put(module, null);
+        }
+      }
+    }
     return newEntity;
   }
 
