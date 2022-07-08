@@ -9,6 +9,7 @@ package io.harness.ngtriggers.eventmapper.filters.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.delegate.beans.connector.scm.adapter.AzureRepoToGitMapper.mapToGitConnectionType;
 import static io.harness.ngtriggers.Constants.DOT_GIT;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NO_MATCHING_TRIGGER_FOR_REPO;
 import static io.harness.ngtriggers.beans.source.webhook.WebhookSourceRepo.AWS_CODECOMMIT;
@@ -226,7 +227,7 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
       AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) connectorConfigDTO;
       wrapper.setConnectorType(ConnectorType.AZURE_REPO);
       wrapper.setUrl(azureRepoConnectorDTO.getUrl());
-      wrapper.setGitConnectionType(azureRepoConnectorDTO.getConnectionType());
+      wrapper.setGitConnectionType(mapToGitConnectionType(azureRepoConnectorDTO.getConnectionType()));
     } else if (connectorConfigDTO.getClass().isAssignableFrom(AwsCodeCommitConnectorDTO.class)) {
       AwsCodeCommitConnectorDTO awsCodeCommitConnectorDTO = (AwsCodeCommitConnectorDTO) connectorConfigDTO;
       wrapper.setConnectorType(ConnectorType.CODECOMMIT);

@@ -372,3 +372,8 @@ io.harness.cdng.service.beans.AzureWebAppServiceSpec
 JenkinsBuildStepNode
 JenkinsBuildSpecParameters
 JenkinsBuildOutcome
+io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig
+io.harness.ngpipeline.artifact.bean.JenkinsArtifactOutcome
+io.harness.cdng.artifact.JenkinsArtifactSummary
+io.harness.logging.CommandExecutionStatus
+io.harness.plancreator.steps.TaskSelectorYaml

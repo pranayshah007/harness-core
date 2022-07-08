@@ -29,6 +29,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import java.util.Arrays;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
@@ -93,13 +94,13 @@ public class JenkinsArtifactResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @NotNull @PathParam("jobName") String jobName, @NotNull @QueryParam("artifactPaths") List<String> artifactPath,
+      @NotNull @PathParam("jobName") String jobName, @QueryParam("artifactPath") String artifactPath,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(jenkinsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
-    return ResponseDTO.newResponse(
-        jenkinsResourceService.getBuildForJob(connectorRef, orgIdentifier, projectIdentifier, jobName, artifactPath));
+    return ResponseDTO.newResponse(jenkinsResourceService.getBuildForJob(
+        connectorRef, orgIdentifier, projectIdentifier, jobName, Arrays.asList(artifactPath)));
   }
 
   @GET

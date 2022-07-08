@@ -9,14 +9,12 @@ package io.harness.pms.approval.resources;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
-import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.approval.ApprovalResourceService;
 import io.harness.pms.pipeline.PipelineResourceConstants;
-import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.steps.approval.step.beans.ApprovalInstanceResponseDTO;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivityRequestDTO;
@@ -107,7 +105,7 @@ public class ApprovalResource {
   @POST
   @Path("/{approvalInstanceId}/harness/activity")
   @ApiOperation(value = "Approve or Reject a Pipeline Execution", nickname = "addHarnessApprovalActivity")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
+  @Hidden
   @Operation(operationId = "addHarnessApprovalActivity", summary = "Approve or Reject a Pipeline Execution",
       responses =
       {

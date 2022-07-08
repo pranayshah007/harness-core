@@ -7,21 +7,21 @@
 
 package io.harness.cvng.core.jobs;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-import com.google.inject.Singleton;
-import com.google.protobuf.InvalidProtocolBufferException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
-import lombok.extern.slf4j.Slf4j;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Singleton;
+import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
@@ -74,9 +74,9 @@ public class ProjectChangeEventMessageProcessor extends EntityChangeEventMessage
   @VisibleForTesting
   void processDeleteAction(ProjectEntityChangeDTO projectEntityChangeDTO) {
     ENTITIES_MAP.forEach((entity, handler)
-            -> injector.getInstance(handler).deleteByProjectIdentifier(entity,
-            projectEntityChangeDTO.getAccountIdentifier(),
-            projectEntityChangeDTO.getOrgIdentifier(), projectEntityChangeDTO.getIdentifier()));
+                             -> injector.getInstance(handler).deleteByProjectIdentifier(entity,
+                                 projectEntityChangeDTO.getAccountIdentifier(),
+                                 projectEntityChangeDTO.getOrgIdentifier(), projectEntityChangeDTO.getIdentifier()));
   }
 
   private boolean validateMessage(Message message) {

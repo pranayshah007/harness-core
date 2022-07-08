@@ -54,7 +54,10 @@ import org.hibernate.validator.constraints.NotBlank;
 @Schema(name = "GithubConnector", description = "This contains details of Github connectors")
 public class GithubConnectorDTO
     extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable {
-  @NotNull @JsonProperty("type") GitConnectionType connectionType;
+  @NotNull
+  @JsonProperty("type")
+  @Schema(type = "string", allowableValues = {"Account", "Repo"})
+  GitConnectionType connectionType;
   @NotBlank @NotNull String url;
   String validationRepo;
   @Valid @NotNull GithubAuthenticationDTO authentication;

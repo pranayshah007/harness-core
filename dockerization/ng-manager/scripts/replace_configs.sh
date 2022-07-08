@@ -482,6 +482,14 @@ replace_key_value secretsConfiguration.secretResolutionEnabled "$RESOLVE_SECRETS
 
 replace_key_value opaServerConfig.baseUrl "$OPA_SERVER_BASEURL"
 replace_key_value opaServerConfig.secret "$OPA_SERVER_SECRET"
+replace_key_value policyManagerSecret "$OPA_SERVER_SECRET"
+replace_key_value opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"
+if [[ "" != "$OPA_CONNECT_TIMEOUT" ]]; then
+  replace_key_value opaClientConfig.connectTimeOutSeconds "$OPA_CONNECT_TIMEOUT"
+fi
+if [[ "" != "$OPA_READ_TIMEOUT" ]]; then
+  replace_key_value opaClientConfig.readTimeOutSeconds "$OPA_READ_TIMEOUT"
+fi
 
 replace_key_value subscriptionConfig.stripeApiKey "$STRIPE_API_KEY"
 

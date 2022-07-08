@@ -63,6 +63,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -550,5 +551,20 @@ public class GitClientHelper {
     String gitRepo = getGitRepo(url);
     return StringUtils.join(HTTPS, COLON_SEPARATOR, PATH_SEPARATOR, PATH_SEPARATOR, scmGroup, PATH_SEPARATOR,
         BITBUCKET_SAAS_GIT_LABEL, PATH_SEPARATOR, gitOwner, PATH_SEPARATOR, gitRepo);
+  }
+
+  public static String getCompleteHTTPRepoUrlForAzureRepoSaas(String url) {
+    final String AZURE_REPO_URL = "https://dev.azure.com";
+    String gitOwner = getGitOwner(url, true);
+    String gitRepoProject = getGitRepo(url);
+    List<String> parts = Arrays.asList(gitRepoProject.split("/"));
+    if (parts.size() < 2) {
+      // as gitRepoProject should contain repo and project, there must be atleast two parts
+      throw new InvalidRequestException(String.format("Invalid Azure repoUrl [%s]", url));
+    }
+    String gitRepo = parts.get(parts.size() - 1);
+    String gitProject = parts.get(0);
+    return StringUtils.join(
+        AZURE_REPO_URL, PATH_SEPARATOR, gitOwner, PATH_SEPARATOR, gitProject, AZURE_REPO_GIT_LABEL, gitRepo);
   }
 }

@@ -27,7 +27,6 @@ import io.harness.security.encryption.SecretDecryptionService;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.service.impl.AwsApiHelperService;
 
-import com.amazonaws.services.s3.model.S3Object;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -92,11 +91,11 @@ public class AwsS3DelegateTaskHelper {
 
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(awsTaskParams);
 
-    S3Object s3Object = awsApiHelperService.getBuild(
+    BuildDetails buildDetails = awsApiHelperService.getBuild(
         awsInternalConfig, awsTaskParams.getRegion(), awsTaskParams.getBucketName(), awsTaskParams.getFilePath());
 
     String filePath = "";
-    if (s3Object == null) {
+    if (buildDetails == null) {
       S3BuildResponse.builder().commandExecutionStatus(FAILURE).build();
     } else {
       filePath = awsTaskParams.getFilePath();
