@@ -193,6 +193,9 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
 
   public ConnectorValidationResult validatePermissionsList(
       CloudResourceManager service, String projectId, List<String> permissionsList, String impersonatedServiceAccount) {
+    if (permissionsList.isEmpty()) {
+      return null;
+    }
     final List<ErrorDetail> errorList = new ArrayList<>();
     TestIamPermissionsRequest requestBody = new TestIamPermissionsRequest().setPermissions(permissionsList);
     try {
