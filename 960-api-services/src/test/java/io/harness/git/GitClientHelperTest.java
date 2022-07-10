@@ -694,4 +694,12 @@ public class GitClientHelperTest extends CategoryTest {
                    "https://owner@dev.azure.com/repoOrg/repoProject/_git/repoName"))
         .isEqualTo("https://dev.azure.com/repoOrg/repoProject/_git/repoName");
   }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetAzureRepoOrgAndProjectSSHForProjectTypeConnector() {
+    assertThat(GitClientHelper.getAzureRepoOrgAndProjectSSH("git@ssh.dev.azure.com:v3/repoOrg/repoProject"))
+        .isEqualTo("repoOrg/repoProject");
+  }
 }

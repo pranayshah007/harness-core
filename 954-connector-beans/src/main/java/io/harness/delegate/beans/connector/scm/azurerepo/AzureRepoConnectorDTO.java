@@ -129,13 +129,16 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
       }
       return url;
     }
+    if (GitAuthType.SSH.equals(authentication.getAuthType())) {
+      return FilePathUtils.addEndingSlashIfMissing(url) + gitRepositoryDTO.getName();
+    }
     return FilePathUtils.addEndingSlashIfMissing(url) + AZURE_REPO_NAME_SEPARATOR + gitRepositoryDTO.getName();
   }
 
   @Override
   public GitRepositoryDTO getGitRepositoryDetails() {
     String orgAndProject;
-    if (authentication.getAuthType() == GitAuthType.HTTP) {
+    if (GitAuthType.HTTP.equals(authentication.getAuthType())) {
       orgAndProject = GitClientHelper.getAzureRepoOrgAndProjectHTTP(url);
     } else {
       orgAndProject = GitClientHelper.getAzureRepoOrgAndProjectSSH(url);

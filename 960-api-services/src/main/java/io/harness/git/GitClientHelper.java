@@ -264,8 +264,11 @@ public class GitClientHelper {
   }
 
   public static String getAzureRepoOrgAndProjectSSH(String url) {
-    String temp = StringUtils.substringBeforeLast(url, "/");
-    return StringUtils.substringAfter(temp, "/");
+    String temp = StringUtils.substringAfter(url, "/");
+    if (temp.split("/").length > 2) {
+      return StringUtils.substringBeforeLast(temp, "/");
+    }
+    return temp;
   }
 
   private static String getGitSCMHost(String url) {
