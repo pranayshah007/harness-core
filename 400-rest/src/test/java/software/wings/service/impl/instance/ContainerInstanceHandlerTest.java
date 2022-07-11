@@ -15,8 +15,8 @@ import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.RAGHVENDRA;
-import static io.harness.rule.OwnerRule.YOGESH;
 import static io.harness.rule.OwnerRule.SOURABH;
+import static io.harness.rule.OwnerRule.YOGESH;
 
 import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.container.Label.Builder.aLabel;
@@ -91,7 +91,16 @@ import software.wings.api.DeploymentSummary;
 import software.wings.api.HelmSetupExecutionSummary;
 import software.wings.api.K8sDeploymentInfo;
 import software.wings.api.ondemandrollback.OnDemandRollbackInfo;
-import software.wings.beans.*;
+import software.wings.beans.Application;
+import software.wings.beans.ContainerInfrastructureMapping;
+import software.wings.beans.DirectKubernetesInfrastructureMapping;
+import software.wings.beans.EcsInfrastructureMapping;
+import software.wings.beans.Environment;
+import software.wings.beans.GcpKubernetesInfrastructureMapping;
+import software.wings.beans.HelmExecutionSummary;
+import software.wings.beans.InfrastructureMapping;
+import software.wings.beans.InfrastructureMappingType;
+import software.wings.beans.Service;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.container.Label;
 import software.wings.beans.infrastructure.instance.Instance;
@@ -119,7 +128,16 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -2209,42 +2227,35 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
   public void shouldNotChangeInstancesFromPerpetualTaskIfResponseFromDelegateIsSameEcs() throws Exception {
-    List<Instance> instancesInDb = Arrays.asList(createECSInstance("instance1"),
-            createECSInstance("instance2"),
-            createECSInstance("instance3"));
+    List<Instance> instancesInDb =
+        Arrays.asList(createECSInstance("instance1"), createECSInstance("instance2"), createECSInstance("instance3"));
 
-    ContainerSyncResponse instanceSyncResponse =
-            containerSyncResponse("instance1", "instance2", "instance3");
-    assertSavedAndDeletedInstancesEcs(
-            instancesInDb, instanceSyncResponse, emptyList(),emptyList());
+    ContainerSyncResponse instanceSyncResponse = containerSyncResponse("instance1", "instance2", "instance3");
+    assertSavedAndDeletedInstancesEcs(instancesInDb, instanceSyncResponse, emptyList(), emptyList());
   }
 
   @Test
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
   public void shouldUpdateInstancesFromPerpetualTaskIfResponseFromDelegateIsNotSameEcs() throws Exception {
-    List<Instance> instancesInDb = Arrays.asList(createECSInstance("instance1"),
-            createECSInstance("instance2"),
-            createECSInstance("instance3"));
+    List<Instance> instancesInDb =
+        Arrays.asList(createECSInstance("instance1"), createECSInstance("instance2"), createECSInstance("instance3"));
 
-    ContainerSyncResponse instanceSyncResponse =
-            containerSyncResponse("instance4", "instance5", "instance6");
-    assertSavedAndDeletedInstancesEcs(
-            instancesInDb, instanceSyncResponse, asList("instance4", "instance5", "instance6"),asList("instance1", "instance2", "instance3"));
+    ContainerSyncResponse instanceSyncResponse = containerSyncResponse("instance4", "instance5", "instance6");
+    assertSavedAndDeletedInstancesEcs(instancesInDb, instanceSyncResponse,
+        asList("instance4", "instance5", "instance6"), asList("instance1", "instance2", "instance3"));
   }
 
   @Test
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
   public void shouldUpdateInstancesFromPerpetualTaskIfResponseFromDelegateWithOneInstanceSameEcs() throws Exception {
-    List<Instance> instancesInDb = Arrays.asList(createECSInstance("instance1"),
-            createECSInstance("instance2"),
-            createECSInstance("instance3"));
+    List<Instance> instancesInDb =
+        Arrays.asList(createECSInstance("instance1"), createECSInstance("instance2"), createECSInstance("instance3"));
 
-    ContainerSyncResponse instanceSyncResponse =
-            containerSyncResponse("instance1", "instance5", "instance6");
+    ContainerSyncResponse instanceSyncResponse = containerSyncResponse("instance1", "instance5", "instance6");
     assertSavedAndDeletedInstancesEcs(
-            instancesInDb, instanceSyncResponse, asList("instance5", "instance6"),asList("instance2", "instance3"));
+        instancesInDb, instanceSyncResponse, asList("instance5", "instance6"), asList("instance2", "instance3"));
   }
 
   @Test
@@ -2412,41 +2423,38 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   }
 
   private void assertSavedAndDeletedInstancesEcs(List<Instance> instancesInDb, ContainerSyncResponse syncResponse,
-                                              List<String> savedInstances, List<String> deletedInstances) throws Exception {
+      List<String> savedInstances, List<String> deletedInstances) throws Exception {
     ContainerInfrastructureMapping infrastructureMapping =
-            EcsInfrastructureMapping.Builder.anEcsInfrastructureMapping()
-                    .withAppId(APP_ID)
-                    .withAccountId(ACCOUNT_ID)
-                    .withInfraMappingType(InfrastructureMappingType.AWS_ECS.name())
-                    .build();
+        EcsInfrastructureMapping.Builder.anEcsInfrastructureMapping()
+            .withAppId(APP_ID)
+            .withAccountId(ACCOUNT_ID)
+            .withInfraMappingType(InfrastructureMappingType.AWS_ECS.name())
+            .build();
     infrastructureMapping.setUuid(UUID);
 
     doReturn(instancesInDb).when(instanceService).getInstancesForAppAndInframappingNotRemovedFully(APP_ID, UUID);
     Exception thrownException = null;
 
     try {
-
-      containerInstanceHandler.processInstanceSyncResponseFromPerpetualTask(
-              infrastructureMapping, syncResponse);
+      containerInstanceHandler.processInstanceSyncResponseFromPerpetualTask(infrastructureMapping, syncResponse);
     } catch (Exception e) {
       thrownException = e;
     }
     ArgumentCaptor<Instance> savedInstancesCaptor = ArgumentCaptor.forClass(Instance.class);
     ArgumentCaptor<Set<String>> deletedInstancesCaptor =
-            ArgumentCaptor.forClass((Class<Set<String>>) (Object) Set.class);
+        ArgumentCaptor.forClass((Class<Set<String>>) (Object) Set.class);
 
     verify(instanceService, atLeast(0)).save(savedInstancesCaptor.capture());
     verify(instanceService, atLeast(0)).delete(deletedInstancesCaptor.capture());
     assertThat(savedInstancesCaptor.getAllValues()
-            .stream()
-            .map(Instance::getInstanceInfo)
-            .map(EcsContainerInfo.class ::cast)
-            .map(EcsContainerInfo::getTaskArn))
-            .containsExactlyInAnyOrderElementsOf(savedInstances);
-
+                   .stream()
+                   .map(Instance::getInstanceInfo)
+                   .map(EcsContainerInfo.class ::cast)
+                   .map(EcsContainerInfo::getTaskArn))
+        .containsExactlyInAnyOrderElementsOf(savedInstances);
 
     assertThat(deletedInstancesCaptor.getAllValues().stream().flatMap(Set::stream).collect(Collectors.toList()))
-            .containsExactlyInAnyOrderElementsOf(deletedInstances);
+        .containsExactlyInAnyOrderElementsOf(deletedInstances);
 
     if (thrownException != null) {
       throw thrownException;
@@ -2562,14 +2570,15 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
         .build();
   }
 
-  private Instance createECSInstance(
-          String id) {
-   InstanceInfo instanceinfo1 = EcsContainerInfo.Builder.anEcsContainerInfo().withClusterName("cl1").build();
+  private Instance createECSInstance(String id) {
+    InstanceInfo instanceinfo1 = EcsContainerInfo.Builder.anEcsContainerInfo().withClusterName("cl1").build();
     return Instance.builder()
-            .uuid(id)
-            .instanceType(ECS_CONTAINER_INSTANCE).lastWorkflowExecutionId("WFexec")
-            .containerInstanceKey(ContainerInstanceKey.builder().containerId(id).build()).instanceInfo(instanceinfo1)
-            .build();
+        .uuid(id)
+        .instanceType(ECS_CONTAINER_INSTANCE)
+        .lastWorkflowExecutionId("WFexec")
+        .containerInstanceKey(ContainerInstanceKey.builder().containerId(id).build())
+        .instanceInfo(instanceinfo1)
+        .build();
   }
   private Instance createKubernetesContainerInstance(String id, String releaseName, String namespace) {
     return createKubernetesContainerInstance(id, releaseName, namespace, null);
@@ -2608,8 +2617,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
       list.add(info);
     }
     LinkedList<software.wings.beans.infrastructure.instance.info.ContainerInfo> list1 = new LinkedList<>(list);
-    return ContainerSyncResponse.builder().isEcs(true).containerInfoList(list1)
-            .build();
+    return ContainerSyncResponse.builder().isEcs(true).containerInfoList(list1).build();
   }
 
   private EcsContainerInfo createEcsinfo(String id) {
