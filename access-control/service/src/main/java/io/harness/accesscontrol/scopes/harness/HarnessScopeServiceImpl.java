@@ -20,12 +20,16 @@ import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.AccountDTO;
+import io.harness.ng.core.dto.OrganizationResponse;
+import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.RestClientUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.Optional;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 
@@ -58,8 +62,9 @@ public class HarnessScopeServiceImpl implements HarnessScopeService {
     boolean toBeDeleted = false;
     if (scope.getLevel() == HarnessScopeLevel.PROJECT) {
       try {
-        getResponseWithRetry(projectClient.getProject(
+        Optional<ProjectResponse> response = getResponseWithRetry(projectClient.getProject(
             params.getProjectIdentifier(), params.getAccountIdentifier(), params.getOrgIdentifier()));
+        scope.setInstanceName(response.isPresent() ? response.get().getProject().getName() : null);
       } catch (InvalidRequestException e) {
         toBeDeleted =
             e.getMessage().equals(String.format("Project with orgIdentifier [%s] and identifier [%s] not found",
@@ -67,15 +72,18 @@ public class HarnessScopeServiceImpl implements HarnessScopeService {
       }
     } else if (scope.getLevel() == HarnessScopeLevel.ORGANIZATION) {
       try {
-        getResponseWithRetry(
+        Optional<OrganizationResponse> response = getResponseWithRetry(
             organizationClient.getOrganization(params.getOrgIdentifier(), params.getAccountIdentifier()));
+        scope.setInstanceName(response.isPresent() ? response.get().getOrganization().getName() : null);
       } catch (InvalidRequestException e) {
         toBeDeleted =
             e.getMessage().equals(String.format("Organization with identifier [%s] not found", scope.getInstanceId()));
       }
     } else if (scope.getLevel() == HarnessScopeLevel.ACCOUNT) {
       try {
-        RestClientUtils.getResponse(accountClient.getAccountDTO(params.getAccountIdentifier()));
+        AccountDTO response = RestClientUtils.getResponse(accountClient.getAccountDTO(params.getAccountIdentifier()));
+        scope.setInstanceName(response.getName());
+
       } catch (InvalidRequestException e) {
         toBeDeleted = e.getMessage().equals("Account does not exist.");
       }

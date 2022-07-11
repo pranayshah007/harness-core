@@ -84,7 +84,7 @@ public class EnvGroupPlanCreatorHelper {
         emptyIfNull(environments).stream().collect(Collectors.toMap(Environment::getIdentifier, Function.identity()));
 
     List<EnvironmentPlanCreatorConfig> envConfigs = new ArrayList<>();
-    if (!envGroupYaml.isDeployToAll()) {
+    if (!envGroupYaml.getDeployToAll().getValue()) {
       List<EnvironmentYamlV2> envV2Yamls = envGroupYaml.getEnvironments();
       for (EnvironmentYamlV2 envYaml : envV2Yamls) {
         Environment environment = envMapping.get(envYaml.getEnvironmentRef().getValue());
@@ -124,7 +124,7 @@ public class EnvGroupPlanCreatorHelper {
         .orgIdentifier(orgIdentifier)
         .projectIdentifier(projectIdentifier)
         .environmentGroupRef(envGroupYaml.getEnvGroupRef())
-        .deployToAll(envGroupYaml.isDeployToAll())
+        .deployToAll(envGroupYaml.getDeployToAll().getValue())
         .environmentPlanCreatorConfigs(envConfigs)
         .build();
   }

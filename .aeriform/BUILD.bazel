@@ -186,19 +186,11 @@ aeriform("//800-pipeline-service:module")
 
 aeriform("//800-pipeline-service:tests")
 
-aeriform("//810-ng-triggers:module")
-
-aeriform("//810-ng-triggers:tests")
-
 aeriform("//815-cg-triggers:module")
 
 aeriform("//840-template-service:module")
 
 aeriform("//840-template-service:tests")
-
-aeriform("//860-orchestration-visualization:module")
-
-aeriform("//860-orchestration-visualization:tests")
 
 aeriform("//865-cg-events:module")
 
@@ -209,10 +201,6 @@ aeriform("//867-polling-contracts:module")
 aeriform("//870-cg-orchestration:module")
 
 aeriform("//870-cg-orchestration:tests")
-
-aeriform("//870-orchestration:module")
-
-aeriform("//870-orchestration:tests")
 
 aeriform("//874-orchestration-delay:module")
 

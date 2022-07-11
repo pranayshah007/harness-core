@@ -12,11 +12,11 @@ import io.harness.annotations.dev.OwnedBy;
 
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(HarnessTeam.PL)
-@Value
+@Data
 @Builder
 public class Scope {
   public static final String PATH_DELIMITER = "/";
@@ -24,6 +24,7 @@ public class Scope {
 
   @NotNull ScopeLevel level;
   @NotEmpty String instanceId;
+  String instanceName;
   Scope parentScope;
 
   @Override

@@ -355,9 +355,8 @@ public class AuthHandlerTest extends WingsBaseTest {
   private void setupForAllApp(boolean includeEmptyPipeline) {
     when(appService.getAppIdsByAccountId(ACCOUNT_ID)).thenReturn(appIds);
 
-    PageResponse<Service> svcResponse = aPageResponse().withResponse(asList(service1, service2)).build();
-    when(serviceResourceService.list(any(PageRequest.class), eq(false), eq(false), eq(false), eq(null)))
-        .thenReturn(svcResponse);
+    List<Service> svcResponse = asList(service1, service2);
+    when(serviceResourceService.list(any(), any())).thenReturn(svcResponse);
 
     PageResponse<InfrastructureProvisioner> infrastructureProvisionersResponse =
         aPageResponse().withResponse(asList(infrastructureProvisioner)).build();
@@ -366,9 +365,8 @@ public class AuthHandlerTest extends WingsBaseTest {
     PageResponse<Environment> envResponse = aPageResponse().withResponse(asList(dev, qa, prod, dr)).build();
     when(environmentService.list(any(PageRequest.class), eq(false), eq(null))).thenReturn(envResponse);
 
-    PageResponse<Workflow> workflowResponse =
-        aPageResponse().withResponse(asList(workflow1, workflow2, workflow3, workflow4)).build();
-    when(workflowService.listWorkflowsWithoutOrchestration(any(PageRequest.class))).thenReturn(workflowResponse);
+    List<Workflow> workflowResponse = asList(workflow1, workflow2, workflow3, workflow4);
+    when(workflowService.list(any(), any())).thenReturn(workflowResponse);
 
     List<Pipeline> pipelines = Lists.newArrayList(pipeline1, pipeline2, pipeline3, pipeline4, pipeline5);
     if (includeEmptyPipeline) {
@@ -384,9 +382,8 @@ public class AuthHandlerTest extends WingsBaseTest {
 
   private void setupForOneEnv(Environment env) {
     when(appService.getAppIdsByAccountId(ACCOUNT_ID)).thenReturn(appIds);
-    PageResponse<Service> svcResponse = aPageResponse().withResponse(asList(service1, service2)).build();
-    when(serviceResourceService.list(any(PageRequest.class), eq(false), eq(false), eq(false), eq(null)))
-        .thenReturn(svcResponse);
+    List<Service> svcResponse = asList(service1, service2);
+    when(serviceResourceService.list(any(), any())).thenReturn(svcResponse);
 
     PageResponse<InfrastructureProvisioner> infrastructureProvisionersResponse =
         aPageResponse().withResponse(asList(infrastructureProvisioner)).build();
@@ -400,9 +397,8 @@ public class AuthHandlerTest extends WingsBaseTest {
     }
     when(environmentService.list(any(PageRequest.class), eq(false), eq(null))).thenReturn(envResponse);
 
-    PageResponse<Workflow> workflowResponse =
-        aPageResponse().withResponse(asList(workflow1, workflow2, workflow3, workflow4, buildWorkflow)).build();
-    when(workflowService.listWorkflowsWithoutOrchestration(any(PageRequest.class))).thenReturn(workflowResponse);
+    List<Workflow> workflowResponse = asList(workflow1, workflow2, workflow3, workflow4, buildWorkflow);
+    when(workflowService.list(any(), any())).thenReturn(workflowResponse);
 
     PageResponse<Pipeline> pipelineResponse = aPageResponse()
                                                   .withResponse(asList(pipeline1, pipeline2, pipeline3, pipeline4,

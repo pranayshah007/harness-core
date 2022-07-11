@@ -400,7 +400,8 @@ public enum FeatureName {
   PRUNE_KUBERNETES_RESOURCES_NG,
   CI_STEP_GROUP_ENABLED,
   GIT_SIMPLIFICATION_DISABLED,
-  USE_K8S_API_FOR_STEADY_STATE_CHECK;
+  USE_K8S_API_FOR_STEADY_STATE_CHECK,
+  WINRM_ASG_ROLLBACK("Used for Collect remaining instances rollback step", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

@@ -7,21 +7,24 @@
 
 package io.harness.batch.processing.writer;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import static software.wings.beans.SettingAttribute.SettingCategory.CE_CONNECTOR;
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
 import static software.wings.settings.SettingVariableTypes.CE_AWS;
 
+import io.harness.aws.AwsClientImpl;
 import io.harness.batch.processing.BatchProcessingException;
 import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.batch.processing.ccm.S3SyncRecord;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
+import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.service.impl.AwsS3SyncServiceImpl;
 import io.harness.ccm.commons.dao.AWSConnectorToBucketMappingDao;
 import io.harness.ccm.commons.entities.AWSConnectorToBucketMapping;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
-import io.harness.connector.mappers.ceawsmapper.CEAwsDTOToEntity;
 import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -35,6 +38,7 @@ import software.wings.beans.AwsS3BucketDetails;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.ce.CEAwsConfig;
 
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.costandusagereport.model.ReportDefinition;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -58,7 +62,8 @@ public class S3SyncEventWriter extends EventWriter implements ItemWriter<Setting
   @Autowired private FeatureFlagService featureFlagService;
   @Autowired private AWSConnectorToBucketMappingDao awsConnectorToBucketMappingDao;
   @Autowired private NGConnectorHelper ngConnectorHelper;
-  @Autowired private CEAwsDTOToEntity ceAwsDTOToEntity;
+  @Autowired private BatchMainConfig mainConfig;
+  @Autowired AwsClientImpl awsClient;
   private JobParameters parameters;
   private static final String MASTER = "MASTER";
 
@@ -132,6 +137,20 @@ public class S3SyncEventWriter extends EventWriter implements ItemWriter<Setting
     return syncAwsContainers(nextGenConnectorResponses, accountId, true);
   }
 
+  public Optional<ReportDefinition> getReportDefinition(CEAwsConnectorDTO connectorDTO) {
+    try {
+      final AWSCredentialsProvider credentialsProvider = awsClient.getAssumedCredentialsProvider(
+          awsClient.constructStaticBasicAwsCredentials(
+              mainConfig.getAwsS3SyncConfig().getAwsAccessKey(), mainConfig.getAwsS3SyncConfig().getAwsSecretKey()),
+          connectorDTO.getCrossAccountAccess().getCrossAccountRoleArn(),
+          connectorDTO.getCrossAccountAccess().getExternalId());
+      return awsClient.getReportDefinition(credentialsProvider, connectorDTO.getCurAttributes().getReportName());
+    } catch (Exception ex) {
+      log.error("Error getting report definition", ex);
+      return Optional.empty();
+    }
+  }
+
   public boolean syncAwsContainers(List<ConnectorResponseDTO> connectorResponses, String accountId, boolean isNextGen) {
     boolean areAllSyncSuccessful = true;
     for (ConnectorResponseDTO connector : connectorResponses) {
@@ -148,15 +167,21 @@ public class S3SyncEventWriter extends EventWriter implements ItemWriter<Setting
             }
           }
           AwsCurAttributesDTO curAttributes = ceAwsConnectorDTO.getCurAttributes();
-          if (curAttributes.getS3Prefix() == null || curAttributes.getRegion() == null) {
-            Optional<ReportDefinition> report = ceAwsDTOToEntity.getReportDefinition(ceAwsConnectorDTO);
+          if (isEmpty(curAttributes.getS3Prefix()) || isEmpty(curAttributes.getRegion())) {
+            log.info("S3-Prefix or Region was found to be null/empty, fetching values from Report Definition..");
+            Optional<ReportDefinition> report = getReportDefinition(ceAwsConnectorDTO);
             if (report.isPresent()) {
+              log.info("Report Definition found. s3Prefix: '{}', region: '{}'",
+                  Objects.toString(report.get().getS3Prefix(), ""),
+                  Objects.toString(report.get().getS3Region(), AWS_DEFAULT_REGION));
               curAttributes.setRegion(Objects.toString(report.get().getS3Region(), AWS_DEFAULT_REGION));
               curAttributes.setS3Prefix(Objects.toString(report.get().getS3Prefix(), ""));
             } else {
+              log.info(
+                  "Report Definition not found for Connector: {}, setting default values - s3Prefix: '', region: '{}'",
+                  ceAwsConnectorDTO, AWS_DEFAULT_REGION);
               curAttributes.setRegion(AWS_DEFAULT_REGION);
               curAttributes.setS3Prefix("");
-              log.info("Report Definition not found for Connector: {}", ceAwsConnectorDTO);
             }
           }
           CrossAccountAccessDTO crossAccountAccess = ceAwsConnectorDTO.getCrossAccountAccess();

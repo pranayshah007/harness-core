@@ -14,6 +14,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static software.wings.beans.PhaseStep.PhaseStepBuilder.aPhaseStep;
 import static software.wings.beans.PhaseStepType.PRE_DEPLOYMENT;
 import static software.wings.beans.PhaseStepType.STAGE_EXECUTION;
+import static software.wings.sm.StateType.COLLECT_REMAINING_INSTANCES;
 import static software.wings.sm.StateType.STAGING_ORIGINAL_EXECUTION;
 
 import static java.util.stream.Collectors.toList;
@@ -22,19 +23,26 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.eraro.ErrorCode;
+import io.harness.ff.FeatureFlagService;
 
+import software.wings.api.CloudProviderType;
+import software.wings.api.DeploymentType;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.Graph;
 import software.wings.beans.GraphNode;
 import software.wings.beans.OrchestrationWorkflow;
 import software.wings.beans.PhaseStep;
+import software.wings.beans.PhaseStepType;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowPhase;
 import software.wings.beans.concurrency.ConcurrencyStrategy;
 import software.wings.exception.InvalidRollbackException;
 import software.wings.service.impl.workflow.queuing.WorkflowConcurrencyHelper;
+import software.wings.service.intfc.AppService;
+import software.wings.service.intfc.InfrastructureDefinitionService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.sm.StateMachine;
@@ -43,6 +51,7 @@ import software.wings.sm.states.StagingOriginalExecution.StagingOriginalExecutio
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.util.Collections;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 
 @OwnedBy(CDC)
@@ -56,6 +65,9 @@ public class RollbackStateMachineGenerator {
   @Inject private WorkflowService workflowService;
   @Inject private WorkflowExecutionService workflowExecutionService;
   @Inject private WorkflowConcurrencyHelper workflowConcurrencyHelper;
+  @Inject private FeatureFlagService featureFlagService;
+  @Inject private AppService appService;
+  @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
 
   public StateMachine generateForRollbackExecution(@NotNull String appId, @NotNull String successfulExecutionId)
       throws InvalidRollbackException {
@@ -109,6 +121,14 @@ public class RollbackStateMachineGenerator {
         PhaseStep rollbackPhaseStep = rollbackPhase.getPhaseSteps().get(0);
         rollbackPhaseStep.getSteps().add(
             0, getResourceConstraintStep(appId, canaryOrchestrationWorkflow.getConcurrencyStrategy()));
+
+        if (featureFlagService.isEnabled(FeatureName.WINRM_ASG_ROLLBACK, appService.getAccountIdByAppId(appId))
+            && isItAFirstPhase(phase, canaryOrchestrationWorkflow.getWorkflowPhases())
+            && rollbackPhase.getDeploymentType() == DeploymentType.WINRM
+            && infrastructureDefinitionService.get(appId, rollbackPhase.getInfraDefinitionId()).getCloudProviderType()
+                == CloudProviderType.AWS) {
+          addCollectRemainingInstancesPhase(rollbackPhase);
+        }
       }
     }
     return canaryOrchestrationWorkflow;
@@ -142,5 +162,23 @@ public class RollbackStateMachineGenerator {
 
   private boolean validForRollback(WorkflowExecution successfulExecution) {
     return successfulExecution != null && ExecutionStatus.SUCCESS == successfulExecution.getStatus();
+  }
+
+  private void addCollectRemainingInstancesPhase(WorkflowPhase rollbackPhase) {
+    PhaseStep collectInstancesStep = new PhaseStep(PhaseStepType.COLLECT_INSTANCES, "Collect instances");
+    collectInstancesStep.setUuid(generateUuid());
+    collectInstancesStep.setRollback(true);
+    collectInstancesStep.setSteps(Collections.singletonList(GraphNode.builder()
+                                                                .type(COLLECT_REMAINING_INSTANCES.name())
+                                                                .name(COLLECT_REMAINING_INSTANCES.getName())
+                                                                .rollback(true)
+                                                                .build()));
+
+    rollbackPhase.getPhaseSteps().add(0, collectInstancesStep);
+  }
+
+  private boolean isItAFirstPhase(WorkflowPhase phase, List<WorkflowPhase> workflowPhases) {
+    // will be last in rollback
+    return workflowPhases.get(0).getUuid().equals(phase.getUuid());
   }
 }
