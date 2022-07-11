@@ -18,6 +18,7 @@ import static io.harness.ng.core.remote.ProjectApiMapper.getPageRequest;
 import static io.harness.ng.core.remote.ProjectApiMapper.getProjectDto;
 import static io.harness.ng.core.remote.ProjectApiMapper.getProjectResponse;
 
+import io.harness.ModuleType;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
@@ -51,13 +52,15 @@ public class ProjectApiImpl implements ProjectApi {
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = CREATE_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse createAccountScopedProject(CreateProjectRequest createProjectRequest, @AccountIdentifier String account) {
+  public ProjectResponse createAccountScopedProject(
+      CreateProjectRequest createProjectRequest, @AccountIdentifier String account) {
     return createProject(createProjectRequest, account, DEFAULT_ORG_IDENTIFIER);
   }
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = CREATE_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse createOrgScopedProject(@OrgIdentifier String org, CreateProjectRequest createProjectRequest, @AccountIdentifier String account) {
+  public ProjectResponse createOrgScopedProject(
+      @OrgIdentifier String org, CreateProjectRequest createProjectRequest, @AccountIdentifier String account) {
     return createProject(createProjectRequest, account, org);
   }
 
@@ -69,7 +72,8 @@ public class ProjectApiImpl implements ProjectApi {
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = DELETE_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse deleteOrgScopedProject(@OrgIdentifier String org, @ResourceIdentifier String id, @AccountIdentifier String account) {
+  public ProjectResponse deleteOrgScopedProject(
+      @OrgIdentifier String org, @ResourceIdentifier String id, @AccountIdentifier String account) {
     return deleteProject(id, account, org);
   }
 
@@ -81,30 +85,36 @@ public class ProjectApiImpl implements ProjectApi {
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = VIEW_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse getOrgScopedProject(@OrgIdentifier String org, @ResourceIdentifier String id, @AccountIdentifier String account) {
+  public ProjectResponse getOrgScopedProject(
+      @OrgIdentifier String org, @ResourceIdentifier String id, @AccountIdentifier String account) {
     return getProject(id, account, org);
   }
 
   @Override
-  public List<ProjectResponse> getAccountScopedProjects(String account, List<String> org, List<String> project, Boolean hasModule, String moduleType, String searchTerm, Integer page, Integer limit) {
-    return getProjects(account, org == null ? null : Sets.newHashSet(org), project, hasModule, moduleType, searchTerm, page, limit);
+  public List<ProjectResponse> getAccountScopedProjects(String account, List<String> org, List<String> project,
+      Boolean hasModule, String moduleType, String searchTerm, Integer page, Integer limit) {
+    return getProjects(
+        account, org == null ? null : Sets.newHashSet(org), project, hasModule, moduleType == null ? null : io.harness.ModuleType.fromString(moduleType), searchTerm, page, limit);
   }
 
   @Override
-  public List<ProjectResponse> getOrgScopedProjects(String org, String account, List<String> project, Boolean hasModule, String moduleType, String searchTerm, Integer page, Integer limit) {
-    return getProjects(account, org == null ? null : Sets.newHashSet(org), project, hasModule, moduleType, searchTerm, page, limit);
-
+  public List<ProjectResponse> getOrgScopedProjects(String org, String account, List<String> project, Boolean hasModule,
+      String moduleType, String searchTerm, Integer page, Integer limit) {
+    return getProjects(account, org == null ? null : Sets.newHashSet(org), project, hasModule,
+        moduleType == null ? null : io.harness.ModuleType.fromString(moduleType), searchTerm, page, limit);
   }
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = EDIT_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse updateAccountScopedProject(@ResourceIdentifier String id, UpdateProjectRequest updateProjectRequest, @AccountIdentifier String account) {
+  public ProjectResponse updateAccountScopedProject(
+      @ResourceIdentifier String id, UpdateProjectRequest updateProjectRequest, @AccountIdentifier String account) {
     return updateProject(id, updateProjectRequest, account, DEFAULT_ORG_IDENTIFIER);
   }
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = EDIT_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse updateOrgScopedProject(@OrgIdentifier String org, @ResourceIdentifier String id, UpdateProjectRequest updateProjectRequest, @AccountIdentifier String account) {
+  public ProjectResponse updateOrgScopedProject(@OrgIdentifier String org, @ResourceIdentifier String id,
+      UpdateProjectRequest updateProjectRequest, @AccountIdentifier String account) {
     return updateProject(id, updateProjectRequest, account, org);
   }
 
@@ -113,7 +123,8 @@ public class ProjectApiImpl implements ProjectApi {
     return getProjectResponse(createdProject);
   }
 
-  public ProjectResponse updateProject(String id, UpdateProjectRequest updateProjectRequest, String account, String org) {
+  public ProjectResponse updateProject(
+      String id, UpdateProjectRequest updateProjectRequest, String account, String org) {
     Project updatedProject = projectService.update(account, org, id, getProjectDto(org, id, updateProjectRequest));
     return getProjectResponse(updatedProject);
   }
@@ -122,23 +133,23 @@ public class ProjectApiImpl implements ProjectApi {
     Optional<Project> projectOptional = projectService.get(account, org, id);
     if (!projectOptional.isPresent()) {
       throw new NotFoundException(
-              String.format("Project with orgIdentifier [%s] and identifier [%s] not found", org, id));
+          String.format("Project with orgIdentifier [%s] and identifier [%s] not found", org, id));
     }
     return getProjectResponse(projectOptional.get());
   }
 
-  public List<ProjectResponse> getProjects(String account, Set<String> org, List<String> project, Boolean hasModule, String moduleType,
-                                           String searchTerm, Integer page, Integer limit) {
+  public List<ProjectResponse> getProjects(String account, Set<String> org, List<String> project, Boolean hasModule,
+                                           ModuleType moduleType, String searchTerm, Integer page, Integer limit) {
     ProjectFilterDTO projectFilterDTO =
-            ProjectFilterDTO.builder()
-                    .searchTerm(searchTerm)
-                    .orgIdentifiers(org == null ? null : Sets.newHashSet(org))
-                    .hasModule(hasModule)
-                    .moduleType(moduleType == null ? null : io.harness.ModuleType.fromString(moduleType))
-                    .identifiers(project)
-                    .build();
+        ProjectFilterDTO.builder()
+            .searchTerm(searchTerm)
+            .orgIdentifiers(org)
+            .hasModule(hasModule)
+            .moduleType(moduleType)
+            .identifiers(project)
+            .build();
     Page<Project> projectPages =
-            projectService.listPermittedProjects(account, getPageRequest(page, limit), projectFilterDTO);
+        projectService.listPermittedProjects(account, getPageRequest(page, limit), projectFilterDTO);
 
     Page<ProjectResponse> projectResponsePage = projectPages.map(ProjectApiMapper::getProjectResponse);
 
@@ -149,12 +160,12 @@ public class ProjectApiImpl implements ProjectApi {
     Optional<Project> projectOptional = projectService.get(account, org, id);
     if (!projectOptional.isPresent()) {
       throw new NotFoundException(
-              String.format("Project with orgIdentifier [%s] and identifier [%s] not found", org, id));
+          String.format("Project with orgIdentifier [%s] and identifier [%s] not found", org, id));
     }
     boolean deleted = projectService.delete(account, org, id, null);
     if (!deleted) {
       throw new NotFoundException(
-              String.format("Project with orgIdentifier [%s] and identifier [%s] not found", org, id));
+          String.format("Project with orgIdentifier [%s] and identifier [%s] not found", org, id));
     }
     return getProjectResponse(projectOptional.get());
   }
