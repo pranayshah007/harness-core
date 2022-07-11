@@ -98,7 +98,7 @@ public class ServiceLevelObjectiveOutboxEventHandlerTest extends CvNextGenTestBa
             .orgIdentifier(sloDTO.getOrgIdentifier())
             .projectIdentifier(sloDTO.getProjectIdentifier())
             .build();
-    String createEventString = objectMapper.writeValueAsString(serviceLevelObjectiveUpdateEvent);
+    String updateEventString = objectMapper.writeValueAsString(serviceLevelObjectiveUpdateEvent);
     ResourceScope resourceScope = new ProjectScope(
         serviceLevelObjectiveUpdateEvent.getServiceLevelObjectiveIdentifier(),
         serviceLevelObjectiveUpdateEvent.getOrgIdentifier(), serviceLevelObjectiveUpdateEvent.getProjectIdentifier());
@@ -106,7 +106,7 @@ public class ServiceLevelObjectiveOutboxEventHandlerTest extends CvNextGenTestBa
         OutboxEvent.builder()
             .eventType("ServiceLevelObjectiveUpdateEvent")
             .resourceScope(resourceScope)
-            .eventData(createEventString)
+            .eventData(updateEventString)
             .createdAt(System.currentTimeMillis())
             .resource(Resource.builder().type(ResourceTypeConstants.SERVICE_LEVEL_OBJECTIVE).build())
             .build();
@@ -129,7 +129,7 @@ public class ServiceLevelObjectiveOutboxEventHandlerTest extends CvNextGenTestBa
             .orgIdentifier(sloDTO.getOrgIdentifier())
             .projectIdentifier(sloDTO.getProjectIdentifier())
             .build();
-    String createEventString = objectMapper.writeValueAsString(serviceLevelObjectiveDeleteEvent);
+    String deleteEventString = objectMapper.writeValueAsString(serviceLevelObjectiveDeleteEvent);
     ResourceScope resourceScope = new ProjectScope(
         serviceLevelObjectiveDeleteEvent.getServiceLevelObjectiveIdentifier(),
         serviceLevelObjectiveDeleteEvent.getOrgIdentifier(), serviceLevelObjectiveDeleteEvent.getProjectIdentifier());
@@ -137,7 +137,7 @@ public class ServiceLevelObjectiveOutboxEventHandlerTest extends CvNextGenTestBa
         OutboxEvent.builder()
             .eventType("ServiceLevelObjectiveDeleteEvent")
             .resourceScope(resourceScope)
-            .eventData(createEventString)
+            .eventData(deleteEventString)
             .createdAt(System.currentTimeMillis())
             .resource(Resource.builder().type(ResourceTypeConstants.SERVICE_LEVEL_OBJECTIVE).build())
             .build();

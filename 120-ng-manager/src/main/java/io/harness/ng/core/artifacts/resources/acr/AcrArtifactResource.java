@@ -127,14 +127,14 @@ public class AcrArtifactResource {
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
       AcrArtifactConfig acrArtifactConfig = (AcrArtifactConfig) artifactSpecFromService;
       if (isEmpty(subscriptionId)) {
-        subscriptionId = acrArtifactConfig.getSubscriptionId().getValue();
+        subscriptionId = (String) acrArtifactConfig.getSubscriptionId().fetchFinalValue();
       }
       if (isEmpty(registry)) {
-        registry = acrArtifactConfig.getRegistry().getValue();
+        registry = (String) acrArtifactConfig.getRegistry().fetchFinalValue();
       }
 
       if (isEmpty(repository)) {
-        registry = acrArtifactConfig.getRepository().getValue();
+        registry = (String) acrArtifactConfig.getRepository().fetchFinalValue();
       }
 
       if (isEmpty(azureConnectorIdentifier)) {

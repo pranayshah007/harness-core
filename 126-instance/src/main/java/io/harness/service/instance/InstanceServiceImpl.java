@@ -7,12 +7,17 @@
 
 package io.harness.service.instance;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static com.google.common.base.Preconditions.checkArgument;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
 import io.harness.mappers.InstanceMapper;
+import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
@@ -85,8 +90,24 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   @Override
-  public Optional<InstanceDTO> softDelete(String instanceKey) {
-    Criteria criteria = Criteria.where(InstanceKeys.instanceKey).is(instanceKey);
+  public Optional<InstanceDTO> delete(String instanceKey, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String infrastructureMappingId) {
+    checkArgument(isNotEmpty(instanceKey), "instanceKey must be present");
+    checkArgument(isNotEmpty(accountIdentifier), "accountIdentifier must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "orgIdentifier must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "projectIdentifier must be present");
+    checkArgument(isNotEmpty(infrastructureMappingId), "infrastructureMappingId must be present");
+
+    Criteria criteria = Criteria.where(InstanceKeys.instanceKey)
+                            .is(instanceKey)
+                            .and(InstanceKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(InstanceKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(InstanceKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(InstanceKeys.infrastructureMappingId)
+                            .is(infrastructureMappingId);
     Update update =
         new Update().set(InstanceKeys.isDeleted, true).set(InstanceKeys.deletedAt, System.currentTimeMillis());
     Instance instance = instanceRepository.findAndModify(criteria, update);
@@ -180,6 +201,13 @@ public class InstanceServiceImpl implements InstanceService {
   public AggregationResults<EnvBuildInstanceCount> getEnvBuildInstanceCountByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs) {
     return instanceRepository.getEnvBuildInstanceCountByServiceId(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, timestampInMs);
+  }
+
+  @Override
+  public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs) {
+    return instanceRepository.getActiveServiceInstanceInfo(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, timestampInMs);
   }
 

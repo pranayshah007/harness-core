@@ -769,7 +769,7 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
       assertThat(serviceInstanceDashboard.getCurrentActiveInstancesList().get(0).getInstanceCount()).isEqualTo(1);
       assertThat(serviceInstanceDashboard.getDeploymentHistoryList()).hasSize(1);
       DeploymentHistory deploymentHistory = serviceInstanceDashboard.getDeploymentHistoryList().get(0);
-      assertThat(deepEquals(serviceInstanceDashboard.getCurrentActiveInstancesList().get(0).getArtifactSummaryFromSvc(),
+      assertThat(deepEquals(serviceInstanceDashboard.getCurrentActiveInstancesList().get(0).getArtifact(),
           deploymentHistory.getArtifact()));
       assertThat(deepEquals(expectedDeployment.getEnvs(), deploymentHistory.getEnvs())).isTrue();
       assertThat(deepEquals(expectedDeployment.getInframappings(), deploymentHistory.getInframappings())).isTrue();

@@ -9,6 +9,7 @@ package io.harness.pms.sdk.core.supporter.children;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
@@ -21,6 +22,7 @@ import lombok.Value;
 @OwnedBy(PIPELINE)
 @Value
 @Builder
+@RecasterAlias("io.harness.pms.sdk.core.supporter.children.TestChildrenStepParameters")
 public class TestChildrenStepParameters implements StepParameters {
   @Singular @Size(min = 2) List<String> parallelNodeIds;
 }

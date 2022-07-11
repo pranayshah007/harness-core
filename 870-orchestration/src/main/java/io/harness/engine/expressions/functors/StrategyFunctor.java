@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.LateBindingValue;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.execution.utils.AmbianceUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -36,8 +37,9 @@ public class StrategyFunctor implements LateBindingValue {
     Map<String, String> matrixValuesMap = new HashMap<>();
     for (Level level : levelsWithStrategyMetadata) {
       matrixValuesMap.putAll(level.getStrategyMetadata().getMatrixMetadata().getMatrixValuesMap());
-      strategyObjectMap.put("currentIteration", level.getStrategyMetadata().getCurrentIteration());
-      strategyObjectMap.put("totalIteration", level.getStrategyMetadata().getTotalIterations());
+      strategyObjectMap.put("iteration", level.getStrategyMetadata().getCurrentIteration());
+      strategyObjectMap.put("iterations", level.getStrategyMetadata().getTotalIterations());
+      strategyObjectMap.put("identifierPostFix", AmbianceUtils.getStrategyPostfix(level));
     }
     strategyObjectMap.put(MATRIX, matrixValuesMap);
 

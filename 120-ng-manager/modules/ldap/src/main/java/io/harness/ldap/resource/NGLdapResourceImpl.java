@@ -39,6 +39,22 @@ public class NGLdapResourceImpl implements NGLdapResource {
   }
 
   @Override
+  public RestResponse<LdapTestResponse> validateLdapUserSettings(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
+    LdapTestResponse ldapTestResponse = ngLdapService.validateLdapUserSettings(
+        accountIdentifier, orgIdentifier, projectIdentifier, LdapSettingsMapper.ldapSettingsDTO(settings));
+    return new RestResponse<>(ldapTestResponse);
+  }
+
+  @Override
+  public RestResponse<LdapTestResponse> validateLdapGroupSettings(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
+    LdapTestResponse ldapTestResponse = ngLdapService.validateLdapGroupSettings(
+        accountIdentifier, orgIdentifier, projectIdentifier, LdapSettingsMapper.ldapSettingsDTO(settings));
+    return new RestResponse<>(ldapTestResponse);
+  }
+
+  @Override
   public RestResponse<Collection<LdapGroupResponse>> searchLdapGroups(
       String ldapId, String accountId, String orgIdentifier, String projectIdentifier, String name) {
     Collection<LdapGroupResponse> groups =

@@ -8,6 +8,7 @@
 package io.harness.serializer.kryo;
 
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSetWrapper;
 import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSets;
@@ -16,6 +17,7 @@ import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
@@ -25,6 +27,8 @@ import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
+import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.ConfigFileWrapper;
@@ -34,6 +38,7 @@ import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig;
+import io.harness.cdng.manifest.yaml.AzureRepoStore;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.GitLabStore;
@@ -60,7 +65,6 @@ import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.harness.HarnessStoreFile;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.manifest.yaml.kinds.KustomizeManifest;
@@ -124,6 +128,8 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(StoreConfig.class, 8022);
     kryo.register(KustomizePatchesManifestOutcome.class, 12548);
     kryo.register(DockerArtifactOutcome.class, 8007);
+    kryo.register(S3ArtifactOutcome.class, 8013);
+    kryo.register(JenkinsArtifactOutcome.class, 13000);
     kryo.register(GcrArtifactOutcome.class, 390006);
     kryo.register(EcrArtifactOutcome.class, 390007);
     kryo.register(ServerlessAwsLambdaServiceSpec.class, 12576);
@@ -187,12 +193,14 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(ConfigFileAttributes.class, 12588);
     kryo.register(HarnessStore.class, 12590);
     kryo.register(NGServiceV2InfoConfig.class, 12592);
-    kryo.register(HarnessStoreFile.class, 12593);
     kryo.register(OciHelmChartStoreGenericConfig.class, 12594);
     kryo.register(OciHelmChartStoreConfigType.class, 12595);
     kryo.register(OciHelmChartConfig.class, 12596);
     kryo.register(OciHelmChartStoreConfigWrapper.class, 12597);
     kryo.register(ReleaseRepoManifest.class, 12598);
     kryo.register(AzureWebAppServiceSpec.class, 12599);
+    kryo.register(AmazonS3ArtifactConfig.class, 12569);
+    kryo.register(AzureRepoStore.class, 12570);
+    kryo.register(JenkinsArtifactConfig.class, 130012);
   }
 }

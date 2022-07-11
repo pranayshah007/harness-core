@@ -23,6 +23,7 @@ import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.JsonSchemaException;
@@ -50,16 +51,23 @@ import io.harness.yaml.utils.JsonPipelineUtils;
 import io.harness.yaml.utils.YamlSchemaUtils;
 import io.harness.yaml.validator.YamlSchemaValidator;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -305,18 +313,103 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       return getPipelineYamlSchemaInternal(accountId, projectIdentifier, orgIdentifier, null);
     }
     List<YamlSchemaWithDetails> yamlSchemaWithDetailsList = null;
+    Map<String, List<JsonNode>> nameSpaceToDefinitionMap = new HashMap<>();
+    Set<String> nameSpaces = new HashSet<>();
+    JsonNode mergedDefinition = null;
+    Map<String, JsonNode> finalNameSpaceToDefinitionMap = new HashMap<>();
     if (StepCategory.STAGE.toString().equals(yamlGroup)) {
       List<ModuleType> enabledModules = obtainEnabledModules(accountId);
+      enabledModules.add(ModuleType.PMS);
       yamlSchemaWithDetailsList = fetchSchemaWithDetailsFromModules(accountId, enabledModules);
+      yamlSchemaWithDetailsList =
+          filterYamlSchemaDetailsByModule(yamlSchemaWithDetailsList, entityType.getEntityProduct());
+      // Hack to handle proper schema generation for stage
+      for (YamlSchemaWithDetails yamlSchemaWithDetails : yamlSchemaWithDetailsList) {
+        String nameSpace = yamlSchemaWithDetails.getYamlSchemaMetadata().getNamespace();
+        JsonNode definition = yamlSchemaWithDetails.getSchema().get(DEFINITIONS_NODE);
+        nameSpaces.add(nameSpace);
+        // Creating a map of all definitions corresponding to all namespace
+        if (EmptyPredicate.isEmpty(nameSpace)) {
+          if (mergedDefinition == null) {
+            mergedDefinition = definition;
+          } else {
+            JsonNodeUtils.merge(mergedDefinition, definition);
+          }
+        } else {
+          if (nameSpaceToDefinitionMap.containsKey(nameSpace)) {
+            nameSpaceToDefinitionMap.get(nameSpace).add(definition);
+          } else {
+            List<JsonNode> nameSpaceDefinition = new LinkedList<>();
+            nameSpaceDefinition.add(definition);
+            nameSpaceToDefinitionMap.put(nameSpace, nameSpaceDefinition);
+          }
+        }
+      }
+      // Multiple schemas might have same namespace. Mergint them into one
+      for (Map.Entry<String, List<JsonNode>> entry : nameSpaceToDefinitionMap.entrySet()) {
+        JsonNode nameSpaceDefinition = null;
+        for (JsonNode jsonNode : entry.getValue()) {
+          if (nameSpaceDefinition == null) {
+            nameSpaceDefinition = jsonNode;
+          } else {
+            JsonNodeUtils.merge(nameSpaceDefinition, jsonNode);
+          }
+        }
+        finalNameSpaceToDefinitionMap.put(entry.getKey(), nameSpaceDefinition);
+      }
     }
     JsonNode jsonNode = schemaFetcher.fetchStepYamlSchema(
         accountId, projectIdentifier, orgIdentifier, scope, entityType, yamlGroup, yamlSchemaWithDetailsList);
 
-    // TODO: hack to remove v2 steps from stage yamls. Fix it properly
     if (StepCategory.STAGE.toString().equals(yamlGroup)) {
-      YamlSchemaTransientHelper.removeV2StepEnumsFromStepElementConfig(
-          jsonNode.get(DEFINITIONS_NODE).fields().next().getValue().get(STEP_ELEMENT_CONFIG));
+      String stepNameSpace = null;
+      if (jsonNode.get(DEFINITIONS_NODE).fields().hasNext()) {
+        String nameSpace = jsonNode.get(DEFINITIONS_NODE).fields().next().getKey();
+        if (nameSpaces.contains(nameSpace)) {
+          stepNameSpace = nameSpace;
+        }
+      }
+
+      // Merging definitions fetched from different modules with stage schema
+      JsonNodeUtils.merge(jsonNode.get(DEFINITIONS_NODE), mergedDefinition);
+      for (Map.Entry<String, JsonNode> entry : finalNameSpaceToDefinitionMap.entrySet()) {
+        if (!stepNameSpace.equals(entry.getKey())) {
+          // Adding definitions to individual namespace and the root definition
+          if (jsonNode.get(DEFINITIONS_NODE).get(entry.getKey()) == null) {
+            ((ObjectNode) jsonNode.get(DEFINITIONS_NODE)).putIfAbsent(entry.getKey(), entry.getValue());
+          } else {
+            JsonNodeUtils.merge(jsonNode.get(DEFINITIONS_NODE).get(entry.getKey()), entry.getValue());
+          }
+          JsonNodeUtils.merge(jsonNode.get(DEFINITIONS_NODE), entry.getValue());
+        }
+      }
+
+      // TODO: hack to remove v2 steps from stage yamls. Fix it properly
+      for (String nameSpace : nameSpaces) {
+        if (jsonNode.get(DEFINITIONS_NODE).get(nameSpace) != null) {
+          YamlSchemaTransientHelper.removeV2StepEnumsFromStepElementConfig(
+              jsonNode.get(DEFINITIONS_NODE).get(nameSpace).get(STEP_ELEMENT_CONFIG));
+        }
+      }
+    } else {
+      JsonNode stepSpecTypeNode = getStepSpecType();
+      JsonNodeUtils.merge(jsonNode.get(DEFINITIONS_NODE), stepSpecTypeNode);
     }
     return jsonNode;
+  }
+
+  // TODO: Brijesh to look at the intermittent issue and remove this
+  private JsonNode getStepSpecType() {
+    String stepSpecTypeNodeString = "{\"StepSpecType\": {\n"
+        + "                    \"type\": \"object\",\n"
+        + "                    \"discriminator\": \"type\",\n"
+        + "                    \"$schema\": \"http://json-schema.org/draft-07/schema#\"\n"
+        + "                }}";
+    ObjectMapper mapper = new ObjectMapper();
+    try {
+      return mapper.readTree(stepSpecTypeNodeString);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

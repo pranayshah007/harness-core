@@ -25,10 +25,10 @@ pipeline:
             value: <+matrix.b>
             type: String
           - name: currentItertionVariable
-            value: <+strategy.currentIteration>
+            value: <+strategy.iteration>
             type: String
           - name: totalIterationVariable
-            value: <+strategy.totalIterations>
+            value: <+strategy.iterations>
             type: String
         spec:
           execution:

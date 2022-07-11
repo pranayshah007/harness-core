@@ -8,6 +8,7 @@
 package io.harness.git.checks;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType.OAUTH;
 import static io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType.TOKEN;
 
 import static java.lang.String.format;
@@ -26,9 +27,9 @@ import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
-import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessSpecDTO;
@@ -44,6 +45,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.delegate.task.ci.GitSCMType;
 import io.harness.exception.ConnectorNotFoundException;
@@ -289,7 +291,7 @@ public class GitStatusCheckHelper {
     if (isNotEmpty(token)) {
       String completeUrl = gitConfigDTO.getUrl();
 
-      if (gitConfigDTO.getConnectionType() == GitConnectionType.ACCOUNT) {
+      if (gitConfigDTO.getConnectionType() == AzureRepoConnectionTypeDTO.PROJECT) {
         completeUrl = StringUtils.join(
             StringUtils.stripEnd(completeUrl, PATH_SEPARATOR), PATH_SEPARATOR, gitStatusCheckParams.getRepo());
       }
@@ -339,6 +341,12 @@ public class GitStatusCheckHelper {
               secretDecryptor.decrypt(gitlabApiAccessDTO.getSpec(), gitConnector.getEncryptedDataDetails(), accountId);
           gitlabApiAccessDTO.setSpec((GitlabApiAccessSpecDTO) decryptableEntity);
           return new String(((GitlabTokenSpecDTO) gitlabApiAccessDTO.getSpec()).getTokenRef().getDecryptedValue());
+        } else if (gitConfigDTO.getApiAccess().getType() == OAUTH) {
+          GitlabOauthDTO gitlabOauthDTO = (GitlabOauthDTO) gitConfigDTO.getApiAccess().getSpec();
+          DecryptableEntity decryptableEntity =
+              secretDecryptor.decrypt(gitlabOauthDTO, gitConnector.getEncryptedDataDetails(), accountId);
+          gitConfigDTO.getApiAccess().setSpec((GitlabOauthDTO) decryptableEntity);
+          return new String(((GitlabOauthDTO) gitConfigDTO.getApiAccess().getSpec()).getTokenRef().getDecryptedValue());
         } else {
           throw new CIStageExecutionException(
               format("Unsupported access type %s for gitlab status", gitConfigDTO.getApiAccess().getType()));

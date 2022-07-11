@@ -196,10 +196,6 @@ aeriform("//840-template-service:module")
 
 aeriform("//840-template-service:tests")
 
-aeriform("//860-orchestration-steps:module")
-
-aeriform("//860-orchestration-steps:tests")
-
 aeriform("//860-orchestration-visualization:module")
 
 aeriform("//860-orchestration-visualization:tests")

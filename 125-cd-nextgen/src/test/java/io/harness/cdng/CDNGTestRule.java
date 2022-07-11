@@ -48,6 +48,8 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxDaoImpl;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.expression.EngineExpressionService;
+import io.harness.pms.expression.NoopEngineExpressionServiceImpl;
 import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkModule;
 import io.harness.pms.sdk.core.SdkDeployMode;
@@ -218,6 +220,7 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         bind(EntitySetupUsageClient.class).toInstance(mock(EntitySetupUsageClient.class));
         bind(EnforcementClientService.class).toInstance(mock(EnforcementClientService.class));
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
+        bind(EngineExpressionService.class).toInstance(mock(NoopEngineExpressionServiceImpl.class));
         bind(new TypeLiteral<Supplier<DelegateCallbackToken>>() {
         }).toInstance(Suppliers.ofInstance(DelegateCallbackToken.newBuilder().build()));
         bind(new TypeLiteral<DelegateServiceGrpc.DelegateServiceBlockingStub>() {

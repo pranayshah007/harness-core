@@ -53,4 +53,19 @@ public final class BusinessMapping implements PersistentEntity, UuidAware, Creat
   long lastUpdatedAt;
   private EmbeddedUser createdBy;
   private EmbeddedUser lastUpdatedBy;
+
+  public BusinessMapping toDTO() {
+    return BusinessMapping.builder()
+        .uuid(getUuid())
+        .name(getName())
+        .accountId(getAccountId())
+        .costTargets(getCostTargets())
+        .sharedCosts(getSharedCosts())
+        .unallocatedCost(getUnallocatedCost())
+        .createdAt(getCreatedAt())
+        .lastUpdatedAt(getLastUpdatedAt())
+        .createdBy(getCreatedBy())
+        .lastUpdatedBy(getLastUpdatedBy())
+        .build();
+  }
 }

@@ -242,8 +242,8 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
         new ImmutableMap.Builder<String, Object>().put("strategy", new StrategyFunctor(ambiance)).build());
 
     validateSingleExpression(evaluator, "strategy.matrix.a", "1", false);
-    validateSingleExpression(evaluator, "strategy.currentIteration", 0, false);
-    validateSingleExpression(evaluator, "strategy.totalIteration", 0, false);
+    validateSingleExpression(evaluator, "strategy.iteration", 0, false);
+    validateSingleExpression(evaluator, "strategy.iterations", 0, false);
   }
   private void validateExpression(EngineExpressionEvaluator evaluator, String expression, Object expected) {
     validateExpression(evaluator, expression, expected, false);

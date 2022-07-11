@@ -16,12 +16,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
@@ -112,6 +114,11 @@ public class ArtifactUtils {
             dockerHubArtifactConfig.getTag().getValue() != null ? dockerHubArtifactConfig.getTag().getValue()
                                                                 : dockerHubArtifactConfig.getTagRegex().getValue(),
             dockerHubArtifactConfig.getConnectorRef().getValue());
+      case AMAZONS3:
+        AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactConfig;
+        return String.format(placeholder, sourceType, amazonS3ArtifactConfig.getBucketName().getValue(),
+            amazonS3ArtifactConfig.getFilePath().getValue(), amazonS3ArtifactConfig.getFilePathRegex().getValue(),
+            amazonS3ArtifactConfig.getConnectorRef().getValue());
       case GCR:
         GcrArtifactConfig gcrArtifactConfig = (GcrArtifactConfig) artifactConfig;
         return String.format(placeholder, sourceType, gcrArtifactConfig.getImagePath().getValue(),
@@ -156,6 +163,11 @@ public class ArtifactUtils {
       case CUSTOM_ARTIFACT:
         CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
         return String.format("type: %s, build: %s", sourceType, customArtifactConfig.getVersion().getValue());
+      case JENKINS:
+        JenkinsArtifactConfig jenkinsArtifactConfig = (JenkinsArtifactConfig) artifactConfig;
+        return String.format(placeholder, sourceType, jenkinsArtifactConfig.getJobName().getValue(),
+            jenkinsArtifactConfig.getArtifactPath().getValue(), jenkinsArtifactConfig.getBuild().getValue(),
+            jenkinsArtifactConfig.getConnectorRef().getValue());
       default:
         throw new UnsupportedOperationException(String.format("Unknown Artifact Config type: [%s]", sourceType));
     }

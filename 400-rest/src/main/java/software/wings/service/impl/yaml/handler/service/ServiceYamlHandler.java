@@ -324,21 +324,25 @@ public class ServiceYamlHandler extends BaseYamlHandler<Yaml, Service> {
       if (serviceVariablesMap.containsKey(configVar.getName())) {
         ServiceVariable serviceVariable = serviceVariablesMap.get(configVar.getName());
 
-        switch (serviceVariable.getType()) {
-          case TEXT:
-            if (configVar.getValue() == null
-                || !Arrays.equals(configVar.getValue().toCharArray(), serviceVariable.getValue())) {
+        if (serviceVariable.getType() == null) {
+          configVarsToUpdate.add(configVar);
+        } else {
+          switch (serviceVariable.getType()) {
+            case TEXT:
+              if (configVar.getValue() == null
+                  || !Arrays.equals(configVar.getValue().toCharArray(), serviceVariable.getValue())) {
+                configVarsToUpdate.add(configVar);
+              }
+              break;
+
+            case ENCRYPTED_TEXT:
+            case ARTIFACT:
               configVarsToUpdate.add(configVar);
-            }
-            break;
+              break;
 
-          case ENCRYPTED_TEXT:
-          case ARTIFACT:
-            configVarsToUpdate.add(configVar);
-            break;
-
-          default:
-            log.warn(format("Unhandled type %s while finding config variables to update", serviceVariable.getType()));
+            default:
+              log.warn(format("Unhandled type %s while finding config variables to update", serviceVariable.getType()));
+          }
         }
       }
     }
@@ -403,6 +407,15 @@ public class ServiceYamlHandler extends BaseYamlHandler<Yaml, Service> {
     for (NameValuePair.Yaml configVar : configVarsToUpdate) {
       ServiceVariable serviceVariable = serviceVariableMap.get(configVar.getName());
       String value = configVar.getValue();
+      if (serviceVariable.getType() == null) {
+        try {
+          serviceVariable.setType(ServiceVariableType.valueOf(configVar.getValueType()));
+        } catch (Exception e) {
+          throw new InvalidRequestException(format(
+              "Invalid config variable type %s. Config variable type should be one of these two TEXT, ENCRYPTED_TEXT",
+              configVar.getValueType()));
+        }
+      }
 
       switch (serviceVariable.getType()) {
         case TEXT:

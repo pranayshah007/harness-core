@@ -10,6 +10,7 @@ package io.harness.pms.expressions.utils;
 import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.awsconnector.AwsCredentialType.MANUAL_CREDENTIALS;
 import static io.harness.k8s.model.ImageDetails.ImageDetailsBuilder;
 
 import static java.lang.String.format;
@@ -23,7 +24,9 @@ import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
+import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -33,6 +36,7 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthT
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureAdditionalParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
@@ -49,6 +53,9 @@ import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsConstant;
+import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusAuthType;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusUsernamePasswordAuthDTO;
@@ -102,6 +109,9 @@ public class ImagePullSecretUtils {
       case ArtifactSourceConstants.DOCKER_REGISTRY_NAME:
         getImageDetailsFromDocker((DockerArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
         break;
+      case ArtifactSourceConstants.AMAZON_S3_NAME:
+        getImageDetailsFromS3((S3ArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
+        break;
       case ArtifactSourceConstants.GCR_NAME:
         getImageDetailsFromGcr((GcrArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
         break;
@@ -117,6 +127,9 @@ public class ImagePullSecretUtils {
       case ArtifactSourceConstants.ACR_NAME:
         getImageDetailsFromAcr((AcrArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
         break;
+      case ArtifactSourceConstants.JENKINS_NAME:
+        getBuildDetailsFromJenkins((JenkinsArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
+        break;
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactOutcome.getArtifactType()));
@@ -130,6 +143,24 @@ public class ImagePullSecretUtils {
       return getArtifactRegistryCredentialsFromUsernameRef(imageDetails);
     }
     return "";
+  }
+
+  private void getImageDetailsFromS3(
+      S3ArtifactOutcome artifactOutcome, ImageDetailsBuilder imageDetailsBuilder, Ambiance ambiance) {
+    String connectorRef = artifactOutcome.getConnectorRef();
+    ConnectorInfoDTO connectorDTO = getConnector(connectorRef, ambiance);
+    AwsConnectorDTO connectorConfig = (AwsConnectorDTO) connectorDTO.getConnectorConfig();
+    if (connectorConfig.getCredential() != null && connectorConfig.getCredential().getConfig() != null
+        && connectorConfig.getCredential().getAwsCredentialType() == MANUAL_CREDENTIALS) {
+      AwsManualConfigSpecDTO credentials = (AwsManualConfigSpecDTO) connectorConfig.getCredential().getConfig();
+      String passwordRef = credentials.getSecretKeyRef().toSecretRefStringValue();
+      if (credentials.getAccessKeyRef() != null) {
+        imageDetailsBuilder.usernameRef(
+            getPasswordExpression(credentials.getAccessKeyRef().toSecretRefStringValue(), ambiance));
+      }
+      imageDetailsBuilder.username(credentials.getAccessKey());
+      imageDetailsBuilder.password(getPasswordExpression(passwordRef, ambiance));
+    }
   }
 
   public static String getArtifactRegistryCredentials(ImageDetails imageDetails) {
@@ -338,6 +369,24 @@ public class ImagePullSecretUtils {
 
     imageDetailsBuilder.username(ACR_DUMMY_DOCKER_USERNAME);
     imageDetailsBuilder.password(token);
+  }
+
+  private void getBuildDetailsFromJenkins(
+      JenkinsArtifactOutcome artifactOutcome, ImageDetailsBuilder imageDetailsBuilder, Ambiance ambiance) {
+    String connectorRef = artifactOutcome.getConnectorRef();
+    ConnectorInfoDTO connectorDTO = getConnector(connectorRef, ambiance);
+    JenkinsConnectorDTO connectorConfig = (JenkinsConnectorDTO) connectorDTO.getConnectorConfig();
+    if (connectorConfig.getAuth().getCredentials() != null
+        && connectorConfig.getAuth().getAuthType().getDisplayName() == JenkinsConstant.USERNAME_PASSWORD) {
+      JenkinsUserNamePasswordDTO credentials = (JenkinsUserNamePasswordDTO) connectorConfig.getAuth().getCredentials();
+      String passwordRef = credentials.getPasswordRef().toSecretRefStringValue();
+      if (credentials.getUsernameRef() != null) {
+        imageDetailsBuilder.usernameRef(
+            getPasswordExpression(credentials.getUsernameRef().toSecretRefStringValue(), ambiance));
+      }
+      imageDetailsBuilder.username(credentials.getUsername());
+      imageDetailsBuilder.password(getPasswordExpression(passwordRef, ambiance));
+    }
   }
 
   private String imageUrlToRegistryUrl(String imageUrl) {

@@ -25,6 +25,7 @@ shared_dependencies = [
     "//950-delegate-tasks-beans:module",
     "//953-events-api:module",
     "//955-filters-sdk:module",
+    "//955-outbox-sdk:module",
     "//958-migration-sdk:module",
     "//960-persistence:module",
     "//960-api-services:module",

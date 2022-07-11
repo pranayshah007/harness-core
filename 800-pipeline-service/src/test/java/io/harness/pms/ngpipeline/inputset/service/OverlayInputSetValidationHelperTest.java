@@ -10,6 +10,7 @@ package io.harness.pms.ngpipeline.inputset.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType.INPUT_SET;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
@@ -175,6 +176,51 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
         .get(accountId, orgId, projectId, pipelineId, nonExistentReference, false);
     assertThatThrownBy(() -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity))
         .isInstanceOf(InvalidOverlayInputSetException.class);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testValidateEmptyReferencesInOverlayInputSet() {
+    String emptyReferencesOverlay = "overlayInputSet:\n"
+        + "  identifier: a\n"
+        + "  orgIdentifier: orgId\n"
+        + "  projectIdentifier: projectId\n"
+        + "  pipelineIdentifier: Test_Pipline11\n"
+        + "  inputSetReferences:\n"
+        + "    - \"\"\n"
+        + "    - \"\"";
+
+    InputSetEntity inputSetEntity = InputSetEntity.builder()
+                                        .accountId(accountId)
+                                        .orgIdentifier(orgId)
+                                        .projectIdentifier(projectId)
+                                        .pipelineIdentifier(pipelineId)
+                                        .yaml(emptyReferencesOverlay)
+                                        .inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET)
+                                        .build();
+
+    assertThatThrownBy(() -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Empty Input Set Identifier not allowed in Input Set References");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testForLengthCheckOnOverlayInputSetIdentifiers() {
+    String yaml = "overlayInputSet:\n"
+        + "  identifier: abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghij";
+    InputSetEntity inputSetEntity = InputSetEntity.builder()
+                                        .accountId(accountId)
+                                        .orgIdentifier(orgId)
+                                        .projectIdentifier(projectId)
+                                        .pipelineIdentifier(pipelineId)
+                                        .yaml(yaml)
+                                        .inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET)
+                                        .build();
+    assertThatThrownBy(() -> OverlayInputSetValidationHelper.validateOverlayInputSet(null, inputSetEntity))
+        .hasMessage("Overlay Input Set identifier length cannot be more that 63 characters.");
   }
 
   private String getOverlayInputSetWithNonExistentReference() {

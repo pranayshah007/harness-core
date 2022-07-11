@@ -30,4 +30,5 @@ public class CommandTaskResponse implements DelegateResponseData {
   CommandExecutionStatus status;
   String errorMessage;
   UnitProgressData unitProgressData;
+  String host;
 }

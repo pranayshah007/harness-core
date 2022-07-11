@@ -316,15 +316,6 @@ public class AmbianceUtilsTest extends CategoryTest {
   @Test
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
-  public void testGetPostFixForStrategyStage() {
-    Ambiance ambiance = buildAmbianceUsingStrategyMetadata();
-    String strategyPostfix = AmbianceUtils.getStrategyPostfix(ambiance);
-    assertThat(strategyPostfix).isEqualTo("_1");
-  }
-
-  @Test
-  @Owner(developers = SAHIL)
-  @Category(UnitTests.class)
   public void testIsCurrentStrategyLevelAtStage() {
     Ambiance ambiance = Ambiance.newBuilder().addLevels(Level.newBuilder().buildPartial()).build();
     assertFalse(AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance));

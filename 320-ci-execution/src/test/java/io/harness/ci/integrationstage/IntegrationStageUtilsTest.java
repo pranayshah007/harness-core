@@ -9,6 +9,8 @@ package io.harness.ci.integrationstage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.beans.stages.IntegrationStageConfig;
+import io.harness.beans.stages.IntegrationStageConfigImpl;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.category.element.UnitTests;
@@ -21,6 +23,8 @@ import io.harness.ci.pipeline.executions.beans.TIBuildDetails;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.plancreator.execution.ExecutionElementConfig;
+import io.harness.plancreator.execution.ExecutionWrapperConfig;
+import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
@@ -127,5 +131,42 @@ public class IntegrationStageUtilsTest {
         CIScmDetails.builder().scmProvider("Git").scmAuthType("Http").scmHostType("SaaS").build();
 
     assertThat(ciScmDetails).isEqualTo(expectedCiScmDetails);
+  }
+
+  @Test
+  @Category(UnitTests.class)
+  public void testGetAllSteps() throws Exception {
+    List<ExecutionWrapperConfig> wrapperConfigs =
+        K8InitializeStepUtilsHelper.getExecutionWrapperConfigListWithStepGroup1();
+    List<StepElementConfig> steps = IntegrationStageUtils.getAllSteps(wrapperConfigs);
+    assertThat(steps.size()).isEqualTo(9);
+    List<String> ids = new ArrayList<>();
+    for (StepElementConfig step : steps) {
+      ids.add(step.getIdentifier());
+    }
+    assertThat(ids.contains("run2")).isTrue();
+    assertThat(ids.contains("run1")).isTrue();
+    assertThat(ids.contains("run31")).isTrue();
+    assertThat(ids.contains("run32")).isTrue();
+    assertThat(ids.contains("step-2")).isTrue();
+    assertThat(ids.contains("step-3")).isTrue();
+    assertThat(ids.contains("step-4")).isTrue();
+    assertThat(ids.contains("run21")).isTrue();
+    assertThat(ids.contains("run22")).isTrue();
+    assertThat(ids.contains("run3")).isFalse();
+  }
+
+  @Test
+  @Category(UnitTests.class)
+  public void testGetStageConnectorRefs() throws Exception {
+    List<ExecutionWrapperConfig> wrapperConfigs =
+        K8InitializeStepUtilsHelper.getExecutionWrapperConfigListWithStepGroup1();
+    ExecutionElementConfig executionElementConfig = ExecutionElementConfig.builder().steps(wrapperConfigs).build();
+    IntegrationStageConfig integrationStageConfig =
+        IntegrationStageConfigImpl.builder().execution(executionElementConfig).build();
+    List<String> refs = IntegrationStageUtils.getStageConnectorRefs(integrationStageConfig);
+    assertThat(refs.size()).isEqualTo(8);
+    assertThat(refs.contains("account.harnessImage")).isTrue();
+    assertThat(refs.contains("run")).isTrue();
   }
 }

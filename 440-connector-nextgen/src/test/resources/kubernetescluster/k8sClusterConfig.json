@@ -1,5 +1,6 @@
 {
   "delegateSelectors": null,
+  "connectorType": "K8sCluster",
   "credential": {
     "type": "ManualConfig",
     "spec": {

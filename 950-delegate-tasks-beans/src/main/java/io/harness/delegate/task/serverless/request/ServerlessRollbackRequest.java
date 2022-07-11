@@ -12,7 +12,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.task.serverless.ServerlessArtifactsConfig;
+import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
@@ -20,6 +20,7 @@ import io.harness.delegate.task.serverless.ServerlessRollbackConfig;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
@@ -39,7 +40,12 @@ public class ServerlessRollbackRequest implements ServerlessCommandRequest, Nest
   @Expression(ALLOW_SECRETS) String manifestContent;
 
   @Override
-  public ServerlessArtifactsConfig getServerlessArtifactsConfig() {
+  public ServerlessArtifactConfig getServerlessArtifactConfig() {
+    return null;
+  }
+
+  @Override
+  public Map<String, ServerlessArtifactConfig> getSidecarServerlessArtifactConfigs() {
     return null;
   }
 }

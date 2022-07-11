@@ -7,25 +7,43 @@
 
 package io.harness.ccm.graphql.core.overview;
 
+import static io.harness.telemetry.Destination.AMPLITUDE;
+
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord;
 import io.harness.ccm.graphql.dto.overview.CCMMetaData;
 import io.harness.ccm.graphql.dto.overview.CCMMetaData.CCMMetaDataBuilder;
 import io.harness.ccm.views.dto.DefaultViewIdDto;
 import io.harness.ccm.views.service.CEViewService;
+import io.harness.telemetry.Category;
+import io.harness.telemetry.TelemetryReporter;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Collections;
+import java.util.HashMap;
 import lombok.NonNull;
 
 @Singleton
 public class CCMMetaDataService {
+  public static final String MODULE_INTERFACE_LOADED = "Module Interface Loaded";
   @Inject private CEMetadataRecordDao metadataRecordDao;
   @Inject private CEViewService ceViewService;
+  @Inject private TelemetryReporter telemetryReporter;
 
   @NonNull
   public CCMMetaData getCCMMetaData(@NonNull final String accountId) {
     CEMetadataRecord ceMetadataRecord = metadataRecordDao.getByAccountId(accountId);
+    Boolean isSegmentModuleInterfaceLoadedEventSent = ceMetadataRecord.getSegmentModuleInterfaceLoadedEventSent();
+    if (isSegmentModuleInterfaceLoadedEventSent == null || !isSegmentModuleInterfaceLoadedEventSent) {
+      HashMap<String, Object> properties = new HashMap<>();
+      properties.put("module", "CCM");
+      telemetryReporter.sendTrackEvent(MODULE_INTERFACE_LOADED, null, accountId, properties,
+          Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+      ceMetadataRecord.setSegmentModuleInterfaceLoadedEventSent(true);
+      metadataRecordDao.upsert(ceMetadataRecord);
+    }
+
     CCMMetaDataBuilder ccmMetaDataBuilder = CCMMetaData.builder();
     if (ceMetadataRecord != null) {
       ccmMetaDataBuilder.applicationDataPresent(getFieldBooleanValue(ceMetadataRecord.getApplicationDataPresent()));

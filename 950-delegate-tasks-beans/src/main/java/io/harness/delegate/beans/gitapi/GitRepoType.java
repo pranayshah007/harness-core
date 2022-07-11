@@ -7,4 +7,4 @@
 
 package io.harness.delegate.beans.gitapi;
 
-public enum GitRepoType { GITHUB, GITLAB, BITBUCKET, STASH }
+public enum GitRepoType { GITHUB, GITLAB, BITBUCKET, STASH, AZURE_REPO }

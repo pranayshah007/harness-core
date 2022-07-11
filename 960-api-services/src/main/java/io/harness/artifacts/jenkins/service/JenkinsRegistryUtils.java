@@ -235,7 +235,7 @@ public class JenkinsRegistryUtils {
       if (isNotEmpty(buildArtifacts)) {
         for (String artifactPath : artifactPaths) {
           // only if artifact path is not empty check if there is a match
-          if (isNotEmpty(artifactPath.trim())) {
+          if (artifactPath != null && isNotEmpty(artifactPath.trim())) {
             Pattern pattern = Pattern.compile(artifactPath.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
             Optional<Artifact> artifactOpt = buildWithDetails.getArtifacts()
                                                  .stream()

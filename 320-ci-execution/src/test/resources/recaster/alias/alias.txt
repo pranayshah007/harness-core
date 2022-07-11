@@ -180,3 +180,5 @@ io.harness.beans.execution.WebhookBaseAttributes
 io.harness.beans.execution.WebhookExecutionSource
 io.harness.beans.execution.WebhookGitUser
 io.harness.ci.beans.entities.CITelemetrySentStatus
+io.harness.plancreator.steps.TaskSelectorYaml
+io.harness.logging.CommandExecutionStatus

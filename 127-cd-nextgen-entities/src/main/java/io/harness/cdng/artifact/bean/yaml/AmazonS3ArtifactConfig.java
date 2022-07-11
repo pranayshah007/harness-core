@@ -68,7 +68,7 @@ public class AmazonS3ArtifactConfig implements ArtifactConfig, Visitable, WithCo
   /**
    * Artifact FilePaths
    */
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> artifactPath;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> filePath;
 
   /**
    * Identifier for artifact.
@@ -87,7 +87,7 @@ public class AmazonS3ArtifactConfig implements ArtifactConfig, Visitable, WithCo
 
   @Override
   public String getUniqueHash() {
-    List<String> valuesList = Arrays.asList(connectorRef.getValue(), artifactPath.getValue());
+    List<String> valuesList = Arrays.asList(connectorRef.getValue(), filePath.getValue());
     return ArtifactUtils.generateUniqueHashFromStringList(valuesList);
   }
 
@@ -101,8 +101,8 @@ public class AmazonS3ArtifactConfig implements ArtifactConfig, Visitable, WithCo
     if (!ParameterField.isNull(amazonS3ArtifactConfig.getBucketName())) {
       resultantConfig = resultantConfig.withBucketName(amazonS3ArtifactConfig.getBucketName());
     }
-    if (!ParameterField.isNull(amazonS3ArtifactConfig.getArtifactPath())) {
-      resultantConfig = resultantConfig.withArtifactPath(amazonS3ArtifactConfig.getArtifactPath());
+    if (!ParameterField.isNull(amazonS3ArtifactConfig.getFilePath())) {
+      resultantConfig = resultantConfig.withFilePath(amazonS3ArtifactConfig.getFilePath());
     }
     if (!ParameterField.isNull(amazonS3ArtifactConfig.getFilePathRegex())) {
       resultantConfig = resultantConfig.withFilePathRegex(amazonS3ArtifactConfig.getFilePathRegex());

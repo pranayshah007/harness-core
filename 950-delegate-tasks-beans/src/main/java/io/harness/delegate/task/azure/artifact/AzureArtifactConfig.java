@@ -10,8 +10,14 @@ package io.harness.delegate.task.azure.artifact;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.security.encryption.EncryptedDataDetail;
+
+import java.util.List;
 
 @OwnedBy(CDP)
 public interface AzureArtifactConfig {
+  ConnectorConfigDTO getConnectorConfig();
   AzureArtifactType getArtifactType();
+  List<EncryptedDataDetail> getEncryptedDataDetails();
 }

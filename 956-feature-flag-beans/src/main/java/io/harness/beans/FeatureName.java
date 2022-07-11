@@ -89,6 +89,7 @@ public enum FeatureName {
   FFM_1827,
   FFM_1859,
   FFM_2134_FF_PIPELINES_TRIGGER,
+  FFM_3938_STALE_FLAGS_ACTIVE_CARD_HIDE_SHOW,
   WINRM_COPY_CONFIG_OPTIMIZE,
   ECS_MULTI_LBS,
   ENTITY_AUDIT_RECORD,
@@ -342,6 +343,7 @@ public enum FeatureName {
   STALE_FLAGS_FFM_1510,
   NG_SVC_ENV_REDESIGN,
   NEW_PIPELINE_STUDIO,
+  EARLY_ACCESS_ENABLED,
   AZURE_REPO_CONNECTOR,
   HELM_OCI_SUPPORT,
   HELP_PANEL,
@@ -392,12 +394,20 @@ public enum FeatureName {
   YAML_APIS_GRANULAR_PERMISSION,
   JENKINS_BUILD,
   ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM,
-  PRUNE_KUBERNETES_RESOURCES_NG;
+  NG_SETTINGS("Enable Settings at various scopes in NG", HarnessTeam.PL),
+  QUEUED_COUNT_FOR_QUEUEKEY("Used to display the count of the queue in CG git sync", HarnessTeam.SPG),
+  NG_EMAIL_STEP,
+  PRUNE_KUBERNETES_RESOURCES_NG,
+  CI_STEP_GROUP_ENABLED,
+  GIT_SIMPLIFICATION_DISABLED,
+  USE_K8S_API_FOR_STEADY_STATE_CHECK;
 
+  @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
   }
 
+  @Deprecated
   FeatureName(Scope scope) {
     this.scope = scope;
   }
@@ -407,6 +417,7 @@ public enum FeatureName {
   FeatureName(String description, HarnessTeam owner) {
     this.description = description;
     this.owner = owner;
+    this.scope = Scope.PER_ACCOUNT;
   }
 
   @Getter private String description;
