@@ -86,9 +86,10 @@ public class ServiceVariableCreator {
         case ServiceSpecType.KUBERNETES:
         case ServiceSpecType.NATIVE_HELM:
         case ServiceSpecType.SERVERLESS_AWS_LAMBDA:
+        case ServiceSpecType.ECS:
           YamlField specNode = serviceDefNode.getNode().getField(YamlTypes.SERVICE_SPEC);
           if (specNode != null) {
-            addVariablesForKubernetesHelmServerlessServiceSpec(specNode, yamlPropertiesMap);
+            addVariablesForKubernetesHelmServerlessEcsServiceSpec(specNode, yamlPropertiesMap);
           }
           break;
         case ServiceSpecType.SSH:
@@ -104,7 +105,7 @@ public class ServiceVariableCreator {
     }
   }
 
-  private void addVariablesForKubernetesHelmServerlessServiceSpec(
+  private void addVariablesForKubernetesHelmServerlessEcsServiceSpec(
       YamlField serviceSpecNode, Map<String, YamlProperties> yamlPropertiesMap) {
     YamlField artifactsNode = serviceSpecNode.getNode().getField(YamlTypes.ARTIFACT_LIST_CONFIG);
     if (VariableCreatorHelper.isNotYamlFieldEmpty(artifactsNode)) {

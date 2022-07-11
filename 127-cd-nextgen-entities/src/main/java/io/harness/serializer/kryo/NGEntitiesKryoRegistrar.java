@@ -32,6 +32,7 @@ import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.ConfigFileWrapper;
+import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
@@ -88,6 +89,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
+import io.harness.cdng.service.beans.EcsServiceSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec;
 import io.harness.cdng.service.beans.ServerlessAwsLambdaServiceSpec;
@@ -220,6 +222,8 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(EcsServiceDefinitionManifestOutcome.class,12576);
     kryo.register(EcsScalingPolicyDefinitionManifestOutcome.class,12577);
     kryo.register(EcsScalableTargetDefinitionManifestOutcome.class,12578);
+    kryo.register(EcsInfrastructureOutcome.class, 12579);
+    kryo.register(EcsServiceSpec.class, 12580);
 
   }
 }

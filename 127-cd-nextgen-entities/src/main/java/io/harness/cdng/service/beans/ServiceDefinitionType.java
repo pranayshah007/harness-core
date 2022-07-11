@@ -42,8 +42,14 @@ public enum ServiceDefinitionType {
   @JsonProperty(ServiceSpecType.AZURE_WEBAPP)
   AZURE_WEBAPP("Azure Web Apps",
       Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY,
-          ExecutionStrategyType.DEFAULT),
-      ServiceSpecType.AZURE_WEBAPP);
+          ExecutionStrategyType.DEFAULT), ServiceSpecType.AZURE_WEBAPP),
+
+  @JsonProperty(ServiceSpecType.ECS)
+  ECS("Ecs",
+          Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY,
+                  ExecutionStrategyType.DEFAULT),
+  ServiceSpecType.ECS);
+
 
   /*
   //Unsupported for now

@@ -31,6 +31,7 @@ import io.harness.cdng.infra.InfrastructureDef;
 import io.harness.cdng.infra.beans.InfraUseFromStage;
 import io.harness.cdng.infra.steps.InfraSectionStepParameters;
 import io.harness.cdng.infra.steps.InfraStepParameters;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
@@ -180,5 +181,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(JenkinsBuildStepInfo.class, 12700);
     kryo.register(MergePRStepParams.class, 12604);
     kryo.register(MergePRStepInfo.class, 12605);
+    kryo.register(EcsInfrastructure.class, 12606);
   }
 }

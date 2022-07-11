@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
+import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureDetailsAbstract;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -27,6 +28,7 @@ import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome.SshWinRmAwsInfrastructureOutcomeBuilder;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -227,6 +229,23 @@ public class InfrastructureMapper {
             azureWebAppInfrastructure.getInfraName());
         return azureWebAppInfrastructureOutcome;
 
+      case InfrastructureKind.ECS:
+        EcsInfrastructure ecsInfrastructure =
+                (EcsInfrastructure) infrastructure;
+        validateEcsInfrastructure(ecsInfrastructure);
+        EcsInfrastructureOutcome ecsInfrastructureOutcome =
+                EcsInfrastructureOutcome.builder()
+                        .connectorRef(ecsInfrastructure.getConnectorRef().getValue())
+                        .region(ecsInfrastructure.getRegion().getValue())
+                        .cluster(ecsInfrastructure.getCluster().getValue())
+                        .environment(environmentOutcome)
+                        .infrastructureKey(InfrastructureKey.generate(
+                                service, environmentOutcome, ecsInfrastructure.getInfrastructureKeyValues()))
+                        .build();
+        setInfraIdentifierAndName(ecsInfrastructureOutcome,
+                ecsInfrastructure.getInfraIdentifier(), ecsInfrastructure.getInfraName());
+        return ecsInfrastructureOutcome;
+
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));
     }
@@ -377,6 +396,18 @@ public class InfrastructureMapper {
       if (infrastructure.getAwsInstanceFilter() == null) {
         throw new InvalidArgumentsException(Pair.of("awsInstanceFilter", "cannot be null"));
       }
+    }
+  }
+
+  private static void validateEcsInfrastructure(EcsInfrastructure infrastructure) {
+    if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
+      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+    }
+    if (!hasValueOrExpression(infrastructure.getCluster())) {
+      throw new InvalidArgumentsException(Pair.of("subscriptionId", "cannot be empty"));
+    }
+    if (!hasValueOrExpression(infrastructure.getRegion())) {
+      throw new InvalidArgumentsException(Pair.of("resourceGroup", "cannot be empty"));
     }
   }
 
