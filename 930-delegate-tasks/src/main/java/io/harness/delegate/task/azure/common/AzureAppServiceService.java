@@ -141,7 +141,7 @@ public class AzureAppServiceService {
     if (DEPLOYMENT_SLOT_PRODUCTION_NAME.equals(slotName)) {
       Optional<WebApp> azureApp = azureWebClient.getWebAppByName(azureWebClientContext);
       if (!azureApp.isPresent()) {
-        throw new InvalidRequestException(format("WebApp - [%s] not ", azureWebClientContext.getAppName()));
+        throw new InvalidRequestException(format("WebApp - [%s] not found", azureWebClientContext.getAppName()));
       }
       deploySlotId = azureApp.get().id();
       appServicePlanId = azureApp.get().appServicePlanId();

@@ -89,7 +89,7 @@ public abstract class SlotStatusVerifier {
   protected WebApp getWebApp() {
     Optional<WebApp> webAppOptional = azureWebClient.getWebAppByName(azureWebClientContext);
     return webAppOptional.orElseThrow(
-        () -> new InvalidRequestException(format("Unable to find deployment slot with name: %s", slotName)));
+        () -> new InvalidRequestException(format("Unable to find WebApp with name: %s", slotName)));
   }
   protected DeploymentSlot getDeploymentSlot() {
     Optional<DeploymentSlot> deploymentSlotOptional =
