@@ -10,10 +10,7 @@ package io.harness.ff;
 import static io.harness.beans.FeatureName.CV_DEMO;
 import static io.harness.beans.FeatureName.GLOBAL_DISABLE_HEALTH_CHECK;
 import static io.harness.beans.FeatureName.SEARCH_REQUEST;
-import static io.harness.rule.OwnerRule.NANDAN;
-import static io.harness.rule.OwnerRule.PHOENIKX;
-import static io.harness.rule.OwnerRule.UTKARSH;
-import static io.harness.rule.OwnerRule.VIKAS;
+import static io.harness.rule.OwnerRule.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,11 +26,7 @@ import io.harness.rule.Owner;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.junit.Before;
@@ -84,6 +77,36 @@ public class FeatureFlagServiceTest extends FeatureFlagTestBase {
     persistence.save(featureFlag);
     boolean featureFlagEnabled = featureFlagService.isEnabled(SEARCH_REQUEST, null);
     assertThat(featureFlagEnabled).isTrue();
+  }
+
+  @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void testIsEnabled_WhenAccountIdIsGiven() {
+    String accountId = "accountId";
+    FeatureFlag featureFlag = FeatureFlag.builder()
+                                  .name(SEARCH_REQUEST.name())
+                                  .enabled(true)
+                                  .accountIds(new HashSet<>(Arrays.asList(accountId)))
+                                  .build();
+    persistence.save(featureFlag);
+    boolean featureFlagEnabled = featureFlagService.isEnabled(SEARCH_REQUEST, accountId);
+    assertThat(featureFlagEnabled).isTrue();
+  }
+
+  @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void testIsEnabled_WhenAccountIdIsGivenAndFeatureFlagIsOff() {
+    String accountId = "accountId";
+    FeatureFlag featureFlag = FeatureFlag.builder()
+            .name(SEARCH_REQUEST.name())
+            .enabled(false)
+            .accountIds(new HashSet<>(Arrays.asList(accountId)))
+            .build();
+    persistence.save(featureFlag);
+    boolean featureFlagEnabled = featureFlagService.isEnabled(SEARCH_REQUEST, accountId);
+    assertThat(featureFlagEnabled).isFalse();
   }
 
   @Test
