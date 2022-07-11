@@ -60,6 +60,15 @@ public class ArtifactoryBuildServiceImpl implements ArtifactoryBuildService {
   @Inject private ArtifactoryClientImpl artifactoryClient;
   @Inject private EncryptionService encryptionService;
 
+
+  @Override
+  public List<Map<String, String>> getLabels(ArtifactStreamAttributes artifactStreamAttributes, List<String> buildNos,
+      ArtifactoryConfig artifactoryConfig, List<EncryptedDataDetail> encryptionDetails) {
+    ArtifactoryConfigRequest artifactoryRequest = ArtifactoryConfigToArtifactoryRequestMapper.toArtifactoryRequest(
+        artifactoryConfig, encryptionService, encryptionDetails);
+      return artifactoryClient.getLabels(artifactoryRequest, artifactStreamAttributes.getImageName(), artifactStreamAttributes.getJobName());
+  }
+
   @Override
   public List<BuildDetails> getBuilds(String appId, ArtifactStreamAttributes artifactStreamAttributes,
       ArtifactoryConfig artifactoryConfig, List<EncryptedDataDetail> encryptionDetails) {

@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.net.ssl.SSLException;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -89,6 +90,39 @@ public class ArtifactoryClientImpl {
   private static final String DOWNLOAD_FILE_FOR_GENERIC_REPO = "Downloading the file for generic repo";
   private static final String ERROR_OCCURRED_WHILE_RETRIEVING_REPOSITORIES =
       "Error occurred while retrieving repositories";
+
+  public List<Map<String, String>> getLabels(ArtifactoryConfigRequest artifactoryConfig, String imageName, String repositoryName) {
+//    log.info("Retrieving repositories for package {}", packageType);
+    Map<String, String> repositories = new HashMap<>();
+    Artifactory artifactory = getArtifactoryClient(artifactoryConfig);
+    ArtifactoryRequest repositoryRequest = new ArtifactoryRequestImpl()
+        .apiUrl(format("api/storage/%s/%s/%s/manifest.json?properties", repositoryName, imageName, "label_dummy"))
+        .method(GET)
+        .responseType(JSON);
+
+    try {
+      ArtifactoryResponse response = artifactory.restCall(repositoryRequest);
+//      handleErrorResponse(response);
+      Map<String, Map<String, List<String>>> responseList = response.parseBody(HashMap.class);
+
+//      for (Map<Object, Object> repository : responseList) {
+//        repositories.put(repository.get(KEY).toString(), repository.get(KEY).toString());
+//      }
+//      if (EmptyPredicate.isEmpty(repositories)) {
+//        log.warn("Repositories are not available of package type {} or User not authorized to access artifactory",
+//            packageType);
+//      } else {
+//        log.info("Retrieving repositories for package {} success", packageType);
+//      }
+      Map<String, List<String>> properties = responseList.get("properties");
+      Map<String, String> propertyOk = properties.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().get(0)));
+      List<Map<String, String>> labels = new ArrayList<>();
+      labels.add(propertyOk);
+      return labels;
+
+    } catch (Exception e) {}
+    return List.of(new HashMap<>());
+  }
 
   public boolean validateArtifactServer(ArtifactoryConfigRequest config) {
     if (!connectableHttpUrl(getBaseUrl(config))) {
