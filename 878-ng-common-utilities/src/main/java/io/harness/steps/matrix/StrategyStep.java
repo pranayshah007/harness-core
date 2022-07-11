@@ -24,10 +24,10 @@ import io.harness.pms.contracts.execution.ChildrenExecutableResponse.Child;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.steps.executables.ChildrenExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.steps.executable.ChildrenExecutableWithRollbackAndRbac;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
@@ -37,7 +37,7 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> {
+public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<StrategyStepParameters> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(NGCommonUtilPlanCreationConstants.STRATEGY)
                                                .setStepCategory(StepCategory.STRATEGY)
@@ -49,7 +49,12 @@ public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> 
   @Inject EnforcementClientService enforcementClientService;
 
   @Override
-  public ChildrenExecutableResponse obtainChildren(
+  public void validateResources(Ambiance ambiance, StrategyStepParameters stepParameters) {
+    // do Nothing
+  }
+
+  @Override
+  public ChildrenExecutableResponse obtainChildrenAfterRbac(
       Ambiance ambiance, StrategyStepParameters stepParameters, StepInputPackage inputPackage) {
     int maxConcurrencyLimitBasedOnPlan = 10000;
     try {
@@ -119,7 +124,7 @@ public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> 
   }
 
   @Override
-  public StepResponse handleChildrenResponse(
+  public StepResponse handleChildrenResponseInternal(
       Ambiance ambiance, StrategyStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     log.info("Completed  execution for Strategy Step [{}]", stepParameters);
     return createStepResponseFromChildResponse(responseDataMap);

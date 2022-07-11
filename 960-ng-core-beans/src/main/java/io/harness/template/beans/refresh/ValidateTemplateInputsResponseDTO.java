@@ -9,14 +9,23 @@ package io.harness.template.beans.refresh;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.ngexception.ErrorMetadataConstants;
+import io.harness.exception.ngexception.ErrorMetadataDTO;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Data;
 
 @OwnedBy(HarnessTeam.CDC)
 @Data
 @Builder
-public class ValidateTemplateInputsResponseDTO {
+@JsonTypeName(ErrorMetadataConstants.TEMPLATE_INPUTS_VALIDATION_ERROR)
+public class ValidateTemplateInputsResponseDTO implements ErrorMetadataDTO {
   boolean validYaml;
   ErrorNodeSummary errorNodeSummary;
+
+  @Override
+  public String getType() {
+    return ErrorMetadataConstants.TEMPLATE_INPUTS_VALIDATION_ERROR;
+  }
 }

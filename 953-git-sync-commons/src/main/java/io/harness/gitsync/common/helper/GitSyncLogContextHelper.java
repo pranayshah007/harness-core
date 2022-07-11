@@ -19,6 +19,7 @@ import io.harness.gitsync.common.beans.GitOperation;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -28,6 +29,7 @@ public class GitSyncLogContextHelper {
   public static final String REPO_NAME_KEY = "repoName";
   public static final String FILEPATH_KEY = "filePath";
   public static final String BRANCH_KEY = "branch";
+  public static final String CONTEXT_KEY = "contextKey";
   private Map<String, String> logContextMap;
 
   public static Map<String, String> setContextMap(Scope scope, String repoName, String branchName, String filePath,
@@ -43,6 +45,7 @@ public class GitSyncLogContextHelper {
     setContextIfNotNull(BRANCH_KEY, branchName);
     setContextIfNotNull(FILEPATH_KEY, filePath);
     setContextIfNotNull(GIT_OPERATION_TYPE, operationType.name());
+    setContextIfNotNull(CONTEXT_KEY, String.valueOf(UUID.randomUUID()));
     return logContextMap;
   }
 

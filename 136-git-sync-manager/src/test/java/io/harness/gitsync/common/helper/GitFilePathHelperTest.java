@@ -229,17 +229,39 @@ public class GitFilePathHelperTest extends CategoryTest {
   @Test
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
-  public void testGetFileUrlForAzureRepo_ForAccountTypeConnector() {
-    String repoUrl = "https://dev.azure.com/org";
-    String repoProjectName = "repoProjectName";
+  public void testGetFileUrlForAzureRepo_ForProjectTypeConnector() {
+    String repoUrl = "https://dev.azure.com/org/project";
     AzureRepoConnectorDTO azureRepoConnectorDTO =
-        AzureRepoConnectorDTO.builder().connectionType(AzureRepoConnectionTypeDTO.PROJECT).url(repoUrl).build();
-    GitRepositoryDTO gitRepository = GitRepositoryDTO.builder().name(repoName).projectName(repoProjectName).build();
+        AzureRepoConnectorDTO.builder()
+            .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
+            .authentication(AzureRepoAuthenticationDTO.builder().authType(GitAuthType.HTTP).build())
+            .url(repoUrl)
+            .build();
+    GitRepositoryDTO gitRepository = GitRepositoryDTO.builder().name(repoName).build();
+    doReturn(azureRepoConnectorDTO)
+        .when(gitSyncConnectorHelper)
+        .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), anyString());
+    String fileUrl = gitFilePathHelper.getFileUrl(scope, connectorRef, branch, filePath, gitRepository);
+    assertThat(fileUrl).isEqualTo("https://dev.azure.com/org/project/_git/repoName?path=filePath&version=GBbranch");
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetFileUrlForAzureRepo_ForProjectTypeSSHConnector() {
+    String repoUrl = "git@ssh.dev.azure.com:v3/repoOrg/repoProject";
+    AzureRepoConnectorDTO azureRepoConnectorDTO =
+        AzureRepoConnectorDTO.builder()
+            .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
+            .authentication(AzureRepoAuthenticationDTO.builder().authType(GitAuthType.SSH).build())
+            .url(repoUrl)
+            .build();
+    GitRepositoryDTO gitRepository = GitRepositoryDTO.builder().name(repoName).build();
     doReturn(azureRepoConnectorDTO)
         .when(gitSyncConnectorHelper)
         .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), anyString());
     String fileUrl = gitFilePathHelper.getFileUrl(scope, connectorRef, branch, filePath, gitRepository);
     assertThat(fileUrl).isEqualTo(
-        "https://dev.azure.com/org/repoProjectName/_git/repoName?path=filePath&version=GBbranch");
+        "https://dev.azure.com/repoOrg/repoProject/_git/repoName?path=filePath&version=GBbranch");
   }
 }

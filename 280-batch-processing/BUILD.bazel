@@ -15,7 +15,6 @@ shared_dependencies = [
     "//375-ce-graphql:module",
     "//380-cg-graphql:module",
     "//400-rest:module",
-    "//440-connector-nextgen:module",
     "//450-ce-views:module",
     "//480-pricing-service:module",
     "//490-ce-commons:module",

@@ -83,6 +83,19 @@ public class JenkinsRegistryService {
     }
   }
 
+  public BuildDetails getLastSuccessfulBuildForJob(
+      JenkinsInternalConfig jenkinsInternalConfig, String jobName, List<String> artifactPaths) {
+    try {
+      return jenkinsRegistryUtils.getLastSuccessfulBuildForJob(jenkinsInternalConfig, jobName, artifactPaths);
+    } catch (IOException ex) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Check if the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Jobs.",
+          "Failed to fetch last successful build details jenkins server ",
+          new InvalidRequestException(
+              "Failed to fetch last successful build details jenkins server " + ExceptionUtils.getMessage(ex), USER));
+    }
+  }
+
   public JobDetails getJobWithParamters(JenkinsInternalConfig jenkinsInternalConfig, String jobName) {
     return jenkinsRegistryUtils.getJobWithParamters(jobName, jenkinsInternalConfig);
   }

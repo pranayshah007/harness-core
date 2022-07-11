@@ -45,6 +45,7 @@ public class PMSPipelineSummaryResponseDTO {
   long lastUpdatedAt;
   Set<String> modules;
   ExecutionSummaryInfoDTO executionSummaryInfo;
+  @Schema(hidden = true) List<RecentExecutionInfoDTO> recentExecutionsInfo;
   Map<String, LinkedHashMap<String, Object>> filters;
   List<String> stageNames;
   EntityGitDetails gitDetails;

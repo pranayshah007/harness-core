@@ -400,6 +400,13 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
     return pageResponse;
   }
 
+  @Override
+  public List<Service> list(String accountId, List<String> projectFields) {
+    Query<Service> svcQuery = wingsPersistence.createQuery(Service.class).filter(ServiceKeys.accountId, accountId);
+    emptyIfNull(projectFields).forEach(field -> { svcQuery.project(field, true); });
+    return emptyIfNull(svcQuery.asList());
+  }
+
   private void applyInfraBasedFilters(PageRequest<Service> request) {
     Optional<SearchFilter> appIdFilter =
         request.getFilters().stream().filter(t -> t.getFieldName().equals(APP_ID)).findFirst();

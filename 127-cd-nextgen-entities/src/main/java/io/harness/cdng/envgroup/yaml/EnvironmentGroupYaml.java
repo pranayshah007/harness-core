@@ -8,6 +8,7 @@
 package io.harness.cdng.envgroup.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,6 +20,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
@@ -26,7 +28,6 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
@@ -36,16 +37,15 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml")
 public class EnvironmentGroupYaml implements Visitable {
-  @JsonProperty(YamlNode.UUID_FIELD_NAME)
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(hidden = true)
-  private String uuid;
+  @JsonProperty(YamlNode.UUID_FIELD_NAME) @ApiModelProperty(hidden = true) private String uuid;
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) private ParameterField<String> envGroupRef;
 
   List<EnvironmentYamlV2> environments;
 
-  boolean deployToAll;
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @YamlSchemaTypes(runtime)
+  ParameterField<Boolean> deployToAll;
 
   @Override
   public VisitableChildren getChildrenToWalk() {
@@ -54,5 +54,13 @@ public class EnvironmentGroupYaml implements Visitable {
       environments.forEach(environmentYamlV2 -> children.add("environments", environmentYamlV2));
     }
     return children;
+  }
+
+  public ParameterField<Boolean> getDeployToAll() {
+    if (deployToAll == null) {
+      return ParameterField.createValueField(false);
+    }
+    return !deployToAll.isExpression() && deployToAll.getValue() == null ? ParameterField.createValueField(false)
+                                                                         : deployToAll;
   }
 }

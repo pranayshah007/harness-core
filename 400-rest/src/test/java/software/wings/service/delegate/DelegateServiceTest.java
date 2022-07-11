@@ -3939,7 +3939,7 @@ public class DelegateServiceTest extends WingsBaseTest {
 
     assertThat(delegateFromDB).isNotNull();
     assertThat(delegateFromDB.getDelegateId()).isEqualTo("delegateId1");
-    assertThat(delegateFromDB.getTags()).containsExactly("tag123", "tag456");
+    assertThat(delegateFromDB.getTags()).containsExactly("tag123", "tag456", "kube-0", "delegate1");
   }
 
   @Test
