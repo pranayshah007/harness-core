@@ -48,7 +48,7 @@ func (b *dotnetRunner) AutoDetectPackages() ([]string, error) {
 }
 
 func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
-	defaultRunCmd := fmt.Sprintf("%s test --no-build", dotnetCmd)
+	defaultRunCmd := fmt.Sprintf("%s test --no-build --logger \"junit;LogFilePath=test_results.xml\"", dotnetCmd)
 	agentFullName := path.Join(b.agentPath, "dotnet-agent.injector.dll")
 	instrumentCmd := fmt.Sprintf("%s %s %s %s", dotnetCmd, agentFullName, userArgs, agentConfigPath)
 	if ignoreInstr {
@@ -90,6 +90,6 @@ func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 		testStr += "FullyQualifiedName~" + t
 	}
 	// dotnet /dotnet-agent.injector.dll /TestProject1.dll ./Config.yaml
-	runtestCmd := fmt.Sprintf("%s test --no-build --filter \"%s\"", dotnetCmd, testStr)
+	runtestCmd := fmt.Sprintf("%s test --no-build --logger \"junit;LogFilePath=test_results.xml\" --filter \"%s\"", dotnetCmd, testStr)
 	return fmt.Sprintf("%s\n%s", instrumentCmd, runtestCmd), nil
 }
