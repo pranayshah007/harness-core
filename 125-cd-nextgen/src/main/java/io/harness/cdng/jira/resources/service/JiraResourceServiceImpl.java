@@ -110,11 +110,12 @@ public class JiraResourceServiceImpl implements JiraResourceService {
     // remove this block of code.
     Set<JiraFieldNG> jiraUserFields = new HashSet<>();
     createMetadataNG.getProjects().values().forEach(proj
-        -> proj.getIssueTypes().values().forEach(issueTypeNG -> issueTypeNG.getFields().values().stream().forEach(field -> {
-      if (field.getSchema().getType() == JiraFieldTypeNG.USER) {
-        jiraUserFields.add(field);
-      }
-    })));
+        -> proj.getIssueTypes().values().forEach(
+            issueTypeNG -> issueTypeNG.getFields().values().stream().forEach(field -> {
+              if (field.getSchema().getType() == JiraFieldTypeNG.USER) {
+                jiraUserFields.add(field);
+              }
+            })));
     jiraUserFields.forEach(field -> createMetadataNG.removeField(field.getName()));
     return jiraTaskResponse.getIssueCreateMetadata();
   }
