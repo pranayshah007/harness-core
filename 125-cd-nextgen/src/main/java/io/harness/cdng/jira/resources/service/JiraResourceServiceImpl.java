@@ -30,6 +30,8 @@ import io.harness.exception.HarnessJiraException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.jira.JiraActionNG;
+import io.harness.jira.JiraFieldNG;
+import io.harness.jira.JiraFieldTypeNG;
 import io.harness.jira.JiraIssueCreateMetadataNG;
 import io.harness.jira.JiraIssueUpdateMetadataNG;
 import io.harness.jira.JiraProjectBasicNG;
@@ -44,9 +46,11 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @OwnedBy(CDC)
 @Singleton
@@ -101,6 +105,17 @@ public class JiraResourceServiceImpl implements JiraResourceService {
                                                     .fetchStatus(fetchStatus)
                                                     .ignoreComment(ignoreComment);
     JiraTaskNGResponse jiraTaskResponse = obtainJiraTaskNGResponse(jiraConnectorRef, orgId, projectId, paramsBuilder);
+    JiraIssueCreateMetadataNG createMetadataNG = jiraTaskResponse.getIssueCreateMetadata();
+    // TECHDEBIT: we need to remove user type fields only from calls NG until we add support. After that we need to
+    // remove this block of code.
+    Set<JiraFieldNG> jiraUserFields = new HashSet<>();
+    createMetadataNG.getProjects().values().forEach(proj
+        -> proj.getIssueTypes().values().forEach(issueTypeNG -> issueTypeNG.getFields().values().stream().forEach(field -> {
+      if (field.getSchema().getType() == JiraFieldTypeNG.USER) {
+        jiraUserFields.add(field);
+      }
+    })));
+    jiraUserFields.forEach(field -> createMetadataNG.removeField(field.getName()));
     return jiraTaskResponse.getIssueCreateMetadata();
   }
 
