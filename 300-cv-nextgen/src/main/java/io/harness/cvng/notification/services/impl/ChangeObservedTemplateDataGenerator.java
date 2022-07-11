@@ -9,6 +9,7 @@ package io.harness.cvng.notification.services.impl;
 
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.CHANGE_EVENT_TYPE;
 
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.notification.beans.MonitoredServiceChangeEventType;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeObservedCondition;
 
@@ -29,5 +30,11 @@ public class ChangeObservedTemplateDataGenerator
                                        .map(MonitoredServiceChangeEventType::getDisplayName)
                                        .collect(Collectors.joining(", "));
     return "When a change observed in a " + changeEventTypeString;
+  }
+
+  @Override
+  protected String getAnomalousMetrics(ProjectParams projectParams, String identifier, long startTime,
+      MonitoredServiceChangeObservedCondition condition) {
+    return "No metric has been assigned to this monitored service";
   }
 }
