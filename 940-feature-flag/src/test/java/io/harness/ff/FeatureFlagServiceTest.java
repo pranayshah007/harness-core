@@ -100,10 +100,10 @@ public class FeatureFlagServiceTest extends FeatureFlagTestBase {
   public void testIsEnabled_WhenAccountIdIsGivenAndFeatureFlagIsOff() {
     String accountId = "accountId";
     FeatureFlag featureFlag = FeatureFlag.builder()
-            .name(SEARCH_REQUEST.name())
-            .enabled(false)
-            .accountIds(new HashSet<>(Arrays.asList(accountId)))
-            .build();
+                                  .name(SEARCH_REQUEST.name())
+                                  .enabled(false)
+                                  .accountIds(new HashSet<>(Arrays.asList(accountId)))
+                                  .build();
     persistence.save(featureFlag);
     boolean featureFlagEnabled = featureFlagService.isEnabled(SEARCH_REQUEST, accountId);
     assertThat(featureFlagEnabled).isFalse();
