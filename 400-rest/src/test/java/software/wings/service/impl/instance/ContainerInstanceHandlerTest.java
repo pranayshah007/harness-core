@@ -72,7 +72,6 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
-import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.exception.runtime.NoInstancesException;
 import io.harness.ff.FeatureFlagService;
