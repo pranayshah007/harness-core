@@ -8,6 +8,7 @@ package junit
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/harness/harness-core/product/ci/engine/consts"
 	grpcclient "github.com/harness/harness-core/product/ci/engine/grpc/client"
@@ -18,7 +19,7 @@ import (
 
 func GetTestTimes(ctx context.Context, log *zap.SugaredLogger) (types.GetTestTimesResp, error) {
 	// Result of this function will be same as TI response for the API
-	res := types.GetTestTimesResp{}
+	var res types.GetTestTimesResp
 
 	// Create TI proxy client (lite engine)
 	client, err := grpcclient.NewTiProxyClient(consts.LiteEnginePort, log)
@@ -38,16 +39,15 @@ func GetTestTimes(ctx context.Context, log *zap.SugaredLogger) (types.GetTestTim
 	// Call the gRPC for getting the test time data
 	resp, err := client.Client().GetTestTimes(ctx, req)
 	if err != nil {
-		return types.GetTestTimesResp{}, err
+		return res, err
 	}
 
 	// Response will contain a string which when deserialized will convert to
 	// TI response object
-	var testTimes types.GetTestTimesResp
-	err = json.Unmarshal([]byte(resp.MapList), &testTimes)
+	err = json.Unmarshal([]byte(resp.GetMapList()), &res)
 	if err != nil {
-		log.Errorw("could not unmarshal select tests response on addon", zap.Error(err))
-		return types.GetTestTimesResp{}, err
+		fmt.Println("could not unmarshal select tests response on split tests", zap.Error(err))
+		return res, err
 	}
 	return res, nil
 }
