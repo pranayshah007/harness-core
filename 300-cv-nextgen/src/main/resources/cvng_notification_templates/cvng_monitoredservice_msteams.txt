@@ -8,6 +8,10 @@
       "activitySubtitle": "Trigger ${TRIGGER_MESSAGE}. Incident occurred ${START_DATE}",
       "facts": [
               {
+                  "name": "Top metrics that are affected",
+                  "value": "${ANOMALOUS_METRIC}"
+              },
+              {
                   "name": "Account Name",
                   "value": "${ACCOUNT_NAME}"
               },

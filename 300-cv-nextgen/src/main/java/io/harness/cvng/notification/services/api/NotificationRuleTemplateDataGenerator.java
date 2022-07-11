@@ -8,6 +8,7 @@
 package io.harness.cvng.notification.services.api;
 
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ACCOUNT_NAME;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ANOMALOUS_METRIC;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.COLOR;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.HEADER_MESSAGE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ORG_NAME;
@@ -81,6 +82,7 @@ public abstract class NotificationRuleTemplateDataGenerator<T extends Notificati
         put(getEntityName(), name);
         put(HEADER_MESSAGE, getHeaderMessage(notificationDataMap));
         put(TRIGGER_MESSAGE, getTriggerMessage(condition));
+        put(ANOMALOUS_METRIC, getAnomalousMetrics(projectParams, identifier, startTime, condition));
       }
     };
   }
@@ -90,6 +92,8 @@ public abstract class NotificationRuleTemplateDataGenerator<T extends Notificati
       String baseUrl, ProjectParams projectParams, String identifier, NotificationRuleType type, Long endTime);
   protected abstract String getHeaderMessage(Map<String, String> notificationDataMap);
   protected abstract String getTriggerMessage(T condition);
+  protected abstract String getAnomalousMetrics(
+      ProjectParams projectParams, String identifier, long startTime, T condition);
 
   private String getPortalUrl() {
     return portalUrl.concat("ng/#");
