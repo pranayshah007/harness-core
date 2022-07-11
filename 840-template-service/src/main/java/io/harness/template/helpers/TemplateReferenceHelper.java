@@ -99,7 +99,6 @@ public class TemplateReferenceHelper {
     }
     EntityReferenceResponse response =
         entityReferenceServiceBlockingStub.getReferences(entityReferenceRequestBuilder.build());
-    //    templateEntity.setModules(new HashSet<>(response.getModuleInfoList()));
     List<EntityDetailProtoDTO> referredEntities =
         correctFQNsOfReferredEntities(response.getReferredEntitiesList(), templateEntity.getTemplateEntityType());
     List<EntityDetailProtoDTO> referredEntitiesInLinkedTemplates =

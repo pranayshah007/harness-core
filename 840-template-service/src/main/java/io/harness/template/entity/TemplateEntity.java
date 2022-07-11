@@ -35,7 +35,6 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.Builder;
@@ -92,8 +91,6 @@ public class TemplateEntity
   @Wither @Version Long version; // version for mongo operations
   @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate long createdAt;
   @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
-
-  @Setter @NonFinal Set<String> modules;
 
   @Wither @Setter @NonFinal String objectIdOfYaml;
   @Setter @NonFinal Boolean isFromDefaultBranch;

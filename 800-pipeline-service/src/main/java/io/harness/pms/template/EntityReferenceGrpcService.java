@@ -22,7 +22,10 @@ public class EntityReferenceGrpcService extends EntityReferenceServiceImplBase {
 
   @Override
   public void getReferences(EntityReferenceRequest request, StreamObserver<EntityReferenceResponse> responseObserver) {
-    EntityReferenceResponse entityReferenceResponse = entityReferenceService.getReferences(request);
+    EntityReferenceResponse entityReferenceResponse =
+        EntityReferenceResponse.newBuilder()
+            .addAllReferredEntities(entityReferenceService.getReferences(request).getReferredEntitiesList())
+            .build();
     responseObserver.onNext(entityReferenceResponse);
     responseObserver.onCompleted();
   }
