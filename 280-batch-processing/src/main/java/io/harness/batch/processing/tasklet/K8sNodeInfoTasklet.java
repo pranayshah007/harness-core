@@ -102,11 +102,13 @@ public class K8sNodeInfoTasklet implements Tasklet {
 
   public InstanceInfo process(PublishedMessage publishedMessage) {
     NodeInfo nodeInfo = (NodeInfo) publishedMessage.getMessage();
+    log.info("Node Info is {}", nodeInfo);
     String accountId = publishedMessage.getAccountId();
     String clusterId = nodeInfo.getClusterId();
     String nodeUid = nodeInfo.getNodeUid();
 
     Map<String, String> labelsMap = nodeInfo.getLabelsMap();
+    log.info("Node Info label {}", labelsMap);
     Map<String, String> metaData = new HashMap<>();
     CloudProvider k8SCloudProvider =
         cloudProviderService.getK8SCloudProvider(nodeInfo.getCloudProviderId(), nodeInfo.getProviderId());
