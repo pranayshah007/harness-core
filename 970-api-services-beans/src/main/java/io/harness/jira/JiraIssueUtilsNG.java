@@ -86,12 +86,15 @@ public class JiraIssueUtilsNG {
 
     Map<String, String> finalFields = fields;
     if (checkRequiredFields) {
-      Set<String> requiredFieldsNotPresent = issueTypeFields.entrySet()
-                                                 .stream()
-                                                 .filter(e -> e.getValue().isRequired())
-                                                 .map(Map.Entry::getKey)
-                                                 .filter(f -> !finalFields.containsKey(f))
-                                                 .collect(Collectors.toSet());
+      Set<String> requiredFieldsNotPresent =
+          issueTypeFields.entrySet()
+              .stream()
+              // TECHDEBIT: remove the USER validation after support for user type fields
+              .filter(
+                  e -> e.getValue().isRequired() && !e.getValue().getSchema().getType().equals(JiraFieldTypeNG.USER))
+              .map(Map.Entry::getKey)
+              .filter(f -> !finalFields.containsKey(f))
+              .collect(Collectors.toSet());
       if (EmptyPredicate.isNotEmpty(requiredFieldsNotPresent)) {
         throw new JiraClientException(String.format("Some required fields for this jira issue type are missing: %s",
                                           String.join(", ", requiredFieldsNotPresent)),
