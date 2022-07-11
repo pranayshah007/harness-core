@@ -119,6 +119,8 @@ public interface WorkflowService extends OwnedByApplication, SettingsServiceMani
 
   PageResponse<StateMachine> listStateMachines(PageRequest<StateMachine> req);
 
+  List<Workflow> list(String accountId, List<String> projectFields);
+
   Map<StateTypeScope, List<Stencil>> stencils(
       String appId, String workflowId, String phaseId, StateTypeScope... stateTypeScopes);
 
@@ -182,7 +184,8 @@ public interface WorkflowService extends OwnedByApplication, SettingsServiceMani
 
   List<InfrastructureMapping> getResolvedInfraMappings(Workflow workflow, Map<String, String> workflowVariables);
 
-  List<InfrastructureDefinition> getResolvedInfraDefinitions(Workflow workflow, Map<String, String> workflowVariables);
+  List<InfrastructureDefinition> getResolvedInfraDefinitions(
+      Workflow workflow, Map<String, String> workflowVariables, String envId);
 
   /**
    * Resolves the inframappingIds from workflow variables
@@ -192,7 +195,8 @@ public interface WorkflowService extends OwnedByApplication, SettingsServiceMani
    */
   List<String> getResolvedInfraMappingIds(Workflow workflow, Map<String, String> workflowVariables);
 
-  List<String> getResolvedInfraDefinitionIds(Workflow workflow, Map<String, String> workflowVariables);
+  List<String> getResolvedInfraDefinitionIds(
+      Workflow workflow, Map<String, String> workflowVariables, String resolveEnvId);
 
   String getResolvedServiceIdFromPhase(WorkflowPhase workflowPhase, Map<String, String> workflowVariables);
 

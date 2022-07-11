@@ -17,6 +17,7 @@ import static io.harness.eraro.ErrorCode.TOKEN_ALREADY_REFRESHED_ONCE;
 import static io.harness.eraro.ErrorCode.USER_DOES_NOT_EXIST;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_ADMIN;
+import static io.harness.expression.ExpressionEvaluator.matchesVariablePattern;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -1323,7 +1324,11 @@ public class AuthServiceImpl implements AuthService {
           USER);
     }
     final Set<String> envDeployPerms = envPipelineDeployPermissions.get(executableElementInfo);
+
     envIds.forEach(envId -> {
+      if (matchesVariablePattern(envId)) {
+        return;
+      }
       if (!envDeployPerms.contains(envId)) {
         log.error("User not authorized for envId {}", envId);
         throw new InvalidRequestException(String.format("User not authorized to deploy %s to given environment",

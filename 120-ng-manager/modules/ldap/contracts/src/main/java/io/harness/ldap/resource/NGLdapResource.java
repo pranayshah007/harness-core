@@ -69,7 +69,7 @@ import org.hibernate.validator.constraints.NotBlank;
     })
 public interface NGLdapResource {
   @POST
-  @Path("test/connection")
+  @Path("settings/test/connection")
   @Hidden
   @ApiOperation(value = "Validates Ldap Connection Setting", nickname = "validateLdapConnectionSettings")
   @Operation(operationId = "validateLdapConnectionSettings", summary = "Validates Ldap Connection Setting",
@@ -82,6 +82,42 @@ public interface NGLdapResource {
   RestResponse<LdapTestResponse>
   validateLdapConnectionSettings(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                                      NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
+      String projectIdentifier, @Valid LdapSettings settings);
+
+  @POST
+  @Path("settings/test/user")
+  @Hidden
+  @ApiOperation(value = "Validates Ldap User Setting", nickname = "validateLdapUserSettings")
+  @Operation(operationId = "validateLdapUserSettings", summary = "Validates Ldap User Setting",
+      description = "Checks if passed Ldap Group Setting is valid for configured ldap server",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Successfully validated Ldap User Setting")
+      })
+  RestResponse<LdapTestResponse>
+  validateLdapUserSettings(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                               NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
+      String projectIdentifier, @Valid LdapSettings settings);
+
+  @POST
+  @Path("settings/test/group")
+  @Hidden
+  @ApiOperation(value = "Validates Ldap Group Setting", nickname = "validateLdapGroupSettings")
+  @Operation(operationId = "validateLdapGroupSettings", summary = "Validates Ldap Group Setting",
+      description = "Checks if passed Ldap Group Setting is valid for configured ldap server",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Successfully validated Ldap Group Setting")
+      })
+  RestResponse<LdapTestResponse>
+  validateLdapGroupSettings(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                                NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
       String projectIdentifier, @Valid LdapSettings settings);

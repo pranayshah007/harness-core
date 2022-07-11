@@ -498,11 +498,26 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .startTs(System.currentTimeMillis())
             .status(Status.RUNNING)
             .build();
+    NodeExecution nodeExecution2 =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .parentId(parentId)
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .uuid(generateUuid())
+            .name("name")
+            .identifier(generateUuid())
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .startTs(System.currentTimeMillis())
+            .status(Status.QUEUED)
+            .build();
     nodeExecutionService.save(nodeExecution);
     nodeExecutionService.save(nodeExecution1);
+    nodeExecutionService.save(nodeExecution2);
 
-    long updatedNumber = nodeExecutionService.markAllLeavesDiscontinuing(planExecutionUuid, EnumSet.of(Status.RUNNING));
-    assertThat(updatedNumber).isEqualTo(2);
+    long updatedNumber =
+        nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(planExecutionUuid, EnumSet.of(Status.RUNNING));
+    assertThat(updatedNumber).isEqualTo(3);
   }
 
   @Test

@@ -96,7 +96,8 @@ public class OrganisationChangeEventMessageProcessorTest extends CvNextGenTestBa
     Reflections reflections = new Reflections(VerificationApplication.class.getPackage().getName());
     Set<Class<? extends PersistentEntity>> withOrganisationIdentifier = new HashSet<>();
     reflections.getSubTypesOf(PersistentEntity.class).forEach(entity -> {
-      if (doesClassContainField(entity, "accountId") && doesClassContainField(entity, "orgIdentifier")) {
+      if (doesClassContainField(entity, "accountId") && doesClassContainField(entity, "orgIdentifier")
+          && !OrganizationChangeEventMessageProcessor.EXCEPTIONS.contains(entity)) {
         withOrganisationIdentifier.add(entity);
       }
     });

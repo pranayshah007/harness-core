@@ -15,7 +15,9 @@ import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
+import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.variables.NGServiceOverrides;
@@ -23,6 +25,7 @@ import io.harness.yaml.core.variables.NGServiceOverrides;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -30,8 +33,7 @@ import lombok.experimental.UtilityClass;
 public class EnvironmentPlanCreatorConfigMapper {
   public static EnvironmentPlanCreatorConfig toEnvironmentPlanCreatorConfig(
       String mergedEnvYaml, List<InfrastructureConfig> configs, NGServiceOverrides serviceOverride) {
-    NGEnvironmentInfoConfig ngEnvironmentInfoConfig =
-        EnvironmentMapper.toNGEnvironmentConfig(mergedEnvYaml).getNgEnvironmentInfoConfig();
+    NGEnvironmentInfoConfig ngEnvironmentInfoConfig = fetchEnvironmentConfig(mergedEnvYaml);
     return EnvironmentPlanCreatorConfig.builder()
         .environmentRef(ParameterField.createValueField(ngEnvironmentInfoConfig.getIdentifier()))
         .identifier(ngEnvironmentInfoConfig.getIdentifier())
@@ -47,10 +49,18 @@ public class EnvironmentPlanCreatorConfigMapper {
         .build();
   }
 
+  private static NGEnvironmentInfoConfig fetchEnvironmentConfig(@NotNull String envYaml) {
+    NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(envYaml);
+    if (ngEnvironmentConfig == null || ngEnvironmentConfig.getNgEnvironmentInfoConfig() == null) {
+      throw new InvalidRequestException("Environment used is not valid");
+    }
+
+    return ngEnvironmentConfig.getNgEnvironmentInfoConfig();
+  }
+
   public EnvironmentPlanCreatorConfig toEnvPlanCreatorConfigWithGitops(
       String mergedEnvYaml, EnvironmentYamlV2 envYaml, NGServiceOverrides serviceOverride) {
-    NGEnvironmentInfoConfig config =
-        EnvironmentMapper.toNGEnvironmentConfig(mergedEnvYaml).getNgEnvironmentInfoConfig();
+    NGEnvironmentInfoConfig config = fetchEnvironmentConfig(mergedEnvYaml);
     return EnvironmentPlanCreatorConfig.builder()
         .environmentRef(envYaml.getEnvironmentRef())
         .identifier(config.getIdentifier())
@@ -63,12 +73,12 @@ public class EnvironmentPlanCreatorConfigMapper {
         .variables(config.getVariables())
         .serviceOverrides(serviceOverride)
         .gitOpsClusterRefs(getClusterRefs(envYaml))
-        .deployToAll(envYaml.isDeployToAll())
+        .deployToAll(envYaml.getDeployToAll().getValue())
         .build();
   }
 
   private List<String> getClusterRefs(EnvironmentYamlV2 environmentV2) {
-    if (!environmentV2.isDeployToAll()) {
+    if (!environmentV2.getDeployToAll().getValue()) {
       return environmentV2.getGitOpsClusters()
           .getValue()
           .stream()

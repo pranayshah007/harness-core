@@ -97,10 +97,10 @@ public class EcrArtifactResource {
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
       EcrArtifactConfig ecrArtifactConfig = (EcrArtifactConfig) artifactSpecFromService;
       if (isEmpty(imagePath)) {
-        imagePath = ecrArtifactConfig.getImagePath().getValue();
+        imagePath = (String) ecrArtifactConfig.getImagePath().fetchFinalValue();
       }
       if (isEmpty(region)) {
-        region = ecrArtifactConfig.getRegion().getValue();
+        region = (String) ecrArtifactConfig.getRegion().fetchFinalValue();
       }
 
       if (isEmpty(ecrConnectorIdentifier)) {

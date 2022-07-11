@@ -12,6 +12,7 @@ import static software.wings.expression.ManagerExpressionEvaluator.wingsVariable
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 
 import software.wings.beans.InfrastructureMapping;
@@ -25,6 +26,7 @@ import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.settings.SettingVariableTypes;
 import software.wings.sm.ExecutionContext;
+import software.wings.sm.ExecutionContextImpl;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -80,7 +82,14 @@ public class TemplateExpressionProcessor {
     String infraDefinitionId = resolveTemplateExpression(context, templateExpression);
     InfrastructureDefinition infrastructureDefinition = infrastructureDefinitionService.get(appId, infraDefinitionId);
     if (infrastructureDefinition == null) {
+      infrastructureDefinition = infrastructureDefinitionService.getInfraDefByName(
+          appId, ((ExecutionContextImpl) context).getEnv().getUuid(), infraDefinitionId);
+    }
+    if (infrastructureDefinition == null) {
       if (matchesVariablePattern(infraDefinitionId)) {
+        if (infraDefinitionId.contains(".")) {
+          throw new InvalidRequestException(infraDefinitionId + " doesn't resolve to a valid value");
+        }
         throw new WingsException("No value provided for templated Infra Definition workflow variable ["
                 + templateExpression.getExpression() + "]",
             WingsException.USER);

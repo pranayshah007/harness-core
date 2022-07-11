@@ -712,6 +712,7 @@ java_library(
     deps = [
         ":module",
         "//:lombok",
+        "//420-delegate-agent:module",
         "//420-delegate-service:module",
         "//425-verification-commons:module",
         "//430-cv-nextgen-commons:module",
@@ -1054,6 +1055,7 @@ java_library(
         "@maven//:io_dropwizard_metrics_metrics_jvm",
         "@maven//:io_dropwizard_metrics_metrics_logback",
         "@maven//:io_dropwizard_metrics_metrics_servlets",
+        "@maven//:io_dropwizard_modules_dropwizard_protobuf",
         "@maven//:io_fabric8_fabric8_utils",
         "@maven//:io_fabric8_kubernetes_client",
         "@maven//:io_fabric8_kubernetes_client_project",

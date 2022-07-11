@@ -216,6 +216,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
     node3.setDeploymentStageConfig(
         DeploymentStageConfig.builder()
             .service(ServiceYamlV2.builder().serviceRef(ParameterField.<String>builder().value("svc").build()).build())
+            .deploymentType(ServiceDefinitionType.KUBERNETES)
             .infrastructure(PipelineInfrastructure.builder()
                                 .environment(EnvironmentYaml.builder()
                                                  .identifier(envEntity.getIdentifier())
@@ -258,6 +259,34 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
             .gitOpsEnabled(Boolean.TRUE)
             .build());
 
-    return new Object[][] {{node1}, {node2}, {node3}, {node4}, {node5}};
+    final DeploymentStageNode node6 = new DeploymentStageNode();
+    node6.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .service(ServiceYamlV2.builder().serviceRef(ParameterField.<String>builder().value("svc").build()).build())
+            .environment(EnvironmentYamlV2.builder()
+                             .environmentRef(ParameterField.<String>builder().value("env").build())
+                             // default to false
+                             .deployToAll(ParameterField.createValueField(null))
+                             .gitOpsClusters(ParameterField.createValueField(null))
+                             .build())
+            .gitOpsEnabled(Boolean.TRUE)
+            .deploymentType(ServiceDefinitionType.KUBERNETES)
+            .build());
+
+    final DeploymentStageNode node7 = new DeploymentStageNode();
+    node7.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .service(ServiceYamlV2.builder().serviceRef(ParameterField.<String>builder().value("svc").build()).build())
+            .environment(EnvironmentYamlV2.builder()
+                             .environmentRef(ParameterField.<String>builder().value("env").build())
+                             // default to false
+                             .deployToAll(ParameterField.createValueField(false))
+                             .gitOpsClusters(ParameterField.createValueField(null))
+                             .build())
+            .gitOpsEnabled(Boolean.TRUE)
+            .deploymentType(ServiceDefinitionType.KUBERNETES)
+            .build());
+
+    return new Object[][] {{node1}, {node2}, {node3}, {node4}, {node5}, {node6}};
   }
 }

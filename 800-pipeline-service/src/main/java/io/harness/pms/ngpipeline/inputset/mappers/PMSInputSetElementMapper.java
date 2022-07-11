@@ -189,18 +189,20 @@ public class PMSInputSetElementMapper {
     return inputSetEntities.map(inputSetEntity -> {
       InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS = null;
       Map<String, String> overlaySetErrorDetails = null;
-      try {
-        if (isOldGitSync) {
-          GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-          InputSetValidationHelper.validateInputSetForOldGitSync(inputSetService, pipelineService, inputSetEntity,
-              gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId());
-        } else {
-          InputSetValidationHelper.validateInputSet(inputSetService, pipelineService, inputSetEntity, false);
+      if (inputSetEntity.isEntityInvalid()) {
+        try {
+          if (isOldGitSync) {
+            GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+            InputSetValidationHelper.validateInputSetForOldGitSync(inputSetService, pipelineService, inputSetEntity,
+                gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId());
+          } else {
+            InputSetValidationHelper.validateInputSet(inputSetService, pipelineService, inputSetEntity, false);
+          }
+        } catch (InvalidInputSetException e) {
+          inputSetErrorWrapperDTOPMS = (InputSetErrorWrapperDTOPMS) e.getMetadata();
+        } catch (InvalidOverlayInputSetException e) {
+          overlaySetErrorDetails = ((OverlayInputSetErrorWrapperDTOPMS) e.getMetadata()).getInvalidReferences();
         }
-      } catch (InvalidInputSetException e) {
-        inputSetErrorWrapperDTOPMS = (InputSetErrorWrapperDTOPMS) e.getMetadata();
-      } catch (InvalidOverlayInputSetException e) {
-        overlaySetErrorDetails = ((OverlayInputSetErrorWrapperDTOPMS) e.getMetadata()).getInvalidReferences();
       }
       return PMSInputSetElementMapper.toInputSetSummaryResponseDTOPMS(
           inputSetEntity, inputSetErrorWrapperDTOPMS, overlaySetErrorDetails);

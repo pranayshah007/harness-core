@@ -7,6 +7,11 @@
 
 package io.harness.ccm.remote.utils;
 
+import static io.harness.ccm.views.utils.ClusterTableKeys.ACTUAL_IDLE_COST;
+import static io.harness.ccm.views.utils.ClusterTableKeys.BILLING_AMOUNT;
+import static io.harness.ccm.views.utils.ClusterTableKeys.UNALLOCATED_COST;
+
+import io.harness.ccm.commons.entities.CCMAggregation;
 import io.harness.ccm.commons.entities.CCMField;
 import io.harness.ccm.commons.entities.CCMOperator;
 import io.harness.ccm.commons.entities.CCMSortOrder;
@@ -29,6 +34,7 @@ import io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator;
 import io.harness.ccm.views.graphql.QLCEViewTimeGroupType;
 import io.harness.ccm.views.graphql.QLCEViewTimeTruncGroupBy;
 import io.harness.ccm.views.utils.ViewFieldUtils;
+import io.harness.exception.InvalidRequestException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,14 +45,21 @@ public class RESTToGraphQLHelper {
   public static final String COST = "cost";
 
   public static List<QLCEViewFilterWrapper> convertFilters(
+      List<CCMStringFilter> filters, DateTime startTime, DateTime endTime) throws Exception {
+    return convertFilters(filters, null, startTime, endTime);
+  }
+
+  public static List<QLCEViewFilterWrapper> convertFilters(
       List<CCMStringFilter> filters, String perspectiveId, DateTime startTime, DateTime endTime) throws Exception {
     List<QLCEViewFilterWrapper> modifiedFilters = new ArrayList<>();
 
     // convertPerspectiveId Query Param to Filter
-    modifiedFilters.add(
-        QLCEViewFilterWrapper.builder()
-            .viewMetadataFilter(QLCEViewMetadataFilter.builder().isPreview(false).viewId(perspectiveId).build())
-            .build());
+    if (perspectiveId != null) {
+      modifiedFilters.add(
+          QLCEViewFilterWrapper.builder()
+              .viewMetadataFilter(QLCEViewMetadataFilter.builder().isPreview(false).viewId(perspectiveId).build())
+              .build());
+    }
 
     // Add startTime Filter
     modifiedFilters.add(QLCEViewFilterWrapper.builder()
@@ -98,6 +111,32 @@ public class RESTToGraphQLHelper {
     return aggregations;
   }
 
+  public static List<QLCEViewAggregation> getAggregations(List<CCMAggregation> aggregations) {
+    List<QLCEViewAggregation> convertedAggregations = new ArrayList<>();
+    if (aggregations != null) {
+      for (CCMAggregation aggregation : aggregations) {
+        convertedAggregations.add(QLCEViewAggregation.builder()
+                                      .operationType(QLCEViewAggregateOperation.SUM)
+                                      .columnName(mapCCMFieldToColumnName(aggregation.getField()))
+                                      .build());
+      }
+    }
+    return convertedAggregations;
+  }
+
+  private static String mapCCMFieldToColumnName(CCMField field) {
+    switch (field) {
+      case TOTAL_COST:
+        return BILLING_AMOUNT;
+      case IDLE_COST:
+        return ACTUAL_IDLE_COST;
+      case UNALLOCATED_COST:
+        return UNALLOCATED_COST;
+      default:
+        throw new InvalidRequestException("Aggregation on field not supported");
+    }
+  }
+
   private static String[] getStringArray(List<String> values) {
     return values.toArray(new String[values.size()]);
   }
@@ -126,6 +165,17 @@ public class RESTToGraphQLHelper {
       sortOrder = QLCESortOrder.ASCENDING;
     }
     sortCriteriaList.add(QLCEViewSortCriteria.builder().sortType(QLCEViewSortType.COST).sortOrder(sortOrder).build());
+    return sortCriteriaList;
+  }
+
+  public static List<QLCEViewSortCriteria> getClusterCostSortingCriteria(CCMSortOrder sortOrderInput) {
+    List<QLCEViewSortCriteria> sortCriteriaList = new ArrayList<>();
+    QLCESortOrder sortOrder = QLCESortOrder.DESCENDING;
+    if (sortOrderInput != null && sortOrderInput == CCMSortOrder.ASCENDING) {
+      sortOrder = QLCESortOrder.ASCENDING;
+    }
+    sortCriteriaList.add(
+        QLCEViewSortCriteria.builder().sortType(QLCEViewSortType.CLUSTER_COST).sortOrder(sortOrder).build());
     return sortCriteriaList;
   }
 
@@ -366,36 +416,43 @@ public class RESTToGraphQLHelper {
             .build());
     viewFieldHashMap.put("CLUSTER_NAMESPACE",
         QLCEViewFieldInput.builder()
-            .fieldId(clusterFields.get(1).getFieldId())
-            .fieldName(clusterFields.get(1).getFieldId())
-            .identifier(ViewFieldIdentifier.CLUSTER)
-            .identifierName(ViewFieldIdentifier.CLUSTER.getDisplayName())
-            .build());
-    viewFieldHashMap.put("CLUSTER_WORKLOAD",
-        QLCEViewFieldInput.builder()
             .fieldId(clusterFields.get(2).getFieldId())
             .fieldName(clusterFields.get(2).getFieldId())
             .identifier(ViewFieldIdentifier.CLUSTER)
             .identifierName(ViewFieldIdentifier.CLUSTER.getDisplayName())
             .build());
-    viewFieldHashMap.put("CLUSTER_APPLICATION",
+    viewFieldHashMap.put("CLUSTER_WORKLOAD",
         QLCEViewFieldInput.builder()
             .fieldId(clusterFields.get(3).getFieldId())
             .fieldName(clusterFields.get(3).getFieldId())
             .identifier(ViewFieldIdentifier.CLUSTER)
             .identifierName(ViewFieldIdentifier.CLUSTER.getDisplayName())
             .build());
-    viewFieldHashMap.put("CLUSTER_ENVIRONMENT",
+    viewFieldHashMap.put("CLUSTER_APPLICATION",
         QLCEViewFieldInput.builder()
             .fieldId(clusterFields.get(4).getFieldId())
             .fieldName(clusterFields.get(4).getFieldId())
             .identifier(ViewFieldIdentifier.CLUSTER)
             .identifierName(ViewFieldIdentifier.CLUSTER.getDisplayName())
             .build());
-    viewFieldHashMap.put("CLUSTER_SERVICE",
+    viewFieldHashMap.put("CLUSTER_ENVIRONMENT",
         QLCEViewFieldInput.builder()
             .fieldId(clusterFields.get(5).getFieldId())
             .fieldName(clusterFields.get(5).getFieldId())
+            .identifier(ViewFieldIdentifier.CLUSTER)
+            .identifierName(ViewFieldIdentifier.CLUSTER.getDisplayName())
+            .build());
+    viewFieldHashMap.put("CLUSTER_SERVICE",
+        QLCEViewFieldInput.builder()
+            .fieldId(clusterFields.get(6).getFieldId())
+            .fieldName(clusterFields.get(6).getFieldId())
+            .identifier(ViewFieldIdentifier.CLUSTER)
+            .identifierName(ViewFieldIdentifier.CLUSTER.getDisplayName())
+            .build());
+    viewFieldHashMap.put("CLUSTER_ID",
+        QLCEViewFieldInput.builder()
+            .fieldId("clusterId")
+            .fieldName("clusterId")
             .identifier(ViewFieldIdentifier.CLUSTER)
             .identifierName(ViewFieldIdentifier.CLUSTER.getDisplayName())
             .build());

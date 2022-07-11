@@ -21,6 +21,8 @@ import io.harness.exception.HintException;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.WingsException;
 import io.harness.exception.runtime.KubernetesApiClientRuntimeException;
+import io.harness.k8s.exception.KubernetesExceptionExplanation;
+import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.rule.Owner;
 
 import java.io.IOException;

@@ -67,7 +67,11 @@ public class JenkinsArtifactTaskHelper {
           artifactTaskResponse = getSuccessTaskResponse(jenkinsArtifactTaskHandler.getJobWithParamters(attributes));
           saveLogs(executionLogCallback, "Get the Jenkins Job " + registryUrl);
           break;
-
+        case GET_LAST_SUCCESSFUL_BUILD:
+          saveLogs(executionLogCallback, "Get the Jenkins Build");
+          artifactTaskResponse = getSuccessTaskResponse(jenkinsArtifactTaskHandler.getLastSuccessfulBuild(attributes));
+          saveLogs(executionLogCallback, "Get the Jenkins Build " + registryUrl);
+          break;
         case JENKINS_BUILD:
           saveLogs(executionLogCallback, "Trigger the Jenkins Builds");
           artifactTaskResponse =

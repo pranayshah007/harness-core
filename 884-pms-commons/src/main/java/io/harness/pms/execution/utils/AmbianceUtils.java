@@ -21,6 +21,7 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.strategy.StrategyValidationUtils;
 
 import com.cronutils.utils.StringUtils;
 import com.google.common.annotations.VisibleForTesting;
@@ -215,9 +216,14 @@ public class AmbianceUtils {
     return ambiance.getLevels(ambiance.getLevelsCount() - 2).getRuntimeId();
   }
 
-  public static String getStrategyPostfix(Ambiance ambiance) {
+  public static String modifyIdentifier(Ambiance ambiance, String identifier) {
     Level level = obtainCurrentLevel(ambiance);
-    return getStrategyPostfix(level);
+    return modifyIdentifier(level, identifier);
+  }
+
+  public static String modifyIdentifier(Level level, String identifier) {
+    return identifier.replaceAll(
+        StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX_ESCAPED, getStrategyPostfix(level));
   }
 
   public static String getStrategyPostfix(Level level) {

@@ -141,6 +141,7 @@ import com.google.common.collect.Sets.SetView;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -894,10 +895,7 @@ public class AuthHandler {
   }
 
   private Map<String, List<Base>> getAppIdServiceMap(String accountId) {
-    PageRequest<Service> pageRequest =
-        aPageRequest().addFilter("accountId", Operator.EQ, accountId).addFieldsIncluded("_id", "appId").build();
-    List<Service> list =
-        getAllEntities(pageRequest, () -> serviceResourceService.list(pageRequest, false, false, false, null));
+    List<Service> list = serviceResourceService.list(accountId, Arrays.asList("_id", "appId"));
     return list.stream().collect(Collectors.groupingBy(Base::getAppId));
   }
 
@@ -922,14 +920,8 @@ public class AuthHandler {
   }
 
   private Map<String, List<Base>> getAppIdWorkflowMap(String accountId) {
-    PageRequest<Workflow> pageRequest =
-        aPageRequest()
-            .addFilter("accountId", Operator.EQ, accountId)
-            .addFieldsIncluded("_id", "appId", "envId", "templatized", "templateExpressions")
-            .build();
-
     List<Workflow> list =
-        getAllEntities(pageRequest, () -> workflowService.listWorkflowsWithoutOrchestration(pageRequest));
+        workflowService.list(accountId, Arrays.asList("_id", "appId", "envId", "templatized", "templateExpressions"));
     return list.stream().collect(Collectors.groupingBy(Base::getAppId));
   }
 

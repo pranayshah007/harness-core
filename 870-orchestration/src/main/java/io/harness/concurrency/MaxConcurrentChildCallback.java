@@ -17,6 +17,7 @@ import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.OldNotifyCallback;
 import io.harness.waiter.WaitNotifyEngine;
@@ -78,8 +79,10 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
   private void getAmbianceAndStartExecution(String nodeExecutionToStart) {
     NodeExecution nodeExecution =
         nodeExecutionService.getWithFieldsIncluded(nodeExecutionToStart, NodeProjectionUtils.withAmbianceAndStatus);
-    log.info("[MaxConcurrentCallback]: Starting the execution with id: " + nodeExecutionToStart);
-    engine.startNodeExecution(nodeExecution.getAmbiance());
+    if (StatusUtils.resumableStatuses().contains(nodeExecution.getStatus())) {
+      log.info("[MaxConcurrentCallback]: Starting the execution with id: " + nodeExecutionToStart);
+      engine.startNodeExecution(nodeExecution.getAmbiance());
+    }
   }
 
   @Override

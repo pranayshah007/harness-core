@@ -10,6 +10,7 @@ package io.harness.delegate.task.azure.appservice.webapp.handler;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.azure.AzureTestUtils.DEPLOYMENT_SLOT;
 import static io.harness.delegate.task.azure.AzureTestUtils.TRAFFIC_WEIGHT;
+import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VLICA;
 
 import static java.util.Collections.singletonList;
@@ -43,6 +44,8 @@ import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
+import software.wings.delegatetasks.azure.AzureSecretHelper;
+
 import java.util.List;
 import org.junit.Before;
 import org.junit.Rule;
@@ -61,6 +64,7 @@ public class AzureWebAppRollbackRequestHandlerTest {
   @Mock private AzureAppServiceResourceUtilities azureAppServiceResourceUtilities;
   @Mock private AzureLogCallbackProvider logCallbackProvider;
   @Mock private LogCallback mockLogCallback;
+  @Mock private AzureSecretHelper azureSecretHelper;
 
   @InjectMocks AzureWebAppRollbackRequestHandler requestHandler;
 
@@ -83,11 +87,10 @@ public class AzureWebAppRollbackRequestHandlerTest {
   public void testExecuteContainerArtifact() {
     final AzureWebAppRollbackRequest request =
         AzureWebAppRollbackRequest.builder()
+            .accountId("accountId")
             .preDeploymentData(AzureTestUtils.buildTestPreDeploymentData(AppServiceDeploymentProgress.DEPLOY_TO_SLOT))
             .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
-            .artifact(AzureTestUtils.createTestContainerArtifactConfig())
             .timeoutIntervalInMin(10)
-            .blueGreen(true)
             .build();
 
     final List<AzureAppDeploymentData> deploymentDataList = singletonList(AzureAppDeploymentData.builder().build());
@@ -111,14 +114,15 @@ public class AzureWebAppRollbackRequestHandlerTest {
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
   public void testRollbackDeploymentAndTrafficShift() {
+    doReturn(50.0).when(azureAppServiceService).getSlotTrafficWeight(any(), any());
     mockRerouteProductionSlotTraffic();
-    final AzureWebAppRollbackRequest request = AzureWebAppRollbackRequest.builder()
-                                                   .preDeploymentData(AzureTestUtils.buildTestPreDeploymentData(
-                                                       AppServiceDeploymentProgress.UPDATE_TRAFFIC_PERCENT))
-                                                   .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
-                                                   .artifact(AzureTestUtils.createTestContainerArtifactConfig())
-                                                   .timeoutIntervalInMin(10)
-                                                   .build();
+    final AzureWebAppRollbackRequest request =
+        AzureWebAppRollbackRequest.builder()
+            .accountId("accountId")
+            .preDeploymentData(AzureTestUtils.buildTestPreDeploymentData(AppServiceDeploymentProgress.DEPLOY_TO_SLOT))
+            .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
+            .timeoutIntervalInMin(10)
+            .build();
 
     AzureWebAppRequestResponse requestResponse =
         requestHandler.execute(request, AzureTestUtils.createTestAzureConfig(), logCallbackProvider);
@@ -128,10 +132,26 @@ public class AzureWebAppRollbackRequestHandlerTest {
         .rerouteProductionSlotTraffic(any(), eq(DEPLOYMENT_SLOT), eq(TRAFFIC_WEIGHT), any());
   }
 
-  private void mockRerouteProductionSlotTraffic() {
-    doNothing()
-        .when(azureAppServiceDeploymentService)
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testRollbackDeploymentSwapSlotsAndTrafficShift() {
+    mockRerouteProductionSlotTraffic();
+    final AzureWebAppRollbackRequest request =
+        AzureWebAppRollbackRequest.builder()
+            .accountId("accountId")
+            .preDeploymentData(AzureTestUtils.buildTestPreDeploymentData(AppServiceDeploymentProgress.SWAP_SLOT))
+            .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
+            .timeoutIntervalInMin(10)
+            .build();
+
+    AzureWebAppRequestResponse requestResponse =
+        requestHandler.execute(request, AzureTestUtils.createTestAzureConfig(), logCallbackProvider);
+
+    assertThat(requestResponse).isNotNull();
+    verify(azureAppServiceDeploymentService)
         .rerouteProductionSlotTraffic(any(), eq(DEPLOYMENT_SLOT), eq(TRAFFIC_WEIGHT), any());
+    verify(azureAppServiceResourceUtilities).swapSlots(any(), any(), any(), any(), any());
   }
 
   @Test
@@ -141,9 +161,9 @@ public class AzureWebAppRollbackRequestHandlerTest {
     mockRerouteProductionSlotTraffic();
     final AzureWebAppRollbackRequest request =
         AzureWebAppRollbackRequest.builder()
+            .accountId("accountId")
             .preDeploymentData(AzureTestUtils.buildTestPreDeploymentData(AppServiceDeploymentProgress.STOP_SLOT))
             .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
-            .artifact(AzureTestUtils.createTestContainerArtifactConfig())
             .timeoutIntervalInMin(10)
             .build();
 
@@ -168,9 +188,9 @@ public class AzureWebAppRollbackRequestHandlerTest {
   public void testExecuteContainerArtifactFailure() {
     final AzureWebAppRollbackRequest request =
         AzureWebAppRollbackRequest.builder()
+            .accountId("accountId")
             .preDeploymentData(AzureTestUtils.buildTestPreDeploymentData(AppServiceDeploymentProgress.DEPLOY_TO_SLOT))
             .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
-            .artifact(AzureTestUtils.createTestContainerArtifactConfig())
             .timeoutIntervalInMin(10)
             .build();
 
@@ -186,5 +206,11 @@ public class AzureWebAppRollbackRequestHandlerTest {
           assertThat(dataException.getDeploymentProgressMarker()).isEqualTo("DEPLOY_TO_SLOT");
           return true;
         });
+  }
+
+  private void mockRerouteProductionSlotTraffic() {
+    doNothing()
+        .when(azureAppServiceDeploymentService)
+        .rerouteProductionSlotTraffic(any(), eq(DEPLOYMENT_SLOT), eq(TRAFFIC_WEIGHT), any());
   }
 }

@@ -37,6 +37,8 @@ public class S3ArtifactDelegateRequest implements ArtifactSourceDelegateRequest 
   String filePathRegex;
   /** Connector Reference*/
   String connectorRef;
+  /** Region*/
+  String region;
   /** Aws Connector*/
   AwsConnectorDTO awsConnectorDTO;
   /** Encrypted details for decrypting.*/

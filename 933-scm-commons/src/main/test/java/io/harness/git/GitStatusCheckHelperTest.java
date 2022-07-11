@@ -21,10 +21,10 @@ import io.harness.cistatus.service.bitbucket.BitbucketService;
 import io.harness.cistatus.service.gitlab.GitlabService;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
-import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
@@ -252,7 +252,7 @@ public class GitStatusCheckHelperTest extends CategoryTest {
                            .type(AzureRepoApiAccessType.TOKEN)
                            .spec(AzureRepoTokenSpecDTO.builder().build())
                            .build())
-            .connectionType(GitConnectionType.REPO)
+            .connectionType(AzureRepoConnectionTypeDTO.REPO)
             .authentication(AzureRepoAuthenticationDTO.builder().authType(GitAuthType.HTTP).build())
             .build();
     AzureRepoTokenSpecDTO decryptedTokenSpec =

@@ -139,6 +139,7 @@ import software.wings.exception.YamlProcessingException;
 import software.wings.exception.YamlProcessingException.ChangeWithErrorMsg;
 import software.wings.resources.yaml.YamlAuthHandler;
 import software.wings.security.UserThreadLocal;
+import software.wings.service.impl.yaml.YamlProcessingLogContext;
 import software.wings.service.impl.yaml.handler.BaseYamlHandler;
 import software.wings.service.impl.yaml.handler.YamlHandlerFactory;
 import software.wings.service.impl.yaml.handler.tag.HarnessTagYamlHelper;
@@ -1236,7 +1237,9 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
     if (yamlContent.isEmpty()) {
       throw new InvalidArgumentsException(Pair.of("Input YAML", "cannot be empty"));
     }
-    try (AccountLogContext ignore1 = new AccountLogContext(accountId, OverrideBehavior.OVERRIDE_ERROR)) {
+    try (AccountLogContext ignore1 = new AccountLogContext(accountId, OverrideBehavior.OVERRIDE_ERROR);
+         YamlProcessingLogContext ignore2 =
+             YamlProcessingLogContext.builder().filePath(yamlFilePath).build(OverrideBehavior.OVERRIDE_ERROR)) {
       List changeList = Arrays.asList(GitFileChange.Builder.aGitFileChange()
                                           .withFilePath(yamlFilePath)
                                           .withFileContent(yamlContent)

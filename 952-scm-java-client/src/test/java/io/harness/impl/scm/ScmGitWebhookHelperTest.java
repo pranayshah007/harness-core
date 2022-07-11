@@ -17,9 +17,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.HookEventType;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.product.ci.scm.proto.AzureWebhookEvent;
 import io.harness.product.ci.scm.proto.AzureWebhookEvents;
@@ -42,7 +42,7 @@ public class ScmGitWebhookHelperTest extends CategoryTest {
     AzureRepoConnectorDTO githubConnector = AzureRepoConnectorDTO.builder()
                                                 .apiAccess(AzureRepoApiAccessDTO.builder().build())
                                                 .url(repoUrl)
-                                                .connectionType(GitConnectionType.REPO)
+                                                .connectionType(AzureRepoConnectionTypeDTO.REPO)
                                                 .build();
     ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder().connectorConfig(githubConnector).build();
     scmConnector = (ScmConnector) connectorInfo.getConnectorConfig();
