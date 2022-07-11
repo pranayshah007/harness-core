@@ -19,11 +19,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
+import io.harness.delegate.beans.DelegateDTO;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfileDetails;
 import io.harness.delegate.beans.ScopingRules;
 import io.harness.rest.RestResponse;
 
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.DelegateProfileManagerService;
@@ -36,6 +38,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import java.util.List;
+import javax.validation.constraints.NotEmpty;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -45,7 +48,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import org.hibernate.validator.constraints.NotEmpty;
 
 /**
  * Created by rishi on 7/31/18
@@ -211,5 +213,26 @@ public class DelegateProfileResource {
       @PathParam("delegateProfileId") @NotEmpty String delegateProfileId,
       @QueryParam("accountId") @NotEmpty String accountId, List<String> selectors) {
     return new RestResponse<>(delegateProfileManagerService.updateSelectors(accountId, delegateProfileId, selectors));
+  }
+
+  @GET
+  @Path("/{delegateProfileId}/delegates")
+  @Timed
+  @ApiKeyAuthorized(permissionType = ACCOUNT_MANAGEMENT)
+  @ExceptionMetered
+  public RestResponse<List<DelegateDTO>> listDelegates(
+      @PathParam("delegateProfileId") @NotEmpty String delegateProfileId,
+      @QueryParam("accountId") @NotEmpty String accountId) {
+    return new RestResponse<>(delegateProfileService.listDelegatesUsingProfile(accountId, delegateProfileId));
+  }
+
+  @GET
+  @Path("/list")
+  @Timed
+  @ApiKeyAuthorized(permissionType = ACCOUNT_MANAGEMENT)
+  @ExceptionMetered
+  public RestResponse<List<DelegateProfileDetails>> listDelegatesProfiles(
+      @QueryParam("accountId") @NotEmpty String accountId) {
+    return new RestResponse<>(delegateProfileService.listDelegateProfiles(accountId));
   }
 }

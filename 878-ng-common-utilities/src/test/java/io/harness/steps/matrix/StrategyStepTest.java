@@ -170,8 +170,8 @@ public class StrategyStepTest extends NGCommonUtilitiesTestBase {
         ImmutableMap.<String, ResponseData>builder()
             .put(CHILD_ID, StepResponseNotifyData.builder().nodeUuid(CHILD_ID).status(Status.FAILED).build())
             .build();
-    StepResponse stepResponse =
-        strategyStep.handleChildrenResponse(ambiance, StrategyStepParameters.builder().build(), responseDataMap);
+    StepResponse stepResponse = strategyStep.handleChildrenResponseInternal(
+        ambiance, StrategyStepParameters.builder().build(), responseDataMap);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
   }
 }

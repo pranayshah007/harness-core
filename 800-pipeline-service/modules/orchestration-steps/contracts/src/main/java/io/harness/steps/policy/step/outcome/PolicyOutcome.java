@@ -9,6 +9,7 @@ package io.harness.steps.policy.step.outcome;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.List;
@@ -18,6 +19,7 @@ import lombok.Data;
 @Data
 @Builder
 @OwnedBy(PIPELINE)
+@RecasterAlias("io.harness.steps.policy.step.outcome.PolicyOutcome")
 public class PolicyOutcome {
   String identifier;
   String name;

@@ -105,6 +105,7 @@ public class ServerlessTaskHelperBase {
   private static final String ARTIFACTORY_ARTIFACT_NAME = "artifactName";
   private static final String ARTIFACT_FILE_NAME = "artifactFile";
   private static final String ARTIFACT_DIR_NAME = "harnessArtifact";
+  private static final String SIDECAR_ARTIFACT_FILE_NAME_PREFIX = "sidecar-artifact-";
 
   public LogCallback getLogCallback(ILogStreamingTaskClient logStreamingTaskClient, String commandUnitName,
       boolean shouldOpenStream, CommandUnitsProgress commandUnitsProgress) {
@@ -238,31 +239,36 @@ public class ServerlessTaskHelperBase {
   }
 
   public void fetchArtifact(ServerlessArtifactConfig serverlessArtifactConfig, LogCallback logCallback,
-      String workingDirectory) throws IOException {
+      String workingDirectory, String savedArtifactFileName) throws IOException {
     if (serverlessArtifactConfig instanceof ServerlessArtifactoryArtifactConfig) {
       ServerlessArtifactoryArtifactConfig serverlessArtifactoryArtifactConfig =
           (ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig;
       String artifactoryDirectory = Paths.get(workingDirectory, ARTIFACT_DIR_NAME).toString();
       createDirectoryIfDoesNotExist(artifactoryDirectory);
       waitForDirectoryToBeAccessibleOutOfProcess(artifactoryDirectory, 10);
-      fetchArtifactoryArtifact(serverlessArtifactoryArtifactConfig, logCallback, artifactoryDirectory);
+      fetchArtifactoryArtifact(
+          serverlessArtifactoryArtifactConfig, logCallback, artifactoryDirectory, savedArtifactFileName);
     } else if (serverlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
       logCallback.saveExecutionLog(color("Skipping downloading artifact step as it is not needed..", White, Bold));
     }
   }
 
-  public void fetchArtifacts(ServerlessArtifactsConfig serverlessArtifactsConfig, LogCallback logCallback,
+  public void fetchArtifacts(ServerlessArtifactConfig serverlessArtifactConfig,
+      Map<String, ServerlessArtifactConfig> sidecarServerlessArtifactConfigs, LogCallback logCallback,
       String workingDirectory) throws IOException {
-    ServerlessArtifactConfig primaryServerlessArtifactConfig = serverlessArtifactsConfig.getPrimary();
-    fetchArtifact(primaryServerlessArtifactConfig, logCallback, workingDirectory);
+    logCallback.saveExecutionLog(color("Download step for primary artifact...", White, Bold));
+    fetchArtifact(serverlessArtifactConfig, logCallback, workingDirectory, ARTIFACT_FILE_NAME);
 
-    for (Map.Entry<String, ServerlessArtifactConfig> entry : serverlessArtifactsConfig.getSidecars().entrySet()) {
-      fetchArtifact(entry.getValue(), logCallback, workingDirectory);
+    for (Map.Entry<String, ServerlessArtifactConfig> entry : sidecarServerlessArtifactConfigs.entrySet()) {
+      String savedArtifactFileName = SIDECAR_ARTIFACT_FILE_NAME_PREFIX + entry.getKey();
+      logCallback.saveExecutionLog(
+          color(String.format("Download step for Sidecar artifact [%s]...", entry.getKey()), White, Bold));
+      fetchArtifact(entry.getValue(), logCallback, workingDirectory, savedArtifactFileName);
     }
   }
 
   public void fetchArtifactoryArtifact(ServerlessArtifactoryArtifactConfig artifactoryArtifactConfig,
-      LogCallback executionLogCallback, String artifactoryDirectory) throws IOException {
+      LogCallback executionLogCallback, String artifactoryDirectory, String savedArtifactFileName) throws IOException {
     if (EmptyPredicate.isEmpty(artifactoryArtifactConfig.getArtifactPath())) {
       executionLogCallback.saveExecutionLog(
           "artifactPath or artifactPathFilter is blank", ERROR, CommandExecutionStatus.FAILURE);
@@ -284,7 +290,7 @@ public class ServerlessTaskHelperBase {
             .toString();
     artifactMetadata.put(ARTIFACTORY_ARTIFACT_PATH, artifactPath);
     artifactMetadata.put(ARTIFACTORY_ARTIFACT_NAME, artifactPath);
-    String artifactFilePath = Paths.get(artifactoryDirectory, ARTIFACT_FILE_NAME).toAbsolutePath().toString();
+    String artifactFilePath = Paths.get(artifactoryDirectory, savedArtifactFileName).toAbsolutePath().toString();
     File artifactFile = new File(artifactFilePath);
     if (!artifactFile.createNewFile()) {
       log.error("Failed to create new file");

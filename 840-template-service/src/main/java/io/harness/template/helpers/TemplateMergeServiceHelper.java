@@ -52,8 +52,24 @@ public class TemplateMergeServiceHelper {
       versionMarker = versionLabel;
     }
 
-    IdentifierRef templateIdentifierRef = IdentifierRefHelper.getIdentifierRef(identifier, accountId, orgId, projectId);
+    return getLinkedTemplateEntityHelper(
+        accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, versionMarker);
+  }
 
+  // Gets the Template Entity linked to a YAML
+  public TemplateEntity getLinkedTemplateEntity(String accountId, String orgId, String projectId, String identifier,
+      String versionLabel, Map<String, TemplateEntity> templateCacheMap) {
+    String versionMarker = STABLE_VERSION;
+    if (!EmptyPredicate.isEmpty(versionLabel)) {
+      versionMarker = versionLabel;
+    }
+
+    return getLinkedTemplateEntityHelper(
+        accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, versionMarker);
+  }
+  public TemplateEntity getLinkedTemplateEntityHelper(String accountId, String orgId, String projectId,
+      String identifier, String versionLabel, Map<String, TemplateEntity> templateCacheMap, String versionMarker) {
+    IdentifierRef templateIdentifierRef = IdentifierRefHelper.getIdentifierRef(identifier, accountId, orgId, projectId);
     String templateUniqueIdentifier = generateUniqueTemplateIdentifier(templateIdentifierRef.getAccountIdentifier(),
         templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
         templateIdentifierRef.getIdentifier(), versionMarker);

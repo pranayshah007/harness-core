@@ -13,6 +13,9 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class StrategyValidationUtils {
+  public final String STRATEGY_IDENTIFIER_POSTFIX = "<+strategy.identifierPostFix>";
+  public final String STRATEGY_IDENTIFIER_POSTFIX_ESCAPED = "<\\+strategy.identifierPostFix>";
+
   public void validateStrategyNode(StrategyConfig config) {
     if (config.getMatrixConfig() != null) {
       Map<String, AxisConfig> axisConfig = ((MatrixConfig) config.getMatrixConfig()).getAxes();

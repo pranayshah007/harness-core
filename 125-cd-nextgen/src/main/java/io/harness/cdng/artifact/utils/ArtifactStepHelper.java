@@ -198,6 +198,22 @@ public class ArtifactStepHelper {
         }
         return ArtifactConfigToDelegateReqMapper.getAcrDelegateRequest(
             acrArtifactConfig, azureConnectorDTO, encryptedDataDetails, acrArtifactConfig.getConnectorRef().getValue());
+      case JENKINS:
+        JenkinsArtifactConfig jenkinsArtifactConfig = (JenkinsArtifactConfig) artifactConfig;
+        connectorDTO = getConnector(jenkinsArtifactConfig.getConnectorRef().getValue(), ambiance);
+        if (!(connectorDTO.getConnectorConfig() instanceof JenkinsConnectorDTO)) {
+          throw new InvalidConnectorTypeException("provided Connector "
+                  + jenkinsArtifactConfig.getConnectorRef().getValue() + " is not compatible with "
+                  + jenkinsArtifactConfig.getSourceType() + " Artifact",
+              WingsException.USER);
+        }
+        JenkinsConnectorDTO jenkinsConnectorDTO = (JenkinsConnectorDTO) connectorDTO.getConnectorConfig();
+        if (jenkinsConnectorDTO.getAuth() != null && jenkinsConnectorDTO.getAuth().getCredentials() != null) {
+          encryptedDataDetails =
+              secretManagerClientService.getEncryptionDetails(ngAccess, jenkinsConnectorDTO.getAuth().getCredentials());
+        }
+        return ArtifactConfigToDelegateReqMapper.getJenkinsDelegateRequest(jenkinsArtifactConfig, jenkinsConnectorDTO,
+            encryptedDataDetails, jenkinsArtifactConfig.getConnectorRef().getValue());
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -234,6 +250,8 @@ public class ArtifactStepHelper {
         return TaskType.ARTIFACTORY_ARTIFACT_TASK_NG;
       case AMAZONS3:
         return TaskType.AMAZON_S3_ARTIFACT_TASK_NG;
+      case JENKINS:
+        return TaskType.JENKINS_ARTIFACT_TASK_NG;
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));

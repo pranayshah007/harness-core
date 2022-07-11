@@ -343,6 +343,7 @@ public enum FeatureName {
   STALE_FLAGS_FFM_1510,
   NG_SVC_ENV_REDESIGN,
   NEW_PIPELINE_STUDIO,
+  EARLY_ACCESS_ENABLED,
   AZURE_REPO_CONNECTOR,
   HELM_OCI_SUPPORT,
   HELP_PANEL,
@@ -393,12 +394,14 @@ public enum FeatureName {
   YAML_APIS_GRANULAR_PERMISSION,
   JENKINS_BUILD,
   ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM,
+  NG_SETTINGS("Enable Settings at various scopes in NG", HarnessTeam.PL),
   QUEUED_COUNT_FOR_QUEUEKEY("Used to display the count of the queue in CG git sync", HarnessTeam.SPG),
   NG_EMAIL_STEP,
   PRUNE_KUBERNETES_RESOURCES_NG,
   CI_STEP_GROUP_ENABLED,
   GIT_SIMPLIFICATION_DISABLED,
-  USE_K8S_API_FOR_STEADY_STATE_CHECK;
+  USE_K8S_API_FOR_STEADY_STATE_CHECK,
+  WINRM_ASG_ROLLBACK("Used for Collect remaining instances rollback step", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

@@ -32,6 +32,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.matrix.StrategyConstants;
 import io.harness.steps.matrix.StrategyMetadata;
+import io.harness.strategy.StrategyValidationUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -69,7 +70,7 @@ public class StageStrategyUtils {
     // we are appending an expression that will be resolved during execution
     String identifier = originalIdentifier;
     if (strategyField != null) {
-      identifier = originalIdentifier + "<+strategy.identifierPostFix>";
+      identifier = originalIdentifier + StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX;
     }
     return identifier;
   }

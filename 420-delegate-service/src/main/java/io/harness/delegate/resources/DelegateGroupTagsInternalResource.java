@@ -28,14 +28,15 @@ import io.swagger.annotations.Api;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import java.util.List;
 import java.util.Optional;
+import javax.validation.constraints.NotEmpty;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @Api("/delegate-group-tags-internal")
 @Path("/delegate-group-tags-internal")
@@ -133,6 +134,26 @@ public class DelegateGroupTagsInternalResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       return new RestResponse<>(
           delegateSetupService.updateDelegateGroupTags_old(accountId, orgId, projectId, groupName, tags.getTags()));
+    }
+  }
+
+  @POST
+  @Path("/delegate-groups")
+  @Timed
+  @Hidden
+  @InternalApi
+  @ExceptionMetered
+  public RestResponse<List<DelegateGroupDTO>> listDelegateGroupsHavingTags(
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @RequestBody(required = true, description = "Set of tags") DelegateGroupTags tags) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
+      return new RestResponse<>(
+          delegateSetupService.listDelegateGroupsHavingTags(accountIdentifier, orgIdentifier, projectIdentifier, tags));
     }
   }
 }

@@ -37,6 +37,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -73,6 +74,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
     on(templateMergeServiceHelper).set("templateService", templateService);
     on(templateMergeHelper).set("templateMergeServiceHelper", templateMergeServiceHelper);
     on(templateMergeService).set("templateMergeHelper", templateMergeHelper);
+    on(templateMergeService).set("templateMergeServiceHelper", templateMergeServiceHelper);
   }
 
   @Test
@@ -136,12 +138,25 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                         .yaml(shellScriptTemplateStepYaml)
                                         .deleted(false)
                                         .versionLabel("1")
+                                        .identifier("template1")
+                                        .templateScope(Scope.ORG)
                                         .build();
+
+    TemplateEntity templateEntity2 = TemplateEntity.builder()
+                                         .accountId(ACCOUNT_ID)
+                                         .orgIdentifier(ORG_ID)
+                                         .projectIdentifier(PROJECT_ID)
+                                         .yaml(shellScriptTemplateStepYaml)
+                                         .deleted(false)
+                                         .versionLabel("1")
+                                         .identifier("template1")
+                                         .templateScope(Scope.PROJECT)
+                                         .build();
 
     when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, null, "template1", "1", false))
         .thenReturn(Optional.of(templateEntity));
     when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "", false))
-        .thenReturn(Optional.of(templateEntity));
+        .thenReturn(Optional.of(templateEntity2));
 
     String approvalTemplateStepYaml = readFile("approval-step-template.yaml");
     TemplateEntity approvalTemplateEntity = TemplateEntity.builder()
@@ -150,6 +165,8 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                                 .projectIdentifier(PROJECT_ID)
                                                 .yaml(approvalTemplateStepYaml)
                                                 .deleted(false)
+                                                .identifier("template2")
+                                                .templateScope(Scope.ACCOUNT)
                                                 .build();
     when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, null, null, "template2", "1", false))
         .thenReturn(Optional.of(approvalTemplateEntity));
@@ -166,6 +183,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .templateIdentifier("template1")
                                          .versionLabel("1")
                                          .scope(Scope.ORG)
+                                         .moduleInfo(new HashSet<>())
                                          .fqn("pipeline.stages.qaStage.spec.execution.steps.shellScriptStep11")
                                          .stableTemplate(false)
                                          .build());
@@ -173,6 +191,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .templateIdentifier("template1")
                                          .versionLabel("1")
                                          .scope(Scope.PROJECT)
+                                         .moduleInfo(new HashSet<>())
                                          .fqn("pipeline.stages.qaStage.spec.execution.steps.shellScriptStep12")
                                          .stableTemplate(true)
                                          .build());
@@ -180,6 +199,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .templateIdentifier("template2")
                                          .versionLabel("1")
                                          .scope(Scope.ACCOUNT)
+                                         .moduleInfo(new HashSet<>())
                                          .fqn("pipeline.stages.qaStage.spec.execution.steps.approval")
                                          .stableTemplate(false)
                                          .build());
@@ -204,6 +224,8 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                         .yaml(shellScriptTemplateStepYaml)
                                         .identifier("template1")
                                         .deleted(false)
+                                        .templateScope(Scope.PROJECT)
+                                        .identifier("template1")
                                         .versionLabel("1")
                                         .build();
 
@@ -220,6 +242,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                                 .yaml(approvalTemplateStepYaml)
                                                 .identifier("template2")
                                                 .versionLabel("1")
+                                                .templateScope(Scope.PROJECT)
                                                 .deleted(false)
                                                 .build();
     when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "template2", "1", false))
@@ -239,6 +262,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .scope(Scope.PROJECT)
                                          .fqn("pipeline.stages.qaStage.spec.execution.steps.shellScriptStep11")
                                          .stableTemplate(false)
+                                         .moduleInfo(new HashSet<>())
                                          .build());
     templateReferenceSummaryList.add(TemplateReferenceSummary.builder()
                                          .templateIdentifier("template1")
@@ -246,6 +270,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .scope(Scope.PROJECT)
                                          .fqn("pipeline.stages.qaStage.spec.execution.steps.shellScriptStep12")
                                          .stableTemplate(true)
+                                         .moduleInfo(new HashSet<>())
                                          .build());
     templateReferenceSummaryList.add(TemplateReferenceSummary.builder()
                                          .templateIdentifier("template2")
@@ -253,6 +278,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .scope(Scope.PROJECT)
                                          .fqn("pipeline.stages.qaStage.spec.execution.steps.approval")
                                          .stableTemplate(false)
+                                         .moduleInfo(new HashSet<>())
                                          .build());
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).hasSize(3);
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).containsAll(templateReferenceSummaryList);
@@ -273,6 +299,8 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                              .orgIdentifier(ORG_ID)
                                              .projectIdentifier(PROJECT_ID)
                                              .yaml(stageTemplateYaml)
+                                             .templateScope(Scope.PROJECT)
+                                             .identifier("stageTemplate")
                                              .deleted(false)
                                              .build();
 
@@ -283,6 +311,8 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                             .orgIdentifier(ORG_ID)
                                             .projectIdentifier(PROJECT_ID)
                                             .yaml(httpTemplateYaml)
+                                            .identifier("httpTemplate")
+                                            .templateScope(Scope.PROJECT)
                                             .deleted(false)
                                             .build();
 
@@ -293,6 +323,8 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                                 .orgIdentifier(ORG_ID)
                                                 .projectIdentifier(PROJECT_ID)
                                                 .yaml(approvalTemplateYaml)
+                                                .identifier("approvalTemplate")
+                                                .templateScope(Scope.PROJECT)
                                                 .deleted(false)
                                                 .build();
 
@@ -316,6 +348,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                       .versionLabel("1")
                       .scope(Scope.PROJECT)
                       .fqn("pipeline.stages.qaStage")
+                      .moduleInfo(new HashSet<>())
                       .build());
 
     String resFile = "pipeline-with-stage-template-replaced.yaml";
@@ -398,6 +431,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                         .projectIdentifier(PROJECT_ID)
                                         .yaml(httpStepTemplate)
                                         .identifier("httpTemplate")
+                                        .templateScope(Scope.PROJECT)
                                         .deleted(false)
                                         .versionLabel("1")
                                         .build();
@@ -418,6 +452,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .versionLabel("1")
                                          .scope(Scope.PROJECT)
                                          .fqn("pipeline.stages.ci.spec.execution.steps.http")
+                                         .moduleInfo(new HashSet<>())
                                          .build());
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).hasSize(1);
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).containsAll(templateReferenceSummaryList);
@@ -438,6 +473,8 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                                 .orgIdentifier(ORG_ID)
                                                 .projectIdentifier(PROJECT_ID)
                                                 .yaml(pipelineTemplateYaml)
+                                                .identifier("PipelineTemplevel1")
+                                                .templateScope(Scope.PROJECT)
                                                 .deleted(false)
                                                 .versionLabel("1")
                                                 .build();
@@ -449,6 +486,8 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                              .orgIdentifier(ORG_ID)
                                              .projectIdentifier(PROJECT_ID)
                                              .yaml(stageTemplateYaml)
+                                             .templateScope(Scope.PROJECT)
+                                             .identifier("stg_temp2")
                                              .deleted(false)
                                              .versionLabel("1")
                                              .build();
@@ -471,6 +510,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .templateIdentifier("PipelineTemplevel1")
                                          .versionLabel("1")
                                          .scope(Scope.PROJECT)
+                                         .moduleInfo(new HashSet<>())
                                          .fqn("pipeline")
                                          .build());
     assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).hasSize(1);

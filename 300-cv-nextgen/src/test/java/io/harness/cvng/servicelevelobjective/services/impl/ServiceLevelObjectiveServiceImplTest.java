@@ -12,12 +12,14 @@ import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.NO_DATA;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
+import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.NAVEEN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -1193,6 +1195,51 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
         builderFactory.getContext().getProjectParams(), notificationRuleDTO.getIdentifier());
 
     assertThat(notificationRule).isNull();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testDeleteByProjectIdentifier_Success() {
+    ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    ServiceLevelObjectiveService mockServiceLevelObjectiveService = spy(serviceLevelObjectiveService);
+    mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO.setIdentifier("secondSLO");
+    mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    mockServiceLevelObjectiveService.deleteByProjectIdentifier(ServiceLevelObjective.class,
+        projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier());
+    verify(mockServiceLevelObjectiveService, times(2)).delete(any(), any());
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testDeleteByOrgIdentifier_Success() {
+    ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    ServiceLevelObjectiveService mockServiceLevelObjectiveService = spy(serviceLevelObjectiveService);
+    mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO.setIdentifier("secondSLO");
+    mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    mockServiceLevelObjectiveService.deleteByOrgIdentifier(
+        ServiceLevelObjective.class, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier());
+    verify(mockServiceLevelObjectiveService, times(2)).delete(any(), any());
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testDeleteByAccountIdentifier_Success() {
+    ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    ServiceLevelObjectiveService mockServiceLevelObjectiveService = spy(serviceLevelObjectiveService);
+    mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO.setIdentifier("secondSLO");
+    mockServiceLevelObjectiveService.create(projectParams, sloDTO);
+    mockServiceLevelObjectiveService.deleteByAccountIdentifier(
+        ServiceLevelObjective.class, projectParams.getAccountIdentifier());
+    verify(mockServiceLevelObjectiveService, times(2)).delete(any(), any());
   }
 
   private void createSLIRecords(String sliId) {
