@@ -52,7 +52,7 @@ public class WorkloadCostService {
   }
 
   private boolean isTruncatedToDay(Instant instant) {
-    return instant.truncatedTo(ChronoUnit.HOURS).equals(instant);
+    return instant.truncatedTo(ChronoUnit.DAYS).equals(instant);
   }
 
   /**

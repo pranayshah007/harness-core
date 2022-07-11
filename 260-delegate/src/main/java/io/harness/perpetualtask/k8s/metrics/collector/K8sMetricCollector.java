@@ -67,7 +67,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
 @OwnedBy(CE)
 public class K8sMetricCollector {
-  private static final TemporalAmount AGGREGATION_WINDOW = Duration.ofMinutes(3);
+  private static final TemporalAmount AGGREGATION_WINDOW = Duration.ofMinutes(20);
 
   @Value
   @Builder
@@ -112,8 +112,6 @@ public class K8sMetricCollector {
 
   public void collectAndPublishMetrics(
       K8sMetricsClient k8sMetricsClient, Instant now, CoreV1Api coreV1Api, K8sControllerFetcher controllerFetcher) {
-    log.info("collectAndPublishMetrics, now: {}", now);
-    log.info("collectAndPublishMetrics, lastMetricPublished: {}", lastMetricPublished);
     collectNodeMetrics(k8sMetricsClient);
     List<PodMetrics> podMetricsList = k8sMetricsClient.podMetrics().list().getObject().getItems();
     collectPodMetrics(podMetricsList);
@@ -350,14 +348,11 @@ public class K8sMetricCollector {
   }
 
   private void publishContainerStates() {
-    log.info("containerStateProto cache size: {}", containerStatesCache.estimatedSize());
     containerStatesCache.asMap()
         .entrySet()
         .stream()
         .map(e -> {
           ContainerStateCacheKey key = e.getKey();
-          log.info("ContainerStateCacheKey workloadKind: {}", key.getWorkloadKind());
-          log.info("ContainerStateCacheKey workloadName: {}", key.getWorkloadName());
           ContainerState containerState = e.getValue();
           HistogramCheckpoint histogramCheckpoint = containerState.getCpuHistogram().saveToCheckpoint();
           HistogramCheckpoint histogramCheckpointV2 = containerState.getCpuHistogramV2().saveToCheckpoint();
