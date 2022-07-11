@@ -26,7 +26,7 @@ import io.harness.ng.core.dto.OrganizationFilterDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.spec.server.ng.OrganizationsApi;
+import io.harness.spec.server.ng.OrganizationApi;
 import io.harness.spec.server.ng.model.CreateOrganizationRequest;
 import io.harness.spec.server.ng.model.OrganizationResponse;
 import io.harness.spec.server.ng.model.UpdateOrganizationRequest;
@@ -42,7 +42,7 @@ import org.springframework.data.domain.Page;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @NextGenManagerAuth
-public class OrganizationApiImpl implements OrganizationsApi {
+public class OrganizationApiImpl implements OrganizationApi {
   private final OrganizationService organizationService;
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = CREATE_ORGANIZATION_PERMISSION)
