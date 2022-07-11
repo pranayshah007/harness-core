@@ -206,7 +206,7 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
   }
 
   @Override
-  public boolean  isEnabled(@NonNull FeatureName featureName, String accountId) {
+  public boolean isEnabled(@NonNull FeatureName featureName, String accountId) {
     switch (featureFlagConfig.getFeatureFlagSystem()) {
       case CF:
         return cfFeatureFlagEvaluation(featureName, accountId);
@@ -252,7 +252,10 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
             return featureValue;
           }
           featureValue = featureFlag.getAccountIds().contains(accountId);
-          return featureValue && featureFlag.isEnabled();
+          if (!featureFlag.isEnabled()) {
+            return false;
+          }
+          return featureValue;
         }
       } finally {
         cfMigrationService.verifyBehaviorWithCF(featureName, featureValue, accountId);
