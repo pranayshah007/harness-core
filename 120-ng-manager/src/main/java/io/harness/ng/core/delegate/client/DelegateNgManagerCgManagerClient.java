@@ -116,6 +116,12 @@ public interface DelegateNgManagerCgManagerClient {
       @Query(NGCommonEntityConstants.GROUP_IDENTIFIER_KEY) @NotNull String groupIdentifier,
       @Body @NotNull DelegateGroupTags tags);
 
+  @POST(DELEGATE_GROUP_TAGS_API + "/delegate-groups")
+  Call<RestResponse<List<DelegateGroupDTO>>> listDelegateGroupHavingTags(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @Body @NotNull DelegateGroupTags tags);
+
   //------------------------ Delegate Group Upsert -----------------------------------
 
   @PUT(DELEGATE_TOKEN_NG_API + "/upsert")

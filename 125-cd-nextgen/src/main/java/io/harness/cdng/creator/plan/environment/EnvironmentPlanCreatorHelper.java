@@ -24,6 +24,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
@@ -115,7 +116,7 @@ public class EnvironmentPlanCreatorHelper {
     // TODO: need to remove this once we have the migration for old env
     if (EmptyPredicate.isEmpty(originalEnvYaml)) {
       try {
-        originalEnvYaml = YamlPipelineUtils.getYamlString(environment.get());
+        originalEnvYaml = YamlPipelineUtils.getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environment.get()));
       } catch (JsonProcessingException e) {
         throw new InvalidRequestException("Unable to convert environment to yaml");
       }
@@ -129,6 +130,15 @@ public class EnvironmentPlanCreatorHelper {
     if (!gitOpsEnabled) {
       List<InfrastructureConfig> infrastructureConfigs = getInfraStructureConfigList(
           accountIdentifier, orgIdentifier, projectIdentifier, environmentV2, infrastructure);
+
+      if (infrastructureConfigs.size() == 0) {
+        throw new InvalidRequestException(String.format(
+            "Infrastructure linked with environment %s does not exists", environmentV2.getEnvironmentRef().getValue()));
+      }
+
+      if (infrastructureConfigs.size() > 1) {
+        throw new InvalidRequestException("Deployment to multiple infrastructures is not supported yet");
+      }
 
       return EnvironmentPlanCreatorConfigMapper.toEnvironmentPlanCreatorConfig(
           mergedEnvYaml, infrastructureConfigs, serviceOverride);
@@ -234,8 +244,8 @@ public class EnvironmentPlanCreatorHelper {
       EnvironmentPlanCreatorConfig environmentPlanCreatorConfig, YamlField originalEnvironmentField,
       boolean gitOpsEnabled, String environmentUuid, String infraSectionUuid, String serviceSpecNodeUuid,
       KryoSerializer kryoSerializer) throws IOException {
-    YamlField updatedEnvironmentYamlField = EnvironmentPlanCreatorHelper.fetchEnvironmentPlanCreatorConfigYaml(
-        environmentPlanCreatorConfig, originalEnvironmentField);
+    YamlField updatedEnvironmentYamlField =
+        fetchEnvironmentPlanCreatorConfigYaml(environmentPlanCreatorConfig, originalEnvironmentField);
     Map<String, YamlField> environmentYamlFieldMap = new HashMap<>();
     environmentYamlFieldMap.put(environmentUuid, updatedEnvironmentYamlField);
 

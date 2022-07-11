@@ -28,6 +28,6 @@ public class AzureWebAppInstanceSyncPerpetualTaskResponse implements InstanceSyn
 
   @Override
   public String getDeploymentType() {
-    return ServiceSpecType.AZURE_WEBAPPS;
+    return ServiceSpecType.AZURE_WEBAPP;
   }
 }

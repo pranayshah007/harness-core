@@ -29,4 +29,6 @@ public interface Constants {
   String SCM_CONFLICT_ERROR_MESSAGE = "Cannot update file as it has conflicts with remote";
   int SCM_INTERNAL_SERVER_ERROR_CODE = 500;
   String SCM_INTERNAL_SERVER_ERROR_MESSAGE = "Faced internal server error on SCM, couldn't complete operation";
+  String SCM_GIT_PROVIDER_ERROR_MESSAGE =
+      "Facing issues while performing required operation on git provider, please try again later";
 }

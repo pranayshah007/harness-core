@@ -7,6 +7,7 @@
 
 package io.harness.cvng.cdng.services.impl;
 
+import io.harness.common.NGExpressionUtils;
 import io.harness.cvng.cdng.beans.CVNGStepInfo;
 import io.harness.cvng.cdng.beans.ConfiguredMonitoredServiceSpec;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
@@ -23,6 +24,7 @@ import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
+import io.harness.pms.yaml.ParameterField;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -52,12 +54,16 @@ public class ConfiguredVerifyStepMonitoredServiceResolutionServiceImpl
       FilterCreationContext filterCreationContext, CVNGStepInfo cvngStepInfo, ProjectParams projectParams) {
     ConfiguredMonitoredServiceSpec configuredMonitoredServiceSpec =
         (ConfiguredMonitoredServiceSpec) cvngStepInfo.getMonitoredService().getSpec();
-    MonitoredServiceParams monitoredServiceParams =
-        MonitoredServiceParams.builderWithProjectParams(projectParams)
-            .monitoredServiceIdentifier(configuredMonitoredServiceSpec.getMonitoredServiceRef().getValue())
-            .build();
-    MonitoredServiceDTO monitoredServiceDTO = monitoredServiceService.getMonitoredServiceDTO(monitoredServiceParams);
+    ParameterField<String> monitoredServiceRef = configuredMonitoredServiceSpec.getMonitoredServiceRef();
     List<EntityDetailProtoDTO> result = new ArrayList<>();
+    if (monitoredServiceRef.isExpression()
+        || NGExpressionUtils.matchesInputSetPattern(monitoredServiceRef.getExpressionValue())) {
+      return result;
+    }
+    MonitoredServiceParams monitoredServiceParams = MonitoredServiceParams.builderWithProjectParams(projectParams)
+                                                        .monitoredServiceIdentifier(monitoredServiceRef.getValue())
+                                                        .build();
+    MonitoredServiceDTO monitoredServiceDTO = monitoredServiceService.getMonitoredServiceDTO(monitoredServiceParams);
     Preconditions.checkNotNull(monitoredServiceDTO, "MonitoredService does not exist for identifier %s",
         monitoredServiceParams.getMonitoredServiceIdentifier());
     Preconditions.checkState(!monitoredServiceDTO.getSources().getHealthSources().isEmpty(),

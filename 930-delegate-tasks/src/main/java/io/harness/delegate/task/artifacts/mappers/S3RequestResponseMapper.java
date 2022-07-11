@@ -21,7 +21,7 @@ public class S3RequestResponseMapper {
     return S3ArtifactDelegateResponse.builder()
         .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetails))
         .bucketName(request.getBucketName())
-        .filePath(request.getFilePath())
+        .filePath(buildDetails.getNumber())
         .filePathRegex(request.getFilePathRegex())
         .sourceType(ArtifactSourceType.AMAZONS3)
         .build();

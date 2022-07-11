@@ -115,16 +115,25 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
             YamlPipelineUtils.read(requestServiceOverride.getYaml(), NGServiceOverrideConfig.class);
         variableOverrides = config.getServiceOverrideInfoConfig().getVariables();
       } catch (IOException e) {
-        throw new InvalidRequestException("Cannot create service ng service config due to " + e.getMessage());
+        throw new InvalidRequestException("Cannot create Service Overrides config due to " + e.getMessage());
       }
     }
     if (variableOverrides != null) {
       Set<String> variableKeys = new HashSet<>();
       Set<String> duplicates = new HashSet<>();
+      int emptyOverrides = 0;
       for (NGVariable variableOverride : variableOverrides) {
-        if (!variableKeys.add(variableOverride.getName())) {
+        if (isEmpty(variableOverride.getName())) {
+          emptyOverrides++;
+        } else if (!variableKeys.add(variableOverride.getName())) {
           duplicates.add(variableOverride.getName());
         }
+      }
+      if (emptyOverrides != 0) {
+        String plural = emptyOverrides == 1 ? "" : "s";
+        throw new InvalidRequestException(
+            String.format("Empty variable name%s for %s variable override%s in service ref: [%s]", plural,
+                emptyOverrides, plural, requestServiceOverride.getServiceRef()));
       }
       if (!duplicates.isEmpty()) {
         throw new InvalidRequestException(String.format("Duplicate Service overrides provided: [%s] for service: [%s]",

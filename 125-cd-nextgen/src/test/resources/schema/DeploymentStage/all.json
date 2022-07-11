@@ -1657,7 +1657,7 @@
             "Ssh",
             "WinRm",
             "ServerlessAwsLambda",
-            "AzureWebApps"
+            "AzureWebApp"
           ]
         },
         "environment": {
@@ -1878,8 +1878,20 @@
         "envGroupRef"
       ],
       "properties": {
+        "__uuid": {
+          "type": "string"
+        },
         "deployToAll": {
-          "type": "boolean"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "minLength": 1
+            }
+          ]
         },
         "envGroupRef": {
           "type": "string"
@@ -5811,7 +5823,7 @@
             "Ssh",
             "WinRm",
             "ServerlessAwsLambda",
-            "AzureWebApps"
+            "AzureWebApp"
           ]
         }
       },
@@ -5821,7 +5833,7 @@
           "if": {
             "properties": {
               "type": {
-                "const": "AzureWebApps"
+                "const": "AzureWebApp"
               }
             }
           },

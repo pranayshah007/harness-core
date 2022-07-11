@@ -39,7 +39,7 @@ public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandle
         return nativeHelmInstanceSyncHandler;
       case ServiceSpecType.SERVERLESS_AWS_LAMBDA:
         return serverlessAwsLambdaInstanceSyncHandler;
-      case ServiceSpecType.AZURE_WEBAPPS:
+      case ServiceSpecType.AZURE_WEBAPP:
         return azureWebAppInstanceSyncHandler;
       default:
         throw new UnexpectedException("No instance sync handler registered for deploymentType: " + deploymentType);

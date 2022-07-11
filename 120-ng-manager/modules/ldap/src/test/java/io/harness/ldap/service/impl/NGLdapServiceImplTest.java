@@ -62,7 +62,7 @@ import retrofit2.Response;
 @OwnedBy(HarnessTeam.PL)
 @RunWith(MockitoJUnitRunner.class)
 public class NGLdapServiceImplTest extends CategoryTest {
-  public static final String INVAILD_CREDENTIALS = "Invaild Credentials";
+  public static final String INVALID_CREDENTIALS = "Invalid Credentials";
   public static final String UNKNOWN_RESPONSE_FROM_DELEGATE = "Unknown Response from delegate";
   TaskSetupAbstractionHelper taskSetupAbstractionHelper = mock(TaskSetupAbstractionHelper.class);
   DelegateGrpcClientWrapper delegateGrpcClientWrapper = mock(DelegateGrpcClientWrapper.class);
@@ -202,7 +202,111 @@ public class NGLdapServiceImplTest extends CategoryTest {
     }
   }
 
+  @Test
+  @Owner(developers = SHASHANK)
+  @Category(UnitTests.class)
+  public void testLdapUserQuerySuccessfulAndUnsuccessful() {
+    final String accountId = "testAccountId";
+    LdapSettings ldapSettings = LdapSettings.builder().accountId(accountId).build();
+    LdapTestResponse successfulTestResponse =
+        LdapTestResponse.builder()
+            .status(SUCCESS)
+            .message("Configuration looks good. Server returned non-zero number of records")
+            .build();
+
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(successfulTestResponse).build());
+
+    LdapTestResponse ldapTestResponse = ngLdapService.validateLdapUserSettings(accountId, null, null, ldapSettings);
+
+    assertNotNull(ldapTestResponse);
+    assertEquals(successfulTestResponse.getStatus(), ldapTestResponse.getStatus());
+
+    LdapTestResponse unsuccessfulTestResponse = LdapTestResponse.builder().status(FAILURE).message(null).build();
+
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(unsuccessfulTestResponse).build());
+
+    ldapTestResponse = ngLdapService.validateLdapUserSettings(accountId, null, null, ldapSettings);
+
+    assertNotNull(ldapTestResponse);
+    assertEquals(unsuccessfulTestResponse.getStatus(), ldapTestResponse.getStatus());
+  }
+
+  @Test
+  @Owner(developers = SHASHANK)
+  @Category(UnitTests.class)
+  public void testLdapGroupQuerySuccessfulAndUnsuccessful() {
+    final String accountId = "testAccountId";
+    LdapSettings ldapSettings = LdapSettings.builder().accountId(accountId).build();
+    LdapTestResponse successfulTestResponse =
+        LdapTestResponse.builder()
+            .status(SUCCESS)
+            .message("Configuration looks good. Server returned non-zero number of records")
+            .build();
+
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(successfulTestResponse).build());
+
+    LdapTestResponse ldapTestResponse = ngLdapService.validateLdapGroupSettings(accountId, null, null, ldapSettings);
+
+    assertNotNull(ldapTestResponse);
+    assertEquals(successfulTestResponse.getStatus(), ldapTestResponse.getStatus());
+
+    LdapTestResponse unsuccessfulTestResponse =
+        LdapTestResponse.builder()
+            .status(FAILURE)
+            .message("Please check configuration. Server returned zero records for the configuration.")
+            .build();
+
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(unsuccessfulTestResponse).build());
+
+    ldapTestResponse = ngLdapService.validateLdapGroupSettings(accountId, null, null, ldapSettings);
+
+    assertNotNull(ldapTestResponse);
+    assertEquals(unsuccessfulTestResponse.getStatus(), ldapTestResponse.getStatus());
+  }
+
+  @Test
+  @Owner(developers = SHASHANK)
+  @Category(UnitTests.class)
+  public void testLdapUserQueryException() {
+    final String accountId = "testAccountId";
+    LdapSettings ldapSettings = LdapSettings.builder().accountId(accountId).build();
+
+    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildErrorNotifyResponseData());
+
+    LdapTestResponse ldapTestResponse = null;
+    try {
+      ldapTestResponse = ngLdapService.validateLdapUserSettings(accountId, null, null, ldapSettings);
+      failBecauseExceptionWasNotThrown(WingsException.class);
+    } catch (Exception e) {
+      assertNull(ldapTestResponse);
+      assertThat(e).isInstanceOf(LdapDelegateException.class);
+      assertEquals(e.getMessage(), UNKNOWN_RESPONSE_FROM_DELEGATE);
+    }
+  }
+  @Test
+  @Owner(developers = SHASHANK)
+  @Category(UnitTests.class)
+  public void testLdapGroupQueryException() {
+    final String accountId = "testAccountId";
+    LdapSettings ldapSettings = LdapSettings.builder().accountId(accountId).build();
+
+    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildErrorNotifyResponseData());
+
+    LdapTestResponse ldapTestResponse = null;
+    try {
+      ldapTestResponse = ngLdapService.validateLdapGroupSettings(accountId, null, null, ldapSettings);
+      failBecauseExceptionWasNotThrown(WingsException.class);
+    } catch (Exception e) {
+      assertNull(ldapTestResponse);
+      assertThat(e).isInstanceOf(LdapDelegateException.class);
+      assertEquals(e.getMessage(), UNKNOWN_RESPONSE_FROM_DELEGATE);
+    }
+  }
   private ErrorNotifyResponseData buildErrorNotifyResponseData() {
-    return ErrorNotifyResponseData.builder().errorMessage(INVAILD_CREDENTIALS).build();
+    return ErrorNotifyResponseData.builder().errorMessage(INVALID_CREDENTIALS).build();
   }
 }

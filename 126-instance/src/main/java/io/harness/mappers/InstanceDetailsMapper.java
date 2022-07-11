@@ -65,7 +65,7 @@ public class InstanceDetailsMapper {
     } else if (instanceDTO.getInstanceInfoDTO() instanceof NativeHelmInstanceInfoDTO) {
       return ServiceSpecType.NATIVE_HELM;
     } else if (instanceDTO.getInstanceInfoDTO() instanceof AzureWebAppInstanceInfoDTO) {
-      return ServiceSpecType.AZURE_WEBAPPS;
+      return ServiceSpecType.AZURE_WEBAPP;
     }
     return null;
   }

@@ -231,4 +231,6 @@ public interface DelegateService extends OwnedByAccount {
   void checkUniquenessOfDelegateName(String accountId, String delegateName, boolean isNg);
 
   void markDelegatesAsDeletedOnDeletingOwner(String accountId, DelegateEntityOwner owner);
+
+  List<DelegateDTO> listDelegatesHavingTags(String accountId, DelegateTags tags);
 }
