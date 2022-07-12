@@ -113,6 +113,9 @@ import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo
 import software.wings.beans.infrastructure.instance.key.ContainerInstanceKey;
 import software.wings.beans.infrastructure.instance.key.HostInstanceKey;
 import software.wings.beans.infrastructure.instance.key.PodInstanceKey;
+import software.wings.beans.infrastructure.instance.key.deployment.ContainerDeploymentKey;
+import software.wings.beans.infrastructure.instance.key.deployment.DeploymentKey;
+import software.wings.beans.infrastructure.instance.key.deployment.K8sDeploymentKey;
 import software.wings.helpers.ext.k8s.response.K8sInstanceSyncResponse;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 import software.wings.service.impl.ContainerMetadata;
@@ -144,6 +147,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -2262,6 +2266,36 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void generateDeploymentKeyTestForContainerDeploymentInfoWithLabelsAndContainerWithNames() throws Exception {
+    List<Label> labellist = Arrays.asList(createlabel("l1"), createlabel("l2"));
+    DeploymentInfo deploymentInfo =
+        new ContainerDeploymentInfoWithLabels("CL1", labellist, null, "NS1", null, null, "RN1", null);
+    DeploymentKey deploymentKey = containerInstanceHandler.generateDeploymentKey(deploymentInfo);
+    ContainerDeploymentKey containerDeploymentKey = (ContainerDeploymentKey) deploymentKey;
+    assertThat(labellist).containsExactlyInAnyOrderElementsOf(containerDeploymentKey.getLabels());
+  }
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void generateDeploymentKeyTestForContainerDeploymentInfoWithNames() throws Exception {
+    DeploymentInfo deploymentInfo = new ContainerDeploymentInfoWithNames("CL1", "service1", null, null);
+    ContainerDeploymentKey containerDeploymentKey =
+        (ContainerDeploymentKey) containerInstanceHandler.generateDeploymentKey(deploymentInfo);
+    assert ("service1").equals(containerDeploymentKey.getContainerServiceName());
+  }
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void generateDeploymentKeyTestForK8sDeployment() throws Exception {
+    DeploymentInfo deploymentInfo = new K8sDeploymentInfo("NM1", "Name1", 1, null, null, null, "cl1");
+    K8sDeploymentKey k8sDeploymentKey =
+        (K8sDeploymentKey) containerInstanceHandler.generateDeploymentKey(deploymentInfo);
+    assert ("Name1").equals(k8sDeploymentKey.getReleaseName());
+  }
+
+  @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void shouldThrowNoInstancesExceptionInstancesExistsInDb() {
@@ -2612,7 +2646,9 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
             Arrays.stream(podIds).map(id -> createK8sPod(id, releaseName, namespace)).collect(Collectors.toList()))
         .build();
   }
-
+  public Label createlabel(String name) {
+    return Label.Builder.aLabel().withName(name).build();
+  }
   private ContainerSyncResponse containerSyncResponse(String... ids) {
     List<EcsContainerInfo> list = new ArrayList<>();
     for (String id : ids) {
