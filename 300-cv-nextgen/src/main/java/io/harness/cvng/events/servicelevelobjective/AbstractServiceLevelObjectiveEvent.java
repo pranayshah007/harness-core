@@ -27,7 +27,8 @@ public abstract class AbstractServiceLevelObjectiveEvent implements Event {
   public enum ServiceLevelObjectiveEventTypes {
     CREATE("ServiceLevelObjectiveCreateEvent"),
     UPDATE("ServiceLevelObjectiveUpdateEvent"),
-    DELETE("ServiceLevelObjectiveDeleteEvent");
+    DELETE("ServiceLevelObjectiveDeleteEvent"),
+    ERROR_BUDGET_RESET("ServiceLevelObjectiveErrorBudgetResetEvent");
 
     private final String displayName;
     ServiceLevelObjectiveEventTypes(String displayName) {

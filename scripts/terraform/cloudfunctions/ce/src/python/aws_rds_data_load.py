@@ -50,7 +50,7 @@ def update_rds_state(jsonData):
     query = "UPDATE `%s` set DBInstanceStatus='deleted' WHERE DBInstanceStatus NOT IN ('deleted') and lastUpdatedAt < '%s';" % (
         jsonData["targetTableId"], lastUpdatedAt)
 
-    run_batch_query(client, query, None, timeout=120)
+    run_batch_query(client, query, None, timeout=180)
     print_("Finished updating awsRdsInventory table for deleted instances")
 
 
@@ -74,5 +74,5 @@ def load_into_main_table(jsonData):
                    MaxAllocatedStorage, DeletionProtection, InstanceCreateTime, lastUpdatedAt, tags, linkedAccountIdPartition) 
                 """ % (jsonData["targetTableId"], jsonData["sourceTableId"], lastUpdatedAt)
 
-    run_batch_query(client, query, None, timeout=120)
+    run_batch_query(client, query, None, timeout=180)
     print_("Finished merging into main awsRdsInventory table")

@@ -50,7 +50,7 @@ def update_ec2_state(jsonData):
     query = "UPDATE `%s` set state='terminated' WHERE state='running' and lastUpdatedAt < '%s';" % (
         jsonData["targetTableId"], lastUpdatedAt)
 
-    run_batch_query(client, query, None, timeout=120)
+    run_batch_query(client, query, None, timeout=180)
     print_("Finished updating awsEc2Inventory table for any terminated instances")
 
 
@@ -71,5 +71,5 @@ def load_into_main_table(jsonData):
                     lastUpdatedAt, instanceLaunchedAt, instanceLifeCycle, volumeIds, reservationId, stateTransitionReason, linkedAccountIdPartition) 
                 """ % (jsonData["targetTableId"], jsonData["sourceTableId"], lastUpdatedAt)
 
-    run_batch_query(client, query, None, timeout=120)
+    run_batch_query(client, query, None, timeout=180)
     print_("Finished merging into main awsEc2Inventory table")

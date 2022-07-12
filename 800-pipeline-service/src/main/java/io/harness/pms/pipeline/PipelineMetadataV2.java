@@ -54,6 +54,7 @@ public class PipelineMetadataV2 {
                  .field(PipelineMetadataV2Keys.identifier)
                  .build())
         .add(SortCompoundMongoIndex.builder()
+                 .name("account_org_project_last_executed")
                  .field(PipelineMetadataV2Keys.accountIdentifier)
                  .field(PipelineMetadataV2Keys.orgIdentifier)
                  .field(PipelineMetadataV2Keys.projectIdentifier)

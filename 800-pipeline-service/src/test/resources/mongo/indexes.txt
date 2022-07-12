@@ -180,6 +180,7 @@ outcomeInstances {"name": "validUntil_1", "background": true, "expireAfterSecond
 perpetualTaskScheduleConfig {"name": "unique_perpetualTaskScheduleConfig_index1", "unique": true} {"accountId": 1, "perpetualTaskType": 1}
 pipelineMetadata {"name": "account_org_project_pipeline_run_sequence_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "runSequence": -1}
 pipelineMetadata {"name": "account_org_project_pipeline_yaml_git_config_branch_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "entityGitDetails.branch": 1, "entityGitDetails.repoIdentifier": 1}
+pipelineMetadataV2 {"name": "account_org_project_last_executed", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "lastExecutedAt": -1}
 pipelineMetadataV2 {"name": "account_org_project_pipeline", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 pipelinesPMS {"name": "accountId_organizationId_projectId_lastUpdatedAt", "background": true} {"accountId": 1, "orgIdentifier": 1, "lastUpdatedAt": 1, "projectIdentifier": 1}
 pipelinesPMS {"name": "createdAt_1", "background": true} {"createdAt": 1}

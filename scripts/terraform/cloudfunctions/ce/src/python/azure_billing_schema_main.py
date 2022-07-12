@@ -66,7 +66,7 @@ def generate_schema_dynamically(jsonData):
         for blob in blobs:
             # To avoid picking up sub directory json files
             print_(blob.name)
-            localname = '/tmp/%s' % blob.name
+            localname = '/tmp/%s' % blob.name.split("/")[-1]
             print_(localname)
             blob.download_to_filename(localname)
             print_("saved in %s" % localname)
