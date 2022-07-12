@@ -58,18 +58,19 @@ public class ChangeImpactTemplateDataGenerator
     TimeSeriesAnalysisFilter filter = TimeSeriesAnalysisFilter.builder().anomalousMetricsOnly(true).build();
     List<TimeSeriesMetricDataDTO> timeSeriesMetricDataDTOS =
         timeSeriesDashboardService
-            .getTimeSeriesMetricData(monitoredServiceParams, timeRangeParams, filter, PageParams.builder().build())
+            .getTimeSeriesMetricData(
+                monitoredServiceParams, timeRangeParams, filter, PageParams.builder().page(0).size(5).build())
             .getContent();
 
     StringBuilder sb = new StringBuilder();
 
-    for (int i = 0; i < 5; i++) {
-      if (i >= timeSeriesMetricDataDTOS.size()) {
-        break;
-      }
-      TimeSeriesMetricDataDTO timeSeriesMetricDataDTO = timeSeriesMetricDataDTOS.get(i);
-      sb.append("Metric " + timeSeriesMetricDataDTO.getMetricName() + "\n");
-      sb.append("Group " + timeSeriesMetricDataDTO.getGroupName() + "\n");
+    if (timeSeriesMetricDataDTOS.size() == 0) {
+      sb.append("No metric has been assigned to this monitored service");
+    } else {
+      timeSeriesMetricDataDTOS.forEach(dto -> {
+        sb.append("Metric " + dto.getMetricName() + "\n");
+        sb.append("Group " + dto.getGroupName() + "\n");
+      });
     }
 
     return sb.toString();
