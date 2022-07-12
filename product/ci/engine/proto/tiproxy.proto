@@ -69,6 +69,15 @@ message DownloadLinkResponse {
   string links = 1;
 }
 
+message GetTestTimesRequest {
+  string repo = 1;
+  string body = 2;
+}
+
+message GetTestTimesResponse {
+  string time_data_map = 1;
+}
+
 service TiProxy {
   // RPC to stream test cases from the addon
   rpc WriteTests(stream WriteTestsRequest) returns (WriteTestsResponse);
@@ -84,4 +93,7 @@ service TiProxy {
 
   // Get download links from lite engine which forwards the call to ti service.
   rpc DownloadLink(DownloadLinkRequest) returns (DownloadLinkResponse);
+
+  // Get test timing data from lite engine which forwards the call to ti service.
+  rpc GetTestTimes(GetTestTimesRequest) returns (GetTestTimesResponse);
 }
