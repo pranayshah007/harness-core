@@ -279,6 +279,14 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
           ConnectorType.AZURE.name()));
     }
 
+    if (InfrastructureKind.ECS.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.getConnectorConfig() instanceof AwsConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+                connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+                ConnectorType.AWS.name()));
+      }
+    }
+
     saveExecutionLog(logCallback, color("Connector validated", Green));
   }
 

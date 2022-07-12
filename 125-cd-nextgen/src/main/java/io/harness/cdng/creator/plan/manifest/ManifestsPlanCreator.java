@@ -7,6 +7,7 @@
 
 package io.harness.cdng.creator.plan.manifest;
 
+import static io.harness.cdng.manifest.ManifestType.ECS_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.cdng.manifest.ManifestType.HELM_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
 
@@ -196,6 +197,9 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
       case NATIVE_HELM:
         validateDuplicateManifests(
             manifestList, HELM_SUPPORTED_MANIFEST_TYPES, ServiceDefinitionType.NATIVE_HELM.getYamlName());
+        break;
+      case ECS:
+        validateDuplicateManifests(manifestList, ECS_SUPPORTED_MANIFEST_TYPES, ServiceDefinitionType.ECS.getYamlName());
         break;
       default:
     }

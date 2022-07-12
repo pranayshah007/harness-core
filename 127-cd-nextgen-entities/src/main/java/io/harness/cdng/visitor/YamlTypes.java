@@ -126,4 +126,5 @@ public interface YamlTypes {
   String STARTUP_SCRIPT = "startupScript";
   String APPLICATION_SETTINGS = "applicationSettings";
   String CONNECTION_STRINGS = "connectionStrings";
+
 }

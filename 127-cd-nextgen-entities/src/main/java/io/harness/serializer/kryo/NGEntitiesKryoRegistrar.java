@@ -214,16 +214,17 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
 
     kryo.register(JenkinsArtifactConfig.class, 130012);
 
-    kryo.register(EcsScalableTargetDefinitionManifest.class,12571);
-    kryo.register(EcsScalingPolicyDefinitionManifest.class,12572);
-    kryo.register(EcsServiceDefinitionManifest.class,12573);
-    kryo.register(EcsTaskDefinitionManifest.class,12574);
-    kryo.register(EcsTaskDefinitionManifestOutcome.class,12575);
-    kryo.register(EcsServiceDefinitionManifestOutcome.class,12576);
-    kryo.register(EcsScalingPolicyDefinitionManifestOutcome.class,12577);
-    kryo.register(EcsScalableTargetDefinitionManifestOutcome.class,12578);
-    kryo.register(EcsInfrastructureOutcome.class, 12579);
-    kryo.register(EcsServiceSpec.class, 12580);
+    kryo.register(EcsScalingPolicyDefinitionManifest.class,130013);
+    kryo.register(EcsServiceDefinitionManifest.class,130014);
+    kryo.register(EcsTaskDefinitionManifest.class,130015);
+    kryo.register(EcsTaskDefinitionManifestOutcome.class,130016);
+    kryo.register(EcsServiceDefinitionManifestOutcome.class,130017);
+    kryo.register(EcsScalingPolicyDefinitionManifestOutcome.class,130018);
+    kryo.register(EcsScalableTargetDefinitionManifestOutcome.class,130019);
+    kryo.register(EcsInfrastructureOutcome.class, 130020);
+    kryo.register(EcsServiceSpec.class, 130021);
+    kryo.register(EcsScalableTargetDefinitionManifest.class,130022);
+
 
   }
 }
