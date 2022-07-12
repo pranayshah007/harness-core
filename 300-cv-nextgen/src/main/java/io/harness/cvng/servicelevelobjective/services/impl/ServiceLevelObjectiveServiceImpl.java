@@ -97,7 +97,6 @@ import javax.ws.rs.NotFoundException;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.math3.util.Precision;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -580,7 +579,8 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
         return new HashMap<String, String>() {
           {
             put(REMAINING_PERCENTAGE,
-                String.valueOf(Precision.round(sloHealthIndicator.getErrorBudgetRemainingPercentage(), 2)));
+                // String.valueOf(Precision.round(sloHealthIndicator.getErrorBudgetRemainingPercentage(), 2)));
+                String.valueOf(sloHealthIndicator.getErrorBudgetRemainingPercentage()));
           }
         };
       case ERROR_BUDGET_REMAINING_MINUTES:
@@ -589,7 +589,9 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
         };
       case ERROR_BUDGET_BURN_RATE:
         return new HashMap<String, String>() {
-          { put(BURN_RATE, String.valueOf(Precision.round(sloHealthIndicator.getErrorBudgetBurnRate(), 2))); }
+          { // put(BURN_RATE, String.valueOf(Precision.round(sloHealthIndicator.getErrorBudgetBurnRate(), 2)));
+            put(BURN_RATE, String.valueOf(sloHealthIndicator.getErrorBudgetBurnRate()));
+          }
         };
       default:
         throw new InvalidArgumentsException("Not a valid Notification Rule Condition " + condition.getType());
