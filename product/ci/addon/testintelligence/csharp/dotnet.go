@@ -48,7 +48,9 @@ func (b *dotnetRunner) AutoDetectPackages() ([]string, error) {
 }
 
 func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
-	defaultRunCmd := fmt.Sprintf("%s test --no-build --logger \"junit;LogFilePath=test_results.xml\"", dotnetCmd)
+	// Hard coding the logger for now, as this is the only one for now that does not have compatibility issue with our agent
+	installLoggerCmd := "dotnet add package JUnitTestLogger --version 1.1.0"
+	defaultRunCmd := fmt.Sprintf("%s\n%s test --no-build --logger \"junit;LogFilePath=test_results.xml\"", installLoggerCmd, dotnetCmd)
 	agentFullName := path.Join(b.agentPath, "dotnet-agent.injector.dll")
 	instrumentCmd := fmt.Sprintf("%s %s %s %s", dotnetCmd, agentFullName, userArgs, agentConfigPath)
 	if ignoreInstr {
@@ -91,5 +93,5 @@ func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 	}
 	// dotnet /dotnet-agent.injector.dll /TestProject1.dll ./Config.yaml
 	runtestCmd := fmt.Sprintf("%s test --no-build --logger \"junit;LogFilePath=test_results.xml\" --filter \"%s\"", dotnetCmd, testStr)
-	return fmt.Sprintf("%s\n%s", instrumentCmd, runtestCmd), nil
+	return fmt.Sprintf("%s\n%s\n%s", installLoggerCmd, instrumentCmd, runtestCmd), nil
 }
