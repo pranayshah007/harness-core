@@ -429,17 +429,35 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
 
     List<YamlNode> steps = new ArrayList<>();
     String currentStageIdentifier = currentStage.getIdentifier();
-    for (YamlNode stageNode : stages.asArray()) {
-      YamlNode stage = stageNode.getField(STAGE).getNode();
-      if (stage == null) {
-        continue;
+
+    if (stages.asArray().get(0).getField(PARALLEL) != null) {
+      YamlNode parallelStages = stages.asArray().get(0).getField(PARALLEL).getNode();
+      for (YamlNode stageNode : parallelStages.asArray()) {
+        YamlNode stage = stageNode.getField(STAGE).getNode();
+        if (stage == null) {
+          continue;
+        }
+
+        steps.addAll(findExecutionStepsFromStage(stage, filter));
+        steps.addAll(findProvisionerStepsFromStage(stage, filter));
+
+        if (currentStageIdentifier.equals(stage.getIdentifier())) {
+          break;
+        }
       }
+    } else {
+      for (YamlNode stageNode : stages.asArray()) {
+        YamlNode stage = stageNode.getField(STAGE).getNode();
+        if (stage == null) {
+          continue;
+        }
 
-      steps.addAll(findExecutionStepsFromStage(stage, filter));
-      steps.addAll(findProvisionerStepsFromStage(stage, filter));
+        steps.addAll(findExecutionStepsFromStage(stage, filter));
+        steps.addAll(findProvisionerStepsFromStage(stage, filter));
 
-      if (currentStageIdentifier.equals(stage.getIdentifier())) {
-        break;
+        if (currentStageIdentifier.equals(stage.getIdentifier())) {
+          break;
+        }
       }
     }
 
