@@ -147,7 +147,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -2283,7 +2282,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     DeploymentInfo deploymentInfo = new ContainerDeploymentInfoWithNames("CL1", "service1", null, null);
     ContainerDeploymentKey containerDeploymentKey =
         (ContainerDeploymentKey) containerInstanceHandler.generateDeploymentKey(deploymentInfo);
-    assert("service1").equals(containerDeploymentKey.getContainerServiceName());
+    assert ("service1").equals(containerDeploymentKey.getContainerServiceName());
   }
   @Test
   @Owner(developers = SOURABH)
@@ -2292,7 +2291,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     DeploymentInfo deploymentInfo = new K8sDeploymentInfo("NM1", "Name1", 1, null, null, null, "cl1");
     K8sDeploymentKey k8sDeploymentKey =
         (K8sDeploymentKey) containerInstanceHandler.generateDeploymentKey(deploymentInfo);
-    assert("Name1").equals(k8sDeploymentKey.getReleaseName());
+    assert ("Name1").equals(k8sDeploymentKey.getReleaseName());
   }
 
   @Test
