@@ -11,7 +11,7 @@ import re
 import datetime
 
 from google.cloud import bigquery
-from util import print_
+from util import print_, run_batch_query
 
 """
 Scheduler event:
@@ -47,24 +47,18 @@ def update_rds_state(jsonData):
     :return: None
     """
     lastUpdatedAt = datetime.date.today()  # - timedelta(days = 1)
-    query = "UPDATE `%s` set DBInstanceStatus='deleted' WHERE DBInstanceStatus NOT IN ('deleted') lastUpdatedAt < '%s';" % (
+    query = "UPDATE `%s` set DBInstanceStatus='deleted' WHERE DBInstanceStatus NOT IN ('deleted') and lastUpdatedAt < '%s';" % (
         jsonData["targetTableId"], lastUpdatedAt)
 
-    try:
-        query_job = client.query(query)
-        query_job.result()
-    except Exception as e:
-        print_(query)
-        print_(e)
-    else:
-        print_("Finished updating awsRdsInventory table for deleted instances")
+    run_batch_query(client, query, None, timeout=180)
+    print_("Finished updating awsRdsInventory table for deleted instances")
 
 
 def load_into_main_table(jsonData):
     lastUpdatedAt = datetime.datetime.utcnow()
     query = """MERGE `%s` T
                 USING `%s` S
-                ON T.DBInstanceIdentifier = S.DBInstanceIdentifier and T.linkedAccountIdPartition = s.linkedAccountIdPartition
+                ON T.DBInstanceIdentifier = S.DBInstanceIdentifier and T.linkedAccountIdPartition = s.linkedAccountIdPartition and T.AvailabilityZone = S.AvailabilityZone
                 WHEN MATCHED THEN
                   UPDATE SET EngineVersion = s.EngineVersion, DBInstanceStatus = s.DBInstanceStatus, lastUpdatedAt = '%s', 
                     AllocatedStorage = s.AllocatedStorage, Iops = s.Iops, AvailabilityZone = s.AvailabilityZone, MultiAZ = s.MultiAZ,
@@ -79,11 +73,6 @@ def load_into_main_table(jsonData):
                   Iops, AvailabilityZone, MultiAZ, PubliclyAccessible, StorageType, DBClusterIdentifier, StorageEncrypted, KmsKeyId, DBInstanceArn,
                    MaxAllocatedStorage, DeletionProtection, InstanceCreateTime, lastUpdatedAt, tags, linkedAccountIdPartition) 
                 """ % (jsonData["targetTableId"], jsonData["sourceTableId"], lastUpdatedAt)
-    try:
-        query_job = client.query(query)
-        query_job.result()
-    except Exception as e:
-        print_(query)
-        print_(e, "WARN")
-    else:
-        print_("Finished merging into main awsRdsInventory table")
+
+    run_batch_query(client, query, None, timeout=180)
+    print_("Finished merging into main awsRdsInventory table")

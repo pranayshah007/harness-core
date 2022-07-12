@@ -1,8 +1,8 @@
 parallel:
   - step:
       type: Http
-      name: <+strategy.totalIterations>
-      identifier: <+strategy.currentIteration>
+      name: <+strategy.iterations>
+      identifier: <+strategy.iteration>
       spec:
         url: https://www.google.com
         method: GET

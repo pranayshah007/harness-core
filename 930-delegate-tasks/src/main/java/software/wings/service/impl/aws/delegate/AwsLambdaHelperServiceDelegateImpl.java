@@ -811,10 +811,10 @@ public class AwsLambdaHelperServiceDelegateImpl
             awsLambdaExecuteWfRequest.getAccountId(), awsLambdaExecuteWfRequest.getAppId(),
             awsLambdaExecuteWfRequest.getActivityId(), awsLambdaExecuteWfRequest.getCommandName(),
             awsLambdaExecuteWfRequest.getArtifactStreamAttributes().getRegistryHostName());
-    String fileName =
-        System.currentTimeMillis() + awsLambdaExecuteWfRequest.getArtifactStreamAttributes().getArtifactName();
+    String fileName = awsLambdaExecuteWfRequest.getArtifactStreamAttributes().getArtifactName();
 
-    File artifactFile = new File(workingDirectory.getAbsolutePath() + PATH_DELIMITER + FilenameUtils.getName(fileName));
+    File artifactFile = new File(workingDirectory.getAbsolutePath() + PATH_DELIMITER + System.currentTimeMillis()
+        + FilenameUtils.getName(fileName));
 
     if (!artifactFile.createNewFile()) {
       throw new FileCreationException("Failed to create file " + artifactFile.getCanonicalPath(), null,

@@ -176,3 +176,18 @@ segmentConfiguration:
   enabled: true
   url: https://api.segment.io/v1/
   apiKey: UvSVfxy6KzApDrrlhCqSjJBlgPeEDBdf
+
+auditClientConfig:
+  baseUrl: http://localhost:9005/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+enableAudit: false
+
+outboxPollConfig:
+  initialDelayInSeconds: 5
+  pollingIntervalInSeconds: 5
+  maximumRetryAttemptsForAnEvent: 7
+  lockId: NextGenCE
+
+exportMetricsToStackDriver: false

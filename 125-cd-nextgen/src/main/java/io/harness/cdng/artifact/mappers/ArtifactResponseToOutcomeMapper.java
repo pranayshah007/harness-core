@@ -19,6 +19,7 @@ import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -28,6 +29,7 @@ import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
@@ -40,6 +42,7 @@ import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.pms.yaml.ParameterField;
@@ -112,6 +115,11 @@ public class ArtifactResponseToOutcomeMapper {
         AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactConfig;
         S3ArtifactDelegateResponse s3ArtifactDelegateResponse = (S3ArtifactDelegateResponse) artifactDelegateResponse;
         return getS3ArtifactOutcome(amazonS3ArtifactConfig, s3ArtifactDelegateResponse, useDelegateResponse);
+      case JENKINS:
+        JenkinsArtifactConfig jenkinsArtifactConfig = (JenkinsArtifactConfig) artifactConfig;
+        JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
+            (JenkinsArtifactDelegateResponse) artifactDelegateResponse;
+        return getJenkinsArtifactOutcome(jenkinsArtifactConfig, jenkinsArtifactDelegateResponse, useDelegateResponse);
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -122,7 +130,7 @@ public class ArtifactResponseToOutcomeMapper {
       S3ArtifactDelegateResponse s3ArtifactDelegateResponse, boolean useDelegateResponse) {
     return S3ArtifactOutcome.builder()
         .bucketName(amazonS3ArtifactConfig.getBucketName().getValue())
-        .filePath(amazonS3ArtifactConfig.getFilePath().getValue())
+        .filePath(s3ArtifactDelegateResponse.getFilePath())
         .connectorRef(amazonS3ArtifactConfig.getConnectorRef().getValue())
         .type(ArtifactSourceType.AMAZONS3.getDisplayName())
         .identifier(amazonS3ArtifactConfig.getIdentifier())
@@ -276,8 +284,28 @@ public class ArtifactResponseToOutcomeMapper {
         .build();
   }
 
+  private static JenkinsArtifactOutcome getJenkinsArtifactOutcome(JenkinsArtifactConfig jenkinsArtifactConfig,
+      JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse, boolean useDelegateResponse) {
+    return JenkinsArtifactOutcome.builder()
+        .jobName(jenkinsArtifactConfig.getJobName().getValue())
+        .build(getJenkinsBuild(useDelegateResponse, jenkinsArtifactDelegateResponse, jenkinsArtifactConfig))
+        .artifactPath(jenkinsArtifactConfig.getArtifactPath().getValue())
+        .connectorRef(jenkinsArtifactConfig.getConnectorRef().getValue())
+        .type(ArtifactSourceType.JENKINS.getDisplayName())
+        .identifier(jenkinsArtifactConfig.getIdentifier())
+        .primaryArtifact(jenkinsArtifactConfig.isPrimaryArtifact())
+        .build();
+  }
+
   private String getAcrTag(boolean useDelegateResponse, String delegateResponseTag, ParameterField<String> configTag) {
     return useDelegateResponse ? delegateResponseTag : !ParameterField.isNull(configTag) ? configTag.getValue() : null;
+  }
+
+  private String getJenkinsBuild(boolean useDelegateResponse,
+      JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse, JenkinsArtifactConfig jenkinsArtifactConfig) {
+    return useDelegateResponse
+        ? jenkinsArtifactDelegateResponse.getBuild()
+        : (jenkinsArtifactConfig.getBuild() != null ? jenkinsArtifactConfig.getBuild().getValue() : null);
   }
 
   private String getImageValue(ArtifactDelegateResponse artifactDelegateResponse) {

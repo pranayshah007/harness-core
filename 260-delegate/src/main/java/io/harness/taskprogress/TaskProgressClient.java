@@ -11,10 +11,10 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.delegate.AccountId;
+import io.harness.delegate.DelegateServiceAgentClient;
 import io.harness.delegate.TaskId;
 import io.harness.delegate.beans.DelegateProgressData;
 import io.harness.delegate.beans.taskprogress.ITaskProgressClient;
-import io.harness.grpc.DelegateServiceGrpcAgentClient;
 import io.harness.serializer.KryoSerializer;
 
 import lombok.Builder;
@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
 public class TaskProgressClient implements ITaskProgressClient {
-  private final DelegateServiceGrpcAgentClient delegateServiceGrpcAgentClient;
+  private final DelegateServiceAgentClient delegateServiceAgentClient;
   private final KryoSerializer kryoSerializer;
 
   private final String accountId;
@@ -35,7 +35,7 @@ public class TaskProgressClient implements ITaskProgressClient {
   public boolean sendTaskProgressUpdate(DelegateProgressData delegateProgressData) {
     byte[] progressData = kryoSerializer.asDeflatedBytes(delegateProgressData);
 
-    return delegateServiceGrpcAgentClient.sendTaskProgressUpdate(AccountId.newBuilder().setId(accountId).build(),
+    return delegateServiceAgentClient.sendTaskProgressUpdate(AccountId.newBuilder().setId(accountId).build(),
         TaskId.newBuilder().setId(taskId).build(),
         DelegateCallbackToken.newBuilder().setToken(delegateCallbackToken).build(), progressData);
   }

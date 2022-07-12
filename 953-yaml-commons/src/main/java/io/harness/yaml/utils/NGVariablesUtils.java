@@ -12,11 +12,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.yaml.core.properties.CIProperties;
 import io.harness.yaml.core.properties.NGProperties;
-import io.harness.yaml.core.variables.NGServiceOverrides;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
@@ -40,7 +40,7 @@ public class NGVariablesUtils {
         SecretNGVariable secretNGVariable = (SecretNGVariable) variable;
         String secretValue = getSecretValue(secretNGVariable);
         if (secretValue != null) {
-          String value = "${ngSecretManager.obtain(\"" + secretValue + "\", " + expressionFunctorToken + ")}";
+          String value = fetchSecretExpressionWithExpressionToken(secretValue, expressionFunctorToken);
           mapOfVariables.put(variable.getName(), value);
         }
       } else {
@@ -77,7 +77,7 @@ public class NGVariablesUtils {
         SecretNGVariable secretNGVariable = (SecretNGVariable) variable;
         String secretValue = getSecretValue(secretNGVariable);
         if (secretValue != null) {
-          String value = "<+secrets.getValue(\"" + secretValue + "\")>";
+          String value = fetchSecretExpression(secretValue);
           mapOfVariables.put(variable.getName(), value);
         }
       } else {
@@ -90,15 +90,24 @@ public class NGVariablesUtils {
     return mapOfVariables;
   }
 
-  public Map<String, Object> getMapOfServiceVariables(List<NGServiceOverrides> serviceOverrides) {
-    Map<String, Object> mapOfVariables = new HashMap<>();
-    if (EmptyPredicate.isEmpty(serviceOverrides)) {
-      return mapOfVariables;
+  public String fetchSecretExpression(String secretValue) {
+    /*
+    if secretValue is a string, then add it with quotes else add it as a variable
+     */
+    if (EngineExpressionEvaluator.hasExpressions(secretValue)) {
+      return "<+secrets.getValue(" + secretValue + ")>";
     }
-    for (NGServiceOverrides variable : serviceOverrides) {
-      mapOfVariables.put(variable.getServiceRef(), getMapOfVariables(variable.getVariables()));
+    return "<+secrets.getValue(\"" + secretValue + "\")>";
+  }
+
+  public String fetchSecretExpressionWithExpressionToken(String secretValue, long expressionFunctorToken) {
+    /*
+    if secretValue is a string, then add it with quotes else add it as a variable
+     */
+    if (EngineExpressionEvaluator.hasExpressions(secretValue)) {
+      return "${ngSecretManager.obtain(" + secretValue + ", " + expressionFunctorToken + ")}";
     }
-    return mapOfVariables;
+    return "${ngSecretManager.obtain(\"" + secretValue + "\", " + expressionFunctorToken + ")}";
   }
 
   private String getSecretValue(SecretNGVariable variable) {

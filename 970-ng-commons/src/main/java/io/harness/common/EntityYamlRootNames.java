@@ -114,4 +114,5 @@ public class EntityYamlRootNames {
   public static final String AZURE_TRAFFIC_SHIFT_STEP = "AzureTrafficShift";
   public static final String AZURE_SWAP_SLOT_STEP = "AzureSwapSlot";
   public static final String AZURE_WEBAPP_ROLLBACK_STEP = "AzureWebAppRollback";
+  public static final String EMAIL = "EMAIL";
 }

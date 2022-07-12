@@ -7,11 +7,11 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.BURN_RATE;
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.COOL_OFF_DURATION;
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.REMAINING_MINUTES;
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.REMAINING_PERCENTAGE;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.BURN_RATE;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.COOL_OFF_DURATION;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.REMAINING_MINUTES;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.REMAINING_PERCENTAGE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -39,8 +39,8 @@ import io.harness.cvng.notification.entities.SLONotificationRule;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetBurnRateCondition;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLONotificationRuleCondition;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
-import io.harness.cvng.notification.utils.NotificationRuleCommonUtils;
-import io.harness.cvng.notification.utils.NotificationRuleCommonUtils.NotificationMessage;
+import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
+import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator.NotificationData;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse.RiskCount;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
@@ -116,11 +116,10 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   @Inject private CVNGLogService cvngLogService;
   @Inject private NotificationRuleService notificationRuleService;
   @Inject private NotificationClient notificationClient;
-  @Inject private NotificationRuleCommonUtils notificationRuleCommonUtils;
-
+  @Inject
+  private Map<NotificationRuleConditionType, NotificationRuleTemplateDataGenerator>
+      notificationRuleConditionTypeTemplateDataGeneratorMap;
   @Inject private OutboxService outboxService;
-
-  private static final String templateIdentifierName = "sloName";
 
   @Override
   public ServiceLevelObjectiveResponse create(
@@ -447,7 +446,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   }
 
   @Override
-  public void sendNotification(ServiceLevelObjective serviceLevelObjective) {
+  public void handleNotification(ServiceLevelObjective serviceLevelObjective) {
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(serviceLevelObjective.getAccountId())
                                       .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
@@ -459,12 +458,19 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     for (NotificationRule notificationRule : notificationRules) {
       List<SLONotificationRuleCondition> conditions = ((SLONotificationRule) notificationRule).getConditions();
       for (SLONotificationRuleCondition condition : conditions) {
-        NotificationMessage notificationMessage = getNotificationMessage(serviceLevelObjective, condition);
-        if (notificationMessage.isShouldSendNotification()) {
+        NotificationData notificationData = getNotificationData(serviceLevelObjective, condition);
+        if (notificationData.shouldSendNotification()) {
           CVNGNotificationChannel notificationChannel = notificationRule.getNotificationMethod();
           String templateId = getNotificationTemplateId(notificationRule.getType(), notificationChannel.getType());
-          Map<String, String> templateData = notificationRuleCommonUtils.getNotificationTemplateDataForSLO(
-              serviceLevelObjective, condition, notificationMessage, clock.instant());
+          MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
+              MonitoredServiceParams.builderWithProjectParams(projectParams)
+                  .monitoredServiceIdentifier(serviceLevelObjective.getMonitoredServiceIdentifier())
+                  .build());
+          Map<String, String> templateData =
+              notificationRuleConditionTypeTemplateDataGeneratorMap.get(condition.getType())
+                  .getTemplateData(projectParams, serviceLevelObjective.getName(),
+                      serviceLevelObjective.getIdentifier(), monitoredService.getServiceIdentifier(), condition,
+                      notificationData.getTemplateDataMap());
           try {
             NotificationResult notificationResult =
                 notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(
@@ -546,7 +552,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   }
 
   @VisibleForTesting
-  NotificationMessage getNotificationMessage(
+  NotificationData getNotificationData(
       ServiceLevelObjective serviceLevelObjective, SLONotificationRuleCondition condition) {
     SLOHealthIndicator sloHealthIndicator = sloHealthIndicatorService.getBySLOEntity(serviceLevelObjective);
 
@@ -560,7 +566,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
       sloHealthIndicator.setErrorBudgetBurnRate(errorBudgetBurnRate);
     }
 
-    return NotificationMessage.builder()
+    return NotificationData.builder()
         .shouldSendNotification(condition.shouldSendNotification(sloHealthIndicator))
         .templateDataMap(getTemplateData(condition, sloHealthIndicator))
         .build();
@@ -744,6 +750,60 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
         .tags(TagMapper.convertToMap(serviceLevelObjective.getTags()))
         .userJourneyRef(serviceLevelObjective.getUserJourneyIdentifier())
         .build();
+  }
+
+  @Override
+  public void deleteByProjectIdentifier(
+      Class<ServiceLevelObjective> clazz, String accountId, String orgIdentifier, String projectIdentifier) {
+    List<ServiceLevelObjective> serviceLevelObjectives =
+        hPersistence.createQuery(ServiceLevelObjective.class)
+            .filter(ServiceLevelObjectiveKeys.accountId, accountId)
+            .filter(ServiceLevelObjectiveKeys.orgIdentifier, orgIdentifier)
+            .filter(ServiceLevelObjectiveKeys.projectIdentifier, projectIdentifier)
+            .asList();
+
+    serviceLevelObjectives.forEach(serviceLevelObjective -> {
+      delete(ProjectParams.builder()
+                 .accountIdentifier(serviceLevelObjective.getAccountId())
+                 .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                 .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                 .build(),
+          serviceLevelObjective.getIdentifier());
+    });
+  }
+
+  @Override
+  public void deleteByOrgIdentifier(Class<ServiceLevelObjective> clazz, String accountId, String orgIdentifier) {
+    List<ServiceLevelObjective> serviceLevelObjectives =
+        hPersistence.createQuery(ServiceLevelObjective.class)
+            .filter(ServiceLevelObjectiveKeys.accountId, accountId)
+            .filter(ServiceLevelObjectiveKeys.orgIdentifier, orgIdentifier)
+            .asList();
+
+    serviceLevelObjectives.forEach(serviceLevelObjective -> {
+      delete(ProjectParams.builder()
+                 .accountIdentifier(serviceLevelObjective.getAccountId())
+                 .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                 .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                 .build(),
+          serviceLevelObjective.getIdentifier());
+    });
+  }
+
+  @Override
+  public void deleteByAccountIdentifier(Class<ServiceLevelObjective> clazz, String accountId) {
+    List<ServiceLevelObjective> serviceLevelObjectives = hPersistence.createQuery(ServiceLevelObjective.class)
+                                                             .filter(ServiceLevelObjectiveKeys.accountId, accountId)
+                                                             .asList();
+
+    serviceLevelObjectives.forEach(serviceLevelObjective -> {
+      delete(ProjectParams.builder()
+                 .accountIdentifier(serviceLevelObjective.getAccountId())
+                 .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                 .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                 .build(),
+          serviceLevelObjective.getIdentifier());
+    });
   }
 
   @Value

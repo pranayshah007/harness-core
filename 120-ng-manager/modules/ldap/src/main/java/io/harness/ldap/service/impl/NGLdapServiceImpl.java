@@ -14,6 +14,8 @@ import static io.harness.remote.client.RestClientUtils.getResponse;
 
 import static software.wings.beans.TaskType.NG_LDAP_SEARCH_GROUPS;
 import static software.wings.beans.TaskType.NG_LDAP_TEST_CONN_SETTINGS;
+import static software.wings.beans.TaskType.NG_LDAP_TEST_GROUP_SETTINGS;
+import static software.wings.beans.TaskType.NG_LDAP_TEST_USER_SETTINGS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -71,6 +73,34 @@ public class NGLdapServiceImpl implements NGLdapService {
     NGLdapDelegateTaskResponse delegateTaskResponse = (NGLdapDelegateTaskResponse) delegateResponseData;
     log.info("Delegate response for validateLdapConnectionSettings: "
         + delegateTaskResponse.getLdapTestResponse().getStatus());
+    return delegateTaskResponse.getLdapTestResponse();
+  }
+
+  @Override
+  public LdapTestResponse validateLdapUserSettings(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
+    NGLdapDelegateTaskParameters parameters = NGLdapDelegateTaskParameters.builder().ldapSettings(settings).build();
+
+    DelegateResponseData delegateResponseData = getDelegateResponseData(
+        accountIdentifier, orgIdentifier, projectIdentifier, parameters, NG_LDAP_TEST_USER_SETTINGS);
+
+    NGLdapDelegateTaskResponse delegateTaskResponse = (NGLdapDelegateTaskResponse) delegateResponseData;
+    log.info(
+        "Delegate response for validateLdapUserSettings: " + delegateTaskResponse.getLdapTestResponse().getStatus());
+    return delegateTaskResponse.getLdapTestResponse();
+  }
+
+  @Override
+  public LdapTestResponse validateLdapGroupSettings(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
+    NGLdapDelegateTaskParameters parameters = NGLdapDelegateTaskParameters.builder().ldapSettings(settings).build();
+
+    DelegateResponseData delegateResponseData = getDelegateResponseData(
+        accountIdentifier, orgIdentifier, projectIdentifier, parameters, NG_LDAP_TEST_GROUP_SETTINGS);
+
+    NGLdapDelegateTaskResponse delegateTaskResponse = (NGLdapDelegateTaskResponse) delegateResponseData;
+    log.info(
+        "Delegate response for validateLdapGroupSettings: " + delegateTaskResponse.getLdapTestResponse().getStatus());
     return delegateTaskResponse.getLdapTestResponse();
   }
 

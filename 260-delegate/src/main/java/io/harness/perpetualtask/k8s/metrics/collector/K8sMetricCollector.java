@@ -39,21 +39,29 @@ import io.harness.perpetualtask.k8s.metrics.client.model.node.NodeMetrics;
 import io.harness.perpetualtask.k8s.metrics.client.model.pod.PodMetrics;
 import io.harness.perpetualtask.k8s.metrics.recommender.ContainerState;
 import io.harness.perpetualtask.k8s.utils.ApiExceptionLogger;
+import io.harness.perpetualtask.k8s.watch.K8sControllerFetcher;
 import io.harness.perpetualtask.k8s.watch.K8sResourceStandardizer;
+import io.harness.perpetualtask.k8s.watch.Owner;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.ImmutableMap;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
@@ -70,6 +78,15 @@ public class K8sMetricCollector {
     @Nullable String uid;
   }
 
+  @Value
+  @Builder
+  private static class ContainerStateCacheKey {
+    String workloadKind;
+    String workloadName;
+    @Nullable String namespace;
+    @Nullable String containerName;
+  }
+
   private final EventPublisher eventPublisher;
   private final ClusterDetails clusterDetails;
   // to make sure that PVMetric is collected only once for a single node in a single window.
@@ -79,7 +96,11 @@ public class K8sMetricCollector {
   private final Cache<CacheKey, Aggregates> nodeMetricsCache = Caffeine.newBuilder().build();
   private final Cache<CacheKey, Aggregates> pvMetricsCache = Caffeine.newBuilder().build();
 
-  private final Cache<CacheKey, ContainerState> containerStatesCache = Caffeine.newBuilder().build();
+  private final Cache<ContainerStateCacheKey, ContainerState> containerStatesCache = Caffeine.newBuilder().build();
+
+  // Cache from "namespace/podName" --> <workloadKind, workloadName>.
+  private final Cache<String, Pair<String, String>> workloadInfoCache =
+      Caffeine.newBuilder().expireAfterAccess(7, TimeUnit.MINUTES).build();
 
   private Instant lastMetricPublished;
 
@@ -89,9 +110,12 @@ public class K8sMetricCollector {
     this.lastMetricPublished = lastMetricPublished;
   }
 
-  public void collectAndPublishMetrics(final K8sMetricsClient k8sMetricsClient, Instant now) {
+  public void collectAndPublishMetrics(
+      K8sMetricsClient k8sMetricsClient, Instant now, CoreV1Api coreV1Api, K8sControllerFetcher controllerFetcher) {
     collectNodeMetrics(k8sMetricsClient);
-    collectPodMetricsAndContainerStates(k8sMetricsClient);
+    List<PodMetrics> podMetricsList = k8sMetricsClient.podMetrics().list().getObject().getItems();
+    collectPodMetrics(podMetricsList);
+    collectContainerStates(podMetricsList, coreV1Api, controllerFetcher);
     collectPVMetrics(k8sMetricsClient);
     if (now.isAfter(this.lastMetricPublished.plus(AGGREGATION_WINDOW))) {
       publishPending(now);
@@ -147,37 +171,97 @@ public class K8sMetricCollector {
     }
   }
 
-  private void collectPodMetricsAndContainerStates(final K8sMetricsClient k8sMetricsClient) {
-    List<PodMetrics> podMetricsList = k8sMetricsClient.podMetrics().list().getObject().getItems();
+  private void collectPodMetrics(List<PodMetrics> podMetricsList) {
     for (PodMetrics podMetrics : podMetricsList) {
-      if (!isEmpty(podMetrics.getContainers())) {
-        long podCpuNano = 0;
-        long podMemoryBytes = 0;
-        for (PodMetrics.Container container : podMetrics.getContainers()) {
-          long containerCpuNano = K8sResourceStandardizer.getCpuNano(container.getUsage().getCpu());
-          podCpuNano += containerCpuNano;
-          long containerMemoryBytes = K8sResourceStandardizer.getMemoryByte(container.getUsage().getMemory());
-          podMemoryBytes += containerMemoryBytes;
+      if (isEmpty(podMetrics.getContainers())) {
+        // Nothing to aggregate. Continue with the next podMetrics in the list.
+        continue;
+      }
+      String namespace = podMetrics.getMetadata().getNamespace();
+      String podName = podMetrics.getMetadata().getName();
 
-          ContainerState containerState =
-              requireNonNull(containerStatesCache.get(CacheKey.builder()
-                                                          .name(podMetrics.getMetadata().getName())
-                                                          .namespace(podMetrics.getMetadata().getNamespace())
-                                                          .containerName(container.getName())
-                                                          .build(),
-                  key -> new ContainerState(key.namespace, key.name, key.containerName)));
-          double containerCpuCores = K8sResourceStandardizer.getCpuCores(container.getUsage().getCpu()).doubleValue();
-          containerState.addCpuSample(containerCpuCores, podMetrics.getTimestamp());
-          containerState.addMemorySample(containerMemoryBytes, podMetrics.getTimestamp());
-        }
-        requireNonNull(podMetricsCache.get(CacheKey.builder()
-                                               .name(podMetrics.getMetadata().getName())
-                                               .namespace(podMetrics.getMetadata().getNamespace())
-                                               .build(),
-                           key -> new Aggregates(HDurations.parse(podMetrics.getWindow()))))
-            .update(podCpuNano, podMemoryBytes, podMetrics.getTimestamp());
+      // Collect podMetrics.
+      long podCpuNano = 0;
+      long podMemoryBytes = 0;
+      for (PodMetrics.Container container : podMetrics.getContainers()) {
+        long containerCpuNano = K8sResourceStandardizer.getCpuNano(container.getUsage().getCpu());
+        long containerMemoryBytes = K8sResourceStandardizer.getMemoryByte(container.getUsage().getMemory());
+        podCpuNano += containerCpuNano;
+        podMemoryBytes += containerMemoryBytes;
+      }
+      CacheKey cacheKey = CacheKey.builder().name(podName).namespace(namespace).build();
+      Aggregates aggregates = requireNonNull(
+          podMetricsCache.get(cacheKey, key -> new Aggregates(HDurations.parse(podMetrics.getWindow()))));
+      aggregates.update(podCpuNano, podMemoryBytes, podMetrics.getTimestamp());
+    }
+  }
+  private void collectContainerStates(
+      List<PodMetrics> podMetricsList, CoreV1Api coreV1Api, K8sControllerFetcher controllerFetcher) {
+    for (PodMetrics podMetrics : podMetricsList) {
+      if (isEmpty(podMetrics.getContainers())) {
+        // Nothing to aggregate. Continue with the next podMetrics in the list.
+        continue;
+      }
+      String namespace = podMetrics.getMetadata().getNamespace();
+      String podName = podMetrics.getMetadata().getName();
+      Pair<String, String> workloadInfo = getWorkloadInfo(namespace, podName, coreV1Api, controllerFetcher);
+      if (workloadInfo == null) {
+        continue;
+      }
+      String workloadKind = workloadInfo.getLeft();
+      String workloadName = workloadInfo.getRight();
+      for (PodMetrics.Container container : podMetrics.getContainers()) {
+        double containerCpuCores = K8sResourceStandardizer.getCpuCores(container.getUsage().getCpu()).doubleValue();
+        long containerMemoryBytes = K8sResourceStandardizer.getMemoryByte(container.getUsage().getMemory());
+
+        ContainerStateCacheKey key = ContainerStateCacheKey.builder()
+                                         .workloadKind(workloadKind)
+                                         .workloadName(workloadName)
+                                         .namespace(namespace)
+                                         .containerName(container.getName())
+                                         .build();
+        ContainerState containerState = requireNonNull(containerStatesCache.get(
+            key, k -> new ContainerState(k.namespace, k.workloadKind, k.workloadName, k.containerName)));
+        containerState.addCpuSample(containerCpuCores, podMetrics.getTimestamp());
+        containerState.addMemorySample(containerMemoryBytes, podMetrics.getTimestamp());
       }
     }
+  }
+
+  private Pair<String, String> getWorkloadInfo(
+      String namespace, String podName, CoreV1Api coreV1Api, K8sControllerFetcher controllerFetcher) {
+    String key = namespace + "/" + podName;
+    return workloadInfoCache.get(key, k -> findWorkloadInfo(namespace, podName, coreV1Api, controllerFetcher));
+  }
+
+  private Pair<String, String> findWorkloadInfo(
+      String namespace, String podName, CoreV1Api coreV1Api, K8sControllerFetcher controllerFetcher) {
+    V1Pod pod = getPod(coreV1Api, namespace, podName);
+    if (pod == null) {
+      return null;
+    }
+    Owner owner = controllerFetcher.getTopLevelOwner(pod); // Uses internal cache.
+    if (owner == null) {
+      log.warn("Failed to find top level controller for pod {}/{}", namespace, podName);
+      return null;
+    }
+    return Pair.of(owner.getKind(), owner.getName());
+  }
+
+  private V1Pod getPod(CoreV1Api coreV1Api, String namespace, String podName) {
+    V1PodList podList;
+    try {
+      podList = coreV1Api.listNamespacedPod(
+          namespace, null, false, null, "metadata.name=" + podName, null, 1, null, null, null, false);
+    } catch (ApiException e) {
+      log.warn("Failed to get pod {} in namespace {}: {}", podName, namespace, e);
+      return null;
+    }
+    if (podList.getItems().size() == 0) {
+      log.info("Pod not found: namespace={}, podName={}", namespace, podName);
+      return null;
+    }
+    return podList.getItems().get(0);
   }
 
   private void publishNodeMetrics() {
@@ -267,6 +351,7 @@ public class K8sMetricCollector {
         .entrySet()
         .stream()
         .map(e -> {
+          ContainerStateCacheKey key = e.getKey();
           ContainerState containerState = e.getValue();
           HistogramCheckpoint histogramCheckpoint = containerState.getCpuHistogram().saveToCheckpoint();
           HistogramCheckpoint histogramCheckpointV2 = containerState.getCpuHistogramV2().saveToCheckpoint();
@@ -274,9 +359,10 @@ public class K8sMetricCollector {
               .setCloudProviderId(clusterDetails.getCloudProviderId())
               .setClusterId(clusterDetails.getClusterId())
               .setKubeSystemUid(clusterDetails.getKubeSystemUid())
-              .setNamespace(e.getKey().getNamespace())
-              .setPodName(e.getKey().getName())
-              .setContainerName(e.getKey().getContainerName())
+              .setNamespace(key.getNamespace())
+              .setWorkloadKind(key.getWorkloadKind())
+              .setWorkloadName(key.getWorkloadName())
+              .setContainerName(key.getContainerName())
               .setMemoryPeak(containerState.getMemoryPeak())
               .setMemoryPeakTime(HTimestamps.fromInstant(containerState.getMemoryPeakTime()))
               .setCpuHistogram(checkpointToProto(histogramCheckpoint))

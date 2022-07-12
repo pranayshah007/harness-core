@@ -18,7 +18,6 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.perpetualtask.ecs.EcsPerpetualTaskParams;
-import io.harness.perpetualtask.grpc.PerpetualTaskServiceGrpcClient;
 import io.harness.rule.Owner;
 
 import com.google.common.util.concurrent.TimeLimiter;
@@ -44,7 +43,7 @@ public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
   private PerpetualTaskLifecycleManager perpetualTaskLifecycleManager;
   private final Map<String, PerpetualTaskExecutor> factoryMap = new HashMap<>();
   @Mock private TimeLimiter timeLimiter;
-  @Mock private PerpetualTaskServiceGrpcClient perpetualTaskServiceGrpcClient;
+  @Mock private PerpetualTaskServiceAgentClient perpetualTaskServiceAgentClient;
 
   @Mock private PerpetualTaskExecutor perpetualTaskExecutor;
 
@@ -77,7 +76,7 @@ public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
     PerpetualTaskExecutionContext taskContext =
         PerpetualTaskExecutionContext.newBuilder().setTaskParams(params).build();
     perpetualTaskLifecycleManager = new PerpetualTaskLifecycleManager(perpetualTaskId, taskContext, factoryMap,
-        perpetualTaskServiceGrpcClient, timeLimiter, currentlyExecutingPerpetualTasksCount);
+        perpetualTaskServiceAgentClient, timeLimiter, currentlyExecutingPerpetualTasksCount);
   }
 
   @Test
@@ -88,7 +87,7 @@ public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
     when(perpetualTaskExecutor.runOnce(any(), any(), any())).thenReturn(perpetualTaskResponse);
     when(currentlyExecutingPerpetualTasksCount.get()).thenReturn(1);
     perpetualTaskLifecycleManager.call();
-    verify(perpetualTaskServiceGrpcClient)
+    verify(perpetualTaskServiceAgentClient)
         .heartbeat(perpetualTaskIdArgumentCaptor.capture(), instantArgumentCaptor.capture(),
             perpetualTaskResponseArgumentCaptor.capture());
     assertThat(perpetualTaskIdArgumentCaptor.getValue().getId()).isEqualTo(PERPETUAL_TASK_ID);
@@ -109,7 +108,7 @@ public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
     });
     when(currentlyExecutingPerpetualTasksCount.get()).thenReturn(1);
     perpetualTaskLifecycleManager.call();
-    verify(perpetualTaskServiceGrpcClient)
+    verify(perpetualTaskServiceAgentClient)
         .heartbeat(perpetualTaskIdArgumentCaptor.capture(), instantArgumentCaptor.capture(),
             perpetualTaskResponseArgumentCaptor.capture());
     assertThat(perpetualTaskIdArgumentCaptor.getValue().getId()).isEqualTo(PERPETUAL_TASK_ID);
@@ -128,7 +127,7 @@ public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
     when(perpetualTaskExecutor.runOnce(any(), any(), any())).thenAnswer(invocation -> { throw new Exception(); });
     when(currentlyExecutingPerpetualTasksCount.get()).thenReturn(1);
     perpetualTaskLifecycleManager.call();
-    verify(perpetualTaskServiceGrpcClient)
+    verify(perpetualTaskServiceAgentClient)
         .heartbeat(perpetualTaskIdArgumentCaptor.capture(), instantArgumentCaptor.capture(),
             perpetualTaskResponseArgumentCaptor.capture());
     assertThat(perpetualTaskIdArgumentCaptor.getValue().getId()).isEqualTo(PERPETUAL_TASK_ID);

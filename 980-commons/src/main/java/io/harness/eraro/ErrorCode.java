@@ -387,6 +387,8 @@ public enum ErrorCode {
 
   USER_ALREADY_PRESENT,
 
+  EMAIL_ERROR,
+
   INVALID_USAGE_RESTRICTION("Invalid usage restrictions"),
 
   USAGE_RESTRICTION_ERROR,

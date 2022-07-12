@@ -27,6 +27,7 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
@@ -46,6 +47,7 @@ public class AzureWebAppTrafficShiftStep extends TaskExecutableWithRollbackAndRb
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
   @Inject private AzureWebAppStepHelper azureWebAppStepHelper;
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -67,6 +69,7 @@ public class AzureWebAppTrafficShiftStep extends TaskExecutableWithRollbackAndRb
 
     AzureWebAppTrafficShiftRequest azureWebAppTrafficShiftRequest =
         AzureWebAppTrafficShiftRequest.builder()
+            .accountId(AmbianceUtils.getAccountId(ambiance))
             .trafficPercentage(trafficPercent)
             .infrastructure(azureWebAppStepHelper.getInfraDelegateConfig(ambiance))
             .build();

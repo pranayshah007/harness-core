@@ -56,13 +56,13 @@ import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
-import io.harness.template.helpers.TemplateMergeHelper;
 import io.harness.template.helpers.TemplateReferenceHelper;
 import io.harness.template.helpers.TemplateYamlConversionHelper;
 import io.harness.template.helpers.YamlVariablesUtils;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
+import io.harness.template.services.TemplateMergeService;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
@@ -147,7 +147,7 @@ public class NGTemplateResource {
   private final NGTemplateService templateService;
   private final NGTemplateServiceHelper templateServiceHelper;
   private final AccessControlClient accessControlClient;
-  private final TemplateMergeHelper templateMergeHelper;
+  private final TemplateMergeService templateMergeService;
   private final VariablesServiceBlockingStub variablesServiceBlockingStub;
   private final TemplateYamlConversionHelper templateYamlConversionHelper;
   private final TemplateReferenceHelper templateReferenceHelper;
@@ -513,7 +513,7 @@ public class NGTemplateResource {
     log.info(String.format("Get Template inputs for template with identifier %s in project %s, org %s, account %s",
         templateIdentifier, projectId, orgId, accountId));
     return ResponseDTO.newResponse(
-        templateMergeHelper.getTemplateInputs(accountId, orgId, projectId, templateIdentifier, templateLabel));
+        templateMergeService.getTemplateInputs(accountId, orgId, projectId, templateIdentifier, templateLabel));
   }
 
   @POST
@@ -527,9 +527,35 @@ public class NGTemplateResource {
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull TemplateApplyRequestDTO templateApplyRequestDTO) {
     log.info("Applying templates to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
     long start = System.currentTimeMillis();
-    TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeHelper.applyTemplatesToYaml(accountId, orgId,
+    TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeService.applyTemplatesToYaml(accountId, orgId,
         projectId, templateApplyRequestDTO.getOriginalEntityYaml(),
         templateApplyRequestDTO.isGetMergedYamlWithTemplateField());
+    checkLinkedTemplateAccess(accountId, orgId, projectId, templateApplyRequestDTO, templateMergeResponseDTO);
+    log.info("[TemplateService] applyTemplates took {}ms ", System.currentTimeMillis() - start);
+    return ResponseDTO.newResponse(templateMergeResponseDTO);
+  }
+
+  @POST
+  @Path("/applyTemplates/V2")
+  @ApiOperation(value = "Gets complete yaml with templateRefs resolved", nickname = "getYamlWithTemplateRefsResolvedV2")
+  @Hidden
+  public ResponseDTO<TemplateMergeResponseDTO> applyTemplatesV2(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull TemplateApplyRequestDTO templateApplyRequestDTO) {
+    log.info("Applying templates V2 to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
+    long start = System.currentTimeMillis();
+    TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(accountId, orgId,
+        projectId, templateApplyRequestDTO.getOriginalEntityYaml(),
+        templateApplyRequestDTO.isGetMergedYamlWithTemplateField());
+    checkLinkedTemplateAccess(accountId, orgId, projectId, templateApplyRequestDTO, templateMergeResponseDTO);
+    log.info("[TemplateService] applyTemplatesV2 took {}ms ", System.currentTimeMillis() - start);
+    return ResponseDTO.newResponse(templateMergeResponseDTO);
+  }
+
+  private void checkLinkedTemplateAccess(String accountId, String orgId, String projectId,
+      TemplateApplyRequestDTO templateApplyRequestDTO, TemplateMergeResponseDTO templateMergeResponseDTO) {
     if (templateApplyRequestDTO.isCheckForAccess() && templateMergeResponseDTO != null
         && EmptyPredicate.isNotEmpty(templateMergeResponseDTO.getTemplateReferenceSummaries())) {
       Set<String> templateIdentifiers = templateMergeResponseDTO.getTemplateReferenceSummaries()
@@ -540,8 +566,6 @@ public class NGTemplateResource {
           -> accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
               Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_ACCESS_PERMISSION));
     }
-    log.info("[TemplateService] applyTemplates took {}ms ", System.currentTimeMillis() - start);
-    return ResponseDTO.newResponse(templateMergeResponseDTO);
   }
 
   @GET
@@ -574,7 +598,7 @@ public class NGTemplateResource {
       @RequestBody(required = true, description = "Template YAML") @NotNull @ApiParam(hidden = true) String yaml) {
     log.info("Creating variables for template.");
     String appliedTemplateYaml =
-        templateMergeHelper.applyTemplatesToYaml(accountId, orgId, projectId, yaml, false).getMergedPipelineYaml();
+        templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId, yaml, false).getMergedPipelineYaml();
     TemplateEntity templateEntity =
         NGTemplateDtoMapper.toTemplateEntity(accountId, orgId, projectId, appliedTemplateYaml);
     String entityYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(templateEntity);

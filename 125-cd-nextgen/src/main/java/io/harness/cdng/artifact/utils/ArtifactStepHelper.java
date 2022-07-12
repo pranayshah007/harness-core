@@ -20,6 +20,7 @@ import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.mappers.ArtifactConfigToDelegateReqMapper;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
@@ -39,6 +40,7 @@ import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.exception.InvalidArgumentsException;
@@ -90,6 +92,22 @@ public class ArtifactStepHelper {
         }
         return ArtifactConfigToDelegateReqMapper.getDockerDelegateRequest(
             dockerConfig, connectorConfig, encryptedDataDetails, dockerConfig.getConnectorRef().getValue());
+      case AMAZONS3:
+        AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactConfig;
+        connectorDTO = getConnector(amazonS3ArtifactConfig.getConnectorRef().getValue(), ambiance);
+        if (!(connectorDTO.getConnectorConfig() instanceof AwsConnectorDTO)) {
+          throw new InvalidConnectorTypeException("provided Connector "
+                  + amazonS3ArtifactConfig.getConnectorRef().getValue() + " is not compatible with "
+                  + amazonS3ArtifactConfig.getSourceType() + " Artifact",
+              WingsException.USER);
+        }
+        AwsConnectorDTO awsConnectorDTO = (AwsConnectorDTO) connectorDTO.getConnectorConfig();
+        if (awsConnectorDTO.getCredential() != null && awsConnectorDTO.getCredential().getConfig() != null) {
+          encryptedDataDetails =
+              secretManagerClientService.getEncryptionDetails(ngAccess, awsConnectorDTO.getCredential().getConfig());
+        }
+        return ArtifactConfigToDelegateReqMapper.getAmazonS3DelegateRequest(amazonS3ArtifactConfig, awsConnectorDTO,
+            encryptedDataDetails, amazonS3ArtifactConfig.getConnectorRef().getValue());
       case GCR:
         GcrArtifactConfig gcrArtifactConfig = (GcrArtifactConfig) artifactConfig;
         connectorDTO = getConnector(gcrArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -113,14 +131,13 @@ public class ArtifactStepHelper {
                   + " is not compatible with " + ecrArtifactConfig.getSourceType() + " Artifact",
               WingsException.USER);
         }
-        AwsConnectorDTO awsConnectorDTO = (AwsConnectorDTO) connectorDTO.getConnectorConfig();
-        if (awsConnectorDTO.getCredential() != null
-            && awsConnectorDTO.getCredential().getConfig() instanceof DecryptableEntity) {
+        AwsConnectorDTO connector = (AwsConnectorDTO) connectorDTO.getConnectorConfig();
+        if (connector.getCredential() != null && connector.getCredential().getConfig() instanceof DecryptableEntity) {
           encryptedDataDetails = secretManagerClientService.getEncryptionDetails(
-              ngAccess, (DecryptableEntity) awsConnectorDTO.getCredential().getConfig());
+              ngAccess, (DecryptableEntity) connector.getCredential().getConfig());
         }
         return ArtifactConfigToDelegateReqMapper.getEcrDelegateRequest(
-            ecrArtifactConfig, awsConnectorDTO, encryptedDataDetails, ecrArtifactConfig.getConnectorRef().getValue());
+            ecrArtifactConfig, connector, encryptedDataDetails, ecrArtifactConfig.getConnectorRef().getValue());
       case NEXUS3_REGISTRY:
         NexusRegistryArtifactConfig nexusRegistryArtifactConfig = (NexusRegistryArtifactConfig) artifactConfig;
         connectorDTO = getConnector(nexusRegistryArtifactConfig.getConnectorRef().getValue(), ambiance);
@@ -181,6 +198,22 @@ public class ArtifactStepHelper {
         }
         return ArtifactConfigToDelegateReqMapper.getAcrDelegateRequest(
             acrArtifactConfig, azureConnectorDTO, encryptedDataDetails, acrArtifactConfig.getConnectorRef().getValue());
+      case JENKINS:
+        JenkinsArtifactConfig jenkinsArtifactConfig = (JenkinsArtifactConfig) artifactConfig;
+        connectorDTO = getConnector(jenkinsArtifactConfig.getConnectorRef().getValue(), ambiance);
+        if (!(connectorDTO.getConnectorConfig() instanceof JenkinsConnectorDTO)) {
+          throw new InvalidConnectorTypeException("provided Connector "
+                  + jenkinsArtifactConfig.getConnectorRef().getValue() + " is not compatible with "
+                  + jenkinsArtifactConfig.getSourceType() + " Artifact",
+              WingsException.USER);
+        }
+        JenkinsConnectorDTO jenkinsConnectorDTO = (JenkinsConnectorDTO) connectorDTO.getConnectorConfig();
+        if (jenkinsConnectorDTO.getAuth() != null && jenkinsConnectorDTO.getAuth().getCredentials() != null) {
+          encryptedDataDetails =
+              secretManagerClientService.getEncryptionDetails(ngAccess, jenkinsConnectorDTO.getAuth().getCredentials());
+        }
+        return ArtifactConfigToDelegateReqMapper.getJenkinsDelegateRequest(jenkinsArtifactConfig, jenkinsConnectorDTO,
+            encryptedDataDetails, jenkinsArtifactConfig.getConnectorRef().getValue());
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -217,6 +250,8 @@ public class ArtifactStepHelper {
         return TaskType.ARTIFACTORY_ARTIFACT_TASK_NG;
       case AMAZONS3:
         return TaskType.AMAZON_S3_ARTIFACT_TASK_NG;
+      case JENKINS:
+        return TaskType.JENKINS_ARTIFACT_TASK_NG;
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -279,6 +314,14 @@ public class ArtifactStepHelper {
         AmazonS3ArtifactConfig amazonS3ArtifactConfig = (AmazonS3ArtifactConfig) artifactConfig;
         connectorDTO = getConnector(amazonS3ArtifactConfig.getConnectorRef().getValue(), ambiance);
         return TaskSelectorYaml.toTaskSelector(((AwsConnectorDTO) connectorDTO.getConnectorConfig())
+                                                   .getDelegateSelectors()
+                                                   .stream()
+                                                   .map(TaskSelectorYaml::new)
+                                                   .collect(Collectors.toList()));
+      case JENKINS:
+        JenkinsArtifactConfig jenkinsArtifactConfig = (JenkinsArtifactConfig) artifactConfig;
+        connectorDTO = getConnector(jenkinsArtifactConfig.getConnectorRef().getValue(), ambiance);
+        return TaskSelectorYaml.toTaskSelector(((JenkinsConnectorDTO) connectorDTO.getConnectorConfig())
                                                    .getDelegateSelectors()
                                                    .stream()
                                                    .map(TaskSelectorYaml::new)

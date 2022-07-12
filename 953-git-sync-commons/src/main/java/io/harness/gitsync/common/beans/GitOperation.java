@@ -15,5 +15,6 @@ import io.harness.annotations.dev.OwnedBy;
 public enum GitOperation {
   CREATE_FILE,
   UPDATE_FILE,
-  GET_FILE;
+  GET_FILE,
+  GET_REPO_URL;
 }

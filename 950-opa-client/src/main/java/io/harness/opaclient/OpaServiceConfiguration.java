@@ -16,6 +16,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.PIPELINE)
+@Deprecated
 public class OpaServiceConfiguration {
   String baseUrl;
   String secret;

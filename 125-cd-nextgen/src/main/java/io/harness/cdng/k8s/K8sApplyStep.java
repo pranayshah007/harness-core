@@ -148,6 +148,7 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .useLatestKustomizeVersion(k8sStepHelper.isUseLatestKustomizeVersion(accountId))
             .useNewKubectlVersion(k8sStepHelper.isUseNewKubectlVersion(accountId))
+            .useK8sApiForSteadyStateCheck(k8sStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);

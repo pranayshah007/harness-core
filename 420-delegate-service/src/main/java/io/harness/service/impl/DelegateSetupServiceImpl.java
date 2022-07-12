@@ -726,6 +726,64 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
     persistence.delete(query);
   }
 
+  @Override
+  public List<DelegateGroupDTO> listDelegateGroupsHavingTags(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, DelegateGroupTags tags) {
+    DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
+    List<DelegateGroup> allDelegateGroupList = persistence.createQuery(DelegateGroup.class)
+                                                   .filter(DelegateGroupKeys.accountId, accountIdentifier)
+                                                   .filter(DelegateGroupKeys.ng, true)
+                                                   .filter(DelegateGroupKeys.owner, owner)
+                                                   .asList();
+    return allDelegateGroupList.stream()
+        .filter(delegateGroup -> checkForDelegateGroupsHavingAllTags(delegateGroup, tags))
+        .map(delegateGroup -> DelegateGroupDTO.convertToDTO(delegateGroup, null))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<String> listDelegateImplicitSelectors(Delegate delegate) {
+    List<String> delegateImplicitSelectors = new ArrayList<>();
+
+    if (isNotEmpty(delegate.getDelegateGroupId())) {
+      DelegateGroup delegateGroup =
+          delegateCache.getDelegateGroup(delegate.getAccountId(), delegate.getDelegateGroupId());
+
+      if (delegateGroup != null) {
+        delegateImplicitSelectors.add(delegateGroup.getName().toLowerCase());
+
+        if (isNotEmpty(delegateGroup.getTags())) {
+          delegateImplicitSelectors.addAll(delegateGroup.getTags());
+        }
+      }
+    } else if (isNotEmpty(delegate.getHostName())) {
+      delegateImplicitSelectors.add(delegate.getHostName().toLowerCase());
+    }
+
+    if (isNotEmpty(delegate.getDelegateName())) {
+      delegateImplicitSelectors.add(delegate.getDelegateName().toLowerCase());
+    }
+
+    DelegateProfile delegateProfile =
+        delegateCache.getDelegateProfile(delegate.getAccountId(), delegate.getDelegateProfileId());
+
+    if (delegateProfile != null && isNotEmpty(delegateProfile.getName())) {
+      delegateImplicitSelectors.add(delegateProfile.getName().toLowerCase());
+    }
+
+    if (delegateProfile != null && isNotEmpty(delegateProfile.getSelectors())) {
+      delegateImplicitSelectors.addAll(delegateProfile.getSelectors());
+    }
+
+    return delegateImplicitSelectors;
+  }
+
+  private boolean checkForDelegateGroupsHavingAllTags(DelegateGroup delegateGroup, DelegateGroupTags tags) {
+    Set<String> delegateGroupTags = delegateGroup.getTags();
+    delegateGroupTags.addAll(listDelegateGroupImplicitTags(delegateGroup));
+    return delegateGroupTags.containsAll(tags.getTags());
+  }
+
   private DelegateGroup getDelegateGroupByAccountAndOwnerAndIdentifier(
       String accountId, DelegateEntityOwner owner, String delegateGroupIdentifier) {
     if (isEmpty(accountId) || isEmpty(delegateGroupIdentifier)) {

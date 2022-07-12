@@ -16,6 +16,7 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveCreateEvent;
 import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveDeleteEvent;
+import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveErrorBudgetResetEvent;
 import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveUpdateEvent;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
@@ -98,7 +99,7 @@ public class ServiceLevelObjectiveOutboxEventHandlerTest extends CvNextGenTestBa
             .orgIdentifier(sloDTO.getOrgIdentifier())
             .projectIdentifier(sloDTO.getProjectIdentifier())
             .build();
-    String createEventString = objectMapper.writeValueAsString(serviceLevelObjectiveUpdateEvent);
+    String updateEventString = objectMapper.writeValueAsString(serviceLevelObjectiveUpdateEvent);
     ResourceScope resourceScope = new ProjectScope(
         serviceLevelObjectiveUpdateEvent.getServiceLevelObjectiveIdentifier(),
         serviceLevelObjectiveUpdateEvent.getOrgIdentifier(), serviceLevelObjectiveUpdateEvent.getProjectIdentifier());
@@ -106,7 +107,7 @@ public class ServiceLevelObjectiveOutboxEventHandlerTest extends CvNextGenTestBa
         OutboxEvent.builder()
             .eventType("ServiceLevelObjectiveUpdateEvent")
             .resourceScope(resourceScope)
-            .eventData(createEventString)
+            .eventData(updateEventString)
             .createdAt(System.currentTimeMillis())
             .resource(Resource.builder().type(ResourceTypeConstants.SERVICE_LEVEL_OBJECTIVE).build())
             .build();
@@ -129,7 +130,7 @@ public class ServiceLevelObjectiveOutboxEventHandlerTest extends CvNextGenTestBa
             .orgIdentifier(sloDTO.getOrgIdentifier())
             .projectIdentifier(sloDTO.getProjectIdentifier())
             .build();
-    String createEventString = objectMapper.writeValueAsString(serviceLevelObjectiveDeleteEvent);
+    String deleteEventString = objectMapper.writeValueAsString(serviceLevelObjectiveDeleteEvent);
     ResourceScope resourceScope = new ProjectScope(
         serviceLevelObjectiveDeleteEvent.getServiceLevelObjectiveIdentifier(),
         serviceLevelObjectiveDeleteEvent.getOrgIdentifier(), serviceLevelObjectiveDeleteEvent.getProjectIdentifier());
@@ -137,7 +138,39 @@ public class ServiceLevelObjectiveOutboxEventHandlerTest extends CvNextGenTestBa
         OutboxEvent.builder()
             .eventType("ServiceLevelObjectiveDeleteEvent")
             .resourceScope(resourceScope)
-            .eventData(createEventString)
+            .eventData(deleteEventString)
+            .createdAt(System.currentTimeMillis())
+            .resource(Resource.builder().type(ResourceTypeConstants.SERVICE_LEVEL_OBJECTIVE).build())
+            .build();
+    Boolean returnValue = cvServiceOutboxEventHandler.handle(outboxEvent);
+    Assertions.assertThat(returnValue).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testOutboxErrorBudgetResetHandler() throws JsonProcessingException {
+    @Nullable ObjectMapper objectMapper;
+    objectMapper = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
+    ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
+    ServiceLevelObjectiveErrorBudgetResetEvent serviceLevelObjectiveErrorBudgetResetEvent =
+        ServiceLevelObjectiveErrorBudgetResetEvent.builder()
+            .resourceName(sloDTO.getName())
+            .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
+            .accountIdentifier(sloDTO.getIdentifier())
+            .orgIdentifier(sloDTO.getOrgIdentifier())
+            .projectIdentifier(sloDTO.getProjectIdentifier())
+            .build();
+    String errorBudgetResetEventString = objectMapper.writeValueAsString(serviceLevelObjectiveErrorBudgetResetEvent);
+    ResourceScope resourceScope =
+        new ProjectScope(serviceLevelObjectiveErrorBudgetResetEvent.getServiceLevelObjectiveIdentifier(),
+            serviceLevelObjectiveErrorBudgetResetEvent.getOrgIdentifier(),
+            serviceLevelObjectiveErrorBudgetResetEvent.getProjectIdentifier());
+    OutboxEvent outboxEvent =
+        OutboxEvent.builder()
+            .eventType("ServiceLevelObjectiveErrorBudgetResetEvent")
+            .resourceScope(resourceScope)
+            .eventData(errorBudgetResetEventString)
             .createdAt(System.currentTimeMillis())
             .resource(Resource.builder().type(ResourceTypeConstants.SERVICE_LEVEL_OBJECTIVE).build())
             .build();

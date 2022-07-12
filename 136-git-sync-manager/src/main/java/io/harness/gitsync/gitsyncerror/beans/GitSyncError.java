@@ -15,11 +15,13 @@ import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.Scope;
+import io.harness.beans.Scope.ScopeKeys;
 import io.harness.data.validator.Trimmed;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.common.dtos.RepoProviders;
 import io.harness.gitsync.gitsyncerror.GitSyncErrorStatus;
 import io.harness.gitsync.gitsyncerror.beans.GitToHarnessErrorDetails.GitToHarnessErrorDetailsKeys;
+import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
@@ -118,6 +120,8 @@ public class GitSyncError
         GitSyncErrorKeys.additionalErrorDetails + "." + GitToHarnessErrorDetailsKeys.commitMessage;
     public static final String resolvedByCommitId =
         GitSyncErrorKeys.additionalErrorDetails + "." + GitToHarnessErrorDetailsKeys.resolvedByCommitId;
+    public static final String projectIdentifier = GitSyncErrorKeys.scopes + "." + ScopeKeys.projectIdentifier;
+    public static final String orgIdentifier = GitSyncErrorKeys.scopes + "." + ScopeKeys.orgIdentifier;
   }
 
   public static List<MongoIndex> mongoIndexes() {
@@ -142,6 +146,11 @@ public class GitSyncError
                  .fields(Arrays.asList(GitSyncErrorKeys.accountIdentifier, GitSyncErrorKeys.repoUrl,
                      GitSyncErrorKeys.errorType, GitSyncErrorKeys.status))
                  .descSortField(GitSyncErrorKeys.createdAt)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_orgIdentifier_projectIdentifier_Index")
+                 .fields(Arrays.asList(GitSyncErrorKeys.accountIdentifier, GitSyncErrorKeys.projectIdentifier,
+                     GitSyncErrorKeys.orgIdentifier))
                  .build())
         .build();
   }

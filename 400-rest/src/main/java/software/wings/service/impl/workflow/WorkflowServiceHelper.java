@@ -2673,13 +2673,13 @@ public class WorkflowServiceHelper {
   }
 
   public List<InfrastructureDefinition> getResolvedInfraDefinitions(
-      Workflow workflow, Map<String, String> workflowVariables) {
+      Workflow workflow, Map<String, String> workflowVariables, String envId) {
     if (workflow == null || workflow.getOrchestrationWorkflow() == null) {
       return new ArrayList<>();
     }
     OrchestrationWorkflow orchestrationWorkflow = workflow.getOrchestrationWorkflow();
     if (orchestrationWorkflow.isInfraDefinitionTemplatized()) {
-      return resolvedTemplateInfraDefinitions(workflow, workflowVariables);
+      return resolvedTemplateInfraDefinitions(workflow, workflowVariables, envId);
     }
     return infrastructureDefinitionService.getInfraStructureDefinitionByUuids(
         workflow.getAppId(), orchestrationWorkflow.getInfraDefinitionIds());
@@ -2694,10 +2694,11 @@ public class WorkflowServiceHelper {
     }
   }
 
-  public List<String> getResolvedInfraDefinitionIds(Workflow workflow, Map<String, String> workflowVariables) {
+  public List<String> getResolvedInfraDefinitionIds(
+      Workflow workflow, Map<String, String> workflowVariables, String resolveEnvId) {
     OrchestrationWorkflow orchestrationWorkflow = workflow.getOrchestrationWorkflow();
     if (orchestrationWorkflow.isInfraDefinitionTemplatized()) {
-      return resolveInfraDefinitionIds(workflow, workflowVariables);
+      return resolveInfraDefinitionIds(workflow, workflowVariables, resolveEnvId);
     } else {
       return orchestrationWorkflow.getInfraDefinitionIds();
     }
@@ -2710,8 +2711,8 @@ public class WorkflowServiceHelper {
   }
 
   private List<InfrastructureDefinition> resolvedTemplateInfraDefinitions(
-      Workflow workflow, Map<String, String> workflowVariables) {
-    List<String> infrDefinitionIds = resolveInfraDefinitionIds(workflow, workflowVariables);
+      Workflow workflow, Map<String, String> workflowVariables, String envId) {
+    List<String> infrDefinitionIds = resolveInfraDefinitionIds(workflow, workflowVariables, envId);
     return infrastructureDefinitionService.getInfraStructureDefinitionByUuids(workflow.getAppId(), infrDefinitionIds);
   }
 
@@ -2733,21 +2734,35 @@ public class WorkflowServiceHelper {
     return infraMappingIds;
   }
 
-  private List<String> resolveInfraDefinitionIds(Workflow workflow, Map<String, String> workflowVariables) {
+  private List<String> resolveInfraDefinitionIds(
+      Workflow workflow, Map<String, String> workflowVariables, String resolveEnvId) {
     OrchestrationWorkflow orchestrationWorkflow = workflow.getOrchestrationWorkflow();
     List<Variable> userVariables = orchestrationWorkflow.getUserVariables();
     List<String> infraDefinitionNames = new ArrayList<>();
     if (userVariables != null) {
       infraDefinitionNames = getEntityNames(userVariables, INFRASTRUCTURE_DEFINITION);
     }
-    List<String> infraDefinitionIds = getTemplatizedIds(workflowVariables, infraDefinitionNames);
+    List<String> infraDefinitionIdsOrNames = getTemplatizedIds(workflowVariables, infraDefinitionNames);
     List<String> templatizedInfraDefinitionIds = orchestrationWorkflow.getTemplatizedInfraDefinitionIds();
     List<String> workflowDefinitionIds = orchestrationWorkflow.getInfraDefinitionIds();
     if (workflowDefinitionIds != null) {
       workflowDefinitionIds.stream()
           .filter(infraDefinitionId -> !templatizedInfraDefinitionIds.contains(infraDefinitionId))
-          .forEach(infraDefinitionIds::add);
+          .forEach(infraDefinitionIdsOrNames::add);
     }
+    List<String> infraDefinitionIds = new ArrayList<>();
+    infraDefinitionIdsOrNames.forEach(infraIdOrName -> {
+      if (ExpressionEvaluator.containsVariablePattern(infraIdOrName)) {
+        return;
+      }
+      InfrastructureDefinition infraDef =
+          infrastructureDefinitionService.getInfraDefById(workflow.getAccountId(), infraIdOrName);
+      if (infraDef == null) {
+        infraDef = infrastructureDefinitionService.getInfraByName(workflow.getAccountId(), infraIdOrName, resolveEnvId);
+      }
+      notNullCheck("Infra definition " + infraIdOrName + " is invalid", infraDef);
+      infraDefinitionIds.add(infraDef.getUuid());
+    });
     return infraDefinitionIds;
   }
 
@@ -2836,8 +2851,10 @@ public class WorkflowServiceHelper {
         throw new InvalidRequestException(
             format("%s variable %s is not set for stage %s", prefix, variable.getName(), stageElement.getName()));
       } else if (ExpressionEvaluator.matchesVariablePattern(finalValue) && (isEntity || !finalValue.contains("."))) {
-        throw new InvalidRequestException(format("%s variable %s for stage %s cannot be left as an expression", prefix,
-            variable.getName(), stageElement.getName()));
+        if (!(INFRASTRUCTURE_DEFINITION.equals(variable.obtainEntityType()) && finalValue.contains("."))) {
+          throw new InvalidRequestException(format("%s variable %s for stage %s cannot be left as an expression",
+              prefix, variable.getName(), stageElement.getName()));
+        }
       }
     }
   }

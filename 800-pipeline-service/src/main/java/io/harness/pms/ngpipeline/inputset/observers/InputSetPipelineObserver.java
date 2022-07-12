@@ -10,14 +10,16 @@ package io.harness.pms.ngpipeline.inputset.observers;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.pms.events.PipelineDeleteEvent;
 import io.harness.pms.events.PipelineUpdateEvent;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
+import io.harness.pms.ngpipeline.inputset.exceptions.InvalidOverlayInputSetException;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetErrorsHelper;
-import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
+import io.harness.pms.ngpipeline.inputset.service.OverlayInputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.observer.PipelineActionObserver;
@@ -26,7 +28,6 @@ import io.harness.repositories.inputset.PMSInputSetRepository;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
 
@@ -36,11 +37,13 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class InputSetPipelineObserver implements PipelineActionObserver {
   @Inject PMSInputSetRepository inputSetRepository;
   @Inject PMSInputSetService inputSetService;
-  @Inject ValidateAndMergeHelper validateAndMergeHelper;
 
   @Override
   public void onUpdate(PipelineUpdateEvent pipelineUpdateEvent) {
     PipelineEntity pipelineEntity = pipelineUpdateEvent.getNewPipeline();
+    if (pipelineEntity.getStoreType() == StoreType.REMOTE) {
+      return;
+    }
     Criteria criteria = PMSInputSetFilterHelper.createCriteriaForGetListForBranchAndRepo(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
         InputSetListTypePMS.INPUT_SET);
@@ -67,14 +70,13 @@ public class InputSetPipelineObserver implements PipelineActionObserver {
   }
 
   private void checkIfOverlayInputSetIsValid(InputSetEntity overlayInputSet, PipelineEntity pipelineEntity) {
-    Map<String, String> invalidReferences =
-        validateAndMergeHelper.validateOverlayInputSet(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-            pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(), overlayInputSet.getYaml());
-    if (!invalidReferences.isEmpty()) {
+    try {
+      OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, overlayInputSet);
+    } catch (InvalidOverlayInputSetException e) {
       markAsInvalid(overlayInputSet);
-    } else {
-      markAsValid(overlayInputSet);
+      return;
     }
+    markAsValid(overlayInputSet);
   }
 
   private void markAsInvalid(InputSetEntity inputSet) {

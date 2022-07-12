@@ -30,6 +30,7 @@ import io.harness.delegate.beans.DelegateProfileParams;
 import io.harness.delegate.beans.DelegateRegisterResponse;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateScripts;
+import io.harness.delegate.beans.DelegateSelector;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateSizeDetails;
 import io.harness.delegate.beans.DelegateTags;
@@ -65,6 +66,8 @@ public interface DelegateService extends OwnedByAccount {
 
   Set<String> getAllDelegateSelectorsUpTheHierarchy(String accountId, String orgId, String projectId);
 
+  List<DelegateSelector> getAllDelegateSelectorsUpTheHierarchyV2(String accountId, String orgId, String projectId);
+
   DelegateStatus getDelegateStatus(String accountId);
 
   DelegateStatus getDelegateStatusWithScalingGroups(String accountId);
@@ -79,7 +82,7 @@ public interface DelegateService extends OwnedByAccount {
 
   Map<String, List<String>> getActiveDelegatesPerAccount(String targetVersion);
 
-  DelegateSetupDetails validateKubernetesYaml(String accountId, DelegateSetupDetails delegateSetupDetails);
+  DelegateSetupDetails validateKubernetesSetupDetails(String accountId, DelegateSetupDetails delegateSetupDetails);
 
   File generateKubernetesYaml(String accountId, DelegateSetupDetails delegateSetupDetails, String managerHost,
       String verificationServiceUrl, MediaType fileFormat) throws IOException;
@@ -199,14 +202,13 @@ public interface DelegateService extends OwnedByAccount {
 
   DelegateSizeDetails fetchDefaultDockerDelegateSize();
 
-  void validateDelegateSetupDetails(String accountId, DelegateSetupDetails delegateSetupDetails, String delegateType);
+  void validateDockerDelegateSetupDetails(
+      String accountId, DelegateSetupDetails delegateSetupDetails, String delegateType);
 
   File downloadNgDocker(String managerHost, String verificationServiceUrl, String accountId,
       DelegateSetupDetails delegateSetupDetails) throws IOException;
 
   String createDelegateGroup(String accountId, DelegateSetupDetails delegateSetupDetails);
-
-  DelegateSetupDetails validateKubernetesYamlNg(String accountId, DelegateSetupDetails delegateSetupDetails);
 
   long getCountOfRegisteredDelegates(String accountId);
 
@@ -229,4 +231,6 @@ public interface DelegateService extends OwnedByAccount {
   void checkUniquenessOfDelegateName(String accountId, String delegateName, boolean isNg);
 
   void markDelegatesAsDeletedOnDeletingOwner(String accountId, DelegateEntityOwner owner);
+
+  List<DelegateDTO> listDelegatesHavingTags(String accountId, DelegateTags tags);
 }

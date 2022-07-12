@@ -80,6 +80,7 @@ public class K8sScaleStep extends TaskExecutableWithRollbackAndRbac<K8sDeployRes
     boolean skipSteadyCheck = CDStepHelper.getParameterFieldBooleanValue(scaleStepParameter.getSkipSteadyStateCheck(),
         K8sScaleBaseStepInfoKeys.skipSteadyStateCheck, stepElementParameters);
     String releaseName = k8sStepHelper.getReleaseName(ambiance, infrastructure);
+    String accountId = AmbianceUtils.getAccountId(ambiance);
 
     K8sScaleRequest request =
         K8sScaleRequest.builder()
@@ -94,7 +95,8 @@ public class K8sScaleStep extends TaskExecutableWithRollbackAndRbac<K8sDeployRes
             .timeoutIntervalInMin(
                 NGTimeConversionHelper.convertTimeStringToMinutes(stepElementParameters.getTimeout().getValue()))
             .k8sInfraDelegateConfig(k8sStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
-            .useNewKubectlVersion(k8sStepHelper.isUseNewKubectlVersion(AmbianceUtils.getAccountId(ambiance)))
+            .useNewKubectlVersion(k8sStepHelper.isUseNewKubectlVersion(accountId))
+            .useK8sApiForSteadyStateCheck(k8sStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);

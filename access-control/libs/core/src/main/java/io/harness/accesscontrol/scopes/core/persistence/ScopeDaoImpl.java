@@ -36,7 +36,12 @@ public class ScopeDaoImpl implements ScopeDao {
   @Override
   public ScopeDBO createIfNotPresent(ScopeDBO scope) {
     Optional<ScopeDBO> savedScope = scopeRepository.findByIdentifier(scope.getIdentifier());
-    return savedScope.orElseGet(() -> scopeRepository.save(scope));
+    if (savedScope.isPresent()) {
+      ScopeDBO updated = savedScope.get();
+      updated.setName(scope.getName());
+      return scopeRepository.save(updated);
+    }
+    return scopeRepository.save(scope);
   }
 
   @Override

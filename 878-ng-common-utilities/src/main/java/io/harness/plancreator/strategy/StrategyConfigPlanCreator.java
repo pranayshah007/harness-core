@@ -26,6 +26,7 @@ import io.harness.steps.matrix.StrategyConstants;
 import io.harness.steps.matrix.StrategyMetadata;
 import io.harness.steps.matrix.StrategyStep;
 import io.harness.steps.matrix.StrategyStepParameters;
+import io.harness.strategy.StrategyValidationUtils;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -73,7 +74,7 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
         != null) {
       strategyType = StrategyType.PARALLELISM;
     }
-    StageStrategyUtils.validateStrategyNode(config);
+    StrategyValidationUtils.validateStrategyNode(config);
     StepParameters stepParameters = StrategyStepParameters.builder()
                                         .childNodeId(childNodeId)
                                         .strategyConfig(config)

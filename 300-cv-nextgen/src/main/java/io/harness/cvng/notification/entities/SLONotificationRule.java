@@ -37,8 +37,7 @@ public class SLONotificationRule extends NotificationRule {
 
   @Data
   @SuperBuilder
-  public abstract static class SLONotificationRuleCondition {
-    public abstract NotificationRuleConditionType getType();
+  public abstract static class SLONotificationRuleCondition extends NotificationRuleConditionEntity {
     public abstract boolean shouldSendNotification(SLOHealthIndicator sloHealthIndicator);
   }
 

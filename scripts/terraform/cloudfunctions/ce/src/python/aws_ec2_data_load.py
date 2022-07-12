@@ -11,7 +11,7 @@ import re
 import datetime
 
 from google.cloud import bigquery
-from util import print_
+from util import print_, run_batch_query
 
 """
 Scheduler event:
@@ -50,14 +50,8 @@ def update_ec2_state(jsonData):
     query = "UPDATE `%s` set state='terminated' WHERE state='running' and lastUpdatedAt < '%s';" % (
         jsonData["targetTableId"], lastUpdatedAt)
 
-    try:
-        query_job = client.query(query)
-        query_job.result()
-    except Exception as e:
-        print_(query)
-        print_(e)
-    else:
-        print_("Finished updating awsEc2Inventory table for any terminated instances")
+    run_batch_query(client, query, None, timeout=180)
+    print_("Finished updating awsEc2Inventory table for any terminated instances")
 
 
 def load_into_main_table(jsonData):
@@ -76,11 +70,6 @@ def load_into_main_table(jsonData):
                     region, availabilityZone, tenancy, publicIpAddress, state, labels, 
                     lastUpdatedAt, instanceLaunchedAt, instanceLifeCycle, volumeIds, reservationId, stateTransitionReason, linkedAccountIdPartition) 
                 """ % (jsonData["targetTableId"], jsonData["sourceTableId"], lastUpdatedAt)
-    try:
-        query_job = client.query(query)
-        query_job.result()
-    except Exception as e:
-        print_(query)
-        print_(e, "WARN")
-    else:
-        print_("Finished merging into main awsEc2Inventory table")
+
+    run_batch_query(client, query, None, timeout=180)
+    print_("Finished merging into main awsEc2Inventory table")

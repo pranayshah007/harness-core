@@ -15,6 +15,7 @@ import static software.wings.beans.PhaseStepType.AMI_AUTOSCALING_GROUP_SETUP;
 import static software.wings.beans.PhaseStepType.AMI_DEPLOY_AUTOSCALING_GROUP;
 import static software.wings.beans.PhaseStepType.AMI_SWITCH_AUTOSCALING_GROUP_ROUTES;
 import static software.wings.beans.PhaseStepType.CLUSTER_SETUP;
+import static software.wings.beans.PhaseStepType.COLLECT_INSTANCES;
 import static software.wings.beans.PhaseStepType.CONTAINER_DEPLOY;
 import static software.wings.beans.PhaseStepType.CONTAINER_SETUP;
 import static software.wings.beans.PhaseStepType.CUSTOM_DEPLOYMENT_PHASE_STEP;
@@ -134,6 +135,7 @@ import software.wings.sm.states.BarrierState;
 import software.wings.sm.states.BugsnagState;
 import software.wings.sm.states.CVNGState;
 import software.wings.sm.states.CloudWatchState;
+import software.wings.sm.states.CollectRemainingInstancesState;
 import software.wings.sm.states.CommandState;
 import software.wings.sm.states.CustomLogVerificationState;
 import software.wings.sm.states.DatadogLogState;
@@ -816,6 +818,9 @@ public enum StateType implements StateTypeDescriptor {
 
   TERRAFORM_ROLLBACK(TerraformRollbackState.class, PROVISIONERS, ROLLBACK_TERRAFORM_NAME,
       singletonList(InfrastructureMappingType.AWS_SSH), singletonList(PRE_DEPLOYMENT), ORCHESTRATION_STENCILS),
+
+  COLLECT_REMAINING_INSTANCES(CollectRemainingInstancesState.class, CLOUD, "Collect remaining instances",
+      singletonList(InfrastructureMappingType.AWS_SSH), singletonList(COLLECT_INSTANCES), ORCHESTRATION_STENCILS),
 
   K8S_DEPLOYMENT_ROLLING(K8sRollingDeploy.class, KUBERNETES, 3, WorkflowConstants.K8S_DEPLOYMENT_ROLLING,
       Lists.newArrayList(InfrastructureMappingType.DIRECT_KUBERNETES, InfrastructureMappingType.GCP_KUBERNETES,

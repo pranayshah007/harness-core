@@ -59,4 +59,28 @@ public final class Budget implements PersistentEntity, UuidAware, AccountAccess,
   long endTime;
   long createdAt;
   long lastUpdatedAt;
+
+  public Budget toDTO() {
+    return Budget.builder()
+        .uuid(getUuid())
+        .accountId(getAccountId())
+        .name(getName())
+        .type(getType())
+        .budgetAmount(getBudgetAmount())
+        .period(getPeriod())
+        .growthRate(getGrowthRate())
+        .actualCost(getActualCost())
+        .forecastCost(getForecastCost())
+        .lastMonthCost(getLastMonthCost())
+        .alertThresholds(getAlertThresholds())
+        .emailAddresses(getEmailAddresses())
+        .userGroupIds(getUserGroupIds())
+        .notifyOnSlack(isNotifyOnSlack())
+        .isNgBudget(isNgBudget())
+        .startTime(getStartTime())
+        .endTime(getEndTime())
+        .createdAt(getCreatedAt())
+        .lastUpdatedAt(getLastUpdatedAt())
+        .build();
+  }
 }

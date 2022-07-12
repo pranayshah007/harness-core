@@ -28,10 +28,12 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
+import io.harness.delegate.beans.DelegateDTO;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfile.DelegateProfileKeys;
+import io.harness.delegate.beans.DelegateProfileDetails;
 import io.harness.delegate.beans.DelegateProfileScopingRule;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -71,6 +73,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.Getter;
@@ -408,6 +411,38 @@ public class DelegateProfileServiceImpl implements DelegateProfileService, Accou
                                        .filter(DelegateProfileKeys.owner, owner);
 
     persistence.delete(query);
+  }
+
+  @Override
+  public List<DelegateDTO> listDelegatesUsingProfile(String accountId, String delegateProfileId) {
+    List<Delegate> delegateList = persistence.createQuery(Delegate.class)
+                                      .filter(DelegateKeys.accountId, accountId)
+                                      .filter(DelegateKeys.delegateProfileId, delegateProfileId)
+                                      .asList();
+
+    return delegateList.stream().map(delegate -> DelegateDTO.convertToDTO(delegate, null)).collect(Collectors.toList());
+  }
+
+  @Override
+  public List<DelegateProfileDetails> listDelegateProfiles(String accountId) {
+    List<DelegateProfile> delegateProfileList = persistence.createQuery(DelegateProfile.class)
+                                                    .filter(DelegateProfileKeys.accountId, accountId)
+                                                    .filter(DelegateProfileKeys.ng, false)
+                                                    .asList();
+
+    return delegateProfileList.stream().map(this::convertToProfileDetails).collect(Collectors.toList());
+  }
+
+  private DelegateProfileDetails convertToProfileDetails(DelegateProfile delegateProfile) {
+    return DelegateProfileDetails.builder()
+        .uuid(delegateProfile.getUuid())
+        .accountId(delegateProfile.getAccountId())
+        .name(delegateProfile.getName())
+        .primary(delegateProfile.isPrimary())
+        .description(delegateProfile.getDescription())
+        .startupScript(delegateProfile.getStartupScript())
+        .selectors(delegateProfile.getSelectors())
+        .build();
   }
 
   private void publishDelegateProfileChangeEventViaEventFramework(DelegateProfile delegateProfile, String action) {

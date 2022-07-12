@@ -40,7 +40,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import java.util.Optional;
+import javax.validation.constraints.NotEmpty;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -50,7 +52,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @Api("/delegate-group-tags")
 @Path("/delegate-group-tags")
@@ -209,5 +210,37 @@ public class DelegateGroupTagsResource {
       throw new InvalidRequestException(DELEGATE_GROUP_NOT_FOUND_ERROR_MSG);
     }
     return new RestResponse<>(optionalDelegateGroupDTO.get());
+  }
+
+  @POST
+  @ApiOperation(
+      value = "List delegate groups that are having mentioned tags.", nickname = "listDelegateGroupsUsingTags")
+  @Timed
+  @Path("/delegate-groups")
+  @ExceptionMetered
+  @Operation(operationId = "listDelegateGroupsUsingTags",
+      summary = "List delegate groups that are having mentioned tags.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "List of Delegate Group details")
+      })
+  public RestResponse<List<DelegateGroupDTO>>
+  listDelegateGroupsHavingTags(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                                   NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @RequestBody(required = true, description = "Set of tags") DelegateGroupTags tags) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
+    List<DelegateGroupDTO> delegateGroupDTOList =
+        RestClientUtils.getResponse(delegateNgManagerCgManagerClient.listDelegateGroupHavingTags(
+            accountIdentifier, orgIdentifier, projectIdentifier, tags));
+    if (delegateGroupDTOList.isEmpty()) {
+      throw new InvalidRequestException(DELEGATE_GROUP_NOT_FOUND_ERROR_MSG);
+    }
+    return new RestResponse<>(delegateGroupDTOList);
   }
 }

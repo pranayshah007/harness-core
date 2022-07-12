@@ -394,7 +394,7 @@ public class BudgetUtils {
     return viewsBillingService.convertToQLViewTimeSeriesData(
         viewsBillingService.getTimeSeriesStats(bigQueryService.get(), filters, groupBy, aggregationFunction,
             Collections.emptyList(), cloudBillingHelper.getCloudProviderTableName(accountId, unified)),
-        accountId);
+        accountId, groupBy);
   }
 
   private double getActualCostForPerspectiveBudget(Budget budget, String cloudProviderTable) {

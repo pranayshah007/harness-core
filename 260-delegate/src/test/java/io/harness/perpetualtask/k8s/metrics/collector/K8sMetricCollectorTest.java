@@ -23,6 +23,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -42,6 +43,7 @@ import io.harness.perpetualtask.k8s.metrics.client.model.node.NodeMetrics;
 import io.harness.perpetualtask.k8s.metrics.client.model.node.NodeMetricsList;
 import io.harness.perpetualtask.k8s.metrics.client.model.pod.PodMetrics;
 import io.harness.perpetualtask.k8s.metrics.client.model.pod.PodMetricsList;
+import io.harness.perpetualtask.k8s.watch.K8sControllerFetcher;
 import io.harness.rule.Owner;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -51,6 +53,10 @@ import com.google.gson.Gson;
 import com.google.protobuf.Message;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.util.Durations;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodBuilder;
+import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodListBuilder;
 import io.kubernetes.client.util.ClientBuilder;
 import java.io.IOException;
 import java.net.URL;
@@ -66,6 +72,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -83,6 +90,7 @@ public class K8sMetricCollectorTest extends CategoryTest {
   private final String URL_REGEX_SUFFIX = "(\\?(.*))?";
 
   @Mock private EventPublisher eventPublisher;
+  @Mock private K8sControllerFetcher controllerFetcher;
   @Captor private ArgumentCaptor<Message> messageArgumentCaptor;
   private DefaultK8sMetricsClient k8sMetricsClient;
 
@@ -146,6 +154,17 @@ public class K8sMetricCollectorTest extends CategoryTest {
                                   .build())
 
                         .build()))));
+    V1Pod pod1 = new V1PodBuilder().withNewMetadata().withName("pod1").endMetadata().build();
+    V1PodList podList1 = new V1PodListBuilder().addToItems(pod1).build();
+    stubFor(get(
+        "/api/v1/namespaces/ns1/pods?allowWatchBookmarks=false&fieldSelector=metadata.name%3Dpod1&limit=1&watch=false")
+                .willReturn(aResponse().withStatus(200).withBody(new Gson().toJson(podList1))));
+
+    V1Pod pod2 = new V1PodBuilder().withNewMetadata().withName("pod2").endMetadata().build();
+    V1PodList podList2 = new V1PodListBuilder().addToItems(pod2).build();
+    stubFor(get(
+        "/api/v1/namespaces/ns1/pods?allowWatchBookmarks=false&fieldSelector=metadata.name%3Dpod2&limit=1&watch=false")
+                .willReturn(aResponse().withStatus(200).withBody(new Gson().toJson(podList2))));
 
     stubFor(get(urlMatching("^/api/v1/nodes/node1-name/proxy/stats/summary" + URL_REGEX_SUFFIX))
                 .willReturn(aResponse().withStatus(200).withBody("{}")));
@@ -153,12 +172,18 @@ public class K8sMetricCollectorTest extends CategoryTest {
                 .willReturn(aResponse().withStatus(200).withBody("some random response")));
 
     k8sMetricCollector = new K8sMetricCollector(eventPublisher, CLUSTER_DETAILS, now.minus(10, ChronoUnit.MINUTES));
+    io.harness.perpetualtask.k8s.watch.Owner owner =
+        io.harness.perpetualtask.k8s.watch.Owner.newBuilder().setKind("Deployment").setName("nginx").build();
+    when(controllerFetcher.getTopLevelOwner(pod1)).thenReturn(owner);
+    when(controllerFetcher.getTopLevelOwner(pod2)).thenReturn(owner);
     doNothing()
         .when(eventPublisher)
         .publishMessage(messageArgumentCaptor.capture(), any(Timestamp.class),
             eq(Collections.singletonMap(Constants.CLUSTER_ID_IDENTIFIER, CLUSTER_DETAILS.getClusterId())));
-    k8sMetricCollector.collectAndPublishMetrics(k8sMetricsClient, now);
+    k8sMetricCollector.collectAndPublishMetrics(k8sMetricsClient, now, k8sMetricsClient, controllerFetcher);
     verifyZeroInteractions(eventPublisher);
+    Mockito.verify(controllerFetcher).getTopLevelOwner(pod1);
+    Mockito.verify(controllerFetcher).getTopLevelOwner(pod2);
   }
 
   @Test
@@ -268,17 +293,36 @@ public class K8sMetricCollectorTest extends CategoryTest {
                                   .build())
                         .build())))); // always
 
+    V1Pod pod1 = new V1PodBuilder().withNewMetadata().withName("pod1").endMetadata().build();
+    V1PodList podList1 = new V1PodListBuilder().addToItems(pod1).build();
+    stubFor(get(
+        "/api/v1/namespaces/ns1/pods?allowWatchBookmarks=false&fieldSelector=metadata.name%3Dpod1&limit=1&watch=false")
+                .willReturn(aResponse().withStatus(200).withBody(new Gson().toJson(podList1))));
+
+    V1Pod pod2 = new V1PodBuilder().withNewMetadata().withName("pod2").endMetadata().build();
+    V1PodList podList2 = new V1PodListBuilder().addToItems(pod2).build();
+    stubFor(get(
+        "/api/v1/namespaces/ns1/pods?allowWatchBookmarks=false&fieldSelector=metadata.name%3Dpod2&limit=1&watch=false")
+                .willReturn(aResponse().withStatus(200).withBody(new Gson().toJson(podList2))));
+
     String resourceToString = getK8sApiResponseAsString("get_nodestatssummary.json");
     stubFor(get(urlMatching("^/api/v1/nodes/node[12]-name/proxy/stats/summary" + URL_REGEX_SUFFIX))
                 .willReturn(aResponse().withStatus(200).withBody(resourceToString)));
+
+    io.harness.perpetualtask.k8s.watch.Owner owner =
+        io.harness.perpetualtask.k8s.watch.Owner.newBuilder().setKind("Deployment").setName("nginx").build();
+    when(controllerFetcher.getTopLevelOwner(pod1)).thenReturn(owner);
+    when(controllerFetcher.getTopLevelOwner(pod2)).thenReturn(owner);
 
     k8sMetricCollector = new K8sMetricCollector(eventPublisher, CLUSTER_DETAILS, now);
     doNothing()
         .when(eventPublisher)
         .publishMessage(messageArgumentCaptor.capture(), any(Timestamp.class),
             eq(Collections.singletonMap(Constants.CLUSTER_ID_IDENTIFIER, CLUSTER_DETAILS.getClusterId())));
-    k8sMetricCollector.collectAndPublishMetrics(k8sMetricsClient, now.plus(30, ChronoUnit.SECONDS));
-    k8sMetricCollector.collectAndPublishMetrics(k8sMetricsClient, now.plus(30, ChronoUnit.MINUTES));
+    k8sMetricCollector.collectAndPublishMetrics(
+        k8sMetricsClient, now.plus(30, ChronoUnit.SECONDS), k8sMetricsClient, controllerFetcher);
+    k8sMetricCollector.collectAndPublishMetrics(
+        k8sMetricsClient, now.plus(30, ChronoUnit.MINUTES), k8sMetricsClient, controllerFetcher);
 
     verify(2, getRequestedFor(urlMatching("^/api/v1/nodes/node[12]-name/proxy/stats/summary" + URL_REGEX_SUFFIX)));
 
