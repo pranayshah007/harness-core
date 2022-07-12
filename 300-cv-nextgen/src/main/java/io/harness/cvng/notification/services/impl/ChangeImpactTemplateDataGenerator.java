@@ -62,7 +62,7 @@ public class ChangeImpactTemplateDataGenerator
                 monitoredServiceParams, timeRangeParams, filter, PageParams.builder().page(0).size(5).build())
             .getContent();
 
-    StringBuilder sb = new StringBuilder();
+    StringBuilder sb = new StringBuilder(256);
 
     if (timeSeriesMetricDataDTOS.size() == 0) {
       sb.append("No metric has been assigned to this monitored service");
