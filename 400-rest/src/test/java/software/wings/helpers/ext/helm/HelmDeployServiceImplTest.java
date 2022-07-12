@@ -13,6 +13,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.helm.HelmSubCommandType.TEMPLATE;
 import static io.harness.k8s.model.HelmVersion.V2;
 import static io.harness.k8s.model.HelmVersion.V3;
+import static io.harness.k8s.model.HelmVersion.V380;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ABOSII;
@@ -81,6 +82,7 @@ import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
+import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
@@ -216,13 +218,17 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     when(helmClient.releaseHistory(any(), eq(false))).thenReturn(helmCliReleaseHistoryResponse);
     when(helmClient.install(any(), eq(false))).thenReturn(helmCliResponse);
     when(helmClient.listReleases(any(), eq(false))).thenReturn(helmCliListReleasesResponse);
-
     ArgumentCaptor<io.harness.helm.HelmCommandData> argumentCaptor = ArgumentCaptor.forClass(HelmCommandData.class);
     HelmCommandResponse helmCommandResponse = helmDeployService.deploy(helmInstallCommandRequest);
     assertThat(helmCommandResponse.getCommandExecutionStatus()).isEqualTo(SUCCESS);
     verify(helmClient).install(argumentCaptor.capture(), eq(false));
-  }
 
+    // Check if revokeReadPermission function called when Helm Version is V380
+    helmInstallCommandRequest.setHelmVersion(HelmVersion.V380);
+    doNothing().when(spyHelmDeployService).revokeReadPermisssionForKubeConfig(helmInstallCommandRequest);
+    spyHelmDeployService.revokeReadPermisssionForKubeConfig(helmInstallCommandRequest);
+    verify(spyHelmDeployService, times(1)).revokeReadPermisssionForKubeConfig(helmInstallCommandRequest);
+  }
   @Test
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)

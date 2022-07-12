@@ -123,6 +123,7 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.zeroturnaround.exec.ProcessExecutor;
 
 @Slf4j
 public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
@@ -150,7 +151,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   private static final String NON_DIGITS_REGEX = "\\D+";
   private static final int VERSION_LENGTH = 3;
   private static final int KUBERNETESS_116_VERSION = 116;
-
+  public static final String CHMOD = "chmod go-r ";
   @Override
   public void setLogStreamingClient(ILogStreamingTaskClient iLogStreamingTaskClient) {
     this.logStreamingTaskClient = iLogStreamingTaskClient;
@@ -167,6 +168,10 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       HelmInstallCmdResponseNG commandResponse;
       logCallback.saveExecutionLog(
           "List all existing deployed releases for release name: " + commandRequest.getReleaseName());
+
+      if (HelmVersion.V380.equals(commandRequest.getHelmVersion())) {
+        revokeReadPermisssionForKubeConfig(commandRequest);
+      }
 
       HelmCliResponse helmCliResponse =
           helmClient.releaseHistory(HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest), true);
@@ -999,6 +1004,21 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
           .toString();
     } else {
       return null;
+    }
+  }
+  @VisibleForTesting
+  void revokeReadPermisssionForKubeConfig(HelmInstallCommandRequestNG commandRequest) {
+    String cmd = CHMOD + commandRequest.getKubeConfigLocation();
+
+    ProcessExecutor processExecutor = new ProcessExecutor().command("/bin/sh", "-c", cmd);
+    try {
+      processExecutor.execute();
+    } catch (Exception e) {
+      String str = "";
+      if (isNotEmpty(String.valueOf(e.getCause()))) {
+        str = String.valueOf(e.getCause());
+      }
+      log.info("Unable to revoke the readable permissions for KubeConfig file" + str);
     }
   }
 }

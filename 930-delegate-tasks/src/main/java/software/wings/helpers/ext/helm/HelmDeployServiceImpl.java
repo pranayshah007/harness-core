@@ -120,6 +120,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
+import org.zeroturnaround.exec.ProcessExecutor;
 
 /**
  * Created by anubhaw on 4/1/18.
@@ -152,7 +153,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
   protected static final String WORKING_DIR = "./repository/helm/source/${" + ACTIVITY_ID + "}";
   public static final String FROM = " from ";
   public static final String TIMED_OUT_IN_STEADY_STATE = "Timed out waiting for controller to reach in steady state";
-
+  public static final String CHMOD = "chmod go-r ";
   @Override
   public HelmCommandResponse deploy(HelmInstallCommandRequest commandRequest) throws IOException {
     LogCallback executionLogCallback = commandRequest.getExecutionLogCallback();
@@ -162,6 +163,10 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       HelmInstallCommandResponse commandResponse;
       executionLogCallback.saveExecutionLog(
           "List all existing deployed releases for release name: " + commandRequest.getReleaseName());
+
+      if (HelmVersion.V380.equals(commandRequest.getHelmVersion())) {
+        revokeReadPermisssionForKubeConfig(commandRequest);
+      }
 
       HelmCliResponse helmCliResponse =
           helmClient.releaseHistory(HelmCommandDataMapper.getHelmCommandData(commandRequest), false);
@@ -1186,5 +1191,20 @@ public class HelmDeployServiceImpl implements HelmDeployService {
         .chartVersion(releaseRecord.get("CHART VERSION"))
         .appVersion(releaseRecord.get("APP VERSION"))
         .build();
+  }
+  @VisibleForTesting
+  void revokeReadPermisssionForKubeConfig(HelmInstallCommandRequest commandRequest) {
+    String cmd = CHMOD + commandRequest.getKubeConfigLocation();
+
+    ProcessExecutor processExecutor = new ProcessExecutor().command("/bin/sh", "-c", cmd);
+    try {
+      processExecutor.execute();
+    } catch (Exception e) {
+      String str = "";
+      if (isNotEmpty(String.valueOf(e.getCause()))) {
+        str = String.valueOf(e.getCause());
+      }
+      log.info("Unable to revoke the readable permissions for KubeConfig file" + str);
+    }
   }
 }
