@@ -46,6 +46,7 @@ import static software.wings.utils.WingsTestConstants.UUID;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -2282,7 +2283,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     DeploymentInfo deploymentInfo = new ContainerDeploymentInfoWithNames("CL1", "service1", null, null);
     ContainerDeploymentKey containerDeploymentKey =
         (ContainerDeploymentKey) containerInstanceHandler.generateDeploymentKey(deploymentInfo);
-    assert ("service1").equals(containerDeploymentKey.getContainerServiceName());
+    assertEquals("service1", containerDeploymentKey.getContainerServiceName());
   }
   @Test
   @Owner(developers = SOURABH)
@@ -2291,7 +2292,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     DeploymentInfo deploymentInfo = new K8sDeploymentInfo("NM1", "Name1", 1, null, null, null, "cl1");
     K8sDeploymentKey k8sDeploymentKey =
         (K8sDeploymentKey) containerInstanceHandler.generateDeploymentKey(deploymentInfo);
-    assert ("Name1").equals(k8sDeploymentKey.getReleaseName());
+    assertEquals("Name1", k8sDeploymentKey.getReleaseName());
   }
 
   @Test
