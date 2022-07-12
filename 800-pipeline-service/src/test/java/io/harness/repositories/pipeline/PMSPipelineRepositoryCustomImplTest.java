@@ -10,6 +10,7 @@ package io.harness.repositories.pipeline;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SRIDHAR;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -32,6 +33,7 @@ import io.harness.manage.GlobalContextManager;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
+import io.harness.pms.pipeline.mappers.PMSPipelineFilterHelper;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.rule.Owner;
 import io.harness.springdata.TransactionHelper;
@@ -65,6 +67,7 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
   String projectIdentifier = "proj";
   String pipelineId = "pipeline";
   String pipelineYaml = "pipeline: yaml";
+  String repoURL = "repoURL";
 
   Criteria criteria = Criteria.where(PipelineEntityKeys.deleted)
                           .is(false)
@@ -397,5 +400,16 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
     pipelineRepository.deleteAllPipelinesInAProject(accountIdentifier, orgIdentifier, projectIdentifier);
     verify(mongoTemplate, times(1)).findAllAndRemove(any(), (Class<PipelineEntity>) any());
     verify(outboxService, times(1)).save(any());
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testcountFileInstances() {
+    Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFileUniquenessCheck(accountIdentifier, repoURL, filePath);
+    Query query = new Query().addCriteria(criteria);
+    doReturn(17L).when(mongoTemplate).count(query, PipelineEntity.class);
+    assertThat(pipelineRepository.countFileInstances(accountIdentifier, repoURL, filePath)).isEqualTo(17L);
+    verify(mongoTemplate, times(1)).count(query, PipelineEntity.class);
   }
 }

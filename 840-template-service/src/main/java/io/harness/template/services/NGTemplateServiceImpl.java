@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.remote.client.NGRestUtils.getResponse;
+import static io.harness.template.utils.TemplateUtils.isOldGitSync;
 
 import static java.lang.String.format;
 
@@ -139,7 +140,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           makePreviousLastUpdatedTemplateFalse(finalTemplateEntity.getAccountIdentifier(),
               finalTemplateEntity.getOrgIdentifier(), finalTemplateEntity.getProjectIdentifier(),
               finalTemplateEntity.getIdentifier(), finalTemplateEntity.getVersionLabel());
-          return templateRepository.save(finalTemplateEntity, finalComments);
+          return saveTemplate(finalTemplateEntity, finalComments);
         });
       } else {
         String finalComments1 = comments;
@@ -147,7 +148,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           makePreviousLastUpdatedTemplateFalse(finalTemplateEntity.getAccountIdentifier(),
               finalTemplateEntity.getOrgIdentifier(), finalTemplateEntity.getProjectIdentifier(),
               finalTemplateEntity.getIdentifier(), finalTemplateEntity.getVersionLabel());
-          return templateRepository.save(finalTemplateEntity, finalComments1);
+          return saveTemplate(finalTemplateEntity, finalComments1);
         });
       }
 
@@ -747,9 +748,13 @@ public class NGTemplateServiceImpl implements NGTemplateService {
                oldTemplate, GitContextHelper.getGitEntityInfo(),
                format("Template with identifier [%s] and versionLabel [%s] marking stable template as false.",
                    templateIdentifier, oldTemplate.getVersionLabel()))) {
-        TemplateEntity templateToUpdate = oldTemplate.withStableTemplate(false);
-        makeTemplateUpdateCall(templateToUpdate, oldTemplate, ChangeType.MODIFY, "",
-            TemplateUpdateEventType.TEMPLATE_STABLE_FALSE_EVENT, true);
+        if (isOldGitSync(gitSyncSdkService, oldTemplate)) {
+          TemplateEntity templateToUpdate = oldTemplate.withStableTemplate(false);
+          makeTemplateUpdateCall(templateToUpdate, oldTemplate, ChangeType.MODIFY, "",
+              TemplateUpdateEventType.TEMPLATE_STABLE_FALSE_EVENT, true);
+        } else {
+          templateRepository.updateIsStableTemplate(oldTemplate, false);
+        }
       }
     }
   }
@@ -777,9 +782,13 @@ public class NGTemplateServiceImpl implements NGTemplateService {
                oldTemplate, GitContextHelper.getGitEntityInfo(),
                format("Template with identifier [%s] and versionLabel [%s] marking last updated template as false.",
                    templateIdentifier, oldTemplate.getVersionLabel()))) {
-        TemplateEntity templateToUpdate = oldTemplate.withLastUpdatedTemplate(false);
-        makeTemplateUpdateCall(templateToUpdate, oldTemplate, ChangeType.MODIFY, "",
-            TemplateUpdateEventType.TEMPLATE_LAST_UPDATED_FALSE_EVENT, true);
+        if (isOldGitSync(gitSyncSdkService, oldTemplate)) {
+          TemplateEntity templateToUpdate = oldTemplate.withLastUpdatedTemplate(false);
+          makeTemplateUpdateCall(templateToUpdate, oldTemplate, ChangeType.MODIFY, "",
+              TemplateUpdateEventType.TEMPLATE_LAST_UPDATED_FALSE_EVENT, true);
+        } else {
+          templateRepository.updateIsLastUpdatedTemplate(oldTemplate, false);
+        }
       }
     }
   }
@@ -824,6 +833,14 @@ public class NGTemplateServiceImpl implements NGTemplateService {
             accountId, versionLabel, projectIdentifier, orgIdentifier));
       }
       return optionalTemplate;
+    }
+  }
+
+  private TemplateEntity saveTemplate(TemplateEntity templateEntity, String comments) throws InvalidRequestException {
+    if (isOldGitSync(gitSyncSdkService, templateEntity)) {
+      return templateRepository.saveForOldGitSync(templateEntity, comments);
+    } else {
+      return templateRepository.save(templateEntity, comments);
     }
   }
 }

@@ -67,4 +67,6 @@ public interface PMSPipelineRepositoryCustom {
   boolean deleteAllPipelinesInAProject(String accountId, String orgIdentifier, String projectIdentifier);
 
   PipelineEntity savePipelineEntityForImportedYAML(PipelineEntity pipelineToSave, boolean pushToGit);
+
+  Long countFileInstances(String accountId, String repoURL, String filePath);
 }

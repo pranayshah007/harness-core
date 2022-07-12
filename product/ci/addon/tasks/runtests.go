@@ -30,8 +30,8 @@ import (
 const (
 	defaultRunTestsTimeout int64 = 14400 // 4 hour
 	defaultRunTestsRetries int32 = 1
-	outDir                       = "%s/ti/callgraph/"    // path passed as outDir in the config.ini file
-	cgDir                        = "%s/ti/callgraph/cg/" // path where callgraph files will be generated
+	outDir                       = "ti/callgraph/"    // path passed as outDir in the config.ini file
+	cgDir                        = "ti/callgraph/cg/" // path where callgraph files will be generated
 	javaAgentArg                 = "-javaagent:/addon/bin/java-agent.jar=%s"
 	tiConfigPath                 = ".ticonfig.yaml"
 )
@@ -131,7 +131,7 @@ func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogg
 func (r *runTestsTask) Run(ctx context.Context) (map[string]string, int32, error) {
 	var err, errCg error
 	var o map[string]string
-	cgDir := fmt.Sprintf(cgDir, r.tmpFilePath)
+	cgDir := filepath.Join(r.tmpFilePath, cgDir)
 	testSt := time.Now()
 	for i := int32(1); i <= r.numRetries; i++ {
 		if o, err = r.execute(ctx, i); err == nil {
@@ -185,7 +185,7 @@ func (r *runTestsTask) Run(ctx context.Context) (map[string]string, int32, error
 // and returns back the path to the file.
 func (r *runTestsTask) createJavaAgentConfigFile(runner testintelligence.TestRunner) (string, error) {
 	// Create config file
-	dir := fmt.Sprintf(outDir, r.tmpFilePath)
+	dir := filepath.Join(r.tmpFilePath, outDir) + "/"
 	err := r.fs.MkdirAll(dir, os.ModePerm)
 	if err != nil {
 		r.log.Errorw(fmt.Sprintf("could not create nested directory %s", dir), zap.Error(err))
@@ -233,7 +233,8 @@ Returns:
 */
 func (r *runTestsTask) createDotNetConfigFile() (string, error) {
 	// Create config file
-	dir := fmt.Sprintf(outDir, r.tmpFilePath)
+	dir := filepath.Join(r.tmpFilePath, outDir)
+	cgdir := filepath.Join(r.tmpFilePath, cgDir)
 	err := r.fs.MkdirAll(dir, os.ModePerm)
 	if err != nil {
 		r.log.Errorw(fmt.Sprintf("could not create nested directory %s", dir), zap.Error(err))
@@ -254,7 +255,7 @@ func (r *runTestsTask) createDotNetConfigFile() (string, error) {
 	data = fmt.Sprintf(`outDir: '%s'
 logLevel: 0
 writeTo: [COVERAGE_JSON]
-instrPackages: [%s]`, dir, strings.Join(namespaceArray, ","))
+instrPackages: [%s]`, cgdir, strings.Join(namespaceArray, ","))
 
 	r.log.Infow(fmt.Sprintf("attempting to write %s to %s", data, outputFile))
 	f, err := r.fs.Create(outputFile)
@@ -390,12 +391,19 @@ func (r *runTestsTask) execute(ctx context.Context, retryCount int32) (map[strin
 
 	// Install agent artifacts if not present
 	var agentPath = ""
-	var err error
 	if r.language == "csharp" {
-		agentPath, err = installAgentFn(ctx, r.tmpFilePath, r.language, r.buildTool, r.frameworkVersion, r.buildEnvironment, r.log, r.fs)
+		csharpAgentPath, err := installAgentFn(ctx, r.tmpFilePath, r.language, r.buildTool, r.frameworkVersion, r.buildEnvironment, r.log, r.fs)
 		if err != nil {
 			return nil, err
 		}
+		r.log.Infow("agent downloaded to: " + csharpAgentPath)
+		// Unzip everything at agentInstallDir/dotnet-agent.zip
+		err = unzipSource(filepath.Join(csharpAgentPath, "dotnet-agent.zip"), csharpAgentPath, r.log, r.fs)
+		if err != nil {
+			r.log.Errorw("could not unarchive the dotnet agent", zap.Error(err))
+			return nil, err
+		}
+		agentPath = csharpAgentPath
 	}
 
 	outputFile := filepath.Join(r.tmpFilePath, fmt.Sprintf("%s%s", r.id, outputEnvSuffix))

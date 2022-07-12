@@ -20,4 +20,5 @@ public class InfraExecutionSummary {
   String identifier;
   String name;
   String type;
+  String infrastructureIdentifier;
 }

@@ -44,9 +44,10 @@ public class AzureAppServicePackageDeploymentContext extends AzureAppServiceDepl
       Map<String, AzureAppServiceApplicationSetting> appSettingsToRemove,
       Map<String, AzureAppServiceConnectionString> connSettingsToAdd,
       Map<String, AzureAppServiceConnectionString> connSettingsToRemove, String startupCommand, String slotName,
-      String targetSlotName, File artifactFile, ArtifactType artifactType, int steadyStateTimeoutInMin) {
+      String targetSlotName, File artifactFile, ArtifactType artifactType, int steadyStateTimeoutInMin,
+      boolean isBasicDeployment) {
     super(azureWebClientContext, logCallbackProvider, appSettingsToAdd, appSettingsToRemove, connSettingsToAdd,
-        connSettingsToRemove, slotName, targetSlotName, startupCommand, steadyStateTimeoutInMin);
+        connSettingsToRemove, slotName, targetSlotName, startupCommand, steadyStateTimeoutInMin, isBasicDeployment);
     this.artifactFile = artifactFile;
     this.artifactType = artifactType;
   }

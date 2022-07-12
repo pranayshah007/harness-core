@@ -42,4 +42,6 @@ message ContainerStateProto {
   google.protobuf.Timestamp memory_peak_time = 14;
 
   HistogramProto cpu_histogram_v2 = 15;
+  string workload_kind = 16;
+  string workload_name = 17;
 }

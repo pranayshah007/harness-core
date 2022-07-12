@@ -11,6 +11,7 @@ import static io.harness.ccm.commons.constants.Constants.CLUSTER_ID_IDENTIFIER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -46,7 +47,9 @@ import com.google.gson.JsonSyntaxException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.Timestamp;
+import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
@@ -101,8 +104,10 @@ public class K8SWatchTaskExecutor implements PerpetualTaskExecutor {
         log.info("Ensured watch exists with id {}.", watchId);
         taskWatchIdMap.putIfAbsent(taskId.getId(), watchId);
 
-        DefaultK8sMetricsClient k8sMetricsClient =
-            new DefaultK8sMetricsClient(apiClientFactory.getClient(kubernetesConfig));
+        K8sControllerFetcher controllerFetcher =
+            requireNonNull(k8sWatchServiceDelegate.getK8sControllerFetcher(watchId));
+        ApiClient apiClient = apiClientFactory.getClient(kubernetesConfig);
+        DefaultK8sMetricsClient k8sMetricsClient = new DefaultK8sMetricsClient(apiClient);
 
         final Instant now = Instant.now();
 
@@ -128,7 +133,7 @@ public class K8SWatchTaskExecutor implements PerpetualTaskExecutor {
                           .build();
                   return new K8sMetricCollector(eventPublisher, clusterDetails, heartbeatTime);
                 })
-            .collectAndPublishMetrics(k8sMetricsClient, now);
+            .collectAndPublishMetrics(k8sMetricsClient, now, new CoreV1Api(apiClient), controllerFetcher);
 
       } catch (JsonSyntaxException ex) {
         ApiExceptionLogger.logErrorIfNotSeenRecently(

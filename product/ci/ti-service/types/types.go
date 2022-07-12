@@ -172,6 +172,20 @@ type SelectionOverview struct {
 	Selected     SelectionDetails `json:"selected_tests"`
 }
 
+type GetTestTimesReq struct {
+	IncludeFilename  bool `json:"include_filename"`
+	IncludeTestSuite bool `json:"include_test_suite"`
+	IncludeTestCase  bool `json:"include_test_case"`
+	IncludeClassname bool `json:"include_classname"`
+}
+
+type GetTestTimesResp struct {
+	FileTimeMap  map[string]int `json:"file_time_map"`
+	SuiteTimeMap map[string]int `json:"suite_time_map"`
+	TestTimeMap  map[string]int `json:"test_time_map"`
+	ClassTimeMap map[string]int `json:"class_time_map"`
+}
+
 type File struct {
 	Name   string     `json:"name"`
 	Status FileStatus `json:"status"`

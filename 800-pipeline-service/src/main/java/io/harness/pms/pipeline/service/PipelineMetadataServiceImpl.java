@@ -17,15 +17,22 @@ import io.harness.repositories.pipeline.PipelineMetadataV2Repository;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 
+@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Singleton
 @Slf4j
 public class PipelineMetadataServiceImpl implements PipelineMetadataService {
-  @Inject private PipelineMetadataV2Repository pipelineMetadataV2Repository;
-  @Inject private PersistentLocker persistentLocker;
+  private PipelineMetadataV2Repository pipelineMetadataV2Repository;
+  private PersistentLocker persistentLocker;
 
   @Override
   public int incrementRunSequence(PipelineEntity pipelineEntity) {
@@ -82,5 +89,14 @@ public class PipelineMetadataServiceImpl implements PipelineMetadataService {
   public Optional<PipelineMetadataV2> getMetadata(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier) {
     return pipelineMetadataV2Repository.getPipelineMetadata(accountId, orgIdentifier, projectIdentifier, identifier);
+  }
+
+  @Override
+  public Map<String, PipelineMetadataV2> getMetadataForGivenPipelineIds(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> identifiers) {
+    List<PipelineMetadataV2> pipelineMetadataList = pipelineMetadataV2Repository.getMetadataForGivenPipelineIds(
+        accountId, orgIdentifier, projectIdentifier, identifiers);
+    return pipelineMetadataList.stream().collect(
+        Collectors.toMap(PipelineMetadataV2::getIdentifier, Function.identity()));
   }
 }

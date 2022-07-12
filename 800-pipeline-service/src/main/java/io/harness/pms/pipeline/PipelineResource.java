@@ -54,6 +54,7 @@ import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
+import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.variables.VariableMergeServiceResponse;
@@ -79,8 +80,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -143,6 +146,7 @@ public class PipelineResource implements YamlSchemaResource {
   private final PmsFeatureFlagHelper pmsFeatureFlagHelper;
   private final VariableCreatorMergeService variableCreatorMergeService;
   private final PipelineCloneHelper pipelineCloneHelper;
+  private final PipelineMetadataService pipelineMetadataService;
 
   @POST
   @ApiOperation(value = "Create a Pipeline", nickname = "createPipeline")
@@ -542,16 +546,21 @@ public class PipelineResource implements YamlSchemaResource {
           "getDistinctFromBranches") Boolean getDistinctFromBranches) {
     log.info(String.format("Get List of pipelines in project %s, org %s, account %s", projectId, orgId, accountId));
 
+    // todo: Add handling for sort by lastExecutedAt
     Criteria criteria = pipelineServiceHelper.formCriteria(
         accountId, orgId, projectId, filterIdentifier, filterProperties, false, module, searchTerm);
-
     Pageable pageRequest =
         PageUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt));
+    Page<PipelineEntity> pipelineEntities =
+        pmsPipelineService.list(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches);
+
+    List<String> pipelineIdentifiers =
+        pipelineEntities.stream().map(PipelineEntity::getIdentifier).collect(Collectors.toList());
+    Map<String, PipelineMetadataV2> pipelineMetadataMap =
+        pipelineMetadataService.getMetadataForGivenPipelineIds(accountId, orgId, projectId, pipelineIdentifiers);
 
     Page<PMSPipelineSummaryResponseDTO> pipelines =
-        pmsPipelineService.list(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches)
-            .map(PMSPipelineDtoMapper::preparePipelineSummaryForListView);
-
+        pipelineEntities.map(e -> PMSPipelineDtoMapper.preparePipelineSummaryForListView(e, pipelineMetadataMap));
     return ResponseDTO.newResponse(pipelines);
   }
 

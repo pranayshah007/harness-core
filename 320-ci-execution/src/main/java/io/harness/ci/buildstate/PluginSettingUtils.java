@@ -259,6 +259,10 @@ public class PluginSettingUtils {
     setMandatoryEnvironmentVariable(map, PLUGIN_TAGS,
         listToStringSlice(resolveListParameter("tags", "BuildAndPushECR", identifier, stepInfo.getTags(), true)));
 
+    if (isNotEmpty(region) && !region.equals(UNRESOLVED_PARAMETER)) {
+      setOptionalEnvironmentVariable(map, PLUGIN_REGION, region);
+    }
+
     String dockerfile =
         resolveStringParameter("dockerfile", "BuildAndPushECR", identifier, stepInfo.getDockerfile(), false);
     if (dockerfile != null && !dockerfile.equals(UNRESOLVED_PARAMETER)) {

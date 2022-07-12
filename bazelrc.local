@@ -1,6 +1,8 @@
 import bazelrc.common
 try-import bazelrc.cache
 
+startup --macos_qos_class=utility
+
 # Add properties that are specific to local bazel  build
 
 build --disk_cache=~/.bazel-dirs/cache

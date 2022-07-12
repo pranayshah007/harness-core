@@ -6,6 +6,7 @@
 package tasks
 
 import (
+	"archive/zip"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -330,5 +331,65 @@ func downloadFile(ctx context.Context, path, url string, fs filesystem.FileSyste
 		return err
 	}
 
+	return nil
+}
+
+func unzipSource(source, destination string, log *zap.SugaredLogger, fs filesystem.FileSystem) error {
+	log.Infow(fmt.Sprintf("unzipping from %s to %s", source, destination))
+	reader, err := zip.OpenReader(source)
+	if err != nil {
+		return err
+	}
+	defer func(reader *zip.ReadCloser) {
+		err := reader.Close()
+		if err != nil {
+			log.Errorw("unable to unzip file", zap.Error(err))
+		}
+	}(reader)
+
+	destination, err = filepath.Abs(destination)
+	if err != nil {
+		return err
+	}
+
+	for _, f := range reader.File {
+		err := unzipFile(f, destination, fs)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func unzipFile(f *zip.File, destination string, fs filesystem.FileSystem) error {
+	filePath := filepath.Join(destination, f.Name)
+
+	if f.FileInfo().IsDir() {
+		if err := fs.MkdirAll(filePath, os.ModePerm); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	if err := fs.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+		return err
+	}
+
+	destinationFile, err := fs.Create(filePath)
+	defer destinationFile.Close()
+	if err != nil {
+		return err
+	}
+
+	zippedFile, err := f.Open()
+	if err != nil {
+		return err
+	}
+	defer zippedFile.Close()
+
+	if _, err := io.Copy(destinationFile, zippedFile); err != nil {
+		return err
+	}
 	return nil
 }

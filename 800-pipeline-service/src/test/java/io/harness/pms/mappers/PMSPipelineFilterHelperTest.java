@@ -10,6 +10,7 @@ package io.harness.pms.mappers;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -128,5 +129,20 @@ public class PMSPipelineFilterHelperTest extends CategoryTest {
     assertThat(criteriaObject.containsKey(PipelineEntityKeys.accountId)).isTrue();
     assertThat(criteriaObject.containsKey(PipelineEntityKeys.orgIdentifier)).isTrue();
     assertThat(criteriaObject.containsKey(PipelineEntityKeys.projectIdentifier)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testgetCriteriaForFileUniquenessCheck() {
+    String acc = "acc";
+    String repoUrl = "repoUrl";
+    String filepath = "filepath";
+    Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFileUniquenessCheck(acc, repoUrl, filepath);
+    Document criteriaObject = criteria.getCriteriaObject();
+    assertThat(criteriaObject.size()).isEqualTo(3);
+    assertThat(criteriaObject.containsKey(PipelineEntityKeys.accountId)).isTrue();
+    assertThat(criteriaObject.containsKey(PipelineEntityKeys.repoURL)).isTrue();
+    assertThat(criteriaObject.containsKey(PipelineEntityKeys.filePath)).isTrue();
   }
 }

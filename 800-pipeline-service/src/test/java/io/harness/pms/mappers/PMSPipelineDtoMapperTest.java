@@ -397,7 +397,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
                                        .filters(Collections.singletonMap("cd", null))
                                        .build();
     PMSPipelineSummaryResponseDTO pipelineSummaryResponse =
-        PMSPipelineDtoMapper.preparePipelineSummaryForListView(oldNonGitSync);
+        PMSPipelineDtoMapper.preparePipelineSummaryForListView(oldNonGitSync, Collections.emptyMap());
     assertThat(pipelineSummaryResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
         .isEqualTo(EntityValidityDetails.builder().valid(true).build());
@@ -417,7 +417,8 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
                                          .yamlGitConfigRef("repo")
                                          .branch("br1")
                                          .build();
-    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummaryForListView(oldGitSyncValid);
+    pipelineSummaryResponse =
+        PMSPipelineDtoMapper.preparePipelineSummaryForListView(oldGitSyncValid, Collections.emptyMap());
     assertThat(pipelineSummaryResponse.getGitDetails())
         .isEqualTo(EntityGitDetails.builder().repoIdentifier("repo").branch("br1").build());
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
@@ -440,7 +441,8 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
                                            .branch("br1")
                                            .isEntityInvalid(true)
                                            .build();
-    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummaryForListView(oldGitSyncInvalid);
+    pipelineSummaryResponse =
+        PMSPipelineDtoMapper.preparePipelineSummaryForListView(oldGitSyncInvalid, Collections.emptyMap());
     assertThat(pipelineSummaryResponse.getGitDetails())
         .isEqualTo(EntityGitDetails.builder().repoIdentifier("repo").branch("br1").build());
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
@@ -460,7 +462,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
                                 .filters(Collections.singletonMap("cd", null))
                                 .storeType(StoreType.INLINE)
                                 .build();
-    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummaryForListView(inline);
+    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummaryForListView(inline, Collections.emptyMap());
     assertThat(pipelineSummaryResponse.getGitDetails()).isNull();
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())
         .isEqualTo(EntityValidityDetails.builder().valid(true).build());
@@ -480,7 +482,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
                                 .repo("repoName")
                                 .connectorRef("conn")
                                 .build();
-    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummaryForListView(remote);
+    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummaryForListView(remote, Collections.emptyMap());
     assertThat(pipelineSummaryResponse.getGitDetails())
         .isEqualTo(EntityGitDetails.builder().repoName("repoName").build());
     assertThat(pipelineSummaryResponse.getEntityValidityDetails())

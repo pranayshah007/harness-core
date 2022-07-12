@@ -79,6 +79,12 @@ public class InputSetEntity
                  .field(InputSetEntityKeys.yamlGitConfigRef)
                  .field(InputSetEntityKeys.branch)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_repoURL_filePath")
+                 .field(InputSetEntityKeys.accountId)
+                 .field(InputSetEntityKeys.repoURL)
+                 .field(InputSetEntityKeys.filePath)
+                 .build())
         // for full sync
         .add(SortCompoundMongoIndex.builder()
                  .name("accountId_organizationId_projectId_repo_branch")
@@ -125,6 +131,7 @@ public class InputSetEntity
   @Wither @Setter @NonFinal StoreType storeType;
   @Setter @NonFinal String repo;
   @Setter @NonFinal String connectorRef;
+  @Wither @Setter @NonFinal String repoURL;
 
   @Wither @Builder.Default Boolean isInvalid = Boolean.FALSE;
 
