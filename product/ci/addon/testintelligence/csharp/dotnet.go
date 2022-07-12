@@ -51,11 +51,11 @@ func (b *dotnetRunner) AutoDetectPackages() ([]string, error) {
 func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	// Hard coding the logger for now, as this is the only one for now that does not have compatibility issue with our agent
 	installLoggerCmd := "dotnet add package JUnitTestLogger --version 1.1.0"
-	defaultRunCmd := fmt.Sprintf("%s\n%s test --no-build --logger \"junit;LogFilePath=test_results.xml\"", installLoggerCmd, dotnetCmd)
+	defaultRunCmd := fmt.Sprintf("%s test --no-build --logger \"junit;LogFilePath=test_results.xml\"", dotnetCmd)
 	agentFullName := path.Join(b.agentPath, "dotnet-agent.injector.dll")
 	if ignoreInstr {
 		b.log.Infow("ignoring instrumentation and not attaching agent")
-		return defaultRunCmd, nil
+		return fmt.Sprintf("%s\n%s", installLoggerCmd, defaultRunCmd), nil
 	}
 
 	var instrumentCmd string
@@ -68,7 +68,7 @@ func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 	}
 	if runAll {
 		b.log.Infow("Running all tests")
-		return fmt.Sprintf("%s%s", instrumentCmd, defaultRunCmd), nil // Add instrumentation here
+		return fmt.Sprintf("%s\n%s%s", installLoggerCmd, instrumentCmd, defaultRunCmd), nil // Add instrumentation here
 	}
 
 	// Need to handle this for Windows as well
