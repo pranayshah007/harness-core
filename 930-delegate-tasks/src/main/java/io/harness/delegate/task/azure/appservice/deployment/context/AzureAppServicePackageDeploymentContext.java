@@ -35,7 +35,7 @@ import lombok.EqualsAndHashCode;
 public class AzureAppServicePackageDeploymentContext extends AzureAppServiceDeploymentContext {
   @NotNull(message = ARTIFACT_FILE_BLANK_ERROR_MSG) private File artifactFile;
   @NotNull(message = ARTIFACT_TYPE_BLANK_ERROR_MSG)
-  @ArtifactTypeSubset(anyOf = {ArtifactType.ZIP, ArtifactType.WAR, ArtifactType.NUGET})
+  @ArtifactTypeSubset(anyOf = {ArtifactType.ZIP, ArtifactType.WAR, ArtifactType.NUGET, ArtifactType.JAR})
   private ArtifactType artifactType;
 
   @Builder

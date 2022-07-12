@@ -39,6 +39,9 @@ public interface AzureConstants {
   String ACTIVITY_ID = "activityId";
   int NUMBER_OF_LATEST_VERSIONS_TO_KEEP = 3;
   String STEADY_STATE_TIMEOUT_REGEX = "w|d|h|m|s|ms";
+  String ZIP_EXTENSION = ".zip";
+  String JAR_EXTENSION = ".jar";
+  String FILE_RENAME_FAILURE = "Failed to rename the file - [%s] to [%s]";
 
   // VMSS Tags names and values
   String HARNESS_AUTOSCALING_GROUP_TAG_NAME = "HARNESS_REVISION";

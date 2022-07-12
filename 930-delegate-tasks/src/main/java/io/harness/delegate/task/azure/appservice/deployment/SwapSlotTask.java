@@ -8,7 +8,6 @@
 package io.harness.delegate.task.azure.appservice.deployment;
 
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
-import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
@@ -48,7 +47,7 @@ public class SwapSlotTask implements Runnable {
     if (callBack.callFailed()) {
       slotSwapLogCallback.saveExecutionLog("Swap slot failed", ERROR, FAILURE);
     } else {
-      slotSwapLogCallback.saveExecutionLog("Swapping request returned successfully", INFO, SUCCESS);
+      slotSwapLogCallback.saveExecutionLog("Swapping request returned successfully", INFO);
     }
   }
 }
