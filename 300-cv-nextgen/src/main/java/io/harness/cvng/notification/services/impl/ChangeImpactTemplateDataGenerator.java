@@ -68,8 +68,8 @@ public class ChangeImpactTemplateDataGenerator
       sb.append("No metric has been assigned to this monitored service");
     } else {
       timeSeriesMetricDataDTOS.forEach(dto -> {
-        sb.append("Metric " + dto.getMetricName() + "\n");
-        sb.append("Group " + dto.getGroupName() + "\n");
+        sb.append("Metric " + dto.getMetricName() + "\n"
+            + "Group " + dto.getGroupName() + "\n");
       });
     }
 
