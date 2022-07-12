@@ -205,7 +205,7 @@ public class AzureWebAppRollbackTaskHandler extends AbstractAzureWebAppTaskHandl
       AzureAppServiceDeploymentContext deploymentContext) {
     AzureAppServicePreDeploymentData preDeploymentData = rollbackParameters.getPreDeploymentData();
     rollbackSetupSlot(rollbackParameters, deploymentContext);
-    if (!rollbackParameters.isBlueGreen()) {
+    if (!rollbackParameters.isBlueGreen() && !rollbackParameters.isBasicDeployment()) {
       rollbackUpdateSlotTrafficWeight(preDeploymentData, azureWebClientContext, logStreamingTaskClient);
     }
   }
