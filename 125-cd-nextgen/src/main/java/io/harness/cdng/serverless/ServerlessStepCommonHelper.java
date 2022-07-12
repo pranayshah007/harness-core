@@ -474,7 +474,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
           manifestFileContent =
               manifestFileContent.replace(identifier, ((ServerlessEcrArtifactConfig) entry.getValue()).getImage());
         } else if (entry.getValue().getServerlessArtifactType().equals(ServerlessArtifactType.ARTIFACTORY)
-            || entry.getValue().getServerlessArtifactType().equals(ServerlessArtifactType.ECR)) {
+            || entry.getValue().getServerlessArtifactType().equals(ServerlessArtifactType.AMAZON_S3)) {
           manifestFileContent =
               manifestFileContent.replace(identifier, SIDECAR_ARTIFACT_FILE_NAME_PREFIX + entry.getKey());
         }
