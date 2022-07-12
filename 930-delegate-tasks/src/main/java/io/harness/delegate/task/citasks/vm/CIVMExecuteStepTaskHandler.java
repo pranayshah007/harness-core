@@ -89,6 +89,7 @@ public class CIVMExecuteStepTaskHandler implements CIExecuteStepTaskHandler {
     }
     return ExecuteStepRequest.builder()
         .correlationID(taskId)
+        .stageRuntimeID(params.getStageRuntimeId())
         .poolId(params.getPoolId())
         .ipAddress(params.getIpAddress())
         .config(configBuilder.build())
