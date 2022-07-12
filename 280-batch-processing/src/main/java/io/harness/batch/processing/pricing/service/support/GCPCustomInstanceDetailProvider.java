@@ -15,6 +15,7 @@ import io.harness.pricing.dto.cloudinfo.ProductDetails;
 import io.harness.pricing.dto.cloudinfo.ZonePrice;
 
 import com.google.common.collect.ImmutableList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.Builder;
@@ -35,8 +36,10 @@ public class GCPCustomInstanceDetailProvider {
 
   public Resource getCustomGcpInstanceResource(@NonNull String instanceType) {
     String[] split = instanceType.split("-");
-    double cpu = Double.parseDouble(split[split.length - 2]);
-    double memory = Double.parseDouble(split[split.length - 1]);
+    List<String> list = Arrays.asList(split);
+    int indexStart = list.indexOf("custom");
+    double cpu = Double.parseDouble(split[indexStart + 1]);
+    double memory = Double.parseDouble(split[indexStart + 2]);
     return Resource.builder().cpuUnits(cpu * 1024.0).memoryMb(memory).build();
   }
 

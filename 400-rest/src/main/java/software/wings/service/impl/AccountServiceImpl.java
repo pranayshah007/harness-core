@@ -1094,8 +1094,8 @@ public class AccountServiceImpl implements AccountService {
       updateNextGenEnabled(onPremAccount.get().getUuid(), true);
     }
 
-    if(enabled.contains("ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM")){
-        setDefaultExperience(onPremAccount.get().getUuid(), DefaultExperience.NG);
+    if (enabled.contains("ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM")) {
+      setDefaultExperience(onPremAccount.get().getUuid(), DefaultExperience.NG);
     }
   }
 
