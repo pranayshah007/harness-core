@@ -111,6 +111,8 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
         .sharedIndexInformerFor(
             (CallGeneratorParams callGeneratorParams)
                 -> {
+              log.info("Few params {} :: {}", callGeneratorParams.resourceVersion, callGeneratorParams.timeoutSeconds);
+              log.info("Few more params {} :: {}", callGeneratorParams.watch);
               try {
                 return coreV1Api.listPodForAllNamespacesCall(null, null, null, null, null, null,
                     callGeneratorParams.resourceVersion, null, callGeneratorParams.timeoutSeconds,
