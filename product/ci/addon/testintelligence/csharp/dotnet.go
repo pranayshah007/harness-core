@@ -21,6 +21,7 @@ import (
 	"github.com/harness/harness-core/product/ci/ti-service/types"
 	"go.uber.org/zap"
 	"path"
+	"strings"
 )
 
 var (
@@ -52,15 +53,22 @@ func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 	installLoggerCmd := "dotnet add package JUnitTestLogger --version 1.1.0"
 	defaultRunCmd := fmt.Sprintf("%s\n%s test --no-build --logger \"junit;LogFilePath=test_results.xml\"", installLoggerCmd, dotnetCmd)
 	agentFullName := path.Join(b.agentPath, "dotnet-agent.injector.dll")
-	instrumentCmd := fmt.Sprintf("%s %s %s %s", dotnetCmd, agentFullName, userArgs, agentConfigPath)
 	if ignoreInstr {
 		b.log.Infow("ignoring instrumentation and not attaching agent")
 		return defaultRunCmd, nil
 	}
 
+	var instrumentCmd string
+	// Run all the DLLs through the injector
+	args := strings.Split(userArgs, " ")
+	for _, param := range args {
+		if strings.HasSuffix(param, ".dll") {
+			instrumentCmd += fmt.Sprintf("%s %s %s %s\n", dotnetCmd, agentFullName, param, agentConfigPath)
+		}
+	}
 	if runAll {
 		b.log.Infow("Running all tests")
-		return fmt.Sprintf("%s\n%s", instrumentCmd, defaultRunCmd), nil // Add instrumentation here
+		return fmt.Sprintf("%s%s", instrumentCmd, defaultRunCmd), nil // Add instrumentation here
 	}
 
 	// Need to handle this for Windows as well
@@ -93,5 +101,5 @@ func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 	}
 	// dotnet /dotnet-agent.injector.dll /TestProject1.dll ./Config.yaml
 	runtestCmd := fmt.Sprintf("%s test --no-build --logger \"junit;LogFilePath=test_results.xml\" --filter \"%s\"", dotnetCmd, testStr)
-	return fmt.Sprintf("%s\n%s\n%s", installLoggerCmd, instrumentCmd, runtestCmd), nil
+	return fmt.Sprintf("%s\n%s%s", installLoggerCmd, instrumentCmd, runtestCmd), nil
 }
