@@ -10,6 +10,7 @@ package io.harness.ccm.views.service.impl;
 import io.harness.ccm.commons.dao.anomaly.AnomalyDao;
 import io.harness.ccm.commons.entities.CCMFilter;
 import io.harness.ccm.commons.entities.anomaly.AnomalyData;
+import io.harness.ccm.commons.entities.anomaly.AnomalyFeedback;
 import io.harness.ccm.commons.entities.anomaly.AnomalyQueryDTO;
 import io.harness.ccm.commons.utils.AnomalyQueryBuilder;
 import io.harness.ccm.commons.utils.AnomalyUtils;
@@ -18,6 +19,7 @@ import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.helper.PerspectiveToAnomalyQueryHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.PerspectiveAnomalyService;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.timescaledb.tables.pojos.Anomalies;
 
 import com.google.inject.Inject;
@@ -57,21 +59,22 @@ public class PerspectiveAnomalyServiceImpl implements PerspectiveAnomalyService 
 
   private List<AnomalyData> listAnomalies(
       @NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery, Instant date) {
-    if (anomalyQuery == null) {
-      anomalyQuery = AnomalyUtils.getDefaultAnomalyQuery();
-    }
-    Condition condition = anomalyQuery.getFilter() != null
-        ? anomalyQueryBuilder.applyAllFilters(anomalyQuery.getFilter())
-        : DSL.noCondition();
-
-    List<Anomalies> anomalies = anomalyDao.fetchAnomaliesForDate(accountIdentifier, condition,
-        anomalyQueryBuilder.getOrderByFields(
-            anomalyQuery.getOrderBy() != null ? anomalyQuery.getOrderBy() : Collections.emptyList()),
-        anomalyQuery.getOffset() != null ? anomalyQuery.getOffset() : DEFAULT_OFFSET,
-        anomalyQuery.getLimit() != null ? anomalyQuery.getLimit() : DEFAULT_LIMIT, date.truncatedTo(ChronoUnit.DAYS));
-
-    List<AnomalyData> anomalyData = new ArrayList<>();
-    anomalies.forEach(anomaly -> anomalyData.add(AnomalyUtils.buildAnomalyData(anomaly)));
+//    if (anomalyQuery == null) {
+//      anomalyQuery = AnomalyUtils.getDefaultAnomalyQuery();
+//    }
+//    Condition condition = anomalyQuery.getFilter() != null
+//        ? anomalyQueryBuilder.applyAllFilters(anomalyQuery.getFilter())
+//        : DSL.noCondition();
+//
+//    List<Anomalies> anomalies = anomalyDao.fetchAnomaliesForDate(accountIdentifier, condition,
+//        anomalyQueryBuilder.getOrderByFields(
+//            anomalyQuery.getOrderBy() != null ? anomalyQuery.getOrderBy() : Collections.emptyList()),
+//        anomalyQuery.getOffset() != null ? anomalyQuery.getOffset() : DEFAULT_OFFSET,
+//        anomalyQuery.getLimit() != null ? anomalyQuery.getLimit() : DEFAULT_LIMIT, date.truncatedTo(ChronoUnit.DAYS));
+//
+//    List<AnomalyData> anomalyData = new ArrayList<>();
+//    anomalies.forEach(anomaly -> anomalyData.add(AnomalyUtils.buildAnomalyData(anomaly)));
+    List<AnomalyData> anomalyData = Collections.singletonList(AnomalyData.builder().id("_id_").time(1657738984L).anomalyRelativeTime("3hrs back").actualAmount(1.1).expectedAmount(2.2).anomalousSpend(4.4).anomalousSpendPercentage(4.0).resourceInfo("resourceInfo").resourceName("resourceName").entity(null).details("details").status("status").statusRelativeTime("statusRelativeTime").comment("comment").cloudProvider("cloudProvicer").anomalyScore(1.1).userFeedback(AnomalyFeedback.TRUE_ANOMALY).build());
     return anomalyData;
   }
 
