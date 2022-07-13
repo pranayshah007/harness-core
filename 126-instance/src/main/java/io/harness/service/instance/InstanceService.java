@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Optional;
 import javax.validation.constraints.NotEmpty;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
-import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.DX)
 public interface InstanceService {
@@ -34,7 +33,7 @@ public interface InstanceService {
   void deleteAll(List<InstanceDTO> instanceDTOList);
 
   Optional<InstanceDTO> delete(@NotEmpty String instanceKey, @NotEmpty String accountIdentifier,
-      @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier, @NotEmpty String infrastructureMappingId);
+      @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier, String infrastructureMappingId);
 
   Optional<InstanceDTO> findAndReplace(InstanceDTO instanceDTO);
 
@@ -54,6 +53,9 @@ public interface InstanceService {
   List<InstanceDTO> getActiveInstancesByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
 
+  List<InstanceDTO> getActiveInstancesByServiceId(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
+
   List<InstanceDTO> getActiveInstancesByInfrastructureMappingId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String infrastructureMappingId);
 
@@ -72,6 +74,4 @@ public interface InstanceService {
 
   AggregationResults<CountByServiceIdAndEnvType> getActiveServiceInstanceCountBreakdown(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs);
-
-  InstanceDTO findFirstInstance(Criteria criteria);
 }

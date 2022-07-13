@@ -23,6 +23,8 @@ import io.harness.service.instancedashboardservice.InstanceDashboardService;
 import io.harness.service.instancedashboardservice.InstanceDashboardServiceImpl;
 import io.harness.service.instancestats.InstanceStatsService;
 import io.harness.service.instancestats.InstanceStatsServiceImpl;
+import io.harness.service.instancesync.GitopsInstanceSyncService;
+import io.harness.service.instancesync.GitopsInstanceSyncServiceImpl;
 import io.harness.service.instancesync.InstanceSyncService;
 import io.harness.service.instancesync.InstanceSyncServiceImpl;
 import io.harness.service.instancesynchandlerfactory.InstanceSyncHandlerFactoryService;
@@ -68,6 +70,7 @@ public class InstanceModule extends AbstractModule {
     bind(UsageMetricsEventPublisher.class).to(UsageMetricsEventPublisherImpl.class);
     bind(InstanceStatsRepository.class).to(InstanceStatsRepositoryImpl.class);
     bind(BroadcasterFactory.class).to(DefaultBroadcasterFactory.class);
+    bind(GitopsInstanceSyncService.class).to(GitopsInstanceSyncServiceImpl.class);
   }
 
   private void registerRequiredBindings() {
