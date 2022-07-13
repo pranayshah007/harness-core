@@ -1,7 +1,11 @@
 #!/bin/sh
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-#Build your java service and then change the following JAR variable to point to the one on your machine
-JAR=$HOME/.cache/bazel/_bazel_loco/73eb0bf1eff209005bf26dc1460c3f43/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin/360-cg-manager/module_deploy.jar
+#Build your java service and then pass in the path to that jar
+if [[ $# = 0 ]] ; then printf "Error - You did not pass in the path the jar you want nativized!\n"; exit 1; else JAR_PATH="${1}"; fi
 
 native-image --no-fallback -H:TraceClassInitialization=true -H:ConfigurationFileDirectories=target/config \
 --initialize-at-build-time=io.netty \
@@ -37,5 +41,4 @@ native-image --no-fallback -H:TraceClassInitialization=true -H:ConfigurationFile
 --trace-class-initialization=org.conscrypt.Conscrypt \
 --trace-class-initialization=io.netty.util.AbstractReferenceCounted \
 -H:+ReportExceptionStackTraces \
--jar $JAR
-
+-jar $JAR_PATH
