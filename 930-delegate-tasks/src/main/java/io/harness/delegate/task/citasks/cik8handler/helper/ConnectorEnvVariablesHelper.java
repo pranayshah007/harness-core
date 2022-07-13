@@ -9,6 +9,7 @@ package io.harness.delegate.task.citasks.cik8handler.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.ci.pod.SecretParams.Type.FILE;
 import static io.harness.delegate.beans.ci.pod.SecretParams.Type.TEXT;
 
@@ -174,13 +175,20 @@ public class ConnectorEnvVariablesHelper {
     if (awsConnectorConfig.getCredential() != null
         && awsConnectorConfig.getCredential().getCrossAccountAccess() != null) {
       String crossAccountRoleArn = awsConnectorConfig.getCredential().getCrossAccountAccess().getCrossAccountRoleArn();
-
       String crossAccountArnEnvVarName =
           connectorDetails.getEnvToSecretsMap().get(EnvVariableEnum.AWS_CROSS_ACCOUNT_ROLE_ARN);
-      if (isNotBlank(crossAccountArnEnvVarName)) {
+      if (isNotEmpty(crossAccountArnEnvVarName) && isNotEmpty(crossAccountRoleArn)) {
         secretData.put(crossAccountArnEnvVarName,
             getVariableSecret(
                 crossAccountArnEnvVarName + connectorDetails.getIdentifier(), encodeBase64(crossAccountRoleArn)));
+      }
+
+      String externalId = awsConnectorConfig.getCredential().getCrossAccountAccess().getExternalId();
+      String externalIdEnvVarName =
+          connectorDetails.getEnvToSecretsMap().get(EnvVariableEnum.AWS_CROSS_ACCOUNT_EXTERNAL_ID);
+      if (isNotEmpty(externalId) && isNotEmpty(externalIdEnvVarName)) {
+        secretData.put(externalIdEnvVarName,
+            getVariableSecret(externalIdEnvVarName + connectorDetails.getIdentifier(), encodeBase64(externalId)));
       }
     }
     return secretData;

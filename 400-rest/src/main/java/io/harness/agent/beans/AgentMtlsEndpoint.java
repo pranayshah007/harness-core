@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.beans;
+package io.harness.agent.beans;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,8 +22,8 @@ import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 
 /**
- * A representation of a single delegate mTLS endpoint.
- * Any endpoint added to this collection will be picked up by the delegate-gateway and configured automatically.
+ * A representation of a single agent mTLS endpoint.
+ * Any endpoint added to this collection will be picked up by the agent gateway and configured automatically.
  *
  * Note:
  *    As of now, the design is to only have one endpoint per account (same endpoint for cg + ng).
@@ -33,33 +33,33 @@ import org.mongodb.morphia.annotations.Id;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 @Builder
-@FieldNameConstants(innerTypeName = "DelegateMtlsEndpointKeys")
-@Entity(value = "delegateMtlsEndpoint", noClassnameStored = true)
+@FieldNameConstants(innerTypeName = "AgentMtlsEndpointKeys")
+@Entity(value = "agentMtlsEndpoint", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.DEL)
-public class DelegateMtlsEndpoint implements PersistentEntity {
+public class AgentMtlsEndpoint implements PersistentEntity {
   /**
-   * The unique identifier of the delegate mTLS endpoint.
+   * The unique identifier of the mTLS endpoint.
    */
   @Id @NotEmpty private String uuid;
 
   /**
-   * The id of the owning account of the delegate mTLS endpoint.
+   * The id of the owning account of the mTLS endpoint.
    */
   @FdUniqueIndex @NotEmpty private String accountId;
 
   /**
-   * The FQDN that is used by the delegate to connect to the mTLS endpoint.
+   * The FQDN that is used by an agent to connect to the mTLS endpoint.
    */
   @FdUniqueIndex @NotEmpty private String fqdn;
 
   /**
-   * PEM encoded list of CA certificates used by the delegate-gateway to verify client certificates.
+   * PEM encoded list of CA certificates used by the agent-gateway to verify client certificates.
    */
   @NotEmpty private String caCertificates;
 
   /**
    * The mode of the mTLS endpoint.
    */
-  private DelegateMtlsMode mode;
+  private AgentMtlsMode mode;
 }

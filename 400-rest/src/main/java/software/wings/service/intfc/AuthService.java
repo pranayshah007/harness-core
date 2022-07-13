@@ -101,9 +101,9 @@ public interface AuthService {
       List<PermissionAttribute> permissionAttributes);
 
   void validateDelegateToken(String accountId, String tokenString, String delegateId, String delegateTokenName,
-      boolean shouldSetTokenNameInGlobalContext);
+      String agentMtlAuthority, boolean shouldSetTokenNameInGlobalContext);
 
-  void validateDelegateToken(String accountId, String tokenString);
+  void validateDelegateToken(String accountId, String tokenString, String agentMtlsAuthority);
 
   void invalidateAllTokensForUser(String userId);
 

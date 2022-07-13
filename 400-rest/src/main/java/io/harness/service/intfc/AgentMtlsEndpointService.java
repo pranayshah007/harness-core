@@ -7,22 +7,22 @@
 
 package io.harness.service.intfc;
 
+import io.harness.agent.beans.AgentMtlsEndpointDetails;
+import io.harness.agent.beans.AgentMtlsEndpointRequest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.DelegateMtlsEndpointDetails;
-import io.harness.delegate.beans.DelegateMtlsEndpointRequest;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 
 import javax.annotation.Nullable;
 
 /**
- * An abstraction of a service that allows managing delegate mTLS endpoints.
+ * An abstraction of a service that allows managing agent mTLS endpoints.
  */
 @OwnedBy(HarnessTeam.DEL)
-public interface DelegateMtlsEndpointService {
+public interface AgentMtlsEndpointService {
   /**
-   * Creates the delegate mTLS endpoint for an account.
+   * Creates the mTLS endpoint for an account.
    *
    * @param accountId The account id.
    * @param endpointRequest The requested configuration of the endpoint.
@@ -30,10 +30,10 @@ public interface DelegateMtlsEndpointService {
    *
    * @throws InvalidRequestException If there already exists an endpoint for the account, or the request is invalid.
    */
-  DelegateMtlsEndpointDetails createEndpointForAccount(String accountId, DelegateMtlsEndpointRequest endpointRequest);
+  AgentMtlsEndpointDetails createEndpointForAccount(String accountId, AgentMtlsEndpointRequest endpointRequest);
 
   /**
-   * Updates the existing delegate mTLS endpoint for an account.
+   * Updates the existing mTLS endpoint for an account.
    *
    * @param accountId The account id.
    * @param endpointRequest The requested updated configuration of the endpoint.
@@ -42,10 +42,10 @@ public interface DelegateMtlsEndpointService {
    * @throws InvalidRequestException If the request is invalid.
    * @throws EntityNotFoundException If there is no existing endpoint for the account.
    */
-  DelegateMtlsEndpointDetails updateEndpointForAccount(String accountId, DelegateMtlsEndpointRequest endpointRequest);
+  AgentMtlsEndpointDetails updateEndpointForAccount(String accountId, AgentMtlsEndpointRequest endpointRequest);
 
   /**
-   * Updates the existing delegate mTLS endpoint for an account with only the properties that are specified in the
+   * Updates the existing mTLS endpoint for an account with only the properties that are specified in the
    * request.
    *
    * @param accountId The account id.
@@ -56,28 +56,28 @@ public interface DelegateMtlsEndpointService {
    * @throws InvalidRequestException If the request is invalid.
    * @throws EntityNotFoundException If there is no existing endpoint for the account.
    */
-  DelegateMtlsEndpointDetails patchEndpointForAccount(String accountId, DelegateMtlsEndpointRequest endpointRequest);
+  AgentMtlsEndpointDetails patchEndpointForAccount(String accountId, AgentMtlsEndpointRequest endpointRequest);
 
   /**
-   * Returns the delegate mTLS endpoint for the account.
+   * Returns the mTLS endpoint for the account.
    *
    * @param accountId The account id.
-   * @return The details of the requested delegate mTLS endpoint.
+   * @return The details of the requested mTLS endpoint.
    *
    * @throws EntityNotFoundException If there is no existing endpoint for the account.
    */
-  DelegateMtlsEndpointDetails getEndpointForAccount(String accountId);
+  AgentMtlsEndpointDetails getEndpointForAccount(String accountId);
 
   /**
-   * Returns the delegate mTLS endpoint for the account if it exists.
+   * Returns the mTLS endpoint for the account if it exists.
    *
    * @param accountId The account id.
-   * @return The details of the requested delegate mTLS endpoint or null if it doesn't exist.
+   * @return The details of the requested mTLS endpoint or null if it doesn't exist.
    */
-  @Nullable DelegateMtlsEndpointDetails getEndpointForAccountOrNull(String accountId);
+  @Nullable AgentMtlsEndpointDetails getEndpointForAccountOrNull(String accountId);
 
   /**
-   * Removes the delegate mTLS endpoint for the account.
+   * Removes the mTLS endpoint for the account.
    *
    * @param accountId The account id.
    * @return True if and only if the endpoint for the account existed and got removed successfully.
@@ -88,7 +88,7 @@ public interface DelegateMtlsEndpointService {
    * Checks whether the provided domain prefix is available.
    *
    * @param domainPrefix The domain prefix to check.
-   * @return True if and only if there is no existing delegate mTLS endpoint that uses the provided domain prefix.
+   * @return True if and only if there is no existing mTLS endpoint that uses the provided domain prefix.
    *
    * @throws InvalidRequestException If the domain prefix is invalid.
    */

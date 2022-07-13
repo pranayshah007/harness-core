@@ -5,20 +5,20 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.beans;
+package io.harness.agent.beans;
 
 /**
- * Specifies the supported modes for delegate mTLS endpoints.
+ * Specifies the supported modes for agent mTLS endpoints.
  */
-public enum DelegateMtlsMode {
+public enum AgentMtlsMode {
   /**
-   * Allows both mTLS and non-mTLS delegates to connect to the manager.
-   * This allows customers to seamlessly migrate their delegate fleet to mTLS.
+   * Allows both mTLS and non-mTLS agents to connect to the manager.
+   * This allows customers to seamlessly migrate their harness agent fleet to mTLS.
    */
   LOOSE,
 
   /**
-   * Allows only mTLS delegates to connect to the manager - non-mTLS delegates are rejected.
+   * Allows only mTLS agents to connect to the manager - non-mTLS agents are rejected.
    */
   STRICT
 }

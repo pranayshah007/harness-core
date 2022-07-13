@@ -265,6 +265,10 @@ import io.harness.delegate.task.shell.ssh.SshCleanupCommandHandler;
 import io.harness.delegate.task.shell.ssh.SshCopyCommandHandler;
 import io.harness.delegate.task.shell.ssh.SshInitCommandHandler;
 import io.harness.delegate.task.shell.ssh.SshScriptCommandHandler;
+import io.harness.delegate.task.shell.winrm.WinRmCleanupCommandHandler;
+import io.harness.delegate.task.shell.winrm.WinRmCopyCommandHandler;
+import io.harness.delegate.task.shell.winrm.WinRmInitCommandHandler;
+import io.harness.delegate.task.shell.winrm.WinRmScriptCommandHandler;
 import io.harness.delegate.task.ssh.NGCommandUnitType;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
 import io.harness.delegate.task.stepstatus.StepStatusTask;
@@ -352,6 +356,7 @@ import io.harness.security.X509TrustManagerBuilder;
 import io.harness.security.encryption.DelegateDecryptionService;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.service.ScmServiceClient;
+import io.harness.shell.ScriptType;
 import io.harness.shell.ShellExecutionService;
 import io.harness.shell.ShellExecutionServiceImpl;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
@@ -695,6 +700,7 @@ import javax.net.ssl.TrustManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
@@ -1350,13 +1356,25 @@ public class DelegateModule extends AbstractModule {
     azureWebAppRequestTypeToRequestHandlerMap.addBinding(AzureWebAppRequestType.SWAP_SLOTS.name())
         .to(AzureWebAppSlotSwapRequestHandler.class);
 
-    // Ssh and WinRM task handlers
-    MapBinder<String, CommandHandler> commandUnitHandlers =
-        MapBinder.newMapBinder(binder(), String.class, CommandHandler.class);
-    commandUnitHandlers.addBinding(NGCommandUnitType.INIT).to(SshInitCommandHandler.class);
-    commandUnitHandlers.addBinding(NGCommandUnitType.SCRIPT).to(SshScriptCommandHandler.class);
-    commandUnitHandlers.addBinding(NGCommandUnitType.COPY).to(SshCopyCommandHandler.class);
-    commandUnitHandlers.addBinding(NGCommandUnitType.CLEANUP).to(SshCleanupCommandHandler.class);
+    // Ssh and WinRm task handlers
+    MapBinder<Pair, CommandHandler> commandUnitHandlers =
+        MapBinder.newMapBinder(binder(), Pair.class, CommandHandler.class);
+    commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.INIT, ScriptType.BASH.name()))
+        .to(SshInitCommandHandler.class);
+    commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.SCRIPT, ScriptType.BASH.name()))
+        .to(SshScriptCommandHandler.class);
+    commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.COPY, ScriptType.BASH.name()))
+        .to(SshCopyCommandHandler.class);
+    commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.CLEANUP, ScriptType.BASH.name()))
+        .to(SshCleanupCommandHandler.class);
+    commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.INIT, ScriptType.POWERSHELL.name()))
+        .to(WinRmInitCommandHandler.class);
+    commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.SCRIPT, ScriptType.POWERSHELL.name()))
+        .to(WinRmScriptCommandHandler.class);
+    commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.COPY, ScriptType.POWERSHELL.name()))
+        .to(WinRmCopyCommandHandler.class);
+    commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.CLEANUP, ScriptType.POWERSHELL.name()))
+        .to(WinRmCleanupCommandHandler.class);
 
     MapBinder<String, ArtifactCommandUnitHandler> artifactCommandHandlers =
         MapBinder.newMapBinder(binder(), String.class, ArtifactCommandUnitHandler.class);

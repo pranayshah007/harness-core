@@ -81,6 +81,7 @@ public class PcfSetupStateExecutionData extends StateExecutionData implements De
   private List<String> tags;
   private String cfAppNamePrefix;
   private boolean isNonVersioning;
+  private boolean isWebProcessCountZero;
 
   @Override
   public Map<String, ExecutionDataValue> getExecutionDetails() {

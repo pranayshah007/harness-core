@@ -19,6 +19,7 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
@@ -26,6 +27,7 @@ import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
@@ -85,6 +87,7 @@ public class SshCommandStepHelper extends CDStepHelper {
   @Inject private FileStoreService fileStoreService;
   @Inject private NGEncryptedDataService ngEncryptedDataService;
   @Inject private CDExpressionResolver cdExpressionResolver;
+  @Inject protected CDFeatureFlagHelper cdFeatureFlagHelper;
 
   public CommandTaskParameters buildCommandTaskParameters(
       @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters commandStepParameters) {
@@ -132,8 +135,9 @@ public class SshCommandStepHelper extends CDStepHelper {
     Optional<ArtifactOutcome> artifactOutcome = resolveArtifactsOutcome(ambiance);
     Optional<ConfigFilesOutcome> configFilesOutcomeOptional = getConfigFilesOutcome(ambiance);
     Boolean onDelegate = getBooleanParameterFieldValue(commandStepParameters.onDelegate);
+    String accountId = AmbianceUtils.getAccountId(ambiance);
     return WinrmTaskParameters.builder()
-        .accountId(AmbianceUtils.getAccountId(ambiance))
+        .accountId(accountId)
         .executeOnDelegate(onDelegate)
         .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
         .outputVariables(getOutputVars(commandStepParameters.getOutputVariables()))
@@ -147,6 +151,10 @@ public class SshCommandStepHelper extends CDStepHelper {
                 .orElse(null))
         .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
         .host(commandStepParameters.getHost())
+        .useWinRMKerberosUniqueCacheFile(
+            cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
+        .disableWinRMCommandEncodingFFSet(
+            cdFeatureFlagHelper.isEnabled(accountId, FeatureName.DISABLE_WINRM_COMMAND_ENCODING))
         .build();
   }
 

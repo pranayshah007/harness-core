@@ -1308,7 +1308,13 @@ public class WorkflowServiceImpl implements WorkflowService {
     Workflow finalWorkflow = readWorkflow(appId, workflowId, workflow.getDefaultVersion());
 
     if (!migration) {
-      yamlPushService.pushYamlChangeSet(accountId, savedWorkflow, finalWorkflow, Type.UPDATE, isSyncFromGit, isRename);
+      if (cloned) {
+        yamlPushService.pushYamlChangeSet(
+            accountId, savedWorkflow, finalWorkflow, Type.CREATE, isSyncFromGit, isRename);
+      } else {
+        yamlPushService.pushYamlChangeSet(
+            accountId, savedWorkflow, finalWorkflow, Type.UPDATE, isSyncFromGit, isRename);
+      }
     }
 
     if (workflowName != null) {

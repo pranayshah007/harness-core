@@ -7,16 +7,16 @@
 
 package io.harness.service.impl;
 
+import io.harness.agent.beans.AgentMtlsEndpoint;
+import io.harness.agent.beans.AgentMtlsEndpoint.AgentMtlsEndpointKeys;
+import io.harness.agent.beans.AgentMtlsEndpointDetails;
+import io.harness.agent.beans.AgentMtlsEndpointRequest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.DelegateMtlsEndpoint;
-import io.harness.delegate.beans.DelegateMtlsEndpoint.DelegateMtlsEndpointKeys;
-import io.harness.delegate.beans.DelegateMtlsEndpointDetails;
-import io.harness.delegate.beans.DelegateMtlsEndpointRequest;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.UnavailableFeatureException;
 import io.harness.persistence.HPersistence;
-import io.harness.service.intfc.DelegateMtlsEndpointService;
+import io.harness.service.intfc.AgentMtlsEndpointService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * Note:
  *    In environments that aren't fully configured with mTLS yet, creating endpoints with
- *    an unconfigured or default `delegateMtlsSubdomain` can lead to potential issues.
+ *    an unconfigured or default `agentMtlsSubdomain` can lead to potential issues.
  *    Additionally, when generating kubernetes yaml files (or verifying mTLS on datapath)
  *    it is necessary to verify if an mTLS endpoint exists for the account.
  *    Furthermore, we don't want a future misconfiguration break existing mTLS setups.
@@ -38,9 +38,9 @@ import lombok.extern.slf4j.Slf4j;
 @ValidateOnExecution
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
-public class DelegateMtlsEndpointServiceReadOnlyImpl implements DelegateMtlsEndpointService {
+public class AgentMtlsEndpointServiceReadOnlyImpl implements AgentMtlsEndpointService {
   protected static final String ERROR_ENDPOINT_FOR_ACCOUNT_NOT_FOUND_FORMAT =
-      "Delegate mTLS endpoint for account '%s' was not found.";
+      "Agent mTLS endpoint for account '%s' was not found.";
   protected static final String ERROR_NOT_AVAILABLE = "The requested feature is not available.";
 
   protected final HPersistence persistence;
@@ -50,48 +50,41 @@ public class DelegateMtlsEndpointServiceReadOnlyImpl implements DelegateMtlsEndp
    * @param persistence the object used for data peristence.
    */
   @Inject
-  public DelegateMtlsEndpointServiceReadOnlyImpl(HPersistence persistence) {
+  public AgentMtlsEndpointServiceReadOnlyImpl(HPersistence persistence) {
     this.persistence = persistence;
   }
 
   @Override
-  public DelegateMtlsEndpointDetails createEndpointForAccount(
-      String accountId, DelegateMtlsEndpointRequest endpointRequest) {
+  public AgentMtlsEndpointDetails createEndpointForAccount(String accountId, AgentMtlsEndpointRequest endpointRequest) {
     throw new UnavailableFeatureException(ERROR_NOT_AVAILABLE);
   }
 
   @Override
-  public DelegateMtlsEndpointDetails updateEndpointForAccount(
-      String accountId, DelegateMtlsEndpointRequest endpointRequest) {
+  public AgentMtlsEndpointDetails updateEndpointForAccount(String accountId, AgentMtlsEndpointRequest endpointRequest) {
     throw new UnavailableFeatureException(ERROR_NOT_AVAILABLE);
   }
 
   @Override
-  public DelegateMtlsEndpointDetails patchEndpointForAccount(
-      String accountId, DelegateMtlsEndpointRequest patchRequest) {
+  public AgentMtlsEndpointDetails patchEndpointForAccount(String accountId, AgentMtlsEndpointRequest patchRequest) {
     throw new UnavailableFeatureException(ERROR_NOT_AVAILABLE);
   }
 
   @Override
-  public DelegateMtlsEndpointDetails getEndpointForAccount(String accountId) {
-    DelegateMtlsEndpoint endpoint = persistence.createQuery(DelegateMtlsEndpoint.class)
-                                        .field(DelegateMtlsEndpointKeys.accountId)
-                                        .equal(accountId)
-                                        .get();
+  public AgentMtlsEndpointDetails getEndpointForAccount(String accountId) {
+    AgentMtlsEndpoint endpoint =
+        persistence.createQuery(AgentMtlsEndpoint.class).field(AgentMtlsEndpointKeys.accountId).equal(accountId).get();
 
     if (endpoint == null) {
-      throw new EntityNotFoundException(String.format(ERROR_NOT_AVAILABLE, accountId));
+      throw new EntityNotFoundException(String.format(ERROR_ENDPOINT_FOR_ACCOUNT_NOT_FOUND_FORMAT, accountId));
     }
 
     return this.buildEndpointDetails(endpoint);
   }
 
   @Override
-  public DelegateMtlsEndpointDetails getEndpointForAccountOrNull(String accountId) {
-    DelegateMtlsEndpoint endpoint = persistence.createQuery(DelegateMtlsEndpoint.class)
-                                        .field(DelegateMtlsEndpointKeys.accountId)
-                                        .equal(accountId)
-                                        .get();
+  public AgentMtlsEndpointDetails getEndpointForAccountOrNull(String accountId) {
+    AgentMtlsEndpoint endpoint =
+        persistence.createQuery(AgentMtlsEndpoint.class).field(AgentMtlsEndpointKeys.accountId).equal(accountId).get();
 
     return endpoint == null ? null : this.buildEndpointDetails(endpoint);
   }
@@ -106,8 +99,8 @@ public class DelegateMtlsEndpointServiceReadOnlyImpl implements DelegateMtlsEndp
     throw new UnavailableFeatureException(ERROR_NOT_AVAILABLE);
   }
 
-  protected DelegateMtlsEndpointDetails buildEndpointDetails(DelegateMtlsEndpoint endpoint) {
-    return DelegateMtlsEndpointDetails.builder()
+  protected AgentMtlsEndpointDetails buildEndpointDetails(AgentMtlsEndpoint endpoint) {
+    return AgentMtlsEndpointDetails.builder()
         .uuid(endpoint.getUuid())
         .accountId(endpoint.getAccountId())
         .fqdn(endpoint.getFqdn())

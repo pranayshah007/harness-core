@@ -438,6 +438,7 @@ public class IntegrationStageUtils {
   public static List<CIImageDetails> getCiImageDetails(InitializeStepInfo initializeStepInfo) {
     List<CIImageDetails> imageDetailsList = new ArrayList<>();
     List<StepElementConfig> stepElementConfigs = getAllSteps(initializeStepInfo.getExecutionElementConfig().getSteps());
+    CIImageDetails imageDetails;
 
     for (StepElementConfig stepElementConfig : stepElementConfigs) {
       if (!(stepElementConfig.getStepSpecType() instanceof CIStepInfo)) {
@@ -445,17 +446,27 @@ public class IntegrationStageUtils {
       }
       CIStepInfo ciStepInfo = (CIStepInfo) stepElementConfig.getStepSpecType();
       if (ciStepInfo.getStepType() == RunStep.STEP_TYPE) {
-        imageDetailsList.add(getCiImageDetails(((RunStepInfo) ciStepInfo).getImage().getValue()));
+        imageDetails = getCiImageInfo(((RunStepInfo) ciStepInfo).getImage().getValue());
       } else if (ciStepInfo.getStepType() == RunTestsStep.STEP_TYPE) {
-        imageDetailsList.add(getCiImageDetails(((RunTestsStepInfo) ciStepInfo).getImage().getValue()));
+        imageDetails = getCiImageInfo(((RunTestsStepInfo) ciStepInfo).getImage().getValue());
       } else if (ciStepInfo.getStepType() == PluginStepInfo.STEP_TYPE) {
-        imageDetailsList.add(getCiImageDetails(((PluginStepInfo) ciStepInfo).getImage().getValue()));
+        imageDetails = getCiImageInfo(((PluginStepInfo) ciStepInfo).getImage().getValue());
+      } else {
+        continue;
+      }
+
+      if (imageDetails != null) {
+        imageDetailsList.add(imageDetails);
       }
     }
     return imageDetailsList;
   }
 
-  public CIImageDetails getCiImageDetails(String image) {
+  public CIImageDetails getCiImageInfo(String image) {
+    if (isEmpty(image)) {
+      return null;
+    }
+
     ImageDetails imagedetails = getImageInfo(image);
     return CIImageDetails.builder().imageName(imagedetails.getName()).imageTag(imagedetails.getTag()).build();
   }

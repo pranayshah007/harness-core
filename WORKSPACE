@@ -4748,7 +4748,7 @@ plain_artifacts = [
     "net.sf.jopt-simple:jopt-simple:5.0.2",
     "net.sf.json-lib:json-lib:jdk15:2.4",
     "net.sf.opencsv:opencsv:2.3",
-    "net.shibboleth.utilities:java-support:8.0.0",
+    "net.shibboleth.utilities:java-support:7.5.0",
     "net.sourceforge.argparse4j:argparse4j:0.8.1",
     "org.antlr:antlr4-runtime:4.7.2",
     "org.apache.avro:avro:1.9.2",

@@ -11,12 +11,12 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.agent.beans.AgentMtlsEndpoint;
+import io.harness.agent.beans.AgentMtlsEndpoint.AgentMtlsEndpointKeys;
+import io.harness.agent.beans.AgentMtlsEndpointDetails;
+import io.harness.agent.beans.AgentMtlsEndpointRequest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.DelegateMtlsEndpoint;
-import io.harness.delegate.beans.DelegateMtlsEndpoint.DelegateMtlsEndpointKeys;
-import io.harness.delegate.beans.DelegateMtlsEndpointDetails;
-import io.harness.delegate.beans.DelegateMtlsEndpointRequest;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
@@ -36,52 +36,51 @@ import org.mongodb.morphia.query.UpdateOperations;
 @ValidateOnExecution
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
-public class DelegateMtlsEndpointServiceImpl extends DelegateMtlsEndpointServiceReadOnlyImpl {
+public class AgentMtlsEndpointServiceImpl extends AgentMtlsEndpointServiceReadOnlyImpl {
   private static final UrlValidator urlValidator = new UrlValidator(UrlValidator.ALLOW_ALL_SCHEMES);
 
-  private final String delegateMtlsSubdomain;
+  private final String agentMtlsSubdomain;
 
   /**
    * Creates a new instance.
    * @param persistence the object used for data peristence.
-   * @param delegateMtlsSubdomain the mTLS subdomain to use for mTLS endpoints.
+   * @param agentMtlsSubdomain the mTLS subdomain to use for mTLS endpoints.
    */
   @Inject
-  public DelegateMtlsEndpointServiceImpl(
-      HPersistence persistence, @Named("delegateMtlsSubdomain") String delegateMtlsSubdomain) {
+  public AgentMtlsEndpointServiceImpl(
+      HPersistence persistence, @Named("agentMtlsSubdomain") String agentMtlsSubdomain) {
     super(persistence);
 
-    if (isBlank(delegateMtlsSubdomain)) {
-      throw new IllegalArgumentException("Non-blank 'delegateMtlsSubdomain' is required to run this service.");
+    if (isBlank(agentMtlsSubdomain)) {
+      throw new IllegalArgumentException("Non-blank 'agentMtlsSubdomain' is required to run this service.");
     }
 
-    this.delegateMtlsSubdomain = delegateMtlsSubdomain;
+    this.agentMtlsSubdomain = agentMtlsSubdomain;
   }
 
   @Override
-  public DelegateMtlsEndpointDetails createEndpointForAccount(
-      String accountId, DelegateMtlsEndpointRequest endpointRequest) {
-    log.info("Create delegate mTLS endpoint for account '{}' with domain prefix '{}' and mode '{}'.", accountId,
+  public AgentMtlsEndpointDetails createEndpointForAccount(String accountId, AgentMtlsEndpointRequest endpointRequest) {
+    log.info("Create agent mTLS endpoint for account '{}' with domain prefix '{}' and mode '{}'.", accountId,
         endpointRequest.getDomainPrefix(), endpointRequest.getMode());
 
     this.validateEndpointRequest(endpointRequest);
 
     String uuid = generateUuid();
     String fqdn = this.buildFqdn(endpointRequest.getDomainPrefix());
-    DelegateMtlsEndpoint endpoint = DelegateMtlsEndpoint.builder()
-                                        .uuid(uuid)
-                                        .accountId(accountId)
-                                        .fqdn(fqdn)
-                                        .mode(endpointRequest.getMode())
-                                        .caCertificates(endpointRequest.getCaCertificates())
-                                        .build();
+    AgentMtlsEndpoint endpoint = AgentMtlsEndpoint.builder()
+                                     .uuid(uuid)
+                                     .accountId(accountId)
+                                     .fqdn(fqdn)
+                                     .mode(endpointRequest.getMode())
+                                     .caCertificates(endpointRequest.getCaCertificates())
+                                     .build();
 
     try {
       persistence.save(endpoint);
     } catch (DuplicateKeyException e) {
       // We assume it's not the uuid that collides (very unlikely)
       throw new InvalidRequestException(
-          String.format("Delegate mTLS endpoint with domain prefix '%s' or accountId '%s' already exists.",
+          String.format("Agent mTLS endpoint with domain prefix '%s' or accountId '%s' already exists.",
               endpointRequest.getDomainPrefix(), accountId));
     }
 
@@ -89,25 +88,24 @@ public class DelegateMtlsEndpointServiceImpl extends DelegateMtlsEndpointService
   }
 
   @Override
-  public DelegateMtlsEndpointDetails updateEndpointForAccount(
-      String accountId, DelegateMtlsEndpointRequest endpointRequest) {
-    log.info("Update delegate mTLS endpoint for account '{}' with domain prefix '{}' and mode '{}'.", accountId,
+  public AgentMtlsEndpointDetails updateEndpointForAccount(String accountId, AgentMtlsEndpointRequest endpointRequest) {
+    log.info("Update agent mTLS endpoint for account '{}' with domain prefix '{}' and mode '{}'.", accountId,
         endpointRequest.getDomainPrefix(), endpointRequest.getMode());
 
     this.validateEndpointRequest(endpointRequest);
 
-    Query<DelegateMtlsEndpoint> query =
-        persistence.createQuery(DelegateMtlsEndpoint.class).filter(DelegateMtlsEndpointKeys.accountId, accountId);
+    Query<AgentMtlsEndpoint> query =
+        persistence.createQuery(AgentMtlsEndpoint.class).filter(AgentMtlsEndpointKeys.accountId, accountId);
 
     String fqdn = this.buildFqdn(endpointRequest.getDomainPrefix());
-    UpdateOperations<DelegateMtlsEndpoint> updateOperations =
-        persistence.createUpdateOperations(DelegateMtlsEndpoint.class)
-            .set(DelegateMtlsEndpointKeys.fqdn, fqdn)
-            .set(DelegateMtlsEndpointKeys.caCertificates, endpointRequest.getCaCertificates())
-            .set(DelegateMtlsEndpointKeys.mode, endpointRequest.getMode());
+    UpdateOperations<AgentMtlsEndpoint> updateOperations =
+        persistence.createUpdateOperations(AgentMtlsEndpoint.class)
+            .set(AgentMtlsEndpointKeys.fqdn, fqdn)
+            .set(AgentMtlsEndpointKeys.caCertificates, endpointRequest.getCaCertificates())
+            .set(AgentMtlsEndpointKeys.mode, endpointRequest.getMode());
 
     // only update (no insert) and return the resulting endpoint.
-    DelegateMtlsEndpoint updatedEndpoint =
+    AgentMtlsEndpoint updatedEndpoint =
         persistence.findAndModify(query, updateOperations, HPersistence.returnNewOptions);
 
     if (updatedEndpoint == null) {
@@ -118,17 +116,15 @@ public class DelegateMtlsEndpointServiceImpl extends DelegateMtlsEndpointService
   }
 
   @Override
-  public DelegateMtlsEndpointDetails patchEndpointForAccount(
-      String accountId, DelegateMtlsEndpointRequest patchRequest) {
-    log.info("Patch delegate mTLS endpoint for account '{}'.", accountId);
+  public AgentMtlsEndpointDetails patchEndpointForAccount(String accountId, AgentMtlsEndpointRequest patchRequest) {
+    log.info("Patch agent mTLS endpoint for account '{}'.", accountId);
 
-    Query<DelegateMtlsEndpoint> query =
-        persistence.createQuery(DelegateMtlsEndpoint.class).filter(DelegateMtlsEndpointKeys.accountId, accountId);
+    Query<AgentMtlsEndpoint> query =
+        persistence.createQuery(AgentMtlsEndpoint.class).filter(AgentMtlsEndpointKeys.accountId, accountId);
 
     // Build update operation based on the patch request
     boolean emptyPatch = true;
-    UpdateOperations<DelegateMtlsEndpoint> updateOperations =
-        persistence.createUpdateOperations(DelegateMtlsEndpoint.class);
+    UpdateOperations<AgentMtlsEndpoint> updateOperations = persistence.createUpdateOperations(AgentMtlsEndpoint.class);
 
     // patch domain prefix
     if (patchRequest.getDomainPrefix() != null) {
@@ -137,7 +133,7 @@ public class DelegateMtlsEndpointServiceImpl extends DelegateMtlsEndpointService
       this.validateDomainPrefix(patchRequest.getDomainPrefix());
 
       String fqdn = this.buildFqdn(patchRequest.getDomainPrefix());
-      updateOperations = updateOperations.set(DelegateMtlsEndpointKeys.fqdn, fqdn);
+      updateOperations = updateOperations.set(AgentMtlsEndpointKeys.fqdn, fqdn);
       emptyPatch = false;
     }
 
@@ -146,8 +142,7 @@ public class DelegateMtlsEndpointServiceImpl extends DelegateMtlsEndpointService
       log.info("Patch request contains CA certificate.");
       this.validateCaCertificates(patchRequest.getCaCertificates());
 
-      updateOperations =
-          updateOperations.set(DelegateMtlsEndpointKeys.caCertificates, patchRequest.getCaCertificates());
+      updateOperations = updateOperations.set(AgentMtlsEndpointKeys.caCertificates, patchRequest.getCaCertificates());
       emptyPatch = false;
     }
 
@@ -155,7 +150,7 @@ public class DelegateMtlsEndpointServiceImpl extends DelegateMtlsEndpointService
     if (patchRequest.getMode() != null) {
       log.info("Patch request contains mode '{}'.", patchRequest.getMode());
 
-      updateOperations = updateOperations.set(DelegateMtlsEndpointKeys.mode, patchRequest.getMode());
+      updateOperations = updateOperations.set(AgentMtlsEndpointKeys.mode, patchRequest.getMode());
       emptyPatch = false;
     }
 
@@ -165,7 +160,7 @@ public class DelegateMtlsEndpointServiceImpl extends DelegateMtlsEndpointService
     }
 
     // only update (no insert) and return the full resulting endpoint.
-    DelegateMtlsEndpoint updatedEndpoint =
+    AgentMtlsEndpoint updatedEndpoint =
         persistence.findAndModify(query, updateOperations, HPersistence.returnNewOptions);
 
     if (updatedEndpoint == null) {
@@ -177,10 +172,10 @@ public class DelegateMtlsEndpointServiceImpl extends DelegateMtlsEndpointService
 
   @Override
   public boolean deleteEndpointForAccount(String accountId) {
-    log.info("Delete delegate mTLS endpoint for account '{}'.", accountId);
+    log.info("Delete agent mTLS endpoint for account '{}'.", accountId);
 
-    Query<DelegateMtlsEndpoint> query =
-        persistence.createQuery(DelegateMtlsEndpoint.class).filter(DelegateMtlsEndpointKeys.accountId, accountId);
+    Query<AgentMtlsEndpoint> query =
+        persistence.createQuery(AgentMtlsEndpoint.class).filter(AgentMtlsEndpointKeys.accountId, accountId);
 
     return persistence.delete(query);
   }
@@ -190,8 +185,8 @@ public class DelegateMtlsEndpointServiceImpl extends DelegateMtlsEndpointService
     this.validateDomainPrefix(domainPrefix);
 
     String fqdn = this.buildFqdn(domainPrefix);
-    DelegateMtlsEndpoint endpoint =
-        persistence.createQuery(DelegateMtlsEndpoint.class).field(DelegateMtlsEndpointKeys.fqdn).equal(fqdn).get();
+    AgentMtlsEndpoint endpoint =
+        persistence.createQuery(AgentMtlsEndpoint.class).field(AgentMtlsEndpointKeys.fqdn).equal(fqdn).get();
 
     return endpoint == null;
   }
@@ -202,13 +197,13 @@ public class DelegateMtlsEndpointServiceImpl extends DelegateMtlsEndpointService
    * @param endpointRequest The request to validate.
    * @throws InvalidRequestException If the request is invalid.
    */
-  private void validateEndpointRequest(DelegateMtlsEndpointRequest endpointRequest) {
+  private void validateEndpointRequest(AgentMtlsEndpointRequest endpointRequest) {
     this.validateCaCertificates(endpointRequest.getCaCertificates());
 
     this.validateDomainPrefix(endpointRequest.getDomainPrefix());
 
     if (endpointRequest.getMode() == null) {
-      throw new InvalidRequestException("No delegate mTLS mode was provided.");
+      throw new InvalidRequestException("No agent mTLS mode was provided.");
     }
   }
 
@@ -221,7 +216,7 @@ public class DelegateMtlsEndpointServiceImpl extends DelegateMtlsEndpointService
   private void validateCaCertificates(String caCertificates) {
     // TODO: Add more CERT validations.
     if (StringUtils.isBlank(caCertificates)) {
-      throw new InvalidRequestException("No CA certificate was provided for the delegate mTLS endpoint.");
+      throw new InvalidRequestException("No CA certificate was provided for the agent mTLS endpoint.");
     }
   }
 
@@ -234,7 +229,7 @@ public class DelegateMtlsEndpointServiceImpl extends DelegateMtlsEndpointService
   private void validateDomainPrefix(String domainPrefix) {
     // domain prefix is mandatory.
     if (StringUtils.isBlank(domainPrefix)) {
-      throw new InvalidRequestException("No domain prefix was provided for the delegate mTLS endpoint.");
+      throw new InvalidRequestException("No domain prefix was provided for the agent mTLS endpoint.");
     }
 
     // no multi-subdomain prefix is allowed - otherwise our wildcard server certificate won't work.
@@ -252,12 +247,12 @@ public class DelegateMtlsEndpointServiceImpl extends DelegateMtlsEndpointService
   }
 
   /**
-   * Creates the fully qualified domain name for a delegate mTLS endpoint with the given domain prefix.
+   * Creates the fully qualified domain name for an agent mTLS endpoint with the given domain prefix.
    *
    * @param domainPrefix The domain prefix.
    * @return The FQDN.
    */
   private String buildFqdn(String domainPrefix) {
-    return String.format("%s.%s", domainPrefix, this.delegateMtlsSubdomain);
+    return String.format("%s.%s", domainPrefix, this.agentMtlsSubdomain);
   }
 }

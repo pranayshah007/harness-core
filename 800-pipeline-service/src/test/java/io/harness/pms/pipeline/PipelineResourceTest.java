@@ -74,7 +74,7 @@ import org.springframework.data.domain.Sort;
 
 @OwnedBy(PIPELINE)
 public class PipelineResourceTest extends CategoryTest {
-  PipelineResource pipelineResource;
+  PipelineResourceImpl pipelineResource;
   @Mock PMSPipelineService pmsPipelineService;
   @Mock PMSPipelineServiceHelper pmsPipelineServiceHelper;
   @Mock NodeExecutionService nodeExecutionService;
@@ -101,7 +101,7 @@ public class PipelineResourceTest extends CategoryTest {
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
-    pipelineResource = new PipelineResource(pmsPipelineService, pmsPipelineServiceHelper, nodeExecutionService,
+    pipelineResource = new PipelineResourceImpl(pmsPipelineService, pmsPipelineServiceHelper, nodeExecutionService,
         nodeExecutionToExecutioNodeMapper, pipelineTemplateHelper, featureFlagHelper, variableCreatorMergeService,
         pipelineCloneHelper, pipelineMetadataService);
     ClassLoader classLoader = this.getClass().getClassLoader();

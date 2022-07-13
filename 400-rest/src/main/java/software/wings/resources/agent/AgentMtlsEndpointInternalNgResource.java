@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.resources;
+package software.wings.resources.agent;
 
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
@@ -13,16 +13,16 @@ import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.agent.beans.AgentMtlsEndpointDetails;
+import io.harness.agent.beans.AgentMtlsEndpointRequest;
+import io.harness.agent.utils.AgentMtlsApiConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.DelegateMtlsEndpointDetails;
-import io.harness.delegate.beans.DelegateMtlsEndpointRequest;
-import io.harness.delegate.utils.DelegateMtlsApiConstants;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.InternalApi;
-import io.harness.service.intfc.DelegateMtlsEndpointService;
+import io.harness.service.intfc.AgentMtlsEndpointService;
 
 import software.wings.security.annotations.Scope;
 
@@ -43,70 +43,69 @@ import javax.ws.rs.QueryParam;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Exposes the internal delegate mTLS endpoint management REST Api on CG which is called by NG.
+ * Exposes the internal agent mTLS endpoint management REST Api on CG which is called by NG.
  */
-@Path(DelegateMtlsApiConstants.API_ROOT_NG_INTERNAL)
+@Path(AgentMtlsApiConstants.API_ROOT_NG_INTERNAL)
 @Produces("application/json")
 @Consumes("application/json")
 @Scope(DELEGATE)
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 @Hidden
-public class DelegateMtlsEndpointInternalNgResource {
-  private final DelegateMtlsEndpointService delegateMtlsEndpointService;
+public class AgentMtlsEndpointInternalNgResource {
+  private final AgentMtlsEndpointService agentMtlsEndpointService;
 
   @Inject
-  public DelegateMtlsEndpointInternalNgResource(DelegateMtlsEndpointService delegateMtlsEndpointService) {
-    this.delegateMtlsEndpointService = delegateMtlsEndpointService;
+  public AgentMtlsEndpointInternalNgResource(AgentMtlsEndpointService agentMtlsEndpointService) {
+    this.agentMtlsEndpointService = agentMtlsEndpointService;
   }
 
   @POST
-  @Path(DelegateMtlsApiConstants.API_PATH_ENDPOINT)
+  @Path(AgentMtlsApiConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @InternalApi
   @Hidden
-  public RestResponse<DelegateMtlsEndpointDetails> createEndpointForAccount(
+  public RestResponse<AgentMtlsEndpointDetails> createEndpointForAccount(
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull String accountIdentifier,
-      @NotNull DelegateMtlsEndpointRequest endpointRequest) {
+      @NotNull AgentMtlsEndpointRequest endpointRequest) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
       return new RestResponse<>(
-          this.delegateMtlsEndpointService.createEndpointForAccount(accountIdentifier, endpointRequest));
+          this.agentMtlsEndpointService.createEndpointForAccount(accountIdentifier, endpointRequest));
     }
   }
 
   @PUT
-  @Path(DelegateMtlsApiConstants.API_PATH_ENDPOINT)
+  @Path(AgentMtlsApiConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @InternalApi
   @Hidden
-  public RestResponse<DelegateMtlsEndpointDetails> updateEndpointForAccount(
+  public RestResponse<AgentMtlsEndpointDetails> updateEndpointForAccount(
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull String accountIdentifier,
-      @NotNull DelegateMtlsEndpointRequest endpointRequest) {
+      @NotNull AgentMtlsEndpointRequest endpointRequest) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
       return new RestResponse<>(
-          this.delegateMtlsEndpointService.updateEndpointForAccount(accountIdentifier, endpointRequest));
+          this.agentMtlsEndpointService.updateEndpointForAccount(accountIdentifier, endpointRequest));
     }
   }
 
   @PATCH
-  @Path(DelegateMtlsApiConstants.API_PATH_ENDPOINT)
+  @Path(AgentMtlsApiConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @InternalApi
   @Hidden
-  public RestResponse<DelegateMtlsEndpointDetails> patchEndpointForAccount(
+  public RestResponse<AgentMtlsEndpointDetails> patchEndpointForAccount(
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull String accountIdentifier,
-      @NotNull DelegateMtlsEndpointRequest patchRequest) {
+      @NotNull AgentMtlsEndpointRequest patchRequest) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
-      return new RestResponse<>(
-          this.delegateMtlsEndpointService.patchEndpointForAccount(accountIdentifier, patchRequest));
+      return new RestResponse<>(this.agentMtlsEndpointService.patchEndpointForAccount(accountIdentifier, patchRequest));
     }
   }
 
   @DELETE
-  @Path(DelegateMtlsApiConstants.API_PATH_ENDPOINT)
+  @Path(AgentMtlsApiConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @InternalApi
@@ -114,20 +113,20 @@ public class DelegateMtlsEndpointInternalNgResource {
   public RestResponse<Boolean> deleteEndpointForAccount(
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull String accountIdentifier) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
-      return new RestResponse<>(this.delegateMtlsEndpointService.deleteEndpointForAccount(accountIdentifier));
+      return new RestResponse<>(this.agentMtlsEndpointService.deleteEndpointForAccount(accountIdentifier));
     }
   }
 
   @GET
-  @Path(DelegateMtlsApiConstants.API_PATH_ENDPOINT)
+  @Path(AgentMtlsApiConstants.API_PATH_ENDPOINT)
   @Timed
   @ExceptionMetered
   @InternalApi
   @Hidden
-  public RestResponse<DelegateMtlsEndpointDetails> getEndpointForAccount(
+  public RestResponse<AgentMtlsEndpointDetails> getEndpointForAccount(
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull String accountIdentifier) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
-      return new RestResponse<>(this.delegateMtlsEndpointService.getEndpointForAccount(accountIdentifier));
+      return new RestResponse<>(this.agentMtlsEndpointService.getEndpointForAccount(accountIdentifier));
     }
   }
 
@@ -136,17 +135,17 @@ public class DelegateMtlsEndpointInternalNgResource {
    *
    * @param accountIdentifier required to be compliant with new internal OpenAPI specifications.
    * @param domainPrefix The domain prefix to check.
-   * @return True if and only if there is no existing delegate mTLS endpoint that uses the provided domain prefix.
+   * @return True if and only if there is no existing mTLS endpoint that uses the provided domain prefix.
    */
   @GET
-  @Path(DelegateMtlsApiConstants.API_PATH_CHECK_AVAILABILITY)
+  @Path(AgentMtlsApiConstants.API_PATH_CHECK_AVAILABILITY)
   @Timed
   @ExceptionMetered
   @InternalApi
   @Hidden
   public RestResponse<Boolean> isDomainPrefixAvailable(
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull String accountIdentifier,
-      @QueryParam(DelegateMtlsApiConstants.API_PARAM_DOMAIN_PREFIX_NAME) @NotNull String domainPrefix) {
-    return new RestResponse<>(this.delegateMtlsEndpointService.isDomainPrefixAvailable(domainPrefix));
+      @QueryParam(AgentMtlsApiConstants.API_PARAM_DOMAIN_PREFIX_NAME) @NotNull String domainPrefix) {
+    return new RestResponse<>(this.agentMtlsEndpointService.isDomainPrefixAvailable(domainPrefix));
   }
 }

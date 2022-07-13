@@ -58,6 +58,8 @@ public interface PcfConstants {
   String BUILDPACK_MANIFEST_YML_ELEMENT = "buildpack";
   String BUILDPACKS_MANIFEST_YML_ELEMENT = "buildpacks";
   String PROCESSES_MANIFEST_YML_ELEMENT = "processes";
+  String PROCESSES_TYPE_MANIFEST_YML_ELEMENT = "type";
+  String WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT = "web";
   String COMMAND_MANIFEST_YML_ELEMENT = "command";
   String DISK_QUOTA_MANIFEST_YML_ELEMENT = "disk_quota";
   String DOCKER_MANIFEST_YML_ELEMENT = "docker";

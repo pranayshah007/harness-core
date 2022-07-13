@@ -73,6 +73,9 @@ public class KubernetesSteadyStateCheckTask extends AbstractDelegateRunnableTask
         kubernetesSteadyStateCheckParams.getAccountId(), kubernetesSteadyStateCheckParams.getAppId(),
         kubernetesSteadyStateCheckParams.getActivityId(), kubernetesSteadyStateCheckParams.getCommandName());
 
+    executionLogCallback.saveExecutionLog(
+        "The Steady State Check step is based on old k8s V1 and is NOT SUPPORTED ANYMORE", LogLevel.ERROR);
+
     if (containerDeploymentDelegateBaseHelper.getControllerCountByLabels(
             containerDeploymentDelegateHelper.getKubernetesConfig(
                 kubernetesSteadyStateCheckParams.getContainerServiceParams()),

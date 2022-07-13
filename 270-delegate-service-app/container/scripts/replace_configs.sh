@@ -511,7 +511,3 @@ fi
 if [[ "" != "$SEGMENT_APIKEY_NG" ]]; then
   yq write -i $CONFIG_FILE segmentConfiguration.apiKey "$SEGMENT_APIKEY_NG"
 fi
-
-if [[ "" != "$DELEGATE_MTLS_SUBDOMAIN" ]]; then
-  yq write -i $CONFIG_FILE delegateMtlsSubdomain "$DELEGATE_MTLS_SUBDOMAIN"
-fi

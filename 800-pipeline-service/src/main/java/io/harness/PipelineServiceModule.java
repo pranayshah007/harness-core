@@ -83,6 +83,8 @@ import io.harness.pms.opa.service.PMSOpaService;
 import io.harness.pms.opa.service.PMSOpaServiceImpl;
 import io.harness.pms.outbox.PMSOutboxEventHandler;
 import io.harness.pms.outbox.PipelineOutboxEventHandler;
+import io.harness.pms.pipeline.PipelineResource;
+import io.harness.pms.pipeline.PipelineResourceImpl;
 import io.harness.pms.pipeline.mappers.PipelineFilterPropertiesMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceImpl;
@@ -363,6 +365,7 @@ public class PipelineServiceModule extends AbstractModule {
 
     bind(PMSBarrierService.class).to(PMSBarrierServiceImpl.class);
     bind(ApprovalResourceService.class).to(ApprovalResourceServiceImpl.class);
+    bind(PipelineResource.class).to(PipelineResourceImpl.class);
     bind(CustomApprovalHelperService.class).to(CustomApprovalHelperServiceImpl.class);
     bind(JiraApprovalHelperService.class).to(JiraApprovalHelperServiceImpl.class);
     bind(JiraStepHelperService.class).to(JiraStepHelperServiceImpl.class);

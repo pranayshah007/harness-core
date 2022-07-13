@@ -326,6 +326,7 @@ import io.dropwizard.bundles.assets.ConfiguredAssetsBundle;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.jersey.errors.EarlyEofExceptionMapper;
+import io.dropwizard.jersey.protobuf.ProtobufBundle;
 import io.dropwizard.lifecycle.Managed;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
@@ -429,6 +430,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     bootstrap.addBundle(new FileAssetsBundle("/.well-known"));
     configureObjectMapper(bootstrap.getObjectMapper());
     bootstrap.setMetricRegistry(metricRegistry);
+    bootstrap.addBundle(new ProtobufBundle<>());
 
     log.info("bootstrapping done.");
   }
@@ -888,7 +890,7 @@ public class WingsApplication extends Application<MainConfiguration> {
             not(annotatedWith(SuppressValidation.class)), interceptor);
       }
     });
-    modules.add(new DelegateServiceModule(configuration.getDelegateMtlsSubdomain()));
+    modules.add(new DelegateServiceModule());
     modules.add(new CapabilityModule());
     modules.add(MigrationModule.getInstance());
     registerRemoteObserverModule(configuration, modules);

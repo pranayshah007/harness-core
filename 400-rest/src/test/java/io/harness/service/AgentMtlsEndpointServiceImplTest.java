@@ -15,19 +15,20 @@ import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 
-import io.harness.DelegateServiceTestBase;
+import io.harness.agent.beans.AgentMtlsEndpoint;
+import io.harness.agent.beans.AgentMtlsEndpoint.AgentMtlsEndpointKeys;
+import io.harness.agent.beans.AgentMtlsEndpointDetails;
+import io.harness.agent.beans.AgentMtlsEndpointRequest;
+import io.harness.agent.beans.AgentMtlsMode;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.delegate.beans.DelegateMtlsEndpoint;
-import io.harness.delegate.beans.DelegateMtlsEndpoint.DelegateMtlsEndpointKeys;
-import io.harness.delegate.beans.DelegateMtlsEndpointDetails;
-import io.harness.delegate.beans.DelegateMtlsEndpointRequest;
-import io.harness.delegate.beans.DelegateMtlsMode;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.service.impl.DelegateMtlsEndpointServiceImpl;
+import io.harness.service.impl.AgentMtlsEndpointServiceImpl;
+
+import software.wings.WingsBaseTest;
 
 import com.google.inject.Inject;
 import java.util.Random;
@@ -36,22 +37,22 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase {
+public class AgentMtlsEndpointServiceImplTest extends WingsBaseTest {
   // Common values used for uts
-  private static final String SUBDOMAIN = "delegate.ut.harness.io";
+  private static final String SUBDOMAIN = "agent.ut.harness.io";
   private static final String CA_CERTIFICATES = "--Cert-in-PEM-format--";
   private static final String CA_CERTIFICATES_2 = "--Cert2-in-PEM-format--";
   private static final String DOMAIN_PREFIX = "customer1";
   private static final String DOMAIN_PREFIX_2 = "customer2";
 
   private final Random random = new Random();
-  private DelegateMtlsEndpointServiceImpl service;
+  private AgentMtlsEndpointServiceImpl service;
 
   @Inject private HPersistence persistence;
 
   @Before
   public void initialize() {
-    this.service = new DelegateMtlsEndpointServiceImpl(this.persistence, SUBDOMAIN);
+    this.service = new AgentMtlsEndpointServiceImpl(this.persistence, SUBDOMAIN);
   }
 
   @Test
@@ -60,23 +61,23 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
   public void testCreateEndpointForAccountCreatesCorrectEntry() {
     // Use unique accountId to avoid overlap with other tests.
     String accountId = UUIDGenerator.generateUuid();
-    DelegateMtlsEndpointRequest request = DelegateMtlsEndpointRequest.builder()
-                                              .domainPrefix(DOMAIN_PREFIX)
-                                              .caCertificates(CA_CERTIFICATES)
-                                              .mode(DelegateMtlsMode.STRICT)
-                                              .build();
+    AgentMtlsEndpointRequest request = AgentMtlsEndpointRequest.builder()
+                                           .domainPrefix(DOMAIN_PREFIX)
+                                           .caCertificates(CA_CERTIFICATES)
+                                           .mode(AgentMtlsMode.STRICT)
+                                           .build();
 
-    DelegateMtlsEndpointDetails returnedDetails = this.service.createEndpointForAccount(accountId, request);
+    AgentMtlsEndpointDetails returnedDetails = this.service.createEndpointForAccount(accountId, request);
 
     // ensure returned entry is correct
     assertEquals(true, StringUtils.isNotEmpty(returnedDetails.getUuid()));
     assertEquals(DOMAIN_PREFIX + "." + SUBDOMAIN, returnedDetails.getFqdn());
     assertEquals(accountId, returnedDetails.getAccountId());
     assertEquals(CA_CERTIFICATES, returnedDetails.getCaCertificates());
-    assertEquals(DelegateMtlsMode.STRICT, returnedDetails.getMode());
+    assertEquals(AgentMtlsMode.STRICT, returnedDetails.getMode());
 
     // ensure stored entry is correct
-    DelegateMtlsEndpointDetails storedDetails = this.service.getEndpointForAccount(accountId);
+    AgentMtlsEndpointDetails storedDetails = this.service.getEndpointForAccount(accountId);
     assertEquals(returnedDetails.getUuid(), storedDetails.getUuid());
     assertEquals(returnedDetails.getFqdn(), storedDetails.getFqdn());
     assertEquals(returnedDetails.getAccountId(), storedDetails.getAccountId());
@@ -92,21 +93,21 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     String accountId = UUIDGenerator.generateUuid();
 
     // create entry first
-    DelegateMtlsEndpointRequest createRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix(DOMAIN_PREFIX)
-                                                    .caCertificates(CA_CERTIFICATES)
-                                                    .mode(DelegateMtlsMode.STRICT)
-                                                    .build();
-    DelegateMtlsEndpointDetails createDetails = this.service.createEndpointForAccount(accountId, createRequest);
+    AgentMtlsEndpointRequest createRequest = AgentMtlsEndpointRequest.builder()
+                                                 .domainPrefix(DOMAIN_PREFIX)
+                                                 .caCertificates(CA_CERTIFICATES)
+                                                 .mode(AgentMtlsMode.STRICT)
+                                                 .build();
+    AgentMtlsEndpointDetails createDetails = this.service.createEndpointForAccount(accountId, createRequest);
 
     // update entry
-    DelegateMtlsEndpointRequest updateRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix(DOMAIN_PREFIX_2)
-                                                    .caCertificates(CA_CERTIFICATES_2)
-                                                    .mode(DelegateMtlsMode.LOOSE)
-                                                    .build();
+    AgentMtlsEndpointRequest updateRequest = AgentMtlsEndpointRequest.builder()
+                                                 .domainPrefix(DOMAIN_PREFIX_2)
+                                                 .caCertificates(CA_CERTIFICATES_2)
+                                                 .mode(AgentMtlsMode.LOOSE)
+                                                 .build();
 
-    DelegateMtlsEndpointDetails updateDetails = this.service.updateEndpointForAccount(accountId, updateRequest);
+    AgentMtlsEndpointDetails updateDetails = this.service.updateEndpointForAccount(accountId, updateRequest);
 
     // ensure returned entry is correct
     assertEquals(true, StringUtils.isNotEmpty(updateDetails.getUuid()));
@@ -117,7 +118,7 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     assertEquals(updateRequest.getMode(), updateDetails.getMode());
 
     // ensure stored entry is correct
-    DelegateMtlsEndpointDetails storedDetails = this.service.getEndpointForAccount(accountId);
+    AgentMtlsEndpointDetails storedDetails = this.service.getEndpointForAccount(accountId);
     assertEquals(updateDetails.getUuid(), storedDetails.getUuid());
     assertEquals(updateDetails.getFqdn(), storedDetails.getFqdn());
     assertEquals(updateDetails.getAccountId(), storedDetails.getAccountId());
@@ -133,11 +134,11 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     String accountId = UUIDGenerator.generateUuid();
 
     // update entry
-    DelegateMtlsEndpointRequest updateRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix(DOMAIN_PREFIX)
-                                                    .caCertificates(CA_CERTIFICATES)
-                                                    .mode(DelegateMtlsMode.LOOSE)
-                                                    .build();
+    AgentMtlsEndpointRequest updateRequest = AgentMtlsEndpointRequest.builder()
+                                                 .domainPrefix(DOMAIN_PREFIX)
+                                                 .caCertificates(CA_CERTIFICATES)
+                                                 .mode(AgentMtlsMode.LOOSE)
+                                                 .build();
 
     this.service.updateEndpointForAccount(accountId, updateRequest);
   }
@@ -150,21 +151,21 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     String accountId = UUIDGenerator.generateUuid();
 
     // create entry first
-    DelegateMtlsEndpointRequest createRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix(DOMAIN_PREFIX)
-                                                    .caCertificates(CA_CERTIFICATES)
-                                                    .mode(DelegateMtlsMode.STRICT)
-                                                    .build();
-    DelegateMtlsEndpointDetails createDetails = this.service.createEndpointForAccount(accountId, createRequest);
+    AgentMtlsEndpointRequest createRequest = AgentMtlsEndpointRequest.builder()
+                                                 .domainPrefix(DOMAIN_PREFIX)
+                                                 .caCertificates(CA_CERTIFICATES)
+                                                 .mode(AgentMtlsMode.STRICT)
+                                                 .build();
+    AgentMtlsEndpointDetails createDetails = this.service.createEndpointForAccount(accountId, createRequest);
 
     // update entry
-    DelegateMtlsEndpointRequest updateRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix(DOMAIN_PREFIX_2)
-                                                    .caCertificates(CA_CERTIFICATES_2)
-                                                    .mode(DelegateMtlsMode.LOOSE)
-                                                    .build();
+    AgentMtlsEndpointRequest updateRequest = AgentMtlsEndpointRequest.builder()
+                                                 .domainPrefix(DOMAIN_PREFIX_2)
+                                                 .caCertificates(CA_CERTIFICATES_2)
+                                                 .mode(AgentMtlsMode.LOOSE)
+                                                 .build();
 
-    DelegateMtlsEndpointDetails updateDetails = this.service.patchEndpointForAccount(accountId, updateRequest);
+    AgentMtlsEndpointDetails updateDetails = this.service.patchEndpointForAccount(accountId, updateRequest);
 
     // ensure returned entry is correct
     assertEquals(true, StringUtils.isNotEmpty(updateDetails.getUuid()));
@@ -175,7 +176,7 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     assertEquals(updateRequest.getMode(), updateDetails.getMode());
 
     // ensure stored entry is correct
-    DelegateMtlsEndpointDetails storedDetails = this.service.getEndpointForAccount(accountId);
+    AgentMtlsEndpointDetails storedDetails = this.service.getEndpointForAccount(accountId);
     assertEquals(updateDetails.getUuid(), storedDetails.getUuid());
     assertEquals(updateDetails.getFqdn(), storedDetails.getFqdn());
     assertEquals(updateDetails.getAccountId(), storedDetails.getAccountId());
@@ -191,18 +192,17 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     String accountId = UUIDGenerator.generateUuid();
 
     // create entry first
-    DelegateMtlsEndpointRequest createRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix(DOMAIN_PREFIX)
-                                                    .caCertificates(CA_CERTIFICATES)
-                                                    .mode(DelegateMtlsMode.STRICT)
-                                                    .build();
-    DelegateMtlsEndpointDetails createDetails = this.service.createEndpointForAccount(accountId, createRequest);
+    AgentMtlsEndpointRequest createRequest = AgentMtlsEndpointRequest.builder()
+                                                 .domainPrefix(DOMAIN_PREFIX)
+                                                 .caCertificates(CA_CERTIFICATES)
+                                                 .mode(AgentMtlsMode.STRICT)
+                                                 .build();
+    AgentMtlsEndpointDetails createDetails = this.service.createEndpointForAccount(accountId, createRequest);
 
     // patch only domain prefix
-    DelegateMtlsEndpointRequest patchRequest =
-        DelegateMtlsEndpointRequest.builder().domainPrefix(DOMAIN_PREFIX_2).build();
+    AgentMtlsEndpointRequest patchRequest = AgentMtlsEndpointRequest.builder().domainPrefix(DOMAIN_PREFIX_2).build();
 
-    DelegateMtlsEndpointDetails patchDetails = this.service.patchEndpointForAccount(accountId, patchRequest);
+    AgentMtlsEndpointDetails patchDetails = this.service.patchEndpointForAccount(accountId, patchRequest);
 
     // ensure stored entry is correct
     assertEquals(createDetails.getUuid(), patchDetails.getUuid());
@@ -220,18 +220,17 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     String accountId = UUIDGenerator.generateUuid();
 
     // create entry first
-    DelegateMtlsEndpointRequest createRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix(DOMAIN_PREFIX)
-                                                    .caCertificates(CA_CERTIFICATES)
-                                                    .mode(DelegateMtlsMode.STRICT)
-                                                    .build();
-    DelegateMtlsEndpointDetails createDetails = this.service.createEndpointForAccount(accountId, createRequest);
+    AgentMtlsEndpointRequest createRequest = AgentMtlsEndpointRequest.builder()
+                                                 .domainPrefix(DOMAIN_PREFIX)
+                                                 .caCertificates(CA_CERTIFICATES)
+                                                 .mode(AgentMtlsMode.STRICT)
+                                                 .build();
+    AgentMtlsEndpointDetails createDetails = this.service.createEndpointForAccount(accountId, createRequest);
 
     // patch only mode
-    DelegateMtlsEndpointRequest patchRequest =
-        DelegateMtlsEndpointRequest.builder().mode(DelegateMtlsMode.LOOSE).build();
+    AgentMtlsEndpointRequest patchRequest = AgentMtlsEndpointRequest.builder().mode(AgentMtlsMode.LOOSE).build();
 
-    DelegateMtlsEndpointDetails patchDetails = this.service.patchEndpointForAccount(accountId, patchRequest);
+    AgentMtlsEndpointDetails patchDetails = this.service.patchEndpointForAccount(accountId, patchRequest);
 
     // ensure stored entry is correct
     assertEquals(createDetails.getUuid(), patchDetails.getUuid());
@@ -249,18 +248,18 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     String accountId = UUIDGenerator.generateUuid();
 
     // create entry first
-    DelegateMtlsEndpointRequest createRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix(DOMAIN_PREFIX)
-                                                    .caCertificates(CA_CERTIFICATES)
-                                                    .mode(DelegateMtlsMode.STRICT)
-                                                    .build();
-    DelegateMtlsEndpointDetails createDetails = this.service.createEndpointForAccount(accountId, createRequest);
+    AgentMtlsEndpointRequest createRequest = AgentMtlsEndpointRequest.builder()
+                                                 .domainPrefix(DOMAIN_PREFIX)
+                                                 .caCertificates(CA_CERTIFICATES)
+                                                 .mode(AgentMtlsMode.STRICT)
+                                                 .build();
+    AgentMtlsEndpointDetails createDetails = this.service.createEndpointForAccount(accountId, createRequest);
 
     // patch only caCertificates
-    DelegateMtlsEndpointRequest patchRequest =
-        DelegateMtlsEndpointRequest.builder().caCertificates(CA_CERTIFICATES_2).build();
+    AgentMtlsEndpointRequest patchRequest =
+        AgentMtlsEndpointRequest.builder().caCertificates(CA_CERTIFICATES_2).build();
 
-    DelegateMtlsEndpointDetails patchDetails = this.service.patchEndpointForAccount(accountId, patchRequest);
+    AgentMtlsEndpointDetails patchDetails = this.service.patchEndpointForAccount(accountId, patchRequest);
 
     // ensure stored entry is correct
     assertEquals(createDetails.getUuid(), patchDetails.getUuid());
@@ -278,15 +277,15 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     String accountId = UUIDGenerator.generateUuid();
 
     // create entry first
-    DelegateMtlsEndpointRequest createRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix(DOMAIN_PREFIX)
-                                                    .caCertificates(CA_CERTIFICATES)
-                                                    .mode(DelegateMtlsMode.STRICT)
-                                                    .build();
+    AgentMtlsEndpointRequest createRequest = AgentMtlsEndpointRequest.builder()
+                                                 .domainPrefix(DOMAIN_PREFIX)
+                                                 .caCertificates(CA_CERTIFICATES)
+                                                 .mode(AgentMtlsMode.STRICT)
+                                                 .build();
     this.service.createEndpointForAccount(accountId, createRequest);
 
     // patch nothing
-    DelegateMtlsEndpointRequest emptyPatchRequest = DelegateMtlsEndpointRequest.builder().build();
+    AgentMtlsEndpointRequest emptyPatchRequest = AgentMtlsEndpointRequest.builder().build();
     this.service.patchEndpointForAccount(accountId, emptyPatchRequest);
   }
 
@@ -298,11 +297,11 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     String accountId = UUIDGenerator.generateUuid();
 
     // update entry
-    DelegateMtlsEndpointRequest updateRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix(DOMAIN_PREFIX)
-                                                    .caCertificates(CA_CERTIFICATES)
-                                                    .mode(DelegateMtlsMode.LOOSE)
-                                                    .build();
+    AgentMtlsEndpointRequest updateRequest = AgentMtlsEndpointRequest.builder()
+                                                 .domainPrefix(DOMAIN_PREFIX)
+                                                 .caCertificates(CA_CERTIFICATES)
+                                                 .mode(AgentMtlsMode.LOOSE)
+                                                 .build();
 
     this.service.patchEndpointForAccount(accountId, updateRequest);
   }
@@ -315,27 +314,23 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     String accountId = UUIDGenerator.generateUuid();
 
     // create entry first
-    DelegateMtlsEndpointRequest createRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix(DOMAIN_PREFIX)
-                                                    .caCertificates(CA_CERTIFICATES)
-                                                    .mode(DelegateMtlsMode.STRICT)
-                                                    .build();
+    AgentMtlsEndpointRequest createRequest = AgentMtlsEndpointRequest.builder()
+                                                 .domainPrefix(DOMAIN_PREFIX)
+                                                 .caCertificates(CA_CERTIFICATES)
+                                                 .mode(AgentMtlsMode.STRICT)
+                                                 .build();
     this.service.createEndpointForAccount(accountId, createRequest);
 
-    DelegateMtlsEndpoint endpoint = persistence.createQuery(DelegateMtlsEndpoint.class)
-                                        .field(DelegateMtlsEndpointKeys.accountId)
-                                        .equal(accountId)
-                                        .get();
+    AgentMtlsEndpoint endpoint =
+        persistence.createQuery(AgentMtlsEndpoint.class).field(AgentMtlsEndpointKeys.accountId).equal(accountId).get();
 
     assertNotNull("Endpoint should exist as we just created it.", endpoint);
 
     Boolean deleted = this.service.deleteEndpointForAccount(accountId);
     assertTrue("Endpoint should've been deleted.", deleted);
 
-    endpoint = persistence.createQuery(DelegateMtlsEndpoint.class)
-                   .field(DelegateMtlsEndpointKeys.accountId)
-                   .equal(accountId)
-                   .get();
+    endpoint =
+        persistence.createQuery(AgentMtlsEndpoint.class).field(AgentMtlsEndpointKeys.accountId).equal(accountId).get();
 
     assertNull("Endpoint just got deleted.", endpoint);
   }
@@ -348,13 +343,13 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     String accountId = UUIDGenerator.generateUuid();
 
     // create entry first
-    DelegateMtlsEndpointRequest createRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix(DOMAIN_PREFIX)
-                                                    .caCertificates(CA_CERTIFICATES)
-                                                    .mode(DelegateMtlsMode.STRICT)
-                                                    .build();
+    AgentMtlsEndpointRequest createRequest = AgentMtlsEndpointRequest.builder()
+                                                 .domainPrefix(DOMAIN_PREFIX)
+                                                 .caCertificates(CA_CERTIFICATES)
+                                                 .mode(AgentMtlsMode.STRICT)
+                                                 .build();
     this.service.createEndpointForAccount(accountId, createRequest);
-    DelegateMtlsEndpointDetails endpoint = this.service.getEndpointForAccount(accountId);
+    AgentMtlsEndpointDetails endpoint = this.service.getEndpointForAccount(accountId);
 
     // ensure returned entry is correct
     assertEquals(true, StringUtils.isNotEmpty(endpoint.getUuid()));
@@ -388,11 +383,11 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     assertTrue(this.service.isDomainPrefixAvailable(domainPrefix2));
 
     // create entry
-    DelegateMtlsEndpointRequest createRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix(domainPrefix1)
-                                                    .caCertificates(CA_CERTIFICATES)
-                                                    .mode(DelegateMtlsMode.STRICT)
-                                                    .build();
+    AgentMtlsEndpointRequest createRequest = AgentMtlsEndpointRequest.builder()
+                                                 .domainPrefix(domainPrefix1)
+                                                 .caCertificates(CA_CERTIFICATES)
+                                                 .mode(AgentMtlsMode.STRICT)
+                                                 .build();
     this.service.createEndpointForAccount(accountId, createRequest);
     this.service.getEndpointForAccount(accountId);
 
@@ -409,11 +404,11 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     String accountId = UUIDGenerator.generateUuid();
 
     // create entry
-    DelegateMtlsEndpointRequest createRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix(DOMAIN_PREFIX)
-                                                    .caCertificates(null)
-                                                    .mode(DelegateMtlsMode.STRICT)
-                                                    .build();
+    AgentMtlsEndpointRequest createRequest = AgentMtlsEndpointRequest.builder()
+                                                 .domainPrefix(DOMAIN_PREFIX)
+                                                 .caCertificates(null)
+                                                 .mode(AgentMtlsMode.STRICT)
+                                                 .build();
     this.service.createEndpointForAccount(accountId, createRequest);
   }
 
@@ -425,11 +420,11 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     String accountId = UUIDGenerator.generateUuid();
 
     // create entry
-    DelegateMtlsEndpointRequest createRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix(DOMAIN_PREFIX)
-                                                    .caCertificates(CA_CERTIFICATES)
-                                                    .mode(null)
-                                                    .build();
+    AgentMtlsEndpointRequest createRequest = AgentMtlsEndpointRequest.builder()
+                                                 .domainPrefix(DOMAIN_PREFIX)
+                                                 .caCertificates(CA_CERTIFICATES)
+                                                 .mode(null)
+                                                 .build();
     this.service.createEndpointForAccount(accountId, createRequest);
   }
 
@@ -441,11 +436,11 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     String accountId = UUIDGenerator.generateUuid();
 
     // create entry
-    DelegateMtlsEndpointRequest createRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix(null)
-                                                    .caCertificates(CA_CERTIFICATES)
-                                                    .mode(DelegateMtlsMode.STRICT)
-                                                    .build();
+    AgentMtlsEndpointRequest createRequest = AgentMtlsEndpointRequest.builder()
+                                                 .domainPrefix(null)
+                                                 .caCertificates(CA_CERTIFICATES)
+                                                 .mode(AgentMtlsMode.STRICT)
+                                                 .build();
     this.service.createEndpointForAccount(accountId, createRequest);
   }
 
@@ -457,11 +452,11 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     String accountId = UUIDGenerator.generateUuid();
 
     // create entry
-    DelegateMtlsEndpointRequest createRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix("a.b")
-                                                    .caCertificates(CA_CERTIFICATES)
-                                                    .mode(DelegateMtlsMode.STRICT)
-                                                    .build();
+    AgentMtlsEndpointRequest createRequest = AgentMtlsEndpointRequest.builder()
+                                                 .domainPrefix("a.b")
+                                                 .caCertificates(CA_CERTIFICATES)
+                                                 .mode(AgentMtlsMode.STRICT)
+                                                 .build();
     this.service.createEndpointForAccount(accountId, createRequest);
   }
 
@@ -473,11 +468,11 @@ public class DelegateMtlsEndpointServiceImplTest extends DelegateServiceTestBase
     String accountId = UUIDGenerator.generateUuid();
 
     // create entry
-    DelegateMtlsEndpointRequest createRequest = DelegateMtlsEndpointRequest.builder()
-                                                    .domainPrefix("someInvalid%Character")
-                                                    .caCertificates(CA_CERTIFICATES)
-                                                    .mode(DelegateMtlsMode.STRICT)
-                                                    .build();
+    AgentMtlsEndpointRequest createRequest = AgentMtlsEndpointRequest.builder()
+                                                 .domainPrefix("someInvalid%Character")
+                                                 .caCertificates(CA_CERTIFICATES)
+                                                 .mode(AgentMtlsMode.STRICT)
+                                                 .build();
     this.service.createEndpointForAccount(accountId, createRequest);
   }
 

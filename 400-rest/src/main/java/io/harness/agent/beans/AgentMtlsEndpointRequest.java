@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.beans;
+package io.harness.agent.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,16 +16,16 @@ import lombok.Builder;
 import lombok.Value;
 
 /**
- * An external facing input format for creating / updating delegate mTLS endpoints.
- * For a detailed documentation of the available fields, please see {@link DelegateMtlsEndpoint}
+ * An external facing input format for creating / updating agent mTLS endpoints.
+ * For a detailed documentation of the available fields, please see {@link AgentMtlsEndpoint}
  */
 @OwnedBy(HarnessTeam.DEL)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Value
 @Builder
-public class DelegateMtlsEndpointRequest {
+public class AgentMtlsEndpointRequest {
   private String domainPrefix;
   private String caCertificates;
-  private DelegateMtlsMode mode;
+  private AgentMtlsMode mode;
 }

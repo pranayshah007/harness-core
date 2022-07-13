@@ -21,6 +21,7 @@ java_binary(
     ],
     deps = [
         "//:lombok",
+        "//800-pipeline-service/contracts:module",
         "//800-pipeline-service/modules/ng-triggers:module",
         "//800-pipeline-service/modules/orchestration:module",
         "//800-pipeline-service/modules/orchestration-steps:module",
@@ -120,6 +121,7 @@ java_library(
     deps = [
         ":module",
         "//:lombok",
+        "//800-pipeline-service/contracts:module",
         "//800-pipeline-service/modules/ng-triggers:module",
         "//800-pipeline-service/modules/orchestration:module",
         "//800-pipeline-service/modules/orchestration-steps:module",
