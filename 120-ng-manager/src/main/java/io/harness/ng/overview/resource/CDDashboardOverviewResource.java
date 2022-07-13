@@ -351,4 +351,17 @@ public class CDDashboardOverviewResource {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getEnvironmentDeploymentDetailsByServiceId(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
   }
+
+  @GET
+  @Path("/getActiveServiceDeployments")
+  @ApiOperation(value = "Get Information about artifacts for a particular service, deployed to different environments",
+      nickname = "getActiveServiceDeployments")
+  public ResponseDTO<InstanceGroupedByArtifactList>
+  getActiveServiceDeployments(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
+    return ResponseDTO.newResponse(cdOverviewDashboardService.getActiveServiceDeploymentsList(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
+  }
 }

@@ -452,7 +452,7 @@ def ingest_data_to_costagg(jsonData):
     job_config = bigquery.QueryJobConfig(
         priority=bigquery.QueryPriority.BATCH
     )
-    run_batch_query(client, query, job_config, timeout=120)
+    run_batch_query(client, query, job_config, timeout=180)
 
 
 MONTHMAP = {

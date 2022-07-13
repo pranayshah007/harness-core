@@ -3,10 +3,7 @@ java_language_level: 8
 
 directories:
   800-pipeline-service
-  810-ng-triggers
-  860-orchestration-visualization
   867-polling-contracts
-  870-orchestration
   874-orchestration-delay
   876-orchestration-beans
   878-ng-common-utilities
@@ -80,8 +77,6 @@ derive_targets_from_directories: false
 
 targets:
   800-pipeline-service:module
-  860-orchestration-visualization:module
-  870-orchestration:module
   874-orchestration-delay:module
   876-orchestration-beans:module
   878-ng-common-utilities:module

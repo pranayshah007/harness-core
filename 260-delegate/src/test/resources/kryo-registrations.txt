@@ -2099,7 +2099,9 @@
 543522:io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse
 543523:io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse
 543524:io.harness.delegate.beans.azure.response.AzureTagsResponse
+543525:io.harness.delegate.beans.azure.response.AzureHostResponse
 543526:io.harness.delegate.beans.WinRmTaskParams
+543527:io.harness.delegate.beans.azure.response.AzureHostsResponse
 549966:io.harness.secretmanagerclient.dto.EncryptedDataMigrationDTO
 553286:io.harness.delegate.task.scm.ScmPushTaskParams
 553287:io.harness.delegate.task.scm.ScmPushTaskResponseData

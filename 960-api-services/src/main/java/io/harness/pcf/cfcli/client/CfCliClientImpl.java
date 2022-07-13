@@ -133,6 +133,42 @@ public class CfCliClientImpl implements CfCliClient {
     }
   }
 
+  @Override
+  public void startAppByCli(CfRequestConfig cfRequestConfig, LogCallback logCallback) throws PivotalClientApiException {
+    log.info("Using CLI to start application");
+
+    int exitCode = 1;
+    try {
+      boolean loginSuccessful = true;
+      if (!cfRequestConfig.isLoggedin()) {
+        loginSuccessful = doLogin(cfRequestConfig, logCallback, cfRequestConfig.getCfHomeDirPath());
+      }
+
+      if (loginSuccessful) {
+        ProcessResult processResult = getProcessResult(getStartAppCfCliCommand(cfRequestConfig),
+            getEnvironmentMapForCfExecutor(cfRequestConfig.getEndpointUrl(), cfRequestConfig.getCfHomeDirPath()),
+            cfRequestConfig.getTimeOutIntervalInMins(), logCallback);
+        exitCode = processResult.getExitValue();
+        if (exitCode != 0) {
+          logCallback.saveExecutionLog(format(processResult.outputUTF8(), Bold, Red), ERROR);
+        } else {
+          logCallback.saveExecutionLog(format(SUCCESS, Bold, Green));
+        }
+      }
+    } catch (Exception e) {
+      throw new PivotalClientApiException(
+          format("Exception occurred while starting Application: %s, Error: App start process Failed",
+              cfRequestConfig.getApplicationName()),
+          e);
+    }
+
+    if (exitCode != 0) {
+      throw new PivotalClientApiException(
+          format("Exception occurred while starting Application: %s, Error: App start process ExitCode: %s",
+              cfRequestConfig.getApplicationName(), exitCode));
+    }
+  }
+
   private int doCfPush(CfRequestConfig pcfRequestConfig, LogCallback logCallback, String finalFilePath,
       CfCreateApplicationRequestData requestData) throws InterruptedException, TimeoutException, IOException {
     logCallback.saveExecutionLog("# Performing \"cf push\"");
@@ -248,6 +284,12 @@ public class CfCliClientImpl implements CfCliClient {
     return CfCliCommandResolver.getConfigureAutoscalingCliCommand(pcfRequestConfig.getCfCliPath(),
         pcfRequestConfig.getCfCliVersion(), appAutoscalarRequestData.getApplicationName(),
         appAutoscalarRequestData.getAutoscalarFilePath());
+  }
+
+  @NotNull
+  private String getStartAppCfCliCommand(CfRequestConfig pcfRequestConfig) {
+    return CfCliCommandResolver.getStartAppCliCommand(
+        pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), pcfRequestConfig.getApplicationName());
   }
 
   @Override

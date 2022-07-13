@@ -381,4 +381,10 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     pipelineToSave.setRepo(gitEntityInfo.getRepoName());
     pipelineToSave.setFilePath(gitEntityInfo.getFilePath());
   }
+
+  @Override
+  public Long countFileInstances(String accountId, String repoURL, String filePath) {
+    Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFileUniquenessCheck(accountId, repoURL, filePath);
+    return countAllPipelines(criteria);
+  }
 }

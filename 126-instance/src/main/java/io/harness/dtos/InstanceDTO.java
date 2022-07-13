@@ -14,6 +14,7 @@ import io.harness.entities.ArtifactDetails;
 import io.harness.entities.InstanceType;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.Setter;
 import lombok.Value;
@@ -49,4 +50,5 @@ public class InstanceDTO {
   long deletedAt;
   long createdAt;
   long lastModifiedAt;
+  Map<String, String> metadata;
 }

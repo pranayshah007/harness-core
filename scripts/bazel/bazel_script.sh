@@ -105,7 +105,6 @@ BAZEL_MODULES="\
   //865-cg-events:module \
   //867-polling-contracts:module \
   //870-cg-orchestration:module \
-  //870-orchestration/contracts:module \
   //874-orchestration-delay:module \
   //876-orchestration-beans:module \
   //877-filestore:module \
@@ -313,12 +312,10 @@ build_bazel_module 445-cg-connectors
 build_bazel_module 450-ce-views
 build_bazel_module 460-capability
 build_bazel_module 490-ce-commons
-build_bazel_module 810-ng-triggers
 build_bazel_module 815-cg-triggers
 build_bazel_module 865-cg-events
 build_bazel_module 867-polling-contracts
 build_bazel_module 870-cg-orchestration
-build_bazel_module 870-orchestration
 build_bazel_module 874-orchestration-delay
 build_bazel_module 876-orchestration-beans
 build_bazel_module 878-ng-common-utilities

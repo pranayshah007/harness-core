@@ -22,6 +22,7 @@ import io.harness.cache.CacheModule;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.factory.ClosingFactory;
+import io.harness.filter.FiltersModule;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.persistance.NoOpGitSyncSdkServiceImpl;
@@ -198,6 +199,7 @@ public class TemplateServiceTestRule implements InjectorRuleMixin, MethodRule, M
     modules.add(new GitSyncablePersistenceTestModule());
     modules.add(TestMongoModule.getInstance());
     modules.add(mongoTypeModule(annotations));
+    modules.add(new FiltersModule());
     return modules;
   }
 

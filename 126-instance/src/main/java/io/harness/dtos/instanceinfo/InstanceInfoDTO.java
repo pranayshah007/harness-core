@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
   , @JsonSubTypes.Type(value = NativeHelmInstanceInfoDTO.class, name = "NativeHelm"),
       @JsonSubTypes.Type(value = ReferenceInstanceInfoDTO.class, name = "Reference"),
       @JsonSubTypes.Type(value = ServerlessAwsLambdaInstanceInfoDTO.class, name = "ServerlessAwsLambda"),
+      @JsonSubTypes.Type(value = GitOpsInstanceInfoDTO.class, name = "GitOps"),
       @JsonSubTypes.Type(value = AzureWebAppInstanceInfoDTO.class, name = "AzureWebApp")
 })
 public abstract class InstanceInfoDTO {

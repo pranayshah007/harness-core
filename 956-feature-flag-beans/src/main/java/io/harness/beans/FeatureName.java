@@ -19,6 +19,7 @@ import lombok.Getter;
  */
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
+  DEPRECATE_K8S_STEADY_STATE_CHECK_STEP,
   NG_GITOPS,
   APPD_CV_TASK,
   ARGO_PHASE1,
@@ -84,6 +85,7 @@ public enum FeatureName {
   ENABLE_WINRM_ENV_VARIABLES,
   FF_PIPELINE,
   FF_GITSYNC,
+  FF_TEMPLATE_GITSYNC,
   FFM_1513,
   FFM_1512,
   FFM_1827,
@@ -401,7 +403,9 @@ public enum FeatureName {
   CI_STEP_GROUP_ENABLED,
   GIT_SIMPLIFICATION_DISABLED,
   USE_K8S_API_FOR_STEADY_STATE_CHECK,
-  WINRM_ASG_ROLLBACK("Used for Collect remaining instances rollback step", HarnessTeam.CDP);
+  WINRM_ASG_ROLLBACK("Used for Collect remaining instances rollback step", HarnessTeam.CDP),
+  CI_DISABLE_RESOURCE_OPTIMIZATION(
+      "Used for disabling the resource optimization, AXA had asked this flag", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {
