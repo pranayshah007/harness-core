@@ -34,7 +34,10 @@ public class CCMMetaDataService {
   @NonNull
   public CCMMetaData getCCMMetaData(@NonNull final String accountId) {
     CEMetadataRecord ceMetadataRecord = metadataRecordDao.getByAccountId(accountId);
-    Boolean isSegmentModuleInterfaceLoadedEventSent = ceMetadataRecord.getSegmentModuleInterfaceLoadedEventSent();
+    Boolean isSegmentModuleInterfaceLoadedEventSent = null;
+    if (null != ceMetadataRecord) {
+      isSegmentModuleInterfaceLoadedEventSent = ceMetadataRecord.getSegmentModuleInterfaceLoadedEventSent();
+    }
     if (isSegmentModuleInterfaceLoadedEventSent == null || !isSegmentModuleInterfaceLoadedEventSent) {
       HashMap<String, Object> properties = new HashMap<>();
       properties.put("module", "CCM");
