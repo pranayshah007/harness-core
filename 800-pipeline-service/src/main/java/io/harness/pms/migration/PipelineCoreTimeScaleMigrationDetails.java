@@ -40,6 +40,7 @@ public class PipelineCoreTimeScaleMigrationDetails implements MigrationDetails {
         .add(Pair.of(6, UpdateTsCIWithPR.class))
         .add(Pair.of(7, UpdateTsCIWithIsRepoPrivate.class))
         .add(Pair.of(8, AddGitOpsEnabledInServiceInfraInfoTable.class))
+        .add(Pair.of(9, AddInfrastructureIdentifierInServiceInfraInfoTable.class))
         .build();
   }
 }
