@@ -229,6 +229,13 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
                 columnValueMapping.put("env_id", envIdentifier);
               }
 
+              if (infraExecutionSummaryObject.get("infrastructureIdentifier") != null
+                  && infraExecutionSummaryObject.get("infrastructureIdentifier").toString().length() != 0) {
+                String infrastructureIdentifier =
+                    infraExecutionSummaryObject.get("infrastructureIdentifier").toString();
+                columnValueMapping.put("infrastructureIdentifier", infrastructureIdentifier);
+              }
+
               if (infraExecutionSummaryObject.get("type") != null
                   && infraExecutionSummaryObject.get("type").toString().length() != 0) {
                 String envType = infraExecutionSummaryObject.get("type").toString();
