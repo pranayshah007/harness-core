@@ -207,6 +207,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("atmosphereBroadcaster") private AtmosphereBroadcaster atmosphereBroadcaster;
   @JsonProperty(value = "jobsFrequencyConfig") private JobsFrequencyConfig jobsFrequencyConfig;
   @JsonProperty("ngManagerServiceHttpClientConfig") private ServiceHttpClientConfig ngManagerServiceHttpClientConfig;
+  @JsonProperty("managerServiceHttpClientConfig") private ServiceHttpClientConfig managerServiceHttpClientConfig;
   @JsonProperty("mockServerConfig") private MockServerConfig mockServerConfig;
   @JsonProperty("numberOfRemindersBeforeAccountDeletion") private int numberOfRemindersBeforeAccountDeletion;
   @JsonProperty("delegateGrpcServicePort") private Integer delegateGrpcServicePort;

@@ -318,6 +318,7 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
     configuration.getPortal().setJwtExternalServiceSecret("JWT_EXTERNAL_SERVICE_SECRET");
     configuration.getPortal().setJwtPasswordSecret(JWT_PASSWORD_SECRET);
     configuration.getPortal().setJwtNextGenManagerSecret("dummy_key");
+    configuration.getPortal().setJwtManagerServiceSecret("dummy_key");
     configuration.getPortal().setOptionalDelegateTaskRejectAtLimit(10000);
     configuration.getPortal().setImportantDelegateTaskRejectAtLimit(50000);
     configuration.getPortal().setCriticalDelegateTaskRejectAtLimit(100000);
@@ -378,7 +379,9 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
     ServiceHttpClientConfig ngManagerServiceHttpClientConfig =
         ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build();
     configuration.setNgManagerServiceHttpClientConfig(ngManagerServiceHttpClientConfig);
-
+    ServiceHttpClientConfig managerServiceHttpClientConfig =
+        ServiceHttpClientConfig.builder().baseUrl("http://localhost:3457/").build();
+    configuration.setManagerServiceHttpClientConfig(managerServiceHttpClientConfig);
     configuration.setDistributedLockImplementation(DistributedLockImplementation.NOOP);
     configuration.setEventsFrameworkConfiguration(
         EventsFrameworkConfiguration.builder()
