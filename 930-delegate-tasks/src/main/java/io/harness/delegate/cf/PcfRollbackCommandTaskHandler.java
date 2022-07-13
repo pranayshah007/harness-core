@@ -27,6 +27,7 @@ import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -116,12 +117,22 @@ public class PcfRollbackCommandTaskHandler extends PcfCommandTaskHandler {
                       ? commandRollbackRequest.getTimeoutIntervalInMin()
                       : 10)
               .build();
-
       // get Upsize Instance data
       List<CfServiceData> upsizeList =
           commandRollbackRequest.getInstanceData()
               .stream()
-              .filter(cfServiceData -> cfServiceData.getDesiredCount() > cfServiceData.getPreviousCount())
+              .filter(cfServiceData -> {
+                if (cfServiceData.getDesiredCount() > cfServiceData.getPreviousCount()) {
+                  return true;
+                } else if (cfServiceData.getDesiredCount() == cfServiceData.getPreviousCount()) {
+                  String newApplicationName = null;
+                  if (!isNull(commandRollbackRequest.getNewApplicationDetails())) {
+                    newApplicationName = commandRollbackRequest.getNewApplicationDetails().getApplicationName();
+                  }
+                  return cfServiceData.getDesiredCount() == 0 && (!cfServiceData.getName().equals(newApplicationName));
+                }
+                return false;
+              })
               .collect(toList());
 
       // get Downsize Instance data

@@ -979,9 +979,15 @@ public class PcfRollbackCommandTaskHandlerTest extends CategoryTest {
     ArgumentCaptor<List<CfServiceData>> upSizeListCaptor = ArgumentCaptor.forClass((Class) List.class);
     verify(pcfCommandTaskHelper).upsizeListOfInstances(any(), any(), any(), any(), upSizeListCaptor.capture(), any());
     List<CfServiceData> upSizeListCaptorValue = upSizeListCaptor.getValue();
-    assertThat(upSizeListCaptorValue).isEmpty();
+    assertThat(upSizeListCaptorValue)
+        .isEqualTo(Arrays.asList(CfServiceData.builder()
+                                     .name(activeApp.getApplicationName())
+                                     .previousCount(0)
+                                     .desiredCount(0)
+                                     .id(activeAppGuid)
+                                     .build()));
 
-    verify(cfDeploymentManager, times(0)).upsizeApplicationWithSteadyStateCheck(any(), any());
+    verify(cfDeploymentManager, times(1)).upsizeApplicationWithSteadyStateCheck(any(), any());
     verify(cfDeploymentManager, times(1)).resizeApplication(any());
     verify(cfDeploymentManager, times(0)).renameApplication(any(), any());
 
