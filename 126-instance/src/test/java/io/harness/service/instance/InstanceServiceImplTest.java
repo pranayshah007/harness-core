@@ -48,7 +48,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
-import org.springframework.data.mongodb.core.query.Criteria;
 
 public class InstanceServiceImplTest extends InstancesTestBase {
   private final String INSTANCE_KEY = "instance_key";
@@ -318,17 +317,5 @@ public class InstanceServiceImplTest extends InstancesTestBase {
     assertThat(instanceService.getActiveServiceInstanceCountBreakdown(
                    accountIdentifier, orgIdentifier, projectIdentifier, serviceIdsList, timestamp))
         .isEqualTo(idAggregationResults);
-  }
-
-  @Test
-  @Owner(developers = PIYUSH_BHUWALKA)
-  @Category(UnitTests.class)
-  public void findFirstInstanceTest() {
-    Criteria criteria = new Criteria();
-    InstanceInfo instanceInfo = K8sInstanceInfo.builder().build();
-    Instance instance =
-        Instance.builder().instanceInfo(instanceInfo).deletedAt(234L).createdAt(123L).lastModifiedAt(3245L).build();
-    when(instanceRepository.findFirstInstance(criteria)).thenReturn(instance);
-    assertThat(instanceService.findFirstInstance(criteria).getCreatedAt()).isEqualTo(123L);
   }
 }
