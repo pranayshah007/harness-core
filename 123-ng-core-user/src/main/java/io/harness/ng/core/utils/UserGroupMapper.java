@@ -8,6 +8,7 @@
 package io.harness.ng.core.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
@@ -55,7 +56,7 @@ public class UserGroupMapper {
               .linkedSsoId(userGroup.getLinkedSsoId())
               .isSsoLinked(TRUE.equals(userGroup.getIsSsoLinked()))
               .notificationConfigs(
-                  userGroup.getNotificationConfigs().stream().map(UserGroupMapper::toDTO).collect(Collectors.toList()))
+                  emptyIfNull(userGroup.getNotificationConfigs()).stream().map(UserGroupMapper::toDTO).collect(Collectors.toList()))
               .users(userGroup.getUsers() == null ? emptyList() : userGroup.getUsers())
               .build();
   }
