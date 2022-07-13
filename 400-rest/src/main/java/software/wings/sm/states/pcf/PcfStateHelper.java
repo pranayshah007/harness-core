@@ -37,10 +37,13 @@ import static io.harness.pcf.model.PcfConstants.MULTIPLE_APPLICATION_MANIFEST_ME
 import static io.harness.pcf.model.PcfConstants.MULTIPLE_AUTOSCALAR_MANIFEST_MESSAGE;
 import static io.harness.pcf.model.PcfConstants.NAME_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.NO_ROUTE_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.PROCESSES_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.PROCESSES_TYPE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.ROUTES_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.ROUTE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.ROUTE_PLACEHOLDER_TOKEN_DEPRECATED;
 import static io.harness.pcf.model.PcfConstants.VARS_YML;
+import static io.harness.pcf.model.PcfConstants.WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.Log.Builder.aLog;
@@ -52,6 +55,7 @@ import static software.wings.helpers.ext.k8s.request.K8sValuesLocation.ServiceOv
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -876,11 +880,51 @@ public class PcfStateHelper {
     return route;
   }
 
+  public Object fetchInstanceCountFromProcesses(Map<String, Object> treeMap, String processName) {
+    Object maxCount = null;
+    boolean processExists = false;
+    if (treeMap.containsKey(PROCESSES_MANIFEST_YML_ELEMENT)) {
+      Object processes = treeMap.get(PROCESSES_MANIFEST_YML_ELEMENT);
+      if (processes instanceof ArrayList<?>) {
+        try {
+          Map<String, Object> webProcess =
+              ((ArrayList<Map<String, Object>>) processes)
+                  .stream()
+                  .filter(process -> {
+                    try {
+                      if (!isNull(process) && process.containsKey(PROCESSES_TYPE_MANIFEST_YML_ELEMENT)) {
+                        Object p = process.get(PROCESSES_TYPE_MANIFEST_YML_ELEMENT);
+                        if ((p instanceof String) && (p.toString().equals(processName))) {
+                          return true;
+                        }
+                      }
+                    } catch (Exception e) {
+                      return false;
+                    }
+                    return false;
+                  })
+                  .findFirst()
+                  .orElse(null);
+          if (webProcess != null) {
+            processExists = true;
+            maxCount = webProcess.get(INSTANCE_MANIFEST_YML_ELEMENT);
+          }
+        } catch (Exception e) {
+          log.warn("Unable to parse processes info in the manifest: {}", e.getMessage());
+        }
+      }
+    }
+    if (isNull(maxCount) && !processExists) {
+      maxCount = treeMap.get(INSTANCE_MANIFEST_YML_ELEMENT);
+    }
+    return maxCount;
+  }
+
   public Integer fetchMaxCountFromManifest(PcfManifestsPackage pcfManifestsPackage, Integer maxInstances) {
     Map<String, Object> applicationYamlMap = getApplicationYamlMap(pcfManifestsPackage.getManifestYml());
     Map<String, Object> treeMap = generateCaseInsensitiveTreeMap(applicationYamlMap);
+    Object maxCount = fetchInstanceCountFromProcesses(treeMap, WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT);
 
-    Object maxCount = treeMap.get(INSTANCE_MANIFEST_YML_ELEMENT);
     String maxVal;
     if (maxCount instanceof Integer) {
       maxVal = maxCount.toString();
