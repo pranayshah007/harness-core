@@ -30,6 +30,7 @@ import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
+import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessS3ArtifactConfig;
@@ -91,7 +92,8 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
       capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
           ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getConnectorDTO().getConnectorConfig(),
           maskingEvaluator));
-    } else if (serverlessArtifactConfig instanceof ServerlessS3ArtifactConfig) {
+    } else if (serverlessArtifactConfig instanceof ServerlessS3ArtifactConfig
+        || serverlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
       AwsConnectorDTO connectorConfigDTO = (AwsConnectorDTO) ((ServerlessS3ArtifactConfig) serverlessArtifactConfig)
                                                .getConnectorDTO()
                                                .getConnectorConfig();
@@ -106,7 +108,8 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
                   .getConnectorDTO()
                   .getConnectorConfig(),
               maskingEvaluator));
-        } else if (sidecarServerlessArtifactConfig instanceof ServerlessS3ArtifactConfig) {
+        } else if (sidecarServerlessArtifactConfig instanceof ServerlessS3ArtifactConfig
+            || sidecarServerlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
           AwsConnectorDTO connectorConfigDTO =
               (AwsConnectorDTO) ((ServerlessS3ArtifactConfig) sidecarServerlessArtifactConfig)
                   .getConnectorDTO()

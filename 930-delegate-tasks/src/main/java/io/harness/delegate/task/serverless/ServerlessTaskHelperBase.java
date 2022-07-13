@@ -29,6 +29,7 @@ import static software.wings.beans.LogColor.Gray;
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
+import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
 
 import static java.lang.String.format;
 
@@ -40,6 +41,7 @@ import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -244,8 +246,7 @@ public class ServerlessTaskHelperBase {
   }
 
   public void fetchArtifact(ServerlessArtifactConfig serverlessArtifactConfig, LogCallback logCallback,
-      String workingDirectory, String savedArtifactFileName, ServerlessInfraConfig serverlessInfraConfig)
-      throws IOException {
+      String workingDirectory, String savedArtifactFileName) throws IOException {
     if (serverlessArtifactConfig instanceof ServerlessArtifactoryArtifactConfig) {
       ServerlessArtifactoryArtifactConfig serverlessArtifactoryArtifactConfig =
           (ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig;
@@ -261,22 +262,21 @@ public class ServerlessTaskHelperBase {
       String s3Directory = Paths.get(workingDirectory, ARTIFACT_DIR_NAME).toString();
       createDirectoryIfDoesNotExist(s3Directory);
       waitForDirectoryToBeAccessibleOutOfProcess(s3Directory, 10);
-      fetchS3Artifact(
-          serverlessS3ArtifactConfig, logCallback, s3Directory, serverlessInfraConfig, savedArtifactFileName);
+      fetchS3Artifact(serverlessS3ArtifactConfig, logCallback, s3Directory, savedArtifactFileName);
     }
   }
 
   public void fetchArtifacts(ServerlessArtifactConfig serverlessArtifactConfig,
       Map<String, ServerlessArtifactConfig> sidecarServerlessArtifactConfigs, LogCallback logCallback,
-      String workingDirectory, ServerlessInfraConfig serverlessInfraConfig) throws IOException {
+      String workingDirectory) throws IOException {
     logCallback.saveExecutionLog(color("Download step for primary artifact...", White, Bold));
-    fetchArtifact(serverlessArtifactConfig, logCallback, workingDirectory, ARTIFACT_FILE_NAME, serverlessInfraConfig);
+    fetchArtifact(serverlessArtifactConfig, logCallback, workingDirectory, ARTIFACT_FILE_NAME);
 
     for (Map.Entry<String, ServerlessArtifactConfig> entry : sidecarServerlessArtifactConfigs.entrySet()) {
       String savedArtifactFileName = SIDECAR_ARTIFACT_FILE_NAME_PREFIX + entry.getKey();
       logCallback.saveExecutionLog(
           color(String.format("Download step for Sidecar artifact [%s]...", entry.getKey()), White, Bold));
-      fetchArtifact(entry.getValue(), logCallback, workingDirectory, savedArtifactFileName, serverlessInfraConfig);
+      fetchArtifact(entry.getValue(), logCallback, workingDirectory, savedArtifactFileName);
     }
   }
 
@@ -348,8 +348,7 @@ public class ServerlessTaskHelperBase {
   }
 
   public void fetchS3Artifact(ServerlessS3ArtifactConfig s3ArtifactConfig, LogCallback executionLogCallback,
-      String s3Directory, ServerlessInfraConfig serverlessInfraConfig, String savedArtifactFileName)
-      throws IOException {
+      String s3Directory, String savedArtifactFileName) throws IOException {
     if (EmptyPredicate.isEmpty(s3ArtifactConfig.getFilePath())) {
       executionLogCallback.saveExecutionLog(
           "artifactPath or artifactPathFilter is blank", ERROR, CommandExecutionStatus.FAILURE);
@@ -373,15 +372,12 @@ public class ServerlessTaskHelperBase {
                   s3ArtifactConfig.getIdentifier()),
             White, Bold));
     executionLogCallback.saveExecutionLog("S3 Object Path: " + artifactPath);
-    ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig =
-        (ServerlessAwsLambdaInfraConfig) serverlessInfraConfig;
-    String region = serverlessAwsLambdaInfraConfig.getRegion();
-    AwsInternalConfig awsConfig =
-        awsNgConfigMapper.createAwsInternalConfig(serverlessAwsLambdaInfraConfig.getAwsConnectorDTO());
-    try (InputStream artifactInputStream =
-             awsApiHelperService
-                 .getObjectFromS3(awsConfig, region, s3ArtifactConfig.getBucketName(), s3ArtifactConfig.getFilePath())
-                 .getObjectContent();
+    AwsInternalConfig awsConfig = awsNgConfigMapper.createAwsInternalConfig(
+        (AwsConnectorDTO) s3ArtifactConfig.getConnectorDTO().getConnectorConfig());
+    try (InputStream artifactInputStream = awsApiHelperService
+                                               .getObjectFromS3(awsConfig, AWS_DEFAULT_REGION,
+                                                   s3ArtifactConfig.getBucketName(), s3ArtifactConfig.getFilePath())
+                                               .getObjectContent();
          FileOutputStream outputStream = new FileOutputStream(artifactFile)) {
       if (artifactInputStream == null) {
         log.error("Failure in downloading artifact from S3");

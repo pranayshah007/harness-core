@@ -135,7 +135,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
     try {
       serverlessTaskHelperBase.fetchArtifacts(serverlessDeployRequest.getServerlessArtifactConfig(),
           serverlessDeployRequest.getSidecarServerlessArtifactConfigs(), artifactLogCallback,
-          serverlessDelegateTaskParams.getWorkingDirectory(), serverlessAwsLambdaInfraConfig);
+          serverlessDelegateTaskParams.getWorkingDirectory());
       artifactLogCallback.saveExecutionLog(format("Done..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     } catch (Exception ex) {
       artifactLogCallback.saveExecutionLog(color(format("%n artifact download failed."), LogColor.Red, LogWeight.Bold),
