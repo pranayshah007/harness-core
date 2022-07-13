@@ -107,6 +107,7 @@ import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsC
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitSecretKeyAccessKeyDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitUrlType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
@@ -1215,7 +1216,7 @@ public class CIExecutionPlanTestHelper {
                 .connectorConfig(
                     AzureRepoConnectorDTO.builder()
                         .url("https://dev.azure.com/harness/project/repo")
-                        .connectionType(GitConnectionType.REPO)
+                        .connectionType(AzureRepoConnectionTypeDTO.REPO)
                         .authentication(
                             AzureRepoAuthenticationDTO.builder()
                                 .authType(GitAuthType.HTTP)

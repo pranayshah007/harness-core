@@ -9,21 +9,34 @@ package io.harness.opaclient;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.security.ServiceTokenGenerator;
+import io.harness.serializer.kryo.KryoConverterFactory;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Scopes;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class OpaClientModule extends AbstractModule {
-  private final String opaServiceBaseUrl;
-  private final String jwtAuthSecret;
+  private final ServiceHttpClientConfig serviceHttpClientConfig;
+  private final String serviceSecret;
+  private final String clientId;
 
-  public OpaClientModule(String opaServiceBaseUrl, String jwtAuthSecret) {
-    this.opaServiceBaseUrl = opaServiceBaseUrl;
-    this.jwtAuthSecret = jwtAuthSecret;
+  public OpaClientModule(ServiceHttpClientConfig serviceHttpClientConfig, String serviceSecret, String clientId) {
+    this.serviceHttpClientConfig = serviceHttpClientConfig;
+    this.serviceSecret = serviceSecret;
+    this.clientId = clientId;
+  }
+
+  @Provides
+  private OpaClientFactory opaClientFactory(KryoConverterFactory kryoConverterFactory) {
+    return new OpaClientFactory(
+        serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);
   }
 
   @Override
   public void configure() {
-    bind(OpaServiceClient.class).toProvider(new OpaClientFactory(opaServiceBaseUrl, jwtAuthSecret));
+    bind(OpaServiceClient.class).toProvider(OpaClientFactory.class).in(Scopes.SINGLETON);
   }
 }

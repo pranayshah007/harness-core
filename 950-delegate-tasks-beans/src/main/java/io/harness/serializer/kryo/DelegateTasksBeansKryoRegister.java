@@ -78,6 +78,8 @@ import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
 import io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse;
 import io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse;
+import io.harness.delegate.beans.azure.response.AzureHostResponse;
+import io.harness.delegate.beans.azure.response.AzureHostsResponse;
 import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
 import io.harness.delegate.beans.azure.response.AzureRepositoriesResponse;
 import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
@@ -526,7 +528,6 @@ import io.harness.delegate.task.scm.ScmPushTaskResponseData;
 import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessArtifactType;
 import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
-import io.harness.delegate.task.serverless.ServerlessArtifactsConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
@@ -1451,6 +1452,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureDeploymentSlotsResponse.class, 543522);
     kryo.register(AzureDeploymentSlotResponse.class, 543523);
     kryo.register(AzureTagsResponse.class, 543524);
+    kryo.register(AzureHostResponse.class, 543525);
+    kryo.register(AzureHostsResponse.class, 543527);
     kryo.register(HostValidationResponse.class, 5167);
     kryo.register(HostReachabilityInfo.class, 5172);
     kryo.register(HttpHelmRepoConfig.class, 7159);
@@ -1538,7 +1541,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureAcrTokenTaskResponse.class, 563533);
     kryo.register(ServerlessEcrArtifactConfig.class, 563534);
     kryo.register(AwsCliInstallationCapability.class, 563535);
-    kryo.register(ServerlessArtifactsConfig.class, 563536);
 
     kryo.register(LdapTestResponse.Status.class, 5500);
     kryo.register(LdapGroupSettings.class, 5498);

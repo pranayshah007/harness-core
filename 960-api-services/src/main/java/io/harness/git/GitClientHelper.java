@@ -63,6 +63,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -97,6 +98,8 @@ public class GitClientHelper {
   private static final String AZURE_REPO_GIT_LABEL = "/_git/";
   private static final String AZURE_SSH_PROTOCOl = "git@ssh";
   private static final String AZURE_SSH_API_VERSION = "v3";
+  private static final String HTTPS = "https";
+  private static final String BITBUCKET_SAAS_GIT_LABEL = "scm";
 
   static {
     try {
@@ -261,8 +264,11 @@ public class GitClientHelper {
   }
 
   public static String getAzureRepoOrgAndProjectSSH(String url) {
-    String temp = StringUtils.substringBeforeLast(url, "/");
-    return StringUtils.substringAfter(temp, "/");
+    String temp = StringUtils.substringAfter(url, "/");
+    if (temp.split("/").length > 2) {
+      return StringUtils.substringBeforeLast(temp, "/");
+    }
+    return temp;
   }
 
   private static String getGitSCMHost(String url) {
@@ -524,5 +530,44 @@ public class GitClientHelper {
     String completeUrl = StringUtils.join(AZURE_SSH_PROTOCOl, DOT_SEPARATOR, scmGroup, COLON_SEPARATOR,
         AZURE_SSH_API_VERSION, PATH_SEPARATOR, gitOwner, PATH_SEPARATOR, gitRepo);
     return completeUrl.replaceFirst(AZURE_REPO_GIT_LABEL, PATH_SEPARATOR);
+  }
+
+  public static String getCompleteHTTPUrlForGithub(String url) {
+    String scmGroup = getGitSCM(url);
+    String gitOwner = getGitOwner(url, true);
+    String gitRepo = getGitRepo(url);
+    return StringUtils.join(HTTPS, COLON_SEPARATOR, PATH_SEPARATOR, PATH_SEPARATOR, scmGroup, PATH_SEPARATOR, gitOwner,
+        PATH_SEPARATOR, gitRepo);
+  }
+
+  public static String getCompleteHTTPUrlForBitbucketSaas(String url) {
+    String scmGroup = getGitSCM(url);
+    String gitOwner = getGitOwner(url, true);
+    String gitRepo = getGitRepo(url);
+    return StringUtils.join(HTTPS, COLON_SEPARATOR, PATH_SEPARATOR, PATH_SEPARATOR, scmGroup, PATH_SEPARATOR, gitOwner,
+        PATH_SEPARATOR, gitRepo);
+  }
+
+  public static String getCompleteHTTPUrlFromSSHUrlForBitbucketServer(String url) {
+    String scmGroup = getGitSCM(url);
+    String gitOwner = getGitOwner(url, true);
+    String gitRepo = getGitRepo(url);
+    return StringUtils.join(HTTPS, COLON_SEPARATOR, PATH_SEPARATOR, PATH_SEPARATOR, scmGroup, PATH_SEPARATOR,
+        BITBUCKET_SAAS_GIT_LABEL, PATH_SEPARATOR, gitOwner, PATH_SEPARATOR, gitRepo);
+  }
+
+  public static String getCompleteHTTPRepoUrlForAzureRepoSaas(String url) {
+    final String AZURE_REPO_URL = "https://dev.azure.com";
+    String gitOwner = getGitOwner(url, true);
+    String gitRepoProject = getGitRepo(url);
+    List<String> parts = Arrays.asList(gitRepoProject.split("/"));
+    if (parts.size() < 2) {
+      // as gitRepoProject should contain repo and project, there must be atleast two parts
+      throw new InvalidRequestException(String.format("Invalid Azure repoUrl [%s]", url));
+    }
+    String gitRepo = parts.get(parts.size() - 1);
+    String gitProject = parts.get(0);
+    return StringUtils.join(
+        AZURE_REPO_URL, PATH_SEPARATOR, gitOwner, PATH_SEPARATOR, gitProject, AZURE_REPO_GIT_LABEL, gitRepo);
   }
 }

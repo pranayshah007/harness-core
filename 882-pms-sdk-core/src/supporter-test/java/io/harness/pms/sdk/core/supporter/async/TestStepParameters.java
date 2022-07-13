@@ -7,6 +7,7 @@
 
 package io.harness.pms.sdk.core.supporter.async;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import lombok.Builder;
@@ -14,6 +15,7 @@ import lombok.Data;
 
 @Data
 @Builder
+@RecasterAlias("io.harness.pms.sdk.core.supporter.async.TestStepParameters")
 public class TestStepParameters implements StepParameters {
   String param;
 }

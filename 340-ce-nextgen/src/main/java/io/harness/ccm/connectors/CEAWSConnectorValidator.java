@@ -186,7 +186,7 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
         return ConnectorValidationResult.builder()
             .errors(ImmutableList.of(
                 ErrorDetail.builder()
-                    .reason("Error with processing data")
+                    .reason("Internal error with data processing")
                     .message("") // UI adds "Contact Harness Support or Harness Community Forum." in this case
                     .code(500)
                     .build()))

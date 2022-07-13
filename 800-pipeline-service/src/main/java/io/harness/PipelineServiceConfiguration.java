@@ -146,6 +146,8 @@ public class PipelineServiceConfiguration extends Configuration {
   private LogStreamingServiceConfiguration logStreamingServiceConfig;
   private TriggerConfiguration triggerConfig;
   private OpaServiceConfiguration opaServerConfig;
+  private String policyManagerSecret;
+  private ServiceHttpClientConfig opaClientConfig;
 
   private PipelineServiceIteratorsConfig iteratorsConfig;
   private boolean shouldDeployWithGitSync;

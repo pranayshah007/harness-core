@@ -17,6 +17,7 @@ import io.harness.ng.core.migration.DeleteCVSetupUsageEventsMigration;
 import io.harness.ng.core.migration.NGAccountSettingsMigration;
 import io.harness.ng.core.migration.NGDefaultOrgNameMigration;
 import io.harness.ng.core.migration.NGDefaultSMNameMigration;
+import io.harness.ng.core.migration.NGGitlabConnectorMigration;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -44,6 +45,7 @@ public class NGCoreMigrationDetails implements MigrationDetails {
         .add(Pair.of(5, NGDefaultSMNameMigration.class))
         .add(Pair.of(6, NGDefaultOrgNameMigration.class))
         .add(Pair.of(7, NGAccountSettingsMigration.class))
+        .add(Pair.of(8, NGGitlabConnectorMigration.class))
         .build();
   }
 }

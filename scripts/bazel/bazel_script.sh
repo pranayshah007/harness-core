@@ -84,9 +84,12 @@ BAZEL_MODULES="\
   //460-capability:module \
   //490-ce-commons:module \
   //800-pipeline-service:module \
+  //800-pipeline-service/modules/ng-triggers:module \
   //800-pipeline-service/modules/orchestration-steps:module \
   //800-pipeline-service/modules/orchestration-steps/contracts:module \
-  //810-ng-triggers:module \
+  //800-pipeline-service/modules/orchestration-visualization:module \
+  //800-pipeline-service/modules/orchestration:module \
+  //800-pipeline-service/modules/orchestration/contracts:module \
   //815-cg-triggers:module \
   //platform-service/service:module \
   //platform-service/service:module_deploy.jar \
@@ -99,12 +102,9 @@ BAZEL_MODULES="\
   //platform-service/modules/notification-service:module \
   //platform-service/modules/resource-group-service:module \
   //840-template-service:module \
-  //860-orchestration-visualization:module \
   //865-cg-events:module \
   //867-polling-contracts:module \
   //870-cg-orchestration:module \
-  //870-orchestration:module \
-  //870-orchestration/contracts:module \
   //874-orchestration-delay:module \
   //876-orchestration-beans:module \
   //877-filestore:module \
@@ -312,13 +312,10 @@ build_bazel_module 445-cg-connectors
 build_bazel_module 450-ce-views
 build_bazel_module 460-capability
 build_bazel_module 490-ce-commons
-build_bazel_module 810-ng-triggers
 build_bazel_module 815-cg-triggers
 build_bazel_module 865-cg-events
-build_bazel_module 860-orchestration-visualization
 build_bazel_module 867-polling-contracts
 build_bazel_module 870-cg-orchestration
-build_bazel_module 870-orchestration
 build_bazel_module 874-orchestration-delay
 build_bazel_module 876-orchestration-beans
 build_bazel_module 878-ng-common-utilities

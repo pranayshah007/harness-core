@@ -13,6 +13,7 @@ import io.harness.enforcement.beans.metadata.RestrictionMetadataDTO;
 import io.harness.enforcement.beans.metadata.StaticLimitRestrictionMetadataDTO;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.enforcement.constants.RestrictionType;
 import io.harness.enforcement.exceptions.EnforcementServiceConnectionException;
 import io.harness.enforcement.exceptions.WrongFeatureStateException;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
@@ -23,10 +24,10 @@ import io.harness.pms.contracts.execution.ChildrenExecutableResponse.Child;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.steps.executables.ChildrenExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.steps.executable.ChildrenExecutableWithRollbackAndRbac;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
@@ -36,7 +37,7 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> {
+public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<StrategyStepParameters> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(NGCommonUtilPlanCreationConstants.STRATEGY)
                                                .setStepCategory(StepCategory.STRATEGY)
@@ -48,14 +49,20 @@ public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> 
   @Inject EnforcementClientService enforcementClientService;
 
   @Override
-  public ChildrenExecutableResponse obtainChildren(
+  public void validateResources(Ambiance ambiance, StrategyStepParameters stepParameters) {
+    // do Nothing
+  }
+
+  @Override
+  public ChildrenExecutableResponse obtainChildrenAfterRbac(
       Ambiance ambiance, StrategyStepParameters stepParameters, StepInputPackage inputPackage) {
     int maxConcurrencyLimitBasedOnPlan = 10000;
     try {
       if (enforcementClientService.isEnforcementEnabled()) {
         Optional<RestrictionMetadataDTO> restrictionMetadataDTO = enforcementClientService.getRestrictionMetadata(
             FeatureRestrictionName.STRATEGY_MAX_CONCURRENT, AmbianceUtils.getAccountId(ambiance));
-        if (restrictionMetadataDTO.isPresent()) {
+        if (restrictionMetadataDTO.isPresent()
+            && restrictionMetadataDTO.get().getRestrictionType() == RestrictionType.STATIC_LIMIT) {
           StaticLimitRestrictionMetadataDTO staticLimitRestrictionDTO =
               (StaticLimitRestrictionMetadataDTO) restrictionMetadataDTO.get();
           maxConcurrencyLimitBasedOnPlan = staticLimitRestrictionDTO.getLimit().intValue();
@@ -117,7 +124,7 @@ public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> 
   }
 
   @Override
-  public StepResponse handleChildrenResponse(
+  public StepResponse handleChildrenResponseInternal(
       Ambiance ambiance, StrategyStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     log.info("Completed  execution for Strategy Step [{}]", stepParameters);
     return createStepResponseFromChildResponse(responseDataMap);

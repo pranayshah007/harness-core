@@ -10,6 +10,7 @@ package io.harness.connector.entities.embedded.gitlabconnector;
 import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -33,5 +34,6 @@ public class GitlabConnector extends Connector {
   GitAuthType authType;
   GitlabAuthentication authenticationDetails;
   boolean hasApiAccess;
-  GitlabTokenApiAccess gitlabApiAccess;
+  GitlabApiAccessType apiAccessType;
+  GitlabApiAccess gitlabApiAccess;
 }

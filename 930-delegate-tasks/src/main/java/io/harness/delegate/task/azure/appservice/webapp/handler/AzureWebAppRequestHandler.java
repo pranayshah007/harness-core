@@ -23,6 +23,8 @@ import io.harness.delegate.task.azure.common.AzureConnectorMapper;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.exception.InvalidArgumentsException;
 
+import software.wings.delegatetasks.azure.AzureSecretHelper;
+
 import com.google.inject.Inject;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -32,6 +34,7 @@ public abstract class AzureWebAppRequestHandler<T extends AzureWebAppTaskRequest
   @Inject protected AzureAppServiceDeploymentService azureAppServiceDeploymentService;
   @Inject protected AzureAppServiceService azureAppServiceService;
   @Inject protected AzureAppServiceResourceUtilities azureAppServiceResourceUtilities;
+  @Inject protected AzureSecretHelper azureSecretHelper;
 
   public final AzureWebAppRequestResponse handleRequest(
       AzureWebAppTaskRequest azureWebAppTaskRequest, AzureLogCallbackProvider logCallbackProvider) {

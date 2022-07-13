@@ -426,6 +426,7 @@ import software.wings.sm.states.BarrierState;
 import software.wings.sm.states.BugsnagState;
 import software.wings.sm.states.CVNGState;
 import software.wings.sm.states.CloudWatchState;
+import software.wings.sm.states.CollectRemainingInstancesState;
 import software.wings.sm.states.CommandState;
 import software.wings.sm.states.CustomLogVerificationState;
 import software.wings.sm.states.DatadogLogState;
@@ -1044,6 +1045,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     w.put("sm.states.AwsLambdaRollback", AwsLambdaRollback.class);
     w.put("sm.states.AwsLambdaState", AwsLambdaState.class);
     w.put("sm.states.AwsNodeSelectState", AwsNodeSelectState.class);
+    w.put("sm.states.CollectRemainingInstancesState", CollectRemainingInstancesState.class);
     w.put("sm.states.AzureNodeSelectState", AzureNodeSelectState.class);
     w.put("sm.states.BambooState", BambooState.class);
     w.put("sm.states.BarrierState", BarrierState.class);

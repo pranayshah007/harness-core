@@ -25,9 +25,9 @@ public class AzureWebAppTrafficShiftRequest extends AbstractWebAppTaskRequest {
   private double trafficPercentage;
 
   @Builder
-  public AzureWebAppTrafficShiftRequest(CommandUnitsProgress commandUnitsProgress,
+  public AzureWebAppTrafficShiftRequest(String accountId, CommandUnitsProgress commandUnitsProgress,
       AzureWebAppInfraDelegateConfig infrastructure, double trafficPercentage) {
-    super(commandUnitsProgress, infrastructure);
+    super(accountId, commandUnitsProgress, infrastructure);
     this.trafficPercentage = trafficPercentage;
   }
 

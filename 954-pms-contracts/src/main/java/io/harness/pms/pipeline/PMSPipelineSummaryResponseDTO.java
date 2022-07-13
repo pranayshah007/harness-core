@@ -23,7 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.Builder;
+import lombok.Setter;
 import lombok.Value;
+import lombok.experimental.NonFinal;
 import org.springframework.data.annotation.Version;
 
 @Value
@@ -45,6 +47,7 @@ public class PMSPipelineSummaryResponseDTO {
   long lastUpdatedAt;
   Set<String> modules;
   ExecutionSummaryInfoDTO executionSummaryInfo;
+  @NonFinal @Setter @Schema(hidden = true) List<RecentExecutionInfoDTO> recentExecutionsInfo;
   Map<String, LinkedHashMap<String, Object>> filters;
   List<String> stageNames;
   EntityGitDetails gitDetails;

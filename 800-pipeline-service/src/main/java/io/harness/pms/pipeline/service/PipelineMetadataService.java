@@ -10,6 +10,8 @@ package io.harness.pms.pipeline.service;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineMetadataV2;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface PipelineMetadataService {
@@ -22,4 +24,7 @@ public interface PipelineMetadataService {
 
   Optional<PipelineMetadataV2> getMetadata(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier);
+
+  Map<String, PipelineMetadataV2> getMetadataForGivenPipelineIds(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> identifiers);
 }

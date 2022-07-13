@@ -530,6 +530,32 @@ public class NGTemplateResource {
     TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeService.applyTemplatesToYaml(accountId, orgId,
         projectId, templateApplyRequestDTO.getOriginalEntityYaml(),
         templateApplyRequestDTO.isGetMergedYamlWithTemplateField());
+    checkLinkedTemplateAccess(accountId, orgId, projectId, templateApplyRequestDTO, templateMergeResponseDTO);
+    log.info("[TemplateService] applyTemplates took {}ms ", System.currentTimeMillis() - start);
+    return ResponseDTO.newResponse(templateMergeResponseDTO);
+  }
+
+  @POST
+  @Path("/applyTemplates/V2")
+  @ApiOperation(value = "Gets complete yaml with templateRefs resolved", nickname = "getYamlWithTemplateRefsResolvedV2")
+  @Hidden
+  public ResponseDTO<TemplateMergeResponseDTO> applyTemplatesV2(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull TemplateApplyRequestDTO templateApplyRequestDTO) {
+    log.info("Applying templates V2 to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
+    long start = System.currentTimeMillis();
+    TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(accountId, orgId,
+        projectId, templateApplyRequestDTO.getOriginalEntityYaml(),
+        templateApplyRequestDTO.isGetMergedYamlWithTemplateField());
+    checkLinkedTemplateAccess(accountId, orgId, projectId, templateApplyRequestDTO, templateMergeResponseDTO);
+    log.info("[TemplateService] applyTemplatesV2 took {}ms ", System.currentTimeMillis() - start);
+    return ResponseDTO.newResponse(templateMergeResponseDTO);
+  }
+
+  private void checkLinkedTemplateAccess(String accountId, String orgId, String projectId,
+      TemplateApplyRequestDTO templateApplyRequestDTO, TemplateMergeResponseDTO templateMergeResponseDTO) {
     if (templateApplyRequestDTO.isCheckForAccess() && templateMergeResponseDTO != null
         && EmptyPredicate.isNotEmpty(templateMergeResponseDTO.getTemplateReferenceSummaries())) {
       Set<String> templateIdentifiers = templateMergeResponseDTO.getTemplateReferenceSummaries()
@@ -540,8 +566,6 @@ public class NGTemplateResource {
           -> accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
               Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_ACCESS_PERMISSION));
     }
-    log.info("[TemplateService] applyTemplates took {}ms ", System.currentTimeMillis() - start);
-    return ResponseDTO.newResponse(templateMergeResponseDTO);
   }
 
   @GET

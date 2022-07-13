@@ -540,8 +540,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
 
   private GetFileResponse prepareGetFileResponse(
       GetFileRequest getFileRequest, ScmGetFileResponseDTO scmGetFileResponseDTO, Scope scope) {
-    GitRepositoryDTO gitRepositoryDTO =
-        GitRepositoryDTO.builder().name(getFileRequest.getRepoName()).projectName("").build();
+    GitRepositoryDTO gitRepositoryDTO = GitRepositoryDTO.builder().name(getFileRequest.getRepoName()).build();
     return GetFileResponse.newBuilder()
         .setStatusCode(HTTP_200)
         .setFileContent(scmGetFileResponseDTO.getFileContent())
@@ -559,8 +558,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
 
   private io.harness.gitsync.CreateFileResponse prepareCreateFileResponse(
       CreateFileRequest createFileRequest, ScmCommitFileResponseDTO scmCommitFileResponseDTO, Scope scope) {
-    GitRepositoryDTO gitRepositoryDTO =
-        GitRepositoryDTO.builder().name(createFileRequest.getRepoName()).projectName("").build();
+    GitRepositoryDTO gitRepositoryDTO = GitRepositoryDTO.builder().name(createFileRequest.getRepoName()).build();
     return io.harness.gitsync.CreateFileResponse.newBuilder()
         .setStatusCode(HTTP_200)
         .setGitMetaData(GitMetaData.newBuilder()
@@ -577,8 +575,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
 
   private io.harness.gitsync.UpdateFileResponse prepareUpdateFileResponse(
       UpdateFileRequest updateFileRequest, ScmCommitFileResponseDTO scmCommitFileResponseDTO, Scope scope) {
-    GitRepositoryDTO gitRepositoryDTO =
-        GitRepositoryDTO.builder().name(updateFileRequest.getRepoName()).projectName("").build();
+    GitRepositoryDTO gitRepositoryDTO = GitRepositoryDTO.builder().name(updateFileRequest.getRepoName()).build();
     return io.harness.gitsync.UpdateFileResponse.newBuilder()
         .setStatusCode(HTTP_200)
         .setGitMetaData(GitMetaData.newBuilder()

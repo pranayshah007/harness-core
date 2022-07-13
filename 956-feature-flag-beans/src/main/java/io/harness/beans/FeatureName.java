@@ -19,6 +19,7 @@ import lombok.Getter;
  */
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
+  DEPRECATE_K8S_STEADY_STATE_CHECK_STEP,
   NG_GITOPS,
   APPD_CV_TASK,
   ARGO_PHASE1,
@@ -84,6 +85,7 @@ public enum FeatureName {
   ENABLE_WINRM_ENV_VARIABLES,
   FF_PIPELINE,
   FF_GITSYNC,
+  FF_TEMPLATE_GITSYNC,
   FFM_1513,
   FFM_1512,
   FFM_1827,
@@ -343,6 +345,7 @@ public enum FeatureName {
   STALE_FLAGS_FFM_1510,
   NG_SVC_ENV_REDESIGN,
   NEW_PIPELINE_STUDIO,
+  EARLY_ACCESS_ENABLED,
   AZURE_REPO_CONNECTOR,
   HELM_OCI_SUPPORT,
   HELP_PANEL,
@@ -393,12 +396,16 @@ public enum FeatureName {
   YAML_APIS_GRANULAR_PERMISSION,
   JENKINS_BUILD,
   ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM,
+  NG_SETTINGS("Enable Settings at various scopes in NG", HarnessTeam.PL),
   QUEUED_COUNT_FOR_QUEUEKEY("Used to display the count of the queue in CG git sync", HarnessTeam.SPG),
   NG_EMAIL_STEP,
   PRUNE_KUBERNETES_RESOURCES_NG,
   CI_STEP_GROUP_ENABLED,
   GIT_SIMPLIFICATION_DISABLED,
-  USE_K8S_API_FOR_STEADY_STATE_CHECK;
+  USE_K8S_API_FOR_STEADY_STATE_CHECK,
+  WINRM_ASG_ROLLBACK("Used for Collect remaining instances rollback step", HarnessTeam.CDP),
+  CI_DISABLE_RESOURCE_OPTIMIZATION(
+      "Used for disabling the resource optimization, AXA had asked this flag", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {

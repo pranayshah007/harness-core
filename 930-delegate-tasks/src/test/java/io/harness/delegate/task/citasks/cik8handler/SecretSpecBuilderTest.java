@@ -33,7 +33,6 @@ import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
-import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitAuthType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
@@ -42,6 +41,7 @@ import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsC
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitSecretKeyAccessKeyDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitUrlType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
@@ -255,7 +255,7 @@ public class SecretSpecBuilderTest extends CategoryTest {
     AzureRepoConnectorDTO azureRepoConnectorDTO =
         AzureRepoConnectorDTO.builder()
             .url("https://dev.azure.com/org/project/repo")
-            .connectionType(GitConnectionType.REPO)
+            .connectionType(AzureRepoConnectionTypeDTO.REPO)
             .authentication(AzureRepoAuthenticationDTO.builder()
                                 .authType(GitAuthType.HTTP)
                                 .credentials(AzureRepoHttpCredentialsDTO.builder()

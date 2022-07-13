@@ -191,6 +191,20 @@
               "type": "string"
             }
           }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "filePath"
+              ]
+            },
+            {
+              "required": [
+                "filePathRegex"
+              ]
+            }
+          ]
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1657,7 +1671,7 @@
             "Ssh",
             "WinRm",
             "ServerlessAwsLambda",
-            "AzureWebApps"
+            "AzureWebApp"
           ]
         },
         "environment": {
@@ -1878,8 +1892,20 @@
         "envGroupRef"
       ],
       "properties": {
+        "__uuid": {
+          "type": "string"
+        },
         "deployToAll": {
-          "type": "boolean"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "minLength": 1
+            }
+          ]
         },
         "envGroupRef": {
           "type": "string"
@@ -1936,7 +1962,16 @@
       ],
       "properties": {
         "deployToAll": {
-          "type": "boolean"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "minLength": 1
+            }
+          ]
         },
         "environmentInputs": {
           "oneOf": [
@@ -3106,6 +3141,35 @@
           }
         }
       ]
+    },
+    "JenkinsArtifactConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ArtifactConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "jobName"
+          ],
+          "properties": {
+            "artifactPath": {
+              "type": "string"
+            },
+            "build": {
+              "type": "string"
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "jobName": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "JenkinsBuildStepInfo": {
       "allOf": [
@@ -5260,6 +5324,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "Jenkins"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JenkinsArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Nexus3Registry"
               }
             }
@@ -5757,7 +5837,7 @@
             "Ssh",
             "WinRm",
             "ServerlessAwsLambda",
-            "AzureWebApps"
+            "AzureWebApp"
           ]
         }
       },
@@ -5767,7 +5847,7 @@
           "if": {
             "properties": {
               "type": {
-                "const": "AzureWebApps"
+                "const": "AzureWebApp"
               }
             }
           },
@@ -6162,6 +6242,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GcrArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Jenkins"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JenkinsArtifactConfig"
               }
             }
           }

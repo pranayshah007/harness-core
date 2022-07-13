@@ -181,7 +181,8 @@ public class PerpetualTaskWorker {
 
   List<PerpetualTaskAssignDetails> fetchAssignedTask() {
     String delegateId = getDelegateId().orElse("UNREGISTERED");
-    List<PerpetualTaskAssignDetails> assignedTasks = perpetualTaskServiceAgentClient.perpetualTaskList(delegateId);
+    List<PerpetualTaskAssignDetails> assignedTasks =
+        perpetualTaskServiceAgentClient.perpetualTaskList(delegateId, accountId);
     if (log.isDebugEnabled()) {
       log.debug("Refreshed list of assigned perpetual tasks {}", assignedTasks);
     }
@@ -191,7 +192,8 @@ public class PerpetualTaskWorker {
   @VisibleForTesting
   void startTask(PerpetualTaskAssignDetails task) {
     try (AutoLogContext ignore1 = new PerpetualTaskLogContext(task.getTaskId().getId(), OVERRIDE_ERROR)) {
-      PerpetualTaskExecutionContext context = perpetualTaskServiceAgentClient.perpetualTaskContext(task.getTaskId());
+      PerpetualTaskExecutionContext context =
+          perpetualTaskServiceAgentClient.perpetualTaskContext(task.getTaskId(), accountId);
       PerpetualTaskSchedule schedule = context.getTaskSchedule();
       long intervalSeconds = Durations.toSeconds(schedule.getInterval());
 

@@ -57,7 +57,10 @@ import org.hibernate.validator.constraints.NotBlank;
 @OwnedBy(HarnessTeam.DX)
 @Schema(name = "BitbucketConnector", description = "This contains details of Bitbucket connectors")
 public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable {
-  @NotNull @JsonProperty("type") private GitConnectionType connectionType;
+  @NotNull
+  @JsonProperty("type")
+  @Schema(type = "string", allowableValues = {"Account", "Repo"})
+  private GitConnectionType connectionType;
   @NotNull @NotBlank private String url;
   private String validationRepo;
   @Valid @NotNull private BitbucketAuthenticationDTO authentication;
@@ -119,9 +122,9 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
             String.format("Provided repoName [%s] does not match with the repoName [%s] provided in connector.",
                 gitRepositoryDTO.getName(), linkedRepo));
       }
-      return getUrl();
+      return url;
     }
-    return FilePathUtils.addEndingSlashIfMissing(getUrl()) + gitRepositoryDTO.getName();
+    return FilePathUtils.addEndingSlashIfMissing(url) + gitRepositoryDTO.getName();
   }
 
   @Override
@@ -144,7 +147,8 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
     String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
     filePath = removeStartingAndEndingSlash(filePath);
     if (GitClientHelper.isBitBucketSAAS(repoUrl)) {
-      return String.format("%s/src/%s/%s", repoUrl, branchName, filePath);
+      String httpRepoUrl = GitClientHelper.getCompleteHTTPUrlForBitbucketSaas(repoUrl);
+      return String.format("%s/src/%s/%s", httpRepoUrl, branchName, filePath);
     }
     return getFileUrlForBitbucketServer(repoUrl, branchName, filePath);
   }
@@ -158,6 +162,9 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
     final String HOST_URL_AND_ORG_SEPARATOR = "scm";
     String repoName = GitClientHelper.getGitRepo(url);
     String orgName = GitClientHelper.getGitOwner(url, true);
+    if (GitAuthType.SSH.equals(authentication.getAuthType())) {
+      return GitRepositoryDTO.builder().org(orgName).name(repoName).build();
+    }
     String[] parts = new String[0];
     if (orgName.equals(HOST_URL_AND_ORG_SEPARATOR)) {
       parts = repoName.split(FILE_PATH_SEPARATOR);
@@ -175,6 +182,9 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
   }
 
   private String getFileUrlForBitbucketServer(String repoUrl, String branchName, String filePath) {
+    if (GitAuthType.SSH.equals(authentication.getAuthType())) {
+      repoUrl = GitClientHelper.getCompleteHTTPUrlFromSSHUrlForBitbucketServer(repoUrl);
+    }
     String hostUrl = "";
     try {
       URL url1 = new URL(repoUrl);

@@ -118,6 +118,7 @@ import io.harness.ng.migration.UserMembershipMigrationProvider;
 import io.harness.ng.migration.UserMetadataMigrationProvider;
 import io.harness.ng.overview.eventGenerator.DeploymentEventGenerator;
 import io.harness.ng.webhook.services.api.WebhookEventProcessingService;
+import io.harness.ngsettings.settings.SettingsCreationJob;
 import io.harness.observer.NoOpRemoteObserverInformerImpl;
 import io.harness.observer.RemoteObserver;
 import io.harness.observer.RemoteObserverInformer;
@@ -147,6 +148,7 @@ import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsume
 import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
+import io.harness.pms.serializer.json.PmsBeansJacksonModule;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.polling.service.impl.PollingPerpetualTaskManager;
 import io.harness.polling.service.impl.PollingServiceImpl;
@@ -283,6 +285,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
   public static void configureObjectMapper(final ObjectMapper mapper) {
     HObjectMapper.configureObjectMapperForNG(mapper);
+    mapper.registerModule(new PmsBeansJacksonModule());
   }
 
   @Override
@@ -370,6 +373,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     modules.add(PipelineServiceUtilityModule.getInstance());
     CacheModule cacheModule = new CacheModule(appConfig.getCacheConfig());
     modules.add(cacheModule);
+
     Injector injector = Guice.createInjector(modules);
 
     // Will create collections and Indexes
@@ -400,6 +404,9 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerManagedBeans(environment, injector);
     initializeEnforcementService(injector, appConfig);
     initializeEnforcementSdk(injector);
+
+    SettingsCreationJob settingsCreationJob = injector.getInstance(SettingsCreationJob.class);
+    settingsCreationJob.run();
     if (appConfig.getShouldDeployWithGitSync()) {
       intializeGitSync(injector);
       GitSyncSdkInitHelper.initGitSyncSdk(injector, environment, getGitSyncConfiguration(appConfig));

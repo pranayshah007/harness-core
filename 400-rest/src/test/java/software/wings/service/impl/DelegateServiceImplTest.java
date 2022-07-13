@@ -31,6 +31,7 @@ import static io.harness.rule.OwnerRule.VLAD;
 import static io.harness.rule.OwnerRule.VUK;
 
 import static software.wings.utils.Utils.uuidToIdentifier;
+import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.DELEGATE_ID;
 import static software.wings.utils.WingsTestConstants.HOST_NAME;
 
@@ -82,6 +83,8 @@ import io.harness.delegate.beans.DelegateStringResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.DelegateTaskResponse.ResponseCode;
+import io.harness.delegate.beans.DelegateTokenDetails;
+import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.delegate.beans.DelegateType;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.beans.K8sConfigDetails;
@@ -92,6 +95,7 @@ import io.harness.delegate.events.DelegateGroupDeleteEvent;
 import io.harness.delegate.events.DelegateGroupUpsertEvent;
 import io.harness.delegate.events.DelegateUnregisterEvent;
 import io.harness.delegate.service.DelegateVersionService;
+import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.task.http.HttpTaskParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.response.CEK8sDelegatePrerequisite;
@@ -181,6 +185,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   private static final String TEST_DELEGATE_NAME = "testDelegateName";
   private static final String TEST_DELEGATE_GROUP_NAME = "testDelegateGroupName";
   private static final String TEST_DELEGATE_GROUP_NAME_IDENTIFIER = "_testDelegateGroupName";
+  private static final String TOKEN_NAME = "tokenName";
 
   @Mock private UsageLimitedFeature delegatesFeature;
   @Mock private Broadcaster broadcaster;
@@ -193,6 +198,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Mock private Account account;
   @Mock private DelegateProfileService delegateProfileService;
   @Mock private DelegateCache delegateCache;
+  @Mock private DelegateNgTokenService delegateNgTokenService;
   @InjectMocks @Inject private DelegateServiceImpl delegateService;
   @InjectMocks @Inject private DelegateTaskServiceClassicImpl delegateTaskServiceClassic;
   @InjectMocks @Inject private DelegateSyncServiceImpl delegateSyncService;
@@ -962,10 +968,16 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     K8sConfigDetails k8sConfigDetails =
         K8sConfigDetails.builder().k8sPermissionType(K8sPermissionType.NAMESPACE_ADMIN).namespace("namespace").build();
     final ImmutableSet<String> tags = ImmutableSet.of("sometag", "anothertag");
+    when(delegateNgTokenService.getDelegateToken(ACCOUNT_ID, TOKEN_NAME))
+        .thenReturn(DelegateTokenDetails.builder()
+                        .name(TOKEN_NAME)
+                        .accountId(ACCOUNT_ID)
+                        .status(DelegateTokenStatus.ACTIVE)
+                        .build());
     DelegateSetupDetails delegateSetupDetails = DelegateSetupDetails.builder()
                                                     .name(TEST_DELEGATE_GROUP_NAME)
                                                     .orgIdentifier(ORG_ID)
-                                                    .tokenName("xxx")
+                                                    .tokenName(TOKEN_NAME)
                                                     .projectIdentifier(PROJECT_ID)
                                                     .k8sConfigDetails(k8sConfigDetails)
                                                     .description("description")
@@ -999,7 +1011,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
                        .name(TEST_DELEGATE_GROUP_NAME)
                        .orgIdentifier(ORG_ID)
                        .projectIdentifier(PROJECT_ID)
-                       .tokenName("xxx")
+                       .tokenName(TOKEN_NAME)
                        .k8sConfigDetails(k8sConfigDetails)
                        .description("description")
                        .size(DelegateSize.LAPTOP)

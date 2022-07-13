@@ -7,6 +7,7 @@
 
 package io.harness.cdng.creator.plan.steps;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.EXECUTION;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.FAILURE_STRATEGIES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PARALLEL;
@@ -31,7 +32,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.pipeline.CdAbstractStepNode;
 import io.harness.cdng.pipeline.PipelineInfrastructure.PipelineInfrastructureKeys;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
@@ -105,7 +105,8 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
     if (YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null) {
       isStepInsideRollback = true;
     }
-
+    stepElement.setIdentifier(StageStrategyUtils.getIdentifierWithExpression(ctx, stepElement.getIdentifier()));
+    stepElement.setName(StageStrategyUtils.getIdentifierWithExpression(ctx, stepElement.getName()));
     List<AdviserObtainment> adviserObtainmentFromMetaData = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
@@ -389,7 +390,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
 
   protected String getName(T stepElement) {
     String nodeName;
-    if (EmptyPredicate.isEmpty(stepElement.getName())) {
+    if (isEmpty(stepElement.getName())) {
       nodeName = stepElement.getIdentifier();
     } else {
       nodeName = stepElement.getName();
@@ -451,17 +452,39 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
 
     List<YamlNode> steps = new ArrayList<>();
     String currentStageIdentifier = currentStage.getIdentifier();
-    for (YamlNode stageNode : stages.asArray()) {
-      YamlNode stage = stageNode.getField(STAGE).getNode();
-      if (stage == null) {
-        continue;
+
+    if (isEmpty(stages.asArray())) {
+      return Collections.emptyList();
+    }
+
+    if (stages.asArray().get(0).getField(PARALLEL) != null) {
+      YamlNode parallelStages = stages.asArray().get(0).getField(PARALLEL).getNode();
+      for (YamlNode stageNode : parallelStages.asArray()) {
+        YamlNode stage = stageNode.getField(STAGE).getNode();
+        if (stage == null) {
+          continue;
+        }
+
+        steps.addAll(findExecutionStepsFromStage(stage, filter));
+        steps.addAll(findProvisionerStepsFromStage(stage, filter));
+
+        if (currentStageIdentifier.equals(stage.getIdentifier())) {
+          break;
+        }
       }
+    } else {
+      for (YamlNode stageNode : stages.asArray()) {
+        YamlNode stage = stageNode.getField(STAGE).getNode();
+        if (stage == null) {
+          continue;
+        }
 
-      steps.addAll(findExecutionStepsFromStage(stage, filter));
-      steps.addAll(findProvisionerStepsFromStage(stage, filter));
+        steps.addAll(findExecutionStepsFromStage(stage, filter));
+        steps.addAll(findProvisionerStepsFromStage(stage, filter));
 
-      if (currentStageIdentifier.equals(stage.getIdentifier())) {
-        break;
+        if (currentStageIdentifier.equals(stage.getIdentifier())) {
+          break;
+        }
       }
     }
 

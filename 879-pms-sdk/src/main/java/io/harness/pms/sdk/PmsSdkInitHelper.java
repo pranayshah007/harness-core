@@ -36,6 +36,7 @@ import io.harness.pms.contracts.steps.SdkStep;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PmsEventCategory;
+import io.harness.pms.exception.InitializeSdkException;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandlerInfo;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
@@ -48,7 +49,9 @@ import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
+import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,10 +61,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsSdkInitHelper {
+  private static final int MAX_ATTEMPTS = 3;
+
+  private static final long INITIAL_DELAY_MS = 100;
+  private static final long MAX_DELAY_MS = 5000;
+  private static final long DELAY_FACTOR = 5;
+  private static final RetryPolicy<Object> RETRY_POLICY = createRetryPolicy();
+
   public static Map<String, Types> calculateSupportedTypes(PipelineServiceInfoProvider pipelineServiceInfoProvider) {
     List<PartialPlanCreator<?>> planCreators = pipelineServiceInfoProvider.getPlanCreators();
     if (EmptyPredicate.isEmpty(planCreators)) {
@@ -119,7 +131,8 @@ public class PmsSdkInitHelper {
     try {
       PmsServiceGrpc.PmsServiceBlockingStub pmsClient =
           injector.getInstance(PmsServiceGrpc.PmsServiceBlockingStub.class);
-      pmsClient.initializeSdk(buildInitializeSdkRequest(injector, sdkConfiguration));
+      Failsafe.with(RETRY_POLICY)
+          .get(() -> pmsClient.initializeSdk(buildInitializeSdkRequest(injector, sdkConfiguration)));
       log.info("Sdk Initialized for module {} Successfully", sdkConfiguration.getModuleType());
     } catch (StatusRuntimeException ex) {
       log.error("Sdk Initialization failed with StatusRuntimeException Status: {}", ex.getStatus());
@@ -239,5 +252,30 @@ public class PmsSdkInitHelper {
     StepRegistry stepRegistry = injector.getInstance(StepRegistry.class);
     Map<StepType, Step> registry = stepRegistry.getRegistry();
     return registry == null ? Collections.emptyList() : new ArrayList<>(registry.keySet());
+  }
+
+  private static RetryPolicy<Object> createRetryPolicy() {
+    return new RetryPolicy<>()
+        .withBackoff(INITIAL_DELAY_MS, MAX_DELAY_MS, ChronoUnit.MILLIS, DELAY_FACTOR)
+        .withMaxAttempts(MAX_ATTEMPTS)
+        .onFailedAttempt(event
+            -> log.warn(
+                String.format("Pms sdk grpc retry attempt: %d", event.getAttemptCount()), event.getLastFailure()))
+        .onFailure(event
+            -> log.error(String.format("Pms sdk grpc retry failed after attempts: %d", event.getAttemptCount()),
+                event.getFailure()))
+        .handleIf(throwable -> {
+          if (!(throwable instanceof StatusRuntimeException) && !(throwable instanceof InitializeSdkException)) {
+            return false;
+          }
+          if (throwable instanceof InitializeSdkException) {
+            return true;
+          }
+          StatusRuntimeException statusRuntimeException = (StatusRuntimeException) throwable;
+          return statusRuntimeException.getStatus().getCode() == Status.Code.UNAVAILABLE
+              || statusRuntimeException.getStatus().getCode() == Status.Code.UNKNOWN
+              || statusRuntimeException.getStatus().getCode() == Status.Code.DEADLINE_EXCEEDED
+              || statusRuntimeException.getStatus().getCode() == Status.Code.RESOURCE_EXHAUSTED;
+        });
   }
 }

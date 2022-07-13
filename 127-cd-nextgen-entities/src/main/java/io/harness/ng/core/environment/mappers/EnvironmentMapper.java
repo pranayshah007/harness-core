@@ -54,6 +54,9 @@ public class EnvironmentMapper {
 
       environment = toNGEnvironmentEntity(accountId, ngEnvironmentConfig, environmentRequestDTO.getColor());
       environment.setYaml(environmentRequestDTO.getYaml());
+      if (isEmpty(environment.getYaml())) {
+        environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
+      }
       return environment;
     }
     environment = toNGEnvironmentEntity(accountId, environmentRequestDTO);

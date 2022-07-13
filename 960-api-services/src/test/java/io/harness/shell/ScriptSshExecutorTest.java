@@ -1,0 +1,109 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
+package io.harness.shell;
+
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.rule.OwnerRule.VED;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.doReturn;
+
+import io.harness.CategoryTest;
+import io.harness.category.element.UnitTests;
+import io.harness.logging.LogCallback;
+import io.harness.rule.Owner;
+
+import java.util.ArrayList;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(ScriptSshExecutor.class)
+public class ScriptSshExecutorTest extends CategoryTest {
+  private static final String ENV_VAR_VALUE = "/some/valid/path";
+
+  @Mock private SshSessionConfig sshSessionConfig;
+
+  private ScriptSshExecutor scriptSshExecutor;
+
+  @Mock private LogCallback logCallback;
+
+  String APP_ID = "APP_ID";
+  String ACCOUNT_ID = "ACCOUNT_ID";
+  String ACTIVITY_ID = "ACTIVITY_ID";
+
+  @Before
+  public void setup() throws Exception {
+    when(sshSessionConfig.getExecutionId()).thenReturn("ID");
+    scriptSshExecutor = PowerMockito.spy(new ScriptSshExecutor(logCallback, true, sshSessionConfig));
+    PowerMockito.doReturn(ENV_VAR_VALUE).when(scriptSshExecutor, "getEnvVarValue", "Path");
+    PowerMockito.doReturn(ENV_VAR_VALUE).when(scriptSshExecutor, "getEnvVarValue", "HOME");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void shouldRecognizeEnvVarsInPathAndReplaceWithValuesExtractedFromSystem() {
+    assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME")).isEqualTo(ENV_VAR_VALUE);
+    assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME/abc/$Path"))
+        .isEqualTo(ENV_VAR_VALUE + "/abc" + ENV_VAR_VALUE);
+    assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME/work$Path/abc"))
+        .isEqualTo(ENV_VAR_VALUE + "/work" + ENV_VAR_VALUE + "/abc");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void test1() {
+    sshSessionConfig.setAccountId(ACCOUNT_ID);
+    sshSessionConfig.setAppId(APP_ID);
+    sshSessionConfig.setExecutionId(ACTIVITY_ID);
+    sshSessionConfig.setWorkingDirectory("/tmp");
+    sshSessionConfig.setCommandUnitName("MyCommandUnit");
+
+    ExecuteCommandResponse executeCommandResponse = ExecuteCommandResponse.builder().status(SUCCESS).build();
+
+    String command = "export A=\"aaa\"\n"
+        + "export B=\"bbb\"";
+
+    doReturn(executeCommandResponse)
+        .when(scriptSshExecutor)
+        .getExecuteCommandResponse(command, new ArrayList<>(), new ArrayList<>(), false);
+
+    ExecuteCommandResponse response = scriptSshExecutor.executeCommandString(command, new ArrayList<>());
+
+    assertThat(response.getStatus()).isEqualTo(executeCommandResponse.getStatus());
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetMethods() {
+    SshSessionConfig config = new SshSessionConfig();
+    config.setAccountId(ACCOUNT_ID);
+    config.setAppId(APP_ID);
+    config.setExecutionId(ACTIVITY_ID);
+    config.setWorkingDirectory("/tmp");
+    config.setCommandUnitName("MyCommandUnit");
+    config.setHost("host");
+
+    ScriptSshExecutor executor = new ScriptSshExecutor(logCallback, false, config);
+
+    assertThat(executor.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(executor.getExecutionId()).isEqualTo(ACTIVITY_ID);
+    assertThat(executor.getHost()).isEqualTo("host");
+    assertThat(executor.getCommandUnitName()).isEqualTo("MyCommandUnit");
+  }
+}

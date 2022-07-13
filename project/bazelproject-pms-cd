@@ -18,13 +18,10 @@ directories:
   470-alert
   490-ce-commons
   800-pipeline-service
-  810-ng-triggers
   platform-service
-  860-orchestration-visualization
   865-cg-events
   867-polling-contracts
   870-cg-orchestration
-  870-orchestration
   874-orchestration-delay
   876-orchestration-beans
   878-ng-common-utilities

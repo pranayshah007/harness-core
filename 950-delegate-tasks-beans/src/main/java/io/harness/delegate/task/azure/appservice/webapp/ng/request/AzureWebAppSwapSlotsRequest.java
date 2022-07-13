@@ -22,14 +22,12 @@ import lombok.EqualsAndHashCode;
 @OwnedBy(CDP)
 @EqualsAndHashCode(callSuper = true)
 public class AzureWebAppSwapSlotsRequest extends AbstractWebAppTaskRequest {
-  private String targetSlot;
   private Integer timeoutIntervalInMin;
 
   @Builder
-  public AzureWebAppSwapSlotsRequest(CommandUnitsProgress commandUnitsProgress,
-      AzureWebAppInfraDelegateConfig infrastructure, String targetSlot, Integer timeoutIntervalInMin) {
-    super(commandUnitsProgress, infrastructure);
-    this.targetSlot = targetSlot;
+  public AzureWebAppSwapSlotsRequest(String accountId, CommandUnitsProgress commandUnitsProgress,
+      AzureWebAppInfraDelegateConfig infrastructure, Integer timeoutIntervalInMin) {
+    super(accountId, commandUnitsProgress, infrastructure);
     this.timeoutIntervalInMin = timeoutIntervalInMin;
   }
 

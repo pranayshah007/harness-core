@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.DelegateType.DOCKER;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_DELETE_PERMISSION;
-import static io.harness.delegate.utils.RbacConstants.DELEGATE_EDIT_PERMISSION;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_RESOURCE_TYPE;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_VIEW_PERMISSION;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -94,7 +93,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -519,86 +517,6 @@ public class DelegateSetupResourceV3 {
     }
   }
 
-  @POST
-  @Path("validate-kubernetes-yaml")
-  @Timed
-  @ExceptionMetered
-  @AuthRule(permissionType = LOGGED_IN)
-  @Operation(operationId = "validateKubernetesYaml",
-      summary = "Validates data from K8s yaml. "
-          + "Checks whether specified values passes validation checks "
-          + "used when registering a Delegate with K8s yaml file.",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Delegate setup details from the request")
-      })
-  // This NG specific, switching to NG access control. AuthRule to be removed also when NG access control is fully
-  // enabled.
-  public RestResponse<DelegateSetupDetails>
-  validateKubernetesYaml(@Context HttpServletRequest request,
-      @Parameter(description = "Account UUID") @QueryParam("accountId") @NotEmpty String accountId,
-      @Parameter(description = "Organization ID") @QueryParam("orgId") String orgId,
-      @Parameter(description = "Project ID") @QueryParam("projectId") String projectId,
-      @RequestBody(
-          required = true, description = "Delegate setup details, containing data for validation (from k8s yaml file)")
-      DelegateSetupDetails delegateSetupDetails) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
-        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
-
-    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
-      return new RestResponse<>(delegateService.validateKubernetesYaml(accountId, delegateSetupDetails));
-    }
-  }
-
-  @POST
-  @Path("generate-kubernetes-yaml")
-  @Timed
-  @ExceptionMetered
-  @AuthRule(permissionType = LOGGED_IN)
-  @Operation(operationId = "generateKubernetesYaml",
-      summary = "Generates k8s yaml file from the date specified in request body (Delegate setup details).",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Generated yaml file.")
-      })
-  // This NG specific, switching to NG access control. AuthRule to be removed also when NG access control is fully
-  // enabled.
-  public Response
-  generateKubernetesYaml(@Context HttpServletRequest request,
-      @Parameter(description = "Account UUID") @QueryParam("accountId") @NotEmpty String accountId,
-      @Parameter(description = "Organization ID") @QueryParam("orgId") String orgId,
-      @Parameter(description = "Project ID") @QueryParam("projectId") String projectId,
-      @RequestBody(
-          required = true, description = "Delegate setup details, containing data to populate yaml file values.")
-      DelegateSetupDetails delegateSetupDetails,
-      // text/plain
-      @Parameter(description = "File format: text/plain for .yaml file, otherwise tar.gz will be generated.")
-      @QueryParam("fileFormat") MediaType fileFormat) throws IOException {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
-        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
-
-    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
-      File delegateFile = delegateService.generateKubernetesYaml(accountId, delegateSetupDetails,
-          subdomainUrlHelper.getManagerUrl(request, accountId), getVerificationUrl(request), fileFormat);
-
-      if (fileFormat != null && fileFormat.equals(MediaType.TEXT_PLAIN_TYPE)) {
-        return Response.ok(delegateFile)
-            .header(CONTENT_TRANSFER_ENCODING, BINARY)
-            .type("text/plain; charset=UTF-8")
-            .header(CONTENT_DISPOSITION, ATTACHMENT_FILENAME + KUBERNETES_DELEGATE + YAML)
-            .build();
-      }
-
-      return Response.ok(delegateFile)
-          .header(CONTENT_TRANSFER_ENCODING, BINARY)
-          .type(APPLICATION_ZIP_CHARSET_BINARY)
-          .header(CONTENT_DISPOSITION, ATTACHMENT_FILENAME + KUBERNETES_DELEGATE + TAR_GZ)
-          .build();
-    }
-  }
-
   @PUT
   @Path("{delegateId}")
   @Timed
@@ -985,7 +903,7 @@ public class DelegateSetupResourceV3 {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       DelegateSetupDetails delegateSetupDetails =
           DelegateSetupDetails.builder().delegateType(DOCKER).name(delegateName).tokenName(tokenName).build();
-      delegateService.validateDelegateSetupDetails(accountId, delegateSetupDetails, DOCKER);
+      delegateService.validateDockerDelegateSetupDetails(accountId, delegateSetupDetails, DOCKER);
       return new RestResponse<>();
     }
   }

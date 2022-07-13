@@ -1,0 +1,66 @@
+{
+  "_id" : "PIPELINE_ID",
+  "name" : "priceline teting",
+  "keywords" : [
+    "pipeline",
+    "to-do list k8s",
+    "admin@harness.io",
+    "asdad",
+    "admin",
+    "priceline teting"
+  ],
+  "accountId" : "ACCOUNT_ID",
+  "sample" : false,
+  "appId" : "APP_ID",
+  "failureStrategies" : null,
+  "pipelineStages" : [
+    {
+      "name" : "STAGE 1",
+      "parallel" : false,
+      "pipelineStageElements" : [
+        {
+          "uuid" : "FUlET9iUSA6Gs91oJxR_Iw",
+          "name" : "asdad",
+          "type" : "ENV_STATE",
+          "parallelIndex" : 1,
+          "properties" : {
+            "envId" : "${env}",
+            "workflowId" : "WORKFLOW_ID",
+            "pipelineId" : "PIPELINE_ID",
+            "pipelineStageElementId" : "FUlET9iUSA6Gs91oJxR_Iw",
+            "pipelineStageParallelIndex" : 1,
+            "stageName" : "STAGE 1",
+            "disableAssertion" : null,
+            "disable" : false,
+            "workflowVariables" : {
+              "Environment" : "${env}",
+              "InfraDefinition_KUBERNETES" : "${infra}"
+            },
+            "runtimeInputVariables" : [
+              "Environment",
+              "InfraDefinition_KUBERNETES"
+            ],
+            "timeoutAction" : "END_EXECUTION",
+            "userGroupIds" : [
+              "USER_GROUP_ID"
+            ]
+          },
+          "workflowVariables" : {
+            "Environment" : "${env}",
+            "InfraDefinition_KUBERNETES" : "${infra}"
+          },
+          "runtimeInputsConfig" : {
+            "runtimeInputVariables" : [
+              "Environment",
+              "InfraDefinition_KUBERNETES"
+            ],
+            "userGroupIds" : [
+              "USER_GROUP_ID"
+            ],
+            "timeoutAction" : "END_EXECUTION"
+          }
+        }
+      ]
+    }
+  ]
+}

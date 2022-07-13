@@ -424,6 +424,12 @@ permissions:
     includeInAllRoles: false
     allowedScopeLevels:
       - account
+  - identifier: core_license_edit
+    name: Edit Licenses
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
   - identifier: core_serviceaccount_view
     name: View ServiceAccount details
     status: ACTIVE

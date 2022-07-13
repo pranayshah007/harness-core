@@ -368,8 +368,9 @@ public enum TaskType {
   COMMAND_TASK_NG(TaskGroup.COMMAND_TASK_NG, "Command Task"),
   CI_DOCKER_INITIALIZE_TASK(TaskGroup.CI, CIDockerInitializeTaskRequest.class, DockerTaskExecutionResponse.class, true),
   CI_DOCKER_EXECUTE_TASK(TaskGroup.CI, CIDockerExecuteStepRequest.class, DockerTaskExecutionResponse.class, true),
-  CI_DOCKER_CLEANUP_TASK(TaskGroup.CI, CIDockerCleanupStepRequest.class, DockerTaskExecutionResponse.class, true);
-
+  CI_DOCKER_CLEANUP_TASK(TaskGroup.CI, CIDockerCleanupStepRequest.class, DockerTaskExecutionResponse.class, true),
+  NG_LDAP_TEST_USER_SETTINGS(TaskGroup.LDAP),
+  NG_LDAP_TEST_GROUP_SETTINGS(TaskGroup.LDAP);
   private final TaskGroup taskGroup;
   private final String displayName;
   private final Class<? extends TaskParameters> request;

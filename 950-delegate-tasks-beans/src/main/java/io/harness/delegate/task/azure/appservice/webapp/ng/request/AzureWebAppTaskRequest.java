@@ -23,6 +23,7 @@ import java.util.Map;
 
 @OwnedBy(CDP)
 public interface AzureWebAppTaskRequest extends TaskParameters, ExecutionCapabilityDemander {
+  String getAccountId();
   AzureWebAppRequestType getRequestType();
   AzureWebAppInfraDelegateConfig getInfrastructure();
   CommandUnitsProgress getCommandUnitsProgress();

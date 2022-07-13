@@ -112,7 +112,6 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
                         .projectIdentifier(entityToSave.getProjectIdentifier())
                         .build();
       String yamlToPush = entityToSave.getYaml();
-      entityToSave.setYaml("");
       entityToSave.setStoreType(StoreType.REMOTE);
       entityToSave.setConnectorRef(gitEntityInfo.getConnectorRef());
       entityToSave.setRepo(gitEntityInfo.getRepoName());

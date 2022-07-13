@@ -57,6 +57,26 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
   @Test
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
+  public void testValidateEmptyServiceOverrides() {
+    NGServiceOverridesEntity serviceOverridesEntity =
+        NGServiceOverridesEntity.builder()
+            .accountId(ACCOUNT_ID)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .projectIdentifier(PROJECT_IDENTIFIER)
+            .environmentRef(ENV_REF)
+            .serviceRef(SERVICE_REF)
+            .yaml(
+                "serviceOverrides:\n  orgIdentifier: orgIdentifier\\\n  projectIdentifier: projectIdentifier\n  environmentRef: envIdentifier\n  serviceRef: serviceIdentifier\n  variables: \n    - name: \"\"\n      value: var1\n      type: String\n    - name: op1\n      value: var1\n      type: String")
+            .build();
+    assertThatThrownBy(() -> serviceOverrideService.validateOverrideValues(serviceOverridesEntity))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(
+            String.format("Empty variable name for 1 variable override in service ref: [%s]", SERVICE_REF));
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
   public void testValidateDuplicateServiceOverrides() {
     NGServiceOverridesEntity serviceOverridesEntity =
         NGServiceOverridesEntity.builder()

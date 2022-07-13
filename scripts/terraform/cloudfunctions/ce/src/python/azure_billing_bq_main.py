@@ -9,6 +9,7 @@ CF2 for Azure data pipeline
 import json
 import base64
 import os
+import sys
 import re
 from google.cloud import bigquery
 from google.cloud import storage
@@ -111,7 +112,8 @@ def main(event, context):
     # start streaming the data from the gcs
     print_("%s table exists. Starting to write data from gcs into it..." % jsonData["tableName"])
 
-    ingest_data_from_csv(jsonData)
+    if not ingest_data_from_csv(jsonData):
+        return
     azure_column_mapping = setAvailableColumns(jsonData)
     get_unique_subs_id(jsonData, azure_column_mapping)
     ingest_data_into_preagg(jsonData, azure_column_mapping)
@@ -177,7 +179,7 @@ def ingest_data_from_csv(jsonData):
 
     if not csvtoingest:
         print_("No CSV to insert. GCS bucket might be empty", "WARN")
-        return
+        return True
     print_("csvtoingest: %s" % csvtoingest)
 
     job_config = bigquery.LoadJobConfig(
@@ -204,7 +206,7 @@ def ingest_data_from_csv(jsonData):
     try:
         load_job.result()  # Wait for the job to complete.
     except Exception as e:
-        print(e)
+        print_(e, "WARN")
         print_("Ingesting in existing table if exists")
         job_config.autodetect = False
         load_job = client.load_table_from_uri(
@@ -216,10 +218,13 @@ def ingest_data_from_csv(jsonData):
         try:
             load_job.result()  # Wait for the job to complete.
         except Exception as e:
-            print(e)
-            print_("Ingesting in existing table failed. Sending event to generate dynamic schema. Ingestion with new schema will be automatically retried in next 1 hr")
+            print_(e, "WARN")
+            print_("Ingesting in existing table failed. Sending event to generate dynamic schema.\n"
+                   "Ingestion with new schema will be automatically retried in next 1 hr", "WARN")
             send_event(jsonData)
-            raise
+            # Cleanly exit from CF at this point
+            print_("Exiting..")
+            return False
 
     table = client.get_table(jsonData["tableId"])
     print_("Total {} rows in table {}".format(table.num_rows, jsonData["tableId"]))
@@ -591,4 +596,4 @@ def ingest_data_to_costagg(jsonData):
     job_config = bigquery.QueryJobConfig(
         priority=bigquery.QueryPriority.BATCH
     )
-    run_batch_query(client, query, job_config, timeout=120)
+    run_batch_query(client, query, job_config, timeout=180)

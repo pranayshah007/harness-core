@@ -28,6 +28,7 @@ public class AzureWebAppInfraDelegateConfig {
   private String subscription;
   private String resourceGroup;
   private String deploymentSlot;
+  private String targetSlot;
   private List<EncryptedDataDetail> encryptionDataDetails;
 
   @NotNull

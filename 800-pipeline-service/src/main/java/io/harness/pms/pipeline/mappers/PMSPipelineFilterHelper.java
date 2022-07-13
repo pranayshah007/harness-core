@@ -75,4 +75,13 @@ public class PMSPipelineFilterHelper {
         .and(PipelineEntityKeys.accountId)
         .is(accountId);
   }
+
+  public Criteria getCriteriaForFileUniquenessCheck(String accountId, String repoURl, String filePath) {
+    return Criteria.where(PipelineEntityKeys.accountId)
+        .is(accountId)
+        .and(PipelineEntityKeys.repoURL)
+        .is(repoURl)
+        .and(PipelineEntityKeys.filePath)
+        .is(filePath);
+  }
 }

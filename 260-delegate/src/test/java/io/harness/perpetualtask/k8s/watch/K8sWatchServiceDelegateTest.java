@@ -31,7 +31,6 @@ import io.harness.perpetualtask.k8s.utils.K8sClusterHelper;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 
-import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -69,10 +68,9 @@ public class K8sWatchServiceDelegateTest extends DelegateTestBase {
     watcherFactory = mock(WatcherFactory.class);
     SharedInformerFactoryFactory sharedInformerFactoryFactory = mock(SharedInformerFactoryFactory.class);
     ApiClientFactory apiClientFactory = mock(ApiClientFactory.class);
-    ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper = mock(ContainerDeploymentDelegateHelper.class);
 
-    this.k8sWatchServiceDelegate = new K8sWatchServiceDelegate(watcherFactory, sharedInformerFactoryFactory,
-        apiClientFactory, kryoSerializer, containerDeploymentDelegateHelper);
+    this.k8sWatchServiceDelegate =
+        new K8sWatchServiceDelegate(watcherFactory, sharedInformerFactoryFactory, apiClientFactory);
 
     SharedInformerFactory sharedInformerFactory = mock(SharedInformerFactory.class);
     when(sharedInformerFactoryFactory.createSharedInformerFactory(any(), any())).thenReturn(sharedInformerFactory);

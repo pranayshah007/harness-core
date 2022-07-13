@@ -18,11 +18,12 @@ import static io.harness.azure.model.AzureConstants.DELETE_IMAGE_SETTINGS;
 import static io.harness.azure.model.AzureConstants.DEPLOY_TO_SLOT;
 import static io.harness.azure.model.AzureConstants.EMPTY_DOCKER_SETTINGS;
 import static io.harness.azure.model.AzureConstants.FAIL_DEPLOYMENT;
-import static io.harness.azure.model.AzureConstants.FAIL_LOG_STREAMING;
 import static io.harness.azure.model.AzureConstants.FAIL_START_SLOT;
 import static io.harness.azure.model.AzureConstants.FAIL_STOP_SLOT;
 import static io.harness.azure.model.AzureConstants.FAIL_UPDATE_CONTAINER_SETTINGS;
 import static io.harness.azure.model.AzureConstants.FAIL_UPDATE_SLOT_CONFIGURATIONS;
+import static io.harness.azure.model.AzureConstants.FILE_RENAME_FAILURE;
+import static io.harness.azure.model.AzureConstants.JAR_EXTENSION;
 import static io.harness.azure.model.AzureConstants.REQUEST_START_SLOT;
 import static io.harness.azure.model.AzureConstants.REQUEST_STOP_SLOT;
 import static io.harness.azure.model.AzureConstants.REQUEST_TRAFFIC_SHIFT;
@@ -58,9 +59,9 @@ import static io.harness.azure.model.AzureConstants.UPDATE_STARTUP_COMMAND;
 import static io.harness.azure.model.AzureConstants.UPDATING_SLOT_CONFIGURATIONS;
 import static io.harness.azure.model.AzureConstants.WAR_DEPLOY;
 import static io.harness.azure.model.AzureConstants.ZIP_DEPLOY;
+import static io.harness.azure.model.AzureConstants.ZIP_EXTENSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier.SlotStatusVerifierType.SLOT_CONTAINER_DEPLOYMENT_VERIFIER;
-import static io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier.SlotStatusVerifierType.SLOT_DEPLOYMENT_VERIFIER;
 import static io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier.SlotStatusVerifierType.START_VERIFIER;
 import static io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier.SlotStatusVerifierType.STOP_VERIFIER;
 import static io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier.SlotStatusVerifierType.SWAP_VERIFIER;
@@ -68,10 +69,6 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
-
-import static software.wings.beans.LogColor.White;
-import static software.wings.beans.LogHelper.color;
-import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 
@@ -89,7 +86,6 @@ import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServ
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDockerDeploymentContext;
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServicePackageDeploymentContext;
 import io.harness.delegate.task.azure.appservice.deployment.context.SlotContainerDeploymentVerifierContext;
-import io.harness.delegate.task.azure.appservice.deployment.context.SlotDeploymentVerifierContext;
 import io.harness.delegate.task.azure.appservice.deployment.context.SlotStatusVerifierContext;
 import io.harness.delegate.task.azure.appservice.deployment.context.SwapSlotStatusVerifierContext;
 import io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier;
@@ -105,6 +101,9 @@ import software.wings.utils.ArtifactType;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -112,10 +111,10 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import rx.Completable;
 
 @Singleton
@@ -168,7 +167,8 @@ public class AzureAppServiceDeploymentService {
           deploymentContext.getStartupCommand(), deployLogCallback);
       startSlotAsyncWithSteadyCheck(deploymentContext, preDeploymentData, deployLogCallback);
 
-      containerDeploymentSteadyStateCheck(deploymentContext, deployLogCallback, slotLogStreamer);
+      slotDeploymentSteadyStateCheck(deploymentContext.getSlotName(), deploymentContext.getSteadyStateTimeoutInMin(),
+          deploymentContext.getAzureWebClientContext(), deployLogCallback, slotLogStreamer);
 
       deployLogCallback.saveExecutionLog(
           String.format(SUCCESS_SLOT_DEPLOYMENT, deploymentContext.getSlotName()), INFO, SUCCESS);
@@ -178,44 +178,20 @@ public class AzureAppServiceDeploymentService {
     }
   }
 
-  private void containerDeploymentSteadyStateCheck(AzureAppServiceDockerDeploymentContext deploymentContext,
+  private void slotDeploymentSteadyStateCheck(String slot, int timeOut, AzureWebClientContext deploymentContext,
       LogCallback deployLogCallback, SlotContainerLogStreamer slotLogStreamer) {
-    SlotContainerDeploymentVerifierContext verifierContext =
-        SlotContainerDeploymentVerifierContext.builder()
-            .logCallback(deployLogCallback)
-            .slotName(deploymentContext.getSlotName())
-            .azureWebClient(azureWebClient)
-            .azureWebClientContext(deploymentContext.getAzureWebClientContext())
-            .logStreamer(slotLogStreamer)
-            .build();
+    SlotContainerDeploymentVerifierContext verifierContext = SlotContainerDeploymentVerifierContext.builder()
+                                                                 .logCallback(deployLogCallback)
+                                                                 .slotName(slot)
+                                                                 .azureWebClient(azureWebClient)
+                                                                 .azureWebClientContext(deploymentContext)
+                                                                 .logStreamer(slotLogStreamer)
+                                                                 .build();
 
     SlotStatusVerifier statusVerifier =
         SlotStatusVerifier.getStatusVerifier(SLOT_CONTAINER_DEPLOYMENT_VERIFIER.name(), verifierContext);
-    slotSteadyStateChecker.waitUntilCompleteWithTimeout(deploymentContext.getSteadyStateTimeoutInMin(),
-        SLOT_STARTING_STATUS_CHECK_INTERVAL, deployLogCallback, DEPLOY_TO_SLOT, statusVerifier);
-  }
-
-  private void deploySlotSteadyStateCheck(AzureAppServiceDeploymentContext deploymentContext,
-      StreamPackageDeploymentLogsTask streamPackageDeploymentLogsTask, LogCallback deployLogCallback) {
-    try {
-      SlotDeploymentVerifierContext verifierContext =
-          SlotDeploymentVerifierContext.builder()
-              .logCallback(deployLogCallback)
-              .slotName(deploymentContext.getSlotName())
-              .azureWebClient(azureWebClient)
-              .azureWebClientContext(deploymentContext.getAzureWebClientContext())
-              .logStreamer(streamPackageDeploymentLogsTask)
-              .build();
-
-      SlotStatusVerifier statusVerifier =
-          SlotStatusVerifier.getStatusVerifier(SLOT_DEPLOYMENT_VERIFIER.name(), verifierContext);
-
-      slotSteadyStateChecker.waitUntilDeploymentCompleteWithTimeout(deploymentContext.getSteadyStateTimeoutInMin(),
-          SLOT_STARTING_STATUS_CHECK_INTERVAL, deployLogCallback, DEPLOY_TO_SLOT, statusVerifier);
-    } catch (Exception exception) {
-      deployLogCallback.saveExecutionLog(String.format(FAIL_DEPLOYMENT, exception.getMessage()), ERROR, FAILURE);
-      throw exception;
-    }
+    slotSteadyStateChecker.waitUntilCompleteWithTimeout(
+        timeOut, SLOT_STARTING_STATUS_CHECK_INTERVAL, deployLogCallback, DEPLOY_TO_SLOT, statusVerifier);
   }
 
   public void deployPackage(
@@ -234,18 +210,19 @@ public class AzureAppServiceDeploymentService {
     Optional<StreamPackageDeploymentLogsTask> logStreamer = Optional.empty();
 
     try {
-      DateTime startSlotTime = new DateTime(DateTimeZone.UTC).minusMinutes(1);
       markDeploymentProgress(preDeploymentData, AppServiceDeploymentProgress.DEPLOY_TO_SLOT);
       AzureLogCallbackProvider logCallbackProvider = deploymentContext.getLogCallbackProvider();
       LogCallback deployLog = logCallbackProvider.obtainLogCallback(DEPLOY_TO_SLOT);
       deployLog.saveExecutionLog(String.format(START_SLOT_DEPLOYMENT, deploymentContext.getSlotName()));
 
-      logStreamer = streamPackageDeploymentLogs(
-          deployLog, deploymentContext.getAzureWebClientContext(), deploymentContext.getSlotName(), startSlotTime);
+      SlotContainerLogStreamer slotLogStreamer = new SlotContainerLogStreamer(
+          deploymentContext.getAzureWebClientContext(), azureWebClient, deploymentContext.getSlotName(), deployLog);
+
       deployArtifactFile(deploymentContext, preDeploymentData, deployLog);
       startSlotAsyncWithSteadyCheck(deploymentContext, preDeploymentData, deployLog);
-      logStreamer.ifPresent(streamPackageDeploymentLogsTask
-          -> deploySlotSteadyStateCheck(deploymentContext, streamPackageDeploymentLogsTask, deployLog));
+
+      slotDeploymentSteadyStateCheck(deploymentContext.getSlotName(), deploymentContext.getSteadyStateTimeoutInMin(),
+          deploymentContext.getAzureWebClientContext(), deployLog, slotLogStreamer);
 
       deployLog.saveExecutionLog(
           String.format(SUCCESS_SLOT_DEPLOYMENT, deploymentContext.getSlotName()), INFO, SUCCESS);
@@ -498,24 +475,6 @@ public class AzureAppServiceDeploymentService {
     slotSwapLogCallback.saveExecutionLog(SWAP_SLOT_SUCCESS, INFO, SUCCESS);
   }
 
-  private Optional<StreamPackageDeploymentLogsTask> streamPackageDeploymentLogs(
-      LogCallback logCallback, AzureWebClientContext azureWebClientContext, String slotName, DateTime startSlotTime) {
-    StreamPackageDeploymentLogsTask logStreamer = null;
-    try {
-      ExecutorService executorService = Executors.newFixedThreadPool(1);
-      logStreamer = new StreamPackageDeploymentLogsTask(
-          azureWebClientContext, azureWebClient, slotName, logCallback, startSlotTime);
-      executorService.submit(logStreamer);
-      executorService.shutdown();
-    } catch (Exception ex) {
-      String errorMessage = ex.getCause() != null ? ex.getCause().getMessage() : ex.toString();
-      logCallback.saveExecutionLog(
-          color(String.format(FAIL_LOG_STREAMING, slotName, isEmpty(errorMessage) ? "" : errorMessage), White, Bold),
-          INFO, SUCCESS);
-    }
-    return Optional.ofNullable(logStreamer);
-  }
-
   private void deployArtifactFile(AzureAppServicePackageDeploymentContext context,
       AzureAppServicePreDeploymentData preDeploymentData, LogCallback deployLog) {
     String slotName = context.getSlotName();
@@ -541,13 +500,66 @@ public class AzureAppServiceDeploymentService {
 
   private Completable deployPackage(AzureWebClientContext azureWebClientContext, final String slotName,
       final File artifactFile, ArtifactType artifactType, LogCallback logCallback) {
-    if (ArtifactType.ZIP == artifactType || ArtifactType.NUGET == artifactType) {
-      return deployZipToSlotAndLog(azureWebClientContext, slotName, artifactFile, logCallback);
-    } else if (ArtifactType.WAR == artifactType) {
-      return deployWarToSlotAndLog(azureWebClientContext, slotName, artifactFile, logCallback);
-    } else {
-      throw new InvalidRequestException(format(UNSUPPORTED_ARTIFACT, artifactType, slotName));
+    switch (artifactType) {
+      case ZIP:
+      case NUGET:
+        return deployZipToSlotAndLog(azureWebClientContext, slotName, artifactFile, logCallback);
+      case WAR:
+        return deployWarToSlotAndLog(azureWebClientContext, slotName, artifactFile, logCallback);
+      case JAR:
+        return deployJarToSlot(azureWebClientContext, slotName, artifactFile, logCallback);
+      default:
+        throw new InvalidRequestException(format(UNSUPPORTED_ARTIFACT, artifactType, slotName));
     }
+  }
+
+  private Completable deployJarToSlot(AzureWebClientContext azureWebClientContext, final String slotName,
+      final File artifactFile, LogCallback logCallback) {
+    try {
+      File zipFile = convertJarToZip(artifactFile, logCallback);
+      return deployZipToSlotAndLog(azureWebClientContext, slotName, zipFile, logCallback);
+    } catch (IOException e) {
+      logCallback.saveExecutionLog(String.format(FAIL_DEPLOYMENT, e.getMessage()), ERROR, FAILURE);
+      throw new InvalidRequestException("Fail to zip the jar file", e);
+    }
+  }
+
+  private File convertJarToZip(File artifactFile, LogCallback logCallback) throws IOException {
+    artifactFile = renameJarFile(artifactFile);
+    String artifactPath = artifactFile.getAbsolutePath();
+    String zipPath = artifactPath + ZIP_EXTENSION;
+
+    logCallback.saveExecutionLog("Generating zip file ... ");
+    try (FileOutputStream fos = new FileOutputStream(zipPath); ZipOutputStream zipOut = new ZipOutputStream(fos);
+         FileInputStream fis = new FileInputStream(artifactFile)) {
+      ZipEntry zipEntry = new ZipEntry(artifactFile.getName());
+      zipOut.putNextEntry(zipEntry);
+      byte[] bytes = new byte[1024];
+      int length;
+      while ((length = fis.read(bytes)) >= 0) {
+        zipOut.write(bytes, 0, length);
+      }
+    }
+    return new File(zipPath);
+  }
+
+  // artifact file is downloaded to local system with suffix "_34578"
+  // e.g.
+  // "/private/var/tmp/_bazel_anilchowdhury/repository/azureappsvcartifacts/p2wEjFNSSA60rkrM1NDvjg/spring-boot-hello-2.0.jar_1307164"))
+  // we must remove this suffix to work
+  private File renameJarFile(File artifactFile) {
+    String absolutePath = artifactFile.getAbsolutePath();
+    if (absolutePath.endsWith(JAR_EXTENSION)) {
+      return artifactFile;
+    }
+    int lastIndexOf = absolutePath.lastIndexOf('_');
+    String newName = absolutePath.substring(0, lastIndexOf);
+    File oldFile = new File(absolutePath);
+    File newFile = new File(newName);
+    if (!oldFile.renameTo(newFile)) {
+      throw new InvalidRequestException(String.format(FILE_RENAME_FAILURE, absolutePath, newName));
+    }
+    return newFile;
   }
 
   private Completable deployZipToSlotAndLog(

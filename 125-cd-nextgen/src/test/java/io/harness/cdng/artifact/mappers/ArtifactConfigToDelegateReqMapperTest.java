@@ -10,6 +10,7 @@ package io.harness.cdng.artifact.mappers;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -20,16 +21,19 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -37,6 +41,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.utils.RepositoryFormat;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
@@ -64,6 +69,30 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(dockerDelegateRequest.getTag()).isEqualTo("");
     assertThat(dockerDelegateRequest.getConnectorRef()).isEqualTo("");
     assertThat(dockerDelegateRequest.getTagRegex()).isEqualTo("\\*");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetJenkinsDelegateRequest() {
+    JenkinsArtifactConfig jenkinsArtifactConfig = JenkinsArtifactConfig.builder()
+                                                      .artifactPath(ParameterField.createValueField("ARTIFACT"))
+                                                      .jobName(ParameterField.createValueField("JOB"))
+                                                      .build();
+    JenkinsConnectorDTO connectorDTO = JenkinsConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    JenkinsArtifactDelegateRequest jenkinsArtifactDelegateRequest =
+        ArtifactConfigToDelegateReqMapper.getJenkinsDelegateRequest(
+            jenkinsArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(jenkinsArtifactDelegateRequest.getJenkinsConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(jenkinsArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(jenkinsArtifactDelegateRequest.getArtifactPaths())
+        .isEqualTo(Arrays.asList(jenkinsArtifactConfig.getArtifactPath().getValue()));
+    assertThat(jenkinsArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.JENKINS);
+    assertThat(jenkinsArtifactDelegateRequest.getJobName()).isEqualTo(jenkinsArtifactConfig.getJobName().getValue());
+    assertThat(jenkinsArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
   }
 
   @Test

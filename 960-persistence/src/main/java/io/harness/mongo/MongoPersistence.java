@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.StreamSupport;
 import lombok.Builder;
 import lombok.Value;
@@ -97,8 +98,8 @@ public class MongoPersistence implements HPersistence {
   @Inject Morphia morphia;
   @Inject IndexManager indexManager;
 
-  private Map<String, Info> storeInfo = new HashMap<>();
-  private Map<Class, Store> classStores = new HashMap<>();
+  private Map<String, Info> storeInfo = new ConcurrentHashMap<>();
+  private Map<Class, Store> classStores = new ConcurrentHashMap<>();
   private Map<String, AdvancedDatastore> datastoreMap;
   @Inject UserProvider userProvider;
 

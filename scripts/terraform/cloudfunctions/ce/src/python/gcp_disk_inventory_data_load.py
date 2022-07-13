@@ -11,7 +11,7 @@ import re
 import datetime
 
 from google.cloud import bigquery
-from util import print_
+from util import print_, run_batch_query
 
 """
 Scheduler event:
@@ -52,14 +52,8 @@ def update_disk_state(jsonData):
     query = "UPDATE `%s` set status='DELETED' WHERE status != 'DELETED' and lastUpdatedAt < '%s';" % (
         jsonData["targetTableId"], last_updated_at)
 
-    try:
-        query_job = client.query(query)
-        query_job.result()
-    except Exception as e:
-        print_(query)
-        print_(e)
-    else:
-        print_("Finished updating gcpDiskInventory table for any deleted disks")
+    run_batch_query(client, query, None, timeout=180)
+    print_("Finished updating gcpDiskInventory table for any deleted disks")
 
 
 def load_into_main_table(jsonData):
@@ -85,11 +79,6 @@ def load_into_main_table(jsonData):
                     physicalBlockSizeBytes, sourceDisk, sourceDiskId, provisionedIops, satisfiesPzs, snapshots,
                     lastAttachTimestamp, lastDetachTimestamp, lastUpdatedAt)
                 """ % (jsonData["targetTableId"], jsonData["sourceTableId"], last_updated_at)
-    try:
-        query_job = client.query(query)
-        query_job.result()
-    except Exception as e:
-        print_(query)
-        print_(e, "WARN")
-    else:
-        print_("Finished merging into main gcpDiskInventory table")
+
+    run_batch_query(client, query, None, timeout=180)
+    print_("Finished merging into main gcpDiskInventory table")

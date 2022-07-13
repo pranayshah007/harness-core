@@ -752,6 +752,60 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
         .build();
   }
 
+  @Override
+  public void deleteByProjectIdentifier(
+      Class<ServiceLevelObjective> clazz, String accountId, String orgIdentifier, String projectIdentifier) {
+    List<ServiceLevelObjective> serviceLevelObjectives =
+        hPersistence.createQuery(ServiceLevelObjective.class)
+            .filter(ServiceLevelObjectiveKeys.accountId, accountId)
+            .filter(ServiceLevelObjectiveKeys.orgIdentifier, orgIdentifier)
+            .filter(ServiceLevelObjectiveKeys.projectIdentifier, projectIdentifier)
+            .asList();
+
+    serviceLevelObjectives.forEach(serviceLevelObjective -> {
+      delete(ProjectParams.builder()
+                 .accountIdentifier(serviceLevelObjective.getAccountId())
+                 .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                 .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                 .build(),
+          serviceLevelObjective.getIdentifier());
+    });
+  }
+
+  @Override
+  public void deleteByOrgIdentifier(Class<ServiceLevelObjective> clazz, String accountId, String orgIdentifier) {
+    List<ServiceLevelObjective> serviceLevelObjectives =
+        hPersistence.createQuery(ServiceLevelObjective.class)
+            .filter(ServiceLevelObjectiveKeys.accountId, accountId)
+            .filter(ServiceLevelObjectiveKeys.orgIdentifier, orgIdentifier)
+            .asList();
+
+    serviceLevelObjectives.forEach(serviceLevelObjective -> {
+      delete(ProjectParams.builder()
+                 .accountIdentifier(serviceLevelObjective.getAccountId())
+                 .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                 .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                 .build(),
+          serviceLevelObjective.getIdentifier());
+    });
+  }
+
+  @Override
+  public void deleteByAccountIdentifier(Class<ServiceLevelObjective> clazz, String accountId) {
+    List<ServiceLevelObjective> serviceLevelObjectives = hPersistence.createQuery(ServiceLevelObjective.class)
+                                                             .filter(ServiceLevelObjectiveKeys.accountId, accountId)
+                                                             .asList();
+
+    serviceLevelObjectives.forEach(serviceLevelObjective -> {
+      delete(ProjectParams.builder()
+                 .accountIdentifier(serviceLevelObjective.getAccountId())
+                 .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                 .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                 .build(),
+          serviceLevelObjective.getIdentifier());
+    });
+  }
+
   @Value
   @Builder
   private static class Filter {

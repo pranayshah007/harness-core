@@ -25,4 +25,5 @@ message EntityReferenceRequest {
 
 message EntityReferenceResponse {
   repeated io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO referredEntities = 1;
+  repeated string moduleInfo = 2;
 }

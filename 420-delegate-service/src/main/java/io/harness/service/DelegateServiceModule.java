@@ -24,6 +24,7 @@ import io.harness.service.impl.DelegateMtlsEndpointServiceReadOnlyImpl;
 import io.harness.service.impl.DelegateSetupServiceImpl;
 import io.harness.service.impl.DelegateTaskSelectorMapServiceImpl;
 import io.harness.service.impl.DelegateTaskServiceImpl;
+import io.harness.service.impl.TaskProgressServiceImpl;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateInsightsService;
@@ -31,6 +32,7 @@ import io.harness.service.intfc.DelegateMtlsEndpointService;
 import io.harness.service.intfc.DelegateSetupService;
 import io.harness.service.intfc.DelegateTaskSelectorMapService;
 import io.harness.service.intfc.DelegateTaskService;
+import io.harness.service.intfc.TaskProgressService;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -72,6 +74,7 @@ public class DelegateServiceModule extends AbstractModule {
     bind(DelegateTaskSelectorMapService.class).to(DelegateTaskSelectorMapServiceImpl.class);
     bind(DelegateInsightsService.class).to(DelegateInsightsServiceImpl.class);
     bind(DelegateCache.class).to(DelegateCacheImpl.class);
+    bind(TaskProgressService.class).to(TaskProgressServiceImpl.class);
     bind(DelegateSetupService.class).to(DelegateSetupServiceImpl.class);
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);

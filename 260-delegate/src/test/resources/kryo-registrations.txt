@@ -1496,6 +1496,7 @@
 19550:io.harness.delegate.beans.executioncapability.GitInstallationCapability
 19551:io.harness.delegate.beans.connector.ConnectorValidationParameterResponse
 19552:io.harness.delegate.beans.connector.scm.github.GithubOauthDTO
+19553:io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO
 19630:io.harness.delegate.beans.connector.helm.OciHelmValidationParams
 19640:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams
 19641:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse
@@ -1575,6 +1576,7 @@
 19809:io.harness.delegate.beans.connector.azureconnector.AzureSystemAssignedMSIAuthDTO
 19810:io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO
 19811:io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthSADTO
+19854:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO
 20001:io.harness.delegate.task.shell.ShellScriptApprovalTaskParameters
 20002:io.harness.delegate.task.http.HttpTaskParameters
 20100:io.harness.ng.core.environment.beans.EnvironmentType
@@ -2097,7 +2099,9 @@
 543522:io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse
 543523:io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse
 543524:io.harness.delegate.beans.azure.response.AzureTagsResponse
+543525:io.harness.delegate.beans.azure.response.AzureHostResponse
 543526:io.harness.delegate.beans.WinRmTaskParams
+543527:io.harness.delegate.beans.azure.response.AzureHostsResponse
 549966:io.harness.secretmanagerclient.dto.EncryptedDataMigrationDTO
 553286:io.harness.delegate.task.scm.ScmPushTaskParams
 553287:io.harness.delegate.task.scm.ScmPushTaskResponseData
@@ -2139,7 +2143,6 @@
 563533:io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse
 563534:io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig
 563535:io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability
-563536:io.harness.delegate.task.serverless.ServerlessArtifactsConfig
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO

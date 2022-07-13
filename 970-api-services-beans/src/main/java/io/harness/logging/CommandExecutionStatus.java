@@ -7,6 +7,7 @@
 
 package io.harness.logging;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -14,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
  * The Enum CommandExecutionStatus.
  */
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.logging.CommandExecutionStatus")
 public enum CommandExecutionStatus {
   /**
    * Success execution status.

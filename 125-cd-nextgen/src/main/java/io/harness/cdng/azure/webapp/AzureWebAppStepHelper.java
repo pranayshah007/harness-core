@@ -196,6 +196,7 @@ public class AzureWebAppStepHelper {
         .resourceGroup(infrastructure.getResourceGroup())
         .appName(infrastructure.getWebApp())
         .deploymentSlot(infrastructure.getDeploymentSlot())
+        .targetSlot(infrastructure.getTargetSlot())
         .encryptionDataDetails(azureHelperService.getEncryptionDetails(azureConnectorDTO, ngAccess))
         .build();
   }

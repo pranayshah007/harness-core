@@ -400,6 +400,7 @@ gitSyncError {"name": "nextIteration_1", "background": true} {"nextIteration": 1
 gitSyncError {"name": "previousErrors_idx", "background": true} {"accountId": 1, "gitSyncDirection": 1, "additionalErrorDetails.previousCommitIdsWithError": 1}
 gitSyncError {"name": "previousErrors_idx_for_app_filter", "background": true} {"accountId": 1, "appId": 1, "gitSyncDirection": 1, "additionalErrorDetails.previousCommitIdsWithError": 1}
 gitSyncErrorNG {"name": "accountId_commitId_repo_branch_errorType_filePath_unique_Index", "unique": true} {"accountIdentifier": 1, "additionalErrorDetails.gitCommitId": 1, "repoUrl": 1, "branchName": 1, "errorType": 1, "completeFilePath": 1, "createdAt": -1}
+gitSyncErrorNG {"name": "accountId_orgIdentifier_projectIdentifier_Index", "background": true} {"accountIdentifier": 1, "scopes.projectIdentifier": 1, "scopes.orgIdentifier": 1}
 gitSyncErrorNG {"name": "accountId_repo_branch_errorType_status_filePath_sort_Index", "background": true} {"accountIdentifier": 1, "repoUrl": 1, "branchName": 1, "errorType": 1, "status": 1, "completeFilePath": 1, "createdAt": -1}
 gitSyncErrorNG {"name": "accountId_repo_errorType_status_sort_Index", "background": true} {"accountIdentifier": 1, "repoUrl": 1, "errorType": 1, "status": 1, "createdAt": -1}
 gitSyncSettings {"name": "account_org_project_index", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
@@ -770,6 +771,11 @@ settingAttributes {"name": "nextIteration_1", "background": true} {"nextIteratio
 settingAttributes {"name": "secretsMigrationIdx", "background": true} {"value.type": 1, "nextSecretMigrationIteration": 1}
 settingAttributes {"name": "secretsMigrationPerAccountIdx", "background": true} {"value.type": 1, "secretsMigrated": 1, "accountId": 1}
 settingAttributes {"name": "typeNextIterationIdx", "background": true} {"value.type": 1, "nextIteration": 1}
+settingConfigurations {"name": "category_idx", "background": true} {"category": 1}
+settingConfigurations {"name": "identifier_unique_idx", "unique": true} {"identifier": 1}
+settings {"name": "accountIdentifier_orgIdentifier_projectIdentifier_category_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "category": 1}
+settings {"name": "accountIdentifier_orgIdentifier_projectIdentifier_identifier_unique_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
+settingsConfigurationState {"name": "identifier_1", "background": true} {"identifier": 1}
 signupVerificationTokens {"name": "token_signupVerificationToken_query_index", "background": true} {"token": 1}
 sourceCodeManagers {"name": "accountIdentifier_1", "background": true} {"accountIdentifier": 1}
 sourceCodeManagers {"name": "uniqueIndex", "unique": true} {"userIdentifier": 1, "name": 1, "accountIdentifier": 1}
