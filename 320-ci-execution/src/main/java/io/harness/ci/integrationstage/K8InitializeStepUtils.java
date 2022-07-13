@@ -88,6 +88,7 @@ public class K8InitializeStepUtils {
   @Inject private CIExecutionConfigService ciExecutionConfigService;
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject private ConnectorUtils connectorUtils;
+  private final String AXA_ACCOUNT_ID = "UVxMDMhNQxOCvroqqImWdQ";
 
   public List<ContainerDefinitionInfo> createStepContainerDefinitions(List<ExecutionWrapperConfig> steps,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
@@ -388,13 +389,23 @@ public class K8InitializeStepUtils {
 
   private ContainerResourceParams getStepContainerResource(ContainerResource resource, String stepType, String stepId,
       String accountId, Integer extraMemoryPerStep, Integer extraCPUPerStep) {
+    Integer cpuLimit;
+    Integer memoryLimit;
+
+    if (featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId)
+        || accountId.equals(AXA_ACCOUNT_ID)) {
+      cpuLimit = getContainerCpuLimit(resource, stepType, stepId, accountId);
+      memoryLimit = getContainerMemoryLimit(resource, stepType, stepId, accountId);
+    } else {
+      cpuLimit = getContainerCpuLimit(resource, stepType, stepId, accountId) + extraCPUPerStep;
+      memoryLimit = getContainerMemoryLimit(resource, stepType, stepId, accountId) + extraMemoryPerStep;
+    }
+
     return ContainerResourceParams.builder()
         .resourceRequestMilliCpu(STEP_REQUEST_MILLI_CPU)
         .resourceRequestMemoryMiB(STEP_REQUEST_MEMORY_MIB)
-        .resourceLimitMilliCpu(getContainerCpuLimit(resource, stepType, stepId, accountId))
-        .resourceLimitMemoryMiB(getContainerMemoryLimit(resource, stepType, stepId, accountId))
-        .resourceLimitMilliCpu(getContainerCpuLimit(resource, stepType, stepId, accountId) + extraCPUPerStep)
-        .resourceLimitMemoryMiB(getContainerMemoryLimit(resource, stepType, stepId, accountId) + extraMemoryPerStep)
+        .resourceLimitMilliCpu(cpuLimit)
+        .resourceLimitMemoryMiB(memoryLimit)
         .build();
   }
 

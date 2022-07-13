@@ -393,7 +393,9 @@ public enum FeatureName {
   JENKINS_BUILD,
   ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM,
   PRUNE_KUBERNETES_RESOURCES_NG,
-  CI_STEP_GROUP_ENABLED;
+  CI_STEP_GROUP_ENABLED,
+  CI_DISABLE_RESOURCE_OPTIMIZATION(
+      "Used for disabling the resource optimization, AXA had asked this flag", HarnessTeam.CI);
 
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
