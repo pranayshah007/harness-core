@@ -23,7 +23,6 @@ java_library(
         "//360-cg-manager:module",
         "//380-cg-graphql:module",
         "//400-rest:module",
-        "//420-delegate-agent:module",
         "//910-delegate-service-driver:module",
         "//950-delegate-tasks-beans:module",
         "//955-delegate-beans:module",

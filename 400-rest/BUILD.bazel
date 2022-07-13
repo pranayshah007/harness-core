@@ -712,7 +712,6 @@ java_library(
     deps = [
         ":module",
         "//:lombok",
-        "//420-delegate-agent:module",
         "//420-delegate-service:module",
         "//425-verification-commons:module",
         "//430-cv-nextgen-commons:module",
