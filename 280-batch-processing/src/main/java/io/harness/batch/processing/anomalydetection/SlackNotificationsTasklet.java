@@ -31,7 +31,7 @@ public class SlackNotificationsTasklet implements Tasklet {
     final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
 
     Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
-    // alertsService.sendAnomalyDailyReport(jobConstants.getAccountId(), startTime);
+    alertsService.sendNgAnomalyAlerts(jobConstants.getAccountId(), startTime);
     return null;
   }
 }

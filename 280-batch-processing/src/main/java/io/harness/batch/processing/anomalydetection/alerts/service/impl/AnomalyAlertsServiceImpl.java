@@ -192,6 +192,15 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     // Sending email alerts
     emailChannelBuilder.templateData(templateData);
     notificationResourceClient.sendNotification(accountId, emailChannelBuilder.build());
+
+    Map<String, String> slackTemplateData = new HashMap<>();
+    slackTemplateData.put("perspective_name", perspectiveNotificationSetting.getPerspectiveName());
+    slackTemplateData.put("count_of_anomalies", String.valueOf(perspectiveAnomalies.size()));
+    slackTemplateData.put("date", date.toString());
+
+    // Sending slack alerts
+    slackChannelBuilder.templateData(slackTemplateData);
+    notificationResourceClient.sendNotification(accountId, slackChannelBuilder.build());
   }
 
   public List<CCMPerspectiveNotificationChannelsDTO> listNotificationChannelsPerPerspective(String accountId) {
