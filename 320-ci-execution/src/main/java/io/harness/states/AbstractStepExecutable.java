@@ -446,12 +446,24 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
     } else if (stepStatus.getStepExecutionStatus() == StepExecutionStatus.ABORTED) {
       return stepResponseBuilder.status(Status.ABORTED).build();
     } else {
+      String maskedError = maskTransportExceptionError(stepStatus.getError());
       return stepResponseBuilder.status(Status.FAILED)
           .failureInfo(FailureInfo.newBuilder()
-                           .setErrorMessage(stepStatus.getError())
+                           .setErrorMessage(maskedError)
                            .addAllFailureTypes(EnumSet.of(FailureType.APPLICATION_FAILURE))
                            .build())
           .build();
+    }
+  }
+
+  private String maskTransportExceptionError(String errorMessage) {
+    final String defaultTransportExceptionMessage =
+        "Communication between Container and Lite-engine seems to be broken. Please review the resources allocated to the Step";
+    final String transportExceptionString = "connection error: desc = \"transport: Error while dialing dial tcp";
+    if (errorMessage.contains(transportExceptionString)) {
+      return defaultTransportExceptionMessage;
+    } else {
+      return errorMessage;
     }
   }
 
