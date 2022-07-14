@@ -250,6 +250,7 @@ public class SlackMessageGenerator {
 
   private AnomalyEntity convertToAnomalyEntity(AnomalyData anomaly) {
     return AnomalyEntity.builder()
+        .anomalyTime(Instant.ofEpochMilli(anomaly.getTime()))
         .awsAccount(anomaly.getEntity().getAwsUsageAccountId())
         .awsInstanceType(anomaly.getEntity().getAwsInstancetype())
         .awsService(anomaly.getEntity().getAwsServiceCode())
