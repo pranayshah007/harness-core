@@ -92,9 +92,13 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
       capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
           ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getConnectorDTO().getConnectorConfig(),
           maskingEvaluator));
-    } else if (serverlessArtifactConfig instanceof ServerlessS3ArtifactConfig
-        || serverlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
+    } else if (serverlessArtifactConfig instanceof ServerlessS3ArtifactConfig) {
       AwsConnectorDTO connectorConfigDTO = (AwsConnectorDTO) ((ServerlessS3ArtifactConfig) serverlessArtifactConfig)
+                                               .getConnectorDTO()
+                                               .getConnectorConfig();
+      capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
+    } else if (serverlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
+      AwsConnectorDTO connectorConfigDTO = (AwsConnectorDTO) ((ServerlessEcrArtifactConfig) serverlessArtifactConfig)
                                                .getConnectorDTO()
                                                .getConnectorConfig();
       capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
@@ -108,10 +112,16 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
                   .getConnectorDTO()
                   .getConnectorConfig(),
               maskingEvaluator));
-        } else if (sidecarServerlessArtifactConfig instanceof ServerlessS3ArtifactConfig
-            || sidecarServerlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
+        } else if (sidecarServerlessArtifactConfig instanceof ServerlessS3ArtifactConfig) {
           AwsConnectorDTO connectorConfigDTO =
               (AwsConnectorDTO) ((ServerlessS3ArtifactConfig) sidecarServerlessArtifactConfig)
+                  .getConnectorDTO()
+                  .getConnectorConfig();
+          capabilities.addAll(
+              AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
+        } else if (sidecarServerlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
+          AwsConnectorDTO connectorConfigDTO =
+              (AwsConnectorDTO) ((ServerlessEcrArtifactConfig) sidecarServerlessArtifactConfig)
                   .getConnectorDTO()
                   .getConnectorConfig();
           capabilities.addAll(
