@@ -130,7 +130,7 @@ public class EventJobScheduler {
     }
   }
 
-  @Scheduled(cron = "0 */15 * * * ?")
+  @Scheduled(cron = "0 */5 * * * ?")
   public void runCloudEfficiencyInClusterBillingJobs() {
     runCloudEfficiencyEventJobs(BatchJobBucket.IN_CLUSTER_BILLING, true);
   }
