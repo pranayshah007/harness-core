@@ -1,0 +1,9 @@
+singleServerConfig:
+  address: "redis://localhost:6379"
+  userName: ""
+  password: ""
+  sslTruststore: ""
+  sslTruststorePassword: ""
+codec: !<io.harness.redis.RedissonKryoCodec> {}
+nettyThreads: 16
+useScriptCache: true

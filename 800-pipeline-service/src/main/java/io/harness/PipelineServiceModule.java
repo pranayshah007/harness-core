@@ -703,7 +703,7 @@ public class PipelineServiceModule extends AbstractModule {
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
     return harnessCacheManager.getCache("partialSchemaCache", SchemaCacheKey.class, PartialSchemaDTOWrapperValue.class,
         CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 1)),
-        versionInfoManager.getVersionInfo().getBuildNo());
+        versionInfoManager.getVersionInfo().getBuildNo(), true);
   }
 
   @Provides

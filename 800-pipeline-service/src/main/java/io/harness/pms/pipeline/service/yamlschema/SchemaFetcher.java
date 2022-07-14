@@ -27,6 +27,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
@@ -100,6 +101,12 @@ public class SchemaFetcher {
     schemaCache.clear();
     schemaDetailsCache.clear();
     log.info("[PMS] Yaml schema cache was successfully invalidated");
+  }
+
+  public void testCache() {
+    SchemaCacheKey schemaCacheKey = SchemaCacheKey.builder().accountIdentifier("test").moduleType(ModuleType.CD).build();
+    PartialSchemaDTOWrapperValue value = PartialSchemaDTOWrapperValue.builder().partialSchemaValueList(new ArrayList<>()).build();
+    schemaCache.put(schemaCacheKey, value);
   }
 
   private void logWarnIfExceedsThreshold(ModuleType moduleType, long startTs) {
