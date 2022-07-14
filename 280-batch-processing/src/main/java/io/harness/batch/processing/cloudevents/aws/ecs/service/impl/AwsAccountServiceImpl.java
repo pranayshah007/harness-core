@@ -15,6 +15,7 @@ import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.ccm.commons.entities.billing.CECloudAccount;
 import io.harness.ccm.setup.CECloudAccountDao;
 import io.harness.ccm.setup.util.InfraSetUpUtils;
+import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 
 import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.beans.ce.CEAwsConfig;
@@ -60,17 +61,29 @@ public class AwsAccountServiceImpl implements AwsAccountService {
 
   @Override
   public void syncLinkedAccounts(String accountId, String settingId, CEAwsConfig ceAwsConfig) {
-    List<CECloudAccount> linkedAccounts = getLinkedAccounts(accountId, settingId, ceAwsConfig);
+    List<CECloudAccount> linkedAccounts = getLinkedAccounts(
+        accountId, settingId, ceAwsConfig.getAwsMasterAccountId(), ceAwsConfig.getAwsCrossAccountAttributes());
     updateLinkedAccounts(accountId, settingId, ceAwsConfig.getAwsAccountId(), linkedAccounts);
   }
 
-  private List<CECloudAccount> getLinkedAccounts(String accountId, String settingId, CEAwsConfig ceAwsConfig) {
+  @Override
+  public void syncNgLinkedAccounts(String accountId, String settingId, CEAwsConnectorDTO ceAwsConnectorDTO) {
+    AwsCrossAccountAttributes awsCrossAccountAttributes =
+        AwsCrossAccountAttributes.builder()
+            .crossAccountRoleArn(ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn())
+            .externalId(ceAwsConnectorDTO.getCrossAccountAccess().getExternalId())
+            .build();
+    List<CECloudAccount> linkedAccounts =
+        getLinkedAccounts(accountId, settingId, ceAwsConnectorDTO.getAwsAccountId(), awsCrossAccountAttributes);
+    updateLinkedAccounts(accountId, settingId, ceAwsConnectorDTO.getAwsAccountId(), linkedAccounts);
+  }
+
+  private List<CECloudAccount> getLinkedAccounts(String accountId, String settingId, String infraMasterAccountId,
+      AwsCrossAccountAttributes awsCrossAccountAttributes) {
     List<CECloudAccount> ceCloudAccounts = new ArrayList<>();
-    List<Account> accountList =
-        awsOrganizationHelperService.listAwsAccounts(ceAwsConfig.getAwsCrossAccountAttributes());
-    String masterAwsAccountId =
-        getMasterAccountIdFromArn(ceAwsConfig.getAwsCrossAccountAttributes().getCrossAccountRoleArn());
-    String externalId = ceAwsConfig.getAwsCrossAccountAttributes().getExternalId();
+    List<Account> accountList = awsOrganizationHelperService.listAwsAccounts(awsCrossAccountAttributes);
+    String masterAwsAccountId = getMasterAccountIdFromArn(awsCrossAccountAttributes.getCrossAccountRoleArn());
+    String externalId = awsCrossAccountAttributes.getExternalId();
     accountList.forEach(account -> {
       String awsAccountId = getAccountIdFromArn(account.getArn());
       if (!awsAccountId.equals(masterAwsAccountId)) {
@@ -86,7 +99,7 @@ public class AwsAccountServiceImpl implements AwsAccountService {
                                           .accountStatus(CECloudAccount.AccountStatus.NOT_VERIFIED)
                                           .accountName(account.getName())
                                           .infraAccountId(awsAccountId)
-                                          .infraMasterAccountId(ceAwsConfig.getAwsMasterAccountId())
+                                          .infraMasterAccountId(infraMasterAccountId)
                                           .masterAccountSettingId(settingId)
                                           .awsCrossAccountAttributes(linkedAwsCrossAccountAttributes)
                                           .build();
@@ -111,11 +124,11 @@ public class AwsAccountServiceImpl implements AwsAccountService {
       }
     });
 
-    ceExistingAccountMap.forEach((accountIdentifierKey, ceCloudAccount) -> {
+    /*ceExistingAccountMap.forEach((accountIdentifierKey, ceCloudAccount) -> {
       if (!infraAccountMap.containsKey(accountIdentifierKey)) {
         ceCloudAccountDao.deleteAccount(ceCloudAccount.getUuid());
       }
-    });
+    });*/
   }
 
   private Map<AccountIdentifierKey, CECloudAccount> createAccountMap(List<CECloudAccount> cloudAccounts) {
