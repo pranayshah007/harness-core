@@ -37,6 +37,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgService;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.beans.DecryptableEntity;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
 import io.harness.data.structure.EmptyPredicate;
@@ -372,6 +373,9 @@ public class ServerlessTaskHelperBase {
                   s3ArtifactConfig.getIdentifier()),
             White, Bold));
     executionLogCallback.saveExecutionLog("S3 Object Path: " + artifactPath);
+    for (DecryptableEntity entity : s3ArtifactConfig.getConnectorDTO().getConnectorConfig().getDecryptableEntities()) {
+      secretDecryptionService.decrypt(entity, s3ArtifactConfig.getEncryptedDataDetails());
+    }
     AwsInternalConfig awsConfig = awsNgConfigMapper.createAwsInternalConfig(
         (AwsConnectorDTO) s3ArtifactConfig.getConnectorDTO().getConnectorConfig());
     try (InputStream artifactInputStream = awsApiHelperService
