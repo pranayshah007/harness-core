@@ -273,6 +273,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   private static final SecureRandom random = new SecureRandom();
   private HarnessCacheManager harnessCacheManager;
+  public static final String GLOBAL_DELEGATE_ACCOUNT_ID = "__GLOBAL_DELEGATE_ACCOUNT_ID__";
 
   private Supplier<Long> taskCountCache = Suppliers.memoizeWithExpiration(this::fetchTaskCount, 1, TimeUnit.MINUTES);
   @Inject @Getter private Subject<DelegateTaskStatusObserver> delegateTaskStatusObserverSubject;
@@ -425,6 +426,10 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     task.setStatus(taskStatus);
     task.setVersion(getVersion());
     task.setLastBroadcastAt(clock.millis());
+    if (task.isExecuteOnHarnessHostedDelegates()) {
+      task.setSecondaryAccountId(task.getAccountId());
+      task.setAccountId(GLOBAL_DELEGATE_ACCOUNT_ID);
+    }
 
     // For forward compatibility set the wait id to the uuid
     if (task.getUuid() == null) {
