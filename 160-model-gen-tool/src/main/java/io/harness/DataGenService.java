@@ -182,6 +182,7 @@ public class DataGenService {
     Seed seed = new Seed(0);
 
     accountGenerator.ensurePredefined(seed, ownerManager.create(), Accounts.HARNESS_TEST);
+    accountGenerator.ensurePredefined(seed, ownerManager.create(), Accounts.GLOBAL_DELEGATE);
 
     Owners owners = ownerManager.create();
     Account account = accountGenerator.ensurePredefined(seed, owners, Accounts.GENERIC_TEST);
