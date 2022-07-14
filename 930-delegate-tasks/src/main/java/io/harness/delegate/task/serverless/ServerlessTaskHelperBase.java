@@ -376,6 +376,8 @@ public class ServerlessTaskHelperBase {
     for (DecryptableEntity entity : s3ArtifactConfig.getConnectorDTO().getConnectorConfig().getDecryptableEntities()) {
       secretDecryptionService.decrypt(entity, s3ArtifactConfig.getEncryptedDataDetails());
     }
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+        s3ArtifactConfig.getConnectorDTO().getConnectorConfig(), s3ArtifactConfig.getEncryptedDataDetails());
     AwsInternalConfig awsConfig = awsNgConfigMapper.createAwsInternalConfig(
         (AwsConnectorDTO) s3ArtifactConfig.getConnectorDTO().getConnectorConfig());
     try (InputStream artifactInputStream = awsApiHelperService
