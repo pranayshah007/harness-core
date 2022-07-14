@@ -1133,7 +1133,7 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -1147,7 +1147,7 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -1379,6 +1379,9 @@
         },
         "infrastructure": {
           "$ref": "#/definitions/Infrastructure"
+        },
+        "runsOn": {
+          "$ref": "#/definitions/ParameterFieldString"
         },
         "serviceDependencies": {
           "$ref": "#/definitions/ParameterFieldListDependencyElement"
@@ -1809,7 +1812,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -1883,7 +1886,8 @@
                   "format": "double"
                 },
                 {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*))"
                 }
               ]
             }
@@ -2377,6 +2381,39 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ParameterFieldString": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "string"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "PersistentVolumeClaimYaml": {
       "allOf": [
         {
@@ -2849,6 +2886,18 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "RunOnInfraSpec": {
+      "type": "object",
+      "required": [
+        "runsOn"
+      ],
+      "properties": {
+        "runsOn": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "RunStepInfo": {
       "allOf": [
         {
@@ -3195,6 +3244,35 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "RunsOnInfra": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Infrastructure"
+        },
+        {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "spec": {
+              "$ref": "#/definitions/RunOnInfraSpec"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "KubernetesDirect",
+                "UseFromStage",
+                "VM",
+                "KubernetesHosted"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SaveCacheGCSStepInfo": {
       "allOf": [
         {
@@ -3525,12 +3603,18 @@
               "$ref": "#/definitions/K8sHostedInfraYaml"
             },
             {
+              "$ref": "#/definitions/RunsOnInfra"
+            },
+            {
               "$ref": "#/definitions/UseFromStageInfraYaml"
             },
             {
               "$ref": "#/definitions/VmInfraYaml"
             }
           ]
+        },
+        "runsOn": {
+          "type": "string"
         },
         "serviceDependencies": {
           "oneOf": [
@@ -4049,6 +4133,7 @@
       "type": "object",
       "required": [
         "identifier",
+        "name",
         "steps"
       ],
       "properties": {
@@ -4164,7 +4249,7 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]

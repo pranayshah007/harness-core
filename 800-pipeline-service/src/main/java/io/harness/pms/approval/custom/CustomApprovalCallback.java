@@ -78,6 +78,11 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
     Ambiance ambiance = instance.getAmbiance();
     NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, "Execute", false);
 
+    if (ApprovalStatus.ABORTED.equals(instance.getStatus())) {
+      log.warn("Custom Approval Instance queued was aborted. Ignoring the callback response.");
+      return;
+    }
+
     if (instance.hasExpired()) {
       log.warn("Custom Approval Instance queued has expired");
       updateApprovalInstanceAndLog(logCallback, "Approval instance has expired", LogColor.Red,

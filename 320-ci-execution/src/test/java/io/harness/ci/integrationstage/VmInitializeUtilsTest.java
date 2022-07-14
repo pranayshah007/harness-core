@@ -7,6 +7,7 @@
 
 package io.harness.ci.integrationstage;
 
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,6 +42,18 @@ public class VmInitializeUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void validateStageConfig() {
     IntegrationStageConfig integrationStageConfig = VmInitializeTaskHelper.getIntegrationStageConfig();
+    String accountId = "test";
+
+    when(featureFlagService.isEnabled(FeatureName.CI_VM_INFRASTRUCTURE, accountId)).thenReturn(true);
+
+    vmInitializeUtils.validateStageConfig(integrationStageConfig, accountId);
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testValidateStageConfigWithStepGroup() throws Exception {
+    IntegrationStageConfig integrationStageConfig = VmInitializeTaskHelper.getIntegrationStageConfigWithStepGroup();
     String accountId = "test";
 
     when(featureFlagService.isEnabled(FeatureName.CI_VM_INFRASTRUCTURE, accountId)).thenReturn(true);

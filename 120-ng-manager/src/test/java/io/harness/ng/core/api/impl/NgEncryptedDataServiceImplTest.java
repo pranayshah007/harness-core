@@ -43,6 +43,8 @@ import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
 import io.harness.secrets.SecretsFileService;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.UserPrincipal;
 
 import software.wings.service.impl.security.GlobalEncryptDecryptClient;
 
@@ -75,6 +77,7 @@ public class NgEncryptedDataServiceImplTest extends CategoryTest {
         vaultEncryptorsRegistry, secretsFileService, secretManagerClient, globalEncryptDecryptClient,
         ngConnectorSecretManagerService, ngSecretService, secretPermissionValidator);
     ngEncryptedDataService = spy(ngEncryptedDataServiceSpy);
+    SecurityContextBuilder.setContext(new UserPrincipal());
   }
 
   @Test
@@ -97,7 +100,7 @@ public class NgEncryptedDataServiceImplTest extends CategoryTest {
     when(ngSecretService.get(any(), any(), any(), any()))
         .thenReturn(Optional.ofNullable(SecretResponseWrapper.builder().secret(secretDTOV2).build()));
     doNothing().when(secretPermissionValidator).checkForAccessOrThrow(any(), any(), any(), any());
-    ngEncryptedDataService.getEncryptionDetails(ngAccess, vaultConnectorDTO);
+    ngEncryptedDataServiceSpy.getEncryptionDetails(ngAccess, vaultConnectorDTO);
     verify(secretPermissionValidator, times(1)).checkForAccessOrThrow(any(), any(), any(), any());
   }
 
@@ -123,7 +126,7 @@ public class NgEncryptedDataServiceImplTest extends CategoryTest {
     doThrow(new NGAccessDeniedException("Not enough permission", USER, Collections.emptyList()))
         .when(secretPermissionValidator)
         .checkForAccessOrThrow(any(), any(), any(), any());
-    assertThatThrownBy(() -> ngEncryptedDataService.getEncryptionDetails(ngAccess, vaultConnectorDTO))
+    assertThatThrownBy(() -> ngEncryptedDataServiceSpy.getEncryptionDetails(ngAccess, vaultConnectorDTO))
         .isInstanceOf(NGAccessDeniedException.class)
         .hasMessage("Not enough permission");
   }

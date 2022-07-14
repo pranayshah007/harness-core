@@ -13,11 +13,12 @@ import io.harness.annotations.dev.OwnedBy;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Map;
+import javax.validation.constraints.NotEmpty;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @Data
 @Builder(builderClassName = "Builder")
@@ -29,6 +30,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class PermissionCheckDTO {
   ResourceScope resourceScope;
   @NotEmpty String resourceType;
+  Map<String, String> resourceAttributes;
   String resourceIdentifier;
   @NotEmpty String permission;
 }

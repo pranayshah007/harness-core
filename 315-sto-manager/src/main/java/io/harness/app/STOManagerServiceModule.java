@@ -36,6 +36,7 @@ import io.harness.cistatus.service.gitlab.GitlabService;
 import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.ConnectorResourceClientModule;
+import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
@@ -46,7 +47,6 @@ import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
-import io.harness.opaclient.OpaClientModule;
 import io.harness.packages.HarnessPackages;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
@@ -249,14 +249,15 @@ public class STOManagerServiceModule extends AbstractModule {
     install(new SecretNGManagerClientModule(stoManagerConfiguration.getNgManagerClientConfig(),
         stoManagerConfiguration.getNgManagerServiceSecret(), "STOManager"));
     install(new CILogServiceClientModule(stoManagerConfiguration.getLogServiceConfig()));
-    install(new OpaClientModule(
-        stoManagerConfiguration.getOpaServerConfig().getBaseUrl(), stoManagerConfiguration.getJwtAuthSecret()));
     install(UserClientModule.getInstance(stoManagerConfiguration.getManagerClientConfig(),
         stoManagerConfiguration.getManagerServiceSecret(), STO_MANAGER.getServiceId()));
     install(new TIServiceClientModule(stoManagerConfiguration.getTiServiceConfig()));
     install(new STOServiceClientModule(stoManagerConfiguration.getStoServiceConfig()));
     install(new AccountClientModule(stoManagerConfiguration.getManagerClientConfig(),
         stoManagerConfiguration.getNgManagerServiceSecret(), STO_MANAGER.toString()));
+    install(EnforcementClientModule.getInstance(stoManagerConfiguration.getManagerClientConfig(),
+        stoManagerConfiguration.getNgManagerServiceSecret(), STO_MANAGER.getServiceId(),
+        stoManagerConfiguration.getEnforcementClientConfiguration()));
     install(new AbstractTelemetryModule() {
       @Override
       public TelemetryConfiguration telemetryConfiguration() {

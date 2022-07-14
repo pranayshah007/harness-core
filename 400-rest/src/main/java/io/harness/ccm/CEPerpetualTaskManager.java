@@ -76,8 +76,8 @@ public class CEPerpetualTaskManager {
         PerpetualTaskClientContext.builder().clientParams(clientParamMap).build();
 
     PerpetualTaskSchedule schedule = PerpetualTaskSchedule.newBuilder()
-                                         .setInterval(Durations.fromMinutes(1))
-                                         .setTimeout(Durations.fromSeconds(30))
+                                         .setInterval(Durations.fromMinutes(2))
+                                         .setTimeout(Durations.fromMinutes(4))
                                          .build();
     return perpetualTaskService.createTask(PerpetualTaskType.K8S_WATCH, accountId, clientContext, schedule, false, "");
   }

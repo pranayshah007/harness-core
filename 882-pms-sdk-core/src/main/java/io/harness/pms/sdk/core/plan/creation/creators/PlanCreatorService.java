@@ -35,7 +35,6 @@ import io.harness.pms.contracts.plan.VariablesCreationBlobResponse;
 import io.harness.pms.contracts.plan.VariablesCreationResponse;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
-import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.pipeline.filters.FilterCreatorService;
 import io.harness.pms.sdk.core.plan.creation.PlanCreationResponseBlobHelper;
@@ -239,15 +238,6 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
   // Dependency passed from parent to its children plan creator
   private PlanCreationResponse createPlanForDependencyInternal(
       String currentYaml, YamlField field, PlanCreationContext ctx, Dependency dependency) {
-    String executionInputTemplate = "";
-    // Checking if ExecutionInput feature is enabled or not.
-    if (ctx.getGlobalContext().get("metadata").getIsExecutionInputEnabled()) {
-      // TODO(BRIJESH): Hardcoding for steps for now. Will update the logic.
-      if (field.getName().equals("step")) {
-        executionInputTemplate = RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlField(
-            field.getNode().getParentNode().getCurrJsonNode());
-      }
-    }
     try (AutoLogContext ignore =
              PlanCreatorUtils.autoLogContext(ctx.getMetadata().getMetadata(), ctx.getMetadata().getAccountIdentifier(),
                  ctx.getMetadata().getOrgIdentifier(), ctx.getMetadata().getProjectIdentifier())) {
@@ -261,11 +251,16 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
 
         PartialPlanCreator planCreator = planCreatorOptional.get();
         Class<?> cls = planCreator.getFieldClass();
+        String executionInputTemplate = "";
+        if (ctx.getGlobalContext().get("metadata").getIsExecutionInputEnabled()) {
+          executionInputTemplate = planCreator.getExecutionInputTemplateAndModifyYamlField(field);
+        }
         Object obj = YamlField.class.isAssignableFrom(cls) ? field : YamlUtils.read(field.getNode().toString(), cls);
 
         try {
           PlanCreationResponse planForField = planCreator.createPlanForField(
-              PlanCreationContext.cloneWithCurrentField(ctx, field, currentYaml, dependency), obj);
+              PlanCreationContext.cloneWithCurrentField(ctx, field, currentYaml, dependency, executionInputTemplate),
+              obj);
           if (!EmptyPredicate.isEmpty(executionInputTemplate)) {
             planForField.setExecutionInputTemplateInPlanNode(executionInputTemplate);
           }

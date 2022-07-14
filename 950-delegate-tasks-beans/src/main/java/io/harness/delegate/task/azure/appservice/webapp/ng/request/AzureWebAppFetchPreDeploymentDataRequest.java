@@ -29,13 +29,13 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class AzureWebAppFetchPreDeploymentDataRequest extends AbstractSlotDataRequest {
   @Builder
-  public AzureWebAppFetchPreDeploymentDataRequest(CommandUnitsProgress commandUnitsProgress,
+  public AzureWebAppFetchPreDeploymentDataRequest(String accountId, CommandUnitsProgress commandUnitsProgress,
       AzureWebAppInfraDelegateConfig infraDelegateConfig, String startupCommand,
       List<AzureAppServiceApplicationSetting> applicationSettings,
       List<AzureAppServiceConnectionString> connectionStrings, AzureArtifactConfig artifact,
       Integer timeoutIntervalInMin) {
-    super(commandUnitsProgress, infraDelegateConfig, startupCommand, applicationSettings, connectionStrings, artifact,
-        timeoutIntervalInMin);
+    super(accountId, commandUnitsProgress, infraDelegateConfig, startupCommand, applicationSettings, connectionStrings,
+        artifact, timeoutIntervalInMin);
   }
 
   @Override

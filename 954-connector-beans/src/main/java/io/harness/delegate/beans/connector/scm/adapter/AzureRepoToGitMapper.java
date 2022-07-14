@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoSshCredentialsDTO;
@@ -18,6 +19,7 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenD
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnknownEnumTypeException;
 
 import lombok.experimental.UtilityClass;
 
@@ -27,59 +29,59 @@ public class AzureRepoToGitMapper {
   public static final String GIT = "/_git/";
   public static GitConfigDTO mapToGitConfigDTO(AzureRepoConnectorDTO azureRepoConnectorDTO) {
     final GitAuthType authType = azureRepoConnectorDTO.getAuthentication().getAuthType();
-    final GitConnectionType connectionType = azureRepoConnectorDTO.getConnectionType();
+    final GitConnectionType connectionType = mapToGitConnectionType(azureRepoConnectorDTO.getConnectionType());
     final String url = azureRepoConnectorDTO.getUrl();
-    final String validationProject = azureRepoConnectorDTO.getValidationProject();
     final String validationRepo = azureRepoConnectorDTO.getValidationRepo();
     if (authType == null) {
       throw new InvalidRequestException("Azure Repo DTO Auth Type not found");
     }
     switch (authType) {
       case HTTP:
-        return mapToGitHTTP(azureRepoConnectorDTO, connectionType, url, validationProject, validationRepo);
+        return mapToGitHTTP(azureRepoConnectorDTO, connectionType, url, validationRepo);
       case SSH:
-        return mapToGitSSH(azureRepoConnectorDTO, connectionType, url, validationProject, validationRepo);
+        return mapToGitSSH(azureRepoConnectorDTO, connectionType, url, validationRepo);
       default:
         throw new InvalidRequestException("Unknown auth type: " + authType);
     }
   }
 
   public GitConfigDTO mapToGitHTTP(AzureRepoConnectorDTO azureRepoConnectorDTO, GitConnectionType connectionType,
-      String url, String validationProject, String validationRepo) {
+      String url, String validationRepo) {
     final AzureRepoHttpCredentialsDTO credentials =
         (AzureRepoHttpCredentialsDTO) azureRepoConnectorDTO.getAuthentication().getCredentials();
-    String username, validationProjAndRepo;
+    String username;
     SecretRefData usernameRef, tokenRef;
     final AzureRepoUsernameTokenDTO azureRepoUsernameTokenDTO =
         (AzureRepoUsernameTokenDTO) credentials.getHttpCredentialsSpec();
     username = azureRepoUsernameTokenDTO.getUsername();
-    validationProjAndRepo = createValidationProjectRepo(
-        validationProject, validationRepo, azureRepoConnectorDTO.getAuthentication().getAuthType());
     usernameRef = azureRepoUsernameTokenDTO.getUsernameRef();
     tokenRef = azureRepoUsernameTokenDTO.getTokenRef();
-    GitConfigDTO gitConfigForHttp = GitConfigCreater.getGitConfigForHttp(connectionType, url, validationProjAndRepo,
-        username, usernameRef, tokenRef, azureRepoConnectorDTO.getDelegateSelectors());
+    validationRepo = GIT + validationRepo;
+    GitConfigDTO gitConfigForHttp = GitConfigCreater.getGitConfigForHttp(connectionType, url, validationRepo, username,
+        usernameRef, tokenRef, azureRepoConnectorDTO.getDelegateSelectors());
     gitConfigForHttp.setExecuteOnDelegate(true);
     return gitConfigForHttp;
   }
 
   public GitConfigDTO mapToGitSSH(AzureRepoConnectorDTO azureRepoConnectorDTO, GitConnectionType connectionType,
-      String url, String validationProject, String validationRepo) {
-    String validationProjAndRepo = createValidationProjectRepo(
-        validationProject, validationRepo, azureRepoConnectorDTO.getAuthentication().getAuthType());
+      String url, String validationRepo) {
     final AzureRepoSshCredentialsDTO credentials =
         (AzureRepoSshCredentialsDTO) azureRepoConnectorDTO.getAuthentication().getCredentials();
     final SecretRefData sshKeyRef = credentials.getSshKeyRef();
     GitConfigDTO gitConfigForSsh = GitConfigCreater.getGitConfigForSsh(
-        connectionType, url, validationProjAndRepo, sshKeyRef, azureRepoConnectorDTO.getDelegateSelectors());
+        connectionType, url, validationRepo, sshKeyRef, azureRepoConnectorDTO.getDelegateSelectors());
     gitConfigForSsh.setExecuteOnDelegate(true);
     return gitConfigForSsh;
   }
 
-  public String createValidationProjectRepo(String validationProject, String validationRepo, GitAuthType authType) {
-    if (authType == GitAuthType.HTTP) {
-      return validationProject + GIT + validationRepo;
+  public static GitConnectionType mapToGitConnectionType(AzureRepoConnectionTypeDTO connectionType) {
+    switch (connectionType) {
+      case PROJECT:
+        return GitConnectionType.PROJECT;
+      case REPO:
+        return GitConnectionType.REPO;
+      default:
+        throw new UnknownEnumTypeException("AzureRepo Connection Type ", connectionType.name());
     }
-    return validationProject + "/" + validationRepo;
   }
 }

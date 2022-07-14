@@ -35,7 +35,7 @@ import lombok.EqualsAndHashCode;
 public class AzureAppServicePackageDeploymentContext extends AzureAppServiceDeploymentContext {
   @NotNull(message = ARTIFACT_FILE_BLANK_ERROR_MSG) private File artifactFile;
   @NotNull(message = ARTIFACT_TYPE_BLANK_ERROR_MSG)
-  @ArtifactTypeSubset(anyOf = {ArtifactType.ZIP, ArtifactType.WAR, ArtifactType.NUGET})
+  @ArtifactTypeSubset(anyOf = {ArtifactType.ZIP, ArtifactType.WAR, ArtifactType.NUGET, ArtifactType.JAR})
   private ArtifactType artifactType;
 
   @Builder
@@ -44,9 +44,10 @@ public class AzureAppServicePackageDeploymentContext extends AzureAppServiceDepl
       Map<String, AzureAppServiceApplicationSetting> appSettingsToRemove,
       Map<String, AzureAppServiceConnectionString> connSettingsToAdd,
       Map<String, AzureAppServiceConnectionString> connSettingsToRemove, String startupCommand, String slotName,
-      String targetSlotName, File artifactFile, ArtifactType artifactType, int steadyStateTimeoutInMin) {
+      String targetSlotName, File artifactFile, ArtifactType artifactType, int steadyStateTimeoutInMin,
+      boolean isBasicDeployment) {
     super(azureWebClientContext, logCallbackProvider, appSettingsToAdd, appSettingsToRemove, connSettingsToAdd,
-        connSettingsToRemove, slotName, targetSlotName, startupCommand, steadyStateTimeoutInMin);
+        connSettingsToRemove, slotName, targetSlotName, startupCommand, steadyStateTimeoutInMin, isBasicDeployment);
     this.artifactFile = artifactFile;
     this.artifactType = artifactType;
   }

@@ -23,6 +23,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
@@ -193,7 +194,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     }
 
     if (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome
-        || infrastructureOutcome instanceof K8sDirectInfrastructureOutcome) {
+        || infrastructureOutcome instanceof K8sDirectInfrastructureOutcome
+        || infrastructureOutcome instanceof K8sAzureInfrastructureOutcome) {
       K8sInfraDelegateConfig k8sInfraDelegateConfig =
           cdStepHelper.getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
 

@@ -9,6 +9,7 @@ package io.harness.cdng.creator.plan.envGroup;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
@@ -26,6 +27,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
@@ -82,7 +84,7 @@ public class EnvGroupPlanCreatorHelper {
         emptyIfNull(environments).stream().collect(Collectors.toMap(Environment::getIdentifier, Function.identity()));
 
     List<EnvironmentPlanCreatorConfig> envConfigs = new ArrayList<>();
-    if (!envGroupYaml.isDeployToAll()) {
+    if (!envGroupYaml.getDeployToAll().getValue()) {
       List<EnvironmentYamlV2> envV2Yamls = envGroupYaml.getEnvironments();
       for (EnvironmentYamlV2 envYaml : envV2Yamls) {
         Environment environment = envMapping.get(envYaml.getEnvironmentRef().getValue());
@@ -95,7 +97,7 @@ public class EnvGroupPlanCreatorHelper {
         // TODO: need to remove this once we have the migration for old env
         if (EmptyPredicate.isEmpty(originalEnvYaml)) {
           try {
-            originalEnvYaml = YamlPipelineUtils.getYamlString(environment);
+            originalEnvYaml = YamlPipelineUtils.getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environment));
           } catch (JsonProcessingException e) {
             throw new InvalidRequestException("Unable to convert environment to yaml");
           }
@@ -105,6 +107,11 @@ public class EnvGroupPlanCreatorHelper {
         if (isNotEmpty(envYaml.getEnvironmentInputs().getValue())) {
           mergedEnvYaml = EnvironmentPlanCreatorHelper.mergeEnvironmentInputs(
               originalEnvYaml, envYaml.getEnvironmentInputs().getValue());
+        }
+        if (!envYaml.getDeployToAll().getValue() && isEmpty(envYaml.getGitOpsClusters().getValue())) {
+          throw new InvalidRequestException(
+              "List of Gitops clusters must be provided because deployToAll is false for env "
+              + environment.getIdentifier());
         }
         envConfigs.add(
             EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(mergedEnvYaml, envYaml, null));
@@ -117,7 +124,7 @@ public class EnvGroupPlanCreatorHelper {
         .orgIdentifier(orgIdentifier)
         .projectIdentifier(projectIdentifier)
         .environmentGroupRef(envGroupYaml.getEnvGroupRef())
-        .deployToAll(envGroupYaml.isDeployToAll())
+        .deployToAll(envGroupYaml.getDeployToAll().getValue())
         .environmentPlanCreatorConfigs(envConfigs)
         .build();
   }

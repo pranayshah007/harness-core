@@ -284,6 +284,7 @@ import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsMan
 import software.wings.service.impl.ContainerServiceParams;
 import software.wings.service.impl.MasterUrlFetchTaskParameter;
 import software.wings.service.impl.PerpetualTaskCapabilityCheckResponse;
+import software.wings.service.impl.SlackMessageSenderImpl;
 import software.wings.service.impl.analysis.AnalysisComparisonStrategy;
 import software.wings.service.impl.analysis.CustomLogDataCollectionInfo;
 import software.wings.service.impl.analysis.DataCollectionTaskResult;
@@ -813,6 +814,7 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(AwsLambdaDetailsResponse.class, 7256);
     kryo.register(JiraIssueData.class, 7259);
     kryo.register(SlackMessage.class, 7261);
+    kryo.register(SlackMessageSenderImpl.class, 7262);
     kryo.register(SlackMessageJSON.class, 7263);
     kryo.register(AwsS3Request.class, 7266);
     kryo.register(AwsS3RequestType.class, 7267);

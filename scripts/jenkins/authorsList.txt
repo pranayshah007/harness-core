@@ -145,6 +145,7 @@ Pratyush Goel goel.pratyush@harness.io
 Praveen Kambam Sugavanam praveen.sugavanam@harness.io
 Praveen Sugavanam praveen.sugavanam@harness.io
 Puneet Saraswat puneet.saraswat@harness.io
+Rafael Martins rafael.martins@harness.io
 Raghvendra Singh raghu@harness.io
 Raghvendra Singh raghvendra.singh@harness.io
 Raj Patel raj.patel@harness.io

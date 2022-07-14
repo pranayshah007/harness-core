@@ -12,10 +12,13 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.jenkins.JenkinsBearerTokenDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConstant;
 import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
+import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
 import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
 
 import software.wings.beans.JenkinsConfig;
+import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import lombok.experimental.UtilityClass;
 
@@ -69,6 +72,17 @@ public class JenkinsRequestResponseMapper {
         .username(jenkinsConfig.getUsername())
         .password(jenkinsConfig.getPassword())
         .token(jenkinsConfig.getToken())
+        .build();
+  }
+
+  public JenkinsArtifactDelegateResponse toJenkinsArtifactDelegateResponse(
+      BuildDetails buildDetails, JenkinsArtifactDelegateRequest attributeRequest) {
+    return JenkinsArtifactDelegateResponse.builder()
+        .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetails))
+        .sourceType(ArtifactSourceType.JENKINS)
+        .artifactPath(attributeRequest.getArtifactPaths().get(0))
+        .build(buildDetails.getNumber())
+        .jobName(attributeRequest.getJobName())
         .build();
   }
 }

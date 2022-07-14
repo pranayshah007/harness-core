@@ -9,6 +9,7 @@ package software.wings.sm.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.POOJA;
+import static io.harness.rule.OwnerRule.PRABU;
 
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
@@ -35,6 +37,7 @@ import software.wings.sm.StateTypeDescriptor;
 import software.wings.sm.states.ForkState.ForkStateExecutionData;
 
 import com.google.common.collect.ImmutableList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -106,5 +109,46 @@ public class EnvLoopStateTest extends WingsBaseTest {
     envLoopState.setTimeoutMillis((int) TimeUnit.HOURS.toMillis(1));
     Integer timeoutMillis = envLoopState.getTimeoutMillis();
     assertThat(timeoutMillis).isEqualTo((int) TimeUnit.HOURS.toMillis(1));
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void shouldExecuteInfraAsExp() {
+    StateExecutionInstance stateExecutionInstance = aStateExecutionInstance().uuid("UUID").build();
+    when(context.getStateExecutionInstance()).thenReturn(stateExecutionInstance);
+    when(stateExecutionInstanceHelper.clone(stateExecutionInstance)).thenReturn(stateExecutionInstance);
+    Map<String, StateTypeDescriptor> stencilMap = new HashMap<>();
+    stencilMap.put(StateType.ENV_STATE.getType(), StateType.ENV_LOOP_STATE);
+    when(workflowService.stencilMap(anyString())).thenReturn(stencilMap);
+    envLoopState.setLoopedValues(Collections.singletonList("${context.infra}"));
+    when(context.renderExpression("${context.infra}")).thenReturn("Infra1, Infra2");
+    ExecutionResponse executionResponse = envLoopState.execute(context);
+    verify(context).renderExpression(DISABLE_ASSERTION);
+    assertThat(executionResponse).isNotNull();
+    assertThat(executionResponse.isAsync()).isTrue();
+    assertThat(executionResponse.getCorrelationIds().size()).isEqualTo(2);
+    assertThat(executionResponse.getStateExecutionData()).isInstanceOf(ForkStateExecutionData.class);
+    ForkStateExecutionData forkStateExecutionData = (ForkStateExecutionData) executionResponse.getStateExecutionData();
+    assertThat(forkStateExecutionData.getElements().size()).isEqualTo(2);
+    assertThat(forkStateExecutionData.getForkStateNames().size()).isEqualTo(2);
+    assertThat(envLoopState.getLoopedValues()).containsExactlyInAnyOrder("Infra1", "Infra2");
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void shouldThrowExceptionInvalidInfraAsExp() {
+    StateExecutionInstance stateExecutionInstance = aStateExecutionInstance().uuid("UUID").build();
+    when(context.getStateExecutionInstance()).thenReturn(stateExecutionInstance);
+    when(stateExecutionInstanceHelper.clone(stateExecutionInstance)).thenReturn(stateExecutionInstance);
+    Map<String, StateTypeDescriptor> stencilMap = new HashMap<>();
+    stencilMap.put(StateType.ENV_STATE.getType(), StateType.ENV_LOOP_STATE);
+    when(workflowService.stencilMap(anyString())).thenReturn(stencilMap);
+    envLoopState.setLoopedValues(Collections.singletonList("${context.infra}"));
+    ExecutionResponse executionResponse = envLoopState.execute(context);
+    assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
+    assertThat(executionResponse.getErrorMessage())
+        .isEqualTo("The expression ${context.infra} provided for the variable doesn't resolve to a valid value");
   }
 }

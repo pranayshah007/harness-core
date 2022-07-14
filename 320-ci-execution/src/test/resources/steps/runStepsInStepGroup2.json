@@ -1,0 +1,63 @@
+{
+  "identifier": "step_grup2",
+  "name": "step_grup2",
+  "steps": [
+    {
+      "step": {
+        "identifier": "run21",
+        "type": "Run",
+        "name": "run21",
+        "spec": {
+          "connectorRef": "account.harnessImage",
+          "image": "alpine",
+          "shell": "Sh",
+          "command": "echo c06aa63\necho run2",
+          "privileged": false,
+          "outputVariables": [
+            {
+              "name": "run2value",
+              "__uuid": "I2y0ohc8RISfNchlffs39Q"
+            }
+          ],
+          "resources": {
+            "limits": {
+              "memory": "300Mi",
+              "cpu": "200m",
+              "__uuid": "w5EBtZezQ_6p9ZK7nAKFRQ"
+            },
+            "__uuid": "TqOwvl5URcm4Bf_Zd7kr3Q"
+          },
+          "__uuid": "ptMXyVClQrewV1VJJtypvA"
+        },
+        "failureStrategies": [],
+        "__uuid": "sfqviwo-QAuDTxrR6CxzHw"
+      },
+      "__uuid": "IDamxnnARsG27vU-TgsQSQ"
+    },
+    {
+      "step": {
+        "identifier": "run22",
+        "type": "Run",
+        "name": "run22",
+        "spec": {
+          "connectorRef": "account.harnessImage",
+          "image": "alpine",
+          "shell": "Sh",
+          "command": "echo run1",
+          "__uuid": "9dRJGTrAR1KTYyKSukkT1g"
+        },
+        "__uuid": "poEnY2hgScOepfF7qpLVHQ"
+      },
+      "__uuid": "se1pQb1RRW6ySy_FepEiDw"
+    }
+  ],
+  "failureStrategies": [],
+  "spec": {
+    "__uuid": "5AX3wPwHTz--H447vGozDw"
+  },
+  "when": {
+    "stageStatus": "Success",
+    "__uuid": "VxNV9kPHSuStLRIEC7mo9Q"
+  },
+  "__uuid": "_8NITyTASvORJlQ3I12UXg"
+}

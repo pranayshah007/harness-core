@@ -12,9 +12,9 @@ import static io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAcce
 
 import io.harness.connector.ConnectorDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
@@ -26,7 +26,6 @@ public class AzureRepoConnectorTestHelper {
   public static ConnectorDTO createConnectorDTO() {
     final String url = "url";
     final String tokenRef = "tokenRef";
-    final String validationProject = "validationProject";
     final String validationRepo = "validationRepo";
 
     final AzureRepoAuthenticationDTO azureRepoAuthenticationDTO =
@@ -48,9 +47,8 @@ public class AzureRepoConnectorTestHelper {
 
     AzureRepoConnectorDTO azureRepoConnectorDTO = AzureRepoConnectorDTO.builder()
                                                       .url(url)
-                                                      .validationProject(validationProject)
                                                       .validationRepo(validationRepo)
-                                                      .connectionType(GitConnectionType.ACCOUNT)
+                                                      .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
                                                       .authentication(azureRepoAuthenticationDTO)
                                                       .apiAccess(azureRepoApiAccessDTO)
                                                       .build();

@@ -10,15 +10,22 @@ package io.harness.delegate.task.azure.appservice.webapp.ng.request;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType;
+import io.harness.security.encryption.EncryptedDataDetail;
+
+import java.util.List;
+import java.util.Map;
 
 @OwnedBy(CDP)
 public interface AzureWebAppTaskRequest extends TaskParameters, ExecutionCapabilityDemander {
+  String getAccountId();
   AzureWebAppRequestType getRequestType();
   AzureWebAppInfraDelegateConfig getInfrastructure();
   CommandUnitsProgress getCommandUnitsProgress();
+  Map<DecryptableEntity, List<EncryptedDataDetail>> fetchDecryptionDetails();
 }

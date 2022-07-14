@@ -41,14 +41,16 @@ public class PlanCreationContext implements AsyncCreatorContext {
   @Singular("globalContext") Map<String, PlanCreationContextValue> globalContext;
   String yaml;
   Dependency dependency;
+  String executionInputTemplate;
 
-  public static PlanCreationContext cloneWithCurrentField(
-      PlanCreationContext planCreationContext, YamlField field, String yaml, Dependency dependency) {
+  public static PlanCreationContext cloneWithCurrentField(PlanCreationContext planCreationContext, YamlField field,
+      String yaml, Dependency dependency, String executionInputTemplate) {
     return PlanCreationContext.builder()
         .currentField(field)
         .yaml(yaml)
         .dependency(dependency)
         .globalContext(planCreationContext.getGlobalContext())
+        .executionInputTemplate(executionInputTemplate)
         .build();
   }
 

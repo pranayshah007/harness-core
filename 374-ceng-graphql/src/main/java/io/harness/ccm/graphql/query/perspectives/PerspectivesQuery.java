@@ -10,6 +10,7 @@ package io.harness.ccm.graphql.query.perspectives;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
 import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
+import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.bigQuery.BigQueryService;
@@ -50,6 +51,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.tools.StringUtils;
 
@@ -198,7 +200,7 @@ public class PerspectivesQuery {
     PerspectiveTimeSeriesData data = perspectiveTimeSeriesHelper.fetch(
         viewsBillingService.getTimeSeriesStatsNg(bigQuery, filters, groupBy, aggregateFunction, sortCriteria,
             cloudProviderTableName, includeOthers, limit, viewQueryParams),
-        timePeriod, conversionField, businessMappingId, accountId);
+        timePeriod, conversionField, businessMappingId, accountId, groupBy);
 
     Map<Long, Double> unallocatedCost = null;
     if (includeUnallocatedCost) {
@@ -206,7 +208,7 @@ public class PerspectivesQuery {
           bigQuery, filters, groupBy, Collections.emptyList(), cloudProviderTableName, viewQueryParams);
     }
 
-    return perspectiveTimeSeriesHelper.postFetch(data, limit, includeOthers, unallocatedCost);
+    return perspectiveTimeSeriesHelper.postFetch(data, limit, includeOthers, includeUnallocatedCost, unallocatedCost);
   }
 
   @GraphQLQuery(name = "perspectiveFields", description = "Fields for perspective explorer")
@@ -241,6 +243,17 @@ public class PerspectivesQuery {
 
     return viewsBillingService.getTotalCountForQuery(bigQuery, filters, groupBy, cloudProviderTableName,
         viewsQueryHelper.buildQueryParams(accountId, false, false, isClusterQuery, true));
+  }
+
+  @GraphQLQuery(name = "workloadLabels", description = "Labels for workloads")
+  public Map<String, Map<String, String>> workloadLabels(@GraphQLArgument(name = "workloads") Set<String> workloads,
+      @GraphQLArgument(name = "filters") List<QLCEViewFilterWrapper> filters,
+      @GraphQLEnvironment final ResolutionEnvironment env) {
+    final String accountId = graphQLUtils.getAccountIdentifier(env);
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, CLUSTER_TABLE);
+    BigQuery bigQuery = bigQueryService.get();
+
+    return viewsBillingService.getLabelsForWorkloads(bigQuery, workloads, cloudProviderTableName, filters);
   }
 
   private StatsInfo getStats(QLCEViewTrendInfo trendInfo) {

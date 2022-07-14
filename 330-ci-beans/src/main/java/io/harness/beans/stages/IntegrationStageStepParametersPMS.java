@@ -7,6 +7,8 @@
 
 package io.harness.beans.stages;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -14,6 +16,8 @@ import io.harness.beans.build.BuildStatusUpdateParameter;
 import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type;
+import io.harness.beans.yaml.extended.infrastrucutre.RunsOnInfra;
+import io.harness.beans.yaml.extended.infrastrucutre.RunsOnInfra.RunOnInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -21,6 +25,7 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
+import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -76,9 +81,13 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
 
     Infrastructure infrastructure = integrationStageConfig.getInfrastructure();
     if (infrastructure == null) {
-      throw new CIStageExecutionException("Infrastructure is mandatory for execution");
-    }
-    if (integrationStageConfig.getInfrastructure().getType() == Type.USE_FROM_STAGE) {
+      String runsOn = integrationStageConfig.getRunsOn().getValue();
+      if (isEmpty(runsOn)) {
+        throw new CIStageExecutionException("Infrastructure or runsOn field is mandatory for execution");
+      }
+
+      infrastructure = RunsOnInfra.builder().spec(RunOnInfraSpec.builder().runsOn(runsOn).build()).build();
+    } else if (integrationStageConfig.getInfrastructure().getType() == Type.USE_FROM_STAGE) {
       UseFromStageInfraYaml useFromStageInfraYaml = (UseFromStageInfraYaml) integrationStageConfig.getInfrastructure();
       if (useFromStageInfraYaml.getUseFromStage() != null) {
         YamlField yamlField = ctx.getCurrentField();
@@ -119,9 +128,22 @@ public class IntegrationStageStepParametersPMS implements SpecParameters, StepPa
       } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
         ParallelStepElementConfig parallelStepElementConfig = getParallelStepElementConfig(executionWrapper);
         parallelStepElementConfig.getSections().forEach(section -> addStepIdentifier(section, stepIdentifiers));
+      } else if (executionWrapper.getStepGroup() != null && !executionWrapper.getStepGroup().isNull()) {
+        StepGroupElementConfig stepGroupElementConfig = getStepGroupElementConfig(executionWrapper);
+        for (ExecutionWrapperConfig wrapper : stepGroupElementConfig.getSteps()) {
+          addStepIdentifier(wrapper, stepIdentifiers);
+        }
       } else {
-        throw new InvalidRequestException("Only Parallel or StepElement is supported");
+        throw new InvalidRequestException("Only Parallel, StepElement and StepGroup are supported");
       }
+    }
+  }
+
+  public static StepGroupElementConfig getStepGroupElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
+    try {
+      return YamlUtils.read(executionWrapperConfig.getStepGroup().toString(), StepGroupElementConfig.class);
+    } catch (Exception ex) {
+      throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
     }
   }
 

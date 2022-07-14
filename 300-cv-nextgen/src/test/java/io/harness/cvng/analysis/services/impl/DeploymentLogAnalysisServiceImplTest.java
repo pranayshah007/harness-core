@@ -30,6 +30,7 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.LogsAnalysisSummary;
+import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.Cluster;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterCoordinates;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterSummary;
@@ -52,11 +53,14 @@ import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilte
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.ng.beans.PageResponse;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
@@ -74,7 +78,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -1184,7 +1187,6 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KANHAIYA)
   @Category(UnitTests.class)
-  @Ignore("Will be fixed later by Kamal")
   public void testGetRadarChartAnalysisResult() throws IOException {
     LogAnalysisRadarChartListWithCountDTO logAnalysisRadarChartListWithCountDTO =
         deploymentLogAnalysisService.getRadarChartLogAnalysisResult(accountId, radarChartVerificationJobInstanceId,
@@ -1194,19 +1196,31 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
         JsonUtils.asObject(Resources.toString(DeploymentLogAnalysisServiceImplTest.class.getResource(
                                                   "/deployment/deployment-log-analysis-list-output.json"),
                                Charsets.UTF_8),
-            LogAnalysisRadarChartListWithCountDTO.class);
-    // JsonUtils.asPrettyJson(logAnalysisRadarChartListWithCountDTO);
-    assertThat(logAnalysisRadarChartListWithCountDTO.getTotalClusters())
-        .isEqualTo(expectedLogAnalysis.getTotalClusters());
-    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts()).isEqualTo(expectedLogAnalysis.getEventCounts());
-    for (int i = 0; i < logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getTotalItems(); i++) {
-      LogAnalysisRadarChartListDTO logAnalysisRadarChartListDTO =
-          logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().get(i);
-      LogAnalysisRadarChartListDTO expectedLogAnalysisRadarChartListDTO =
-          expectedLogAnalysis.getLogAnalysisRadarCharts().getContent().get(i);
-      assertThat(logAnalysisRadarChartListDTO)
-          .isEqualToIgnoringGivenFields(expectedLogAnalysisRadarChartListDTO, "clusterId", "radius", "angle");
-    }
+            new TypeReference<LogAnalysisRadarChartListWithCountDTO>() {},
+            new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false));
+
+    LogAnalysisRadarChartListDTO logAnalysisRadarChartListDTO =
+        logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts()
+            .getContent()
+            .stream()
+            .filter(chartDto -> chartDto.getLabel() == 1)
+            .findAny()
+            .get();
+    LogAnalysisRadarChartListDTO expectedLogAnalysisRadarChartListDTO =
+        expectedLogAnalysis.getLogAnalysisRadarCharts()
+            .getContent()
+            .stream()
+            .filter(chartDto -> chartDto.getLabel() == 1)
+            .findAny()
+            .get();
+    assertThat(logAnalysisRadarChartListDTO.getAverageFrequencyData())
+        .isEqualTo(expectedLogAnalysisRadarChartListDTO.getAverageFrequencyData());
+    assertThat(logAnalysisRadarChartListDTO.getHostFrequencyData())
+        .isEqualTo(expectedLogAnalysisRadarChartListDTO.getHostFrequencyData());
+    assertThat(logAnalysisRadarChartListDTO.getBaseline().getAverageFrequencyData())
+        .isEqualTo(expectedLogAnalysisRadarChartListDTO.getBaseline().getAverageFrequencyData());
+    assertThat(logAnalysisRadarChartListDTO.getBaseline().getHostFrequencyData())
+        .isEqualTo(expectedLogAnalysisRadarChartListDTO.getBaseline().getHostFrequencyData());
   }
 
   @Test
@@ -1671,9 +1685,33 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
     return ResultSummary.builder()
         .risk(risk)
         .score(score)
+        .controlClusterHostFrequencies(generateClusterHostFrequencyData(controlClusterSummaries))
         .controlClusterSummaries(controlClusterSummaries)
         .testClusterSummaries(testClusterSummaries)
         .build();
+  }
+
+  private List<DeploymentLogAnalysisDTO.ClusterHostFrequencyData> generateClusterHostFrequencyData(
+      List<ControlClusterSummary> testClusterSummaries) {
+    return CollectionUtils.emptyIfNull(testClusterSummaries)
+        .stream()
+        .map(clusterSummary
+            -> DeploymentLogAnalysisDTO.ClusterHostFrequencyData.builder()
+                   .frequencyData(Collections.singletonList(
+                       DeploymentLogAnalysisDTO.HostFrequencyData.builder()
+                           .frequencies(clusterSummary.getControlFrequencyData()
+                                            .stream()
+                                            .map(frequency
+                                                -> DeploymentLogAnalysisDTO.TimestampFrequencyCount.builder()
+                                                       .count(frequency)
+                                                       .timeStamp(1L)
+                                                       .build())
+                                            .collect(Collectors.toList()))
+                           .host("host")
+                           .build()))
+                   .label(clusterSummary.getLabel())
+                   .build())
+        .collect(Collectors.toList());
   }
 
   private ClusterCoordinates createClusterCoordinates(String hostName, int label, double x, double y) {
@@ -1693,6 +1731,18 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
         .count(count)
         .label(label)
         .testFrequencyData(testFrequencyData)
+        .frequencyData(Collections.singletonList(
+            DeploymentLogAnalysisDTO.HostFrequencyData.builder()
+                .frequencies(CollectionUtils.emptyIfNull(testFrequencyData)
+                                 .stream()
+                                 .map(frequency
+                                     -> DeploymentLogAnalysisDTO.TimestampFrequencyCount.builder()
+                                            .count(frequency)
+                                            .timeStamp(1L)
+                                            .build())
+                                 .collect(Collectors.toList()))
+                .host("host")
+                .build()))
         .build();
   }
 

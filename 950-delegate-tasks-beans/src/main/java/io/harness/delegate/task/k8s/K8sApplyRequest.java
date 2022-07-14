@@ -41,6 +41,7 @@ public class K8sApplyRequest implements K8sDeployRequest {
   CommandUnitsProgress commandUnitsProgress;
   boolean useLatestKustomizeVersion;
   boolean useNewKubectlVersion;
+  boolean useK8sApiForSteadyStateCheck;
 
   @Override
   public List<String> getOpenshiftParamList() {

@@ -7,7 +7,6 @@
 
 package io.harness.delegate.beans.connector.scm.azurerepo;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.FilePathUtils.removeStartingAndEndingSlash;
 
@@ -18,7 +17,6 @@ import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
-import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.utils.ScmConnectorHelper;
 import io.harness.exception.InvalidRequestException;
@@ -57,11 +55,9 @@ import org.hibernate.validator.constraints.NotBlank;
 public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable {
   @NotNull
   @JsonProperty("type")
-  @Schema(description = "Account | Repository connector type")
-  GitConnectionType connectionType;
+  @Schema(description = "Project | Repository connector type")
+  AzureRepoConnectionTypeDTO connectionType;
   @NotBlank @NotNull @Schema(description = "SSH | HTTP URL based on type of connection") String url;
-  @Schema(description = "The project to validate AzureRepo credentials. Only valid for Account type connector")
-  String validationProject;
   @Schema(description = "The repo to validate AzureRepo credentials. Only valid for Account type connector")
   String validationRepo;
   @Valid
@@ -73,15 +69,14 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
   AzureRepoApiAccessDTO apiAccess;
   @Schema(description = "Selected Connectivity Modes") Set<String> delegateSelectors;
   @Schema(description = "Connection URL for connecting Azure Repo") String gitConnectionUrl;
-  private static final String AZURE_REPO_NAME_SEPARATOR = "/_git/";
+  private static final String AZURE_REPO_NAME_SEPARATOR = "_git/";
 
   @Builder
-  public AzureRepoConnectorDTO(GitConnectionType connectionType, String url, String validationProject,
-      String validationRepo, AzureRepoAuthenticationDTO authentication, AzureRepoApiAccessDTO apiAccess,
-      Set<String> delegateSelectors, boolean executeOnDelegate) {
+  public AzureRepoConnectorDTO(AzureRepoConnectionTypeDTO connectionType, String url, String validationRepo,
+      AzureRepoAuthenticationDTO authentication, AzureRepoApiAccessDTO apiAccess, Set<String> delegateSelectors,
+      boolean executeOnDelegate) {
     this.connectionType = connectionType;
     this.url = url;
-    this.validationProject = validationProject;
     this.validationRepo = validationRepo;
     this.authentication = authentication;
     this.apiAccess = apiAccess;
@@ -125,27 +120,25 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
 
   @Override
   public String getGitConnectionUrl(GitRepositoryDTO gitRepositoryDTO) {
-    if (connectionType == GitConnectionType.REPO) {
+    if (connectionType == AzureRepoConnectionTypeDTO.REPO) {
       String linkedRepo = getGitRepositoryDetails().getName();
       if (!linkedRepo.equals(gitRepositoryDTO.getName())) {
         throw new InvalidRequestException(
             String.format("Provided repoName [%s] does not match with the repoName [%s] provided in connector.",
                 gitRepositoryDTO.getName(), linkedRepo));
       }
-      return getUrl();
-    } else if (isEmpty(gitRepositoryDTO.getName()) && isNotEmpty(gitRepositoryDTO.getProjectName())) {
-      // this is for project level connection url. In case RepoName is empty for Account Type Connector, Project level
-      // connection url is returned.
-      return FilePathUtils.addEndingSlashIfMissing(getUrl()) + gitRepositoryDTO.getProjectName();
+      return url;
     }
-    return FilePathUtils.addEndingSlashIfMissing(getUrl()) + gitRepositoryDTO.getProjectName()
-        + AZURE_REPO_NAME_SEPARATOR + gitRepositoryDTO.getName();
+    if (GitAuthType.SSH.equals(authentication.getAuthType())) {
+      return FilePathUtils.addEndingSlashIfMissing(url) + gitRepositoryDTO.getName();
+    }
+    return FilePathUtils.addEndingSlashIfMissing(url) + AZURE_REPO_NAME_SEPARATOR + gitRepositoryDTO.getName();
   }
 
   @Override
   public GitRepositoryDTO getGitRepositoryDetails() {
     String orgAndProject;
-    if (authentication.getAuthType() == GitAuthType.HTTP) {
+    if (GitAuthType.HTTP.equals(authentication.getAuthType())) {
       orgAndProject = GitClientHelper.getAzureRepoOrgAndProjectHTTP(url);
     } else {
       orgAndProject = GitClientHelper.getAzureRepoOrgAndProjectSSH(url);
@@ -155,7 +148,7 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
             .org(GitClientHelper.getAzureRepoOrg(orgAndProject))
             .projectName(GitClientHelper.getAzureRepoProject(orgAndProject));
 
-    if (GitConnectionType.REPO.equals(connectionType)) {
+    if (AzureRepoConnectionTypeDTO.REPO.equals(connectionType)) {
       String repoName = GitClientHelper.getGitRepo(url);
       repoName = StringUtils.substringAfterLast(repoName, "/");
       return gitRepositoryDTOBuilder.name(repoName).build();
@@ -168,8 +161,9 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
     final String FILE_URL_FORMAT = "%s?path=%s&version=GB%s";
     ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
     String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
+    String httpRepoUrl = GitClientHelper.getCompleteHTTPRepoUrlForAzureRepoSaas(repoUrl);
     filePath = removeStartingAndEndingSlash(filePath);
-    return String.format(FILE_URL_FORMAT, repoUrl, filePath, branchName);
+    return String.format(FILE_URL_FORMAT, httpRepoUrl, filePath, branchName);
   }
 
   @Override

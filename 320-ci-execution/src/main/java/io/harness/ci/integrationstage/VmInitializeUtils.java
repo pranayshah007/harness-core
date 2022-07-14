@@ -37,6 +37,7 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
+import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.yaml.ParameterField;
 
 import com.google.inject.Inject;
@@ -58,21 +59,27 @@ public class VmInitializeUtils {
     }
 
     for (ExecutionWrapperConfig executionWrapper : integrationStageConfig.getExecution().getSteps()) {
-      if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
-        StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
-        validateStepConfig(stepElementConfig);
-      } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
-        ParallelStepElementConfig parallelStepElementConfig =
-            IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
-        if (isNotEmpty(parallelStepElementConfig.getSections())) {
-          for (ExecutionWrapperConfig executionWrapperInParallel : parallelStepElementConfig.getSections()) {
-            if (executionWrapperInParallel.getStep() == null || executionWrapperInParallel.getStep().isNull()) {
-              continue;
-            }
-            StepElementConfig stepElementConfig =
-                IntegrationStageUtils.getStepElementConfig(executionWrapperInParallel);
-            validateStepConfig(stepElementConfig);
-          }
+      validateStageConfigUtil(executionWrapper);
+    }
+  }
+
+  private void validateStageConfigUtil(ExecutionWrapperConfig executionWrapper) {
+    if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
+      StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
+      validateStepConfig(stepElementConfig);
+    } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
+      ParallelStepElementConfig parallelStepElementConfig =
+          IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
+      if (isNotEmpty(parallelStepElementConfig.getSections())) {
+        for (ExecutionWrapperConfig executionWrapperInParallel : parallelStepElementConfig.getSections()) {
+          validateStageConfigUtil(executionWrapperInParallel);
+        }
+      }
+    } else {
+      StepGroupElementConfig stepGroupElementConfig = IntegrationStageUtils.getStepGroupElementConfig(executionWrapper);
+      if (isNotEmpty(stepGroupElementConfig.getSteps())) {
+        for (ExecutionWrapperConfig executionWrapperInStepGroup : stepGroupElementConfig.getSteps()) {
+          validateStageConfigUtil(executionWrapperInStepGroup);
         }
       }
     }
@@ -164,6 +171,11 @@ public class VmInitializeUtils {
   }
 
   public OSType getOS(Infrastructure infrastructure) {
+    // Only linux is supported now for runs on infrastructure
+    if (infrastructure.getType() == Infrastructure.Type.RUNS_ON) {
+      return OSType.Linux;
+    }
+
     if (infrastructure.getType() != Infrastructure.Type.VM) {
       throw new CIStageExecutionException(format("Invalid infrastructure type: %s", infrastructure.getType()));
     }

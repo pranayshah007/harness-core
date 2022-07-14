@@ -10,7 +10,7 @@ shared_dependencies = [
     "//879-pms-sdk:module",
     "//890-sm-core:module",
     "//930-ng-core-clients:module",
-    "//933-scm-commons:module",
+    "//933-ci-commons:module",
     "//942-enforcement-sdk:module",
     "//950-log-client:module",
     "//950-opa-client:module",
@@ -424,6 +424,7 @@ test_deps = [
     "@maven//:org_assertj_assertj_core",
     "@maven//:org_mockito_mockito_core",
     "@maven//:org_mockito_mockito_inline",
+    "@maven//:org_powermock_powermock_reflect",
     "@maven//:org_mongodb_morphia_morphia",
 ]
 

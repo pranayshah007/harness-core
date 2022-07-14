@@ -11,7 +11,7 @@ import re
 import datetime
 
 from google.cloud import bigquery
-from util import print_
+from util import print_, run_batch_query
 
 """
 Scheduler event:
@@ -51,14 +51,8 @@ def update_ebs_state(jsonData):
             " deleteTime = '%s' WHERE lastUpdatedAt < '%s' AND ( state != 'deleted' OR createTime IS NULL )" % (
                 jsonData["targetTableId"], lastUpdatedAt, lastUpdatedAt, lastUpdatedAt)
 
-    try:
-        query_job = client.query(query)
-        query_job.result()
-    except Exception as e:
-        print_(query)
-        print_(e)
-    else:
-        print_("Finished updating awsEbsInventory table for any deleted volumes")
+    run_batch_query(client, query, None, timeout=180)
+    print_("Finished updating awsEbsInventory table for any deleted volumes")
 
 
 def load_into_main_table(jsonData):
@@ -84,11 +78,6 @@ def load_into_main_table(jsonData):
             availabilityZone, region, encrypted, size, state, iops, volumeType, multiAttachedEnabled, 
             detachedAt, deleteTime, snapshotId, kmsKeyId, attachments, tags, snapshots, linkedAccountId, linkedAccountIdPartition) 
     """ % (jsonData["targetTableId"], jsonData["sourceTableId"], lastUpdatedAt, lastUpdatedAt)
-    try:
-        query_job = client.query(query)
-        query_job.result()
-    except Exception as e:
-        print_(query)
-        print_(e)
-    else:
-        print_("Finished merging into main awsEbsInventory table")
+
+    run_batch_query(client, query, None, timeout=180)
+    print_("Finished merging into main awsEbsInventory table")

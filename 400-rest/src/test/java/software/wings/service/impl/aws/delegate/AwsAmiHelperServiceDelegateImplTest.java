@@ -920,6 +920,11 @@ public class AwsAmiHelperServiceDelegateImplTest extends WingsBaseTest {
     awsAmiSwitchRoutesResponse =
         awsAmiHelperServiceDelegate.rollbackSwitchAmiRoutesTrafficShift(trafficShiftAlbSetupRequest);
     assertThat(awsAmiSwitchRoutesResponse.getExecutionStatus()).isEqualTo(FAILED);
+
+    trafficShiftAlbSetupRequest.setLbDetails(emptyList());
+    awsAmiSwitchRoutesResponse =
+        awsAmiHelperServiceDelegate.rollbackSwitchAmiRoutesTrafficShift(trafficShiftAlbSetupRequest);
+    assertThat(awsAmiSwitchRoutesResponse.getExecutionStatus()).isEqualTo(FAILED);
   }
 
   @Test

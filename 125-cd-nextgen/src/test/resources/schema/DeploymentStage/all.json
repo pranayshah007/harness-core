@@ -191,6 +191,20 @@
               "type": "string"
             }
           }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "filePath"
+              ]
+            },
+            {
+              "required": [
+                "filePathRegex"
+              ]
+            }
+          ]
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -342,6 +356,88 @@
           }
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AzureRepoStore": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StoreConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "gitFetchType"
+          ],
+          "properties": {
+            "branch": {
+              "type": "string"
+            },
+            "commitId": {
+              "type": "string"
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "folderPath": {
+              "type": "string"
+            },
+            "gitFetchType": {
+              "type": "string",
+              "enum": [
+                "Branch",
+                "Commit"
+              ]
+            },
+            "paths": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "repoName": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "commitId"
+              ]
+            },
+            {
+              "required": [
+                "branch"
+              ]
+            }
+          ]
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "folderPath"
+              ]
+            },
+            {
+              "required": [
+                "paths"
+              ]
+            }
+          ]
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "AzureWebAppInfrastructure": {
@@ -1406,6 +1502,44 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CustomRemoteStoreConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StoreConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "extractionScript",
+            "filePath"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "extractionScript": {
+              "type": "string"
+            },
+            "filePath": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "DeleteManifestPathSpec": {
       "allOf": [
         {
@@ -1562,99 +1696,45 @@
       ]
     },
     "DeploymentStageConfig": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "oneOf": [
-        {
-          "type": "object",
-          "required": [
-            "execution",
-            "serviceConfig",
-            "infrastructure"
-          ],
-          "properties": {
-            "execution": {
-              "$ref": "#/definitions/ExecutionElementConfig"
-            },
-            "infrastructure": {
-              "$ref": "#/definitions/PipelineInfrastructure"
-            },
-            "serviceConfig": {
-              "$ref": "#/definitions/ServiceConfig"
-            }
-          },
-          "additionalProperties": false
+      "type": "object",
+      "required": [
+        "execution"
+      ],
+      "properties": {
+        "deploymentType": {
+          "type": "string",
+          "enum": [
+            "Kubernetes",
+            "NativeHelm",
+            "Ssh",
+            "WinRm",
+            "ServerlessAwsLambda",
+            "AzureWebApp"
+          ]
         },
-        {
-          "type": "object",
-          "required": [
-            "execution",
-            "deploymentType",
-            "environmentGroup",
-            "service"
-          ],
-          "properties": {
-            "deploymentType": {
-              "type": "string",
-              "enum": [
-                "Kubernetes",
-                "NativeHelm",
-                "Ssh",
-                "WinRm",
-                "ServerlessAwsLambda",
-                "AzureWebApps"
-              ]
-            },
-            "environmentGroup": {
-              "$ref": "#/definitions/EnvironmentGroupYaml"
-            },
-            "execution": {
-              "$ref": "#/definitions/ExecutionElementConfig"
-            },
-            "gitOpsEnabled": {
-              "type": "boolean"
-            },
-            "service": {
-              "$ref": "#/definitions/ServiceYamlV2"
-            }
-          },
-          "additionalProperties": false
+        "environment": {
+          "$ref": "#/definitions/EnvironmentYamlV2"
         },
-        {
-          "type": "object",
-          "required": [
-            "execution",
-            "deploymentType",
-            "environment",
-            "service"
-          ],
-          "properties": {
-            "deploymentType": {
-              "type": "string",
-              "enum": [
-                "Kubernetes",
-                "NativeHelm",
-                "Ssh",
-                "WinRm",
-                "ServerlessAwsLambda",
-                "AzureWebApps"
-              ]
-            },
-            "environment": {
-              "$ref": "#/definitions/EnvironmentYamlV2"
-            },
-            "execution": {
-              "$ref": "#/definitions/ExecutionElementConfig"
-            },
-            "gitOpsEnabled": {
-              "type": "boolean"
-            },
-            "service": {
-              "$ref": "#/definitions/ServiceYamlV2"
-            }
-          },
-          "additionalProperties": false
+        "environmentGroup": {
+          "$ref": "#/definitions/EnvironmentGroupYaml"
+        },
+        "execution": {
+          "$ref": "#/definitions/ExecutionElementConfig"
+        },
+        "gitOpsEnabled": {
+          "type": "boolean"
+        },
+        "infrastructure": {
+          "$ref": "#/definitions/PipelineInfrastructure"
+        },
+        "service": {
+          "$ref": "#/definitions/ServiceYamlV2"
+        },
+        "serviceConfig": {
+          "$ref": "#/definitions/ServiceConfig"
         }
-      ]
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "DeploymentStageNode": {
       "type": "object",
@@ -1850,8 +1930,20 @@
         "envGroupRef"
       ],
       "properties": {
+        "__uuid": {
+          "type": "string"
+        },
         "deployToAll": {
-          "type": "boolean"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "minLength": 1
+            }
+          ]
         },
         "envGroupRef": {
           "type": "string"
@@ -1908,7 +2000,16 @@
       ],
       "properties": {
         "deployToAll": {
-          "type": "boolean"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "minLength": 1
+            }
+          ]
         },
         "environmentInputs": {
           "oneOf": [
@@ -2385,7 +2486,7 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -2399,7 +2500,7 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -3079,6 +3180,35 @@
         }
       ]
     },
+    "JenkinsArtifactConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ArtifactConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "jobName"
+          ],
+          "properties": {
+            "artifactPath": {
+              "type": "string"
+            },
+            "build": {
+              "type": "string"
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "jobName": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "JenkinsBuildStepInfo": {
       "allOf": [
         {
@@ -3714,7 +3844,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -3727,6 +3857,9 @@
         {
           "type": "object",
           "properties": {
+            "manifestScope": {
+              "type": "string"
+            },
             "metadata": {
               "type": "string"
             },
@@ -4097,7 +4230,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -4230,7 +4363,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4351,7 +4484,8 @@
                   "format": "double"
                 },
                 {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*))"
                 }
               ]
             }
@@ -4827,7 +4961,7 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        { }
+        {}
       ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "oneOf": [
@@ -5224,6 +5358,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GcrArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Jenkins"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JenkinsArtifactConfig"
               }
             }
           }
@@ -5653,7 +5803,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -5729,7 +5879,7 @@
             "Ssh",
             "WinRm",
             "ServerlessAwsLambda",
-            "AzureWebApps"
+            "AzureWebApp"
           ]
         }
       },
@@ -5739,7 +5889,7 @@
           "if": {
             "properties": {
               "type": {
-                "const": "AzureWebApps"
+                "const": "AzureWebApp"
               }
             }
           },
@@ -6142,6 +6292,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "Jenkins"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JenkinsArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Nexus3Registry"
               }
             }
@@ -6172,7 +6338,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6182,7 +6348,7 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        { }
+        {}
       ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "oneOf": [
@@ -7000,6 +7166,7 @@
       "type": "object",
       "required": [
         "identifier",
+        "name",
         "steps"
       ],
       "properties": {
@@ -7111,6 +7278,7 @@
         "type": {
           "type": "string",
           "enum": [
+            "CustomRemote",
             "Git",
             "Github",
             "Bitbucket",
@@ -7123,7 +7291,8 @@
             "S3Url",
             "InheritFromManifest",
             "Harness",
-            "OciHelmChart"
+            "OciHelmChart",
+            "AzureRepo"
           ]
         }
       },
@@ -7149,6 +7318,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "AzureRepo"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureRepoStore"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Bitbucket"
               }
             }
@@ -7157,6 +7342,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/BitbucketStore"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CustomRemote"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CustomRemoteStoreConfig"
               }
             }
           }
@@ -7373,7 +7574,7 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]

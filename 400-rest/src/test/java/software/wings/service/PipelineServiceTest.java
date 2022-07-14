@@ -1675,7 +1675,7 @@ public class PipelineServiceTest extends WingsBaseTest {
       when(wingsPersistence.getWithAppId(Pipeline.class, APP_ID, pipeline.getUuid())).thenReturn(pipeline);
       when(workflowService.getResolvedServices(any(), any())).thenReturn(Collections.emptyList());
       when(workflowService.getResolvedInfraMappingIds(any(), any())).thenReturn(Collections.emptyList());
-      when(workflowService.getResolvedInfraDefinitionIds(any(), any())).thenReturn(Collections.emptyList());
+      when(workflowService.getResolvedInfraDefinitionIds(any(), any(), any())).thenReturn(Collections.emptyList());
       when(workflowService.resolveEnvironmentId(any(), any())).thenReturn(null);
       if (withDefaultArtifact) {
         deploymentMetadata = pipelineService.fetchDeploymentMetadata(

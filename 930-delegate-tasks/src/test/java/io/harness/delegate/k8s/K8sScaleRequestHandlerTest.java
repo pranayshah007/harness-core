@@ -22,6 +22,7 @@ import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,10 +38,12 @@ import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sScaleRequest;
 import io.harness.delegate.task.k8s.K8sScaleResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionHints;
+import io.harness.delegate.task.k8s.client.K8sClient;
+import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.LogCallback;
@@ -172,6 +175,10 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
                                           .namespace(namespace)
                                           .versioned(false)
                                           .build();
+    K8sClient k8sClient = mock(K8sClient.class);
+    doReturn(k8sClient).when(k8sTaskHelperBase).getKubernetesClient(anyBoolean());
+    doReturn(true).when(k8sClient).performSteadyStateCheck(any(K8sSteadyStateDTO.class));
+
     when(k8sTaskHelperBase.getCurrentReplicas(any(Kubectl.class), eq(deployment), eq(delegateTaskParams)))
         .thenReturn(1);
     when(k8sTaskHelperBase.scale(
@@ -199,8 +206,6 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
     verify(k8sTaskHelperBase, times(2))
         .getPodDetails(eq(kubernetesConfig), eq(namespace), eq(releaseName), eq(timeoutIntervalInMillis));
     verify(k8sTaskHelperBase, times(1)).tagNewPods(anyListOf(K8sPod.class), anyListOf(K8sPod.class));
-    verify(k8sTaskHelperBase, times(1))
-        .doStatusCheck(any(Kubectl.class), eq(deployment), eq(delegateTaskParams), eq(logCallback), eq(true));
   }
 
   @Test
@@ -441,6 +446,9 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
 
     List<K8sPod> pods =
         Arrays.asList(K8sPod.builder().name("old-pod").build(), K8sPod.builder().name("new-pod").newPod(true).build());
+    K8sClient k8sClient = mock(K8sClient.class);
+    doReturn(k8sClient).when(k8sTaskHelperBase).getKubernetesClient(anyBoolean());
+    doReturn(true).when(k8sClient).performSteadyStateCheck(any(K8sSteadyStateDTO.class));
 
     KubernetesResourceId deployment = KubernetesResourceId.builder()
                                           .kind("Deployment")
@@ -469,8 +477,6 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
     verify(k8sTaskHelperBase, times(2))
         .getPodDetails(eq(kubernetesConfig), eq(namespace), eq(releaseName), eq(timeoutIntervalInMillis));
     verify(k8sTaskHelperBase, times(1)).tagNewPods(anyListOf(K8sPod.class), anyListOf(K8sPod.class));
-    verify(k8sTaskHelperBase, times(1))
-        .doStatusCheck(any(Kubectl.class), eq(deployment), eq(delegateTaskParams), eq(logCallback), eq(true));
   }
 
   @Test
@@ -503,6 +509,10 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
                                           .namespace(namespace)
                                           .versioned(false)
                                           .build();
+    K8sClient k8sClient = mock(K8sClient.class);
+    doReturn(k8sClient).when(k8sTaskHelperBase).getKubernetesClient(anyBoolean());
+    doReturn(true).when(k8sClient).performSteadyStateCheck(any(K8sSteadyStateDTO.class));
+
     when(k8sTaskHelperBase.getCurrentReplicas(any(Kubectl.class), eq(deployment), eq(delegateTaskParams)))
         .thenReturn(1);
     when(k8sTaskHelperBase.scale(
@@ -529,7 +539,5 @@ public class K8sScaleRequestHandlerTest extends CategoryTest {
     verify(k8sTaskHelperBase, times(2))
         .getPodDetails(eq(kubernetesConfig), eq(namespace), eq(releaseName), eq(timeoutIntervalInMillis));
     verify(k8sTaskHelperBase, times(1)).tagNewPods(anyListOf(K8sPod.class), anyListOf(K8sPod.class));
-    verify(k8sTaskHelperBase, times(1))
-        .doStatusCheck(any(Kubectl.class), eq(deployment), eq(delegateTaskParams), eq(logCallback), eq(true));
   }
 }

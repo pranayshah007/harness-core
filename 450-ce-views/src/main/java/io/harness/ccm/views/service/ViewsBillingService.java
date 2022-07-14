@@ -25,6 +25,7 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.TableResult;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @OwnedBy(CE)
 public interface ViewsBillingService {
@@ -74,4 +75,7 @@ public interface ViewsBillingService {
       String cloudProviderTableName, ViewQueryParams queryParams);
 
   boolean isDataGroupedByAwsAccount(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy);
+
+  Map<String, Map<String, String>> getLabelsForWorkloads(
+      BigQuery bigQuery, Set<String> workloads, String cloudProviderTableName, List<QLCEViewFilterWrapper> filters);
 }

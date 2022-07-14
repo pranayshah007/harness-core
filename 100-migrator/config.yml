@@ -93,7 +93,7 @@ cg:
   deploymentClusterName: ""
   bugsnagApiKey: ""
   numberOfRemindersBeforeAccountDeletion: 3
-  delegateMtlsSubdomain: "delegate.local.harness.io"
+  agentMtlsSubdomain: ""
 
   jobsFrequencyConfig:
     accountLicenseCheckJobFrequencyInMinutes: 60
@@ -345,7 +345,7 @@ cg:
   envPath: ""
 
   kubectlVersion: v1.13.2
-  scmVersion: 5652f13b
+  scmVersion: 386387fc
 
   ngAuthUIEnabled: false
 

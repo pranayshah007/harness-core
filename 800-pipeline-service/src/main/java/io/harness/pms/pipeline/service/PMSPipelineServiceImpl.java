@@ -432,15 +432,15 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     String importedPipelineYAML =
         pmsPipelineServiceHelper.importPipelineFromRemote(accountId, orgIdentifier, projectIdentifier);
 
-    String updatedImportedPipeline = PMSPipelineServiceHelper.updateFieldsInImportedPipeline(
+    PMSPipelineServiceHelper.checkAndThrowMismatchInImportedPipelineMetadata(
         orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineImportRequest, importedPipelineYAML);
 
     PipelineEntity pipelineEntity =
-        PMSPipelineDtoMapper.toPipelineEntity(accountId, orgIdentifier, projectIdentifier, updatedImportedPipeline);
+        PMSPipelineDtoMapper.toPipelineEntity(accountId, orgIdentifier, projectIdentifier, importedPipelineYAML);
     try {
       PipelineEntity entityWithUpdatedInfo = pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity);
-      PipelineEntity savedPipelineEntity = pmsPipelineRepository.savePipelineEntityForImportedYAML(
-          entityWithUpdatedInfo, !updatedImportedPipeline.equals(importedPipelineYAML));
+      PipelineEntity savedPipelineEntity =
+          pmsPipelineRepository.savePipelineEntityForImportedYAML(entityWithUpdatedInfo);
       pmsPipelineServiceHelper.sendPipelineSaveTelemetryEvent(savedPipelineEntity, CREATING_PIPELINE);
       return savedPipelineEntity;
     } catch (DuplicateKeyException ex) {

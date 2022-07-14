@@ -11,7 +11,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//954-pms-contracts:module",
+        "//800-pipeline-service/modules/pms-contracts:module",
         "//955-filters-sdk:module",
         "//960-api-services:module",
         "//970-api-services-beans:module",
@@ -29,7 +29,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         ":module",
-        "//954-pms-contracts:module",
+        "//800-pipeline-service/modules/pms-contracts:module",
         "//960-api-services:module",
         "//970-ng-commons:module",
         "//980-commons:module",

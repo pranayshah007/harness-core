@@ -18,16 +18,21 @@ import lombok.Value;
 @Value
 @EqualsAndHashCode(callSuper = false)
 public class JenkinsArtifactDelegateResponse extends ArtifactDelegateResponse {
-  /** Images in repos need to be referenced via a path */
-  String imagePath;
-  /** Tag refers to exact tag number */
-  String tag;
+  /** Jenkins Job build number */
+  String build;
+
+  /** Jenkins Job name */
+  String jobName;
+
+  /** Jenkins artifact path */
+  String artifactPath;
 
   @Builder
-  public JenkinsArtifactDelegateResponse(
-      ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType, String imagePath, String tag) {
+  public JenkinsArtifactDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType,
+      String jobName, String build, String artifactPath) {
     super(buildDetails, sourceType);
-    this.imagePath = imagePath;
-    this.tag = tag;
+    this.build = build;
+    this.jobName = jobName;
+    this.artifactPath = artifactPath;
   }
 }

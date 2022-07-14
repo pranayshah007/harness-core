@@ -45,9 +45,11 @@ import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppReque
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AbstractWebAppTaskRequest;
+import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSlotDeploymentRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppTaskRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppRequestResponse;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppTaskResponse;
+import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProviderFactory;
 import io.harness.encryption.SecretRefData;
@@ -160,9 +162,14 @@ public class AzureWebAppTaskNGTest extends CategoryTest {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testRunWithDecrypt() throws Exception {
-    final AbstractWebAppTaskRequest abstractWebAppTaskRequest = spy(AbstractWebAppTaskRequest.class);
     final AzureWebAppRequestResponse requestResponse = mock(AzureWebAppRequestResponse.class);
     final AzureWebAppInfraDelegateConfig infrastructure = AzureTestUtils.createTestWebAppInfraDelegateConfig();
+    final AzureArtifactConfig artifactConfig = AzureTestUtils.createTestAzureContainerConfig();
+    final AzureWebAppTaskRequest taskRequest = AzureWebAppSlotDeploymentRequest.builder()
+                                                   .accountId("accountId")
+                                                   .artifact(artifactConfig)
+                                                   .infrastructure(infrastructure)
+                                                   .build();
     final AzureClientKeyCertDTO azureClientKeyCert =
         AzureClientKeyCertDTO.builder().clientCertRef(SecretRefData.builder().build()).build();
     final List<EncryptedDataDetail> encryptedDataDetails = emptyList();
@@ -181,17 +188,11 @@ public class AzureWebAppTaskNGTest extends CategoryTest {
             .build());
     infrastructure.setEncryptionDataDetails(encryptedDataDetails);
 
-    doReturn(AzureWebAppRequestType.SLOT_DEPLOYMENT).when(abstractWebAppTaskRequest).getRequestType();
-    doReturn(requestResponse)
-        .when(azureWebAppRequestHandler)
-        .handleRequest(abstractWebAppTaskRequest, logCallbackProvider);
-    doReturn(CommandUnitsProgress.builder().commandUnitProgressMap(new LinkedHashMap<>()).build())
-        .when(abstractWebAppTaskRequest)
-        .getCommandUnitsProgress();
-    doReturn(infrastructure).when(abstractWebAppTaskRequest).getInfrastructure();
+    doReturn(requestResponse).when(azureWebAppRequestHandler).handleRequest(taskRequest, logCallbackProvider);
 
-    azureWebAppTaskNG.run(abstractWebAppTaskRequest);
+    azureWebAppTaskNG.run(taskRequest);
 
     verify(decryptionService).decrypt(azureClientKeyCert, encryptedDataDetails);
+    verify(decryptionService).decrypt(artifactConfig.getConnectorConfig(), artifactConfig.getEncryptedDataDetails());
   }
 }

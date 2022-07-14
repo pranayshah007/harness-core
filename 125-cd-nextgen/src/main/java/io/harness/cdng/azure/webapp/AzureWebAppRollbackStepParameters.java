@@ -27,9 +27,11 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = true)
 @TypeAlias("AzureWebAppRollbackStepParameters")
 @RecasterAlias("io.harness.cdng.azure.webapp.AzureWebAppRollbackStepParameters")
-public class AzureWebAppRollbackStepParameters extends AzureWebAppRollbackBaseStepInfo implements SpecParameters {
+public class AzureWebAppRollbackStepParameters
+    extends AzureWebAppRollbackBaseStepInfo implements SpecParameters, AzureWebAppStepParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public AzureWebAppRollbackStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public AzureWebAppRollbackStepParameters(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String slotDeploymentStepFqn, String swapSlotStepFqn) {
+    super(delegateSelectors, slotDeploymentStepFqn, swapSlotStepFqn);
   }
 }

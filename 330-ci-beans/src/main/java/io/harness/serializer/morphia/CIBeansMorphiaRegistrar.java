@@ -11,6 +11,7 @@ import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.sweepingoutputs.ContainerPortDetails;
 import io.harness.beans.sweepingoutputs.ContextElement;
+import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.K8PodDetails;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.PodCleanupDetails;
@@ -48,6 +49,7 @@ public class CIBeansMorphiaRegistrar implements MorphiaRegistrar {
     set.add(VmDetailsOutcome.class);
     set.add(StageInfraDetails.class);
     set.add(CITelemetrySentStatus.class);
+    set.add(DliteVmStageInfraDetails.class);
   }
 
   @Override

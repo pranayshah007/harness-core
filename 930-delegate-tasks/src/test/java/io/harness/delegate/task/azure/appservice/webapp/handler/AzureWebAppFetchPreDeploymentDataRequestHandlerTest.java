@@ -12,7 +12,10 @@ import static io.harness.rule.OwnerRule.ABOSII;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -30,6 +33,8 @@ import io.harness.delegate.task.azure.common.AzureAppServiceService;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.rule.Owner;
 
+import software.wings.delegatetasks.azure.AzureSecretHelper;
+
 import java.util.Collections;
 import org.junit.Rule;
 import org.junit.Test;
@@ -44,7 +49,7 @@ public class AzureWebAppFetchPreDeploymentDataRequestHandlerTest extends Categor
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock private AzureLogCallbackProvider logCallbackProvider;
-
+  @Mock protected AzureSecretHelper azureSecretHelper;
   @Mock private AzureAppServiceResourceUtilities azureResourceUtilities;
   @Mock private AzureAppServiceService azureAppServiceService;
 
@@ -56,6 +61,7 @@ public class AzureWebAppFetchPreDeploymentDataRequestHandlerTest extends Categor
   public void testExecuteContainer() {
     final AzureWebAppFetchPreDeploymentDataRequest request =
         AzureWebAppFetchPreDeploymentDataRequest.builder()
+            .accountId("accountId")
             .applicationSettings(Collections.emptyList())
             .connectionStrings(Collections.emptyList())
             .artifact(AzureTestUtils.createTestContainerArtifactConfig())
@@ -71,6 +77,9 @@ public class AzureWebAppFetchPreDeploymentDataRequestHandlerTest extends Categor
         .getDockerDeploymentPreDeploymentData(any(AzureAppServiceDockerDeploymentContext.class));
 
     AzureWebAppRequestResponse response = requestHandler.execute(request, azureConfig, logCallbackProvider);
+    verify(azureSecretHelper, times(1))
+        .encryptAzureAppServicePreDeploymentData(any(AzureAppServicePreDeploymentData.class), eq("accountId"));
+
     assertThat(response).isInstanceOf(AzureWebAppFetchPreDeploymentDataResponse.class);
     AzureWebAppFetchPreDeploymentDataResponse preDeploymentDataResponse =
         (AzureWebAppFetchPreDeploymentDataResponse) response;

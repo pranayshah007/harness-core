@@ -17,8 +17,7 @@ import java.util.List;
 public class SecretDecryptorViaNg implements SecretDecryptor {
   @Inject private SecretUtils secretUtils;
 
-  public DecryptableEntity decrypt(
-      DecryptableEntity object, List<EncryptedDataDetail> encryptedDataDetails, String accountId) {
-    return secretUtils.decryptViaManager(object, encryptedDataDetails, accountId, null);
+  public DecryptableEntity decrypt(DecryptableEntity object, List<EncryptedDataDetail> encryptedDataDetails) {
+    return secretUtils.decryptViaManager(object, encryptedDataDetails, "random", null);
   }
 }

@@ -34,12 +34,12 @@ public abstract class AbstractSlotDataRequest extends AbstractWebAppTaskRequest 
   private AzureArtifactConfig artifact;
   private Integer timeoutIntervalInMin;
 
-  protected AbstractSlotDataRequest(CommandUnitsProgress commandUnitsProgress,
+  protected AbstractSlotDataRequest(String accountId, CommandUnitsProgress commandUnitsProgress,
       AzureWebAppInfraDelegateConfig infrastructure, String startupCommand,
       List<AzureAppServiceApplicationSetting> applicationSettings,
       List<AzureAppServiceConnectionString> connectionStrings, AzureArtifactConfig artifact,
       Integer timeoutIntervalInMin) {
-    super(commandUnitsProgress, infrastructure);
+    super(accountId, commandUnitsProgress, infrastructure);
     this.startupCommand = startupCommand;
     this.applicationSettings = applicationSettings;
     this.connectionStrings = connectionStrings;

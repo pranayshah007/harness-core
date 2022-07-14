@@ -849,6 +849,7 @@
 7258:io.harness.security.encryption.EncryptableSettingWithEncryptionDetails
 7259:software.wings.api.jira.JiraExecutionData.JiraIssueData
 7261:software.wings.beans.SlackMessage
+7262:software.wings.service.impl.SlackMessageSenderImpl
 7263:software.wings.beans.SlackMessageJSON
 7266:software.wings.service.impl.aws.model.AwsS3Request
 7267:software.wings.service.impl.aws.model.AwsS3Request.AwsS3RequestType
@@ -1495,6 +1496,7 @@
 19550:io.harness.delegate.beans.executioncapability.GitInstallationCapability
 19551:io.harness.delegate.beans.connector.ConnectorValidationParameterResponse
 19552:io.harness.delegate.beans.connector.scm.github.GithubOauthDTO
+19553:io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO
 19630:io.harness.delegate.beans.connector.helm.OciHelmValidationParams
 19640:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams
 19641:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse
@@ -1560,6 +1562,8 @@
 19701:io.harness.delegate.task.k8s.OpenshiftManifestDelegateConfig
 19702:io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig
 19703:io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig
+19704:io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse
+19705:io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest
 19800:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType
 19801:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO
 19802:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoCredentialsDTO
@@ -1572,6 +1576,7 @@
 19809:io.harness.delegate.beans.connector.azureconnector.AzureSystemAssignedMSIAuthDTO
 19810:io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO
 19811:io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthSADTO
+19854:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO
 20001:io.harness.delegate.task.shell.ShellScriptApprovalTaskParameters
 20002:io.harness.delegate.task.http.HttpTaskParameters
 20100:io.harness.ng.core.environment.beans.EnvironmentType
@@ -1719,6 +1724,10 @@
 55401:io.harness.delegate.beans.SerializedResponseData
 55402:software.wings.beans.SerializationFormat
 55403:io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse
+55404:io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig
+55405:io.harness.delegate.task.localstore.LocalStoreFetchFilesResult
+55406:io.harness.delegate.task.localstore.ManifestFiles
+56403:io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
 70003:io.harness.accesscontrol.acl.api.ResourceScope
@@ -2094,7 +2103,9 @@
 543522:io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse
 543523:io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse
 543524:io.harness.delegate.beans.azure.response.AzureTagsResponse
+543525:io.harness.delegate.beans.azure.response.AzureHostResponse
 543526:io.harness.delegate.beans.WinRmTaskParams
+543527:io.harness.delegate.beans.azure.response.AzureHostsResponse
 549966:io.harness.secretmanagerclient.dto.EncryptedDataMigrationDTO
 553286:io.harness.delegate.task.scm.ScmPushTaskParams
 553287:io.harness.delegate.task.scm.ScmPushTaskResponseData
@@ -2136,7 +2147,6 @@
 563533:io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse
 563534:io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig
 563535:io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability
-563536:io.harness.delegate.task.serverless.ServerlessArtifactsConfig
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO
@@ -2230,5 +2240,3 @@
 980029:io.harness.exception.runtime.SshCommandExecutionException
 980030:io.harness.exception.InterruptedRuntimeException
 9800001:io.harness.beans.RecasterMap
-
-

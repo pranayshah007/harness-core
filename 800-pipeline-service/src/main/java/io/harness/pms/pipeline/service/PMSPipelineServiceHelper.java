@@ -23,7 +23,7 @@ import io.harness.data.structure.HarnessStringUtils;
 import io.harness.engine.GovernanceService;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.UnexpectedException;
+import io.harness.exception.ngexception.InvalidFieldsDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.filter.FilterType;
@@ -59,6 +59,7 @@ import io.harness.pms.pipeline.PipelineEntityUtils;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YAMLMetadataFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
@@ -73,6 +74,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -372,7 +374,7 @@ public class PMSPipelineServiceHelper {
     return gitAwareEntityHelper.fetchYAMLFromRemote(scope, gitContextRequestParams, Collections.emptyMap());
   }
 
-  public static String updateFieldsInImportedPipeline(String orgIdentifier, String projectIdentifier,
+  public static void checkAndThrowMismatchInImportedPipelineMetadata(String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, String importedPipeline) {
     if (EmptyPredicate.isEmpty(importedPipeline)) {
       String errorMessage = PipelineCRUDErrorResponse.errorMessageForEmptyYamlOnGit(
@@ -394,50 +396,42 @@ public class PMSPipelineServiceHelper {
       throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
     }
 
-    boolean hasMetadataChanged = false;
+    Map<String, String> changedFields = new HashMap<>();
+
     String identifierFromGit = pipelineInnerField.getNode().getIdentifier();
     if (!pipelineIdentifier.equals(identifierFromGit)) {
-      YamlUtils.setStringValueForField(YAMLFieldNameConstants.IDENTIFIER, pipelineIdentifier, pipelineInnerField);
-      hasMetadataChanged = true;
+      changedFields.put(YAMLMetadataFieldNameConstants.IDENTIFIER, identifierFromGit);
     }
 
     String nameFromGit = pipelineInnerField.getNode().getName();
     if (!pipelineImportRequest.getPipelineName().equals(nameFromGit)) {
-      YamlUtils.setStringValueForField(
-          YAMLFieldNameConstants.NAME, pipelineImportRequest.getPipelineName(), pipelineInnerField);
-      hasMetadataChanged = true;
+      changedFields.put(YAMLMetadataFieldNameConstants.NAME, nameFromGit);
     }
 
     String orgIdentifierFromGit = pipelineInnerField.getNode().getStringValue(YAMLFieldNameConstants.ORG_IDENTIFIER);
     if (!orgIdentifier.equals(orgIdentifierFromGit)) {
-      YamlUtils.setStringValueForField(YAMLFieldNameConstants.ORG_IDENTIFIER, orgIdentifier, pipelineInnerField);
-      hasMetadataChanged = true;
+      changedFields.put(YAMLMetadataFieldNameConstants.ORG_IDENTIFIER, orgIdentifierFromGit);
     }
 
     String projectIdentifierFromGit =
         pipelineInnerField.getNode().getStringValue(YAMLFieldNameConstants.PROJECT_IDENTIFIER);
     if (!projectIdentifier.equals(projectIdentifierFromGit)) {
-      YamlUtils.setStringValueForField(
-          YAMLFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifier, pipelineInnerField);
-      hasMetadataChanged = true;
+      changedFields.put(YAMLMetadataFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifierFromGit);
     }
 
     String descriptionFromGit = pipelineInnerField.getNode().getStringValue(YAMLFieldNameConstants.DESCRIPTION);
-    if (pipelineImportRequest.getPipelineDescription() != null
+    if (!(EmptyPredicate.isEmpty(pipelineImportRequest.getPipelineDescription())
+            && EmptyPredicate.isEmpty(descriptionFromGit))
         && !pipelineImportRequest.getPipelineDescription().equals(descriptionFromGit)) {
-      YamlUtils.setStringValueForField(
-          YAMLFieldNameConstants.DESCRIPTION, pipelineImportRequest.getPipelineDescription(), pipelineInnerField);
-      hasMetadataChanged = true;
+      changedFields.put(YAMLMetadataFieldNameConstants.DESCRIPTION, descriptionFromGit);
     }
 
-    if (hasMetadataChanged) {
-      try {
-        importedPipeline = YamlUtils.writeYamlString(pipelineYamlField).replace("---\n", "");
-      } catch (IOException e) {
-        log.error("Unexpected error when trying to set description", e);
-        throw new UnexpectedException("Unexpected error when trying to set Pipeline Metadata. Please try again.", e);
-      }
+    if (!changedFields.isEmpty()) {
+      InvalidFieldsDTO invalidFields = InvalidFieldsDTO.builder().expectedValues(changedFields).build();
+      throw new InvalidRequestException(
+          "Requested metadata params do not match the values found in the YAML on Git for these fields: "
+              + changedFields.keySet(),
+          invalidFields);
     }
-    return importedPipeline;
   }
 }

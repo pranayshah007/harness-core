@@ -78,7 +78,6 @@ public class FilterCreatorMergeService {
   public FilterCreatorMergeServiceResponse getPipelineInfo(PipelineEntity pipelineEntity) throws IOException {
     Map<String, PlanCreatorServiceInfo> services = getServices();
     Dependencies dependencies = getDependencies(pipelineEntity.getYaml());
-
     Map<String, String> filters = new HashMap<>();
     SetupMetadata.Builder setupMetadataBuilder = getSetupMetadataBuilder(
         pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());

@@ -33,7 +33,7 @@ public interface PMSInputSetRepositoryCustom {
 
   InputSetEntity save(InputSetEntity entityToSave);
 
-  InputSetEntity saveForImportedYAML(InputSetEntity entityToSave, boolean pushToGit);
+  InputSetEntity saveForImportedYAML(InputSetEntity entityToSave);
 
   Optional<InputSetEntity> findForOldGitSync(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, boolean notDeleted);

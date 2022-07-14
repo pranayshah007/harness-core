@@ -98,17 +98,17 @@ public class GcrArtifactResource {
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
       GcrArtifactConfig gcrArtifactConfig = (GcrArtifactConfig) artifactSpecFromService;
       if (isEmpty(imagePath)) {
-        imagePath = gcrArtifactConfig.getImagePath().getValue();
+        imagePath = (String) gcrArtifactConfig.getImagePath().fetchFinalValue();
       }
       if (isEmpty(registryHostname)) {
-        registryHostname = gcrArtifactConfig.getRegistryHostname().getValue();
+        registryHostname = (String) gcrArtifactConfig.getRegistryHostname().fetchFinalValue();
       }
 
       if (isEmpty(gcrConnectorIdentifier)) {
         gcrConnectorIdentifier = gcrArtifactConfig.getConnectorRef().getValue();
       }
     }
-
+    // todo(hinger): resolve other expressions here?
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(gcrConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     imagePath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,

@@ -58,7 +58,7 @@ public class StepGroupElementConfig {
   @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN)
   @VariableExpression
   String identifier;
-  @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) @VariableExpression String name;
+  @NotNull @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) String name;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

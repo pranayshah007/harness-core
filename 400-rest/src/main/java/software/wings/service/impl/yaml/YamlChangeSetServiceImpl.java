@@ -183,8 +183,9 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
     }
     String queueKey = buildQueueKey(yamlGitConfig);
     return wingsPersistence.createQuery(YamlChangeSet.class)
-        .filter(YamlChangeSetKeys.queueKey, queueKey)
         .filter(YamlChangeSetKeys.accountId, yamlGitConfig.getAccountId())
+        .filter(YamlChangeSetKeys.queueKey, queueKey)
+        .filter(YamlChangeSetKeys.status, QUEUED)
         .count();
   }
 

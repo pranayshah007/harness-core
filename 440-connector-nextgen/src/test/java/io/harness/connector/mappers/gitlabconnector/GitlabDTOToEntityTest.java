@@ -9,6 +9,7 @@ package io.harness.connector.mappers.gitlabconnector;
 
 import static io.harness.delegate.beans.connector.scm.GitAuthType.HTTP;
 import static io.harness.rule.OwnerRule.ABHINAV;
+import static io.harness.rule.OwnerRule.HEN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,6 +18,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabConnector;
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabHttpAuthentication;
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabKerberos;
+import io.harness.connector.entities.embedded.gitlabconnector.GitlabOauth;
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabSshAuthentication;
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabTokenApiAccess;
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabUsernamePassword;
@@ -30,6 +32,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabKerberosDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernamePasswordDTO;
@@ -239,5 +242,51 @@ public class GitlabDTOToEntityTest extends CategoryTest {
                        .build());
     assertThat(gitlabConnector.getGitlabApiAccess())
         .isEqualTo(GitlabTokenApiAccess.builder().tokenRef(kerberosKeyRef).build());
+  }
+
+  @Test
+  @Owner(developers = HEN)
+  @Category(UnitTests.class)
+  public void testToConnectorEntity_5() {
+    final String url = "url";
+    final String tokenRef = "tokenRef";
+    final String refreshTokenRef = "refreshTokenRef";
+    final GitlabAuthenticationDTO gitlabAuthenticationDTO =
+        GitlabAuthenticationDTO.builder()
+            .authType(HTTP)
+            .credentials(GitlabHttpCredentialsDTO.builder()
+                             .type(GitlabHttpAuthenticationType.OAUTH)
+                             .httpCredentialsSpec(GitlabOauthDTO.builder()
+                                                      .tokenRef(SecretRefHelper.createSecretRef(tokenRef))
+                                                      .refreshTokenRef(SecretRefHelper.createSecretRef(refreshTokenRef))
+                                                      .build())
+                             .build())
+            .build();
+
+    final GitlabApiAccessDTO gitlabApiAccessDTO =
+        GitlabApiAccessDTO.builder()
+            .type(GitlabApiAccessType.OAUTH)
+            .spec(GitlabOauthDTO.builder()
+                      .tokenRef(SecretRefHelper.createSecretRef(tokenRef))
+                      .refreshTokenRef(SecretRefHelper.createSecretRef(refreshTokenRef))
+                      .build())
+            .build();
+    final GitlabConnectorDTO gitlabConnectorDTO = GitlabConnectorDTO.builder()
+                                                      .url(url)
+                                                      .connectionType(GitConnectionType.REPO)
+                                                      .authentication(gitlabAuthenticationDTO)
+                                                      .apiAccess(gitlabApiAccessDTO)
+                                                      .build();
+    final GitlabConnector gitlabConnector = gitlabDTOToEntity.toConnectorEntity(gitlabConnectorDTO);
+    assertThat(gitlabConnector).isNotNull();
+    assertThat(gitlabConnector.getUrl()).isEqualTo(url);
+    assertThat(gitlabConnector.getAuthType()).isEqualTo(HTTP);
+    assertThat(gitlabConnector.getAuthenticationDetails())
+        .isEqualTo(GitlabHttpAuthentication.builder()
+                       .type(GitlabHttpAuthenticationType.OAUTH)
+                       .auth(GitlabOauth.builder().tokenRef(tokenRef).refreshTokenRef(refreshTokenRef).build())
+                       .build());
+    assertThat(gitlabConnector.getGitlabApiAccess())
+        .isEqualTo(GitlabOauth.builder().tokenRef(tokenRef).refreshTokenRef(refreshTokenRef).build());
   }
 }

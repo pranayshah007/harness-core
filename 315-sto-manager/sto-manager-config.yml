@@ -225,10 +225,8 @@ cacheConfig:
   cacheNamespace: ""
   disabledCaches: [ ]
 
-opaServerConfig:
-  baseUrl: http://localhost:3000
-  secret: secret
-
+enforcementClientConfiguration:
+  enforcementCheckEnabled: false
 
 pmsPlanCreatorServicePoolConfig:
   corePoolSize: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_CORE_SIZE:-2}

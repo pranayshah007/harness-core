@@ -19,6 +19,7 @@ import static io.harness.git.model.GitRepositoryType.TRIGGER;
 import static io.harness.git.model.GitRepositoryType.YAML;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.HARSH;
@@ -641,5 +642,64 @@ public class GitClientHelperTest extends CategoryTest {
   public void testGetCompleteSSHUrlFromHttpUrlForAzure() {
     assertThat(GitClientHelper.getCompleteSSHUrlFromHttpUrlForAzure("https://dev.azure.com/org/test/_git/test"))
         .isEqualTo("git@ssh.dev.azure.com:v3/org/test/test");
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetCompleteHTTPUrlFromSSHUrlForGithub() {
+    assertThat(GitClientHelper.getCompleteHTTPUrlForGithub("git@github.com:repoOrg/repo.git"))
+        .isEqualTo("https://github.com/repoOrg/repo");
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetCompleteHTTPUrlFromSSHUrlForBitbucket() {
+    assertThat(GitClientHelper.getCompleteHTTPUrlForBitbucketSaas("git@bitbucket.org:repoOrg/repo.git"))
+        .isEqualTo("https://bitbucket.org/repoOrg/repo");
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetCompleteHTTPUrlFromSSHUrlForBitbucketClone() {
+    assertThat(GitClientHelper.getCompleteHTTPUrlForBitbucketSaas("https://bhavya181@bitbucket.org/repoOrg/repo.git"))
+        .isEqualTo("https://bitbucket.org/repoOrg/repo");
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetCompleteHTTPUrlFromSSHUrlForBitbucketServer() {
+    assertThat(GitClientHelper.getCompleteHTTPUrlFromSSHUrlForBitbucketServer(
+                   "ssh://git@bitbucket.dev.harness.io:7999/repoOrg/repo.git"))
+        .isEqualTo("https://bitbucket.dev.harness.io/scm/repoOrg/repo");
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetCompleteHTTPUrlFromSSHUrlForAzureRepo() {
+    assertThat(
+        GitClientHelper.getCompleteHTTPRepoUrlForAzureRepoSaas("git@ssh.dev.azure.com:v3/repoOrg/repoProject/repoName"))
+        .isEqualTo("https://dev.azure.com/repoOrg/repoProject/_git/repoName");
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetCompleteHTTPUrlFromHTTPCloneForAzureRepo() {
+    assertThat(GitClientHelper.getCompleteHTTPRepoUrlForAzureRepoSaas(
+                   "https://owner@dev.azure.com/repoOrg/repoProject/_git/repoName"))
+        .isEqualTo("https://dev.azure.com/repoOrg/repoProject/_git/repoName");
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetAzureRepoOrgAndProjectSSHForProjectTypeConnector() {
+    assertThat(GitClientHelper.getAzureRepoOrgAndProjectSSH("git@ssh.dev.azure.com:v3/repoOrg/repoProject"))
+        .isEqualTo("repoOrg/repoProject");
   }
 }

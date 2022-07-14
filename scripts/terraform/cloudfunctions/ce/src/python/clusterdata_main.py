@@ -132,12 +132,13 @@ def create_dataset_and_tables(jsonData):
             createTable(client, table_ref)
         else:
             print_("%s table exists" % table_ref)
-            if table_ref == cluster_data_aggregated_table_ref:
-                alterTableAggregated(jsonData)
-            elif table_ref == cluster_data_table_ref:
-                alterTable(jsonData)
-            elif table_ref == unified_table_ref:
-                alter_unified_table(jsonData)
+            # Enable these only when needed.
+            # if table_ref == cluster_data_aggregated_table_ref:
+            #     alterTableAggregated(jsonData)
+            # elif table_ref == cluster_data_table_ref:
+            #     alterTable(jsonData)
+            # elif table_ref == unified_table_ref:
+            #     alter_unified_table(jsonData)
 
 
 def ingest_data_from_avro(jsonData):
@@ -451,7 +452,7 @@ def ingest_data_to_costagg(jsonData):
     job_config = bigquery.QueryJobConfig(
         priority=bigquery.QueryPriority.BATCH
     )
-    run_batch_query(client, query, job_config, timeout=120)
+    run_batch_query(client, query, job_config, timeout=180)
 
 
 MONTHMAP = {

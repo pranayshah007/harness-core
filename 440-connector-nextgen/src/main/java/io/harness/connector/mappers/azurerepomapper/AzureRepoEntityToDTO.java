@@ -10,6 +10,7 @@ package io.harness.connector.mappers.azurerepomapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoAuthentication;
+import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoConnectionType;
 import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoConnector;
 import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoHttpAuth;
 import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoHttpAuthentication;
@@ -22,6 +23,7 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
@@ -34,6 +36,8 @@ import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnknownEnumTypeException;
+
+import com.google.common.annotations.VisibleForTesting;
 
 @OwnedBy(HarnessTeam.PL)
 public class AzureRepoEntityToDTO implements ConnectorEntityToDTOMapper<AzureRepoConnectorDTO, AzureRepoConnector> {
@@ -50,10 +54,9 @@ public class AzureRepoEntityToDTO implements ConnectorEntityToDTOMapper<AzureRep
     }
     return AzureRepoConnectorDTO.builder()
         .apiAccess(azureApiAccess)
-        .connectionType(connector.getConnectionType())
+        .connectionType(getAzureRepoConnectionTypeDTO(connector.getConnectionType()))
         .authentication(azureAuthenticationDTO)
         .url(connector.getUrl())
-        .validationProject(connector.getValidationProject())
         .validationRepo(connector.getValidationRepo())
         .build();
   }
@@ -126,5 +129,17 @@ public class AzureRepoEntityToDTO implements ConnectorEntityToDTOMapper<AzureRep
         throw new UnknownEnumTypeException("AzureRepo Api Access Type", apiAccessType.getDisplayName());
     }
     return AzureRepoApiAccessDTO.builder().type(apiAccessType).spec(apiAccessSpecDTO).build();
+  }
+
+  @VisibleForTesting
+  public AzureRepoConnectionTypeDTO getAzureRepoConnectionTypeDTO(AzureRepoConnectionType connectionType) {
+    switch (connectionType) {
+      case PROJECT:
+        return AzureRepoConnectionTypeDTO.PROJECT;
+      case REPO:
+        return AzureRepoConnectionTypeDTO.REPO;
+      default:
+        throw new UnknownEnumTypeException("AzureRepo Connection Type ", connectionType.name());
+    }
   }
 }

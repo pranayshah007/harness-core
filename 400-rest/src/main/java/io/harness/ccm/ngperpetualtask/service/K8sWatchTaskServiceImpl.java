@@ -75,7 +75,7 @@ public class K8sWatchTaskServiceImpl implements K8sWatchTaskService {
 
     PerpetualTaskSchedule schedule = PerpetualTaskSchedule.newBuilder()
                                          .setInterval(Durations.fromMinutes(2))
-                                         .setTimeout(Durations.fromHours(3))
+                                         .setTimeout(Durations.fromMinutes(4))
                                          .build();
 
     return perpetualTaskService.createTask(

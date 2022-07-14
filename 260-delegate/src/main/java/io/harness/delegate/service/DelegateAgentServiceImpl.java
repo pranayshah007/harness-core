@@ -97,6 +97,7 @@ import io.harness.configuration.DeployMode;
 import io.harness.data.structure.NullSafeImmutableMap;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.DelegateAgentCommonVariables;
+import io.harness.delegate.DelegateServiceAgentClient;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateInstanceStatus;
@@ -132,7 +133,6 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
 import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.filesystem.FileIo;
-import io.harness.grpc.DelegateServiceGrpcAgentClient;
 import io.harness.grpc.util.RestartableServiceManager;
 import io.harness.logging.AutoLogContext;
 import io.harness.logstreaming.LogStreamingClient;
@@ -357,7 +357,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @Inject(optional = true) @Nullable private PerpetualTaskWorker perpetualTaskWorker;
   @Inject(optional = true) @Nullable private LogStreamingClient logStreamingClient;
   @Inject DelegateTaskFactory delegateTaskFactory;
-  @Inject(optional = true) @Nullable private DelegateServiceGrpcAgentClient delegateServiceGrpcAgentClient;
+  @Inject(optional = true) @Nullable private DelegateServiceAgentClient delegateServiceAgentClient;
   @Inject private KryoSerializer kryoSerializer;
   @Nullable @Inject(optional = true) private ChronicleEventTailer chronicleEventTailer;
   @Inject HarnessMetricRegistry metricRegistry;
@@ -608,6 +608,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                 new Function<Exception>() { // Do not change this, wasync doesn't like lambdas
                   @Override
                   public void on(Exception e) {
+                    log.error("Exception on websocket", e);
                     handleError(e);
                   }
                 })
@@ -629,6 +630,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
               @Override
               public void on(IOException ioe) {
                 log.error("Error occured while starting Delegate", ioe);
+              }
+            })
+            .on(new Function<TransportNotSupported>() {
+              public void on(TransportNotSupported ex) {
+                log.error("Connection was terminated forcefully (most likely), trying to reconnect", ex);
+                trySocketReconnect();
               }
             });
 
@@ -807,61 +814,63 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void handleClose(Object o) {
-    log.info("Event:{}, message:[{}]", Event.CLOSE.name(), o.toString());
+    log.info("Event:{}, message:[{}] trying to reconnect", Event.CLOSE.name(), o.toString());
     // TODO(brett): Disabling the fallback to poll for tasks as it can cause too much traffic to ingress controller
     // pollingForTasks.set(true);
-    if (!closingSocket.get() && reconnectingSocket.compareAndSet(false, true)) {
-      try {
-        trySocketReconnect();
-      } finally {
-        reconnectingSocket.set(false);
-      }
-    }
+    trySocketReconnect();
   }
 
   private void handleError(final Exception e) {
     log.info("Event:{}, message:[{}]", Event.ERROR.name(), e.getMessage());
-    if (reconnectingSocket.compareAndSet(false, true)) {
-      try {
-        if (e instanceof SSLException || e instanceof TransportNotSupported) {
-          log.warn("Reopening connection to manager because of exception", e);
-          try {
-            socket.close();
-          } catch (final Exception ex) {
-            log.error("Failed closing the socket!", ex);
-          }
-          trySocketReconnect();
-        } else if (e instanceof ConnectException) {
-          log.warn("Failed to connect.", e);
-          restartNeeded.set(true);
-        } else if (e instanceof ConcurrentModificationException) {
-          log.warn("ConcurrentModificationException on WebSocket ignoring");
-          log.debug("ConcurrentModificationException on WebSocket.", e);
-        } else {
-          log.error("Exception: ", e);
-          try {
-            finalizeSocket();
-          } catch (final Exception ex) {
-            log.error("Failed closing the socket!", ex);
-          }
-          restartNeeded.set(true);
+    if (!reconnectingSocket.get()) { // Don't restart if we are trying to reconnect
+      if (e instanceof SSLException || e instanceof TransportNotSupported) {
+        log.warn("Reopening connection to manager because of exception", e);
+        trySocketReconnect();
+      } else if (e instanceof ConnectException) {
+        log.warn("Failed to connect.", e);
+        restartNeeded.set(true);
+      } else if (e instanceof ConcurrentModificationException) {
+        log.warn("ConcurrentModificationException on WebSocket ignoring");
+        log.debug("ConcurrentModificationException on WebSocket.", e);
+      } else {
+        log.error("Exception: ", e);
+        try {
+          finalizeSocket();
+        } catch (final Exception ex) {
+          log.error("Failed closing the socket!", ex);
         }
-      } finally {
-        reconnectingSocket.set(false);
+        restartNeeded.set(true);
       }
     }
   }
 
   private void trySocketReconnect() {
-    try {
-      FibonacciBackOff.executeForEver(() -> {
-        RequestBuilder requestBuilder = prepareRequestBuilder();
-        Socket skt = socket.open(requestBuilder.build());
-        log.info("Socket status: {}", socket.status().toString());
-        return skt;
-      });
-    } catch (IOException ex) {
-      log.error("Unable to open socket", ex);
+    if (!closingSocket.get() && reconnectingSocket.compareAndSet(false, true)) {
+      try {
+        log.info("Starting socket reconnecting");
+        FibonacciBackOff.executeForEver(() -> {
+          final RequestBuilder requestBuilder = prepareRequestBuilder();
+          try {
+            final Socket skt = socket.open(requestBuilder.build(), 15, TimeUnit.SECONDS);
+            log.info("Socket status: {}", socket.status().toString());
+            if (socket.status() == STATUS.CLOSE || socket.status() == STATUS.ERROR) {
+              throw new IllegalStateException("Socket not opened");
+            }
+            return skt;
+          } catch (Exception e) {
+            log.error("Failed to reconnect to socket, trying again: ", e);
+            throw new IOException("Try reconnect again");
+          }
+        });
+      } catch (IOException ex) {
+        log.error("Unable to open socket", ex);
+      } finally {
+        reconnectingSocket.set(false);
+        log.info("Finished socket reconnecting");
+      }
+    } else {
+      log.warn("Socket already reconnecting {} or closing {}, will not start the reconnect procedure again",
+          closingSocket.get(), reconnectingSocket.get());
     }
   }
 
@@ -1014,6 +1023,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     } finally {
       if (response != null && !response.isSuccessful()) {
         String errorResponse = response.errorBody().string();
+
+        log.warn("Received Error Response: {}", errorResponse);
+
         if (errorResponse.contains(INVALID_TOKEN.name())) {
           log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
           initiateSelfDestruct();
@@ -1026,6 +1038,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           log.warn("Delegate used revoked token. It will be frozen and drained.");
           freeze();
         }
+
         response.errorBody().close();
       }
     }
@@ -1059,7 +1072,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
       if (restResponse == null || restResponse.getResource() == null) {
         log.error(
-            "Error occurred while registering delegate with manager for account {}. Please see the manager log for more information",
+            "Error occurred while registering delegate with manager for account '{}' - Please see the manager log for more information.",
             accountId);
         sleep(ofMinutes(1));
         continue;
@@ -2118,12 +2131,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             .appId(appId)
             .activityId(activityId);
 
-    if (isNotBlank(delegateTaskPackage.getDelegateCallbackToken()) && delegateServiceGrpcAgentClient != null) {
+    if (isNotBlank(delegateTaskPackage.getDelegateCallbackToken()) && delegateServiceAgentClient != null) {
       taskClientBuilder.taskProgressClient(TaskProgressClient.builder()
                                                .accountId(delegateTaskPackage.getAccountId())
                                                .taskId(delegateTaskPackage.getDelegateTaskId())
                                                .delegateCallbackToken(delegateTaskPackage.getDelegateCallbackToken())
-                                               .delegateServiceGrpcAgentClient(delegateServiceGrpcAgentClient)
+                                               .delegateServiceAgentClient(delegateServiceAgentClient)
                                                .kryoSerializer(kryoSerializer)
                                                .build());
     }

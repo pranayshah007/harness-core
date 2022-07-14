@@ -175,7 +175,7 @@ public class GitBuildStatusUtility {
     GitStatusCheckParams gitStatusCheckParams = convertParams(ciBuildStatusPushParameters);
     log.info("Sending git status update request for stage {}, planId {}, commitId {}, status {}", stageId,
         ambiance.getPlanExecutionId(), ciBuildStatusPushParameters.getSha(), ciBuildStatusPushParameters.getState());
-    gitStatusCheckHelper.sendStatus(gitStatusCheckParams, accountId);
+    gitStatusCheckHelper.sendStatus(gitStatusCheckParams);
   }
 
   private void sendStatusViaDelegate(

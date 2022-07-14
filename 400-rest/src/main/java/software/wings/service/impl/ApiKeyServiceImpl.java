@@ -261,16 +261,17 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                             .filter(ApiKeyEntryKeys.accountId, accountId)
                             .filter(ID_KEY, uuid)
                             .get();
+    User user = UserThreadLocal.get();
+    if (user != null && !userService.isUserAssignedToAccount(user, accountId)) {
+      throw new InvalidRequestException("The user is not part of the account to view API key data");
+    }
     return buildApiKeyEntry(uuid, entry, true);
   }
 
   private ApiKeyEntry buildApiKeyEntry(String uuid, ApiKeyEntry entry, boolean details) {
     notNullCheck("apiKeyEntry is null for id: " + uuid, entry);
     String decryptedKey = new String(getSimpleEncryption(entry.getAccountId()).decryptChars(entry.getEncryptedKey()));
-    User user = UserThreadLocal.get();
-    if (!userService.isUserAssignedToAccount(user, entry.getAccountId())) {
-      decryptedKey = null;
-    }
+
     return ApiKeyEntry.builder()
         .uuid(entry.getUuid())
         .userGroupIds(entry.getUserGroupIds())

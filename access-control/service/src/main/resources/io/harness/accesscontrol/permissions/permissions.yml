@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 29
+version: 30
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -420,6 +420,12 @@ permissions:
       - project
   - identifier: core_license_view
     name: View Licenses
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: core_license_edit
+    name: Edit Licenses
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
@@ -887,20 +893,20 @@ permissions:
     includeInAllRoles: false
     allowedScopeLevels:
       - account
-  - identifier: sto_exception_view
-    name: View exceptions
+  - identifier: sto_exemption_view
+    name: View exemptions
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
-  - identifier: sto_exception_create
-    name: Create exception
+  - identifier: sto_exemption_create
+    name: Create exemption
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
       - account
-  - identifier: sto_exception_approve
-    name: Approve exception
+  - identifier: sto_exemption_approve
+    name: Approve exemption
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:

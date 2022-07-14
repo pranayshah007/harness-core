@@ -47,7 +47,14 @@ public class SchemaConstants {
   public static final String PATTERN_NODE = "pattern";
   public static final String MIN_LENGTH_NODE = "minLength";
   public static final String RUNTIME_INPUT_PATTERN = "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$";
-  public static final String EXPRESSION_PATTERN = EXPR_START_ESC + "([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)" + EXPR_END_ESC;
+  public static final String INPUT_SET_PATTERN = "^" + EXPR_START_ESC + "input" + EXPR_END_ESC + ".*";
+  public static final String EXPRESSION_PATTERN =
+      "(^" + EXPR_START_ESC + "([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)" + EXPR_END_ESC + "$|" + INPUT_SET_PATTERN + ")";
+  // This should validate string patterns starting with optional + or - ([+-]?). Then at least one digit ([0-9]+). Then
+  // optional `.` amd optional digits.
+  public static final String NUMBER_STRING_WITH_EXPRESSION_PATTERN = "("
+      + "^[+-]?[0-9]+\\.?[0-9]*$"
+      + "|" + EXPRESSION_PATTERN + ")";
   public static final String SPEC_NODE = "spec";
   public static final String STAGE_ELEMENT_WRAPPER_CONFIG = "StageElementWrapperConfig";
   public static final String STAGE_ELEMENT_CONFIG_REF_VALUE = "#/definitions/StageElementConfig";

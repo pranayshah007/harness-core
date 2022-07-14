@@ -27,6 +27,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.DOCKER;
 import static io.harness.delegate.beans.connector.ConnectorType.GIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
+import static io.harness.delegate.beans.connector.scm.adapter.AzureRepoToGitMapper.mapToGitConnectionType;
 
 import static java.lang.String.format;
 import static org.springframework.util.StringUtils.trimLeadingCharacter;
@@ -82,6 +83,7 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
+import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.TriggerType;
@@ -131,6 +133,14 @@ public class IntegrationStageUtils {
   public StepElementConfig getStepElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
     try {
       return YamlUtils.read(executionWrapperConfig.getStep().toString(), StepElementConfig.class);
+    } catch (Exception ex) {
+      throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
+    }
+  }
+
+  public StepGroupElementConfig getStepGroupElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
+    try {
+      return YamlUtils.read(executionWrapperConfig.getStepGroup().toString(), StepGroupElementConfig.class);
     } catch (Exception ex) {
       throw new CIStageExecutionException("Failed to deserialize ExecutionWrapperConfig step node", ex);
     }
@@ -329,7 +339,8 @@ public class IntegrationStageUtils {
       return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == AZURE_REPO) {
       AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
-      return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      GitConnectionType gitConnectionType = mapToGitConnectionType(gitConfigDTO.getConnectionType());
+      return getGitURL(ciCodebase, gitConnectionType, gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == GITLAB) {
       GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
       return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
@@ -388,12 +399,16 @@ public class IntegrationStageUtils {
         continue;
       }
 
-      if (executionWrapper.getStep() != null) {
+      if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
         stepElementConfigs.add(getStepElementConfig(executionWrapper));
-      } else if (executionWrapper.getParallel() != null) {
+      } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
         ParallelStepElementConfig parallelStepElementConfig = getParallelStepElementConfig(executionWrapper);
         List<StepElementConfig> fromParallel = getAllSteps(parallelStepElementConfig.getSections());
         stepElementConfigs.addAll(fromParallel);
+      } else if (executionWrapper.getStepGroup() != null && !executionWrapper.getStepGroup().isNull()) {
+        StepGroupElementConfig stepGroupElementConfig = getStepGroupElementConfig(executionWrapper);
+        List<StepElementConfig> fromStepGroup = getAllSteps(stepGroupElementConfig.getSteps());
+        stepElementConfigs.addAll(fromStepGroup);
       }
     }
     return stepElementConfigs;
@@ -423,6 +438,7 @@ public class IntegrationStageUtils {
   public static List<CIImageDetails> getCiImageDetails(InitializeStepInfo initializeStepInfo) {
     List<CIImageDetails> imageDetailsList = new ArrayList<>();
     List<StepElementConfig> stepElementConfigs = getAllSteps(initializeStepInfo.getExecutionElementConfig().getSteps());
+    CIImageDetails imageDetails;
 
     for (StepElementConfig stepElementConfig : stepElementConfigs) {
       if (!(stepElementConfig.getStepSpecType() instanceof CIStepInfo)) {
@@ -430,17 +446,27 @@ public class IntegrationStageUtils {
       }
       CIStepInfo ciStepInfo = (CIStepInfo) stepElementConfig.getStepSpecType();
       if (ciStepInfo.getStepType() == RunStep.STEP_TYPE) {
-        imageDetailsList.add(getCiImageDetails(((RunStepInfo) ciStepInfo).getImage().getValue()));
+        imageDetails = getCiImageInfo(((RunStepInfo) ciStepInfo).getImage().getValue());
       } else if (ciStepInfo.getStepType() == RunTestsStep.STEP_TYPE) {
-        imageDetailsList.add(getCiImageDetails(((RunTestsStepInfo) ciStepInfo).getImage().getValue()));
+        imageDetails = getCiImageInfo(((RunTestsStepInfo) ciStepInfo).getImage().getValue());
       } else if (ciStepInfo.getStepType() == PluginStepInfo.STEP_TYPE) {
-        imageDetailsList.add(getCiImageDetails(((PluginStepInfo) ciStepInfo).getImage().getValue()));
+        imageDetails = getCiImageInfo(((PluginStepInfo) ciStepInfo).getImage().getValue());
+      } else {
+        continue;
+      }
+
+      if (imageDetails != null) {
+        imageDetailsList.add(imageDetails);
       }
     }
     return imageDetailsList;
   }
 
-  public CIImageDetails getCiImageDetails(String image) {
+  public CIImageDetails getCiImageInfo(String image) {
+    if (isEmpty(image)) {
+      return null;
+    }
+
     ImageDetails imagedetails = getImageInfo(image);
     return CIImageDetails.builder().imageName(imagedetails.getName()).imageTag(imagedetails.getTag()).build();
   }
@@ -546,9 +572,9 @@ public class IntegrationStageUtils {
     return resolveOSType(k8sDirectInfraYaml.getSpec().getOs());
   }
 
-  public List<String> getStageConnectorRefs(IntegrationStageConfig integrationStageConfig) {
+  public ArrayList<String> populateConnectorIdentifiers(List<ExecutionWrapperConfig> wrappers) {
     ArrayList<String> connectorIdentifiers = new ArrayList<>();
-    for (ExecutionWrapperConfig executionWrapper : integrationStageConfig.getExecution().getSteps()) {
+    for (ExecutionWrapperConfig executionWrapper : wrappers) {
       if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
         StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
         String identifier = getConnectorIdentifier(stepElementConfig);
@@ -559,20 +585,30 @@ public class IntegrationStageUtils {
         ParallelStepElementConfig parallelStepElementConfig =
             IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
         if (isNotEmpty(parallelStepElementConfig.getSections())) {
-          for (ExecutionWrapperConfig executionWrapperInParallel : parallelStepElementConfig.getSections()) {
-            if (executionWrapperInParallel.getStep() == null || executionWrapperInParallel.getStep().isNull()) {
-              continue;
-            }
-            StepElementConfig stepElementConfig =
-                IntegrationStageUtils.getStepElementConfig(executionWrapperInParallel);
-            String identifier = getConnectorIdentifier(stepElementConfig);
-            if (identifier != null) {
-              connectorIdentifiers.add(identifier);
-            }
+          ArrayList<String> connectorIdentifiersForParallel =
+              populateConnectorIdentifiers(parallelStepElementConfig.getSections());
+          if (connectorIdentifiersForParallel != null && connectorIdentifiersForParallel.size() > 0) {
+            connectorIdentifiers.addAll(connectorIdentifiersForParallel);
+          }
+        }
+      } else {
+        StepGroupElementConfig stepGroupElementConfig =
+            IntegrationStageUtils.getStepGroupElementConfig(executionWrapper);
+        if (isNotEmpty(stepGroupElementConfig.getSteps())) {
+          ArrayList<String> connectorIdentifiersForStepGroup =
+              populateConnectorIdentifiers(stepGroupElementConfig.getSteps());
+          if (connectorIdentifiersForStepGroup != null && connectorIdentifiersForStepGroup.size() > 0) {
+            connectorIdentifiers.addAll(connectorIdentifiersForStepGroup);
           }
         }
       }
     }
+    return connectorIdentifiers;
+  }
+
+  public List<String> getStageConnectorRefs(IntegrationStageConfig integrationStageConfig) {
+    ArrayList<String> connectorIdentifiers = new ArrayList<>();
+    connectorIdentifiers = populateConnectorIdentifiers(integrationStageConfig.getExecution().getSteps());
 
     if (integrationStageConfig.getServiceDependencies() == null
         || isEmpty(integrationStageConfig.getServiceDependencies().getValue())) {

@@ -47,7 +47,11 @@ public enum ResourceType {
   PERSPECTIVE_BUDGET(ResourceTypeConstants.PERSPECTIVE_BUDGET),
   PERSPECTIVE_REPORT(ResourceTypeConstants.PERSPECTIVE_REPORT),
   COST_CATEGORY(ResourceTypeConstants.COST_CATEGORY),
-  SMTP(ResourceTypeConstants.SMTP);
+  SMTP(ResourceTypeConstants.SMTP),
+  PERSPECTIVE_FOLDER(ResourceTypeConstants.PERSPECTIVE_FOLDER),
+  AUTOSTOPPING_RULE(ResourceTypeConstants.AUTOSTOPPING_RULE),
+  AUTOSTOPPING_LB(ResourceTypeConstants.AUTOSTOPPING_LB),
+  AUTOSTOPPING_STARTSTOP(ResourceTypeConstants.AUTOSTOPPING_STARTSTOP);
 
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {

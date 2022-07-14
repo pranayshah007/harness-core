@@ -23,6 +23,7 @@ import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
+import io.harness.plancreator.steps.StepGroupElementConfig;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -66,22 +67,27 @@ public class ValidationUtils {
     }
 
     for (ExecutionWrapperConfig executionWrapper : steps) {
-      if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
-        StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
-        validateWindowsK8Step(stepElementConfig);
-      } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
-        ParallelStepElementConfig parallelStepElementConfig =
-            IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
-        if (isNotEmpty(parallelStepElementConfig.getSections())) {
-          for (ExecutionWrapperConfig executionWrapperInParallel : parallelStepElementConfig.getSections()) {
-            if (executionWrapperInParallel.getStep() == null || executionWrapperInParallel.getStep().isNull()) {
-              continue;
-            }
+      validateWindowsK8StageUtil(executionWrapper);
+    }
+  }
 
-            StepElementConfig stepElementConfig =
-                IntegrationStageUtils.getStepElementConfig(executionWrapperInParallel);
-            validateWindowsK8Step(stepElementConfig);
-          }
+  public void validateWindowsK8StageUtil(ExecutionWrapperConfig executionWrapper) {
+    if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
+      StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
+      validateWindowsK8Step(stepElementConfig);
+    } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
+      ParallelStepElementConfig parallelStepElementConfig =
+          IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
+      if (isNotEmpty(parallelStepElementConfig.getSections())) {
+        for (ExecutionWrapperConfig executionWrapperInParallel : parallelStepElementConfig.getSections()) {
+          validateWindowsK8StageUtil(executionWrapperInParallel);
+        }
+      }
+    } else {
+      StepGroupElementConfig stepGroupElementConfig = IntegrationStageUtils.getStepGroupElementConfig(executionWrapper);
+      if (isNotEmpty(stepGroupElementConfig.getSteps())) {
+        for (ExecutionWrapperConfig executionWrapperInStepGroup : stepGroupElementConfig.getSteps()) {
+          validateWindowsK8StageUtil(executionWrapperInStepGroup);
         }
       }
     }

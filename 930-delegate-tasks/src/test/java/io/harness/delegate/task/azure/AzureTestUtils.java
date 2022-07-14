@@ -14,11 +14,16 @@ import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.model.AzureAuthenticationType;
 import io.harness.azure.model.AzureConfig;
 import io.harness.delegate.beans.azure.registry.AzureRegistryType;
+import io.harness.delegate.beans.connector.docker.DockerAuthType;
+import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
+import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
+import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
+import io.harness.encryption.SecretRefData;
 
 import java.util.Collections;
 import lombok.experimental.UtilityClass;
@@ -38,6 +43,8 @@ public class AzureTestUtils {
   public static final String TENANT_ID = "tenant-id";
   public static final String CLIENT_ID = "client-id";
   public static final byte[] CERT = "test-cert".getBytes();
+  public static final String TAG = "tag";
+  public static final String IMAGE = "image";
 
   public AzureArtifactConfig createTestContainerArtifactConfig() {
     return AzureContainerArtifactConfig.builder()
@@ -53,6 +60,7 @@ public class AzureTestUtils {
         .resourceGroup(RESOURCE_GROUP)
         .appName(APP_NAME)
         .deploymentSlot(DEPLOYMENT_SLOT)
+        .targetSlot(TARGET_SLOT)
         .build();
   }
 
@@ -78,6 +86,23 @@ public class AzureTestUtils {
         .slotName(DEPLOYMENT_SLOT)
         .imageNameAndTag("imageNameAndTag")
         .deploymentProgressMarker(deploymentProgress.name())
+        .build();
+  }
+
+  public AzureArtifactConfig createTestAzureContainerConfig() {
+    return AzureContainerArtifactConfig.builder()
+        .connectorConfig(
+            DockerConnectorDTO.builder()
+                .auth(DockerAuthenticationDTO.builder()
+                          .authType(DockerAuthType.USER_PASSWORD)
+                          .credentials(DockerUserNamePasswordDTO.builder()
+                                           .username("test")
+                                           .passwordRef(SecretRefData.builder().identifier("password").build())
+                                           .build())
+                          .build())
+                .build())
+        .tag(TAG)
+        .image(IMAGE)
         .build();
   }
 }
