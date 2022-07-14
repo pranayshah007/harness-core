@@ -142,8 +142,10 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
 
   private void checkAndSendNgAnomalyAlerts(String accountId, Instant date) {
     checkNotNull(accountId);
+    log.info("Getting notification Channels");
     List<CCMPerspectiveNotificationChannelsDTO> notificationSettings =
         listNotificationChannelsPerPerspective(accountId);
+    log.info("Notification settings: {}", notificationSettings);
     notificationSettings.forEach(
         notificationSetting -> checkAndSendAnomalyAlertsForPerspective(notificationSetting, accountId, date));
   }

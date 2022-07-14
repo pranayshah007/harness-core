@@ -28,6 +28,7 @@ public class SlackNotificationsTasklet implements Tasklet {
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
+    log.info("Started Slack Notification Tasklet");
     final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
 
     Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
