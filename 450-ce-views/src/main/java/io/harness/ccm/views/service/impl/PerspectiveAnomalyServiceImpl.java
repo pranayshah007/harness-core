@@ -12,6 +12,7 @@ import io.harness.ccm.commons.entities.CCMFilter;
 import io.harness.ccm.commons.entities.anomaly.AnomalyData;
 import io.harness.ccm.commons.entities.anomaly.AnomalyFeedback;
 import io.harness.ccm.commons.entities.anomaly.AnomalyQueryDTO;
+import io.harness.ccm.commons.entities.anomaly.EntityInfo;
 import io.harness.ccm.commons.utils.AnomalyQueryBuilder;
 import io.harness.ccm.commons.utils.AnomalyUtils;
 import io.harness.ccm.views.dto.PerspectiveQueryDTO;
@@ -74,7 +75,8 @@ public class PerspectiveAnomalyServiceImpl implements PerspectiveAnomalyService 
 //
 //    List<AnomalyData> anomalyData = new ArrayList<>();
 //    anomalies.forEach(anomaly -> anomalyData.add(AnomalyUtils.buildAnomalyData(anomaly)));
-    List<AnomalyData> anomalyData = Collections.singletonList(AnomalyData.builder().id("_id_").time(1657738984L).anomalyRelativeTime("3hrs back").actualAmount(1.1).expectedAmount(2.2).anomalousSpend(4.4).anomalousSpendPercentage(4.0).resourceInfo("resourceInfo").resourceName("resourceName").entity(null).details("details").status("status").statusRelativeTime("statusRelativeTime").comment("comment").cloudProvider("cloudProvicer").anomalyScore(1.1).userFeedback(AnomalyFeedback.TRUE_ANOMALY).build());
+    List<AnomalyData> anomalyData = Collections.singletonList(AnomalyData.builder().id("_id_").time(1657738984L).anomalyRelativeTime("3hrs back").actualAmount(1.1).expectedAmount(2.2).anomalousSpend(4.4).anomalousSpendPercentage(4.0).resourceInfo("resourceInfo").resourceName("resourceName").entity(EntityInfo.builder().field("field").clusterName("cnma").clusterId("cid").namespace("namesp").workloadName("wname").workloadType("wtype").gcpProjectId("gcpPId").gcpProduct("gcpProd").gcpSKUId("gcpSkuId").gcpSKUDescription("gcpSKUDesc").awsUsageAccountId("awsUsageAcId").awsServiceCode("awsServCode").awsInstancetype("awSSInnstacneT").awsUsageType("awsUsa").azureSubscriptionGuid("awsSubI").azureResourceGroup("acre").azureMeterCategory("ametere").azureServiceName("ljkfd").azureInstanceId("insta").build()).details("details").status("status").statusRelativeTime("statusRelativeTime").comment("comment").cloudProvider("cloudProvicer").anomalyScore(1.1).userFeedback(AnomalyFeedback.TRUE_ANOMALY).build());
+
     return anomalyData;
   }
 
