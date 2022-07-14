@@ -150,7 +150,8 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
         .terraformCommand(TerraformPlanCommand.APPLY == planStepParameters.getConfiguration().getCommand()
                 ? TerraformCommand.APPLY
                 : TerraformCommand.DESTROY)
-        .planName(helper.getTerraformPlanName(planStepParameters.getConfiguration().getCommand(), ambiance))
+        .planName(helper.getTerraformPlanName(planStepParameters.getConfiguration().getCommand(), ambiance,
+            planStepParameters.getProvisionerIdentifier().getValue()))
         .timeoutInMillis(
             StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT));
 

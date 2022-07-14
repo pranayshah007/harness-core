@@ -143,6 +143,7 @@ public class TerraformStepHelperTest extends CategoryTest {
         .putSetupAbstractions("projectIdentifier", "test-project")
         .putSetupAbstractions("orgIdentifier", "test-org")
         .setPlanExecutionId("exec_id")
+        .setPlanId("plan_id")
         .build();
   }
 
@@ -769,8 +770,8 @@ public class TerraformStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetTerraformPlanName() {
     Ambiance ambiance = getAmbiance();
-    String planName = helper.getTerraformPlanName(APPLY, ambiance);
-    assertThat(planName).isEqualTo("tfPlan-exec-id");
+    String planName = helper.getTerraformPlanName(APPLY, ambiance, "provisionId");
+    assertThat(planName).isEqualTo("tfPlan-exec-id-provisionId");
   }
 
   @Test
