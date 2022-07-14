@@ -169,6 +169,11 @@ public class DelegateTask
   private long expiry;
 
   private LinkedList<String> eligibleToExecuteDelegateIds;
+
+  // below 2 used for harness hosted delegattes
+  private boolean executeOnHarnessHostedDelegates;
+  private String secondaryAccountId;
+
   @Transient private List<String> broadcastToDelegateIds;
 
   @Transient private List<String> taskActivityLogs;

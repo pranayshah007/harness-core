@@ -24,8 +24,7 @@ import static io.harness.rule.OwnerRule.SANJA;
 import static io.harness.rule.OwnerRule.VUK;
 
 import static software.wings.beans.Account.Builder.anAccount;
-import static software.wings.service.impl.DelegateTaskServiceClassicImpl.TASK_CATEGORY_MAP;
-import static software.wings.service.impl.DelegateTaskServiceClassicImpl.TASK_SELECTORS;
+import static software.wings.service.impl.DelegateTaskServiceClassicImpl.*;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_STREAM_ID;
@@ -1106,6 +1105,40 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     assertThat(selectorCapabilityList.get(0).getSelectors()).contains("sel1", "sel2");
     assertThat(selectorCapabilityList.get(0).getSelectorOrigin()).isEqualTo("step");
   }
+
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void processDelegateTask_ForGlobalDelegateAccount() {
+    DelegateTask delegateTask = DelegateTask.builder()
+            .uuid(generateUuid())
+            .accountId(ACCOUNT_ID)
+            .waitId(generateUuid())
+            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
+            .executeOnHarnessHostedDelegates(true)
+            .version(VERSION)
+            .data(TaskData.builder()
+                    .async(false)
+                    .taskType(TaskType.HTTP.name())
+                    .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
+                    .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                    .build())
+            .tags(new ArrayList<>())
+            .build();
+    when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
+            .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
+    when(assignDelegateService.getConnectedDelegateList(any(), any()))
+            .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
+    delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
+    DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
+    assertThat(task).isNotNull();
+    assertThat(task.getStatus()).isEqualTo(QUEUED);
+    assertThat(task.getAccountId()).isEqualTo(GLOBAL_DELEGATE_ACCOUNT_ID);
+    assertThat(task.getSecondaryAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(task.getEligibleToExecuteDelegateIds()).contains(DELEGATE_ID);
+  }
+
 
   private CapabilityRequirement buildCapabilityRequirement() {
     return CapabilityRequirement.builder()
