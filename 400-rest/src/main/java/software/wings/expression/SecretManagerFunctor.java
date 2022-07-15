@@ -179,9 +179,18 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
       if (io.harness.data.structure.EmptyPredicate.isEmpty(encryptedDataDetails)) {
         throw new InvalidRequestException("No secret found with identifier + [" + secretName + "]", USER);
       }
-      EncryptedDataDetails objectToCache =
-          EncryptedDataDetails.builder().encryptedDataDetailList(encryptedDataDetails).build();
-      secretsCache.put(encryptedData.getUuid(), objectToCache);
+
+      // Skip caching secrets for HashiCorp vault.
+      List<EncryptedDataDetail> encryptedDataDetailsToCache =
+          encryptedDataDetails.stream()
+              .filter(encryptedDataDetail
+                  -> encryptedDataDetail.getEncryptedData().getEncryptionType() != EncryptionType.VAULT)
+              .collect(Collectors.toList());
+      if (isNotEmpty(encryptedDataDetailsToCache)) {
+        EncryptedDataDetails objectToCache =
+            EncryptedDataDetails.builder().encryptedDataDetailList(encryptedDataDetailsToCache).build();
+        secretsCache.put(encryptedData.getUuid(), objectToCache);
+      }
     }
 
     boolean enabled = featureFlagService.isEnabled(FeatureName.THREE_PHASE_SECRET_DECRYPTION, accountId);

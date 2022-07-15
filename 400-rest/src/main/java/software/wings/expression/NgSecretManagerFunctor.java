@@ -136,9 +136,18 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
       if (EmptyPredicate.isEmpty(encryptedDataDetails)) {
         throw new InvalidRequestException("No secret found with identifier + [" + secretIdentifier + "]", USER);
       }
-      EncryptedDataDetails objectToCache =
-          EncryptedDataDetails.builder().encryptedDataDetailList(encryptedDataDetails).build();
-      secretsCache.put(String.valueOf(keyHash), objectToCache);
+
+      // Skip caching secrets for HashiCorp vault.
+      List<EncryptedDataDetail> encryptedDataDetailsToCache =
+          encryptedDataDetails.stream()
+              .filter(encryptedDataDetail
+                  -> encryptedDataDetail.getEncryptedData().getEncryptionType() != EncryptionType.VAULT)
+              .collect(Collectors.toList());
+      if (isNotEmpty(encryptedDataDetailsToCache)) {
+        EncryptedDataDetails objectToCache =
+            EncryptedDataDetails.builder().encryptedDataDetailList(encryptedDataDetailsToCache).build();
+        secretsCache.put(String.valueOf(keyHash), objectToCache);
+      }
     }
 
     List<EncryptedDataDetail> localEncryptedDetails =
