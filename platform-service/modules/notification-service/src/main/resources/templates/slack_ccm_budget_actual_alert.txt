@@ -1,0 +1,46 @@
+{
+    "blocks": [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Budget Alert for ${perspective_name}* \n Hello, Your perspective is has *exceeded* it's monthly budget."
+            }
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+            }
+                "text": "*Perspective: * ${perspective_name} \n *Budget amount: * ${budget_amount}\n *Current Spend: * ${current_spend}  \n *Exceeded threshold: * ${budget_exceed_percent}% of Budget amount \n *Threshold exceeded on: * ${exceed_time}"
+        },
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "View Budget",
+                        "emoji": true
+                    },
+                    "value": "${budget_url}",
+                    "url": "${budget_url}"
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "View Perspective",
+                        "emoji": true
+                    },
+                    "value": "${perspective_url}",
+                    "url": "${perspective_url}"
+                }
+            ]
+        }
+    ]
+}

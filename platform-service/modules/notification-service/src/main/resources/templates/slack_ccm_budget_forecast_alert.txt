@@ -1,0 +1,46 @@
+{
+    "blocks": [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Budget Alert for ${perspective_name}* \n Hello, Your perspective is *approaching* it's monthly budget."
+            }
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Perspective: * ${perspective_name} \n *Budget amount: * ${budget_amount}\n *Forecasted Spend: * ${forecast_spend}  \n *Appraoching threshold: * ${budget_percent}% of Budget amount \n *Forecasted spend to exceed threshold on: * ${budget_exceed_threshold} "
+            }
+        },
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "View Budget",
+                        "emoji": true
+                    },
+                    "value": "${budget_url}",
+                    "url": "${budget_url}"
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "View Perspective",
+                        "emoji": true
+                    },
+                    "value": "${perspective_url}",
+                    "url": "${perspective_url}"
+                }
+            ]
+        }
+    ]
+}
