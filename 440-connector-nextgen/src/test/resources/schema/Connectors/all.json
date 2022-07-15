@@ -5096,6 +5096,9 @@
                 "type": "string"
               }
             },
+            "k8sAuthEndpoint": {
+              "type": "string"
+            },
             "namespace": {
               "type": "string"
             },
