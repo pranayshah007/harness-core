@@ -14,6 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ScopeLevel;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 
@@ -21,12 +22,12 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import javax.validation.constraints.AssertTrue;
+import javax.validation.constraints.NotEmpty;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(GITOPS)
 @Value
@@ -46,6 +47,8 @@ public class ClusterBatchRequest {
   public static class ClusterBasicDTO {
     @EntityIdentifier @Schema(description = "identifier of the cluster") String identifier;
     @Schema(description = "name of the cluster") @EntityName String name;
+    @Schema(description = "scope at which the cluster exists in harness gitops, project vs org vs account")
+    ScopeLevel scope;
   }
 
   @AssertTrue(
