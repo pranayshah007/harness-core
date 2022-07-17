@@ -442,6 +442,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   public void run(final boolean watched, final boolean isImmutableDelegate) {
     this.isImmutableDelegate = isImmutableDelegate;
 
+    log.info("Check the value of immutable {} ", isImmutableDelegate);
+
+    log.info("Checking the delegate published version {} ", versionInfoManager.getVersionInfo().getDelegateVersion());
+
     try {
       // Initialize delegate process in background.
       backgroundExecutor.submit(() -> { initDelegateProcess(watched); });
