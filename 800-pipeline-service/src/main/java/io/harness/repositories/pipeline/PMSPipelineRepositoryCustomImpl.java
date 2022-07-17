@@ -350,18 +350,13 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   }
 
   @Override
-  public PipelineEntity savePipelineEntityForImportedYAML(PipelineEntity pipelineToSave, boolean pushToGit) {
+  public PipelineEntity savePipelineEntityForImportedYAML(PipelineEntity pipelineToSave) {
     String accountIdentifier = pipelineToSave.getAccountIdentifier();
     String orgIdentifier = pipelineToSave.getOrgIdentifier();
     String projectIdentifier = pipelineToSave.getProjectIdentifier();
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
-    String yamlToPush = pipelineToSave.getYaml();
     addGitParamsToPipelineEntity(pipelineToSave, gitEntityInfo);
     return transactionHelper.performTransaction(() -> {
-      if (pushToGit) {
-        Scope scope = buildScope(pipelineToSave);
-        gitAwareEntityHelper.updateFileImportedFromGit(pipelineToSave, yamlToPush, scope);
-      }
       PipelineEntity savedPipelineEntity = mongoTemplate.save(pipelineToSave);
       checkForMetadataAndSaveIfAbsent(savedPipelineEntity);
       outboxService.save(

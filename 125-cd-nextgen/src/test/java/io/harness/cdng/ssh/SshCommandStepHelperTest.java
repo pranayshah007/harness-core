@@ -26,6 +26,7 @@ import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
@@ -87,6 +88,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
   @Mock private NGEncryptedDataService ngEncryptedDataService;
   @Mock private EncryptedDataDetail encryptedDataDetail;
   @Mock private CDExpressionResolver cdExpressionResolver;
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Spy @InjectMocks private SshCommandStepHelper helper;
 

@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
@@ -44,17 +45,25 @@ public class HarnessImageUtils {
   }
 
   public ConnectorDetails getHarnessImageConnectorDetailsForVM(NGAccess ngAccess, StageInfraDetails stageInfraDetails) {
-    if (!(stageInfraDetails instanceof VmStageInfraDetails)) {
-      throw new InvalidRequestException("Harness image step evaluation only allowed for VM.");
-    }
-    VmStageInfraDetails vmStageInfraDetails = (VmStageInfraDetails) stageInfraDetails;
     ConnectorDetails harnessInternalImageConnector = null;
-    if (isNotEmpty(vmStageInfraDetails.getHarnessImageConnectorRef())) {
-      harnessInternalImageConnector =
-          connectorUtils.getConnectorDetails(ngAccess, vmStageInfraDetails.getHarnessImageConnectorRef());
+    String harnessImageConnectorRef = getVmHarnessImageConnectorRef(stageInfraDetails);
+    if (isNotEmpty(harnessImageConnectorRef)) {
+      harnessInternalImageConnector = connectorUtils.getConnectorDetails(ngAccess, harnessImageConnectorRef);
     } else if (isNotEmpty(ciExecutionServiceConfig.getDefaultInternalImageConnector())) {
       harnessInternalImageConnector = connectorUtils.getDefaultInternalConnector(ngAccess);
     }
     return harnessInternalImageConnector;
+  }
+
+  private String getVmHarnessImageConnectorRef(StageInfraDetails stageInfraDetails) {
+    if (stageInfraDetails.getType() == StageInfraDetails.Type.VM) {
+      VmStageInfraDetails vmStageInfraDetails = (VmStageInfraDetails) stageInfraDetails;
+      return vmStageInfraDetails.getHarnessImageConnectorRef();
+    } else if (stageInfraDetails.getType() == StageInfraDetails.Type.DLITE_VM) {
+      DliteVmStageInfraDetails dliteVmStageInfraDetails = (DliteVmStageInfraDetails) stageInfraDetails;
+      return dliteVmStageInfraDetails.getHarnessImageConnectorRef();
+    } else {
+      throw new InvalidRequestException("Harness image step evaluation only allowed for VM.");
+    }
   }
 }

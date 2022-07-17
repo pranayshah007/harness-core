@@ -20,6 +20,7 @@ import static io.harness.yaml.schema.beans.SchemaConstants.EXPRESSION_PATTERN;
 import static io.harness.yaml.schema.beans.SchemaConstants.INTEGER_TYPE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.ITEMS_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.MIN_LENGTH_NODE;
+import static io.harness.yaml.schema.beans.SchemaConstants.NUMBER_STRING_WITH_EXPRESSION_PATTERN;
 import static io.harness.yaml.schema.beans.SchemaConstants.NUMBER_TYPE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.OBJECT_TYPE_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.ONE_OF_NODE;
@@ -569,6 +570,10 @@ public class YamlSchemaGenerator {
         return objectNode;
       case list:
         objectNode.put(TYPE_NODE, ARRAY_TYPE_NODE);
+        return objectNode;
+      case numberString:
+        objectNode.put(TYPE_NODE, STRING_TYPE_NODE);
+        objectNode.put(PATTERN_NODE, NUMBER_STRING_WITH_EXPRESSION_PATTERN);
         return objectNode;
       case expression:
         /*

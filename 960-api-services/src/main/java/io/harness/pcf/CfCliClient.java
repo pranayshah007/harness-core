@@ -32,6 +32,15 @@ public interface CfCliClient {
       throws PivotalClientApiException;
 
   /**
+   * Start application.
+   *
+   * @param cfRequestConfig pcf request config
+   * @param logCallback log callback
+   * @throws PivotalClientApiException
+   */
+  void startAppByCli(CfRequestConfig cfRequestConfig, LogCallback logCallback) throws PivotalClientApiException;
+
+  /**
    * Configure Autoscaler service.
    *
    * @param appAutoscalarRequestData application autoscaler request data

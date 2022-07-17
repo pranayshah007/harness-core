@@ -105,8 +105,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
     ConnectorDetails connectorDetails =
         connectorUtils.getConnectorDetails(AmbianceUtils.getNgAccess(ambiance), stepParameters.getConnectorRef());
 
-    ScmGitRefTaskParams scmGitRefTaskParams = obtainTaskParameters(
-        manualExecutionSource, connectorDetails, stepParameters.getProjectName(), stepParameters.getRepoName());
+    ScmGitRefTaskParams scmGitRefTaskParams =
+        obtainTaskParameters(manualExecutionSource, connectorDetails, stepParameters.getRepoName());
 
     final TaskData taskData = TaskData.builder()
                                   .async(true)
@@ -155,8 +155,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
         String prNumber = manualExecutionSource.getPrNumber();
         String tag = manualExecutionSource.getTag();
         try {
-          ScmConnector scmConnector = scmGitRefManager.getScmConnector(connectorDetails,
-              ngAccess.getAccountIdentifier(), stepParameters.getProjectName(), stepParameters.getRepoName());
+          ScmConnector scmConnector = scmGitRefManager.getScmConnector(
+              connectorDetails, ngAccess.getAccountIdentifier(), stepParameters.getRepoName());
           ScmGitRefTaskResponseData response = scmGitRefManager.fetchCodebaseMetadata(
               scmConnector, connectorDetails.getIdentifier(), branch, prNumber, tag);
           saveScmResponseToSweepingOutput(ambiance, stepParameters, response);
@@ -200,10 +200,10 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
   }
 
   @VisibleForTesting
-  ScmGitRefTaskParams obtainTaskParameters(ManualExecutionSource manualExecutionSource,
-      ConnectorDetails connectorDetails, String projectName, String repoName) {
+  ScmGitRefTaskParams obtainTaskParameters(
+      ManualExecutionSource manualExecutionSource, ConnectorDetails connectorDetails, String repoName) {
     ScmConnector scmConnector = (ScmConnector) connectorDetails.getConnectorConfig();
-    String completeUrl = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, projectName, repoName);
+    String completeUrl = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, repoName);
     scmConnector.setUrl(completeUrl);
 
     String branch = manualExecutionSource.getBranch();

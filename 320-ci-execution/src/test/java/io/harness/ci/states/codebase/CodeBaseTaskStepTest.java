@@ -73,7 +73,7 @@ public class CodeBaseTaskStepTest extends CategoryTest {
                                             .build();
 
     ScmGitRefTaskParams taskParams =
-        codeBaseTaskStep.obtainTaskParameters(executionSource, connectorDetails, null, "hello-world");
+        codeBaseTaskStep.obtainTaskParameters(executionSource, connectorDetails, "hello-world");
     assertThat(taskParams).isNotNull();
     assertThat(taskParams.getBranch()).isEqualTo("main");
     assertThat(taskParams.getScmConnector().getUrl()).isEqualTo("http://github.com/octocat/hello-world");
@@ -93,8 +93,7 @@ public class CodeBaseTaskStepTest extends CategoryTest {
                                                                  .build())
                                             .build();
 
-    ScmGitRefTaskParams taskParams =
-        codeBaseTaskStep.obtainTaskParameters(executionSource, connectorDetails, null, null);
+    ScmGitRefTaskParams taskParams = codeBaseTaskStep.obtainTaskParameters(executionSource, connectorDetails, null);
     assertThat(taskParams).isNotNull();
     assertThat(taskParams.getPrNumber()).isEqualTo(1);
     assertThat(taskParams.getScmConnector().getUrl()).isEqualTo("http://github.com/octocat/hello-world");

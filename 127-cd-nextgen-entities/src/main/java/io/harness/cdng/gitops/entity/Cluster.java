@@ -21,11 +21,11 @@ import io.harness.persistence.PersistentEntity;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
+import javax.validation.constraints.NotEmpty;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
-import org.hibernate.validator.constraints.NotEmpty;
 import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -66,6 +66,7 @@ public class Cluster implements PersistentEntity {
   @Wither @Id @org.mongodb.morphia.annotations.Id String id;
   @Trimmed @NotEmpty String accountId;
   @NotEmpty @EntityIdentifier String clusterRef;
+
   @Trimmed String orgIdentifier;
   @Trimmed String projectIdentifier;
 

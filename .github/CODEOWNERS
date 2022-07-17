@@ -55,7 +55,6 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /952-scm-java-client/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /953-events-api/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /954-connector-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/954-pms-contracts/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /955-alert-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /955-cg-yaml/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /955-delegate-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io

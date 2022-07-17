@@ -890,7 +890,7 @@ public class WingsApplication extends Application<MainConfiguration> {
             not(annotatedWith(SuppressValidation.class)), interceptor);
       }
     });
-    modules.add(new DelegateServiceModule(configuration.getDelegateMtlsSubdomain()));
+    modules.add(new DelegateServiceModule());
     modules.add(new CapabilityModule());
     modules.add(MigrationModule.getInstance());
     registerRemoteObserverModule(configuration, modules);

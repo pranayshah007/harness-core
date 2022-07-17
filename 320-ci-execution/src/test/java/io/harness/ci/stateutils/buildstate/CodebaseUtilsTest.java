@@ -10,7 +10,6 @@ package io.harness.ci.stateutils.buildstate;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.CodebaseUtils;
@@ -26,7 +25,6 @@ import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.rule.Owner;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -45,7 +43,7 @@ public class CodebaseUtilsTest extends CIExecutionTestBase {
                                  .build())
             .build();
 
-    String completeURL = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, null, null);
+    String completeURL = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, null);
     assertThat(completeURL).isEqualTo("https://github.com/test/repo");
   }
 
@@ -63,7 +61,7 @@ public class CodebaseUtilsTest extends CIExecutionTestBase {
                                  .build())
             .build();
 
-    String completeURL = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, null, null);
+    String completeURL = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, null);
     assertThat(completeURL).isEqualTo("git@github.com:test/test-repo.git");
   }
 
@@ -81,7 +79,7 @@ public class CodebaseUtilsTest extends CIExecutionTestBase {
                                  .build())
             .build();
 
-    String completeURL = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, null, "repo");
+    String completeURL = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, "repo");
     assertThat(completeURL).isEqualTo("https://github.com/test/repo");
   }
 
@@ -99,14 +97,13 @@ public class CodebaseUtilsTest extends CIExecutionTestBase {
                                  .build())
             .build();
 
-    String completeURL = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, null, "test-repo");
+    String completeURL = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, "test-repo");
     assertThat(completeURL).isEqualTo("git@github.com:test/test-repo");
   }
 
   @Test
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
-  @Ignore("Will be fixed for project type connector")
   public void testGetCompleteUrlForAzureHttpAccountConnector() {
     ConnectorDetails connectorDetails =
         ConnectorDetails.builder()
@@ -114,51 +111,30 @@ public class CodebaseUtilsTest extends CIExecutionTestBase {
             .connectorConfig(
                 AzureRepoConnectorDTO.builder()
                     .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
-                    .url("https://dev.azure.com/org")
+                    .url("https://dev.azure.com/org/project/")
                     .authentication(AzureRepoAuthenticationDTO.builder().authType(GitAuthType.HTTP).build())
                     .build())
             .build();
 
-    String completeURL = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, "project", "repo");
+    String completeURL = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, "repo");
     assertThat(completeURL).isEqualTo("https://dev.azure.com/org/project/_git/repo");
   }
 
   @Test
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
-  @Ignore("Will be fixed for project type connector")
   public void testGetCompleteUrlForAzureSshAccountConnector() {
     ConnectorDetails connectorDetails =
         ConnectorDetails.builder()
             .connectorType(ConnectorType.AZURE_REPO)
             .connectorConfig(AzureRepoConnectorDTO.builder()
                                  .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
-                                 .url("git@ssh.dev.azure.com:v3/org")
+                                 .url("git@ssh.dev.azure.com:v3/org/project/")
                                  .authentication(AzureRepoAuthenticationDTO.builder().authType(GitAuthType.SSH).build())
                                  .build())
             .build();
 
-    String completeURL = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, "project", "repo");
+    String completeURL = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, "repo");
     assertThat(completeURL).isEqualTo("git@ssh.dev.azure.com:v3/org/project/repo");
-  }
-
-  @Test
-  @Owner(developers = RAGHAV_GUPTA)
-  @Category(UnitTests.class)
-  @Ignore("Will be fixed for project type connector")
-  public void testGetCompleteUrlForAzureHttpAccountConnectorWithoutProjectName() {
-    ConnectorDetails connectorDetails =
-        ConnectorDetails.builder()
-            .connectorType(ConnectorType.AZURE_REPO)
-            .connectorConfig(
-                AzureRepoConnectorDTO.builder()
-                    .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
-                    .url("https://dev.azure.com/org")
-                    .authentication(AzureRepoAuthenticationDTO.builder().authType(GitAuthType.HTTP).build())
-                    .build())
-            .build();
-
-    assertThatThrownBy(() -> CodebaseUtils.getCompleteURLFromConnector(connectorDetails, null, "repo"))
-        .isInstanceOf(IllegalArgumentException.class);
   }
 }

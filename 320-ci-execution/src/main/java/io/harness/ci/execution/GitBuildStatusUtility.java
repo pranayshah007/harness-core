@@ -175,7 +175,7 @@ public class GitBuildStatusUtility {
     GitStatusCheckParams gitStatusCheckParams = convertParams(ciBuildStatusPushParameters);
     log.info("Sending git status update request for stage {}, planId {}, commitId {}, status {}", stageId,
         ambiance.getPlanExecutionId(), ciBuildStatusPushParameters.getSha(), ciBuildStatusPushParameters.getState());
-    gitStatusCheckHelper.sendStatus(gitStatusCheckParams, accountId);
+    gitStatusCheckHelper.sendStatus(gitStatusCheckParams);
   }
 
   private void sendStatusViaDelegate(
@@ -220,9 +220,8 @@ public class GitBuildStatusUtility {
     ConnectorDetails gitConnector = getGitConnector(ngAccess, buildStatusUpdateParameter.getConnectorIdentifier());
     validateSCMType(gitConnector.getConnectorType());
 
-    String projectName = buildStatusUpdateParameter.getProjectName();
     String repoName = buildStatusUpdateParameter.getRepoName();
-    String url = CodebaseUtils.getCompleteURLFromConnector(gitConnector, projectName, repoName);
+    String url = CodebaseUtils.getCompleteURLFromConnector(gitConnector, repoName);
 
     url = StringUtils.join(StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR);
 

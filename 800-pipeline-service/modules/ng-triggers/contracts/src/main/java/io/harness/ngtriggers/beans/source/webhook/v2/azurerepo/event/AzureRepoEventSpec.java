@@ -29,6 +29,4 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = AzureRepoIssueCommentSpec.class, name = ISSUE_COMMENT_EVENT_TYPE)
 })
 @OwnedBy(CI)
-public interface AzureRepoEventSpec extends PayloadAware, GitAware {
-  String getProjectName();
-}
+public interface AzureRepoEventSpec extends PayloadAware, GitAware {}

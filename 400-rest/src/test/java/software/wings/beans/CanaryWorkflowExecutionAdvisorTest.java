@@ -8,12 +8,14 @@
 package software.wings.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.ENABLE_EXPERIMENTAL_STEP_FAILURE_STRATEGIES;
 import static io.harness.beans.FeatureName.LOG_APP_DEFAULTS;
 import static io.harness.exception.FailureType.APPLICATION_ERROR;
 import static io.harness.exception.FailureType.TIMEOUT_ERROR;
 import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.GEORGE;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.MILOS;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
@@ -55,6 +57,7 @@ import software.wings.service.impl.WorkflowExecutionServiceImpl;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionEvent;
 import software.wings.sm.ExecutionEventAdvice;
+import software.wings.sm.ExecutionInterrupt;
 import software.wings.sm.State;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
@@ -69,19 +72,22 @@ import org.apache.commons.jexl3.JexlException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(CDC)
+@RunWith(PowerMockRunner.class)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class CanaryWorkflowExecutionAdvisorTest extends CategoryTest {
   private static final long VALID_TIMEOUT = 60000L;
-  CanaryWorkflowExecutionAdvisor canaryWorkflowExecutionAdvisor;
-  FeatureFlagService featureFlagService;
-  WorkflowExecutionServiceImpl executionService;
+  @Mock FeatureFlagService featureFlagService;
+  @Mock WorkflowExecutionServiceImpl executionService;
+  @InjectMocks CanaryWorkflowExecutionAdvisor canaryWorkflowExecutionAdvisor = new CanaryWorkflowExecutionAdvisor();
 
   @Before
   public void setUp() {
-    canaryWorkflowExecutionAdvisor = new CanaryWorkflowExecutionAdvisor();
-    featureFlagService = mock(FeatureFlagService.class);
     when(featureFlagService.isEnabled(LOG_APP_DEFAULTS, ACCOUNT_ID)).thenReturn(false);
   }
 
@@ -631,5 +637,25 @@ public class CanaryWorkflowExecutionAdvisorTest extends CategoryTest {
     ExecutionEventAdvice advice =
         canaryWorkflowExecutionAdvisor.computeExecutionEventAdvice(null, failureStrategy, executionEvent, null, null);
     assertThat(advice.getExecutionInterruptType()).isEqualTo(ExecutionInterruptType.END_EXECUTION);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldReturnCorrectStrategyInStep_RollbackWorkflow() {
+    doReturn(true).when(featureFlagService).isEnabled(ENABLE_EXPERIMENTAL_STEP_FAILURE_STRATEGIES, "accountId");
+
+    FailureStrategy failureStrategy = FailureStrategy.builder()
+                                          .failureTypes(Collections.singletonList(APPLICATION_ERROR))
+                                          .repairActionCode(RepairActionCode.ROLLBACK_WORKFLOW)
+                                          .build();
+    StateExecutionInstance stateExecutionInstance = aStateExecutionInstance().accountId("accountId").build();
+    ExecutionEvent executionEvent =
+        ExecutionEvent.builder().context(new ExecutionContextImpl(stateExecutionInstance)).build();
+
+    ExecutionEventAdvice advice = canaryWorkflowExecutionAdvisor.computeExecutionEventAdvice(
+        null, failureStrategy, executionEvent, null, stateExecutionInstance);
+    verify(executionService).triggerExecutionInterrupt(any(ExecutionInterrupt.class));
+    assertThat(advice.getExecutionInterruptType()).isEqualTo(ExecutionInterruptType.ROLLBACK);
   }
 }

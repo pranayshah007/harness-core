@@ -500,9 +500,6 @@
             }
           ]
         },
-        "projectName": {
-          "type": "string"
-        },
         "repoName": {
           "type": "string"
         },
@@ -1051,7 +1048,7 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -1065,7 +1062,7 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -1516,7 +1513,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -1695,7 +1692,8 @@
                   "format": "double"
                 },
                 {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*))"
                 }
               ]
             }
@@ -3671,7 +3669,7 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]

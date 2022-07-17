@@ -10,6 +10,7 @@ package io.harness.cdng.helm;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.NativeHelmRollbackOutcome.NativeHelmRollbackOutcomeBuilder;
 import io.harness.cdng.helm.beans.NativeHelmExecutionPassThroughData;
@@ -67,6 +68,7 @@ public class HelmRollbackStep extends TaskExecutableWithRollbackAndRbac<HelmCmdE
   public static final String HELM_COMMAND_NAME = "Helm Rollback";
 
   @Inject NativeHelmStepHelper nativeHelmStepHelper;
+  @Inject private CDStepHelper cdStepHelper;
   @Inject private OutcomeService outcomeService;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
@@ -171,19 +173,19 @@ public class HelmRollbackStep extends TaskExecutableWithRollbackAndRbac<HelmCmdE
     HelmRollbackCommandRequestNGBuilder rollbackCommandRequestNGBuilder = HelmRollbackCommandRequestNG.builder();
     InfrastructureOutcome infrastructure = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-    String releaseName = nativeHelmStepHelper.getReleaseName(ambiance, infrastructure);
+    String releaseName = cdStepHelper.getReleaseName(ambiance, infrastructure);
     int rollbackVersion = nativeHelmDeployOutcome.getPrevReleaseVersion();
 
     rollbackCommandRequestNGBuilder.accountId(AmbianceUtils.getAccountId(ambiance))
         .commandName(HELM_COMMAND_NAME)
         .prevReleaseVersion(rollbackVersion)
-        .k8sInfraDelegateConfig(nativeHelmStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
+        .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
         .manifestDelegateConfig(nativeHelmStepHelper.getManifestDelegateConfig(manifestOutcome, ambiance))
         .commandUnitsProgress(CommandUnitsProgress.builder().build())
         .releaseName(releaseName)
         .helmVersion(nativeHelmStepHelper.getHelmVersionBasedOnFF(
             helmChartManifestOutcome.getHelmVersion(), AmbianceUtils.getAccountId(ambiance)))
-        .namespace(nativeHelmStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance).getNamespace())
+        .namespace(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance).getNamespace())
         .k8SteadyStateCheckEnabled(cdFeatureFlagHelper.isEnabled(
             AmbianceUtils.getAccountId(ambiance), FeatureName.HELM_STEADY_STATE_CHECK_1_16))
         .useLatestKubectlVersion(

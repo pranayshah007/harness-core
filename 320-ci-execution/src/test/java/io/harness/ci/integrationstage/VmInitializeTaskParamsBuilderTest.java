@@ -29,6 +29,7 @@ import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.tiserviceclient.TIServiceUtils;
 import io.harness.ci.utils.CIVmSecretEvaluator;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
+import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
@@ -83,8 +84,6 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
 
     String stageRuntimeId = "test";
 
-    CIVmInitializeTaskParams expected = null;
-
     doNothing().when(vmInitializeUtils).validateStageConfig(any(), any());
     when(vmInitializeUtils.getOS(initializeStepInfo.getInfrastructure())).thenReturn(OSType.Linux);
     when(vmInitializeUtils.getVolumeToMountPath(any(), any())).thenReturn(volToMountPath);
@@ -114,7 +113,51 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     when(featureFlagService.isEnabled(any(), any())).thenReturn(false);
 
     CIVmInitializeTaskParams response =
-        vmInitializeTaskParamsBuilder.getVmInitializeTaskParams(initializeStepInfo, ambiance, "");
+        vmInitializeTaskParamsBuilder.getDirectVmInitializeTaskParams(initializeStepInfo, ambiance);
     assertThat(response.getStageRuntimeId()).isEqualTo(stageRuntimeId);
+  }
+
+  @Test
+  @Owner(developers = SHUBHAM)
+  @Category(UnitTests.class)
+  public void getHostedVmInitializeTaskParams() {
+    InitializeStepInfo initializeStepInfo = VmInitializeTaskParamsHelper.getHostedVmInitializeStep();
+    Map<String, String> volToMountPath = new HashMap<>();
+    volToMountPath.put("shared-0", "/tmp");
+    volToMountPath.put("harness", "/harness");
+
+    String stageRuntimeId = "test";
+
+    doNothing().when(vmInitializeUtils).validateStageConfig(any(), any());
+    when(vmInitializeUtils.getOS(initializeStepInfo.getInfrastructure())).thenReturn(OSType.Linux);
+    when(vmInitializeUtils.getVolumeToMountPath(any(), any())).thenReturn(volToMountPath);
+    when(executionSweepingOutputService.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder().found(false).build());
+    when(executionSweepingOutputResolver.consume(any(), any(), any(), any())).thenReturn("");
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails)))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(StageDetails.builder().stageRuntimeID(stageRuntimeId).build())
+                        .build());
+
+    Map<String, String> m = new HashMap<>();
+    when(codebaseUtils.getGitConnector(AmbianceUtils.getNgAccess(ambiance), initializeStepInfo.getCiCodebase(),
+             initializeStepInfo.isSkipGitClone()))
+        .thenReturn(null);
+    when(codebaseUtils.getCodebaseVars(any(), any())).thenReturn(m);
+    when(codebaseUtils.getGitEnvVariables(null, initializeStepInfo.getCiCodebase())).thenReturn(m);
+
+    when(logServiceUtils.getLogServiceConfig()).thenReturn(LogServiceConfig.builder().baseUrl("1.1.1.1").build());
+    when(logServiceUtils.getLogServiceToken(any())).thenReturn("test");
+    when(tiServiceUtils.getTiServiceConfig()).thenReturn(TIServiceConfig.builder().baseUrl("1.1.1.2").build());
+    when(tiServiceUtils.getTIServiceToken(any())).thenReturn("test");
+    when(stoServiceUtils.getStoServiceConfig()).thenReturn(STOServiceConfig.builder().baseUrl("1.1.1.3").build());
+    when(stoServiceUtils.getSTOServiceToken(any())).thenReturn("test");
+    when(featureFlagService.isEnabled(any(), any())).thenReturn(false);
+
+    DliteVmInitializeTaskParams response =
+        vmInitializeTaskParamsBuilder.getHostedVmInitializeTaskParams(initializeStepInfo, ambiance);
+    assertThat(response.getSetupVmRequest().getId()).isEqualTo(stageRuntimeId);
   }
 }

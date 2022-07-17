@@ -1028,6 +1028,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     } finally {
       if (response != null && !response.isSuccessful()) {
         String errorResponse = response.errorBody().string();
+
+        log.warn("Received Error Response: {}", errorResponse);
+
         if (errorResponse.contains(INVALID_TOKEN.name())) {
           log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
           initiateSelfDestruct();
@@ -1040,6 +1043,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           log.warn("Delegate used revoked token. It will be frozen and drained.");
           freeze();
         }
+
         response.errorBody().close();
       }
     }
@@ -1073,7 +1077,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
       if (restResponse == null || restResponse.getResource() == null) {
         log.error(
-            "Error occurred while registering delegate with manager for account {}. Please see the manager log for more information",
+            "Error occurred while registering delegate with manager for account '{}' - Please see the manager log for more information.",
             accountId);
         sleep(ofMinutes(1));
         continue;

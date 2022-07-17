@@ -9,6 +9,7 @@ package io.harness.steps.approval;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.YamlExtraProperties;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
@@ -22,6 +23,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.YamlTypes;
 import io.harness.steps.approval.step.harness.HarnessApprovalStepNode;
+import io.harness.steps.approval.step.harness.beans.ApproverInputInfo;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -73,11 +75,13 @@ public class ApprovalStepVariableCreator extends GenericStepVariableCreator<Harn
       String fqnPrefix, String localNamePrefix, HarnessApprovalStepNode config) {
     YamlExtraProperties stepExtraProperties = super.getStepExtraProperties(fqnPrefix, localNamePrefix, config);
 
-    List<String> outputExpressions = config.getHarnessApprovalStepInfo()
-                                         .getApproverInputs()
-                                         .stream()
-                                         .map(entry -> APPROVER_INPUTS_EXPRESSION + entry.getName())
-                                         .collect(Collectors.toList());
+    List<String> outputExpressions = new ArrayList<>();
+    List<ApproverInputInfo> approverInputs = config.getHarnessApprovalStepInfo().getApproverInputs();
+    if (EmptyPredicate.isNotEmpty(approverInputs)) {
+      outputExpressions = approverInputs.stream()
+                              .map(entry -> APPROVER_INPUTS_EXPRESSION + entry.getName())
+                              .collect(Collectors.toList());
+    }
 
     List<YamlProperties> outputProperties = new LinkedList<>();
     for (String outputExpression : outputExpressions) {

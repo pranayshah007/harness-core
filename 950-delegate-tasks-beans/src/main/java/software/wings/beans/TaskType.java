@@ -18,11 +18,17 @@ import io.harness.delegate.beans.ci.docker.CIDockerCleanupStepRequest;
 import io.harness.delegate.beans.ci.docker.CIDockerExecuteStepRequest;
 import io.harness.delegate.beans.ci.docker.CIDockerInitializeTaskRequest;
 import io.harness.delegate.beans.ci.docker.DockerTaskExecutionResponse;
+import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
+import io.harness.delegate.beans.ci.vm.dlite.DliteVmCleanupTaskParams;
+import io.harness.delegate.beans.ci.vm.dlite.DliteVmExecuteStepTaskParams;
+import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
 import io.harness.delegate.task.TaskParameters;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
 public enum TaskType {
+  CUSTOM_MANIFEST_VALUES_FETCH_TASK_NG(
+      TaskGroup.CUSTOM_MANIFEST_VALUES_FETCH_TASK, "Custom Manifest/Values Fetch Task"),
   GITOPS_TASK_NG(TaskGroup.GIT),
   BATCH_CAPABILITY_CHECK(TaskGroup.BATCH_CAPABILITY_CHECK),
   CAPABILITY_VALIDATION(TaskGroup.CAPABILITY_VALIDATION),
@@ -370,7 +376,11 @@ public enum TaskType {
   CI_DOCKER_EXECUTE_TASK(TaskGroup.CI, CIDockerExecuteStepRequest.class, DockerTaskExecutionResponse.class, true),
   CI_DOCKER_CLEANUP_TASK(TaskGroup.CI, CIDockerCleanupStepRequest.class, DockerTaskExecutionResponse.class, true),
   NG_LDAP_TEST_USER_SETTINGS(TaskGroup.LDAP),
-  NG_LDAP_TEST_GROUP_SETTINGS(TaskGroup.LDAP);
+  NG_LDAP_TEST_GROUP_SETTINGS(TaskGroup.LDAP),
+  DLITE_CI_VM_INITIALIZE_TASK(TaskGroup.CI, DliteVmInitializeTaskParams.class, VmTaskExecutionResponse.class, true),
+  DLITE_CI_VM_EXECUTE_TASK(TaskGroup.CI, DliteVmExecuteStepTaskParams.class, VmTaskExecutionResponse.class, true),
+  DLITE_CI_VM_CLEANUP_TASK(TaskGroup.CI, DliteVmCleanupTaskParams.class, VmTaskExecutionResponse.class, true);
+
   private final TaskGroup taskGroup;
   private final String displayName;
   private final Class<? extends TaskParameters> request;

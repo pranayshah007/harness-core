@@ -7,6 +7,7 @@
 
 package io.harness.beans.stages;
 
+import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -28,7 +29,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
-import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -57,10 +57,11 @@ public class IntegrationStageConfigImpl implements IntegrationStageConfig {
   ParameterField<List<String>> sharedPaths;
 
   ExecutionElementConfig execution;
-  @NotNull
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = UseFromStageInfraYaml.class)
   Infrastructure infrastructure;
+
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> runsOn;
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = "[Lio.harness.beans.dependencies.DependencyElement;")
   ParameterField<List<DependencyElement>> serviceDependencies;

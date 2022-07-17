@@ -4,10 +4,10 @@ load("//:tools/bazel/macros.bzl", "run_analysis")
 
 shared_dependencies = [
     "//878-ng-common-utilities:module",
-    "//879-pms-sdk:module",
     "//930-delegate-tasks:module",
     "//960-persistence:module",
     "//999-annotations:module",
+    "//clients/pipeline-service/pms-sdk:module",
     "//product/ci/engine/proto:ciengine_java_proto",
     "@maven//:aopalliance_aopalliance",
     "@maven//:cglib_cglib_nodep",

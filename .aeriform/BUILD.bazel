@@ -204,33 +204,17 @@ aeriform("//870-cg-orchestration:tests")
 
 aeriform("//874-orchestration-delay:module")
 
-aeriform("//876-orchestration-beans:module")
-
-aeriform("//876-orchestration-beans:tests")
-
 aeriform("//878-ng-common-utilities:module")
 
 aeriform("//878-ng-common-utilities:tests")
-
-aeriform("//879-pms-sdk:module")
-
-aeriform("//879-pms-sdk:tests")
 
 aeriform("//880-pipeline-cd-commons:module")
 
 aeriform("//880-pipeline-cd-commons:tests")
 
-aeriform("//882-pms-sdk-core:module")
-
-aeriform("//882-pms-sdk-core:supporter-test")
-
-aeriform("//882-pms-sdk-core:tests")
-
 aeriform("//884-pms-commons:module")
 
 aeriform("//884-pms-commons:tests")
-
-aeriform("//888-pms-client:module")
 
 aeriform("//890-sm-core:module")
 
@@ -276,7 +260,7 @@ aeriform("//930-ng-license-manager:tests")
 
 aeriform("//932-connector-task:module")
 
-aeriform("//933-scm-commons:module")
+aeriform("//933-ci-commons:module")
 
 aeriform("//935-analyser-service:module")
 
@@ -387,8 +371,6 @@ aeriform("//954-connector-beans:module")
 aeriform("//954-connector-beans:tests")
 
 aeriform("//954-feature-flag-sdk:module")
-
-aeriform("//954-pms-contracts:module")
 
 aeriform("//955-alert-beans:module")
 

@@ -26,4 +26,6 @@ public interface IntegrationStageConfig extends StageInfoConfig {
   Infrastructure getInfrastructure();
   ParameterField<List<DependencyElement>> getServiceDependencies();
   ParameterField<Boolean> getCloneCodebase();
+
+  ParameterField<String> getRunsOn();
 }

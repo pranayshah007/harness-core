@@ -94,7 +94,6 @@ public class CodebasePlanCreator {
     CodeBaseTaskStepParameters codeBaseTaskStepParameters = CodeBaseTaskStepParameters.builder()
                                                                 .connectorRef(ciCodeBase.getConnectorRef().getValue())
                                                                 .repoName(ciCodeBase.getRepoName().getValue())
-                                                                .projectName(ciCodeBase.getProjectName().getValue())
                                                                 .executionSource(executionSource)
                                                                 .build();
 

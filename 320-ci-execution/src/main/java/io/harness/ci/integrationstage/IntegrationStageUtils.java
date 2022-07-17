@@ -300,10 +300,10 @@ public class IntegrationStageUtils {
   }
 
   public String retrieveGenericGitConnectorURL(CodeBase ciCodebase, GitConnectionType connectionType, String url) {
-    String gitUrl;
+    String gitUrl = "";
     if (connectionType == GitConnectionType.REPO) {
       gitUrl = url;
-    } else if (connectionType == GitConnectionType.ACCOUNT) {
+    } else if (connectionType == GitConnectionType.PROJECT || connectionType == GitConnectionType.ACCOUNT) {
       if (ciCodebase == null) {
         throw new IllegalArgumentException("CI codebase spec is not set");
       }
@@ -312,11 +312,12 @@ public class IntegrationStageUtils {
         throw new IllegalArgumentException("Repo name is not set in CI codebase spec");
       }
 
-      String projectName = ciCodebase.getProjectName().getValue();
       String repoName = ciCodebase.getRepoName().getValue();
 
-      if (isNotEmpty(projectName) && url.contains(AZURE_REPO_BASE_URL)) {
-        gitUrl = GitClientHelper.getCompleteUrlForAccountLevelAzureConnector(url, projectName, repoName);
+      if (connectionType == GitConnectionType.PROJECT) {
+        if (url.contains(AZURE_REPO_BASE_URL)) {
+          gitUrl = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(url, repoName);
+        }
       } else {
         gitUrl = StringUtils.join(StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR,
             StringUtils.stripStart(repoName, PATH_SEPARATOR));

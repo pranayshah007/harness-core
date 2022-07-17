@@ -11,7 +11,7 @@ import static io.harness.eraro.ErrorCode.POLICY_EVALUATION_FAILURE;
 
 import io.harness.eraro.Level;
 import io.harness.exception.WingsException;
-import io.harness.pms.contracts.governance.GovernanceMetadata;
+import io.harness.governance.GovernanceMetadata;
 
 public class PolicyEvaluationFailureException extends WingsException {
   private static final String MESSAGE_KEY = "message";

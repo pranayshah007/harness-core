@@ -127,6 +127,7 @@ public class HelmTaskHelperBase {
   public static final String VERSION_KEY = "version:";
   public static final String NAME_KEY = "name:";
   public static final String REGISTRY_URL = "${REGISTRY_URL}";
+  private static final String CHMOD = "chmod go-r ";
 
   @Inject private K8sGlobalConfigService k8sGlobalConfigService;
   @Inject private NgChartmuseumClientFactory ngChartmuseumClientFactory;
@@ -1233,6 +1234,17 @@ public class HelmTaskHelperBase {
       default:
         throw new InvalidRequestException(
             format("Store type: %s not supported for helm values fetch task NG", helmStoreDelegateConfig.getType()));
+    }
+  }
+
+  public void revokeReadPermission(String filePath) {
+    String cmd = CHMOD + filePath;
+
+    ProcessExecutor processExecutor = new ProcessExecutor().command("/bin/sh", "-c", cmd);
+    try {
+      processExecutor.execute();
+    } catch (Exception e) {
+      log.error("Unable to revoke the readable permissions for KubeConfig file ", e);
     }
   }
 }

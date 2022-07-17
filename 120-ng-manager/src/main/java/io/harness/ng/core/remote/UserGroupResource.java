@@ -165,7 +165,6 @@ public class UserGroupResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(USERGROUP, userGroupDTO.getIdentifier()), MANAGE_USERGROUP_PERMISSION);
     validateScopes(accountIdentifier, orgIdentifier, projectIdentifier, userGroupDTO);
-    checkExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, userGroupDTO.getIdentifier());
     userGroupDTO.setAccountIdentifier(accountIdentifier);
     userGroupDTO.setOrgIdentifier(orgIdentifier);
     userGroupDTO.setProjectIdentifier(projectIdentifier);

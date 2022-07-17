@@ -74,6 +74,7 @@ import static org.apache.commons.lang3.StringUtils.substringAfter;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
 import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
+import io.harness.agent.beans.AgentMtlsEndpointDetails;
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -107,7 +108,6 @@ import io.harness.delegate.beans.DelegateGroup.DelegateGroupKeys;
 import io.harness.delegate.beans.DelegateGroupStatus;
 import io.harness.delegate.beans.DelegateInitializationDetails;
 import io.harness.delegate.beans.DelegateInstanceStatus;
-import io.harness.delegate.beans.DelegateMtlsEndpointDetails;
 import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfileParams;
@@ -170,10 +170,10 @@ import io.harness.persistence.UuidAware;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.service.intfc.AgentMtlsEndpointService;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateInsightsService;
-import io.harness.service.intfc.DelegateMtlsEndpointService;
 import io.harness.service.intfc.DelegateProfileObserver;
 import io.harness.service.intfc.DelegateSetupService;
 import io.harness.service.intfc.DelegateSyncService;
@@ -356,6 +356,8 @@ public class DelegateServiceImpl implements DelegateService {
 
   private static final long MAX_GRPC_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
 
+  private static final Duration HEARTBEAT_EXPIRY_TIME = ofMinutes(5);
+
   static {
     templateConfiguration.setTemplateLoader(new ClassTemplateLoader(DelegateServiceImpl.class, "/delegatetemplates"));
   }
@@ -418,8 +420,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private DelegateVersionService delegateVersionService;
-  private static final Duration HEARTBEAT_EXPIRY_TIME = ofMinutes(5);
-  @Inject private DelegateMtlsEndpointService delegateMtlsEndpointService;
+  @Inject private AgentMtlsEndpointService agentMtlsEndpointService;
 
   private final LoadingCache<String, String> delegateVersionCache =
       CacheBuilder.newBuilder()
@@ -1567,9 +1568,9 @@ public class DelegateServiceImpl implements DelegateService {
       return original;
     }
 
-    DelegateMtlsEndpointDetails delegateMtlsEndpoint =
-        this.delegateMtlsEndpointService.getEndpointForAccountOrNull(original.getAccountId());
-    if (delegateMtlsEndpoint == null) {
+    AgentMtlsEndpointDetails mtlsEndpoint =
+        this.agentMtlsEndpointService.getEndpointForAccountOrNull(original.getAccountId());
+    if (mtlsEndpoint == null) {
       return original;
     }
 
@@ -1586,9 +1587,9 @@ public class DelegateServiceImpl implements DelegateService {
     String baseUri = original.getManagerHost();
 
     updatedBuilder.managerHost(
-        this.updateUriToTargetMtlsEndpoint(original.getManagerHost(), baseUri, delegateMtlsEndpoint.getFqdn()));
-    updatedBuilder.logStreamingServiceBaseUrl(this.updateUriToTargetMtlsEndpoint(
-        original.getLogStreamingServiceBaseUrl(), baseUri, delegateMtlsEndpoint.getFqdn()));
+        this.updateUriToTargetMtlsEndpoint(original.getManagerHost(), baseUri, mtlsEndpoint.getFqdn()));
+    updatedBuilder.logStreamingServiceBaseUrl(
+        this.updateUriToTargetMtlsEndpoint(original.getLogStreamingServiceBaseUrl(), baseUri, mtlsEndpoint.getFqdn()));
 
     return updatedBuilder.build();
   }
@@ -4289,13 +4290,16 @@ public class DelegateServiceImpl implements DelegateService {
         persistence.createQuery(Delegate.class).filter(DelegateKeys.accountId, accountId).asList();
     return delegateList.stream()
         .filter(delegate -> checkForDelegateHavingAllTags(delegate, tags))
-        .map(delegate -> DelegateDTO.convertToDTO(delegate, null))
+        .map(delegate
+            -> DelegateDTO.convertToDTO(delegate, delegateSetupService.listDelegateImplicitSelectors(delegate)))
         .collect(Collectors.toList());
   }
 
   private boolean checkForDelegateHavingAllTags(Delegate delegate, DelegateTags tags) {
-    List<String> delegateTags = delegate.getTags();
-    delegateTags.addAll(delegateSetupService.listDelegateImplicitSelectors(delegate));
+    List<String> delegateTags = delegateSetupService.listDelegateImplicitSelectors(delegate);
+    if (isNotEmpty(delegate.getTags())) {
+      delegateTags.addAll(delegate.getTags());
+    }
     return delegateTags.containsAll(tags.getTags());
   }
 

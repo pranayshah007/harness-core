@@ -28,10 +28,13 @@ import static io.harness.pcf.model.PcfConstants.INSTANCE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.NAME_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.NO_ROUTE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.PATH_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.PROCESSES_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.PROCESSES_TYPE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.RANDOM_ROUTE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.ROUTES_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.ROUTE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.USERNAME_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT;
 
 import static software.wings.beans.LogColor.Green;
 import static software.wings.beans.LogColor.Red;
@@ -307,6 +310,18 @@ public class PcfCommandTaskHelper {
     updateArtifactDetails(requestData, cfCommandSetupRequest, applicationToBeUpdated);
     applicationToBeUpdated.put(INSTANCE_MANIFEST_YML_ELEMENT, 0);
 
+    if (applicationToBeUpdated.containsKey(PROCESSES_MANIFEST_YML_ELEMENT)) {
+      Object processes = applicationToBeUpdated.get(PROCESSES_MANIFEST_YML_ELEMENT);
+      if (processes instanceof ArrayList<?>) {
+        ArrayList<Map<String, Object>> allProcesses = (ArrayList<Map<String, Object>>) processes;
+        for (Map<String, Object> process : allProcesses) {
+          Object p = process.get(PROCESSES_TYPE_MANIFEST_YML_ELEMENT);
+          if ((p instanceof String) && (p.toString().equals(WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT))) {
+            process.put(INSTANCE_MANIFEST_YML_ELEMENT, 0);
+          }
+        }
+      }
+    }
     // Update routes.
     updateConfigWithRoutesIfRequired(requestData, applicationToBeUpdated, cfCommandSetupRequest);
     // We do not want to change order

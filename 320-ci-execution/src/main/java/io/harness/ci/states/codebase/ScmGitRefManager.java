@@ -93,10 +93,9 @@ public class ScmGitRefManager {
     }
   }
 
-  public ScmConnector getScmConnector(
-      ConnectorDetails connectorDetails, String accountId, String projectName, String repoName) {
+  public ScmConnector getScmConnector(ConnectorDetails connectorDetails, String accountId, String repoName) {
     ScmConnector scmConnector = (ScmConnector) connectorDetails.getConnectorConfig();
-    String completeUrl = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, projectName, repoName);
+    String completeUrl = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, repoName);
     scmConnector.setUrl(completeUrl);
 
     final DecryptableEntity decryptedScmSpec =

@@ -258,7 +258,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     // ServiceNow Outcome
     assertThat(response.getTicket().getNumber()).isEqualTo(TICKET_NUMBER);
     assertThat(response.getTicket().getUrl())
-        .isEqualTo("https://harness.service-now.com/nav_to.do?uri=/incident.do?sysparm_query=number=INC00001");
+        .isEqualTo(
+            "https://harness.service-now.com/nav_to.do?uri=/incident.do?sys_id=aacc24dcdb5f85509e7c2a59139619c4");
     assertThat(response.getTicket().getFields()).hasSize(2);
     verify(secretDecryptionService).decrypt(any(), any());
     verify(serviceNowRestClient).createUsingTemplate(anyString(), eq("incident"), eq(TEMPLATE_NAME));
@@ -358,7 +359,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     // ServiceNow Outcome
     assertThat(response.getTicket().getNumber()).isEqualTo(TICKET_NUMBER);
     assertThat(response.getTicket().getUrl())
-        .isEqualTo("https://harness.service-now.com/nav_to.do?uri=/incident.do?sysparm_query=number=INC00001");
+        .isEqualTo(
+            "https://harness.service-now.com/nav_to.do?uri=/incident.do?sys_id=aacc24dcdb5f85509e7c2a59139619c4");
     assertThat(response.getTicket().getFields()).hasSize(2);
     verify(secretDecryptionService).decrypt(any(), any());
     verify(serviceNowRestClient).updateUsingTemplate(anyString(), eq("incident"), eq(TEMPLATE_NAME), eq(TICKET_NUMBER));

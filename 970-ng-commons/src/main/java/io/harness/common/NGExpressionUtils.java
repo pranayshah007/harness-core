@@ -37,6 +37,10 @@ public class NGExpressionUtils {
   private static final Pattern ExecutionInputPattern = Pattern.compile(EXPR_START_ESC + "input" + EXPR_END_ESC + ".*"
       + ".executionInput\\(\\)"
       + ".*");
+
+  private static final Pattern UpdatedExecutionInputPattern = Pattern.compile(EXPR_START_ESC + "executionInput."
+      + ".*" + EXPR_END_ESC);
+
   public static final String DEFAULT_INPUT_SET_EXPRESSION = EXPR_START + "input" + EXPR_END;
   public static final Pattern GENERIC_EXPRESSIONS_PATTERN =
       Pattern.compile(EXPR_START_ESC + "([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)" + EXPR_END_ESC);
@@ -53,6 +57,12 @@ public class NGExpressionUtils {
       return false;
     }
     return NGExpressionUtils.ExecutionInputPattern.matcher(expression).matches();
+  }
+  public boolean matchesUpdatedExecutionInputPattern(String expression) {
+    if (isEmpty(expression)) {
+      return false;
+    }
+    return NGExpressionUtils.UpdatedExecutionInputPattern.matcher(expression).matches();
   }
 
   public boolean matchesGenericExpressionPattern(final String expression) {

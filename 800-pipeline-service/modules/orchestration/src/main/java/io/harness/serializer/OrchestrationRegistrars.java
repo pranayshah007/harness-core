@@ -96,8 +96,6 @@ import io.harness.serializer.spring.converters.orchestrationMap.OrchestrationMap
 import io.harness.serializer.spring.converters.orchestrationMap.OrchestrationMapWriteConverter;
 import io.harness.serializer.spring.converters.outcomes.PmsOutcomeReadConverter;
 import io.harness.serializer.spring.converters.outcomes.PmsOutcomeWriteConverter;
-import io.harness.serializer.spring.converters.outputs.PmsSweepingOutputReadConverter;
-import io.harness.serializer.spring.converters.outputs.PmsSweepingOutputWriteConverter;
 import io.harness.serializer.spring.converters.plannode.PlanNodeProtoReadConverter;
 import io.harness.serializer.spring.converters.plannode.PlanNodeProtoWriteConverter;
 import io.harness.serializer.spring.converters.principal.ExecutionPrincipalInfoReadConverter;
@@ -112,8 +110,6 @@ import io.harness.serializer.spring.converters.sdk.SdkModuleInfoReadConverter;
 import io.harness.serializer.spring.converters.sdk.SdkModuleInfoWriteConverter;
 import io.harness.serializer.spring.converters.skip.SkipInfoReadConverter;
 import io.harness.serializer.spring.converters.skip.SkipInfoWriteConverter;
-import io.harness.serializer.spring.converters.stepdetails.PmsStepDetailsReadConverter;
-import io.harness.serializer.spring.converters.stepdetails.PmsStepDetailsWriteConverter;
 import io.harness.serializer.spring.converters.stepoutcomeref.StepOutcomeRefReadConverter;
 import io.harness.serializer.spring.converters.stepoutcomeref.StepOutcomeRefWriteConverter;
 import io.harness.serializer.spring.converters.stepparameters.PmsStepParametersReadConverter;
@@ -226,14 +222,12 @@ public class OrchestrationRegistrars {
       InterruptEffectWriteConverter.class, SdkModuleInfoReadConverter.class, SdkModuleInfoWriteConverter.class,
       ConsumerConfigReadConverter.class, ConsumerConfigWriteConverter.class, OrchestrationMapReadConverter.class,
       OrchestrationMapWriteConverter.class, SdkStepWriteConverter.class, SdkStepReadConverter.class,
-      PmsOutcomeReadConverter.class, PmsOutcomeWriteConverter.class, PmsSweepingOutputReadConverter.class,
-      PmsSweepingOutputWriteConverter.class, PmsStepParametersReadConverter.class,
-      PmsStepParametersWriteConverter.class, PmsStepDetailsReadConverter.class, PmsStepDetailsWriteConverter.class,
-      PolicyMetadataReadConverter.class, PolicyMetadataWriteConverter.class, PolicySetMetadataReadConverter.class,
-      PolicySetMetadataWriteConverter.class, GovernanceMetadataReadConverter.class,
-      GovernanceMetadataWriteConverter.class, JsonExpansionInfoReadConverter.class,
-      JsonExpansionInfoWriteConverter.class, StrategyMetadataReadConverter.class, MatrixMetadataReadConverter.class,
-      StrategyMetadataWriteConverter.class, MatrixMetadataWriteConverter.class);
+      PmsOutcomeReadConverter.class, PmsOutcomeWriteConverter.class, PmsStepParametersReadConverter.class,
+      PmsStepParametersWriteConverter.class, PolicyMetadataReadConverter.class, PolicyMetadataWriteConverter.class,
+      PolicySetMetadataReadConverter.class, PolicySetMetadataWriteConverter.class,
+      GovernanceMetadataReadConverter.class, GovernanceMetadataWriteConverter.class,
+      JsonExpansionInfoReadConverter.class, JsonExpansionInfoWriteConverter.class, StrategyMetadataReadConverter.class,
+      MatrixMetadataReadConverter.class, StrategyMetadataWriteConverter.class, MatrixMetadataWriteConverter.class);
 
   public static final List<Class<? extends Converter<?, ?>>> springConverters =
       ImmutableList.<Class<? extends Converter<?, ?>>>builder()

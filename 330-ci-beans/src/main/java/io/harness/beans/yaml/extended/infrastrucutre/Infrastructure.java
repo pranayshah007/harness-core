@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonValue;
+import io.swagger.annotations.ApiModelProperty;
 import org.springframework.data.annotation.TypeAlias;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = UseFromStageInfraYaml.class)
@@ -18,7 +19,8 @@ import org.springframework.data.annotation.TypeAlias;
   @JsonSubTypes.Type(value = K8sDirectInfraYaml.class, name = "KubernetesDirect")
   , @JsonSubTypes.Type(value = UseFromStageInfraYaml.class, name = "UseFromStage"),
       @JsonSubTypes.Type(value = VmInfraYaml.class, name = "VM"),
-      @JsonSubTypes.Type(value = K8sHostedInfraYaml.class, name = "KubernetesHosted")
+      @JsonSubTypes.Type(value = K8sHostedInfraYaml.class, name = "KubernetesHosted"),
+      @JsonSubTypes.Type(value = RunsOnInfra.class, name = "RunsOn"),
 })
 
 public interface Infrastructure {
@@ -27,7 +29,8 @@ public interface Infrastructure {
     @JsonProperty("KubernetesDirect") KUBERNETES_DIRECT("KubernetesDirect"),
     @JsonProperty("UseFromStage") USE_FROM_STAGE("UseFromStage"),
     @JsonProperty("VM") VM("VM"),
-    @JsonProperty("KubernetesHosted") KUBERNETES_HOSTED("KubernetesHosted");
+    @JsonProperty("KubernetesHosted") KUBERNETES_HOSTED("KubernetesHosted"),
+    @JsonProperty("RunsOn") RUNS_ON("RunsOn");
 
     private final String yamlName;
 
@@ -40,5 +43,5 @@ public interface Infrastructure {
       return yamlName;
     }
   }
-  Type getType();
+  @ApiModelProperty(allowableValues = "KubernetesDirect, UseFromStage, VM, KubernetesHosted") Type getType();
 }
