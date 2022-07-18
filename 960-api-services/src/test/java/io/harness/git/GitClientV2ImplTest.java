@@ -370,7 +370,9 @@ public class GitClientV2ImplTest extends CategoryTest {
     doNothing().when(gitClientHelper).createDirStructureForFileDownload(any());
     doReturn(repoPath).when(gitClientHelper).getFileDownloadRepoDirectory(any());
 
-    assertThatThrownBy(() -> gitClient.downloadFiles(request)).isInstanceOf(YamlException.class);
+    assertThatThrownBy(() -> gitClient.downloadFiles(request))
+        .isInstanceOf(YamlException.class)
+        .hasMessageContaining("Reason: Error in checking out Branch master, Ref origin/master cannot be resolved");
   }
 
   @Test
