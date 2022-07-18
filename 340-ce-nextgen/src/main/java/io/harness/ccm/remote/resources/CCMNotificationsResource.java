@@ -17,7 +17,10 @@ import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
+import io.harness.notification.channeldetails.SlackChannel;
+import io.harness.notification.dtos.NotificationChannelDTO;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -25,6 +28,7 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import io.harness.security.annotations.PublicApi;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -49,10 +53,9 @@ import org.springframework.stereotype.Service;
 @Path("notification")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Hidden
-@NextGenManagerAuth
 @Slf4j
 @Service
+@PublicApi
 @OwnedBy(CE)
 @Tag(name = "Cloud Cost Notifications", description = "Send Notifications")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
@@ -77,8 +80,30 @@ public class CCMNotificationsResource {
   public ResponseDTO<NotificationResult>
   sendNotification(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(required = true, description = "Notification channel") NotificationChannel notificationChannel) {
+      @RequestBody(required = true, description = "Notification channel") NotificationChannelDTO notificationChannelDTO) {
     log.info("Inside send notification api");
-    return ResponseDTO.newResponse(notificationClient.sendNotificationAsync(notificationChannel));
+    NotificationResult notificationResult = null;
+    if (notificationChannelDTO.getEmailRecipients() != null && !notificationChannelDTO.getEmailRecipients().isEmpty()) {
+      notificationResult = notificationClient.sendNotificationAsync(
+              new EmailChannel(notificationChannelDTO.getAccountId(),
+                      notificationChannelDTO.getUserGroups(),
+                      notificationChannelDTO.getTemplateId(),
+                      notificationChannelDTO.getTemplateData(),
+                      notificationChannelDTO.getTeam(),
+                      notificationChannelDTO.getEmailRecipients()));
+    }
+    if (notificationChannelDTO.getWebhookUrls() != null && !notificationChannelDTO.getWebhookUrls().isEmpty()) {
+      notificationResult = notificationClient.sendNotificationAsync(
+              new SlackChannel(notificationChannelDTO.getAccountId(),
+                      notificationChannelDTO.getUserGroups(),
+                      notificationChannelDTO.getTemplateId(),
+                      notificationChannelDTO.getTemplateData(),
+                      notificationChannelDTO.getTeam(),
+                      notificationChannelDTO.getWebhookUrls(),
+                      null,
+                      null,
+                      0));
+    }
+    return ResponseDTO.newResponse(notificationResult);
   }
 }

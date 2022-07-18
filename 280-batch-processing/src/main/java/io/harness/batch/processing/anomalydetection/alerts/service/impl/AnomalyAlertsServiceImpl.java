@@ -10,6 +10,7 @@ package io.harness.batch.processing.anomalydetection.alerts.service.impl;
 import static io.harness.notification.NotificationChannelType.EMAIL;
 import static io.harness.notification.NotificationChannelType.MSTEAMS;
 import static io.harness.notification.NotificationChannelType.SLACK;
+import static io.harness.notification.dtos.NotificationChannelDTO.NotificationChannelDTOBuilder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.slack.api.webhook.WebhookPayloads.payload;
@@ -34,8 +35,10 @@ import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.EmailChannel.EmailChannelBuilder;
 import io.harness.notification.channeldetails.MSTeamChannel;
 import io.harness.notification.channeldetails.MSTeamChannel.MSTeamChannelBuilder;
+import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.channeldetails.SlackChannel;
 import io.harness.notification.channeldetails.SlackChannel.SlackChannelBuilder;
+import io.harness.notification.dtos.NotificationChannelDTO;
 import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.notifications.NotificationResourceClient;
 
@@ -178,26 +181,26 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     log.info("Slack webhooks: {}", slackWebHookUrls);
     List<String> msTeamKeys = getChannelUrls(channels, MSTEAMS);
 
-    EmailChannelBuilder emailChannelBuilder = EmailChannel.builder()
+    NotificationChannelDTOBuilder emailChannelBuilder = NotificationChannelDTO.builder()
                                                   .accountId(accountId)
-                                                  .recipients(eMails)
+                                                  .emailRecipients(eMails)
                                                   .team(Team.OTHER)
                                                   .templateId("email_ccm_anomaly_alert.txt")
                                                   .userGroups(Collections.emptyList());
 
-    SlackChannelBuilder slackChannelBuilder = SlackChannel.builder()
+    NotificationChannelDTOBuilder slackChannelBuilder = NotificationChannelDTO.builder()
                                                   .accountId(accountId)
                                                   .webhookUrls(slackWebHookUrls)
                                                   .team(Team.OTHER)
                                                   .templateId("slack_ccm_anomaly_alert.txt")
                                                   .userGroups(Collections.emptyList());
 
-    MSTeamChannelBuilder msTeamChannelBuilder = MSTeamChannel.builder()
-                                                    .accountId(accountId)
-                                                    .msTeamKeys(msTeamKeys)
-                                                    .team(Team.OTHER)
-                                                    .templateId("template-id-here")
-                                                    .userGroups(Collections.emptyList());
+//    MSTeamChannelBuilder msTeamChannelBuilder = MSTeamChannel.builder()
+//                                                    .accountId(accountId)
+//                                                    .msTeamKeys(msTeamKeys)
+//                                                    .team(Team.OTHER)
+//                                                    .templateId("template-id-here")
+//                                                    .userGroups(Collections.emptyList());
 
     Map<String, String> templateData = new HashMap<>();
     templateData.put("perspective_name", perspectiveNotificationSetting.getPerspectiveName());
