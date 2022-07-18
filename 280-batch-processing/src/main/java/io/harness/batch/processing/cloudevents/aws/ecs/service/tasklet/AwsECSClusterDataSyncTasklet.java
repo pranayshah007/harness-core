@@ -426,6 +426,7 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
       // Fetch Service Tags and add to the Task Labels
       List<Tag> serviceTagList = serviceArnTagsMap.get(serviceArn);
       if (isNotEmpty(serviceTagList)) {
+        serviceLabels = new HashMap<>();
         for (Tag tag : serviceTagList) {
           serviceLabels.put(encode(tag.getKey()), tag.getValue());
         }
