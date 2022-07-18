@@ -26,6 +26,7 @@ java_binary(
         "//800-pipeline-service/modules/orchestration:module",
         "//800-pipeline-service/modules/orchestration-steps:module",
         "//800-pipeline-service/modules/orchestration-steps/contracts:module",
+        "//800-pipeline-service/modules/orchestration-visualization/contracts:module",
         "//800-pipeline-service/modules/orchestration-visualization:module",
         "//800-pipeline-service/modules/orchestration/contracts:module",
         "//800-pipeline-service/modules/pms-contracts:module",
