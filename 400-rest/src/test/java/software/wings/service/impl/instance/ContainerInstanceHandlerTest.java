@@ -85,9 +85,23 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.api.*;
+import software.wings.api.ContainerDeploymentInfoWithLabels;
+import software.wings.api.ContainerDeploymentInfoWithNames;
+import software.wings.api.DeploymentInfo;
+import software.wings.api.DeploymentSummary;
+import software.wings.api.HelmSetupExecutionSummary;
+import software.wings.api.K8sDeploymentInfo;
 import software.wings.api.ondemandrollback.OnDemandRollbackInfo;
-import software.wings.beans.*;
+import software.wings.beans.Application;
+import software.wings.beans.ContainerInfrastructureMapping;
+import software.wings.beans.DirectKubernetesInfrastructureMapping;
+import software.wings.beans.EcsInfrastructureMapping;
+import software.wings.beans.Environment;
+import software.wings.beans.GcpKubernetesInfrastructureMapping;
+import software.wings.beans.HelmExecutionSummary;
+import software.wings.beans.InfrastructureMapping;
+import software.wings.beans.InfrastructureMappingType;
+import software.wings.beans.Service;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.container.Label;
 import software.wings.beans.infrastructure.instance.Instance;
@@ -101,7 +115,6 @@ import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo
 import software.wings.beans.infrastructure.instance.key.ContainerInstanceKey;
 import software.wings.beans.infrastructure.instance.key.HostInstanceKey;
 import software.wings.beans.infrastructure.instance.key.PodInstanceKey;
-import software.wings.beans.infrastructure.instance.key.deployment.AwsCodeDeployDeploymentKey;
 import software.wings.beans.infrastructure.instance.key.deployment.ContainerDeploymentKey;
 import software.wings.beans.infrastructure.instance.key.deployment.DeploymentKey;
 import software.wings.beans.infrastructure.instance.key.deployment.K8sDeploymentKey;
@@ -2257,8 +2270,9 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
   public void shouldThrowExceptionOnUnsupportedInfraMapping() throws Exception {
-    AwsInfrastructureMapping awsInfrastructureMapping = AwsInfrastructureMapping.Builder.anAwsInfrastructureMapping().build();
-    containerInstanceHandler.processInstanceSyncResponseFromPerpetualTask(awsInfrastructureMapping,null);
+    AwsInfrastructureMapping awsInfrastructureMapping =
+        AwsInfrastructureMapping.Builder.anAwsInfrastructureMapping().build();
+    containerInstanceHandler.processInstanceSyncResponseFromPerpetualTask(awsInfrastructureMapping, null);
   }
 
   @Test
@@ -2266,7 +2280,8 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void generateDeploymentKeyTestForContainerDeploymentInfoWithLabels() throws Exception {
     List<Label> labelList = Arrays.asList(createLabel("l1"), createLabel("l2"));
-    DeploymentInfo deploymentInfo = ContainerDeploymentInfoWithLabels.builder().namespace("NS1").releaseName("RN1").build();
+    DeploymentInfo deploymentInfo =
+        ContainerDeploymentInfoWithLabels.builder().namespace("NS1").releaseName("RN1").build();
     DeploymentKey deploymentKey = containerInstanceHandler.generateDeploymentKey(deploymentInfo);
     ContainerDeploymentKey containerDeploymentKey = (ContainerDeploymentKey) deploymentKey;
     assertThat(labelList).containsExactlyInAnyOrderElementsOf(containerDeploymentKey.getLabels());
@@ -2275,7 +2290,8 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
   public void generateDeploymentKeyTestForContainerDeploymentInfoWithNames() throws Exception {
-    DeploymentInfo deploymentInfo = ContainerDeploymentInfoWithNames.builder().containerSvcName("service1").clusterName("cl1").build();
+    DeploymentInfo deploymentInfo =
+        ContainerDeploymentInfoWithNames.builder().containerSvcName("service1").clusterName("cl1").build();
     ContainerDeploymentKey containerDeploymentKey =
         (ContainerDeploymentKey) containerInstanceHandler.generateDeploymentKey(deploymentInfo);
     assertEquals("service1", containerDeploymentKey.getContainerServiceName());
