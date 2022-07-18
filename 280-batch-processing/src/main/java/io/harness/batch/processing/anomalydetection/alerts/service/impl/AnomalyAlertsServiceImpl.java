@@ -208,7 +208,9 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     Call<RestResponse<NotificationResult>> call = notificationResourceClient.sendNotification(accountId, emailChannelBuilder.build());
     Request request = call.request();
     log.info("REQUEST: {}", request);
-    log.info("REQUEST body: {}", request.body());
+    if (request.body()!=null) {
+      log.info("REQUEST body: {}", request.body().toString());
+    }
     log.info("REQUEST headers: {}", request.headers());
     log.info("REQUEST isHttps: {}", request.isHttps());
     log.info("REQUEST method: {}", request.method());
@@ -236,6 +238,9 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     request = call.request();
     log.info("REQUEST: {}", request);
     log.info("REQUEST body: {}", request.body());
+    if (request.body()!=null) {
+      log.info("REQUEST body: {}", request.body().toString());
+    }
     log.info("REQUEST headers: {}", request.headers());
     log.info("REQUEST isHttps: {}", request.isHttps());
     log.info("REQUEST method: {}", request.method());
