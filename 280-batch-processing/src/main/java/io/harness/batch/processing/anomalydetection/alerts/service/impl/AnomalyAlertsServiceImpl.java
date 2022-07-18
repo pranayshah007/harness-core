@@ -206,8 +206,13 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     emailChannelBuilder.templateData(templateData);
     Call<RestResponse<NotificationResult>> call = notificationResourceClient.sendNotification(accountId, emailChannelBuilder.build());
     Response<RestResponse<NotificationResult>> response = call.execute();
+    log.info("RESPONSE isSuccessful: {}", response.isSuccessful());
+    log.info("RESPONSE code: {}", response.code());
+    log.info("RESPONSE headers: {}", response.headers());
+    log.info("RESPONSE message: {}", response.message());
+    log.info("RESPONSE raw: {}", response.raw());
+    log.info("RESPONSE errorBody: {}", response.errorBody());
     log.info("RESPONSE body: {}", response.body());
-    log.info("RESPONSE body toString: {}", response.body().toString());
 
     Map<String, String> slackTemplateData = new HashMap<>();
     slackTemplateData.put("perspective_name", perspectiveNotificationSetting.getPerspectiveName());
@@ -218,8 +223,13 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     slackChannelBuilder.templateData(slackTemplateData);
     call = notificationResourceClient.sendNotification(accountId, slackChannelBuilder.build());
     response = call.execute();
+    log.info("RESPONSE isSuccessful: {}", response.isSuccessful());
+    log.info("RESPONSE code: {}", response.code());
+    log.info("RESPONSE headers: {}", response.headers());
+    log.info("RESPONSE message: {}", response.message());
+    log.info("RESPONSE raw: {}", response.raw());
+    log.info("RESPONSE errorBody: {}", response.errorBody());
     log.info("RESPONSE body: {}", response.body());
-    log.info("RESPONSE body toString: {}", response.body().toString());
   }
 
   public List<CCMPerspectiveNotificationChannelsDTO> listNotificationChannelsPerPerspective(String accountId) {
