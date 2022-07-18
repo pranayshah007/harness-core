@@ -23,12 +23,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @EqualsAndHashCode(callSuper = true)
+@Slf4j
 public class SlackChannel extends NotificationChannel {
   List<String> webhookUrls;
   String orgIdentifier;
@@ -48,8 +50,10 @@ public class SlackChannel extends NotificationChannel {
 
   @Override
   public NotificationRequest buildNotificationRequest() {
+    log.info("Building Slack Notification Request");
     NotificationRequest.Builder builder = NotificationRequest.newBuilder();
     String notificationId = generateUuid();
+    log.info("Slack Notification Id: {}", notificationId);
     return builder.setId(notificationId).setAccountId(accountId).setTeam(team).setSlack(buildSlack(builder)).build();
   }
 
