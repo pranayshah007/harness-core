@@ -220,7 +220,9 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     log.info("RESPONSE headers: {}", response.headers());
     log.info("RESPONSE message: {}", response.message());
     log.info("RESPONSE raw: {}", response.raw());
-    log.info("RESPONSE errorBody: {}", response.errorBody());
+    if (response.errorBody() != null) {
+      log.info("RESPONSE errorBody: {}", response.errorBody().string());
+    }
     log.info("RESPONSE body: {}", response.body());
 
     Map<String, String> slackTemplateData = new HashMap<>();
@@ -245,7 +247,9 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     log.info("RESPONSE headers: {}", response.headers());
     log.info("RESPONSE message: {}", response.message());
     log.info("RESPONSE raw: {}", response.raw());
-    log.info("RESPONSE errorBody: {}", response.errorBody());
+    if (response.errorBody() != null) {
+      log.info("RESPONSE errorBody: {}", response.errorBody().string());
+    }
     log.info("RESPONSE body: {}", response.body());
   }
 
