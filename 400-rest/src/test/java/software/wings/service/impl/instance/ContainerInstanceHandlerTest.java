@@ -2282,8 +2282,11 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void generateDeploymentKeyTestForContainerDeploymentInfoWithLabels() throws Exception {
     List<Label> labelList = Arrays.asList(createLabel("l1"), createLabel("l2"));
-    DeploymentInfo deploymentInfo =
-        ContainerDeploymentInfoWithLabels.builder().namespace("NS1").releaseName("RN1").build();
+    DeploymentInfo deploymentInfo = ContainerDeploymentInfoWithLabels.builder()
+                                        .labels(new ArrayList<Label>(asList(createLabel("l1"), createLabel("l2"))))
+                                        .namespace("NS1")
+                                        .releaseName("RN1")
+                                        .build();
     DeploymentKey deploymentKey = containerInstanceHandler.generateDeploymentKey(deploymentInfo);
     ContainerDeploymentKey containerDeploymentKey = (ContainerDeploymentKey) deploymentKey;
     assertThat(labelList).containsExactlyInAnyOrderElementsOf(containerDeploymentKey.getLabels());
