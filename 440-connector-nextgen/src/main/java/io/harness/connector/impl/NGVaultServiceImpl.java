@@ -483,14 +483,7 @@ public class NGVaultServiceImpl implements NGVaultService {
             .map(metadataRequestSpec
                 -> ((VaultK8sCredentialDTO) (metadataRequestSpec.getSpec())).getServiceAccountTokenPath())
             .filter(saTokenPath -> !saTokenPath.isEmpty());
-    serviceAccountTokenPath.ifPresent(vaultConfig::setServiceAccountTokenPath);
-
-    Optional<String> k8sAuthEndpoint =
-        Optional.ofNullable(specDTO)
-            .filter(metadataRequestSpec -> metadataRequestSpec.getAccessType() == AccessType.K8s_AUTH)
-            .map(metadataRequestSpec -> ((VaultK8sCredentialDTO) (metadataRequestSpec.getSpec())).getK8sAuthEndpoint())
-            .filter(k8sPath -> !k8sPath.isEmpty());
-    k8sAuthEndpoint.ifPresent(vaultConfig::setK8sAuthEndpoint);
+    serviceAccountTokenPath.ifPresent(saTokenPath -> { vaultConfig.setServiceAccountTokenPath(saTokenPath); });
   }
 
   private SecretManagerMetadataDTO getAzureKeyVaultMetadata(String accountIdentifier,

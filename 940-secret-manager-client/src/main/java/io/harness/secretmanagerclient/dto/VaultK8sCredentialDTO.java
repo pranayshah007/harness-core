@@ -24,5 +24,4 @@ import lombok.EqualsAndHashCode;
 public class VaultK8sCredentialDTO extends VaultCredentialDTO {
   private String vaultK8sAuthRole;
   private String serviceAccountTokenPath;
-  private String k8sAuthEndpoint;
 }

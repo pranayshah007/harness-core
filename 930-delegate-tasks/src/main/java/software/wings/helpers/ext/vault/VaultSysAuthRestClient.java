@@ -35,7 +35,7 @@ public interface VaultSysAuthRestClient {
   String SIGN_PUBLIC_SSH_KEY_URL = "v1/{secret-engine-name}/sign/{role-name}";
   String TOKEN_RENEW_URL = "v1/auth/token/renew-self";
   String AWS_IAM_LOGIN_URL = "v1/auth/aws/login";
-  String K8s_LOGIN_URL = "v1/auth/{kubernetes-auth-path}/login";
+  String K8s_LOGIN_URL = "v1/auth/kubernetes/login";
 
   /**
    * The JSON response will be returned as a String. The caller of this API need to '/secret/options/version' field in
@@ -57,9 +57,7 @@ public interface VaultSysAuthRestClient {
   Call<SSHVaultAuthResponse> fetchAuthPublicKey(
       @Path(value = "secret-engine-name") String secretEngineName, @Header("X-Vault-Token") String header);
 
-  @POST(K8s_LOGIN_URL)
-  Call<VaultK8sLoginResponse> k8sAuthLogin(
-      @Path(value = "kubernetes-auth-path") String k8sAuthEndpoint, @Body VaultK8sAuthLoginRequest request);
+  @POST(K8s_LOGIN_URL) Call<VaultK8sLoginResponse> k8sAuthLogin(@Body VaultK8sAuthLoginRequest request);
 
   @POST(SIGN_PUBLIC_SSH_KEY_URL)
   Call<SignedSSHVaultResponse> fetchSignedPublicKey(@Path(value = "secret-engine-name") String secretEngineName,

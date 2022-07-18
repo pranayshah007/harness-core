@@ -8,7 +8,6 @@
 package io.harness.delegate.beans.connector.vaultconnector;
 
 import static io.harness.SecretManagerDescriptionConstants.AWS_REGION;
-import static io.harness.SecretManagerDescriptionConstants.K8S_AUTH_ENDPOINT;
 import static io.harness.SecretManagerDescriptionConstants.SERVICE_ACCOUNT_TOKEN_PATH;
 import static io.harness.SecretManagerDescriptionConstants.SINK_PATH;
 import static io.harness.SecretManagerDescriptionConstants.USE_AWS_IAM;
@@ -98,7 +97,6 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
   @Schema(description = USE_K8s_AUTH) private boolean useK8sAuth;
   @Schema(description = VAULT_K8S_AUTH_ROLE) private String vaultK8sAuthRole;
   @Schema(description = SERVICE_ACCOUNT_TOKEN_PATH) private String serviceAccountTokenPath;
-  @Schema(description = K8S_AUTH_ENDPOINT) private String k8sAuthEndpoint;
 
   public AccessType getAccessType() {
     if (useVaultAgent) {
