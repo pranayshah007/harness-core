@@ -56,6 +56,7 @@ import java.util.stream.Collectors;
 
 import io.harness.rest.RestResponse;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Request;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import retrofit2.Call;
@@ -205,6 +206,14 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     // Sending email alerts
     emailChannelBuilder.templateData(templateData);
     Call<RestResponse<NotificationResult>> call = notificationResourceClient.sendNotification(accountId, emailChannelBuilder.build());
+    Request request = call.request();
+    log.info("REQUEST: {}", request);
+    log.info("REQUEST body: {}", request.body());
+    log.info("REQUEST headers: {}", request.headers());
+    log.info("REQUEST isHttps: {}", request.isHttps());
+    log.info("REQUEST method: {}", request.method());
+    log.info("REQUEST url: {}", request.url());
+    log.info("REQUEST toString: {}", request.toString());
     Response<RestResponse<NotificationResult>> response = call.execute();
     log.info("RESPONSE isSuccessful: {}", response.isSuccessful());
     log.info("RESPONSE code: {}", response.code());
@@ -222,6 +231,14 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     // Sending slack alerts
     slackChannelBuilder.templateData(slackTemplateData);
     call = notificationResourceClient.sendNotification(accountId, slackChannelBuilder.build());
+    request = call.request();
+    log.info("REQUEST: {}", request);
+    log.info("REQUEST body: {}", request.body());
+    log.info("REQUEST headers: {}", request.headers());
+    log.info("REQUEST isHttps: {}", request.isHttps());
+    log.info("REQUEST method: {}", request.method());
+    log.info("REQUEST url: {}", request.url());
+    log.info("REQUEST toString: {}", request.toString());
     response = call.execute();
     log.info("RESPONSE isSuccessful: {}", response.isSuccessful());
     log.info("RESPONSE code: {}", response.code());
