@@ -1,10 +1,11 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 1
+version : 2
 settings :
   - identifier: test_setting_CI
     name: Test CI setting
     category : CI
+    group: group_2
     defaultValue: default
     valueType : STRING
     allowedValues : ~

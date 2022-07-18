@@ -50,6 +50,7 @@ public class SettingConfiguration implements PersistentEntity {
   @NotEmpty @EntityIdentifier String identifier;
   @NotEmpty @NGEntityName String name;
   @NotNull SettingCategory category;
+  @NotNull String group;
   String defaultValue;
   @NotNull SettingValueType valueType;
   Set<String> allowedValues;

@@ -25,4 +25,6 @@ public final class SettingConstants {
   public static final String SETTING_UPDATE_REQUEST_LIST = "List of update requests for settings";
   public static final String BATCH_ITEM_RESPONSE_STATUS = "Request status for the corresponding item in batch request";
   public static final String BATCH_ITEM_ERROR_MESSAGE = "Error message";
+
+  public static final String GROUP_ID = "Group Id of the setting";
 }

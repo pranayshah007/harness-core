@@ -9,15 +9,7 @@ package io.harness.ngsettings.dto;
 
 import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
-import static io.harness.ngsettings.SettingConstants.ALLOWED_VALUES;
-import static io.harness.ngsettings.SettingConstants.ALLOW_OVERRIDES;
-import static io.harness.ngsettings.SettingConstants.CATEGORY;
-import static io.harness.ngsettings.SettingConstants.DEFAULT_VALUE;
-import static io.harness.ngsettings.SettingConstants.IDENTIFIER;
-import static io.harness.ngsettings.SettingConstants.NAME;
-import static io.harness.ngsettings.SettingConstants.SOURCE;
-import static io.harness.ngsettings.SettingConstants.VALUE;
-import static io.harness.ngsettings.SettingConstants.VALUE_TYPE;
+import static io.harness.ngsettings.SettingConstants.*;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -42,6 +34,7 @@ public class SettingDTO {
   @Schema(description = ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = PROJECT_PARAM_MESSAGE) String projectIdentifier;
   @NotNull @NotBlank @Schema(description = CATEGORY) SettingCategory category;
+  @NotNull @NotBlank @Schema(description = GROUP_ID) String group;
   @NotNull @NotBlank @Schema(description = VALUE_TYPE) SettingValueType valueType;
   @Schema(description = ALLOWED_VALUES) Set<String> allowedValues;
   @NotNull @NotBlank @Schema(description = ALLOW_OVERRIDES) Boolean allowOverrides;
