@@ -5069,7 +5069,13 @@ amazon_v2_artifacts = [
         ],
     )
     for x in [
-        "ecs"
+        "ecs",
+        "applicationautoscaling",
+        "aws-core",
+        "core",
+        "auth",
+        "sts",
+        "sdk-core"
     ]
 ]
 
