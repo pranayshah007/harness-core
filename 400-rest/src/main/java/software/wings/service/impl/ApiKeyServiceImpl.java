@@ -54,11 +54,7 @@ import software.wings.security.UserPermissionInfo;
 import software.wings.security.UserRestrictionInfo;
 import software.wings.security.UserThreadLocal;
 import software.wings.service.impl.security.auth.AuthHandler;
-import software.wings.service.intfc.AccountService;
-import software.wings.service.intfc.ApiKeyService;
-import software.wings.service.intfc.AuthService;
-import software.wings.service.intfc.UserGroupService;
-import software.wings.service.intfc.UserService;
+import software.wings.service.intfc.*;
 import software.wings.utils.CryptoUtils;
 
 import com.google.common.base.Charsets;
@@ -97,7 +93,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   @Inject private AuthService authService;
   @Inject private ExecutorService executorService;
   @Inject private AuditServiceHelper auditServiceHelper;
-  @Inject private UserService userService;
+  @Inject private HarnessUserGroupService harnessUserGroupService;
 
   private static String DELIMITER = "::";
 
@@ -262,7 +258,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                             .filter(ID_KEY, uuid)
                             .get();
     User user = UserThreadLocal.get();
-    if (user != null && !userService.isUserAssignedToAccount(user, accountId)) {
+    if (user != null && harnessUserGroupService.isHarnessSupportUser(user.getUuid())) {
       throw new InvalidRequestException("The user is not part of the account to view API key data");
     }
     return buildApiKeyEntry(uuid, entry, true);

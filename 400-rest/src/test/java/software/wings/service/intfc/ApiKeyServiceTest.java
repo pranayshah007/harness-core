@@ -70,6 +70,8 @@ import org.mockito.Mock;
 public class ApiKeyServiceTest extends WingsBaseTest {
   @Mock private AccountService accountService;
   @Mock private UserService userService;
+  @Mock private HarnessUserGroupService harnessUserGroupService;
+
   @Mock private UserGroupService userGroupService;
   @Mock private AuditServiceHelper auditServiceHelper;
   @Mock private Cache<String, ApiKeyEntry> apiKeyCache;
@@ -81,6 +83,7 @@ public class ApiKeyServiceTest extends WingsBaseTest {
   public void init() {
     setUserRequestContext();
     when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
+    when(harnessUserGroupService.isHarnessSupportUser(any())).thenReturn(false);
   }
 
   private void setUserRequestContext() {
@@ -249,7 +252,7 @@ public class ApiKeyServiceTest extends WingsBaseTest {
     ApiKeyEntry apiKeyEntry = generateKey("name");
     User user = User.Builder.anUser().uuid("uid").name("username").build();
     UserThreadLocal.set(user);
-    when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
+    when(harnessUserGroupService.isHarnessSupportUser(any())).thenReturn(false);
     boolean exceptionThrown = false;
     ApiKeyEntry apiKeyEntryFromGet = null;
     try {
@@ -270,7 +273,7 @@ public class ApiKeyServiceTest extends WingsBaseTest {
     ApiKeyEntry apiKeyEntry = generateKey("name");
     User user = User.Builder.anUser().uuid("uid").name("username").build();
     UserThreadLocal.set(user);
-    when(userService.isUserAssignedToAccount(any(), any())).thenReturn(false);
+    when(harnessUserGroupService.isHarnessSupportUser(any())).thenReturn(true);
     ApiKeyEntry apiKeyEntryFromGet = null;
     boolean exceptionThrown = false;
     try {
@@ -288,7 +291,7 @@ public class ApiKeyServiceTest extends WingsBaseTest {
   public void testGetApiKey3() {
     ApiKeyEntry apiKeyEntry = generateKey("name");
     UserThreadLocal.set(null);
-    when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
+    when(harnessUserGroupService.isHarnessSupportUser(any())).thenReturn(true);
     boolean exceptionThrown = false;
     ApiKeyEntry apiKeyEntryFromGet = null;
     try {
