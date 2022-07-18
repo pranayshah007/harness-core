@@ -1724,6 +1724,10 @@
 55401:io.harness.delegate.beans.SerializedResponseData
 55402:software.wings.beans.SerializationFormat
 55403:io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse
+55404:io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig
+55405:io.harness.delegate.task.localstore.LocalStoreFetchFilesResult
+55406:io.harness.delegate.task.localstore.ManifestFiles
+56403:io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
 70003:io.harness.accesscontrol.acl.api.ResourceScope
@@ -2099,7 +2103,9 @@
 543522:io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse
 543523:io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse
 543524:io.harness.delegate.beans.azure.response.AzureTagsResponse
+543525:io.harness.delegate.beans.azure.response.AzureHostResponse
 543526:io.harness.delegate.beans.WinRmTaskParams
+543527:io.harness.delegate.beans.azure.response.AzureHostsResponse
 549966:io.harness.secretmanagerclient.dto.EncryptedDataMigrationDTO
 553286:io.harness.delegate.task.scm.ScmPushTaskParams
 553287:io.harness.delegate.task.scm.ScmPushTaskResponseData

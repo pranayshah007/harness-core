@@ -128,6 +128,8 @@ public class CIExecutionConstants {
   public static final String PLUGIN_ACCESS_KEY = "PLUGIN_ACCESS_KEY";
   public static final String PLUGIN_SECRET_KEY = "PLUGIN_SECRET_KEY";
   public static final String PLUGIN_ASSUME_ROLE = "PLUGIN_ASSUME_ROLE";
+  public static final String PLUGIN_EXTERNAL_ID = "PLUGIN_EXTERNAL_ID";
+
   public static final String AWS_ROLE_ARN = "AWS_ROLE_ARN";
   public static final String PLUGIN_JSON_KEY = "PLUGIN_JSON_KEY";
   public static final String PLUGIN_URL = "PLUGIN_URL";

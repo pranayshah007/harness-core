@@ -25,6 +25,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -38,6 +40,7 @@ import io.harness.artifacts.docker.service.DockerRegistryServiceImpl.DockerImage
 import io.harness.artifacts.docker.service.DockerRegistryServiceImpl.DockerRegistryToken;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
+import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
@@ -81,6 +84,7 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
 
   private static String url;
   private static DockerInternalConfig dockerConfig;
+  private static DockerInternalConfig harborConfig;
   private static DockerRegistryToken dockerRegistryToken;
   private static DockerRegistryRestClient dockerRegistryRestClient;
   private static DockerImageTagResponse dockerImageTagResponse;
@@ -94,6 +98,12 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
     url = "http://localhost:" + wireMockRule.port() + "/";
     dockerConfig =
         DockerInternalConfig.builder().dockerRegistryUrl(url).username("username").password("password").build();
+    harborConfig = DockerInternalConfig.builder()
+                       .dockerRegistryUrl(url)
+                       .username("username")
+                       .password("password")
+                       .providerType(DockerRegistryProviderType.HARBOR)
+                       .build();
     dockerRegistryRestClient = new DockerRestClientFactoryImpl().getDockerRegistryRestClient(dockerConfig);
 
     dockerImageTagResponse = new DockerImageTagResponse();
@@ -483,5 +493,55 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
     assertThat(parsedLink)
         .isEqualTo(
             "v2/myAccount/myfirstrepo/tags/list?next_page=gAAAAABbuZsLNl9W6tAycol_oLvcYeti2w53XnoV3FYyFBkd-TQV3OBiWNJLqp2m8isy3SWusAqA4Y32dHJ7tGi0br18kXEt6nTW306QUFexaXrAGq8KeSc%3D&n=25");
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_PUTHRAYA)
+  @Category(UnitTests.class)
+  public void testHarborProjectsSuccessfulResponse() {
+    wireMockRule.stubFor(get(urlEqualTo("/api/v2.0/projects"))
+                             .willReturn(aResponse().withStatus(200).withBody("[{\"name\": \"library\"}]")));
+    assertThat(dockerRegistryService.validateCredentials(harborConfig)).isTrue();
+    verify(dockerRestClientFactory, never()).getDockerRegistryRestClient(any());
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_PUTHRAYA)
+  @Category(UnitTests.class)
+  public void testHarborProjectsFailureCases() {
+    wireMockRule.stubFor(get(urlEqualTo("/api/v2.0/projects")).willReturn(aResponse().withStatus(401)));
+    assertThatThrownBy(() -> dockerRegistryService.validateCredentials(harborConfig))
+        .isInstanceOf(HintException.class)
+        .getCause()
+        .isInstanceOf(ExplanationException.class)
+        .getCause()
+        .isInstanceOf(InvalidArtifactServerException.class)
+        .extracting("params.message")
+        .isEqualTo("Invalid Docker Registry credentials");
+
+    verify(dockerRestClientFactory, never()).getDockerRegistryRestClient(any());
+
+    wireMockRule.stubFor(get(urlEqualTo("/api/v2.0/projects")).willReturn(aResponse().withStatus(200).withBody("[]")));
+    assertThatThrownBy(() -> dockerRegistryService.validateCredentials(harborConfig))
+        .isInstanceOf(HintException.class)
+        .getCause()
+        .isInstanceOf(ExplanationException.class)
+        .getCause()
+        .isInstanceOf(InvalidArtifactServerException.class)
+        .extracting("params.message")
+        .isEqualTo("No Harbor projects associated with given user");
+
+    verify(dockerRestClientFactory, never()).getDockerRegistryRestClient(any());
+
+    wireMockRule.stubFor(
+        get(urlEqualTo("/api/v2.0/projects")).willReturn(aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
+    assertThatThrownBy(() -> dockerRegistryService.validateCredentials(harborConfig))
+        .isInstanceOf(HintException.class)
+        .getCause()
+        .isInstanceOf(ExplanationException.class)
+        .getCause()
+        .isInstanceOf(InvalidArtifactServerException.class)
+        .extracting("params.message")
+        .isEqualTo("ProtocolException: Expected leading [0-9a-fA-F] character but was 0x6c");
   }
 }

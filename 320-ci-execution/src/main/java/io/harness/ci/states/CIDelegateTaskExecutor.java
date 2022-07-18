@@ -50,6 +50,7 @@ public class CIDelegateTaskExecutor {
     final DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
                                                         .parked(taskData.isParked())
                                                         .accountId(accountId)
+                                                        .serializationFormat(taskData.getSerializationFormat())
                                                         .taskSelectors(taskSelectors)
                                                         .taskType(taskData.getTaskType())
                                                         .taskParameters(extractTaskParameters(taskData))

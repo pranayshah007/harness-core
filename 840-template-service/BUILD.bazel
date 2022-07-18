@@ -6,8 +6,8 @@ shared_dependencies = [
     "@maven//:com_google_guava_guava",
     "@maven//:io_netty_netty_all",
 ] + [
+    "//878-ng-common-utilities:module",
     "//884-pms-commons:module",
-    "//888-pms-client:module",
     "//890-sm-core:module",
     "//900-git-sync-sdk:module",
     "//930-ng-core-clients:module",
@@ -28,6 +28,7 @@ shared_dependencies = [
     "//980-commons:module",
     "//999-annotations:module",
     "//clients/access-control/sdk:module",
+    "//clients/pipeline-service/pms-client:module",
     "@maven//:ch_qos_logback_logback_access",
     "@maven//:ch_qos_logback_logback_classic",
     "@maven//:ch_qos_logback_logback_core",

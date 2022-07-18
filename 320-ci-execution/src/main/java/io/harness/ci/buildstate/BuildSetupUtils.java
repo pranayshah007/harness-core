@@ -35,7 +35,9 @@ public class BuildSetupUtils {
       case KUBERNETES_HOSTED:
         return k8InitializeTaskParamsBuilder.getK8InitializeTaskParams(initializeStepInfo, ambiance, logPrefix);
       case VM:
-        return vmInitializeTaskParamsBuilder.getVmInitializeTaskParams(initializeStepInfo, ambiance, logPrefix);
+        return vmInitializeTaskParamsBuilder.getDirectVmInitializeTaskParams(initializeStepInfo, ambiance);
+      case RUNS_ON:
+        return vmInitializeTaskParamsBuilder.getHostedVmInitializeTaskParams(initializeStepInfo, ambiance);
       default:
         unhandled(initializeStepInfo.getBuildJobEnvInfo().getType());
     }

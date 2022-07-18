@@ -33,6 +33,10 @@ public class AccountHttpClientFactory extends AbstractHttpClientFactory implemen
 
   @Override
   public AccountClient get() {
-    return getRetrofit().create(AccountClient.class);
+    if (getServiceHttpClientConfig() != null) {
+      return getRetrofit().create(AccountClient.class);
+    } else {
+      return null;
+    }
   }
 }

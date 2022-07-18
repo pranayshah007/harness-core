@@ -14,11 +14,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.connector.ConnectorDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.opa.OpaEvaluationContext;
 import io.harness.ng.opa.OpaService;
 import io.harness.opaclient.OpaUtils;
 import io.harness.opaclient.model.OpaConstants;
-import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.remote.client.RestClientUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;

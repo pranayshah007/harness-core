@@ -51,6 +51,8 @@ public class ServiceLevelObjectiveOutboxEventHandler implements OutboxEventHandl
           return handleServiceLevelObjectiveUpdateEvent(outboxEvent, globalContext);
         case "ServiceLevelObjectiveDeleteEvent":
           return handleServiceLevelObjectiveDeleteEvent(outboxEvent, globalContext);
+        case "ServiceLevelObjectiveErrorBudgetResetEvent":
+          return handleServiceLevelObjectiveErrorBudgetResetEvent(outboxEvent, globalContext);
         default:
           return false;
       }
@@ -100,6 +102,19 @@ public class ServiceLevelObjectiveOutboxEventHandler implements OutboxEventHandl
                                 .action(Action.DELETE)
                                 .module(ModuleType.CV)
                                 .oldYaml(getYamlString(sloDeleteEvent.getOldServiceLevelObjectiveDTO()))
+                                .timestamp(outboxEvent.getCreatedAt())
+                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+                                .insertId(outboxEvent.getId())
+                                .build();
+    return auditClientService.publishAudit(auditEntry, globalContext);
+  }
+
+  private boolean handleServiceLevelObjectiveErrorBudgetResetEvent(OutboxEvent outboxEvent, GlobalContext globalContext)
+      throws IOException {
+    AuditEntry auditEntry = AuditEntry.builder()
+                                .action(Action.ERROR_BUDGET_RESET)
+                                .module(ModuleType.CV)
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
                                 .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))

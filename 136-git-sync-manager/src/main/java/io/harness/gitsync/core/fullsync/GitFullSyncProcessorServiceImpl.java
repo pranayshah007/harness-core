@@ -424,7 +424,8 @@ public class GitFullSyncProcessorServiceImpl implements GitFullSyncProcessorServ
                                                                   .build();
       filesGroupedByMicroservices.add(fullSyncFilesGroupedByMsvc);
     }
-    filesGroupedByMicroservices.sort(Comparator.comparingInt(x -> microservicesProcessingOrder.indexOf(x)));
+    filesGroupedByMicroservices.sort(
+        Comparator.comparingInt(x -> microservicesProcessingOrder.indexOf(x.getMicroservice())));
     return filesGroupedByMicroservices;
   }
 

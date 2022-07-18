@@ -20,10 +20,10 @@ import io.harness.NgManagerTestBase;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.opa.OpaService;
 import io.harness.ng.opa.entities.secret.OpaSecretServiceImpl;
-import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 

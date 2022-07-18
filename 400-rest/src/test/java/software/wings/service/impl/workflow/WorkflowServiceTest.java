@@ -161,6 +161,7 @@ import static software.wings.sm.StateType.ARTIFACT_COLLECT_LOOP_STATE;
 import static software.wings.sm.StateType.AWS_CODEDEPLOY_STATE;
 import static software.wings.sm.StateType.AWS_LAMBDA_VERIFICATION;
 import static software.wings.sm.StateType.AWS_NODE_SELECT;
+import static software.wings.sm.StateType.COLLECT_REMAINING_INSTANCES;
 import static software.wings.sm.StateType.DC_NODE_SELECT;
 import static software.wings.sm.StateType.ECS_SERVICE_DEPLOY;
 import static software.wings.sm.StateType.ECS_SERVICE_SETUP;
@@ -4780,7 +4781,7 @@ public class WorkflowServiceTest extends WingsBaseTest {
   public void testAllStateTypesDefinedInStepTypes() {
     List<StateType> excludedStateTypes = asList(SUB_WORKFLOW, REPEAT, FORK, WAIT, PAUSE, ENV_STATE, PHASE, PHASE_STEP,
         AWS_LAMBDA_VERIFICATION, STAGING_ORIGINAL_EXECUTION, SCALYR, ENV_RESUME_STATE, ENV_LOOP_RESUME_STATE,
-        APPROVAL_RESUME, ENV_LOOP_STATE, ARTIFACT_COLLECT_LOOP_STATE);
+        APPROVAL_RESUME, ENV_LOOP_STATE, ARTIFACT_COLLECT_LOOP_STATE, COLLECT_REMAINING_INSTANCES);
 
     Set<String> stateTypes = new HashSet<>();
     for (StateType stateType : StateType.values()) {

@@ -97,22 +97,23 @@ public class CustomManifestValuesFetchTaskTest extends CategoryTest {
 
     doReturn(SAMPLE_1_RESULT)
         .when(customManifestService)
-        .fetchValues(eq(SAMPLE_1), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback));
+        .fetchValues(eq(SAMPLE_1), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback), eq(true));
     doReturn(SAMPLE_2_RESULT)
         .when(customManifestService)
-        .fetchValues(eq(SAMPLE_2), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback));
+        .fetchValues(eq(SAMPLE_2), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback), eq(true));
     doReturn(SAMPLE_3_RESULT)
         .when(customManifestService)
-        .fetchValues(eq(SAMPLE_3), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback));
+        .fetchValues(eq(SAMPLE_3), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback), eq(true));
     doThrow(new FileNotFoundException())
         .when(customManifestService)
-        .fetchValues(eq(MISSING_FILE), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback));
+        .fetchValues(eq(MISSING_FILE), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback), eq(true));
     doThrow(new AccessDeniedException("file not accessible"))
         .when(customManifestService)
-        .fetchValues(eq(NOT_ACCESSIBLE), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback));
+        .fetchValues(eq(NOT_ACCESSIBLE), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback), eq(true));
     doThrow(new RuntimeException("something wen wrong"))
         .when(customManifestService)
-        .fetchValues(eq(EXECUTION_EXCEPTION), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback));
+        .fetchValues(
+            eq(EXECUTION_EXCEPTION), workingDirectoryCaptor.capture(), eq(ACTIVITY_ID), eq(logCallback), eq(true));
 
     doAnswer(invocation -> invocation.getMethod().getName() + new Random().nextInt())
         .when(customManifestService)

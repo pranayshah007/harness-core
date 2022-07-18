@@ -150,6 +150,21 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
   }
 
   @Override
+  public ApplicationDetail upsizeApplication(CfRequestConfig pcfRequestConfig, LogCallback executionLogCallback)
+      throws PivotalClientApiException {
+    try {
+      ApplicationDetail applicationDetail = cfSdkClient.getApplicationByName(pcfRequestConfig);
+      cfSdkClient.scaleApplications(pcfRequestConfig);
+      if (pcfRequestConfig.getDesiredCount() >= 0 && applicationDetail.getInstances() == 0) {
+        cfCliClient.startAppByCli(pcfRequestConfig, executionLogCallback);
+      }
+      return cfSdkClient.getApplicationByName(pcfRequestConfig);
+    } catch (Exception e) {
+      throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);
+    }
+  }
+
+  @Override
   public ApplicationDetail upsizeApplicationWithSteadyStateCheck(
       CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
     boolean steadyStateReached = false;
@@ -159,7 +174,7 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     executionLogCallback.saveExecutionLog(color("\n# Streaming Logs From PCF -", White, Bold));
     StartedProcess startedProcess = startTailingLogsIfNeeded(cfRequestConfig, executionLogCallback, null);
 
-    ApplicationDetail applicationDetail = resizeApplication(cfRequestConfig);
+    ApplicationDetail applicationDetail = upsizeApplication(cfRequestConfig, executionLogCallback);
     while (!steadyStateReached && System.currentTimeMillis() < expiryTime) {
       try {
         startedProcess = startTailingLogsIfNeeded(cfRequestConfig, executionLogCallback, startedProcess);
@@ -211,6 +226,9 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
 
   @VisibleForTesting
   boolean reachedDesiredState(ApplicationDetail applicationDetail, int desiredCount) {
+    if (desiredCount == 0 && applicationDetail.getRunningInstances() == 0) {
+      return true;
+    }
     if (applicationDetail.getRunningInstances() != desiredCount) {
       return false;
     }

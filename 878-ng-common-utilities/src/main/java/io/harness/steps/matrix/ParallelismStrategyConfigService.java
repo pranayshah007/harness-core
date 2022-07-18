@@ -40,7 +40,7 @@ public class ParallelismStrategyConfigService implements StrategyConfigService {
   }
 
   @Override
-  public List<JsonNode> expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode) {
+  public StrategyInfo expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode) {
     Integer parallelism = 0;
     if (!ParameterField.isBlank(strategyConfig.getParallelism())) {
       parallelism = strategyConfig.getParallelism().getValue();
@@ -52,6 +52,6 @@ public class ParallelismStrategyConfigService implements StrategyConfigService {
       StageStrategyUtils.modifyJsonNode(clonedJsonNode, Lists.newArrayList(String.valueOf(i)));
       jsonNodes.add(clonedJsonNode);
     }
-    return jsonNodes;
+    return StrategyInfo.builder().expandedJsonNodes(jsonNodes).maxConcurrency(jsonNodes.size()).build();
   }
 }

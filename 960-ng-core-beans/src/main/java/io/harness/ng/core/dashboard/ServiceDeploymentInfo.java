@@ -19,4 +19,5 @@ import lombok.Value;
 public class ServiceDeploymentInfo {
   private String serviceName;
   private String serviceTag;
+  private String image;
 }

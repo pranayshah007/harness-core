@@ -378,6 +378,10 @@ public abstract class AbstractAzureAppServiceState extends State {
     return userDataSpecification.map(UserDataSpecification::getData).orElse(null);
   }
 
+  protected boolean isBasicWorkflowOrchestrationType(ExecutionContext context) {
+    return OrchestrationWorkflowType.BASIC.equals(context.getOrchestrationWorkflowType());
+  }
+
   protected abstract boolean supportRemoteManifest();
 
   protected abstract boolean shouldExecute(ExecutionContext context);

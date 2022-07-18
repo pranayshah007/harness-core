@@ -207,6 +207,8 @@ public interface ArtifactService extends OwnedByArtifactStream {
 
   Artifact getArtifactByBuildNumber(ArtifactStream artifactStream, String buildNumber, boolean regex);
 
+  Artifact getArtifactByBuildNumber(String accountId, String artifactStreamId, String buildNumber, boolean regex);
+
   Artifact getArtifactByBuildNumberAndSourceName(
       ArtifactStream artifactStream, String buildNumber, boolean regex, String artifactSourceName);
 

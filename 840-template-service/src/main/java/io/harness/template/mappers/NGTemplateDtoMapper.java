@@ -109,7 +109,9 @@ public class NGTemplateDtoMapper {
         .templateEntityType(templateConfig.getTemplateInfoConfig().getType())
         .templateScope(getScopeFromTemplateDto(templateConfig.getTemplateInfoConfig()))
         .fullyQualifiedIdentifier(templateReference.getFullyQualifiedName())
-        .childType(JsonNodeUtils.getString(templateConfig.getTemplateInfoConfig().getSpec(), "type"))
+        .childType(templateConfig.getTemplateInfoConfig().getSpec() != null
+                ? JsonNodeUtils.getString(templateConfig.getTemplateInfoConfig().getSpec(), "type")
+                : null)
         .build();
   }
 

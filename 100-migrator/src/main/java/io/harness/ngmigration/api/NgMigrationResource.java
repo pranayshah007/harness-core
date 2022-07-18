@@ -18,6 +18,7 @@ import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigrationInputResult;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.service.DiscoveryService;
 import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.rest.RestResponse;
@@ -33,6 +34,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -73,6 +75,16 @@ public class NgMigrationResource {
       @QueryParam("entityType") NGMigrationEntityType entityType, @QueryParam("exportImg") boolean exportImage) {
     return new RestResponse<>(discoveryService.discover(
         accountId, appId, entityId, entityType, exportImage ? NGMigrationConstants.DISCOVERY_IMAGE_PATH : null));
+  }
+
+  @GET
+  @Path("/discover/summary")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Map<NGMigrationEntityType, BaseSummary>> discoverySummary(@QueryParam("entityId") String entityId,
+      @QueryParam("appId") String appId, @QueryParam("accountId") String accountId,
+      @QueryParam("entityType") NGMigrationEntityType entityType) {
+    return new RestResponse<>(discoveryService.getSummary(accountId, appId, entityId, entityType));
   }
 
   @GET

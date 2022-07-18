@@ -10,6 +10,7 @@ package io.harness.pms.plan.execution.handlers;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.observers.PlanStatusUpdateObserver;
 import io.harness.exception.ExceptionUtils;
+import io.harness.execution.PlanExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.ExecutionStatus;
@@ -17,6 +18,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.metadata.RecentExecutionsInfoHelper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.security.PmsSecurityContextEventGuard;
 
@@ -33,28 +35,38 @@ import lombok.extern.slf4j.Slf4j;
 public class ExecutionInfoUpdateEventHandler implements PlanStatusUpdateObserver {
   private final PMSPipelineService pmsPipelineService;
   private final PlanExecutionService planExecutionService;
+  private final RecentExecutionsInfoHelper recentExecutionsInfoHelper;
 
   @Inject
-  public ExecutionInfoUpdateEventHandler(
-      PMSPipelineService pmsPipelineService, PlanExecutionService planExecutionService) {
+  public ExecutionInfoUpdateEventHandler(PMSPipelineService pmsPipelineService,
+      PlanExecutionService planExecutionService, RecentExecutionsInfoHelper recentExecutionsInfoHelper) {
     this.pmsPipelineService = pmsPipelineService;
     this.planExecutionService = planExecutionService;
+    this.recentExecutionsInfoHelper = recentExecutionsInfoHelper;
   }
 
   @Override
   public void onPlanStatusUpdate(Ambiance ambiance) {
+    String planExecutionId = ambiance.getPlanExecutionId();
+    PlanExecution planExecution = planExecutionService.get(planExecutionId);
+
+    recentExecutionsInfoHelper.onExecutionUpdate(ambiance, planExecution);
+    updateExecutionInfoInPipelineEntity(ambiance, planExecution);
+  }
+
+  void updateExecutionInfoInPipelineEntity(Ambiance ambiance, PlanExecution planExecution) {
     // this security context guard is needed because now pipeline get requires proper permissions to be set in the case
     // when the Pipeline is REMOTE
     try (PmsSecurityContextEventGuard ignore = new PmsSecurityContextEventGuard(ambiance)) {
+      Status status = planExecution.getStatus();
       String accountId = AmbianceUtils.getAccountId(ambiance);
-      String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
       String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+      String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
       String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
       Optional<PipelineEntity> pipelineEntity = pmsPipelineService.get(accountId, orgId, projectId, pipelineId, false);
       if (!pipelineEntity.isPresent()) {
         return;
       }
-      Status status = planExecutionService.get(ambiance.getPlanExecutionId()).getStatus();
       ExecutionSummaryInfo executionSummaryInfo = pipelineEntity.get().getExecutionSummaryInfo();
       if (executionSummaryInfo != null) {
         executionSummaryInfo.setLastExecutionStatus(ExecutionStatus.getExecutionStatus(status));

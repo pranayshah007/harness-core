@@ -33,7 +33,7 @@ public class InstanceGroupedByArtifactList {
   public static class InstanceGroupedByInfrastructure {
     String infraIdentifier;
     String infraName;
-    int count;
+    Integer count;
     String lastPipelineExecutionId;
     String lastPipelineExecutionName;
     String lastDeployedAt;

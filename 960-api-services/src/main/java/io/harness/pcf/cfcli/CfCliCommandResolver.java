@@ -23,6 +23,7 @@ import io.harness.pcf.cfcli.command.PluginsCliCommand;
 import io.harness.pcf.cfcli.command.PushCliCommand;
 import io.harness.pcf.cfcli.command.PushCliCommand.PushOptions;
 import io.harness.pcf.cfcli.command.SetEnvCliCommand;
+import io.harness.pcf.cfcli.command.StartAppCliCommand;
 import io.harness.pcf.cfcli.command.TargetCliCommand;
 import io.harness.pcf.cfcli.command.TargetCliCommand.TargetOptions;
 import io.harness.pcf.cfcli.command.UnmapRouteCliCommand;
@@ -143,6 +144,15 @@ public interface CfCliCommandResolver {
         .cliPath(cfCliPath)
         .cliVersion(cfCliVersion)
         .arguments(Arrays.asList(appName, autoScalarFilePath))
+        .build()
+        .getCommand();
+  }
+
+  static String getStartAppCliCommand(final String cfCliPath, CfCliVersion cfCliVersion, final String appName) {
+    return StartAppCliCommand.builder()
+        .cliPath(cfCliPath)
+        .cliVersion(cfCliVersion)
+        .arguments(Collections.singletonList(appName))
         .build()
         .getCommand();
   }

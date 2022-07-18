@@ -75,6 +75,6 @@ public class OverviewQuery {
       return null;
     }
 
-    return perspectiveTimeSeriesHelper.fetch(result, timePeriod);
+    return perspectiveTimeSeriesHelper.fetch(result, timePeriod, groupBy);
   }
 }

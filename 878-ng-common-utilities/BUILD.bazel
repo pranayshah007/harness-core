@@ -11,7 +11,6 @@ java_library(
     deps = [
         "@maven//:com_google_guava_guava",
     ] + [
-        "//882-pms-sdk-core:module",
         "//910-delegate-service-driver:module",
         "//930-delegate-tasks:module",
         "//930-ng-core-clients:module",
@@ -28,6 +27,7 @@ java_library(
         "//970-telemetry-beans:module",
         "//980-commons:module",
         "//clients/access-control/sdk:module",
+        "//clients/pipeline-service/pms-sdk-core:module",
         "@maven//:com_squareup_retrofit2_converter_gson",
         "//:lombok",
     ],

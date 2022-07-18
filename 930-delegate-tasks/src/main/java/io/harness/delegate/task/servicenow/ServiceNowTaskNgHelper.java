@@ -175,14 +175,17 @@ public class ServiceNowTaskNgHelper {
       handleResponse(response, "Failed to create ServiceNow ticket");
       JsonNode responseObj = response.body().get("result");
       String ticketNumber = responseObj.get("record_number").asText();
+      String ticketSysId = responseObj.get("record_sys_id").asText();
 
       ServiceNowTicketNGBuilder serviceNowTicketNGBuilder =
-          fetchServiceNowTicketUsingNumber(ticketNumber, serviceNowTaskNGParameters);
-      log.info("ticketNumber created for ServiceNow: {}", ticketNumber);
-      String ticketUrl = ServiceNowUtils.prepareTicketUrlFromTicketNumber(
-          serviceNowConnectorDTO.getServiceNowUrl(), ticketNumber, serviceNowTaskNGParameters.getTicketType());
-
-      return ServiceNowTaskNGResponse.builder().ticket(serviceNowTicketNGBuilder.url(ticketUrl).build()).build();
+          fetchServiceNowTicketUsingSysId(ticketSysId, serviceNowTaskNGParameters);
+      log.info(String.format("Created ticket with number: %s, sys_id: %s", ticketNumber, ticketSysId));
+      // get url from sys_id instead of ticket number
+      String ticketUrlFromSysId = ServiceNowUtils.prepareTicketUrlFromTicketId(
+          serviceNowConnectorDTO.getServiceNowUrl(), ticketSysId, serviceNowTaskNGParameters.getTicketType());
+      return ServiceNowTaskNGResponse.builder()
+          .ticket(serviceNowTicketNGBuilder.url(ticketUrlFromSysId).build())
+          .build();
     } catch (Exception e) {
       log.error("Failed to create ServiceNow ticket ");
       throw new ServiceNowException(ExceptionUtils.getMessage(e), SERVICENOW_ERROR, USER, e);
@@ -221,16 +224,16 @@ public class ServiceNowTaskNgHelper {
       handleResponse(response, "Failed to update ServiceNow ticket");
       JsonNode responseObj = response.body().get("result");
       String ticketNumber = responseObj.get("record_number").asText();
+      String ticketSysId = responseObj.get("record_sys_id").asText();
 
       ServiceNowTicketNGBuilder serviceNowTicketNGBuilder =
-          fetchServiceNowTicketUsingNumber(ticketNumber, serviceNowTaskNGParameters);
+          fetchServiceNowTicketUsingSysId(ticketSysId, serviceNowTaskNGParameters);
 
-      log.info("Ticket Number of updated ticket: {}", ticketNumber);
-      // todo: use ticketLink provided by ServiceNow?
-      String ticketUrlFromTicketNumber = ServiceNowUtils.prepareTicketUrlFromTicketNumber(
-          serviceNowConnectorDTO.getServiceNowUrl(), ticketNumber, serviceNowTaskNGParameters.getTicketType());
+      log.info(String.format("Updated ticket with number: %s, sys_id: %s", ticketNumber, ticketSysId));
+      String ticketUrlFromSysId = ServiceNowUtils.prepareTicketUrlFromTicketId(
+          serviceNowConnectorDTO.getServiceNowUrl(), ticketSysId, serviceNowTaskNGParameters.getTicketType());
       return ServiceNowTaskNGResponse.builder()
-          .ticket(serviceNowTicketNGBuilder.url(ticketUrlFromTicketNumber).build())
+          .ticket(serviceNowTicketNGBuilder.url(ticketUrlFromSysId).build())
           .build();
     } catch (Exception e) {
       log.error("Failed to create ServiceNow ticket ");
@@ -280,9 +283,9 @@ public class ServiceNowTaskNgHelper {
     }
   }
 
-  private ServiceNowTicketNGBuilder fetchServiceNowTicketUsingNumber(
-      String ticketNumber, ServiceNowTaskNGParameters parameters) {
-    String query = "number=" + ticketNumber;
+  private ServiceNowTicketNGBuilder fetchServiceNowTicketUsingSysId(
+      String ticketSysId, ServiceNowTaskNGParameters parameters) {
+    String query = "sys_id=" + ticketSysId;
     ServiceNowConnectorDTO serviceNowConnectorDTO = parameters.getServiceNowConnectorDTO();
     String userName = getUserName(serviceNowConnectorDTO);
     String password = new String(serviceNowConnectorDTO.getPasswordRef().getDecryptedValue());
@@ -295,28 +298,28 @@ public class ServiceNowTaskNgHelper {
     try {
       response = request.execute();
       log.info("Response received from serviceNow: {}", response);
-      handleResponse(response, "Failed to fetch ticketId : " + ticketNumber + " from serviceNow");
+      handleResponse(response, "Failed to fetch ticket with sys_id : " + ticketSysId + " from serviceNow");
       JsonNode responseObj = response.body().get("result");
       if (responseObj.isArray()) {
         if (responseObj.size() > 1) {
-          String errorMsg = "Multiple issues found for " + ticketNumber + "Please enter unique issueNumber";
+          String errorMsg = "Multiple issues found for sys_id " + ticketSysId;
           throw new ServiceNowException(errorMsg, SERVICENOW_ERROR, USER);
         }
         JsonNode issueObj = responseObj.get(0);
         if (issueObj != null) {
           return parseFromServiceNowTicketResponse(issueObj);
         } else {
-          String errorMsg = "Error in fetching issue " + ticketNumber + " .Issue does not exist";
+          String errorMsg = "Error in fetching issue " + ticketSysId + " .Issue does not exist";
           throw new ServiceNowException(errorMsg, SERVICENOW_ERROR, USER);
         }
       } else {
         throw new ServiceNowException(
-            "Failed to fetch issueNumber " + ticketNumber + "response: " + response, SERVICENOW_ERROR, USER);
+            "Failed to fetch issueNumber " + ticketSysId + "response: " + response, SERVICENOW_ERROR, USER);
       }
     } catch (WingsException e) {
       throw e;
     } catch (Exception e) {
-      String errorMsg = "Error in fetching issueNumber " + parameters.getTicketNumber();
+      String errorMsg = "Error in fetching issue with sys_id " + ticketSysId;
       throw new ServiceNowException(errorMsg + ExceptionUtils.getMessage(e), SERVICENOW_ERROR, USER, e);
     }
   }

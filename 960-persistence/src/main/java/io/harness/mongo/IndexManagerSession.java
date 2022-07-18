@@ -597,7 +597,9 @@ public class IndexManagerSession {
         // verification service
         "timeSeriesAnomaliesRecords", "timeSeriesCumulativeSums",
         // telemetry
-        "ciTelemetrySentStatus", "ciAccountExecutionMetadata");
+        "ciTelemetrySentStatus", "ciAccountExecutionMetadata",
+        // cd-telemetry
+        "cdTelemetrySentStatus", "cdAccountExecutionMetadata");
 
     List<String> obsoleteCollections = datastore.getDB()
                                            .getCollectionNames()

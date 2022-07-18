@@ -12,6 +12,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.NGMigrationConstants.VIZ_FILE_NAME;
 import static io.harness.ngmigration.utils.NGMigrationConstants.VIZ_TEMP_DIR_PREFIX;
 
+import static java.util.stream.Collectors.groupingBy;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -25,6 +27,7 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigrationInputResult;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.utils.NGMigrationConstants;
@@ -89,6 +92,11 @@ public class DiscoveryService {
     CgEntityNode currentNode = discoveryNode.getEntityNode();
     Set<CgEntityId> chilldren = discoveryNode.getChildren();
 
+    // To ensure that appId is present in case of account level discovery
+    if (NGMigrationEntityType.APPLICATION.equals(currentNode.getType())) {
+      appId = currentNode.getId();
+    }
+
     // Add the discovered node to the graph
     entities.putIfAbsent(currentNode.getEntityId(), currentNode);
     graph.putIfAbsent(currentNode.getEntityId(), new HashSet<>());
@@ -101,13 +109,30 @@ public class DiscoveryService {
 
     // Discover the child nodes and add to graph
     if (isNotEmpty(chilldren)) {
-      // check if child already discovered, if yes, no need to rediscover. Just create a link in parent.
-      chilldren.forEach(child -> {
+      // TODO: check if child already discovered, if yes, no need to rediscover. Just create a link in parent.
+      for (CgEntityId child : chilldren) {
         NgMigrationService ngMigrationService = migrationFactory.getMethod(child.getType());
         DiscoveryNode node = ngMigrationService.discover(accountId, appId, child.getId());
         travel(accountId, appId, entities, graph, currentNode.getEntityId(), node);
-      });
+      }
     }
+  }
+
+  public Map<NGMigrationEntityType, BaseSummary> getSummary(
+      String accountId, String appId, String entityId, NGMigrationEntityType entityType) {
+    DiscoveryResult result = discover(accountId, appId, entityId, entityType, null);
+    Map<NGMigrationEntityType, List<CgEntityNode>> entitiesByType =
+        result.getEntities().values().stream().collect(groupingBy(CgEntityNode::getType));
+
+    Map<NGMigrationEntityType, BaseSummary> summaries = new HashMap<>();
+
+    entitiesByType.forEach((key, value) -> {
+      NgMigrationService ngMigrationService = migrationFactory.getMethod(key);
+      BaseSummary summary = ngMigrationService.getSummary(value);
+      summaries.put(key, summary);
+    });
+
+    return summaries;
   }
 
   /*

@@ -32,7 +32,7 @@ public class AzureWebAppDeploymentInfoDTO extends DeploymentInfoDTO {
 
   @Override
   public String getType() {
-    return ServiceSpecType.AZURE_WEBAPPS;
+    return ServiceSpecType.AZURE_WEBAPP;
   }
 
   @Override

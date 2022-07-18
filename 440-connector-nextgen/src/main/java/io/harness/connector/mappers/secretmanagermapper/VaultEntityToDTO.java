@@ -38,6 +38,7 @@ public class VaultEntityToDTO implements ConnectorEntityToDTOMapper<VaultConnect
         .useK8sAuth(connector.getUseK8sAuth())
         .vaultK8sAuthRole(connector.getVaultK8sAuthRole())
         .serviceAccountTokenPath(connector.getServiceAccountTokenPath())
+        .k8sAuthEndpoint(connector.getK8sAuthEndpoint())
         .secretEngineManuallyConfigured(connector.isSecretEngineManuallyConfigured())
         .appRoleId(connector.getAppRoleId())
         .secretId(SecretRefHelper.createSecretRef(connector.getSecretIdRef()))

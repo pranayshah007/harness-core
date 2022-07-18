@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.K8sApplyBaseStepInfo.K8sApplyBaseStepInfoKeys;
+import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
@@ -62,6 +63,7 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
   private final String K8S_APPLY_COMMAND_NAME = "K8s Apply";
 
   @Inject private K8sStepHelper k8sStepHelper;
+  @Inject private CDStepHelper cdStepHelper;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -120,7 +122,7 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
       K8sExecutionPassThroughData executionPassThroughData, boolean shouldOpenFetchFilesLogStream,
       UnitProgressData unitProgressData) {
     InfrastructureOutcome infrastructure = executionPassThroughData.getInfrastructure();
-    String releaseName = k8sStepHelper.getReleaseName(ambiance, infrastructure);
+    String releaseName = cdStepHelper.getReleaseName(ambiance, infrastructure);
     K8sApplyStepParameters k8sApplyStepParameters = (K8sApplyStepParameters) stepElementParameters.getSpec();
     boolean skipDryRun = CDStepHelper.getParameterFieldBooleanValue(
         k8sApplyStepParameters.getSkipDryRun(), K8sApplyBaseStepInfoKeys.skipDryRun, stepElementParameters);
@@ -137,18 +139,20 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
             .taskType(K8sTaskType.APPLY)
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .valuesYamlList(k8sStepHelper.renderValues(k8sManifestOutcome, ambiance, manifestOverrideContents))
-            .k8sInfraDelegateConfig(k8sStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
+            .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
             .kustomizePatchesList(k8sStepHelper.renderPatches(k8sManifestOutcome, ambiance, manifestOverrideContents))
-            .manifestDelegateConfig(k8sStepHelper.getManifestDelegateConfig(k8sManifestOutcome, ambiance))
+            .manifestDelegateConfig(
+                k8sStepHelper.getManifestDelegateConfigWrapper(executionPassThroughData.getZippedManifestId(),
+                    k8sManifestOutcome, ambiance, executionPassThroughData.getManifestFiles()))
             .accountId(accountId)
             .deprecateFabric8Enabled(true)
             .filePaths(k8sApplyStepParameters.getFilePaths().getValue())
             .skipSteadyStateCheck(skipSteadyStateCheck)
             .shouldOpenFetchFilesLogStream(shouldOpenFetchFilesLogStream)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-            .useLatestKustomizeVersion(k8sStepHelper.isUseLatestKustomizeVersion(accountId))
-            .useNewKubectlVersion(k8sStepHelper.isUseNewKubectlVersion(accountId))
-            .useK8sApiForSteadyStateCheck(k8sStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
+            .useLatestKustomizeVersion(cdStepHelper.isUseLatestKustomizeVersion(accountId))
+            .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
+            .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
@@ -160,8 +164,12 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance,
       StepElementParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+    if (passThroughData instanceof CustomFetchResponsePassThroughData) {
+      return k8sStepHelper.handleCustomTaskFailure((CustomFetchResponsePassThroughData) passThroughData);
+    }
+
     if (passThroughData instanceof GitFetchResponsePassThroughData) {
-      return k8sStepHelper.handleGitTaskFailure((GitFetchResponsePassThroughData) passThroughData);
+      return cdStepHelper.handleGitTaskFailure((GitFetchResponsePassThroughData) passThroughData);
     }
 
     if (passThroughData instanceof HelmValuesFetchResponsePassThroughData) {
@@ -169,7 +177,7 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
     }
 
     if (passThroughData instanceof StepExceptionPassThroughData) {
-      return k8sStepHelper.handleStepExceptionFailure((StepExceptionPassThroughData) passThroughData);
+      return cdStepHelper.handleStepExceptionFailure((StepExceptionPassThroughData) passThroughData);
     }
 
     K8sDeployResponse k8sTaskExecutionResponse;

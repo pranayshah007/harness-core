@@ -10,99 +10,79 @@ package io.harness.delegate;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.callback.DelegateCallbackToken;
-import io.harness.delegate.DelegateServiceGrpc.DelegateServiceBlockingStub;
 import io.harness.exception.DelegateServiceLiteException;
+import io.harness.managerclient.DelegateAgentManagerClient;
+import io.harness.rest.CallbackWithRetry;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
-import io.grpc.StatusRuntimeException;
-import java.util.concurrent.TimeUnit;
+import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.Call;
 
 @Slf4j
 @TargetModule(HarnessModule._920_DELEGATE_AGENT_BEANS)
 public class DelegateServiceAgentClient {
-  private final DelegateServiceBlockingStub delegateServiceBlockingStub;
-
-  @Inject
-  public DelegateServiceAgentClient(
-      @Named("agent-client-stub") DelegateServiceBlockingStub delegateServiceBlockingStub) {
-    this.delegateServiceBlockingStub = delegateServiceBlockingStub;
-  }
+  @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
 
   public boolean sendTaskProgressUpdate(
       AccountId accountId, TaskId taskId, DelegateCallbackToken delegateCallbackToken, byte[] responseData) {
+    CompletableFuture<SendTaskProgressResponse> result = new CompletableFuture<>();
     try {
-      SendTaskProgressResponse response =
-          delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
-              .sendTaskProgress(
-                  SendTaskProgressRequest.newBuilder()
-                      .setAccountId(accountId)
-                      .setTaskId(taskId)
-                      .setCallbackToken(delegateCallbackToken)
-                      .setTaskResponseData(
-                          TaskResponseData.newBuilder().setKryoResultsData(ByteString.copyFrom(responseData)).build())
-                      .build());
-
-      return response.getSuccess();
-    } catch (StatusRuntimeException ex) {
-      throw new DelegateServiceClientException("Unexpected error occurred while sending task progress update.", ex);
+      Call<SendTaskProgressResponse> call = delegateAgentManagerClient.sendTaskProgressUpdate(
+          SendTaskProgressRequest.newBuilder()
+              .setAccountId(accountId)
+              .setTaskId(taskId)
+              .setCallbackToken(delegateCallbackToken)
+              .setTaskResponseData(
+                  TaskResponseData.newBuilder().setKryoResultsData(ByteString.copyFrom(responseData)).build())
+              .build(),
+          accountId.getId());
+      executeAsyncCallWithRetry(call, result);
+      return result.get().getSuccess();
+    } catch (IOException | InterruptedException | ExecutionException e) {
+      log.error("Error while sending sendTaskProgressUpdate ", e);
     }
-  }
-
-  public ExecuteParkedTaskResponse executeParkedTask(AccountId accountId, TaskId taskId) {
-    try {
-      return delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
-          .executeParkedTask(ExecuteParkedTaskRequest.newBuilder().setTaskId(taskId).setAccountId(accountId).build());
-    } catch (StatusRuntimeException ex) {
-      throw new DelegateServiceLiteException("Unexpected error occurred while executing parked task.", ex);
-    }
-  }
-
-  public FetchParkedTaskStatusResponse fetchParkedTaskStatus(
-      AccountId accountId, TaskId taskId, DelegateCallbackToken delegateCallbackToken) {
-    try {
-      return delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
-          .fetchParkedTaskStatus(FetchParkedTaskStatusRequest.newBuilder()
-                                     .setAccountId(accountId)
-                                     .setTaskId(taskId)
-                                     .setCallbackToken(delegateCallbackToken)
-                                     .build());
-    } catch (StatusRuntimeException ex) {
-      throw new DelegateServiceLiteException("Unexpected error occurred fetching parked task results.", ex);
-    }
+    return false;
   }
 
   public TaskExecutionStage taskProgress(AccountId accountId, TaskId taskId) {
+    CompletableFuture<TaskProgressResponse> result = new CompletableFuture<>();
     try {
-      TaskProgressResponse response =
-          delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
-              .taskProgress(TaskProgressRequest.newBuilder().setAccountId(accountId).setTaskId(taskId).build());
-
-      return response.getCurrentlyAtStage();
-    } catch (StatusRuntimeException ex) {
+      Call<TaskProgressResponse> call = delegateAgentManagerClient.taskProgress(
+          TaskProgressRequest.newBuilder().setAccountId(accountId).setTaskId(taskId).build(), accountId.getId());
+      executeAsyncCallWithRetry(call, result);
+      return result.get().getCurrentlyAtStage();
+    } catch (IOException | ExecutionException | InterruptedException ex) {
       throw new DelegateServiceLiteException("Unexpected error occurred while checking task progress.", ex);
     }
   }
 
   public boolean sendTaskStatus(
       AccountId accountId, TaskId taskId, DelegateCallbackToken delegateCallbackToken, byte[] responseData) {
+    CompletableFuture<SendTaskStatusResponse> result = new CompletableFuture<>();
     try {
-      SendTaskStatusResponse response =
-          delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
-              .sendTaskStatus(
-                  SendTaskStatusRequest.newBuilder()
-                      .setAccountId(accountId)
-                      .setTaskId(taskId)
-                      .setCallbackToken(delegateCallbackToken)
-                      .setTaskResponseData(
-                          TaskResponseData.newBuilder().setKryoResultsData(ByteString.copyFrom(responseData)).build())
-                      .build());
-
-      return response.getSuccess();
-    } catch (StatusRuntimeException ex) {
+      Call<SendTaskStatusResponse> call = delegateAgentManagerClient.sendTaskStatus(
+          SendTaskStatusRequest.newBuilder()
+              .setAccountId(accountId)
+              .setTaskId(taskId)
+              .setCallbackToken(delegateCallbackToken)
+              .setTaskResponseData(
+                  TaskResponseData.newBuilder().setKryoResultsData(ByteString.copyFrom(responseData)).build())
+              .build(),
+          accountId.getId());
+      executeAsyncCallWithRetry(call, result);
+      return result.get().getSuccess();
+    } catch (ExecutionException | InterruptedException | IOException ex) {
       throw new DelegateServiceLiteException("Unexpected error occurred while sending task status.", ex);
     }
+  }
+
+  private <T> T executeAsyncCallWithRetry(Call<T> call, CompletableFuture<T> result)
+      throws IOException, ExecutionException, InterruptedException {
+    call.enqueue(new CallbackWithRetry<T>(call, result));
+    return result.get();
   }
 }

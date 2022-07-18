@@ -9,6 +9,7 @@ package io.harness.ci.plan.creator.filter;
 
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_DIRECT;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.VM;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.filters.FilterCreatorHelper.convertToEntityDetailProtoDTO;
 import static io.harness.git.GitClientHelper.getGitRepo;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CI;
@@ -123,14 +124,18 @@ public class CIStageFilterJsonCreator extends GenericStageFilterJsonCreator {
 
     Infrastructure infrastructure = integrationStageConfig.getInfrastructure();
     if (infrastructure == null) {
-      throw new CIStageExecutionException("Infrastructure is mandatory for execution");
-    }
-    if (infrastructure.getType() == Infrastructure.Type.VM) {
-      validationUtils.validateVmInfraDependencies(integrationStageConfig.getServiceDependencies().getValue());
-    }
-    if (infrastructure.getType() == KUBERNETES_DIRECT
-        && k8InitializeTaskUtils.getOS(infrastructure) == OSType.Windows) {
-      validationUtils.validateWindowsK8Stage(integrationStageConfig.getExecution());
+      String runsOn = integrationStageConfig.getRunsOn().getValue();
+      if (isEmpty(runsOn)) {
+        throw new CIStageExecutionException("Infrastructure or runsOn field is mandatory for execution");
+      }
+    } else {
+      if (infrastructure.getType() == Infrastructure.Type.VM) {
+        validationUtils.validateVmInfraDependencies(integrationStageConfig.getServiceDependencies().getValue());
+      }
+      if (infrastructure.getType() == KUBERNETES_DIRECT
+          && k8InitializeTaskUtils.getOS(infrastructure) == OSType.Windows) {
+        validationUtils.validateWindowsK8Stage(integrationStageConfig.getExecution());
+      }
     }
   }
 
@@ -163,7 +168,10 @@ public class CIStageFilterJsonCreator extends GenericStageFilterJsonCreator {
 
     IntegrationStageConfig integrationStage = (IntegrationStageConfig) stageElementConfig.getStageType();
     if (integrationStage.getInfrastructure() == null) {
-      throw new CIStageExecutionException("Input infrastructure is not set");
+      String runsOn = integrationStage.getRunsOn().getValue();
+      if (isEmpty(runsOn)) {
+        throw new CIStageExecutionException("Infrastructure or runsOn field is mandatory for execution");
+      }
     } else {
       if (integrationStage.getInfrastructure().getType() == KUBERNETES_DIRECT) {
         K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) integrationStage.getInfrastructure();

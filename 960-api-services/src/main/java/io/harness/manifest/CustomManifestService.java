@@ -22,13 +22,13 @@ public interface CustomManifestService {
       throws IOException;
 
   Collection<CustomSourceFile> fetchValues(@NotNull CustomManifestSource source, String workingDirectory,
-      String activityId, LogCallback logCallback) throws IOException;
+      String activityId, LogCallback logCallback, boolean closeLogStream) throws IOException;
 
   String getWorkingDirectory() throws IOException;
 
   @NotNull
-  String executeCustomSourceScript(
-      String activityId, LogCallback logCallback, CustomManifestSource customManifestSource) throws IOException;
+  String executeCustomSourceScript(String activityId, LogCallback logCallback,
+      CustomManifestSource customManifestSource, boolean closeLogStream) throws IOException;
 
   Collection<CustomSourceFile> readFilesContent(String parentDirectory, List<String> filesPath) throws IOException;
 

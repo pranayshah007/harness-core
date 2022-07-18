@@ -10,6 +10,9 @@ package io.harness.ngmigration.service.entity;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
+
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.GitStore.GitStoreBuilder;
@@ -23,6 +26,8 @@ import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.summary.AppManifestSummary;
+import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
@@ -66,6 +71,24 @@ public class ManifestMigrationService extends NgMigrationService {
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
     throw new IllegalAccessError("Mapping not allowed for Manifests");
+  }
+
+  @Override
+  public BaseSummary getSummary(List<CgEntityNode> entities) {
+    if (isEmpty(entities)) {
+      return null;
+    }
+    Map<String, Long> kindSummary = entities.stream()
+                                        .map(entity -> (ApplicationManifest) entity.getEntity())
+                                        .collect(groupingBy(entity -> entity.getKind().name(), counting()));
+    Map<String, Long> storeSummary = entities.stream()
+                                         .map(entity -> (ApplicationManifest) entity.getEntity())
+                                         .collect(groupingBy(entity -> entity.getStoreType().name(), counting()));
+    return AppManifestSummary.builder()
+        .count(entities.size())
+        .kindSummary(kindSummary)
+        .storeSummary(storeSummary)
+        .build();
   }
 
   @Override

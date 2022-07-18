@@ -118,6 +118,7 @@ public class NextGenConfiguration extends Configuration {
   public static final String ENTITYSETUP_PACKAGE = "io.harness.ng.core.entitysetupusage.resource";
   public static final String SCHEMA_PACKAGE = "io.harness.ng.core.schema.resource";
   public static final String DELEGATE_PACKAGE = "io.harness.ng.core.delegate.resources";
+  public static final String AGENT_PACKAGE = "io.harness.ng.core.agent.resources";
   public static final String ACCESS_CONTROL_PACKAGE = "io.harness.ng.accesscontrol.resources";
   public static final String FEEDBACK_PACKAGE = "io.harness.ng.feedback.resources";
   public static final String INSTANCE_SYNC_PACKAGE = "io.harness.ng.instancesync.resources";
@@ -273,7 +274,7 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.GITOPS_RESOURCE_PACKAGE, NextGenConfiguration.INFRA_RESOURCE_PACKAGE,
                 NextGenConfiguration.AWS_PACKAGE, NextGenConfiguration.OAUTH_RESOURCE_PACKAGE,
                 NextGenConfiguration.LDAP_PACKAGE, NextGenConfiguration.CHAOS_PACKAGE,
-                NextGenConfiguration.SETTINGS_RESOURCE_PACKAGE))
+                NextGenConfiguration.SETTINGS_RESOURCE_PACKAGE, NextGenConfiguration.AGENT_PACKAGE))
         .collect(Collectors.toSet());
   }
 
