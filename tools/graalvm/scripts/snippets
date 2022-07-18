@@ -1,0 +1,51 @@
+## this is simply a set of lines that may be added to our native-image command
+## they are listed here for easy copy/paste ability
+
+--initialize-at-build-time=org.apache.sshd.common.util.GenericUtils \
+--initialize-at-build-time=io.netty \
+--initialize-at-build-time=ch.qos.logback \
+--initialize-at-build-time=ch.qos.logback.classic.Logger \
+--initialize-at-build-time=ch.qos.logback.classic.Level \
+--initialize-at-build-time=ch.qos.logback.classic.PatternLayout \
+--initialize-at-build-time=ch.qos.logback.core.spi.AppenderAttachableImpl \
+--initialize-at-build-time=ch.qos.logback.core.status.InfoStatus \
+--initialize-at-build-time=org.apache.sshd.client.subsystem.sftp.SftpFileSystemProvider \
+
+--initialize-at-run-time=io.netty.channel.kqueue.KQueueEventArray \
+--initialize-at-run-time=io.netty.channel.kqueue.Native \
+--initialize-at-run-time=io.netty.util.NetUtil \
+--initialize-at-run-time=io.netty.channel.epoll.Epoll \
+--initialize-at-run-time=io.netty.channel.epoll.Native \
+--initialize-at-run-time=io.netty.channel.epoll.EpollEventArray \
+--initialize-at-run-time=io.netty.handler.ssl.JdkNpnApplicationProtocolNegotiator \
+--initialize-at-run-time=io.netty.handler.ssl.ReferenceCountedOpenSslEngine \
+--initialize-at-run-time=io.netty.channel.unix.Limits \
+--initialize-at-run-time=io.netty.handler.ssl.JettyNpnSslEngine \
+--initialize-at-run-time=io.netty.channel.socket.InternetProtocolFamily \
+--initialize-at-run-time=io.netty.resolver.dns.DnsServerAddressStreamProviders \
+--initialize-at-run-time=io.netty.resolver.dns.DnsNameResolver \
+--initialize-at-run-time=io.netty.resolver.dns.DefaultDnsServerAddressStreamProvider \
+--initialize-at-run-time=io.netty.channel.DefaultChannelId \
+--initialize-at-run-time=io.netty.resolver.dns.DnsServerAddressStreamProviders\$DefaultProviderHolder \
+--initialize-at-run-time=io.netty.util.AbstractReferenceCounted \
+
+--trace-object-instantiation=org.bouncycastle.jce.provider.BouncyCastleProvider \
+--trace-object-instantiation='org.bouncycastle.jcajce.provider.asymmetric.edec.KeyFactorySpi$X448' \
+
+--trace-class-initialization=jdk.xml.internal.SecuritySupport \
+--trace-class-initialization=org.slf4j.MDC \
+--trace-class-initialization=org.slf4j.impl.StaticLoggerBinder \
+--trace-class-initialization=org.slf4j.LoggerFactory \
+--trace-class-initialization=com.google.common.collect.RegularImmutableMap \
+--trace-class-initialization=io.netty.channel.socket.InternetProtocolFamily \
+--trace-class-initialization=javax.xml.parsers.FactoryFinder \
+--trace-class-initialization=org.apache.sshd.common.util.GenericUtils \
+--trace-class-initialization=org.conscrypt.OpenSSLProvider \
+--trace-class-initialization=org.conscrypt.HostProperties\$Architecture\$1 \
+--trace-class-initialization=org.conscrypt.Platform \
+--trace-class-initialization=org.conscrypt.NativeCrypto \
+--trace-class-initialization=org.conscrypt.HostProperties \
+--trace-class-initialization=org.slf4j.impl.StaticLoggerBinder \
+--trace-class-initialization=org.conscrypt.Conscrypt \
+--trace-class-initialization=io.netty.util.AbstractReferenceCounted \
+
