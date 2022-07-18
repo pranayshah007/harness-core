@@ -74,6 +74,7 @@ import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
 import io.harness.delegate.task.helm.HelmChartInfo;
+import io.harness.exception.GeneralException;
 import io.harness.exception.runtime.NoInstancesException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.k8s.model.HarnessLabels;
@@ -84,23 +85,9 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.api.ContainerDeploymentInfoWithLabels;
-import software.wings.api.ContainerDeploymentInfoWithNames;
-import software.wings.api.DeploymentInfo;
-import software.wings.api.DeploymentSummary;
-import software.wings.api.HelmSetupExecutionSummary;
-import software.wings.api.K8sDeploymentInfo;
+import software.wings.api.*;
 import software.wings.api.ondemandrollback.OnDemandRollbackInfo;
-import software.wings.beans.Application;
-import software.wings.beans.ContainerInfrastructureMapping;
-import software.wings.beans.DirectKubernetesInfrastructureMapping;
-import software.wings.beans.EcsInfrastructureMapping;
-import software.wings.beans.Environment;
-import software.wings.beans.GcpKubernetesInfrastructureMapping;
-import software.wings.beans.HelmExecutionSummary;
-import software.wings.beans.InfrastructureMapping;
-import software.wings.beans.InfrastructureMappingType;
-import software.wings.beans.Service;
+import software.wings.beans.*;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.container.Label;
 import software.wings.beans.infrastructure.instance.Instance;
@@ -114,6 +101,7 @@ import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo
 import software.wings.beans.infrastructure.instance.key.ContainerInstanceKey;
 import software.wings.beans.infrastructure.instance.key.HostInstanceKey;
 import software.wings.beans.infrastructure.instance.key.PodInstanceKey;
+import software.wings.beans.infrastructure.instance.key.deployment.AwsCodeDeployDeploymentKey;
 import software.wings.beans.infrastructure.instance.key.deployment.ContainerDeploymentKey;
 import software.wings.beans.infrastructure.instance.key.deployment.DeploymentKey;
 import software.wings.beans.infrastructure.instance.key.deployment.K8sDeploymentKey;
@@ -2233,7 +2221,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Test
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
-  public void shouldNotChangeInstancesFromPerpetualTaskIfResponseFromDelegateIsSameEcs() throws Exception {
+  public void shouldNotChangeInstancesFromPerpetualTaskIfResponseFromDelegateIsSameECS() throws Exception {
     List<Instance> instancesInDb =
         Arrays.asList(createECSInstance("instance1"), createECSInstance("instance2"), createECSInstance("instance3"));
 
@@ -2244,7 +2232,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Test
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
-  public void shouldUpdateInstancesFromPerpetualTaskIfResponseFromDelegateIsNotSameEcs() throws Exception {
+  public void shouldUpdateInstancesFromPerpetualTaskIfResponseFromDelegateIsNotSameECS() throws Exception {
     List<Instance> instancesInDb =
         Arrays.asList(createECSInstance("instance1"), createECSInstance("instance2"), createECSInstance("instance3"));
 
@@ -2256,7 +2244,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Test
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
-  public void shouldUpdateInstancesFromPerpetualTaskIfResponseFromDelegateWithOneInstanceSameEcs() throws Exception {
+  public void shouldUpdateInstancesFromPerpetualTaskIfResponseFromDelegateWithOneInstanceSameECS() throws Exception {
     List<Instance> instancesInDb =
         Arrays.asList(createECSInstance("instance1"), createECSInstance("instance2"), createECSInstance("instance3"));
 
@@ -2265,22 +2253,29 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
         instancesInDb, instanceSyncResponse, asList("instance5", "instance6"), asList("instance2", "instance3"));
   }
 
+  @Test(expected = GeneralException.class)
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void shouldThrowExceptionOnUnsupportedInfraMapping() throws Exception {
+    AwsInfrastructureMapping awsInfrastructureMapping = AwsInfrastructureMapping.Builder.anAwsInfrastructureMapping().build();
+    containerInstanceHandler.processInstanceSyncResponseFromPerpetualTask(awsInfrastructureMapping,null);
+  }
+
   @Test
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
-  public void generateDeploymentKeyTestForContainerDeploymentInfoWithLabelsAndContainerWithNames() throws Exception {
-    List<Label> labellist = Arrays.asList(createlabel("l1"), createlabel("l2"));
-    DeploymentInfo deploymentInfo =
-        new ContainerDeploymentInfoWithLabels("CL1", labellist, null, "NS1", null, null, "RN1", null);
+  public void generateDeploymentKeyTestForContainerDeploymentInfoWithLabels() throws Exception {
+    List<Label> labelList = Arrays.asList(createLabel("l1"), createLabel("l2"));
+    DeploymentInfo deploymentInfo = ContainerDeploymentInfoWithLabels.builder().namespace("NS1").releaseName("RN1").build();
     DeploymentKey deploymentKey = containerInstanceHandler.generateDeploymentKey(deploymentInfo);
     ContainerDeploymentKey containerDeploymentKey = (ContainerDeploymentKey) deploymentKey;
-    assertThat(labellist).containsExactlyInAnyOrderElementsOf(containerDeploymentKey.getLabels());
+    assertThat(labelList).containsExactlyInAnyOrderElementsOf(containerDeploymentKey.getLabels());
   }
   @Test
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
   public void generateDeploymentKeyTestForContainerDeploymentInfoWithNames() throws Exception {
-    DeploymentInfo deploymentInfo = new ContainerDeploymentInfoWithNames("CL1", "service1", null, null);
+    DeploymentInfo deploymentInfo = ContainerDeploymentInfoWithNames.builder().containerSvcName("service1").clusterName("cl1").build();
     ContainerDeploymentKey containerDeploymentKey =
         (ContainerDeploymentKey) containerInstanceHandler.generateDeploymentKey(deploymentInfo);
     assertEquals("service1", containerDeploymentKey.getContainerServiceName());
@@ -2289,10 +2284,18 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
   public void generateDeploymentKeyTestForK8sDeployment() throws Exception {
-    DeploymentInfo deploymentInfo = new K8sDeploymentInfo("NM1", "Name1", 1, null, null, null, "cl1");
+    DeploymentInfo deploymentInfo = K8sDeploymentInfo.builder().releaseName("Name1").clusterName("cl1").build();
     K8sDeploymentKey k8sDeploymentKey =
         (K8sDeploymentKey) containerInstanceHandler.generateDeploymentKey(deploymentInfo);
     assertEquals("Name1", k8sDeploymentKey.getReleaseName());
+  }
+
+  @Test(expected = GeneralException.class)
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void generateDeploymentKeyTestUnsupportedTypeThrowsException() throws Exception {
+    DeploymentInfo deploymentInfo = AwsCodeDeployDeploymentInfo.builder().build();
+    containerInstanceHandler.generateDeploymentKey(deploymentInfo);
   }
 
   @Test
@@ -2608,13 +2611,13 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
   }
 
   private Instance createECSInstance(String id) {
-    InstanceInfo instanceinfo1 = EcsContainerInfo.Builder.anEcsContainerInfo().withClusterName("cl1").build();
+    InstanceInfo instanceInfo = EcsContainerInfo.Builder.anEcsContainerInfo().withClusterName("cl1").build();
     return Instance.builder()
         .uuid(id)
         .instanceType(ECS_CONTAINER_INSTANCE)
         .lastWorkflowExecutionId("WFexec")
         .containerInstanceKey(ContainerInstanceKey.builder().containerId(id).build())
-        .instanceInfo(instanceinfo1)
+        .instanceInfo(instanceInfo)
         .build();
   }
   private Instance createKubernetesContainerInstance(String id, String releaseName, String namespace) {
@@ -2646,20 +2649,20 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
             Arrays.stream(podIds).map(id -> createK8sPod(id, releaseName, namespace)).collect(Collectors.toList()))
         .build();
   }
-  public Label createlabel(String name) {
+  public Label createLabel(String name) {
     return Label.Builder.aLabel().withName(name).build();
   }
   private ContainerSyncResponse containerSyncResponse(String... ids) {
     List<EcsContainerInfo> list = new ArrayList<>();
     for (String id : ids) {
-      EcsContainerInfo info = createEcsinfo(id);
+      EcsContainerInfo info = createECSInfo(id);
       list.add(info);
     }
     LinkedList<software.wings.beans.infrastructure.instance.info.ContainerInfo> list1 = new LinkedList<>(list);
     return ContainerSyncResponse.builder().isEcs(true).containerInfoList(list1).build();
   }
 
-  private EcsContainerInfo createEcsinfo(String id) {
+  private EcsContainerInfo createECSInfo(String id) {
     return EcsContainerInfo.Builder.anEcsContainerInfo().withTaskArn(id).withClusterName("cl1").build();
   }
 
