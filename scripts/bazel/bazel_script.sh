@@ -300,7 +300,6 @@ build_bazel_module 100-migrator
 build_bazel_module 320-ci-execution
 build_bazel_module 323-sto-utilities
 build_bazel_module 325-sto-beans
-build_bazel_module 332-ci-manager
 build_bazel_module 380-cg-graphql
 build_bazel_module 400-rest
 build_bazel_module 410-cg-rest
