@@ -27,11 +27,24 @@ public interface NGTemplateRepositoryCustom {
 
   TemplateEntity save(TemplateEntity templateToSave, String comments) throws InvalidRequestException;
 
+  Optional<TemplateEntity>
+  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForOldGitSync(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
+      boolean notDeleted);
+
   Optional<TemplateEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
       boolean notDeleted);
 
+  Optional<TemplateEntity>
+  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForOldGitSync(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted);
+
   Optional<TemplateEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted);
+
+  Optional<TemplateEntity>
+  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNotForOldGitSync(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted);
 
   Optional<TemplateEntity>
