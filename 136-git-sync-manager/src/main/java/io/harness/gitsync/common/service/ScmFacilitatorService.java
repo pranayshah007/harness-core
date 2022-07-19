@@ -9,6 +9,7 @@ package io.harness.gitsync.common.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
 import io.harness.gitsync.common.dtos.GitRepositoryResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
@@ -50,4 +51,6 @@ public interface ScmFacilitatorService {
 
   String getDefaultBranch(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repoName);
+
+  String getRepoUrl(Scope scope, String connectorRef, String repoName);
 }
