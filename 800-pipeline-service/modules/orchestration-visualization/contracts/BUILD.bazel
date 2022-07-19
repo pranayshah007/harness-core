@@ -9,9 +9,9 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//800-pipeline-service/modules/orchestration:module",
+        "//800-pipeline-service/modules/orchestration-beans:module",
         "//800-pipeline-service/modules/pms-contracts:module",
-         "//800-pipeline-service/modules/orchestration-beans:module",
-         "//800-pipeline-service/modules/orchestration:module",
         "@maven//:io_swagger_swagger_annotations",
         "@maven//:javax_validation_validation_api",
     ],
