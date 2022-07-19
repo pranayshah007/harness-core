@@ -236,10 +236,10 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       tags.add(o.getValue());
     });
     Criteria tagsCriteria = new Criteria();
-    tagsCriteria.orOperator(where(PlanExecutionSummaryKeys.tags + "."
+    tagsCriteria.orOperator(where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.tags + "."
                                 + "key")
                                 .in(tags),
-        where(PlanExecutionSummaryKeys.tags + "."
+        where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.tags + "."
             + "value")
             .in(tags));
     criteria.andOperator(tagsCriteria);

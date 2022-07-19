@@ -91,7 +91,7 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
   }
 
   private void queryFieldsForPipelineExecutionSummaryEntity(Query query) {
-    query.fields().include(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.uuid);
+    query.fields().include(PlanExecutionSummaryKeys.uuid);
     query.fields().include(PlanExecutionSummaryKeys.runSequence);
     query.fields().include(PlanExecutionSummaryKeys.accountId);
     query.fields().include(PlanExecutionSummaryKeys.projectIdentifier);
@@ -107,8 +107,7 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
 
   @Override
   public String fetchRootRetryExecutionId(String planExecutionId) {
-    Query query =
-        query(where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId));
+    Query query = query(where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId));
 
     queryFieldsForPipelineExecutionSummaryEntity(query);
 
