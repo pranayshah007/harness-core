@@ -13,7 +13,6 @@
 				"type": "mrkdwn",
 				"text": "${Top_N} Cost Anomalies:"
 			}
-		},
-        ${ANOMALY_DETAILS}
+		}
 	]
 }
