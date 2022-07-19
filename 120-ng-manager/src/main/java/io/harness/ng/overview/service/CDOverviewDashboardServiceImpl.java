@@ -700,7 +700,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           boolean gitOpsEnabled = resultSet.getBoolean("gitOpsEnabled");
           serviceIdToDeploymentType.putIfAbsent(service_id, new HashSet<>());
           if (gitOpsEnabled) {
-            serviceIdToDeploymentType.get(service_id).add("gitOps");
+            serviceIdToDeploymentType.get(service_id).add("Kubernetes:gitOps");
           } else {
             serviceIdToDeploymentType.get(service_id).add(deployment_type);
           }
