@@ -737,7 +737,8 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
                                                    .asList();
     return allDelegateGroupList.stream()
         .filter(delegateGroup -> checkForDelegateGroupsHavingAllTags(delegateGroup, tags))
-        .map(delegateGroup -> DelegateGroupDTO.convertToDTO(delegateGroup, null))
+        .map(
+            delegateGroup -> DelegateGroupDTO.convertToDTO(delegateGroup, listDelegateGroupImplicitTags(delegateGroup)))
         .collect(Collectors.toList());
   }
 
@@ -779,8 +780,10 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
   }
 
   private boolean checkForDelegateGroupsHavingAllTags(DelegateGroup delegateGroup, DelegateGroupTags tags) {
-    Set<String> delegateGroupTags = delegateGroup.getTags();
-    delegateGroupTags.addAll(listDelegateGroupImplicitTags(delegateGroup));
+    Set<String> delegateGroupTags = listDelegateGroupImplicitTags(delegateGroup);
+    if (isNotEmpty(delegateGroup.getTags())) {
+      delegateGroupTags.addAll(delegateGroup.getTags());
+    }
     return delegateGroupTags.containsAll(tags.getTags());
   }
 

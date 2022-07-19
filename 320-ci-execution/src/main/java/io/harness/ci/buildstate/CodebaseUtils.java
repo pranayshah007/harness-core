@@ -376,22 +376,18 @@ public class CodebaseUtils {
     return connectorUtils.getConnectorDetails(ngAccess, codeBase.getConnectorRef().getValue());
   }
 
-  public static String getCompleteURLFromConnector(
-      ConnectorDetails connectorDetails, String projectName, String repoName) {
+  public static String getCompleteURLFromConnector(ConnectorDetails connectorDetails, String repoName) {
     ScmConnector scmConnector = (ScmConnector) connectorDetails.getConnectorConfig();
     GitConnectionType gitConnectionType = getGitConnectionType(connectorDetails);
     String completeURL = scmConnector.getUrl();
 
-    if (isNotEmpty(repoName) && (gitConnectionType == null || gitConnectionType == GitConnectionType.ACCOUNT)) {
-      if (scmConnector instanceof AzureRepoConnectorDTO) {
-        if (isEmpty(projectName)) {
-          throw new IllegalArgumentException("Project name is not set for azure repo");
-        }
-        completeURL = GitClientHelper.getCompleteUrlForAccountLevelAzureConnector(completeURL, projectName, repoName);
-      } else {
-        completeURL = StringUtils.join(StringUtils.stripEnd(scmConnector.getUrl(), PATH_SEPARATOR), PATH_SEPARATOR,
-            StringUtils.stripStart(repoName, PATH_SEPARATOR));
+    if (isNotEmpty(repoName) && gitConnectionType == GitConnectionType.PROJECT) {
+      if (scmConnector.getConnectorType() == AZURE_REPO) {
+        completeURL = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(completeURL, repoName);
       }
+    } else if (isNotEmpty(repoName) && (gitConnectionType == null || gitConnectionType == GitConnectionType.ACCOUNT)) {
+      completeURL = StringUtils.join(StringUtils.stripEnd(scmConnector.getUrl(), PATH_SEPARATOR), PATH_SEPARATOR,
+          StringUtils.stripStart(repoName, PATH_SEPARATOR));
     }
 
     return completeURL;

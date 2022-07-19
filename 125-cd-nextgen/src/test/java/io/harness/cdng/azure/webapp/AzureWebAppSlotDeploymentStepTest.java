@@ -91,6 +91,8 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
   private static final String CONN_STRINGS_FILE_CONTENT =
       "[{\"name\": \"conn\", \"value\": \"test\", \"type\": \"MySql\"}]";
   private static final String STARTUP_SCRIPT_FILE_CONTENT = "echo 'test'";
+  private static final String WEB_APP = "webApp";
+  private static final String DEPLOYMENT_SLOT = "deploymentSlot";
 
   @Mock private AzureWebAppStepHelper azureWebAppStepHelper;
   @Mock private CDStepHelper cdStepHelper;
@@ -112,7 +114,9 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
   public void setupTest() {
     doReturn(azureArtifactConfig).when(azureWebAppStepHelper).getPrimaryArtifactConfig(ambiance);
     doReturn(infrastructure).when(cdStepHelper).getInfrastructureOutcome(ambiance);
-    doReturn(infraDelegateConfig).when(azureWebAppStepHelper).getInfraDelegateConfig(ambiance, infrastructure);
+    doReturn(infraDelegateConfig)
+        .when(azureWebAppStepHelper)
+        .getInfraDelegateConfig(ambiance, infrastructure, WEB_APP, DEPLOYMENT_SLOT);
     doReturn(taskRequest)
         .when(azureWebAppStepHelper)
         .prepareTaskRequest(
@@ -411,7 +415,10 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
 
   private StepElementParameters createTestStepElementParameters() {
     return StepElementParameters.builder()
-        .spec(AzureWebAppSlotDeploymentStepParameters.infoBuilder().build())
+        .spec(AzureWebAppSlotDeploymentStepParameters.infoBuilder()
+                  .webApp(ParameterField.createValueField(WEB_APP))
+                  .deploymentSlot(ParameterField.createValueField(DEPLOYMENT_SLOT))
+                  .build())
         .timeout(ParameterField.createValueField("10m"))
         .build();
   }

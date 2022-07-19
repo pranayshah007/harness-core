@@ -128,7 +128,7 @@ public class K8sPodInfoEventTaskletTest extends BaseTaskletTest {
     when(instanceDataBulkWriteService.upsertInstanceInfo(any())).thenReturn(true);
     when(harnessServiceInfoFetcher.fetchHarnessServiceInfo(any(), any(), any(), any(), any()))
         .thenReturn(Optional.empty());
-    when(featureFlagService.isEnabled(eq(FeatureName.NODE_RECOMMENDATION_1), eq(ACCOUNT_ID))).thenReturn(false);
+    when(featureFlagService.isEnabled(eq(FeatureName.NODE_RECOMMENDATION_AGGREGATE), eq(ACCOUNT_ID))).thenReturn(false);
     io.harness.ccm.cluster.entities.ClusterRecord clusterRecord =
         io.harness.ccm.cluster.entities.ClusterRecord.builder()
             .cluster(DirectKubernetesCluster.builder().clusterName(CLUSTER_NAME).build())

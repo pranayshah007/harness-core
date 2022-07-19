@@ -74,10 +74,7 @@ public class OverviewPageStatsDataFetcher
         isApplicationDataPresent = ceMetadataRecord.getApplicationDataPresent();
       }
     }
-    boolean inventoryDashboard = false;
-    if (featureFlagService.isEnabledReloadCache(FeatureName.CE_INVENTORY_DASHBOARD, accountId)) {
-      inventoryDashboard = true;
-    }
+    boolean inventoryDashboard = true;
 
     QLCEOverviewStatsDataBuilder overviewStatsDataBuilder =
         QLCEOverviewStatsData.builder().inventoryDataPresent(inventoryDashboard);

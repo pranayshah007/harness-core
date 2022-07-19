@@ -14,6 +14,7 @@ import static io.harness.k8s.KubernetesConvention.getAccountIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.sweepingoutputs.ContextElement;
+import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.PodCleanupDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
@@ -27,6 +28,7 @@ import io.harness.delegate.beans.ci.CICleanupTaskParams;
 import io.harness.delegate.beans.ci.k8s.CIK8CleanupTaskParams;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
+import io.harness.delegate.beans.ci.vm.dlite.DliteVmCleanupTaskParams;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -75,6 +77,9 @@ public class StageCleanupUtility {
     } else if (stageInfraDetails.getType() == StageInfraDetails.Type.VM) {
       VmStageInfraDetails vmStageInfraDetails = (VmStageInfraDetails) stageInfraDetails;
       return buildVmCleanupParameters(ambiance, vmStageInfraDetails);
+    } else if (stageInfraDetails.getType() == StageInfraDetails.Type.DLITE_VM) {
+      DliteVmStageInfraDetails dliteVmStageInfraDetails = (DliteVmStageInfraDetails) stageInfraDetails;
+      return buildHostedVmCleanupParameters(ambiance, dliteVmStageInfraDetails);
     } else {
       throw new CIStageExecutionException("Unknown infra type");
     }
@@ -127,6 +132,21 @@ public class StageCleanupUtility {
     return CIVmCleanupTaskParams.builder()
         .stageRuntimeId(stageDetails.getStageRuntimeID())
         .poolId(vmStageInfraDetails.getPoolId())
+        .build();
+  }
+
+  public DliteVmCleanupTaskParams buildHostedVmCleanupParameters(
+      Ambiance ambiance, DliteVmStageInfraDetails stageInfraDetails) {
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
+    if (!optionalSweepingOutput.isFound()) {
+      throw new CIStageExecutionException("Stage details sweeping output cannot be empty");
+    }
+
+    StageDetails stageDetails = (StageDetails) optionalSweepingOutput.getOutput();
+    return DliteVmCleanupTaskParams.builder()
+        .stageRuntimeId(stageDetails.getStageRuntimeID())
+        .poolId(stageInfraDetails.getPoolId())
         .build();
   }
 }

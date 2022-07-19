@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.YOGESH;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.beans.ScopeLevel;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGEntitiesTestBase;
 import io.harness.cdng.gitops.entity.Cluster;
@@ -66,7 +67,7 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
     final String uuid = UUIDGenerator.generateUuid();
     clusterService.create(getCluster(uuid));
 
-    clusterService.delete(ACCOUNT_ID, ORG_ID, PROJECT_ID, ENV_ID, uuid);
+    clusterService.delete(ACCOUNT_ID, ORG_ID, PROJECT_ID, ENV_ID, uuid, ScopeLevel.PROJECT);
 
     assertThat(clusterService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, ENV_ID, uuid)).isNotPresent();
   }

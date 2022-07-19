@@ -8,6 +8,7 @@
 package io.harness.pms.merger;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -18,6 +19,7 @@ import io.harness.pms.yaml.YamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -47,18 +49,30 @@ public class YamlConfig {
   }
 
   public YamlConfig(Map<FQN, Object> fqnToValueMap, JsonNode originalYaml) {
-    this.fqnToValueMap = fqnToValueMap;
     yamlMap = YamlMapGenerator.generateYamlMap(fqnToValueMap, originalYaml, false);
-    if (yamlMap.size() != 0) {
-      yaml = YamlUtils.write(yamlMap).replace("---\n", "");
+    // fqnToValueMap can be missing some values which need to be taken from originalYaml. These values are there in
+    // yamlMap generated in the above line, hence the fqn map needs to be regenerated
+    if (!yamlMap.isEmpty()) {
+      this.fqnToValueMap = FQNMapGenerator.generateFQNMap(yamlMap);
+    } else {
+      this.fqnToValueMap = new LinkedHashMap<>();
     }
   }
 
   public YamlConfig(Map<FQN, Object> fqnToValueMap, JsonNode originalYaml, boolean isSanitiseFlow) {
     this.fqnToValueMap = fqnToValueMap;
     yamlMap = YamlMapGenerator.generateYamlMap(fqnToValueMap, originalYaml, isSanitiseFlow);
-    if (yamlMap.size() != 0) {
-      yaml = YamlUtils.write(yamlMap).replace("---\n", "");
+  }
+
+  public String getYaml() {
+    if (isNotEmpty(yaml)) {
+      return yaml;
     }
+    if (!yamlMap.isEmpty()) {
+      yaml = YamlUtils.write(yamlMap).replace("---\n", "");
+    } else {
+      yaml = null;
+    }
+    return yaml;
   }
 }

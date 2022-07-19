@@ -85,14 +85,14 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     assertThat(map.get("step-3").getResourceLimitMilliCpu()).isEqualTo(150);
     assertThat(map.get("step-4").getResourceLimitMemoryMiB()).isEqualTo(200);
     assertThat(map.get("step-4").getResourceLimitMilliCpu()).isEqualTo(200);
-    assertThat(map.get("run21").getResourceLimitMemoryMiB()).isEqualTo(300);
-    assertThat(map.get("run21").getResourceLimitMilliCpu()).isEqualTo(200);
-    assertThat(map.get("run22").getResourceLimitMemoryMiB()).isEqualTo(300);
-    assertThat(map.get("run22").getResourceLimitMilliCpu()).isEqualTo(200);
-    assertThat(map.get("run2").getResourceLimitMemoryMiB()).isEqualTo(500);
-    assertThat(map.get("run2").getResourceLimitMilliCpu()).isEqualTo(400);
-    assertThat(map.get("run1").getResourceLimitMemoryMiB()).isEqualTo(500);
-    assertThat(map.get("run1").getResourceLimitMilliCpu()).isEqualTo(400);
+    assertThat(map.get("step_grup2_run21").getResourceLimitMemoryMiB()).isEqualTo(300);
+    assertThat(map.get("step_grup2_run21").getResourceLimitMilliCpu()).isEqualTo(200);
+    assertThat(map.get("step_grup2_run22").getResourceLimitMemoryMiB()).isEqualTo(300);
+    assertThat(map.get("step_grup2_run22").getResourceLimitMilliCpu()).isEqualTo(200);
+    assertThat(map.get("step_grup1_run2").getResourceLimitMemoryMiB()).isEqualTo(500);
+    assertThat(map.get("step_grup1_run2").getResourceLimitMilliCpu()).isEqualTo(400);
+    assertThat(map.get("step_grup1_run1").getResourceLimitMemoryMiB()).isEqualTo(500);
+    assertThat(map.get("step_grup1_run1").getResourceLimitMilliCpu()).isEqualTo(400);
   }
 
   @Test
@@ -112,12 +112,12 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
 
     assertThat(map.get("step-2").getResourceLimitMemoryMiB()).isEqualTo(200);
     assertThat(map.get("step-2").getResourceLimitMilliCpu()).isEqualTo(400);
-    assertThat(map.get("run2").getResourceLimitMemoryMiB()).isEqualTo(200);
-    assertThat(map.get("run2").getResourceLimitMilliCpu()).isEqualTo(400);
-    assertThat(map.get("run3").getResourceLimitMemoryMiB()).isEqualTo(100);
-    assertThat(map.get("run3").getResourceLimitMilliCpu()).isEqualTo(200);
-    assertThat(map.get("run4").getResourceLimitMemoryMiB()).isEqualTo(100);
-    assertThat(map.get("run4").getResourceLimitMilliCpu()).isEqualTo(200);
+    assertThat(map.get("step_g_run2").getResourceLimitMemoryMiB()).isEqualTo(200);
+    assertThat(map.get("step_g_run2").getResourceLimitMilliCpu()).isEqualTo(400);
+    assertThat(map.get("step_g_run3").getResourceLimitMemoryMiB()).isEqualTo(100);
+    assertThat(map.get("step_g_run3").getResourceLimitMilliCpu()).isEqualTo(200);
+    assertThat(map.get("step_g_run4").getResourceLimitMemoryMiB()).isEqualTo(100);
+    assertThat(map.get("step_g_run4").getResourceLimitMilliCpu()).isEqualTo(200);
   }
 
   @Test
@@ -141,18 +141,18 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     assertThat(map.get("step-3").getResourceLimitMilliCpu()).isEqualTo(150);
     assertThat(map.get("step-4").getResourceLimitMemoryMiB()).isEqualTo(200);
     assertThat(map.get("step-4").getResourceLimitMilliCpu()).isEqualTo(200);
-    assertThat(map.get("run21").getResourceLimitMemoryMiB()).isEqualTo(300);
-    assertThat(map.get("run21").getResourceLimitMilliCpu()).isEqualTo(200);
-    assertThat(map.get("run22").getResourceLimitMemoryMiB()).isEqualTo(300);
-    assertThat(map.get("run22").getResourceLimitMilliCpu()).isEqualTo(200);
-    assertThat(map.get("run2").getResourceLimitMemoryMiB()).isEqualTo(375);
-    assertThat(map.get("run2").getResourceLimitMilliCpu()).isEqualTo(200);
-    assertThat(map.get("run1").getResourceLimitMemoryMiB()).isEqualTo(375);
-    assertThat(map.get("run1").getResourceLimitMilliCpu()).isEqualTo(200);
-    assertThat(map.get("run32").getResourceLimitMemoryMiB()).isEqualTo(125);
-    assertThat(map.get("run32").getResourceLimitMilliCpu()).isEqualTo(200);
-    assertThat(map.get("run31").getResourceLimitMemoryMiB()).isEqualTo(125);
-    assertThat(map.get("run31").getResourceLimitMilliCpu()).isEqualTo(200);
+    assertThat(map.get("step_grup2_run21").getResourceLimitMemoryMiB()).isEqualTo(300);
+    assertThat(map.get("step_grup2_run21").getResourceLimitMilliCpu()).isEqualTo(200);
+    assertThat(map.get("step_grup2_run22").getResourceLimitMemoryMiB()).isEqualTo(300);
+    assertThat(map.get("step_grup2_run22").getResourceLimitMilliCpu()).isEqualTo(200);
+    assertThat(map.get("step_grup1_run2").getResourceLimitMemoryMiB()).isEqualTo(375);
+    assertThat(map.get("step_grup1_run2").getResourceLimitMilliCpu()).isEqualTo(200);
+    assertThat(map.get("step_grup1_run1").getResourceLimitMemoryMiB()).isEqualTo(375);
+    assertThat(map.get("step_grup1_run1").getResourceLimitMilliCpu()).isEqualTo(200);
+    assertThat(map.get("step_grup3_run32").getResourceLimitMemoryMiB()).isEqualTo(125);
+    assertThat(map.get("step_grup3_run32").getResourceLimitMilliCpu()).isEqualTo(200);
+    assertThat(map.get("step_grup3_run31").getResourceLimitMemoryMiB()).isEqualTo(125);
+    assertThat(map.get("step_grup3_run31").getResourceLimitMilliCpu()).isEqualTo(200);
   }
 
   @Test

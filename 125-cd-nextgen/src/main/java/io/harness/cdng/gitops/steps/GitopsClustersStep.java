@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 import static java.util.function.Predicate.not;
 
+import io.harness.beans.ScopeLevel;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
@@ -55,6 +56,7 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.executable.SyncExecutableWithRbac;
 import io.harness.utils.RetryUtils;
 
+import com.amazonaws.util.StringUtils;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -62,6 +64,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -73,6 +76,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.jetbrains.annotations.NotNull;
 import retrofit2.Response;
 
 @Slf4j
@@ -125,8 +129,11 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     }
     try {
       final Map<String, IndividualClusterInternal> validatedClusters = validatedClusters(ambiance, stepParameters);
+
       final GitopsClustersOutcome outcome = toOutcome(validatedClusters, variables);
+
       executionSweepingOutputResolver.consume(ambiance, GITOPS_SWEEPING_OUTPUT, outcome, StepOutcomeGroup.STAGE.name());
+
       stepResponseBuilder.stepOutcome(StepOutcome.builder().name(GITOPS_SWEEPING_OUTPUT).outcome(outcome).build());
       status = SUCCESS;
     } finally {
@@ -179,16 +186,61 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
       throw new InvalidRequestException("No Gitops Cluster is selected with the current environment configuration");
     }
 
-    final Set<String> clusterIdentifiers = individualClusters.keySet();
+    return filterClustersFromGitopsService(ambiance, individualClusters);
+  }
 
-    Map<String, Object> filter = ImmutableMap.of("identifier", ImmutableMap.of("$in", clusterIdentifiers));
+  @NotNull
+  private Map<String, IndividualClusterInternal> filterClustersFromGitopsService(
+      Ambiance ambiance, Map<String, IndividualClusterInternal> individualClusters) {
+    final Set<String> accountLevelClustersIds = individualClusters.keySet()
+                                                    .stream()
+                                                    .filter(ref -> StringUtils.beginsWithIgnoreCase(ref, "account."))
+                                                    .collect(Collectors.toSet());
+    final Set<String> orgLevelClustersIds = individualClusters.keySet()
+                                                .stream()
+                                                .filter(ref -> StringUtils.beginsWithIgnoreCase(ref, "organization."))
+                                                .collect(Collectors.toSet());
+
+    final Map<String, IndividualClusterInternal> accountLevelClusters = new HashMap<>();
+    final Map<String, IndividualClusterInternal> orgLevelClusters = new HashMap<>();
+    final Map<String, IndividualClusterInternal> projectLevelClusters = new HashMap<>();
+
+    for (Map.Entry<String, IndividualClusterInternal> clusterEntry : individualClusters.entrySet()) {
+      final String key = clusterEntry.getKey();
+      final IndividualClusterInternal value = clusterEntry.getValue();
+      if (accountLevelClustersIds.contains(key)) {
+        accountLevelClusters.putIfAbsent(key.split("\\.")[1], value);
+      } else if (orgLevelClustersIds.contains(key)) {
+        orgLevelClusters.putIfAbsent(key.split("\\.")[1], value);
+      } else {
+        projectLevelClusters.putIfAbsent(key, value);
+      }
+    }
+
+    final Map<String, IndividualClusterInternal> projectLevelFilteredClusters = filterClustersFromGitopsService(
+        getAccountId(ambiance), getOrgIdentifier(ambiance), getProjectIdentifier(ambiance), projectLevelClusters);
+    final Map<String, IndividualClusterInternal> orgLevelFilteredClusters =
+        filterClustersFromGitopsService(getAccountId(ambiance), getOrgIdentifier(ambiance), "", orgLevelClusters);
+    final Map<String, IndividualClusterInternal> accountLevelFilteredClusters =
+        filterClustersFromGitopsService(getAccountId(ambiance), "", "", accountLevelClusters);
+
+    return combine(projectLevelFilteredClusters, orgLevelFilteredClusters, accountLevelFilteredClusters);
+  }
+
+  private Map<String, IndividualClusterInternal> filterClustersFromGitopsService(
+      String accountId, String orgId, String projectId, Map<String, IndividualClusterInternal> individualClusters) {
+    if (isEmpty(individualClusters)) {
+      return new HashMap<>();
+    }
+    saveExecutionLog("Processing clusters at scope " + ScopeLevel.of(accountId, orgId, projectId).toString());
+    Map<String, Object> filter = ImmutableMap.of("identifier", ImmutableMap.of("$in", individualClusters.keySet()));
     try {
       final ClusterQuery query = ClusterQuery.builder()
-                                     .accountId(getAccountId(ambiance))
-                                     .orgIdentifier(getOrgIdentifier(ambiance))
-                                     .projectIdentifier(getProjectIdentifier(ambiance))
+                                     .accountId(accountId)
+                                     .orgIdentifier(orgId)
+                                     .projectIdentifier(projectId)
                                      .pageIndex(0)
-                                     .pageSize(clusterIdentifiers.size())
+                                     .pageSize(individualClusters.keySet().size())
                                      .filter(filter)
                                      .build();
       final Response<PageResponse<Cluster>> response =
@@ -312,6 +364,17 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
         }
       }
     }
+  }
+
+  private Map<String, IndividualClusterInternal> combine(Map<String, IndividualClusterInternal> m1,
+      Map<String, IndividualClusterInternal> m2, Map<String, IndividualClusterInternal> m3) {
+    Map<String, IndividualClusterInternal> combined = new HashMap<>();
+
+    m1.keySet().forEach(k -> combined.putIfAbsent(k, m1.get(k)));
+    m2.keySet().forEach(k -> combined.putIfAbsent(k, m2.get(k)));
+    m3.keySet().forEach(k -> combined.putIfAbsent(k, m3.get(k)));
+
+    return combined;
   }
 
   private void logDataFromGitops(List<Cluster> content) {

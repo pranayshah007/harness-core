@@ -13,7 +13,6 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureDetailsAbstract;
@@ -204,24 +203,15 @@ public class InfrastructureMapper {
 
       case InfrastructureKind.AZURE_WEB_APP:
         AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
-        String targetSlot = !ParameterField.isBlank(azureWebAppInfrastructure.getTargetSlot())
-            ? azureWebAppInfrastructure.getTargetSlot().getValue()
-            : null;
         validateAzureWebAppInfrastructure(azureWebAppInfrastructure);
         AzureWebAppInfrastructureOutcome azureWebAppInfrastructureOutcome =
             AzureWebAppInfrastructureOutcome.builder()
                 .connectorRef(azureWebAppInfrastructure.getConnectorRef().getValue())
-                .webApp(azureWebAppInfrastructure.getWebApp().getValue())
-                .deploymentSlot(
-                    AzureResourceUtility.fixDeploymentSlotName(azureWebAppInfrastructure.getDeploymentSlot().getValue(),
-                        azureWebAppInfrastructure.getWebApp().getValue()))
                 .environment(environmentOutcome)
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, azureWebAppInfrastructure.getInfrastructureKeyValues()))
                 .subscription(azureWebAppInfrastructure.getSubscriptionId().getValue())
                 .resourceGroup(azureWebAppInfrastructure.getResourceGroup().getValue())
-                .targetSlot(AzureResourceUtility.fixDeploymentSlotName(
-                    targetSlot, azureWebAppInfrastructure.getWebApp().getValue()))
                 .build();
         setInfraIdentifierAndName(azureWebAppInfrastructureOutcome, azureWebAppInfrastructure.getInfraIdentifier(),
             azureWebAppInfrastructure.getInfraName());
@@ -295,16 +285,6 @@ public class InfrastructureMapper {
     if (ParameterField.isNull(infrastructure.getConnectorRef())
         || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getConnectorRef()))) {
       throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
-    }
-
-    if (ParameterField.isNull(infrastructure.getDeploymentSlot())
-        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getDeploymentSlot()))) {
-      throw new InvalidArgumentsException(Pair.of("deploymentSlot", "cannot be empty"));
-    }
-
-    if (ParameterField.isNull(infrastructure.getWebApp())
-        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getWebApp()))) {
-      throw new InvalidArgumentsException(Pair.of("appService", "cannot be empty"));
     }
 
     if (ParameterField.isNull(infrastructure.getSubscriptionId())

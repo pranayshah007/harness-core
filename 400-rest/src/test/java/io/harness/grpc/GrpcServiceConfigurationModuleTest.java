@@ -14,6 +14,8 @@ import io.harness.govern.ProviderModule;
 import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.perpetualtask.PerpetualTaskServiceModule;
 import io.harness.rule.Owner;
+import io.harness.service.impl.AgentMtlsEndpointServiceReadOnlyImpl;
+import io.harness.service.intfc.AgentMtlsEndpointService;
 
 import software.wings.app.MainConfiguration;
 import software.wings.integration.IntegrationTestBase;
@@ -21,6 +23,7 @@ import software.wings.integration.IntegrationTestBase;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import com.google.common.util.concurrent.ServiceManager;
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -65,6 +68,13 @@ public class GrpcServiceConfigurationModuleTest extends IntegrationTestBase {
     modules.add(new PerpetualTaskServiceModule());
     modules.add(new GrpcServiceConfigurationModule(
         configuration.getGrpcServerConfig(), configuration.getPortal().getJwtNextGenManagerSecret()));
+
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(AgentMtlsEndpointService.class).to(AgentMtlsEndpointServiceReadOnlyImpl.class);
+      }
+    });
     Injector injector = Guice.createInjector(modules);
     injector.getInstance(ServiceManager.class).startAsync().awaitHealthy();
   }

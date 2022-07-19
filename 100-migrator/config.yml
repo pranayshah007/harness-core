@@ -93,7 +93,7 @@ cg:
   deploymentClusterName: ""
   bugsnagApiKey: ""
   numberOfRemindersBeforeAccountDeletion: 3
-  delegateMtlsSubdomain: "delegate.local.harness.io"
+  agentMtlsSubdomain: ""
 
   jobsFrequencyConfig:
     accountLicenseCheckJobFrequencyInMinutes: 60

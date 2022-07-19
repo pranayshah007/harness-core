@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static java.lang.Long.parseLong;
-import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
 import io.harness.accesscontrol.AccountIdentifier;
@@ -43,12 +42,9 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.HeaderParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -69,8 +65,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public ResponseDTO<NGTriggerResponseDTO> create(@NotNull @AccountIdentifier String accountIdentifier,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
-      @Parameter(description = "Identifier of the target pipeline") @NotNull
-      @ResourceIdentifier String targetIdentifier, @NotNull String yaml, @DefaultValue("false") boolean ignoreError) {
+      @NotNull @ResourceIdentifier String targetIdentifier, @NotNull String yaml, boolean ignoreError) {
     NGTriggerEntity createdEntity = null;
     try {
       TriggerDetails triggerDetails =
@@ -103,10 +98,10 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
-  public ResponseDTO<NGTriggerResponseDTO> update(@HeaderParam(IF_MATCH) String ifMatch,
-      @NotNull @AccountIdentifier String accountIdentifier, @NotNull @OrgIdentifier String orgIdentifier,
-      @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String targetIdentifier,
-      String triggerIdentifier, @NotNull String yaml, @DefaultValue("false") boolean ignoreError) {
+  public ResponseDTO<NGTriggerResponseDTO> update(String ifMatch, @NotNull @AccountIdentifier String accountIdentifier,
+      @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
+      @NotNull @ResourceIdentifier String targetIdentifier, String triggerIdentifier, @NotNull String yaml,
+      boolean ignoreError) {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
     if (!ngTriggerEntity.isPresent()) {
@@ -146,10 +141,9 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
-  public ResponseDTO<Boolean> delete(@HeaderParam(IF_MATCH) String ifMatch,
-      @NotNull @AccountIdentifier String accountIdentifier, @NotNull @OrgIdentifier String orgIdentifier,
-      @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String targetIdentifier,
-      String triggerIdentifier) {
+  public ResponseDTO<Boolean> delete(String ifMatch, @NotNull @AccountIdentifier String accountIdentifier,
+      @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
+      @NotNull @ResourceIdentifier String targetIdentifier, String triggerIdentifier) {
     return ResponseDTO.newResponse(ngTriggerService.delete(accountIdentifier, orgIdentifier, projectIdentifier,
         targetIdentifier, triggerIdentifier, isNumeric(ifMatch) ? parseLong(ifMatch) : null));
   }
@@ -158,8 +152,7 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
   public ResponseDTO<PageResponse<NGTriggerDetailsResponseDTO>> getListForTarget(
       @NotNull @AccountIdentifier String accountIdentifier, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String targetIdentifier,
-      String filterQuery, @DefaultValue("0") int page, @DefaultValue("25") int size, List<String> sort,
-      String searchTerm) {
+      String filterQuery, int page, int size, List<String> sort, String searchTerm) {
     Criteria criteria = TriggerFilterHelper.createCriteriaForGetList(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, null, searchTerm, false);
     Pageable pageRequest;

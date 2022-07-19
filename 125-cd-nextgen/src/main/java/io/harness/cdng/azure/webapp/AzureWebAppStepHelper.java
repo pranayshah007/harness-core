@@ -23,6 +23,7 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAM
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.beans.FileReference;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
@@ -33,6 +34,7 @@ import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.azure.config.ApplicationSettingsOutcome;
 import io.harness.cdng.azure.config.ConnectionStringsOutcome;
 import io.harness.cdng.azure.config.StartupScriptOutcome;
+import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -46,6 +48,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
@@ -66,8 +69,10 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 
 import software.wings.beans.TaskType;
@@ -95,7 +100,17 @@ public class AzureWebAppStepHelper {
   @Inject private AzureHelperService azureHelperService;
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private CDExpressionResolver cdExpressionResolver;
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
+
+  public AzureAppServicePreDeploymentData getPreDeploymentData(Ambiance ambiance, String sweepingOutputName) {
+    OptionalSweepingOutput sweepingOutput = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(sweepingOutputName));
+    if (sweepingOutput.isFound()) {
+      return ((AzureWebAppPreDeploymentDataOutput) sweepingOutput.getOutput()).getPreDeploymentData();
+    }
+    return null;
+  }
 
   public Map<String, StoreConfig> fetchWebAppConfig(Ambiance ambiance) {
     Map<String, StoreConfig> settingsConfig = new HashMap<>();
@@ -167,7 +182,8 @@ public class AzureWebAppStepHelper {
         Map.Entry::getKey, entry -> fetchFileContentFromHarnessStore(ambiance, entry.getKey(), entry.getValue())));
   }
 
-  public AzureWebAppInfraDelegateConfig getInfraDelegateConfig(Ambiance ambiance) {
+  public AzureWebAppInfraDelegateConfig getInfraDelegateConfig(
+      Ambiance ambiance, String webApp, String deploymentSlot) {
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
     if (!(infrastructureOutcome instanceof AzureWebAppInfrastructureOutcome)) {
       throw new InvalidArgumentsException(Pair.of("infrastructure",
@@ -176,11 +192,11 @@ public class AzureWebAppStepHelper {
     }
 
     AzureWebAppInfrastructureOutcome infrastructure = (AzureWebAppInfrastructureOutcome) infrastructureOutcome;
-    return getInfraDelegateConfig(ambiance, infrastructure);
+    return getInfraDelegateConfig(ambiance, infrastructure, webApp, deploymentSlot);
   }
 
   public AzureWebAppInfraDelegateConfig getInfraDelegateConfig(
-      Ambiance ambiance, AzureWebAppInfrastructureOutcome infrastructure) {
+      Ambiance ambiance, AzureWebAppInfrastructureOutcome infrastructure, String webApp, String deploymentSlot) {
     ConnectorInfoDTO connectorInfo = cdStepHelper.getConnector(infrastructure.getConnectorRef(), ambiance);
     if (!(connectorInfo.getConnectorConfig() instanceof AzureConnectorDTO)) {
       throw new InvalidArgumentsException(Pair.of("infrastructure",
@@ -194,9 +210,8 @@ public class AzureWebAppStepHelper {
         .azureConnectorDTO(azureConnectorDTO)
         .subscription(infrastructure.getSubscription())
         .resourceGroup(infrastructure.getResourceGroup())
-        .appName(infrastructure.getWebApp())
-        .deploymentSlot(infrastructure.getDeploymentSlot())
-        .targetSlot(infrastructure.getTargetSlot())
+        .appName(webApp)
+        .deploymentSlot(AzureResourceUtility.fixDeploymentSlotName(deploymentSlot, webApp))
         .encryptionDataDetails(azureHelperService.getEncryptionDetails(azureConnectorDTO, ngAccess))
         .build();
   }

@@ -38,7 +38,8 @@ public class DelegateServiceAgentClient {
               .setCallbackToken(delegateCallbackToken)
               .setTaskResponseData(
                   TaskResponseData.newBuilder().setKryoResultsData(ByteString.copyFrom(responseData)).build())
-              .build());
+              .build(),
+          accountId.getId());
       executeAsyncCallWithRetry(call, result);
       return result.get().getSuccess();
     } catch (IOException | InterruptedException | ExecutionException e) {
@@ -51,7 +52,7 @@ public class DelegateServiceAgentClient {
     CompletableFuture<TaskProgressResponse> result = new CompletableFuture<>();
     try {
       Call<TaskProgressResponse> call = delegateAgentManagerClient.taskProgress(
-          TaskProgressRequest.newBuilder().setAccountId(accountId).setTaskId(taskId).build());
+          TaskProgressRequest.newBuilder().setAccountId(accountId).setTaskId(taskId).build(), accountId.getId());
       executeAsyncCallWithRetry(call, result);
       return result.get().getCurrentlyAtStage();
     } catch (IOException | ExecutionException | InterruptedException ex) {
@@ -70,7 +71,8 @@ public class DelegateServiceAgentClient {
               .setCallbackToken(delegateCallbackToken)
               .setTaskResponseData(
                   TaskResponseData.newBuilder().setKryoResultsData(ByteString.copyFrom(responseData)).build())
-              .build());
+              .build(),
+          accountId.getId());
       executeAsyncCallWithRetry(call, result);
       return result.get().getSuccess();
     } catch (ExecutionException | InterruptedException | IOException ex) {

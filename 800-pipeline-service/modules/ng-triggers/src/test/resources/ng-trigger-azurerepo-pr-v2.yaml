@@ -13,7 +13,6 @@ trigger:
         type: PullRequest
         spec:
           connectorRef: conn
-          projectName: project
           repoName: myrepo
           actions:
             - Create

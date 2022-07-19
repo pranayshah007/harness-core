@@ -67,8 +67,12 @@ import io.harness.ng.core.serviceoverride.services.impl.ServiceOverrideServiceIm
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instance.InstanceServiceImpl;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.MapBinder;
+import com.google.inject.name.Names;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
 
@@ -115,6 +119,13 @@ public class NGModule extends AbstractModule {
     bind(ClusterService.class).to(ClusterServiceImpl.class);
     bind(InfrastructureEntityService.class).to(InfrastructureEntityServiceImpl.class);
     bind(ServiceOverrideService.class).to(ServiceOverrideServiceImpl.class);
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("CdTelemetryPublisherExecutor"))
+        .toInstance(new ScheduledThreadPoolExecutor(1,
+            new ThreadFactoryBuilder()
+                .setNameFormat("Cd-ng-telemetry-publisher-Thread-%d")
+                .setPriority(Thread.NORM_PRIORITY)
+                .build()));
 
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);

@@ -176,6 +176,7 @@ import io.harness.telemetry.TelemetryReporter;
 import io.harness.telemetry.filter.APIAuthTelemetryFilter;
 import io.harness.telemetry.filter.APIAuthTelemetryResponseFilter;
 import io.harness.telemetry.filter.APIErrorsTelemetrySenderFilter;
+import io.harness.telemetry.service.CdTelemetryRecordsJob;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
@@ -404,9 +405,10 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerManagedBeans(environment, injector);
     initializeEnforcementService(injector, appConfig);
     initializeEnforcementSdk(injector);
-
+    initializeCdMonitoring(appConfig, injector);
     SettingsCreationJob settingsCreationJob = injector.getInstance(SettingsCreationJob.class);
     settingsCreationJob.run();
+
     if (appConfig.getShouldDeployWithGitSync()) {
       intializeGitSync(injector);
       GitSyncSdkInitHelper.initGitSyncSdk(injector, environment, getGitSyncConfiguration(appConfig));
@@ -426,6 +428,11 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   private void initializeNGMonitoring(NextGenConfiguration appConfig, Injector injector) {
     log.info("Initializing NGMonitoring");
     injector.getInstance(NGTelemetryRecordsJob.class).scheduleTasks();
+  }
+
+  private void initializeCdMonitoring(NextGenConfiguration appConfig, Injector injector) {
+    log.info("Initializing Cd Monitoring");
+    injector.getInstance(CdTelemetryRecordsJob.class).scheduleTasks();
   }
 
   private void registerOasResource(NextGenConfiguration appConfig, Environment environment, Injector injector) {

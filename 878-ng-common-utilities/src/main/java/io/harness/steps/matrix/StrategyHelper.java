@@ -7,6 +7,8 @@
 
 package io.harness.steps.matrix;
 
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -27,7 +29,9 @@ import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -36,10 +40,13 @@ public class StrategyHelper {
   @Inject ForLoopStrategyConfigService forLoopStrategyConfigService;
   @Inject ParallelismStrategyConfigService parallelismStrategyConfigService;
 
-  public List<JsonNode> expandJsonNodes(JsonNode nodeWithStrategy) throws IOException {
+  public StrategyInfo expandJsonNodes(JsonNode nodeWithStrategy) throws IOException {
     JsonNode node = nodeWithStrategy.get("strategy");
     if (node == null || node.isNull()) {
-      return Collections.singletonList(nodeWithStrategy);
+      return StrategyInfo.builder()
+          .expandedJsonNodes(Collections.singletonList(nodeWithStrategy))
+          .maxConcurrency(1)
+          .build();
     }
     StrategyConfig strategyConfig = JsonPipelineUtils.read(node.toString(), StrategyConfig.class);
     StrategyValidationUtils.validateStrategyNode(strategyConfig);
@@ -52,44 +59,75 @@ public class StrategyHelper {
     return forLoopStrategyConfigService.expandJsonNode(strategyConfig, nodeWithStrategy);
   }
 
-  public List<ExecutionWrapperConfig> expandExecutionWrapperConfig(ExecutionWrapperConfig executionWrapperConfig) {
+  public ExpandedExecutionWrapperInfo expandExecutionWrapperConfig(ExecutionWrapperConfig executionWrapperConfig) {
     try {
       if (executionWrapperConfig.getStep() != null) {
-        List<JsonNode> expandedJsonNodes = expandJsonNodes(executionWrapperConfig.getStep());
-        return expandedJsonNodes.stream()
-            .map(node -> ExecutionWrapperConfig.builder().step(node).uuid(executionWrapperConfig.getUuid()).build())
-            .collect(Collectors.toList());
+        StrategyInfo strategyInfo = expandJsonNodes(executionWrapperConfig.getStep());
+        List<JsonNode> expandedJsonNodes = strategyInfo.getExpandedJsonNodes();
+        Map<String, StrategyExpansionData> uuidToStrategyExpansionData = new HashMap<>();
+        String uuid = EmptyPredicate.isEmpty(executionWrapperConfig.getUuid()) ? UUIDGenerator.generateUuid()
+                                                                               : executionWrapperConfig.getUuid();
+        uuidToStrategyExpansionData.put(
+            uuid, StrategyExpansionData.builder().maxConcurrency(strategyInfo.getMaxConcurrency()).build());
+        List<ExecutionWrapperConfig> executionWrapperConfigs =
+            expandedJsonNodes.stream()
+                .map(node -> ExecutionWrapperConfig.builder().step(node).uuid(uuid).build())
+                .collect(Collectors.toList());
+        return ExpandedExecutionWrapperInfo.builder()
+            .expandedExecutionConfigs(executionWrapperConfigs)
+            .uuidToStrategyExpansionData(uuidToStrategyExpansionData)
+            .build();
       }
       if (executionWrapperConfig.getParallel() != null) {
+        Map<String, StrategyExpansionData> uuidToStrategyMetadata = new HashMap<>();
         ParallelStepElementConfig parallelStepElementConfig =
             YamlUtils.read(executionWrapperConfig.getParallel().toString(), ParallelStepElementConfig.class);
         List<ExecutionWrapperConfig> executionWrapperConfigs = new ArrayList<>();
         for (ExecutionWrapperConfig config : parallelStepElementConfig.getSections()) {
-          executionWrapperConfigs.addAll(expandExecutionWrapperConfig(config));
+          ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo = expandExecutionWrapperConfig(config);
+          executionWrapperConfigs.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
+          uuidToStrategyMetadata.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
         }
         parallelStepElementConfig.setSections(executionWrapperConfigs);
         ArrayNode arrayNode = JsonPipelineUtils.getMapper().createArrayNode();
         for (ExecutionWrapperConfig config : executionWrapperConfigs) {
           arrayNode.add(JsonPipelineUtils.asTree(config));
         }
-        return Lists.newArrayList(ExecutionWrapperConfig.builder().parallel(arrayNode).build());
+        return ExpandedExecutionWrapperInfo.builder()
+            .expandedExecutionConfigs(Lists.newArrayList(ExecutionWrapperConfig.builder().parallel(arrayNode).build()))
+            .uuidToStrategyExpansionData(uuidToStrategyMetadata)
+            .build();
       }
       if (executionWrapperConfig.getStepGroup() != null) {
+        Map<String, StrategyExpansionData> uuidToMaxConcurrency = new HashMap<>();
         StepGroupElementConfig stepGroupElementConfig =
             YamlUtils.read(executionWrapperConfig.getStepGroup().toString(), StepGroupElementConfig.class);
         List<ExecutionWrapperConfig> executionWrapperConfigs = new ArrayList<>();
         for (ExecutionWrapperConfig config : stepGroupElementConfig.getSteps()) {
-          executionWrapperConfigs.addAll(expandExecutionWrapperConfig(config));
+          ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo = expandExecutionWrapperConfig(config);
+          executionWrapperConfigs.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
+          uuidToMaxConcurrency.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
         }
         stepGroupElementConfig.setSteps(executionWrapperConfigs);
         JsonNode stepGroupNode = JsonPipelineUtils.asTree(stepGroupElementConfig);
-        List<JsonNode> expandedJsonNodes = expandJsonNodes(stepGroupNode);
-        return expandedJsonNodes.stream()
-            .map(
-                node -> ExecutionWrapperConfig.builder().stepGroup(node).uuid(executionWrapperConfig.getUuid()).build())
-            .collect(Collectors.toList());
+        StrategyInfo strategyInfo = expandJsonNodes(stepGroupNode);
+        List<JsonNode> expandedJsonNodes = strategyInfo.getExpandedJsonNodes();
+        String uuid = EmptyPredicate.isEmpty(executionWrapperConfig.getUuid()) ? UUIDGenerator.generateUuid()
+                                                                               : executionWrapperConfig.getUuid();
+        uuidToMaxConcurrency.put(
+            uuid, StrategyExpansionData.builder().maxConcurrency(strategyInfo.getMaxConcurrency()).build());
+        return ExpandedExecutionWrapperInfo.builder()
+            .expandedExecutionConfigs(
+                expandedJsonNodes.stream()
+                    .map(node -> ExecutionWrapperConfig.builder().stepGroup(node).uuid(uuid).build())
+                    .collect(Collectors.toList()))
+            .uuidToStrategyExpansionData(uuidToMaxConcurrency)
+            .build();
       }
-      return Lists.newArrayList(executionWrapperConfig);
+      return ExpandedExecutionWrapperInfo.builder()
+          .expandedExecutionConfigs(Lists.newArrayList(executionWrapperConfig))
+          .uuidToStrategyExpansionData(new HashMap<>())
+          .build();
     } catch (InvalidYamlException ex) {
       throw ex;
     } catch (JsonMappingException ex) {

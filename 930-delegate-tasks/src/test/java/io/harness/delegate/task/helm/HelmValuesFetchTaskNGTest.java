@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.ACASIAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
@@ -89,7 +90,9 @@ public class HelmValuesFetchTaskNGTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    doReturn(mock(LogCallback.class)).when(helmValuesFetchTaskNG).getLogCallback(any(CommandUnitsProgress.class));
+    doReturn(mock(LogCallback.class))
+        .when(helmValuesFetchTaskNG)
+        .getLogCallback(any(CommandUnitsProgress.class), anyBoolean());
   }
 
   @Test
@@ -266,7 +269,7 @@ public class HelmValuesFetchTaskNGTest extends CategoryTest {
     doThrow(new RuntimeException("Something went wrong"))
         .when(helmTaskHelperBase)
         .fetchValuesYamlFromChart(eq(manifestDelegateConfig), eq(DEFAULT_ASYNC_CALL_TIMEOUT), any(), any());
-    doReturn(logCallback).when(helmValuesFetchTaskNG).getLogCallback(any());
+    doReturn(logCallback).when(helmValuesFetchTaskNG).getLogCallback(any(), anyBoolean());
     doNothing().when(logCallback).saveExecutionLog(anyString(), any(), any());
 
     HelmValuesFetchRequest request = HelmValuesFetchRequest.builder()

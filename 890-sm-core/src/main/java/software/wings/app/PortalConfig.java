@@ -44,6 +44,7 @@ public class PortalConfig {
   @ConfigSecret private String jwtIdentityServiceSecret;
   @ConfigSecret private String jwtDataHandlerSecret;
   @ConfigSecret private String jwtNextGenManagerSecret;
+  @ConfigSecret private String jwtManagerServiceSecret;
   private String delegateDockerImage;
   private String upgraderDockerImage;
   private int externalGraphQLRateLimitPerMinute = 500;

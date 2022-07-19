@@ -44,7 +44,6 @@ import io.harness.rule.Owner;
 import java.io.IOException;
 import org.apache.groovy.util.Maps;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -194,20 +193,20 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
   @Test
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
-  @Ignore("Will be fixed for project type connector")
-  public void testOwnerRepoNameForAccountLevelHttpAzureRepoConnector() throws IOException {
-    String url = "https://dev.azure.com/org/";
+  public void testOwnerRepoNameForProjectLevelHttpAzureRepoConnector() throws IOException {
+    String url = "https://dev.azure.com/org/project/";
     prepareAccountLevelConnector(url, null);
 
     when(connectorDetails.getConnectorType()).thenReturn(AZURE_REPO);
     when(connectorDetails.getConnectorConfig()).thenReturn(azureGitConfigDTO);
     when(azureGitConfigDTO.getUrl()).thenReturn(url);
+    when(azureGitConfigDTO.getConnectorType()).thenReturn(AZURE_REPO);
     when(azureGitConfigDTO.getConnectionType()).thenReturn(AzureRepoConnectionTypeDTO.PROJECT);
 
     ExecutionMetadata executionMetadata =
         ExecutionMetadata.newBuilder().setExecutionUuid("executionuuid").setPipelineIdentifier("pipelineId").build();
     BuildStatusUpdateParameter buildStatusUpdateParameter =
-        getBuildStatusUpdateParameter("shortIdentifier", "shortname", "project", "repo");
+        getBuildStatusUpdateParameter("shortIdentifier", "shortname", "repo");
 
     CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
@@ -233,7 +232,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
     ExecutionMetadata executionMetadata =
         ExecutionMetadata.newBuilder().setExecutionUuid("executionuuid").setPipelineIdentifier("pipelineId").build();
     BuildStatusUpdateParameter buildStatusUpdateParameter =
-        getBuildStatusUpdateParameter("shortIdentifier", "shortname", null, null);
+        getBuildStatusUpdateParameter("shortIdentifier", "shortname", null);
 
     CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
@@ -247,20 +246,20 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
   @Test
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
-  @Ignore("Will be fixed for project type connector")
-  public void testOwnerRepoNameForAccountLevelSSHAzureRepoConnector() throws IOException {
-    String url = "git@ssh.dev.azure.com:v3/org/";
+  public void testOwnerRepoNameForProjectLevelSSHAzureRepoConnector() throws IOException {
+    String url = "git@ssh.dev.azure.com:v3/org/project/";
     prepareAccountLevelConnector(url, null);
 
     when(connectorDetails.getConnectorType()).thenReturn(AZURE_REPO);
     when(connectorDetails.getConnectorConfig()).thenReturn(azureGitConfigDTO);
     when(azureGitConfigDTO.getUrl()).thenReturn(url);
+    when(azureGitConfigDTO.getConnectorType()).thenReturn(AZURE_REPO);
     when(azureGitConfigDTO.getConnectionType()).thenReturn(AzureRepoConnectionTypeDTO.PROJECT);
 
     ExecutionMetadata executionMetadata =
         ExecutionMetadata.newBuilder().setExecutionUuid("executionuuid").setPipelineIdentifier("pipelineId").build();
     BuildStatusUpdateParameter buildStatusUpdateParameter =
-        getBuildStatusUpdateParameter("shortIdentifier", "shortname", "project", "repo");
+        getBuildStatusUpdateParameter("shortIdentifier", "shortname", "repo");
 
     CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
@@ -286,7 +285,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
     ExecutionMetadata executionMetadata =
         ExecutionMetadata.newBuilder().setExecutionUuid("executionuuid").setPipelineIdentifier("pipelineId").build();
     BuildStatusUpdateParameter buildStatusUpdateParameter =
-        getBuildStatusUpdateParameter("shortIdentifier", "shortname", null, null);
+        getBuildStatusUpdateParameter("shortIdentifier", "shortname", null);
 
     CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
@@ -304,19 +303,6 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
   private BuildStatusUpdateParameter getBuildStatusUpdateParameter(String identifier, String name, String repo) {
     return BuildStatusUpdateParameter.builder()
         .connectorIdentifier("testConnector")
-        .repoName(repo)
-        .identifier(identifier)
-        .buildNumber("0")
-        .desc("desc")
-        .name(name)
-        .build();
-  }
-
-  private BuildStatusUpdateParameter getBuildStatusUpdateParameter(
-      String identifier, String name, String projectName, String repo) {
-    return BuildStatusUpdateParameter.builder()
-        .connectorIdentifier("testConnector")
-        .projectName(projectName)
         .repoName(repo)
         .identifier(identifier)
         .buildNumber("0")

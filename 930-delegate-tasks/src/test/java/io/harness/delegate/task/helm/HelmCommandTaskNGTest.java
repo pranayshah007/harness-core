@@ -29,7 +29,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.ManifestDelegateConfigHelper;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
@@ -189,10 +188,9 @@ public class HelmCommandTaskNGTest extends CategoryTest {
     ArgumentCaptor<LogCallback> logCallbackCaptor = ArgumentCaptor.forClass(LogCallback.class);
     doReturn(mock(LogCallback.class)).when(dummyCommandRequest).getLogCallback();
 
-    assertThatThrownBy(() -> helmCommandTaskNG.run(dummyCommandRequest)).isInstanceOf(TaskNGDataException.class);
+    assertThatThrownBy(() -> spyHelmCommandTask.run(dummyCommandRequest)).isInstanceOf(TaskNGDataException.class);
 
-    verify(dummyCommandRequest, times(1)).setLogCallback(logCallbackCaptor.capture());
-    assertThat(logCallbackCaptor.getValue()).isInstanceOf(NGDelegateLogCallback.class);
+    verify(dummyCommandRequest, times(2)).setLogCallback(logCallbackCaptor.capture());
   }
 
   @Test(expected = NotImplementedException.class)

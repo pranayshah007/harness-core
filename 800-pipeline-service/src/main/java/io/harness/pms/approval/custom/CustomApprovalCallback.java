@@ -87,6 +87,7 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
       log.warn("Custom Approval Instance queued has expired");
       updateApprovalInstanceAndLog(logCallback, "Approval instance has expired", LogColor.Red,
           CommandExecutionStatus.FAILURE, ApprovalStatus.EXPIRED, instance.getId());
+      return;
     }
 
     ShellScriptTaskResponseNG scriptTaskResponse;

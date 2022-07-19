@@ -11,6 +11,8 @@ import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.stages.IntegrationStageConfigImpl;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.beans.yaml.extended.infrastrucutre.RunsOnInfra;
+import io.harness.beans.yaml.extended.infrastrucutre.RunsOnInfra.RunOnInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml.VmPoolYamlSpec;
@@ -31,6 +33,15 @@ public class VmInitializeTaskParamsHelper {
             .sharedPaths(ParameterField.createValueField(Arrays.asList("/shared")))
             .build();
     return InitializeStepInfo.builder().infrastructure(vmInfraYaml).stageElementConfig(integrationStageConfig).build();
+  }
+
+  public static InitializeStepInfo getHostedVmInitializeStep() {
+    RunsOnInfra runsOnInfra = RunsOnInfra.builder().spec(RunOnInfraSpec.builder().runsOn(POOL_NAME).build()).build();
+    IntegrationStageConfig integrationStageConfig =
+        IntegrationStageConfigImpl.builder()
+            .sharedPaths(ParameterField.createValueField(Arrays.asList("/shared")))
+            .build();
+    return InitializeStepInfo.builder().infrastructure(runsOnInfra).stageElementConfig(integrationStageConfig).build();
   }
 
   private static VmPoolYaml getPoolWithName(String poolName) {

@@ -36,7 +36,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 public class PmsYamlSchemaResourceTest extends PipelineServiceTestBase {
-  @InjectMocks PmsYamlSchemaResource pmsYamlSchemaResource;
+  @InjectMocks PmsYamlSchemaResourceImpl pmsYamlSchemaResource;
   @Mock PMSYamlSchemaService pmsYamlSchemaService;
   @Mock NGTriggerYamlSchemaService ngTriggerYamlSchemaService;
 

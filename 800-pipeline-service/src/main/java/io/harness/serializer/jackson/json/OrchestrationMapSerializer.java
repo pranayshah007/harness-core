@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.data.OrchestrationMap;
-import io.harness.pms.data.stepparameters.PmsSecretSanitizer;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
 import com.fasterxml.jackson.core.JsonGenerator;

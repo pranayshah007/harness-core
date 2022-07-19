@@ -35,9 +35,9 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperD
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.interceptor.GitImportInfoDTO;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
-import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
 import io.harness.pms.helpers.PmsFeatureFlagHelper;
@@ -74,7 +74,7 @@ import org.springframework.data.domain.Sort;
 
 @OwnedBy(PIPELINE)
 public class PipelineResourceTest extends CategoryTest {
-  PipelineResource pipelineResource;
+  PipelineResourceImpl pipelineResource;
   @Mock PMSPipelineService pmsPipelineService;
   @Mock PMSPipelineServiceHelper pmsPipelineServiceHelper;
   @Mock NodeExecutionService nodeExecutionService;
@@ -101,7 +101,7 @@ public class PipelineResourceTest extends CategoryTest {
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
-    pipelineResource = new PipelineResource(pmsPipelineService, pmsPipelineServiceHelper, nodeExecutionService,
+    pipelineResource = new PipelineResourceImpl(pmsPipelineService, pmsPipelineServiceHelper, nodeExecutionService,
         nodeExecutionToExecutioNodeMapper, pipelineTemplateHelper, featureFlagHelper, variableCreatorMergeService,
         pipelineCloneHelper, pipelineMetadataService);
     ClassLoader classLoader = this.getClass().getClassLoader();

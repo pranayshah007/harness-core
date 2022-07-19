@@ -25,18 +25,19 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class AzureWebAppRollbackRequest extends AbstractWebAppTaskRequest {
   private AzureAppServicePreDeploymentData preDeploymentData;
-
   private AzureArtifactConfig artifact;
   private Integer timeoutIntervalInMin;
+  private String targetSlot;
 
   @Builder
   public AzureWebAppRollbackRequest(String accountId, AzureAppServicePreDeploymentData preDeploymentData,
       CommandUnitsProgress commandUnitsProgress, AzureWebAppInfraDelegateConfig infrastructure,
-      AzureArtifactConfig artifact, Integer timeoutIntervalInMin) {
+      AzureArtifactConfig artifact, Integer timeoutIntervalInMin, String targetSlot) {
     super(accountId, commandUnitsProgress, infrastructure);
     this.preDeploymentData = preDeploymentData;
     this.artifact = artifact;
     this.timeoutIntervalInMin = timeoutIntervalInMin;
+    this.targetSlot = targetSlot;
   }
 
   @Override

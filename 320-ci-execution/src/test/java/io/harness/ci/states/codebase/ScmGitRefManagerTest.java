@@ -90,7 +90,7 @@ public class ScmGitRefManagerTest extends CIExecutionTestBase {
     DecryptableEntity decryptableEntity = mock(GithubApiAccessSpecDTO.class);
     when(secretUtils.decryptViaManager(any(), any(), any(), any())).thenReturn(decryptableEntity);
 
-    ScmConnector scmConnector = scmGitRefManager.getScmConnector(connectorDetails, accountId, "test", "test");
+    ScmConnector scmConnector = scmGitRefManager.getScmConnector(connectorDetails, accountId, "test");
     assertEquals(decryptableEntity, ((GithubConnectorDTO) scmConnector).getApiAccess().getSpec());
   }
 

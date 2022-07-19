@@ -199,7 +199,7 @@ public class PerpetualTaskWorker {
 
       PerpetualTaskLifecycleManager perpetualTaskLifecycleManager =
           new PerpetualTaskLifecycleManager(task.getTaskId(), context, factoryMap, perpetualTaskServiceAgentClient,
-              perpetualTaskTimeLimiter, currentlyExecutingPerpetualTasksCount);
+              perpetualTaskTimeLimiter, currentlyExecutingPerpetualTasksCount, accountId);
 
       synchronized (runningTaskMap) {
         runningTaskMap.computeIfAbsent(task.getTaskId(), k -> {

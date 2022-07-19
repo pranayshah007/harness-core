@@ -11,6 +11,7 @@ import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.beans.K8sCanaryExecutionOutput;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
@@ -57,6 +58,7 @@ public class K8sCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<K8sDe
   public static final String K8S_CANARY_STEP_MISSING = "Canary Deploy step is not configured.";
 
   @Inject private K8sStepHelper k8sStepHelper;
+  @Inject private CDStepHelper cdStepHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Override
@@ -70,8 +72,8 @@ public class K8sCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<K8sDe
     K8sCanaryDeleteStepParameters k8sCanaryDeleteStepParameters =
         (K8sCanaryDeleteStepParameters) stepElementParameters.getSpec();
     String canaryStepFqn = k8sCanaryDeleteStepParameters.getCanaryStepFqn();
-    InfrastructureOutcome infrastructure = k8sStepHelper.getInfrastructureOutcome(ambiance);
-    String releaseName = k8sStepHelper.getReleaseName(ambiance, infrastructure);
+    InfrastructureOutcome infrastructure = cdStepHelper.getInfrastructureOutcome(ambiance);
+    String releaseName = cdStepHelper.getReleaseName(ambiance, infrastructure);
     if (EmptyPredicate.isEmpty(canaryStepFqn)) {
       throw new InvalidRequestException(K8S_CANARY_STEP_MISSING, USER);
     }
@@ -105,10 +107,10 @@ public class K8sCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<K8sDe
         K8sCanaryDeleteRequest.builder()
             .canaryWorkloads(canaryOutcome.getCanaryWorkload())
             .commandName(K8S_CANARY_DELETE_COMMAND_NAME)
-            .k8sInfraDelegateConfig(k8sStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
+            .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
             .timeoutIntervalInMin(
                 NGTimeConversionHelper.convertTimeStringToMinutes(stepElementParameters.getTimeout().getValue()))
-            .useNewKubectlVersion(k8sStepHelper.isUseNewKubectlVersion(AmbianceUtils.getAccountId(ambiance)))
+            .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(AmbianceUtils.getAccountId(ambiance)))
             .build();
 
     return queueCanaryDeleteRequest(stepElementParameters, request, ambiance, infrastructure, releaseName);
@@ -120,10 +122,10 @@ public class K8sCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<K8sDe
         K8sCanaryDeleteRequest.builder()
             .releaseName(releaseName)
             .commandName(K8S_CANARY_DELETE_COMMAND_NAME)
-            .k8sInfraDelegateConfig(k8sStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
+            .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
             .timeoutIntervalInMin(
                 NGTimeConversionHelper.convertTimeStringToMinutes(stepElementParameters.getTimeout().getValue()))
-            .useNewKubectlVersion(k8sStepHelper.isUseNewKubectlVersion(AmbianceUtils.getAccountId(ambiance)))
+            .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(AmbianceUtils.getAccountId(ambiance)))
             .build();
 
     return queueCanaryDeleteRequest(stepElementParameters, request, ambiance, infrastructure, releaseName);

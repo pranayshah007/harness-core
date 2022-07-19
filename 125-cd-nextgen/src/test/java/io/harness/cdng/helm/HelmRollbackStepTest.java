@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.account.services.AccountService;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.beans.NativeHelmExecutionPassThroughData;
 import io.harness.cdng.helm.rollback.HelmRollbackStepParams;
@@ -79,6 +80,7 @@ public class HelmRollbackStepTest extends CategoryTest {
   @Mock private OutcomeService outcomeService;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private NativeHelmStepHelper nativeHelmStepHelper;
+  @Mock private CDStepHelper cdStepHelper;
   @Mock private InstanceInfoService instanceInfoService;
   @Mock private K8sInfraDelegateConfig infraDelegateConfig;
   protected final HelmChartManifestDelegateConfig manifestDelegateConfig =
@@ -98,7 +100,7 @@ public class HelmRollbackStepTest extends CategoryTest {
             ImmutableMap.of("entityType", HelmChartManifestOutcome.builder().helmVersion(HelmVersion.V3).build()))));
     when(nativeHelmStepHelper.getHelmSupportedManifestOutcome(any()))
         .thenReturn(HelmChartManifestOutcome.builder().helmVersion(HelmVersion.V3).build());
-    doReturn(infraDelegateConfig).when(nativeHelmStepHelper).getK8sInfraDelegateConfig(any(), eq(ambiance));
+    doReturn(infraDelegateConfig).when(cdStepHelper).getK8sInfraDelegateConfig(any(), eq(ambiance));
     doReturn(manifestDelegateConfig).when(nativeHelmStepHelper).getManifestDelegateConfig(any(), eq(ambiance));
     when(cdFeatureFlagHelper.isEnabled(any(), any())).thenReturn(true);
   }
@@ -238,7 +240,7 @@ public class HelmRollbackStepTest extends CategoryTest {
         .queueNativeHelmTask(eq(stepElementParameters), any(HelmCommandRequestNG.class), eq(ambiance),
             any(NativeHelmExecutionPassThroughData.class));
 
-    doReturn("test").when(nativeHelmStepHelper).getReleaseName(eq(ambiance), any());
+    doReturn("test").when(cdStepHelper).getReleaseName(eq(ambiance), any());
 
     TaskRequest result = helmRollbackStep.obtainTask(ambiance, stepElementParameters, stepInputPackage);
     assertThat(result).isNotNull();

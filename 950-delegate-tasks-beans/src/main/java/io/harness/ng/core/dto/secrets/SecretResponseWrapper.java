@@ -10,7 +10,7 @@ package io.harness.ng.core.dto.secrets;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.contracts.governance.GovernanceMetadata;
+import io.harness.governance.GovernanceMetadata;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.NotNull;

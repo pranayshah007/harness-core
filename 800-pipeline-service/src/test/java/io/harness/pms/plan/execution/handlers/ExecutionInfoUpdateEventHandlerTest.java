@@ -27,6 +27,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.metadata.RecentExecutionsInfoHelper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.rule.Owner;
@@ -45,12 +46,14 @@ import org.mockito.Mock;
 public class ExecutionInfoUpdateEventHandlerTest extends PipelineServiceTestBase {
   @Mock private PMSPipelineService pmsPipelineService;
   @Mock private PlanExecutionService planExecutionService;
+  @Mock private RecentExecutionsInfoHelper recentExecutionsInfoHelper;
 
   private ExecutionInfoUpdateEventHandler executionInfoUpdateEventHandler;
 
   @Before
   public void setUp() {
-    executionInfoUpdateEventHandler = new ExecutionInfoUpdateEventHandler(pmsPipelineService, planExecutionService);
+    executionInfoUpdateEventHandler =
+        new ExecutionInfoUpdateEventHandler(pmsPipelineService, planExecutionService, recentExecutionsInfoHelper);
   }
 
   @Test

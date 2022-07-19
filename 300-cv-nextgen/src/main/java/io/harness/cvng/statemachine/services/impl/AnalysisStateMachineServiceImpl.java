@@ -44,6 +44,7 @@ import io.harness.cvng.statemachine.entities.TestTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
 import io.harness.cvng.statemachine.services.api.AnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.AnalysisStateMachineService;
+import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.metrics.AutoMetricContext;
@@ -58,8 +59,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.mongodb.morphia.query.Sort;
 
 @Slf4j
@@ -323,11 +326,23 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
       stateMachine.setAccountId(cvConfig.getAccountId());
       stateMachine.setCurrentState(firstState);
     } else if (TaskType.DEPLOYMENT.equals(verificationTaskType)) {
-      VerificationJobInstance verificationJobInstance = verificationJobInstanceService.getVerificationJobInstance(
-          ((DeploymentInfo) verificationTask.getTaskInfo()).getVerificationJobInstanceId());
-      CVConfig cvConfigForDeployment =
-          cvConfigService.get(((DeploymentInfo) verificationTask.getTaskInfo()).getCvConfigId());
+      DeploymentInfo deploymentInfo = (DeploymentInfo) verificationTask.getTaskInfo();
+      String cvConfigId = deploymentInfo.getCvConfigId();
+      VerificationJobInstance verificationJobInstance =
+          verificationJobInstanceService.getVerificationJobInstance(deploymentInfo.getVerificationJobInstanceId());
       Preconditions.checkNotNull(verificationJobInstance, "verificationJobInstance can not be null");
+      VerificationJob resolvedVerificationJob = verificationJobInstance.getResolvedJob();
+      CVConfig cvConfigForDeployment = null;
+      if (Objects.nonNull(resolvedVerificationJob)) {
+        List<CVConfig> cvConfigs = resolvedVerificationJob.getCvConfigs();
+        if (CollectionUtils.isNotEmpty(cvConfigs)) {
+          cvConfigForDeployment =
+              cvConfigs.stream().filter(cvConfig -> cvConfig.getUuid().equals(cvConfigId)).findFirst().orElse(null);
+        }
+      }
+      if (Objects.isNull(cvConfigForDeployment)) {
+        cvConfigForDeployment = cvConfigService.get(cvConfigId);
+      }
       Preconditions.checkNotNull(cvConfigForDeployment, "cvConfigForDeployment can not be null");
       stateMachine.setAccountId(verificationTask.getAccountId());
       stateMachine.setStateMachineIgnoreMinutes(STATE_MACHINE_IGNORE_MINUTES_DEFAULT);
