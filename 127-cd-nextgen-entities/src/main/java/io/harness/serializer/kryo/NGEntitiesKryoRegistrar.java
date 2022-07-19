@@ -22,6 +22,14 @@ import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptInfo;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptSourceWrapper;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScripts;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactSpecInfo;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactSpecVisitorHelper;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptBaseSource;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
+import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
@@ -99,6 +107,7 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.steps.shellscript.ShellType;
 
 import com.esotericsoftware.kryo.Kryo;
 
@@ -202,5 +211,13 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(AmazonS3ArtifactConfig.class, 12569);
     kryo.register(AzureRepoStore.class, 12570);
     kryo.register(JenkinsArtifactConfig.class, 130012);
+    kryo.register(CustomScriptBaseSource.class, 130013);
+    kryo.register(CustomArtifactScriptInfo.class, 130014);
+    kryo.register(CustomArtifactScripts.class, 130015);
+    kryo.register(CustomArtifactScriptSourceWrapper.class, 130016);
+    kryo.register(CustomArtifactSpecInfo.class, 130017);
+    kryo.register(CustomArtifactSpecVisitorHelper.class, 130018);
+    kryo.register(CustomScriptInlineSource.class, 130019);
+    kryo.register(FetchAllArtifacts.class, 130020);
   }
 }

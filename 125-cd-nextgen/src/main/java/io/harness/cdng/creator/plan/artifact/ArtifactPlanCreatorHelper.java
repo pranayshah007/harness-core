@@ -23,7 +23,8 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class ArtifactPlanCreatorHelper {
   public StepType getStepType(ArtifactStepParameters artifactStepParameters) {
-    if (ArtifactSourceType.CUSTOM_ARTIFACT == artifactStepParameters.getType()) {
+    if (ArtifactSourceType.CUSTOM_ARTIFACT == artifactStepParameters.getType()
+        && !isCustomArtifactIsDelegateTask(artifactStepParameters)) {
       return ArtifactSyncStep.STEP_TYPE;
     }
 
@@ -31,10 +32,18 @@ public class ArtifactPlanCreatorHelper {
   }
 
   public FacilitatorType getFacilitatorType(ArtifactStepParameters artifactStepParameters) {
-    if (ArtifactSourceType.CUSTOM_ARTIFACT == artifactStepParameters.getType()) {
+    if (ArtifactSourceType.CUSTOM_ARTIFACT == artifactStepParameters.getType()
+        && !isCustomArtifactIsDelegateTask(artifactStepParameters)) {
       return FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build();
     }
 
     return FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.TASK).build();
+  }
+
+  public boolean isCustomArtifactIsDelegateTask(ArtifactStepParameters artifactStepParameters) {
+    if (artifactStepParameters.getSpec().toString().contains("scripts")) {
+      return true;
+    }
+    return false;
   }
 }

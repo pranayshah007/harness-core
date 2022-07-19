@@ -302,6 +302,8 @@ import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifact
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
@@ -1612,5 +1614,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GitApiMergePRTaskResponse.class, 55403);
     kryo.register(PdcWinRmInfraDelegateConfig.class, 55335);
     kryo.register(WinrmTaskParameters.class, 55336);
+    kryo.register(CustomArtifactDelegateRequest.class, 55337);
+    kryo.register(CustomArtifactDelegateResponse.class, 55338);
   }
 }

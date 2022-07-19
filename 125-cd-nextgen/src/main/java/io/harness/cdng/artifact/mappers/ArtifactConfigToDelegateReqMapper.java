@@ -14,11 +14,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -32,6 +34,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
@@ -40,6 +43,8 @@ import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.steps.shellscript.ShellScriptInlineSource;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -81,6 +86,24 @@ public class ArtifactConfigToDelegateReqMapper {
     String jobName = artifactConfig.getJobName() != null ? artifactConfig.getJobName().getValue() : "";
     return ArtifactDelegateRequestUtils.getJenkinsDelegateRequest(connectorRef, connectorDTO, encryptedDataDetails,
         ArtifactSourceType.JENKINS, null, null, jobName, Arrays.asList(artifactPath));
+  }
+  public CustomArtifactDelegateRequest getCustomDelegateRequest(CustomArtifactConfig artifactConfig) {
+    CustomScriptInlineSource customScriptInlineSource = (CustomScriptInlineSource) artifactConfig.getScripts()
+                                                            .getFetchAllArtifacts()
+                                                            .getShellScriptBaseStepInfo()
+                                                            .getSource()
+                                                            .getSpec();
+    return ArtifactDelegateRequestUtils.getCusotmDelegateRequest(
+        artifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath().getValue(),
+        artifactConfig.getVersionRegex().getValue(),
+        artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getSource().getType(),
+        ArtifactSourceType.CUSTOM_ARTIFACT,
+        artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getShell().getScriptType(),
+        artifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().getValue(),
+        customScriptInlineSource.getScript().fetchFinalValue().toString(),
+        NGVariablesUtils.getMapOfVariables(artifactConfig.getScripts().getFetchAllArtifacts().getAttributes(), 0L),
+        NGVariablesUtils.getMapOfVariables(artifactConfig.getInputs(), 0L), artifactConfig.getVersion().getValue(),
+        artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getTimeout());
   }
 
   public GcrArtifactDelegateRequest getGcrDelegateRequest(GcrArtifactConfig gcrArtifactConfig,

@@ -23,6 +23,7 @@ import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
@@ -30,6 +31,7 @@ import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.shell.ScriptType;
 
 import software.wings.helpers.ext.jenkins.JobDetails;
 
@@ -208,6 +210,24 @@ public class ArtifactDelegateRequestUtils {
         .awsConnectorDTO(connectorDTO)
         .encryptedDataDetails(encryptedDataDetails)
         .sourceType(sourceType)
+        .build();
+  }
+
+  public CustomArtifactDelegateRequest getCusotmDelegateRequest(String artifactsArrayPath, String versionRegex,
+      String ShellType, ArtifactSourceType sourceType, ScriptType scriptType, String versionPath, String script,
+      Map<String, Object> attributes, Map<String, Object> inputs, String version, long timeout) {
+    return CustomArtifactDelegateRequest.builder()
+        .artifactsArrayPath(artifactsArrayPath)
+        .attributes(attributes)
+        .versionRegex(trim(versionRegex))
+        .sourceType(sourceType)
+        .type(ShellType)
+        .versionPath(versionPath)
+        .script(script)
+        .scriptType(scriptType)
+        .timeout(timeout)
+        .inputs(inputs)
+        .version(version)
         .build();
   }
 
