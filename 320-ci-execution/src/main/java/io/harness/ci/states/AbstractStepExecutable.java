@@ -112,6 +112,7 @@ import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -181,7 +182,11 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     String runtimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String logKey = getLogKey(ambiance);
+    String stepGroupIdentifier = AmbianceUtils.obtainStepGroupIdentifier(ambiance);
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
+    if (Strings.isNotBlank(stepGroupIdentifier)) {
+      stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
+    }
     String accountId = AmbianceUtils.getAccountId(ambiance);
     ParameterField<String> timeout = stepParameters.getTimeout();
     String stepParametersName = stepParameters.getName();
