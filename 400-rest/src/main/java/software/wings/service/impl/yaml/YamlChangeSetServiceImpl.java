@@ -560,7 +560,8 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
                                                                        .headCommitId("HEAD")
                                                                        .repositoryFullName(repositoryName)
                                                                        .isPollingBased(true)
-                                                                       .build());
+                                                                       .build())
+                                      .build();
     return save(yamlChangeSet);
   }
 
