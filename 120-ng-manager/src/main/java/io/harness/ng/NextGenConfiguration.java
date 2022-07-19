@@ -293,7 +293,7 @@ public class NextGenConfiguration extends Configuration {
         new Info()
             .title("Harness NextGen Software Delivery Platform API Reference")
             .description(
-                "This is the Open Api Spec 3 for the NextGen Manager. This is under active development. Beware of the breaking change with respect to the generated code stub")
+                "This is the Open API Spec 3 for the NextGen Manager. This is under active development. Beware of any breaking changes with respect to the generated code stub")
             .termsOfService("https://harness.io/terms-of-use/")
             .version("3.0")
             .contact(new Contact().email("contact@harness.io"));
