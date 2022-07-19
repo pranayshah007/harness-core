@@ -10,7 +10,10 @@ errors=()
 TEMP_DIR=`mktemp -d`
 touch $TEMP_DIR/codehash-out.text
 
-GIT_BRANCH=$GIT_BRANCH
+git fetch origin develop
+git checkout develop
+git checkout $GIT_BRANCH
+
 COMMIT=$(git log develop.."$GIT_BRANCH" --pretty=format:"%h" | tail -1)
 git checkout $COMMIT
 
@@ -20,9 +23,8 @@ CODEBASE_HASH_STRING=`cat $TEMP_DIR/codehash-out.text | grep "Codebase Hash:"`
 HASH=${CODEBASE_HASH_STRING:14:64}
 echo "New hash: " $HASH
 
-touch $TEMP_DIR/codehash-out-develop.text
-git fetch origin develop
 git checkout develop
+touch $TEMP_DIR/codehash-out-develop.text
 bazel run "//001-microservice-intfc-tool:delegate" | tee $TEMP_DIR/codehash-out-develop.text
 CODEBASE_HASH_STRING=`cat $TEMP_DIR/codehash-out-develop.text | grep "Codebase Hash:"`
 EXISTING_HASH=${CODEBASE_HASH_STRING:14:64}
