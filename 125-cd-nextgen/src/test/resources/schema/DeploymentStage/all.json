@@ -449,17 +449,11 @@
           "type": "object",
           "required": [
             "connectorRef",
-            "deploymentSlot",
             "resourceGroup",
-            "subscriptionId",
-            "webApp"
+            "subscriptionId"
           ],
           "properties": {
             "connectorRef": {
-              "type": "string",
-              "minLength": 1
-            },
-            "deploymentSlot": {
               "type": "string",
               "minLength": 1
             },
@@ -468,13 +462,6 @@
               "minLength": 1
             },
             "subscriptionId": {
-              "type": "string",
-              "minLength": 1
-            },
-            "targetSlot": {
-              "type": "string"
-            },
-            "webApp": {
               "type": "string",
               "minLength": 1
             }
@@ -540,6 +527,10 @@
         },
         {
           "type": "object",
+          "required": [
+            "deploymentSlot",
+            "webApp"
+          ],
           "properties": {
             "delegateSelectors": {
               "oneOf": [
@@ -555,6 +546,12 @@
                   "minLength": 1
                 }
               ]
+            },
+            "deploymentSlot": {
+              "type": "string"
+            },
+            "webApp": {
+              "type": "string"
             }
           }
         }
@@ -568,6 +565,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "targetSlot"
+          ],
           "properties": {
             "delegateSelectors": {
               "oneOf": [
@@ -583,6 +583,9 @@
                   "minLength": 1
                 }
               ]
+            },
+            "targetSlot": {
+              "type": "string"
             }
           }
         }
@@ -3844,7 +3847,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4363,7 +4366,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4961,7 +4964,7 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        {}
+        { }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "oneOf": [
@@ -5803,7 +5806,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6338,7 +6341,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6348,7 +6351,7 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        {}
+        { }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "oneOf": [

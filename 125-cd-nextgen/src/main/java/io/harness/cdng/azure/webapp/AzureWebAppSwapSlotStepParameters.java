@@ -29,8 +29,11 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepParameters")
 public class AzureWebAppSwapSlotStepParameters
     extends AzureWebAppSwapSlotBaseStepInfo implements SpecParameters, AzureWebAppStepParameters {
+  ParameterField<String> targetSlot;
   @Builder(builderMethodName = "infoBuilder")
-  public AzureWebAppSwapSlotStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public AzureWebAppSwapSlotStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      String slotDeploymentStepFqn, ParameterField<String> targetSlot) {
+    super(delegateSelectors, slotDeploymentStepFqn);
+    this.targetSlot = targetSlot;
   }
 }

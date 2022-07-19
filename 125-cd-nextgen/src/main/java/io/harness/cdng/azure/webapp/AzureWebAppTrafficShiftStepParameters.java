@@ -31,9 +31,9 @@ public class AzureWebAppTrafficShiftStepParameters
     extends AzureWebAppTrafficShiftBaseStepInfo implements SpecParameters, AzureWebAppStepParameters {
   private ParameterField<String> traffic;
   @Builder(builderMethodName = "infoBuilder")
-  public AzureWebAppTrafficShiftStepParameters(
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<String> traffic) {
-    super(delegateSelectors);
+  public AzureWebAppTrafficShiftStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      String slotDeploymentStepFqn, ParameterField<String> traffic) {
+    super(delegateSelectors, slotDeploymentStepFqn);
     this.traffic = traffic;
   }
 }
