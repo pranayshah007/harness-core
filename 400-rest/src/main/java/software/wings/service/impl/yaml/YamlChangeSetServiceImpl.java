@@ -20,6 +20,7 @@ import static software.wings.yaml.gitSync.YamlChangeSet.Status.SKIPPED;
 import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.PageResponse;
@@ -44,6 +45,7 @@ import software.wings.service.intfc.yaml.YamlSuccessfulChangeService;
 import software.wings.service.intfc.yaml.sync.YamlGitConfigService;
 import software.wings.yaml.gitSync.GitSyncMetadata;
 import software.wings.yaml.gitSync.GitSyncMetadata.GitSyncMetadataKeys;
+import software.wings.yaml.gitSync.GitWebhookRequestAttributes;
 import software.wings.yaml.gitSync.YamlChangeSet;
 import software.wings.yaml.gitSync.YamlChangeSet.Status;
 import software.wings.yaml.gitSync.YamlChangeSet.YamlChangeSetKeys;
@@ -539,6 +541,27 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
       query.and(getHarnessToGitChangeSetCriteria(query, appId));
     }
     return query.asList(new FindOptions().limit(displayCount));
+  }
+
+  @Override
+  public YamlChangeSet pushYamlChangeSetForGitToHarness(
+      String accountId, String branchName, String connectorId, String repositoryName) {
+    if (!featureFlagService.isEnabled(FeatureName.CG_GIT_POLLING, accountId)) {
+      return null;
+    }
+    YamlChangeSet yamlChangeSet = YamlChangeSet.builder()
+                                      .status(YamlChangeSet.Status.QUEUED)
+                                      .accountId(accountId)
+                                      .fullSync(false)
+                                      .gitToHarness(true)
+                                      .gitWebhookRequestAttributes(GitWebhookRequestAttributes.builder()
+                                                                       .branchName(branchName)
+                                                                       .gitConnectorId(connectorId)
+                                                                       .headCommitId("HEAD")
+                                                                       .repositoryFullName(repositoryName)
+                                                                       .isPollingBased(true)
+                                                                       .build());
+    return save(yamlChangeSet);
   }
 
   private CriteriaContainer getGitToHarnessChangeSetCriteria(Query<YamlChangeSet> query, YamlGitConfig yamlGitConfig) {
