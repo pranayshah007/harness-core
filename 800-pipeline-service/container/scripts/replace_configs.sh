@@ -302,22 +302,34 @@ if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   yq write -i $REDISSON_CACHE_FILE nettyThreads "$REDIS_NETTY_THREADS"
 fi
 
-yq delete -i $REDISSON_CACHE_FILE codec
+yq delete -i $ENTERPRISE_REDISSON_CACHE_FILE codec
 
 if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
-  yq write -i $REDISSON_CACHE_FILE useScriptCache false
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE useScriptCache false
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_NETTY_THREADS" ]]; then
-  yq write -i $REDISSON_CACHE_FILE nettyThreads "$EVENTS_FRAMEWORK_NETTY_THREADS"
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE nettyThreads "$EVENTS_FRAMEWORK_NETTY_THREADS"
 fi
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_URL" ]]; then
-  yq write -i $REDISSON_CACHE_FILE singleServerConfig.address "$EVENTS_FRAMEWORK_REDIS_URL"
-  yq write -i $REDISSON_CACHE_FILE singleServerConfig.userName "$EVENTS_FRAMEWORK_REDIS_USERNAME"
-  yq write -i $REDISSON_CACHE_FILE singleServerConfig.password "$EVENTS_FRAMEWORK_REDIS_PASSWORD"
-  yq write -i $REDISSON_CACHE_FILE singleServerConfig.sslTruststore "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH"
-  yq write -i $REDISSON_CACHE_FILE singleServerConfig.sslTruststorePassword "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD"
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.address "$EVENTS_FRAMEWORK_REDIS_URL"
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_USERNAME" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.userName "$EVENTS_FRAMEWORK_REDIS_USERNAME"
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.password "$EVENTS_FRAMEWORK_REDIS_PASSWORD"
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.sslTruststore "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH"
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.sslTruststorePassword "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD"
 fi
 
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
