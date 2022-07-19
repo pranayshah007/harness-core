@@ -47,9 +47,7 @@ shared_dependencies = [
     "@maven//:org_springframework_boot_spring_boot_starter_batch",
     "@maven//:org_springframework_data_spring_data_mongodb",
     "@maven//:org_springframework_guice_spring_guice",
-    "@maven//:org_zeroturnaround_zt_exec",
-    "@maven//:software_amazon_awssdk_athena",
-    "@maven//:software_amazon_awssdk_auth",
+    "@maven//:org_zeroturnaround_zt_exec"
 ]
 
 java_binary(
