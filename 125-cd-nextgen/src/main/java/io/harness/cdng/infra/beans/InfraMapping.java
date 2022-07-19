@@ -32,7 +32,7 @@ import org.mongodb.morphia.annotations.Entity;
       @JsonSubTypes.Type(value = SshWinRmAwsInfrastructure.class, name = "ssh-winrm-aws"),
       @JsonSubTypes.Type(value = ServerlessAwsLambdaInfrastructure.class, name = "serverless-aws-lambda"),
       @JsonSubTypes.Type(value = AzureWebAppInfrastructure.class, name = "azure-webapp"),
-      @JsonSubTypes.Type(value = EcsInfrastructure.class, name ="ecs")
+      @JsonSubTypes.Type(value = EcsInfrastructure.class, name ="ECS")
 })
 @Entity(value = "infrastructureMapping")
 public interface InfraMapping extends PersistentEntity, UuidAware, Outcome {

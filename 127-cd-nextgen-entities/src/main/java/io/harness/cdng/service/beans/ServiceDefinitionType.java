@@ -45,7 +45,7 @@ public enum ServiceDefinitionType {
           ExecutionStrategyType.DEFAULT), ServiceSpecType.AZURE_WEBAPP),
 
   @JsonProperty(ServiceSpecType.ECS)
-  ECS("Ecs",
+  ECS("ECS",
           Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY,
                   ExecutionStrategyType.DEFAULT),
   ServiceSpecType.ECS);
