@@ -29,6 +29,7 @@ import io.harness.ccm.communication.CESlackWebhookService;
 import io.harness.ccm.communication.entities.CESlackWebhook;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.PerspectiveAnomalyService;
+import io.harness.eraro.ResponseMessage;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.Team;
 import io.harness.notification.channeldetails.EmailChannel;
@@ -225,6 +226,14 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     log.info("RESPONSE headers: {}", response.headers());
     log.info("RESPONSE message: {}", response.message());
     log.info("RESPONSE raw: {}", response.raw());
+    if (response.body() != null && response.body().getResponseMessages() !=null) {
+      log.info("RESPONSE responseMessages: {}", response.body().getResponseMessages());
+      if (!response.body().getResponseMessages().isEmpty()) {
+        for(ResponseMessage responseMessage: response.body().getResponseMessages()) {
+          log.info("RESPONSE in responseMessages message: {}", responseMessage.getMessage());
+        }
+      }
+    }
     if (response.errorBody() != null) {
       log.info("RESPONSE errorBody: {}", response.errorBody().string());
     }
@@ -255,6 +264,14 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     log.info("RESPONSE headers: {}", response.headers());
     log.info("RESPONSE message: {}", response.message());
     log.info("RESPONSE raw: {}", response.raw());
+    if (response.body() != null && response.body().getResponseMessages() !=null) {
+      log.info("RESPONSE responseMessages: {}", response.body().getResponseMessages());
+      if (!response.body().getResponseMessages().isEmpty()) {
+        for(ResponseMessage responseMessage: response.body().getResponseMessages()) {
+          log.info("RESPONSE in responseMessages message: {}", responseMessage.getMessage());
+        }
+      }
+    }
     if (response.errorBody() != null) {
       log.info("RESPONSE errorBody: {}", response.errorBody().string());
     }
