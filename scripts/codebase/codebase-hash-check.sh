@@ -12,7 +12,7 @@ touch $TEMP_DIR/codehash-out.text
 
 git fetch origin develop
 git checkout develop
-git checkout $GIT_BRANCH
+git checkout "$ghprbSourceBranch"
 
 COMMIT=$(git log develop.."$GIT_BRANCH" --pretty=format:"%h" | tail -1)
 git checkout $COMMIT
