@@ -170,6 +170,8 @@ public class PluginSettingUtils {
         map.put(EnvVariableEnum.ARTIFACTORY_USERNAME, PLUGIN_USERNAME);
         map.put(EnvVariableEnum.ARTIFACTORY_PASSWORD, PLUGIN_PASSW);
         return map;
+      case GIT_CLONE:
+        return map;
       default:
         throw new IllegalStateException("Unexpected value: " + stepInfoType);
     }

@@ -526,8 +526,7 @@ public class K8InitializeTaskUtils {
   }
 
   @NotNull
-  public Map<String, String> getCommonStepEnvVariables(K8PodDetails k8PodDetails, Map<String, String> gitEnvVars,
-      Map<String, String> runtimeCodebaseVars, String workDirPath, String logPrefix, Ambiance ambiance) {
+  public Map<String, String> getCommonStepEnvVariables(K8PodDetails k8PodDetails, String logPrefix, Ambiance ambiance) {
     Map<String, String> envVars = new HashMap<>();
     final String accountID = AmbianceUtils.getAccountId(ambiance);
     final String orgID = AmbianceUtils.getOrgIdentifier(ambiance);
@@ -537,11 +536,7 @@ public class K8InitializeTaskUtils {
     final String stageID = k8PodDetails.getStageID();
     final String executionID = ambiance.getPlanExecutionId();
 
-    // Add git connector environment variables
-    envVars.putAll(gitEnvVars);
 
-    // Add runtime git vars, i.e. manual pull request execution data.
-    envVars.putAll(runtimeCodebaseVars);
 
     // Check whether FF to enable blob upload to log service (as opposed to directly blob storage) is enabled
     if (featureFlagService.isEnabled(FeatureName.CI_INDIRECT_LOG_UPLOAD, accountID)) {
@@ -550,7 +545,6 @@ public class K8InitializeTaskUtils {
     }
 
     // Add other environment variables needed in the containers
-    envVars.put(HARNESS_WORKSPACE, workDirPath);
     envVars.put(HARNESS_ACCOUNT_ID_VARIABLE, accountID);
     envVars.put(HARNESS_PROJECT_ID_VARIABLE, projectID);
     envVars.put(HARNESS_ORG_ID_VARIABLE, orgID);

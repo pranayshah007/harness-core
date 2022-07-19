@@ -66,6 +66,7 @@ public interface EntityTypeConstants {
   String SECURITY = "Security";
   String SECURITY_STAGE = "SecurityStage";
   String SECURITY_STEPS = "SecuritySteps";
+  String GIT_CLONE = "GitClone";
   String ARTIFACTORY_UPLOAD = "ArtifactoryUpload";
   String GCS_UPLOAD = "GCSUpload";
   String S3_UPLOAD = "S3Upload";

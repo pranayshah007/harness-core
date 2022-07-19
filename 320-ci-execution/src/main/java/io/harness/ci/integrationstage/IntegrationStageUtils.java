@@ -46,6 +46,7 @@ import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
@@ -112,7 +113,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.CI)
 public class IntegrationStageUtils {
   private static final String TAG_EXPRESSION = "<+trigger.tag>";
-  private static final String BRANCH_EXPRESSION = "<+trigger.branch>";
+  public static final String BRANCH_EXPRESSION = "<+trigger.branch>";
   public static final String PR_EXPRESSION = "<+trigger.prNumber>";
 
   private static final String HARNESS_HOSTED = "Harness Hosted";
@@ -291,7 +292,15 @@ public class IntegrationStageUtils {
   }
 
   public String getGitURL(CodeBase ciCodebase, GitConnectionType connectionType, String url) {
-    String gitUrl = retrieveGenericGitConnectorURL(ciCodebase, connectionType, url);
+    if (ciCodebase == null) {
+      throw new IllegalArgumentException("CI codebase spec is not set");
+    }
+    String repoName = ciCodebase.getRepoName().getValue();
+    return getGitURL(repoName, connectionType, url);
+  }
+
+  public String getGitURL(String repoName, GitConnectionType connectionType, String url) {
+    String gitUrl = retrieveGenericGitConnectorURL(repoName, connectionType, url);
 
     if (!gitUrl.endsWith(GIT_URL_SUFFIX) && !gitUrl.contains(AZURE_REPO_BASE_URL)) {
       gitUrl += GIT_URL_SUFFIX;
@@ -299,21 +308,15 @@ public class IntegrationStageUtils {
     return gitUrl;
   }
 
-  public String retrieveGenericGitConnectorURL(CodeBase ciCodebase, GitConnectionType connectionType, String url) {
+  public String retrieveGenericGitConnectorURL(String repoName, GitConnectionType connectionType, String url) {
     String gitUrl = "";
     if (connectionType == GitConnectionType.REPO) {
       gitUrl = url;
     } else if (connectionType == GitConnectionType.PROJECT || connectionType == GitConnectionType.ACCOUNT) {
-      if (ciCodebase == null) {
-        throw new IllegalArgumentException("CI codebase spec is not set");
-      }
 
-      if (isEmpty(ciCodebase.getRepoName().getValue())) {
+      if (isEmpty(repoName)) {
         throw new IllegalArgumentException("Repo name is not set in CI codebase spec");
       }
-
-      String repoName = ciCodebase.getRepoName().getValue();
-
       if (connectionType == GitConnectionType.PROJECT) {
         if (url.contains(AZURE_REPO_BASE_URL)) {
           gitUrl = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(url, repoName);
@@ -638,6 +641,9 @@ public class IntegrationStageUtils {
       switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {
         case RUN:
           return resolveConnectorIdentifier(((RunStepInfo) ciStepInfo).getConnectorRef(), ciStepInfo.getIdentifier());
+        case GIT_CLONE:
+          GitCloneStepInfo gitCloneStepInfo = ((GitCloneStepInfo) ciStepInfo);
+          return resolveConnectorIdentifier(gitCloneStepInfo.getConnectorRef(), gitCloneStepInfo.getIdentifier());
         case PLUGIN:
           return resolveConnectorIdentifier(
               ((PluginStepInfo) ciStepInfo).getConnectorRef(), ciStepInfo.getIdentifier());

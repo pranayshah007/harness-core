@@ -120,7 +120,6 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
     Stopwatch timer = Stopwatch.createStarted();
     CIK8InitializeTaskParams cik8InitializeTaskParams = (CIK8InitializeTaskParams) ciInitializeTaskParams;
     String cik8BuildTaskParamsStr = cik8InitializeTaskParams.toString();
-    ConnectorDetails gitConnectorDetails = cik8InitializeTaskParams.getCik8PodParams().getGitConnector();
 
     PodParams podParams = cik8InitializeTaskParams.getCik8PodParams();
     String namespace = podParams.getNamespace();
@@ -148,7 +147,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
 
         createImageSecrets(coreV1Api, namespace, (CIK8PodParams<CIK8ContainerParams>) podParams);
         createEnvVariablesSecrets(
-            coreV1Api, namespace, (CIK8PodParams<CIK8ContainerParams>) podParams, gitConnectorDetails);
+            coreV1Api, namespace, (CIK8PodParams<CIK8ContainerParams>) podParams);
 
         if (cik8InitializeTaskParams.getServicePodParams() != null) {
           for (CIK8ServicePodParams servicePodParams : cik8InitializeTaskParams.getServicePodParams()) {
@@ -321,7 +320,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
   }
 
   private void createEnvVariablesSecrets(CoreV1Api coreV1Api, String namespace,
-      CIK8PodParams<CIK8ContainerParams> podParams, ConnectorDetails gitConnectorDetails) {
+      CIK8PodParams<CIK8ContainerParams> podParams) {
     Stopwatch timer = Stopwatch.createStarted();
     log.info("Creating env variables for pod name: {}", podParams.getName());
     List<CIK8ContainerParams> containerParamsList = podParams.getContainerParamsList();
@@ -396,12 +395,12 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
             podParams.getName());
         secretData.putAll(getAndUpdateDelegateServiceToken(containerParams, k8SecretName));
       }
-    }
 
-    log.info("Creating git secret env variables for pod: {}", podParams.getName());
-    Map<String, String> gitSecretData =
-        getAndUpdateGitSecretData(gitConnectorDetails, containerParamsList, k8SecretName);
-    secretData.putAll(gitSecretData);
+      log.info("Creating git secret env variables for container: {}", containerParams.getName());
+      Map<String, String> gitSecretData =
+          getAndUpdateGitSecretData(containerParams.getGitConnector(), containerParams, k8SecretName);
+      secretData.putAll(gitSecretData);
+    }
     log.info("Determined environment secrets to create for stage for pod {}", podParams.getName());
 
     for (CIK8ContainerParams containerParams : containerParamsList) {
@@ -504,13 +503,10 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
   }
 
   private Map<String, String> getAndUpdateGitSecretData(
-      ConnectorDetails gitConnector, List<CIK8ContainerParams> containerParamsList, String secretName) {
+      ConnectorDetails gitConnector, CIK8ContainerParams containerParams, String secretName) {
     Map<String, SecretParams> gitSecretData = secretSpecBuilder.decryptGitSecretVariables(gitConnector);
     if (isNotEmpty(gitSecretData)) {
-      for (CIK8ContainerParams containerParams : containerParamsList) {
         updateContainer(containerParams, secretName, gitSecretData);
-      }
-
       return gitSecretData.values().stream().collect(
           Collectors.toMap(SecretParams::getSecretKey, SecretParams::getValue));
     } else {

@@ -226,6 +226,7 @@ public class VmInitializeStepUtils {
         case UPLOAD_ARTIFACTORY:
         case UPLOAD_S3:
         case UPLOAD_GCS:
+        case GIT_CLONE:
           return resolveConnectorIdentifier(
               ((PluginCompatibleStep) ciStepInfo).getConnectorRef(), ciStepInfo.getIdentifier());
         default:

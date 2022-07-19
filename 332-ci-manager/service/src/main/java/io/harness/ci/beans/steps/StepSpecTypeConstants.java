@@ -24,6 +24,7 @@ public interface StepSpecTypeConstants {
   String ARTIFACTORY_UPLOAD = "ArtifactoryUpload";
   String GCS_UPLOAD = "GCSUpload";
   String S3_UPLOAD = "S3Upload";
+  String GIT_CLONE = "GitClone";
 
   String BUILD_AND_PUSH_GCR = "BuildAndPushGCR";
   String BUILD_AND_PUSH_ECR = "BuildAndPushECR";

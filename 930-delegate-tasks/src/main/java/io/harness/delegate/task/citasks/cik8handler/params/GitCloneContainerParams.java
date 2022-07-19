@@ -25,25 +25,23 @@ import lombok.Getter;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class GitCloneContainerParams extends ContainerParams {
-  private final ConnectorDetails gitConnectorDetails;
   private final String branchName;
   private final String commitId;
   private final String stepExecVolumeName;
   private final String stepExecWorkingDir;
 
   @Builder
-  public GitCloneContainerParams(ConnectorDetails gitConnectorDetails, String branchName, String commitId,
+  public GitCloneContainerParams(String branchName, String commitId,
       String stepExecVolumeName, String stepExecWorkingDir, String name,
       ImageDetailsWithConnector imageDetailsWithConnector, List<String> commands, List<String> args, String workingDir,
       List<Integer> ports, Map<String, String> envVars, Map<String, String> envVarsWithSecretRef,
       Map<String, SecretVarParams> secretEnvVars, Map<String, SecretVolumeParams> secretVolumes, String imageSecret,
       Map<String, String> volumeToMountPath, ContainerResourceParams containerResourceParams,
       ContainerSecrets containerSecrets, Integer runAsUser, boolean privileged, String imagePullPolicy,
-      ContainerSecurityContext securityContext) {
+      ContainerSecurityContext securityContext, ConnectorDetails gitConnector) {
     super(name, imageDetailsWithConnector, commands, args, workingDir, ports, envVars, envVarsWithSecretRef,
         secretEnvVars, secretVolumes, imageSecret, volumeToMountPath, containerResourceParams, containerSecrets,
-        runAsUser, privileged, imagePullPolicy, securityContext);
-    this.gitConnectorDetails = gitConnectorDetails;
+        runAsUser, privileged, imagePullPolicy, securityContext, gitConnector);
     this.branchName = branchName;
     this.commitId = commitId;
     this.stepExecVolumeName = stepExecVolumeName;

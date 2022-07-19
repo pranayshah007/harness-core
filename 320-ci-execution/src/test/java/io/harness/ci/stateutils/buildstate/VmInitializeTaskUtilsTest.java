@@ -102,7 +102,8 @@ public class VmInitializeTaskUtilsTest extends CIExecutionTestBase {
              initializeStepInfo.isSkipGitClone()))
         .thenReturn(null);
     when(codebaseUtils.getCodebaseVars(any(), any())).thenReturn(m);
-    when(codebaseUtils.getGitEnvVariables(null, initializeStepInfo.getCiCodebase())).thenReturn(m);
+    when(codebaseUtils.getGitEnvVariables(null, initializeStepInfo.getCiCodebase(),
+            initializeStepInfo.isSkipGitClone())).thenReturn(m);
     when(logServiceUtils.getLogServiceConfig()).thenReturn(LogServiceConfig.builder().baseUrl("1.1.1.1").build());
     when(logServiceUtils.getLogServiceToken(any())).thenReturn("test");
     when(tiServiceUtils.getTiServiceConfig()).thenReturn(TIServiceConfig.builder().baseUrl("1.1.1.2").build());
@@ -148,7 +149,8 @@ public class VmInitializeTaskUtilsTest extends CIExecutionTestBase {
              initializeStepInfo.isSkipGitClone()))
         .thenReturn(null);
     when(codebaseUtils.getCodebaseVars(any(), any())).thenReturn(m);
-    when(codebaseUtils.getGitEnvVariables(null, initializeStepInfo.getCiCodebase())).thenReturn(m);
+    when(codebaseUtils.getGitEnvVariables(null, initializeStepInfo.getCiCodebase(),
+            initializeStepInfo.isSkipGitClone())).thenReturn(m);
     when(logServiceUtils.getLogServiceConfig()).thenReturn(LogServiceConfig.builder().baseUrl("1.1.1.1").build());
     when(logServiceUtils.getLogServiceToken(any())).thenReturn("test");
     when(tiServiceUtils.getTiServiceConfig()).thenReturn(TIServiceConfig.builder().baseUrl("1.1.1.2").build());

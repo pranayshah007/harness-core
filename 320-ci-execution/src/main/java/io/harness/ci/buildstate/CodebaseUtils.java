@@ -164,7 +164,19 @@ public class CodebaseUtils {
     return codebaseRuntimeVars;
   }
 
-  public Map<String, String> getGitEnvVariables(ConnectorDetails gitConnector, CodeBase ciCodebase) {
+  public Map<String, String> getGitEnvVariables(ConnectorDetails gitConnector, CodeBase ciCodebase,
+                                                boolean skipGitClone) {
+    if (skipGitClone) {
+      return new HashMap<>();
+    }
+    if (ciCodebase == null) {
+      throw new CIStageExecutionException("CI codebase spec is not set");
+    }
+    String repoName = ciCodebase.getRepoName().getValue();
+    return getGitEnvVariables(gitConnector, repoName);
+  }
+
+  public Map<String, String> getGitEnvVariables(ConnectorDetails gitConnector, String repoName) {
     Map<String, String> envVars = new HashMap<>();
     if (gitConnector == null) {
       return envVars;
@@ -174,26 +186,26 @@ public class CodebaseUtils {
     if (gitConnector.getConnectorType() == GITHUB) {
       GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
       validateGithubConnectorAuth(gitConfigDTO);
-      envVars = retrieveGitSCMEnvVar(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      envVars = retrieveGitSCMEnvVar(repoName, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == AZURE_REPO) {
       AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
       validateAzureRepoConnectorAuth(gitConfigDTO);
       GitConnectionType gitConnectionType = mapToGitConnectionType(gitConfigDTO.getConnectionType());
-      envVars = retrieveGitSCMEnvVar(ciCodebase, gitConnectionType, gitConfigDTO.getUrl());
+      envVars = retrieveGitSCMEnvVar(repoName, gitConnectionType, gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == GITLAB) {
       GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
       validateGitlabConnectorAuth(gitConfigDTO);
-      envVars = retrieveGitSCMEnvVar(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      envVars = retrieveGitSCMEnvVar(repoName, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == BITBUCKET) {
       BitbucketConnectorDTO gitConfigDTO = (BitbucketConnectorDTO) gitConnector.getConnectorConfig();
       validateBitbucketConnectorAuth(gitConfigDTO);
-      envVars = retrieveGitSCMEnvVar(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      envVars = retrieveGitSCMEnvVar(repoName, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == CODECOMMIT) {
       AwsCodeCommitConnectorDTO gitConfigDTO = (AwsCodeCommitConnectorDTO) gitConnector.getConnectorConfig();
-      envVars = retrieveAwsCodeCommitEnvVar(gitConfigDTO, ciCodebase);
+      envVars = retrieveAwsCodeCommitEnvVar(gitConfigDTO, repoName);
     } else if (gitConnector.getConnectorType() == GIT) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) gitConnector.getConnectorConfig();
-      envVars = retrieveGitEnvVar(gitConfigDTO, ciCodebase);
+      envVars = retrieveGitEnvVar(gitConfigDTO, repoName);
     } else {
       throw new CIStageExecutionException("Unsupported git connector type" + gitConnector.getConnectorType());
     }
@@ -201,9 +213,9 @@ public class CodebaseUtils {
     return envVars;
   }
 
-  private Map<String, String> retrieveGitSCMEnvVar(CodeBase ciCodebase, GitConnectionType connectionType, String url) {
+  private Map<String, String> retrieveGitSCMEnvVar(String repoName, GitConnectionType connectionType, String url) {
     Map<String, String> envVars = new HashMap<>();
-    String gitUrl = IntegrationStageUtils.getGitURL(ciCodebase, connectionType, url);
+    String gitUrl = IntegrationStageUtils.getGitURL(repoName, connectionType, url);
     String domain = GitClientHelper.getGitSCM(gitUrl);
     String port = GitClientHelper.getGitSCMPort(gitUrl);
     if (port != null) {
@@ -285,10 +297,10 @@ public class CodebaseUtils {
     }
   }
 
-  private Map<String, String> retrieveGitEnvVar(GitConfigDTO gitConfigDTO, CodeBase ciCodebase) {
+  private Map<String, String> retrieveGitEnvVar(GitConfigDTO gitConfigDTO, String repoName) {
     Map<String, String> envVars = new HashMap<>();
     String gitUrl =
-        IntegrationStageUtils.getGitURL(ciCodebase, gitConfigDTO.getGitConnectionType(), gitConfigDTO.getUrl());
+        IntegrationStageUtils.getGitURL(repoName, gitConfigDTO.getGitConnectionType(), gitConfigDTO.getUrl());
     String domain = GitClientHelper.getGitSCM(gitUrl);
 
     envVars.put(DRONE_REMOTE_URL, gitUrl);
@@ -306,11 +318,11 @@ public class CodebaseUtils {
     return envVars;
   }
 
-  private Map<String, String> retrieveAwsCodeCommitEnvVar(AwsCodeCommitConnectorDTO gitConfigDTO, CodeBase ciCodebase) {
+  private Map<String, String> retrieveAwsCodeCommitEnvVar(AwsCodeCommitConnectorDTO gitConfigDTO, String repoName) {
     Map<String, String> envVars = new HashMap<>();
     GitConnectionType gitConnectionType =
         gitConfigDTO.getUrlType() == AwsCodeCommitUrlType.REPO ? GitConnectionType.REPO : GitConnectionType.ACCOUNT;
-    String gitUrl = IntegrationStageUtils.getGitURL(ciCodebase, gitConnectionType, gitConfigDTO.getUrl());
+    String gitUrl = IntegrationStageUtils.getGitURL(repoName, gitConnectionType, gitConfigDTO.getUrl());
 
     envVars.put(DRONE_REMOTE_URL, gitUrl);
     envVars.put(DRONE_AWS_REGION, getAwsCodeCommitRegion(gitConfigDTO.getUrl()));
@@ -370,10 +382,15 @@ public class CodebaseUtils {
       throw new CIStageExecutionException("CI codebase is mandatory in case git clone is enabled");
     }
 
-    if (codeBase.getConnectorRef().getValue() == null) {
+    String connectorRefValue = codeBase.getConnectorRef().getValue();
+    return getGitConnector(ngAccess, connectorRefValue);
+  }
+
+  public ConnectorDetails getGitConnector(NGAccess ngAccess, String gitConnectorRefValue) {
+    if (gitConnectorRefValue == null) {
       throw new CIStageExecutionException("Git connector is mandatory in case git clone is enabled");
     }
-    return connectorUtils.getConnectorDetails(ngAccess, codeBase.getConnectorRef().getValue());
+    return connectorUtils.getConnectorDetails(ngAccess, gitConnectorRefValue);
   }
 
   public static String getCompleteURLFromConnector(ConnectorDetails connectorDetails, String repoName) {

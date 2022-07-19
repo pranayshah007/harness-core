@@ -38,6 +38,7 @@ public abstract class ContainerParams implements NestedAnnotationResolver {
   @Deprecated private boolean privileged;
   private String imagePullPolicy;
   private ContainerSecurityContext securityContext;
+  private ConnectorDetails gitConnector;
 
   public abstract ContainerParams.Type getType();
 

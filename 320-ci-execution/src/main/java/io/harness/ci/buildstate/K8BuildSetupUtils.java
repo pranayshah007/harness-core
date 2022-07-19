@@ -299,7 +299,8 @@ public class K8BuildSetupUtils {
     CodeBase ciCodebase = initializeStepInfo.getCiCodebase();
     ConnectorDetails gitConnector =
         codebaseUtils.getGitConnector(ngAccess, ciCodebase, initializeStepInfo.isSkipGitClone());
-    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase);
+    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase,
+            initializeStepInfo.isSkipGitClone());
     Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance);
 
     List<CIK8ContainerParams> containerParamsList =

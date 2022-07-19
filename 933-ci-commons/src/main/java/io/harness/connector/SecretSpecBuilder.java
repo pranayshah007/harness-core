@@ -69,6 +69,7 @@ import io.harness.secrets.SecretDecryptor;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +84,10 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.CI)
 public class SecretSpecBuilder {
+  private static final String SOURCE = "123456789bcdfghjklmnpqrstvwxyz";
+  private static final Integer RANDOM_LENGTH = 8;
+  private static final SecureRandom random = new SecureRandom();
+
   public static final String DOCKER_REGISTRY_SECRET_TYPE = "kubernetes.io/dockercfg";
   public static final String SECRET_KEY = "secret_key";
   public static final String SECRET = "secret";
@@ -329,8 +334,10 @@ public class SecretSpecBuilder {
         if (isEmpty(username)) {
           throw new CIStageExecutionException("Github connector should have not empty username");
         }
+        String uniqueIdentifier = "_" + generateRandomAlphaNumericString(RANDOM_LENGTH);
         secretData.put(DRONE_NETRC_USERNAME,
-            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME).value(encodeBase64(username)).type(TEXT).build());
+            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME + uniqueIdentifier)
+                    .value(encodeBase64(username)).type(TEXT).build());
 
         if (githubUsernameTokenDTO.getTokenRef() == null) {
           throw new CIStageExecutionException("Github connector should have not empty tokenRef");
@@ -340,7 +347,8 @@ public class SecretSpecBuilder {
           throw new CIStageExecutionException("Github connector should have not empty token");
         }
         secretData.put(DRONE_NETRC_PASSWORD,
-            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD).value(encodeBase64(token)).type(TEXT).build());
+            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD + uniqueIdentifier)
+                    .value(encodeBase64(token)).type(TEXT).build());
 
       } else if (gitHTTPAuthenticationDTO.getType() == GithubHttpAuthenticationType.OAUTH) {
         GithubOauthDTO githubOauthDTO = (GithubOauthDTO) decryptableEntity;
@@ -635,5 +643,13 @@ public class SecretSpecBuilder {
                                              .value(encodeBase64(varValue))
                                              .build()));
     return secretParamsMap;
+  }
+
+  private static String generateRandomAlphaNumericString(int length) {
+    StringBuilder sb = new StringBuilder(length);
+    for (int i = 0; i < length; i++) {
+      sb.append(SOURCE.charAt(random.nextInt(SOURCE.length())));
+    }
+    return sb.toString();
   }
 }

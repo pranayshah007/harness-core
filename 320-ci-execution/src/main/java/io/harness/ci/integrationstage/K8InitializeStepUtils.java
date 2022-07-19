@@ -12,11 +12,19 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerPara
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameterWithDefaultValue;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_TAG;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_CPU_POV;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_MEM_POV;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_SSL_NO_VERIFY;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_WORKSPACE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_PREFIX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MEMORY_MIB;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
+import static io.harness.ci.integrationstage.IntegrationStageUtils.BRANCH_EXPRESSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -36,14 +44,17 @@ import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
+import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.buildstate.StepContainerUtils;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.utils.CIStepInfoUtils;
@@ -64,13 +75,20 @@ import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.core.variables.StringNGVariable;
+import io.harness.yaml.extended.ci.codebase.Build;
+import io.harness.yaml.extended.ci.codebase.BuildType;
+import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
+import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.fabric8.utils.Strings;
@@ -82,6 +100,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Singleton
 @Slf4j
@@ -90,11 +110,12 @@ public class K8InitializeStepUtils {
   @Inject private CIExecutionConfigService ciExecutionConfigService;
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private CodebaseUtils codebaseUtils;
   private final String AXA_ACCOUNT_ID = "UVxMDMhNQxOCvroqqImWdQ";
 
   public List<ContainerDefinitionInfo> createStepContainerDefinitions(List<ExecutionWrapperConfig> steps,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
-      OSType os) {
+      OSType os, Ambiance ambiance) {
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     if (steps == null) {
       return containerDefinitionInfos;
@@ -120,7 +141,7 @@ public class K8InitializeStepUtils {
             Math.max(0, stageCpuRequest - getContainerCpuLimit(containerResource, "stepType", "stepId", accountId));
         ContainerDefinitionInfo containerDefinitionInfo =
             createStepContainerDefinition(stepElementConfig, integrationStage, ciExecutionArgs, portFinder, stepIndex,
-                accountId, os, extraMemoryPerStep, extraCPUPerStep);
+                accountId, os, ambiance, extraMemoryPerStep, extraCPUPerStep);
         if (containerDefinitionInfo != null) {
           containerDefinitionInfos.add(containerDefinitionInfo);
         }
@@ -142,7 +163,7 @@ public class K8InitializeStepUtils {
                 IntegrationStageUtils.getStepElementConfig(executionWrapperInParallel);
             ContainerDefinitionInfo containerDefinitionInfo =
                 createStepContainerDefinition(stepElementConfig, integrationStage, ciExecutionArgs, portFinder,
-                    stepIndex, accountId, os, extraMemoryPerStep, extraCPUPerStep);
+                    stepIndex, accountId, os, ambiance, extraMemoryPerStep, extraCPUPerStep);
             if (containerDefinitionInfo != null) {
               containerDefinitionInfos.add(containerDefinitionInfo);
             }
@@ -155,7 +176,7 @@ public class K8InitializeStepUtils {
 
   public List<ContainerDefinitionInfo> createStepContainerDefinitionsStepGroupWithFF(List<ExecutionWrapperConfig> steps,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
-      OSType os, int stepIndex) {
+      OSType os, Ambiance ambiance, int stepIndex) {
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     if (steps == null) {
       return containerDefinitionInfos;
@@ -168,7 +189,7 @@ public class K8InitializeStepUtils {
       if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
         stepIndex++;
         ContainerDefinitionInfo containerDefinitionInfo = handleSingleStep(executionWrapper, integrationStage,
-            ciExecutionArgs, portFinder, accountId, os, stageMemoryRequest, stageCpuRequest, stepIndex, null);
+            ciExecutionArgs, portFinder, accountId, os, ambiance, stageMemoryRequest, stageCpuRequest, stepIndex,  null);
         if (containerDefinitionInfo != null) {
           containerDefinitionInfos.add(containerDefinitionInfo);
         }
@@ -176,7 +197,7 @@ public class K8InitializeStepUtils {
         Integer extraMemory = calculateExtraMemory(executionWrapper, accountId, stageMemoryRequest);
         Integer extraCPU = calculateExtraCPU(executionWrapper, accountId, stageCpuRequest);
         List<ContainerDefinitionInfo> parallelDefinitionInfos = handleParallelStep(executionWrapper, integrationStage,
-            ciExecutionArgs, portFinder, accountId, os, extraMemory, extraCPU, stepIndex, null);
+            ciExecutionArgs, portFinder, accountId, os, ambiance, extraMemory, extraCPU, stepIndex, null);
         if (parallelDefinitionInfos != null) {
           stepIndex += parallelDefinitionInfos.size();
           if (parallelDefinitionInfos.size() > 0) {
@@ -185,7 +206,7 @@ public class K8InitializeStepUtils {
         }
       } else if (executionWrapper.getStepGroup() != null && !executionWrapper.getStepGroup().isNull()) {
         List<ContainerDefinitionInfo> stepGroupDefinitionInfos = handleStepGroup(executionWrapper, integrationStage,
-            ciExecutionArgs, portFinder, accountId, os, stageMemoryRequest, stageCpuRequest, stepIndex);
+            ciExecutionArgs, portFinder, accountId, os, ambiance, stageMemoryRequest, stageCpuRequest, stepIndex);
         if (stepGroupDefinitionInfos != null) {
           stepIndex += stepGroupDefinitionInfos.size();
           if (stepGroupDefinitionInfos.size() > 0) {
@@ -201,7 +222,7 @@ public class K8InitializeStepUtils {
 
   private ContainerDefinitionInfo handleSingleStep(ExecutionWrapperConfig executionWrapper,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
-      OSType os, int maxAllocatableMemoryRequest, int maxAllocatableCpuRequest, int stepIndex,
+      OSType os, Ambiance ambiance, int maxAllocatableMemoryRequest, int maxAllocatableCpuRequest, int stepIndex,
       String stepGroupIdOfParent) {
     StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
     if (Strings.isNotBlank(stepGroupIdOfParent)) {
@@ -211,12 +232,12 @@ public class K8InitializeStepUtils {
     Integer extraMemoryPerStep = calculateExtraMemory(executionWrapper, accountId, maxAllocatableMemoryRequest);
     Integer extraCPUPerStep = calculateExtraCPU(executionWrapper, accountId, maxAllocatableCpuRequest);
     return createStepContainerDefinition(stepElementConfig, integrationStage, ciExecutionArgs, portFinder, stepIndex,
-        accountId, os, extraMemoryPerStep, extraCPUPerStep);
+        accountId, os, ambiance, extraMemoryPerStep, extraCPUPerStep);
   }
 
   private List<ContainerDefinitionInfo> handleStepGroup(ExecutionWrapperConfig executionWrapper,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
-      OSType os, int maxAllocatableMemoryRequest, int maxAllocatableCpuRequest, int stepIndex) {
+      OSType os, Ambiance ambiance, int maxAllocatableMemoryRequest, int maxAllocatableCpuRequest, int stepIndex) {
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     StepGroupElementConfig stepGroupElementConfig = IntegrationStageUtils.getStepGroupElementConfig(executionWrapper);
     if (isEmpty(stepGroupElementConfig.getSteps())) {
@@ -227,7 +248,7 @@ public class K8InitializeStepUtils {
       if (step.getStep() != null && !step.getStep().isNull()) {
         stepIndex++;
         ContainerDefinitionInfo containerDefinitionInfo = handleSingleStep(step, integrationStage, ciExecutionArgs,
-            portFinder, accountId, os, maxAllocatableMemoryRequest, maxAllocatableCpuRequest, stepIndex,
+            portFinder, accountId, os, ambiance,  maxAllocatableMemoryRequest, maxAllocatableCpuRequest, stepIndex,
             stepGroupElementConfig.getIdentifier());
         if (containerDefinitionInfo != null) {
           containerDefinitionInfos.add(containerDefinitionInfo);
@@ -236,8 +257,8 @@ public class K8InitializeStepUtils {
         int extraMemory = calculateExtraMemory(step, accountId, maxAllocatableMemoryRequest);
         int extraCpu = calculateExtraCPU(step, accountId, maxAllocatableCpuRequest);
         List<ContainerDefinitionInfo> parallelStepDefinitionInfos =
-            handleParallelStep(step, integrationStage, ciExecutionArgs, portFinder, accountId, os, extraMemory,
-                extraCpu, stepIndex, stepGroupElementConfig.getIdentifier());
+            handleParallelStep(step, integrationStage, ciExecutionArgs, portFinder, accountId, os, ambiance,
+               extraMemory, extraCpu, stepIndex, stepGroupElementConfig.getIdentifier());
         if (parallelStepDefinitionInfos != null) {
           stepIndex += parallelStepDefinitionInfos.size();
           if (parallelStepDefinitionInfos.size() > 0) {
@@ -251,7 +272,7 @@ public class K8InitializeStepUtils {
 
   private List<ContainerDefinitionInfo> handleParallelStep(ExecutionWrapperConfig executionWrapper,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
-      OSType os, int extraMemory, int extraCPU, int stepIndex, String stepGroupIdOfParent) {
+      OSType os, Ambiance ambiance, int extraMemory, int extraCPU, int stepIndex, String stepGroupIdOfParent) {
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     ParallelStepElementConfig parallelStepElementConfig =
         IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
@@ -269,7 +290,7 @@ public class K8InitializeStepUtils {
         stepIndex++;
         ContainerDefinitionInfo containerDefinitionInfo =
             handleSingleStep(executionWrapperInParallel, integrationStage, ciExecutionArgs, portFinder, accountId, os,
-                extraMemoryPerStep + getExecutionWrapperMemoryRequest(executionWrapperInParallel, accountId),
+                ambiance, extraMemoryPerStep + getExecutionWrapperMemoryRequest(executionWrapperInParallel, accountId),
                 extraCPUPerStep + getExecutionWrapperCpuRequest(executionWrapperInParallel, accountId), stepIndex,
                 stepGroupIdOfParent);
         if (containerDefinitionInfo != null) {
@@ -279,7 +300,7 @@ public class K8InitializeStepUtils {
           && !executionWrapperInParallel.getStepGroup().isNull()) {
         List<ContainerDefinitionInfo> stepGroupDefinitionInfos =
             handleStepGroup(executionWrapperInParallel, integrationStage, ciExecutionArgs, portFinder, accountId, os,
-                extraMemoryPerStep + getExecutionWrapperMemoryRequest(executionWrapperInParallel, accountId),
+                ambiance, extraMemoryPerStep + getExecutionWrapperMemoryRequest(executionWrapperInParallel, accountId),
                 extraCPUPerStep + getExecutionWrapperCpuRequest(executionWrapperInParallel, accountId), stepIndex);
         if (stepGroupDefinitionInfos != null) {
           stepIndex += stepGroupDefinitionInfos.size();
@@ -295,7 +316,7 @@ public class K8InitializeStepUtils {
 
   private ContainerDefinitionInfo createStepContainerDefinition(StepElementConfig stepElement,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
-      String accountId, OSType os, Integer extraMemoryPerStep, Integer extraCPUPerStep) {
+      String accountId, OSType os, Ambiance ambiance, Integer extraMemoryPerStep, Integer extraCPUPerStep) {
     if (!(stepElement.getStepSpecType() instanceof CIStepInfo)) {
       return null;
     }
@@ -323,6 +344,10 @@ public class K8InitializeStepUtils {
         return createPluginCompatibleStepContainerDefinition((PluginCompatibleStep) ciStepInfo, integrationStage,
             ciExecutionArgs, portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(),
             stepElement.getType(), timeout, accountId, os, extraMemoryPerStep, extraCPUPerStep);
+      case GIT_CLONE:
+        return createGitCloneStepContainerDefinition((GitCloneStepInfo) ciStepInfo, integrationStage, ciExecutionArgs,
+                portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(), accountId, os, ambiance,
+                extraMemoryPerStep, extraCPUPerStep);
       case PLUGIN:
         return createPluginStepContainerDefinition((PluginStepInfo) ciStepInfo, integrationStage, ciExecutionArgs,
             portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(), accountId, os,
@@ -486,6 +511,41 @@ public class K8InitializeStepUtils {
         .runAsUser(runAsUser)
         .imagePullPolicy(RunTimeInputHandler.resolveImagePullPolicy(runTestsStepInfo.getImagePullPolicy()))
         .build();
+  }
+
+  private ContainerDefinitionInfo createGitCloneStepContainerDefinition(GitCloneStepInfo gitCloneStepInfo,
+      StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
+      String identifier, String name, String accountId, OSType os, Ambiance ambiance, Integer extraMemoryPerStep,
+      Integer extraCPUPerStep) {
+
+    //Create a PluginStepInfo from the GitCloneStepInfo
+    PluginStepInfo pluginStepInfo = createPluginStepInfo(gitCloneStepInfo, ciExecutionConfigService, accountId, os);
+
+    //Get the Git Connector
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    ConnectorDetails gitConnector = codebaseUtils.getGitConnector(ngAccess,
+            pluginStepInfo.getConnectorRef().getValue());
+
+    //Set the Git Connector Reference environment variables
+    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector,
+            gitCloneStepInfo.getRepoName().getValue());
+    pluginStepInfo.getEnvVariables().putAll(gitEnvVars);
+
+    String cloneDirectoryString = RunTimeInputHandler.resolveStringParameter("cloneDirectory", name,
+            identifier, gitCloneStepInfo.getCloneDirectory(), false);
+    if(isNotEmpty(cloneDirectoryString)) {
+      pluginStepInfo.getEnvVariables().put(HARNESS_WORKSPACE, cloneDirectoryString);
+    }
+
+    //TODO: not sure if this is the best way to do this. Would GitCloneStep ever need the other information from ExecutionSource?
+    //Don't use the ciExecutionArgs ExecutionSource (contains codebase build info that overwrites branch/tag env variables
+    ciExecutionArgs.setExecutionSource(null);
+
+    final ContainerDefinitionInfo pluginStepContainerDefinition = createPluginStepContainerDefinition(pluginStepInfo, integrationStage, ciExecutionArgs,
+            portFinder, stepIndex, identifier, name, accountId, os,
+            extraMemoryPerStep, extraCPUPerStep);
+    pluginStepContainerDefinition.setGitConnector(gitConnector);
+    return pluginStepContainerDefinition;
   }
 
   private ContainerDefinitionInfo createPluginStepContainerDefinition(PluginStepInfo pluginStepInfo,
@@ -712,6 +772,7 @@ public class K8InitializeStepUtils {
       case SAVE_CACHE_S3:
       case SAVE_CACHE_GCS:
       case SECURITY:
+      case GIT_CLONE:
         return getContainerCpuLimit(((PluginCompatibleStep) ciStepInfo).getResources(), stepElement.getType(),
             stepElement.getIdentifier(), accountId);
       default:
@@ -755,6 +816,7 @@ public class K8InitializeStepUtils {
       case SAVE_CACHE_S3:
       case SAVE_CACHE_GCS:
       case SECURITY:
+      case GIT_CLONE:
         return ((PluginCompatibleStep) ciStepInfo).getResources();
       default:
         throw new CIStageExecutionException(
@@ -928,6 +990,7 @@ public class K8InitializeStepUtils {
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_S3:
       case UPLOAD_GCS:
+      case GIT_CLONE:
         return ((PluginCompatibleStep) ciStepInfo).getResources();
       case PLUGIN:
         return ((PluginStepInfo) ciStepInfo).getResources();
@@ -936,5 +999,119 @@ public class K8InitializeStepUtils {
       default:
         return null;
     }
+  }
+
+  //TODO: it may not make sense to overload this method for VM usage, but if it does this method needs put somewhere more generic
+  //Overloaded for use with VMs - the base method is setup to handle nulls accountId and Os.
+  public static PluginStepInfo createPluginStepInfo(GitCloneStepInfo gitCloneStepInfo,
+                                                    CIExecutionConfigService ciExecutionConfigService) {
+    return createPluginStepInfo(gitCloneStepInfo, ciExecutionConfigService, null, null);
+  }
+
+  /**
+   * Create Plugin step info
+   * Given a gitCloneStepInfo convert it into a PluginStepInfo (which is what codebase used originally for git clone)
+   * @return PluginStepInfo with values set from GitCloneStepInfo
+   */
+  public static PluginStepInfo createPluginStepInfo(GitCloneStepInfo gitCloneStepInfo,
+                                                    CIExecutionConfigService ciExecutionConfigService, String accountId,
+                                                    OSType os) {
+    Map<String, JsonNode> settings = new HashMap<>();
+
+    Pair<String, String> buildEnvVar = getBuildEnvVar(gitCloneStepInfo);
+
+    Integer depth = null;
+    final ParameterField<Integer> depthParameter = gitCloneStepInfo.getDepth();
+    if (depthParameter == null || depthParameter.getValue() == null) {
+      if (buildEnvVar != null && isNotEmpty(buildEnvVar.getValue())) {
+        depth = GIT_CLONE_MANUAL_DEPTH;
+      }
+    }
+
+    if (depth != null && depth != 0) {
+      settings.put(GIT_CLONE_DEPTH_ATTRIBUTE, JsonNodeFactory.instance.textNode(depth.toString()));
+    }
+
+    Map<String, String> envVariables = new HashMap<>();
+    if (gitCloneStepInfo.getSslVerify() != null && gitCloneStepInfo.getSslVerify().getValue() != null
+            && !gitCloneStepInfo.getSslVerify().getValue()) {
+      envVariables.put(GIT_SSL_NO_VERIFY, "true");
+    }
+    if (buildEnvVar != null) {
+      String type = buildEnvVar.getKey();
+      envVariables.put(type, buildEnvVar.getValue());
+      if(DRONE_TAG.equals(type)) {
+        envVariables.put(DRONE_BUILD_EVENT, "tag");
+      }
+    }
+
+    CIExecutionServiceConfig ciExecutionServiceConfig = ciExecutionConfigService.getCiExecutionServiceConfig();
+    List<String> entrypoint = Collections.emptyList();
+    if (ciExecutionServiceConfig != null && ciExecutionServiceConfig.getStepConfig() != null
+            && ciExecutionServiceConfig.getStepConfig().getGitCloneConfig() != null) {
+      entrypoint = ciExecutionServiceConfig.getStepConfig().getGitCloneConfig().getEntrypoint();
+      if (OSType.Windows == os) {
+        entrypoint = ciExecutionServiceConfig.getStepConfig().getGitCloneConfig().getWindowsEntrypoint();
+      }
+    }
+
+    PluginStepInfo step = PluginStepInfo.builder()
+            .connectorRef(gitCloneStepInfo.getConnectorRef())
+            .identifier(gitCloneStepInfo.getIdentifier())
+            .name(gitCloneStepInfo.getName())
+            .settings(ParameterField.createValueField(settings))
+            .envVariables(envVariables)
+            .entrypoint(entrypoint)
+            .harnessManagedImage(true)
+            .resources(gitCloneStepInfo.getResources())
+            .privileged(ParameterField.createValueField(null))
+            .reports(ParameterField.createValueField(null))
+            .build();
+
+    if (isNotEmpty(accountId)) {
+      String gitCloneImage =
+              ciExecutionConfigService.getPluginVersionForK8(CIStepInfoType.GIT_CLONE, accountId).getImage();
+      step.setImage(ParameterField.createValueField(gitCloneImage));
+    }
+    return step;
+  }
+
+  /**
+   * Get Build Env variable - branch or tag
+   *
+   * @param gitCloneStepInfo gitCloneStepInfo
+   * @return a pair containing whether the build is configured for a branch or tag, and the value of the branch or tag
+   */
+  private static Pair<String, String> getBuildEnvVar(GitCloneStepInfo gitCloneStepInfo) {
+    final String identifier = gitCloneStepInfo.getIdentifier();
+    final String type = gitCloneStepInfo.getStepType().getType();
+    Pair<String, String> buildEnvVar = null;
+    Build build = RunTimeInputHandler.resolveBuild(gitCloneStepInfo.getBuild());
+    if (build != null) {
+      if (build.getType() == BuildType.PR) {
+        throw new CIStageExecutionException(format("%s is not a valid build type in step type %s with identifier %s",
+                BuildType.PR, type, identifier));
+      } else if (build.getType() == BuildType.BRANCH) {
+        ParameterField<String> branch = ((BranchBuildSpec) build.getSpec()).getBranch();
+        String branchString =
+                RunTimeInputHandler.resolveStringParameter("branch", type, identifier, branch, false);
+        if (isNotEmpty(branchString)) {
+          if (!branchString.equals(BRANCH_EXPRESSION)) {
+            buildEnvVar = new ImmutablePair<>(DRONE_COMMIT_BRANCH, branchString);
+          }
+        } else {
+          throw new CIStageExecutionException("Branch should not be empty for branch build type");
+        }
+      } else if (build.getType() == BuildType.TAG) {
+        ParameterField<String> tag = ((TagBuildSpec) build.getSpec()).getTag();
+        String tagString = RunTimeInputHandler.resolveStringParameter("tag", type, identifier, tag, false);
+        if (isNotEmpty(tagString)) {
+          buildEnvVar = new ImmutablePair<>(DRONE_TAG, tagString);
+        } else {
+          throw new CIStageExecutionException("Tag should not be empty for tag build type");
+        }
+      }
+    }
+    return buildEnvVar;
   }
 }
