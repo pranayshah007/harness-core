@@ -58,8 +58,7 @@ public enum PredefinedTemplate {
   CVNG_MONITOREDSERVICE_MSTEAMS(
       "cvng_notification_templates/cvng_monitoredservice_msteams.txt", "cvng_monitoredservice_msteams"),
   EMAIL_CCM_ANOMALY_ALERT("templates/email_ccm_anomaly_alert.txt", "email_ccm_anomaly_alert"),
-  SLACK_CCM_ANOMALY_ALERT("templates/slack_ccm_anomaly_alert.txt", "slack_ccm_anomaly_alert"),
-  SLACK_CCM_TEST("templates/slack_ccm_test.txt", "slack_ccm_test");
+  SLACK_CCM_ANOMALY_ALERT("templates/slack_ccm_anomaly_alert.txt", "slack_ccm_anomaly_alert");
 
   private String path;
   private String identifier;
