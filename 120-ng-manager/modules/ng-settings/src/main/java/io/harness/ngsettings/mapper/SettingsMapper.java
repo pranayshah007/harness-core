@@ -44,7 +44,7 @@ public class SettingsMapper {
         .defaultValue(settingConfiguration.getDefaultValue())
         .value(settingConfiguration.getDefaultValue())
         .allowedValues(settingConfiguration.getAllowedValues())
-        .allowOverrides(true)
+        .allowOverrides(settingConfiguration.getAllowOverrides())
         .settingSource(SettingSource.DEFAULT)
         .build();
   }
