@@ -182,6 +182,10 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
             // projectIdentifier
             columnValueMapping.put("projectIdentifier", projectIdentifier);
 
+            // gitOpsEnabled
+            String gitOpsEnabled = serviceInfoObject.get("gitOpsEnabled").toString();
+            columnValueMapping.put("gitOpsEnabled", gitOpsEnabled);
+
             // deploymentType
             String deploymentType = serviceInfoObject.get("deploymentType").toString();
             columnValueMapping.put("deployment_type", deploymentType);

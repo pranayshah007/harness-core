@@ -176,6 +176,7 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
                                                       .identifier(outcome.getIdentifier())
                                                       .displayName(outcome.getName())
                                                       .deploymentType(outcome.getServiceDefinitionType())
+                                                      .gitOpsEnabled(outcome.isGitOpsEnabled())
                                                       .artifacts(mapArtifactsOutcomeToSummary(artifactsOutcome))
                                                       .build()));
     } else if (isInfrastructureNodeAndCompleted(stepType, event.getStatus())) {

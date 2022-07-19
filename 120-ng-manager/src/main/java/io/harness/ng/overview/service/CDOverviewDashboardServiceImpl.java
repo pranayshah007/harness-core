@@ -679,8 +679,9 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIds) {
     Map<String, Set<String>> serviceIdToDeploymentType = new HashMap<>();
 
-    String query = "select service_id, deployment_type from service_infra_info where accountid=? and orgidentifier=? "
-        + "and projectidentifier=? and service_id = any (?) group by service_id, deployment_type";
+    String query =
+        "select service_id, deployment_type, gitOpsEnabled from service_infra_info where accountid=? and orgidentifier=? "
+        + "and projectidentifier=? and service_id = any (?) group by service_id, deployment_type, gitOpsEnabled";
 
     int totalTries = 0;
     boolean successfulOperation = false;
@@ -696,8 +697,13 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         while (resultSet != null && resultSet.next()) {
           String service_id = resultSet.getString("service_id");
           String deployment_type = resultSet.getString("deployment_type");
+          boolean gitOpsEnabled = resultSet.getBoolean("gitOpsEnabled");
           serviceIdToDeploymentType.putIfAbsent(service_id, new HashSet<>());
-          serviceIdToDeploymentType.get(service_id).add(deployment_type);
+          if (gitOpsEnabled) {
+            serviceIdToDeploymentType.get(service_id).add("gitOps");
+          } else {
+            serviceIdToDeploymentType.get(service_id).add(deployment_type);
+          }
         }
         successfulOperation = true;
       } catch (SQLException ex) {
