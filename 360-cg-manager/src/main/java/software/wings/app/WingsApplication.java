@@ -83,7 +83,6 @@ import io.harness.execution.export.background.ExportExecutionsRequestCleanupHand
 import io.harness.execution.export.background.ExportExecutionsRequestHandler;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.ff.FeatureFlagService;
-import io.harness.gitsync.core.fullsync.GitSyncPollingIterator;
 import io.harness.govern.ProviderModule;
 import io.harness.grpc.GrpcServiceConfigurationModule;
 import io.harness.grpc.server.GrpcServerConfig;
@@ -295,6 +294,7 @@ import software.wings.sm.StateMachineExecutor;
 import software.wings.sm.StateStatusUpdate;
 import software.wings.yaml.gitSync.GitChangeSetRunnable;
 import software.wings.yaml.gitSync.GitSyncEntitiesExpiryHandler;
+import software.wings.yaml.gitSync.GitSyncPollingIterator;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.DeserializationFeature;

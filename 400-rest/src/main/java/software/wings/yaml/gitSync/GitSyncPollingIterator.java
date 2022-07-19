@@ -1,4 +1,4 @@
-package io.harness.gitsync.core.fullsync;
+package software.wings.yaml.gitSync;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
