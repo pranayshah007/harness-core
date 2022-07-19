@@ -8,7 +8,7 @@ shared_dependencies = [
     "//430-cv-nextgen-commons:module",
     "//490-ce-commons:module",
     "//800-pipeline-service:module",
-    "//800-pipeline-service/modules/orchestration-visualization:module",
+    "//800-pipeline-service/modules/orchestration-visualization/contracts:module",
     "//920-delegate-agent-beans:module",
     "//920-delegate-service-beans:module",
     "//930-delegate-tasks:module",
