@@ -12,7 +12,7 @@ touch $TEMP_DIR/codehash-out.text
 
 GIT_BRANCH=$GIT_BRANCH
 COMMIT=$(git log develop.."$GIT_BRANCH" --pretty=format:"%h" | tail -1)
-git checkout COMMIT
+git checkout $COMMIT
 
 bazel run "//001-microservice-intfc-tool:delegate" | tee $TEMP_DIR/codehash-out.text
 CODEBASE_HASH_STRING=`cat $TEMP_DIR/codehash-out.text | grep "Codebase Hash:"`
