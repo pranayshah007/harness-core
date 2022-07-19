@@ -91,7 +91,7 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
   }
 
   private void queryFieldsForPipelineExecutionSummaryEntity(Query query) {
-    query.fields().include(PlanExecutionSummaryKeys.uuid);
+    query.fields().include(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.uuid);
     query.fields().include(PlanExecutionSummaryKeys.runSequence);
     query.fields().include(PlanExecutionSummaryKeys.accountId);
     query.fields().include(PlanExecutionSummaryKeys.projectIdentifier);

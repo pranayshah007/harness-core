@@ -17,7 +17,6 @@ import io.harness.engine.executions.retry.RetryExecutionMetadata;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.ExecutionStatus;
-import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PipelineExecutionSummaryEntityBuilder;
 import io.harness.rule.Owner;
 
 import java.util.List;
@@ -30,7 +29,8 @@ public class PipelineExecutionSummaryTest extends OrchestrationVisualizationTest
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testIsLatestExecution() {
-    PipelineExecutionSummaryEntityBuilder entityBuilder = PipelineExecutionSummaryEntity.builder();
+    PipelineExecutionSummaryEntity.PipelineExecutionSummaryEntityBuilder entityBuilder =
+        PipelineExecutionSummaryEntity.builder();
     // case1: entity does not contain isLatest
     assertThat(entityBuilder.build().isLatestExecution()).isTrue();
 
@@ -47,7 +47,7 @@ public class PipelineExecutionSummaryTest extends OrchestrationVisualizationTest
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testGetRetryExecutionMetadata() {
-    PipelineExecutionSummaryEntityBuilder entityBuilder =
+    PipelineExecutionSummaryEntity.PipelineExecutionSummaryEntityBuilder entityBuilder =
         PipelineExecutionSummaryEntity.builder().planExecutionId("planId");
 
     PipelineExecutionSummaryEntity entity;
@@ -69,7 +69,7 @@ public class PipelineExecutionSummaryTest extends OrchestrationVisualizationTest
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testGetStatus() {
-    PipelineExecutionSummaryEntityBuilder entityBuilder =
+    PipelineExecutionSummaryEntity.PipelineExecutionSummaryEntityBuilder entityBuilder =
         PipelineExecutionSummaryEntity.builder().status(ExecutionStatus.EXPIRED);
 
     PipelineExecutionSummaryEntity entity;
@@ -95,7 +95,8 @@ public class PipelineExecutionSummaryTest extends OrchestrationVisualizationTest
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testIsStagesExecutionAllowed() {
-    PipelineExecutionSummaryEntityBuilder entityBuilder = PipelineExecutionSummaryEntity.builder();
+    PipelineExecutionSummaryEntity.PipelineExecutionSummaryEntityBuilder entityBuilder =
+        PipelineExecutionSummaryEntity.builder();
 
     PipelineExecutionSummaryEntity entity;
 
