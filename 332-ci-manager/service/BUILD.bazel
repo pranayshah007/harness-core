@@ -392,7 +392,7 @@ java_library(
     name = "module",
     srcs = glob(["src/main/java/**/*.java"]),
     resources = [
-        "//330-ci-beans/src/main/resources:resource",
+        "//332-ci-manager/service/src/main/resources:resource",
     ],
     visibility = ["//visibility:public"],
     deps = shared_dependencies + [
@@ -405,7 +405,7 @@ java_library(
     testonly = True,
     srcs = glob(["src/test/**/*.java"]),
     resources = [
-        "//330-ci-beans/src/test/resources:resource",
+        "//332-ci-manager/service/src/test/resources:resource",
     ],
     visibility = ["//visibility:public"],
     deps = shared_dependencies + [

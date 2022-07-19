@@ -100,9 +100,9 @@ aeriform("//325-sto-beans:module")
 
 aeriform("//325-sto-beans:tests")
 
-aeriform("//330-ci-beans:module")
+aeriform("//332-ci-manager/service:module")
 
-aeriform("//330-ci-beans:tests")
+aeriform("//332-ci-manager/service:tests")
 
 aeriform("//340-ce-nextgen:module")
 
