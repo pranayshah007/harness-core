@@ -289,7 +289,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       });
       return true;
     } catch (Exception e) {
-      String errorMessage = format("Error while deleting Pipelines in Project [%s], in Org [%s] for Account [%s] : %s",
+      String errorMessage = format("Error while deleting Templates in Project [%s], in Org [%s] for Account [%s] : %s",
           projectIdentifier, orgIdentifier, accountId, e.getMessage());
       log.error(errorMessage, e);
       return false;
