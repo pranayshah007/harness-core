@@ -23,6 +23,8 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 @HarnessRepo
 public interface SettingConfigurationRepository extends PagingAndSortingRepository<SettingConfiguration, String> {
   List<SettingConfiguration> findByCategoryAndAllowedScopesIn(SettingCategory category, List<ScopeLevel> scopes);
+  List<SettingConfiguration> findByCategoryAndGroupAndAllowedScopesIn(
+      SettingCategory category, String group, List<ScopeLevel> scopes);
   Optional<SettingConfiguration> findByIdentifier(String identifier);
   Optional<SettingConfiguration> findByIdentifierAndAllowedScopesIn(String identifier, List<ScopeLevel> scopes);
 }

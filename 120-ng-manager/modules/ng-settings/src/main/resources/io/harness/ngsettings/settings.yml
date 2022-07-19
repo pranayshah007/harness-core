@@ -1,41 +1,109 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 2
+version : 1
 settings :
   - identifier: test_setting_CI
     name: Test CI setting
     category : CI
-    group: group_2
+    group: group_1
     defaultValue: default
     valueType : STRING
     allowedValues : ~
-    allowOverrides : true
+    allowOverrides : false
     allowedScopes :
       - ACCOUNT
       - ORGANIZATION
       - PROJECT
-#  - identifier: test_setting_CD_1
-#    name: Test CD setting 1
-#    category : CD
-#    defaultValue: 8
-#    valueType : NUMBER
-#    allowedValues : ~
-#    allowOverrides : false
-#    allowedScopes :
-#      - ACCOUNT
-#      - ORGANIZATION
-#      - PROJECT
-#  - identifier: test_setting_CD_2
-#    name: Test CD setting 2
-#    category : CD
-#    defaultValue: true
-#    valueType : BOOLEAN
-#    allowedValues : ~
-#    allowOverrides : true
-#    allowedScopes :
-#      - ACCOUNT
-#      - ORGANIZATION
-#      - PROJECT
+  - identifier: test_setting_CI_2
+    name: Test CI setting
+    category: CI
+    defaultValue: 2
+    valueType: NUMBER
+    group: group_1
+    allowedValues: ~
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: test_setting_CI_3
+    name: Test CI setting
+    category: CI
+    group: group_1
+    defaultValue: default
+    valueType: STRING
+    allowedValues: ~
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: test_setting_CI_4
+    name: Test CI setting
+    category: CI
+    group: group_2
+    defaultValue: default
+    valueType: STRING
+    allowedValues: ~
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: test_setting_CI_5
+    name: Test CI setting
+    category: CI
+    group: group_2
+    defaultValue: default
+    valueType: STRING
+    allowedValues: ~
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: test_setting_CI_6
+    name: Test CI setting
+    category: CI
+    defaultValue: default
+    valueType: STRING
+    allowedValues: ~
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: test_setting_CI_7
+    name: Test CI setting
+    category: CI
+    defaultValue: default
+    valueType: STRING
+    allowedValues: ~
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: test_setting_CD_1
+    name: Test CD setting 1
+    category : CD
+    defaultValue: 8
+    valueType : NUMBER
+    allowedValues : ~
+    allowOverrides: true
+    allowedScopes :
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: test_setting_CD_2
+    name: Test CD setting 2
+    category : CD
+    defaultValue: true
+    valueType : BOOLEAN
+    allowedValues : ~
+    allowedScopes :
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
 #  - identifier: test_setting_CD_3
 #    name: Test CD setting 3
 #    category : CD

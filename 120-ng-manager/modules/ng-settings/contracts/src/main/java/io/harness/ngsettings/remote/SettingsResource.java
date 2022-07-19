@@ -101,8 +101,9 @@ public interface SettingsResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = SettingConstants.CATEGORY) @QueryParam(
-          SettingConstants.CATEGORY_KEY) SettingCategory category);
+      @Parameter(description = SettingConstants.CATEGORY) @NotNull @QueryParam(
+          SettingConstants.CATEGORY_KEY) SettingCategory category,
+      @Parameter(description = SettingConstants.GROUP_ID) @QueryParam(SettingConstants.GROUP_KEY) String group);
 
   @PUT
   @ApiOperation(value = "Updates the settings", nickname = "updateSettingValue")

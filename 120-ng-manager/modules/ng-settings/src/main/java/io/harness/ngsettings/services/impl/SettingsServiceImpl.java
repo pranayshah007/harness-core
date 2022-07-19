@@ -63,11 +63,11 @@ public class SettingsServiceImpl implements SettingsService {
   }
 
   @Override
-  public List<SettingResponseDTO> list(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category) {
+  public List<SettingResponseDTO> list(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      SettingCategory category, String group) {
     Map<String, SettingConfiguration> settingConfigurations =
-        getSettingConfigurations(accountIdentifier, orgIdentifier, projectIdentifier, category);
-    Map<String, Setting> settings = getSettings(accountIdentifier, orgIdentifier, projectIdentifier, category);
+        getSettingConfigurations(accountIdentifier, orgIdentifier, projectIdentifier, category, group);
+    Map<String, Setting> settings = getSettings(accountIdentifier, orgIdentifier, projectIdentifier, category, group);
     List<SettingResponseDTO> settingResponseDTOList = new ArrayList<>();
     settingConfigurations.forEach((identifier, settingConfiguration) -> {
       if (settings.containsKey(identifier)) {
@@ -143,19 +143,30 @@ public class SettingsServiceImpl implements SettingsService {
     return settingConfigurationRepository.save(settingConfiguration);
   }
 
-  private Map<String, Setting> getSettings(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category) {
-    List<Setting> settings = settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndCategory(
-        accountIdentifier, orgIdentifier, projectIdentifier, category);
+  private Map<String, Setting> getSettings(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      SettingCategory category, String group) {
+    List<Setting> settings;
+    if (group != null) {
+      settings = settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndCategoryAndGroup(
+          accountIdentifier, orgIdentifier, projectIdentifier, category, group);
+    } else {
+      settings = settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndCategory(
+          accountIdentifier, orgIdentifier, projectIdentifier, category);
+    }
     return settings.stream().collect(Collectors.toMap(Setting::getIdentifier, Function.identity()));
   }
 
-  private Map<String, SettingConfiguration> getSettingConfigurations(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category) {
+  private Map<String, SettingConfiguration> getSettingConfigurations(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, SettingCategory category, String group) {
     Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
     List<ScopeLevel> scopes = Collections.singletonList(ScopeLevel.of(scope));
-    List<SettingConfiguration> defaultSettingConfigurations =
-        settingConfigurationRepository.findByCategoryAndAllowedScopesIn(category, scopes);
+    List<SettingConfiguration> defaultSettingConfigurations;
+    if (group != null) {
+      defaultSettingConfigurations =
+          settingConfigurationRepository.findByCategoryAndGroupAndAllowedScopesIn(category, group, scopes);
+    } else {
+      defaultSettingConfigurations = settingConfigurationRepository.findByCategoryAndAllowedScopesIn(category, scopes);
+    }
     return defaultSettingConfigurations.stream().collect(
         Collectors.toMap(SettingConfiguration::getIdentifier, Function.identity()));
   }
