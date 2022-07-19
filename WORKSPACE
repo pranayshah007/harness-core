@@ -1022,8 +1022,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:ydIzFACT2VH9euHfBZuHxFu7AGN21xStbernowJvlHY=",
-    version = "v1.26.0",
+    sum = "h1:tx7Xgpt64DYq90WFPVi9T/5c7IuNQ8ckbb8qUEK05gU=",
+    version = "v1.26.1-0.20220718061611-2e3f1a56c8dd",
 )
 
 go_repository(
