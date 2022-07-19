@@ -9,6 +9,7 @@ package io.harness.repositories;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import static java.lang.String.format;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -48,6 +49,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
 
@@ -268,6 +270,30 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     Update update = new Update().set(TemplateEntityKeys.isLastUpdatedTemplate, value);
     return mongoTemplate.findAndModify(query(buildCriteria(templateEntity)), update,
         FindAndModifyOptions.options().returnNew(true), TemplateEntity.class);
+  }
+
+  @Override
+  public boolean deleteAllTemplatesInAProject(String accountId, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = Criteria.where(TemplateEntityKeys.accountId)
+                            .is(accountId)
+                            .and(TemplateEntityKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(TemplateEntityKeys.projectIdentifier)
+                            .is(projectIdentifier);
+    Query query = new Query(criteria);
+    try {
+      List<TemplateEntity> entities = mongoTemplate.findAllAndRemove(query, TemplateEntity.class);
+      entities.stream().forEach(deletedTemplateEntity -> {
+        outboxService.save(
+            new TemplateDeleteEvent(accountId, orgIdentifier, projectIdentifier, deletedTemplateEntity, ""));
+      });
+      return true;
+    } catch (Exception e) {
+      String errorMessage = format("Error while deleting Pipelines in Project [%s], in Org [%s] for Account [%s] : %s",
+          projectIdentifier, orgIdentifier, accountId, e.getMessage());
+      log.error(errorMessage, e);
+      return false;
+    }
   }
 
   private Criteria buildCriteria(TemplateEntity templateEntity) {

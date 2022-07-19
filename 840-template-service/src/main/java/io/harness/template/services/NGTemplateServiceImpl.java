@@ -575,6 +575,29 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         templateEntity.getProjectIdentifier(), criteria, update);
   }
 
+  @Override
+  public boolean deleteAllTemplatesInAProject(String accountId, String orgId, String projectId) {
+    boolean isOldGitSyncEnabled = gitSyncSdkService.isGitSyncEnabled(accountId, orgId, projectId);
+    if (isOldGitSyncEnabled) {
+      Criteria criteria = Criteria.where(TemplateEntity.TemplateEntityKeys.accountId)
+                              .is(accountId)
+                              .and(TemplateEntity.TemplateEntityKeys.orgIdentifier)
+                              .is(orgId)
+                              .and(TemplateEntity.TemplateEntityKeys.projectIdentifier)
+                              .is(projectId);
+      Pageable pageRequest = org.springframework.data.domain.PageRequest.of(
+          0, 1000, Sort.by(Sort.Direction.DESC, TemplateEntity.TemplateEntityKeys.lastUpdatedAt));
+
+      Page<TemplateEntity> templateEntities =
+          templateRepository.findAll(criteria, pageRequest, accountId, orgId, projectId, false);
+      for (TemplateEntity templateEntity : templateEntities) {
+        templateRepository.hardDeleteTemplate(templateEntity, "");
+      }
+      return true;
+    }
+    return templateRepository.deleteAllTemplatesInAProject(accountId, orgId, projectId);
+  }
+
   private void assureThatTheProjectAndOrgExists(String accountId, String orgId, String projectId) {
     if (isNotEmpty(projectId)) {
       // it's project level template

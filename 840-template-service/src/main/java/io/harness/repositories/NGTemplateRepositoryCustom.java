@@ -57,4 +57,6 @@ public interface NGTemplateRepositoryCustom {
   TemplateEntity updateIsStableTemplate(TemplateEntity templateEntity, boolean value);
 
   TemplateEntity updateIsLastUpdatedTemplate(TemplateEntity templateEntity, boolean value);
+
+  boolean deleteAllTemplatesInAProject(String accountId, String orgId, String projectId);
 }
