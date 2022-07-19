@@ -128,6 +128,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
                              .projectIdentifier(entityToSave.getProjectIdentifier())
                              .pipelineIdentifier(entityToSave.getPipelineIdentifier())
                              .inputSet(savedInputSetEntity)
+                             .isForOldGitSync(false)
                              .build());
       return savedInputSetEntity;
     });
@@ -154,6 +155,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
                              .projectIdentifier(projectIdentifier)
                              .pipelineIdentifier(savedInputSetEntity.getPipelineIdentifier())
                              .inputSet(savedInputSetEntity)
+                             .isForOldGitSync(false)
                              .build());
       return savedInputSetEntity;
     });
@@ -277,6 +279,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
                            .pipelineIdentifier(entityToUpdate.getPipelineIdentifier())
                            .newInputSet(updatedEntity)
                            .oldInputSet(oldEntityFromDB)
+                           .isForOldGitSync(false)
                            .build());
     return updatedEntity;
   }
@@ -341,6 +344,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
                            .projectIdentifier(projectIdentifier)
                            .pipelineIdentifier(pipelineIdentifier)
                            .inputSet(removedEntity)
+                           .isForOldGitSync(false)
                            .build());
   }
 
