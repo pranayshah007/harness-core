@@ -34,12 +34,14 @@ import io.harness.beans.quantity.unit.DecimalQuantityUnit;
 import io.harness.beans.quantity.unit.StorageQuantityUnit;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageConfig;
+import io.harness.beans.stages.IntegrationStageConfigImpl;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.PluginSettingUtils;
@@ -354,6 +356,8 @@ public class K8InitializeStepUtils {
     envVarMap.putAll(BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs));
     envVarMap.putAll(
         PluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, identifier, timeout, StageInfraDetails.Type.K8));
+    setEnvVariablesForHostedBuids(integrationStage, stepInfo, envVarMap);
+
     Integer runAsUser = resolveIntegerParameter(stepInfo.getRunAsUser(), null);
 
     Boolean privileged = null;
@@ -382,6 +386,23 @@ public class K8InitializeStepUtils {
         .privileged(privileged)
         .runAsUser(runAsUser)
         .build();
+  }
+
+  private void setEnvVariablesForHostedBuids(
+      StageElementConfig integrationStage, PluginCompatibleStep stepInfo, Map<String, String> envVarMap) {
+    IntegrationStageConfigImpl stage = (IntegrationStageConfigImpl) integrationStage.getStageType();
+    if (stage != null && stage.getInfrastructure() != null
+        && stage.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
+      switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
+        case ECR:
+        case GCR:
+        case DOCKER:
+          envVarMap.put("container", "docker");
+          break;
+        default:
+          break;
+      }
+    }
   }
 
   private ContainerDefinitionInfo createRunStepContainerDefinition(RunStepInfo runStepInfo,
