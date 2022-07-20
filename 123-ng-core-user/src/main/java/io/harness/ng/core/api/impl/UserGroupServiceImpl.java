@@ -7,6 +7,16 @@
 
 package io.harness.ng.core.api.impl;
 
+import static io.harness.NGConstants.ACCOUNT_BASIC_ROLE;
+import static io.harness.NGConstants.ACCOUNT_VIEWER_ROLE;
+import static io.harness.NGConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.ORGANIZATION_VIEWER_ROLE;
+import static io.harness.NGConstants.PROJECT_VIEWER_ROLE;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -35,11 +45,15 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.principals.PrincipalDTO;
+import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentAggregateResponseDTO;
+import io.harness.accesscontrol.roleassignments.api.RoleAssignmentCreateRequestDTO;
+import io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentFilterDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentResponseDTO;
 import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
@@ -74,6 +88,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.ng.core.spring.UserGroupRepository;
 import io.harness.user.remote.UserClient;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.ScopeUtils;
 
 import software.wings.beans.sso.SSOSettings;
@@ -117,6 +132,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   private final AccessControlAdminClient accessControlAdminClient;
   private final AccessControlClient accessControlClient;
   private final ScopeNameMapper scopeNameMapper;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
 
   @Inject
@@ -124,7 +140,7 @@ public class UserGroupServiceImpl implements UserGroupService {
       OutboxService outboxService, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
       NgUserService ngUserService, AuthSettingsManagerClient managerClient, LastAdminCheckService lastAdminCheckService,
       AccessControlAdminClient accessControlAdminClient, AccessControlClient accessControlClient,
-      ScopeNameMapper scopeNameMapper) {
+      ScopeNameMapper scopeNameMapper, NGFeatureFlagHelperService ngFeatureFlagHelperService) {
     this.userGroupRepository = userGroupRepository;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
@@ -134,6 +150,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     this.accessControlAdminClient = accessControlAdminClient;
     this.accessControlClient = accessControlClient;
     this.scopeNameMapper = scopeNameMapper;
+    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
   }
 
   @Override
@@ -478,6 +495,13 @@ public class UserGroupServiceImpl implements UserGroupService {
       validateUsers(userGroup.getUsers());
       validateScopeMembership(userGroup);
     }
+    validateManagedUserGroup(userGroup);
+  }
+
+  private void validateManagedUserGroup(UserGroup userGroup) {
+    if (TRUE.equals(userGroup.isHarnessManaged())) {
+      throw new InvalidArgumentsException("Not allowed to create Managed User Group. Set harnessManaged flag to false");
+    }
   }
 
   private void validateUsers(List<String> usersIds) {
@@ -751,6 +775,81 @@ public class UserGroupServiceImpl implements UserGroupService {
       userGroup.setUsers(new ArrayList<>(uniqueUserIds));
 
       userGroupRepository.save(userGroup);
+    }
+  }
+
+  @Override
+  public void setUpDefaultUserGroup(Scope scope) {
+    String userGroupIdentifier = DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER;
+    String userGroupName = "Account All Users";
+    String userGroupDescription = "Account all users user group";
+    if (isNotEmpty(scope.getProjectIdentifier())) {
+      userGroupIdentifier = DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER;
+      userGroupName = "Project All Users";
+      userGroupDescription = "Project all users user group";
+    } else if (isNotEmpty(scope.getOrgIdentifier())) {
+      userGroupIdentifier = DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER;
+      userGroupName = "Organization All Users";
+      userGroupDescription = "Organization all users user group";
+    }
+
+    UserGroupDTO userGroupDTO = UserGroupDTO.builder()
+            .accountIdentifier(scope.getAccountIdentifier())
+            .orgIdentifier(scope.getOrgIdentifier())
+            .projectIdentifier(scope.getProjectIdentifier())
+            .name(userGroupName)
+            .description(userGroupDescription)
+            .identifier(userGroupIdentifier)
+            .isSsoLinked(false)
+            .externallyManaged(false)
+            .harnessManaged(true)
+            .build();
+
+    log.info("Creating all users usergroup {} at scope {}", userGroupIdentifier, scope);
+    create(userGroupDTO);
+    if (isNotEmpty(scope.getProjectIdentifier())) {
+      createRoleAssignmentForProject(userGroupIdentifier, scope);
+    }
+    else if (isNotEmpty(scope.getOrgIdentifier())) {
+      createRoleAssignmentsForOrganization(userGroupIdentifier, scope);
+    }
+    else {
+      createRoleAssignmentsForAccount(userGroupIdentifier, scope);
+    }
+    log.info("Created all users usergroup {} at scope {}", userGroupIdentifier, scope);
+  }
+
+  private void createRoleAssignmentsForOrganization(String userGroupIdentifier, Scope scope) {
+    createRoleAssignment(userGroupIdentifier, scope, true, ORGANIZATION_VIEWER_ROLE, DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+  }
+
+  private void createRoleAssignmentForProject(String userGroupIdentifier, Scope scope) {
+    createRoleAssignment(userGroupIdentifier, scope, true, PROJECT_VIEWER_ROLE, DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+  }
+
+  private void createRoleAssignment(String userGroupIdentifier, Scope scope, boolean managed, String roleIdentifier, String resourceGroupIdentifier) {
+    List<RoleAssignmentDTO> roleAssignmentDTOList = new ArrayList<>();
+    roleAssignmentDTOList.add(RoleAssignmentDTO.builder()
+            .resourceGroupIdentifier(resourceGroupIdentifier)
+            .roleIdentifier(roleIdentifier)
+            .disabled(false)
+            .managed(managed)
+            .principal(PrincipalDTO.builder().identifier(userGroupIdentifier).scopeLevel(ScopeLevel.of(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier()).name()).type(USER_GROUP).build())
+            .build());
+
+    RoleAssignmentCreateRequestDTO roleAssignmentCreateRequestDTO = RoleAssignmentCreateRequestDTO.builder()
+            .roleAssignments(roleAssignmentDTOList).build();
+
+    log.info("Creating role assignment for all users usergroup {} at scope {}", userGroupIdentifier, scope);
+    NGRestUtils.getResponse(accessControlAdminClient.createMultiRoleAssignment(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), managed, roleAssignmentCreateRequestDTO));
+    log.info("Created role assignment for all users usergroup {} at scope {}", userGroupIdentifier, scope);
+  }
+
+  private void createRoleAssignmentsForAccount(String principalIdentifier, Scope scope) {
+    createRoleAssignment(principalIdentifier, scope, false, ACCOUNT_BASIC_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+    boolean isAccountBasicFeatureFlagEnabled = ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE);
+    if (!isAccountBasicFeatureFlagEnabled) {
+      createRoleAssignment(principalIdentifier, scope, false, ACCOUNT_VIEWER_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
     }
   }
 }

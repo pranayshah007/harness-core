@@ -53,6 +53,7 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.DefaultOrganization;
 import io.harness.ng.core.OrgIdentifier;
 import io.harness.ng.core.ProjectIdentifier;
+import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.beans.ProjectsPerOrganizationCount;
 import io.harness.ng.core.beans.ProjectsPerOrganizationCount.ProjectsPerOrganizationCountKeys;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
@@ -130,13 +131,14 @@ public class ProjectServiceImpl implements ProjectService {
   private final ProjectInstrumentationHelper instrumentationHelper;
   private final YamlGitConfigService yamlGitConfigService;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private final UserGroupService userGroupService;
 
   @Inject
   public ProjectServiceImpl(ProjectRepository projectRepository, OrganizationService organizationService,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
       NgUserService ngUserService, AccessControlClient accessControlClient, ScopeAccessHelper scopeAccessHelper,
       ProjectInstrumentationHelper instrumentationHelper, YamlGitConfigService yamlGitConfigService,
-      NGFeatureFlagHelperService ngFeatureFlagHelperService) {
+      NGFeatureFlagHelperService ngFeatureFlagHelperService, UserGroupService userGroupService) {
     this.projectRepository = projectRepository;
     this.organizationService = organizationService;
     this.transactionTemplate = transactionTemplate;
@@ -147,6 +149,7 @@ public class ProjectServiceImpl implements ProjectService {
     this.instrumentationHelper = instrumentationHelper;
     this.yamlGitConfigService = yamlGitConfigService;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
+    this.userGroupService = userGroupService;
   }
 
   @Override
@@ -193,6 +196,7 @@ public class ProjectServiceImpl implements ProjectService {
       throw new InvalidRequestException("User not found in security context");
     }
     try {
+      userGroupService.setUpDefaultUserGroup(scope);
       assignProjectAdmin(scope, principalId, principalType);
       busyPollUntilProjectSetupCompletes(scope, principalId);
     } catch (Exception e) {
