@@ -71,16 +71,35 @@ public class SettingsServiceImpl implements SettingsService {
     Map<String, SettingConfiguration> settingConfigurations =
         getSettingConfigurations(accountIdentifier, orgIdentifier, projectIdentifier, category, group);
     Map<String, Setting> settings = getSettings(accountIdentifier, orgIdentifier, projectIdentifier, category, group);
+    // get parent scopes settings
+
     List<SettingResponseDTO> settingResponseDTOList = new ArrayList<>();
     settingConfigurations.forEach((identifier, settingConfiguration) -> {
       if (settings.containsKey(identifier)) {
         settingResponseDTOList.add(
-            settingsMapper.writeSettingResponseDTO(settings.get(identifier), settingConfiguration));
+            settingsMapper.writeSettingResponseDTO(settings.get(identifier), settingConfiguration, true));
       } else {
-        settingResponseDTOList.add(settingsMapper.writeSettingResponseDTO(settingConfiguration));
+        // check for parent scopes in hierarchy
+        Scope currentScope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
+        settingResponseDTOList.add(getSettingResponseDTOFromParentScopes(currentScope, settingConfiguration));
       }
     });
     return settingResponseDTOList;
+  }
+
+  private SettingResponseDTO getSettingResponseDTOFromParentScopes(
+      Scope currentScope, SettingConfiguration settingConfiguration) {
+    while ((currentScope = getParentScope(currentScope)) != null) {
+      Optional<Setting> setting =
+          settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+              currentScope.getAccountIdentifier(), currentScope.getOrgIdentifier(), currentScope.getProjectIdentifier(),
+              settingConfiguration.getIdentifier());
+      if (setting.isPresent()) {
+        return settingsMapper.writeSettingResponseDTO(
+            setting.get(), settingConfiguration, setting.get().getAllowOverrides());
+      }
+    }
+    return settingsMapper.writeSettingResponseDTO(settingConfiguration, settingConfiguration.getAllowOverrides());
   }
 
   @Override
@@ -95,7 +114,8 @@ public class SettingsServiceImpl implements SettingsService {
         if (settingRequestDTO.getUpdateType() == SettingUpdateType.RESTORE) {
           SettingConfiguration settingConfiguration =
               restoreSetting(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO);
-          settingResponseDTO = settingsMapper.writeSettingResponseDTO(settingConfiguration);
+          settingResponseDTO =
+              settingsMapper.writeSettingResponseDTO(settingConfiguration, settingConfiguration.getAllowOverrides());
         } else {
           settingResponseDTO = updateSetting(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO);
         }
@@ -148,9 +168,23 @@ public class SettingsServiceImpl implements SettingsService {
     if (existingSetting.isPresent()) {
       value = existingSetting.get().getValue();
     } else {
-      value = settingConfiguration.getDefaultValue();
+      value = getSettingValueFromParentScope(Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), identifier,
+          settingConfiguration.getDefaultValue());
     }
     return SettingValueResponseDTO.builder().valueType(settingConfiguration.getValueType()).value(value).build();
+  }
+
+  private String getSettingValueFromParentScope(Scope currentScope, String identifier, String defaultValue) {
+    while ((currentScope = getParentScope(currentScope)) != null) {
+      Optional<Setting> setting =
+          settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+              currentScope.getAccountIdentifier(), currentScope.getOrgIdentifier(), currentScope.getProjectIdentifier(),
+              identifier);
+      if (setting.isPresent()) {
+        return setting.get().getValue();
+      }
+    }
+    return defaultValue;
   }
 
   @Override
@@ -224,7 +258,7 @@ public class SettingsServiceImpl implements SettingsService {
     }
     SettingUtils.validate(newSettingDTO);
     Setting setting = settingRepository.upsert(settingsMapper.toSetting(accountIdentifier, newSettingDTO));
-    return settingsMapper.writeSettingResponseDTO(setting, settingConfiguration);
+    return settingsMapper.writeSettingResponseDTO(setting, settingConfiguration, true);
   }
 
   private SettingConfiguration getSettingConfiguration(
