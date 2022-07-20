@@ -46,6 +46,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.rule.Owner;
 import io.harness.utils.AmbianceTestUtils;
 
@@ -828,5 +829,21 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     Query query = argumentCaptor.getValue();
     assertThat(query.toString())
         .isEqualTo("Query: { \"ambiance.planExecutionId\" : \"tempId\", \"oldRetry\" : false}, Fields: {}, Sort: {}");
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testFindByParentIdAndStatusIn() {
+    mongoTemplate = mock(MongoTemplate.class);
+
+    on(nodeExecutionService).set("mongoTemplate", mongoTemplate);
+    ArgumentCaptor<Query> argumentCaptor = ArgumentCaptor.forClass(Query.class);
+    nodeExecutionService.findByParentIdAndStatusIn("parentId", StatusUtils.unpausableChildStatuses());
+    verify(mongoTemplate, times(1)).find(argumentCaptor.capture(), any());
+    Query query = argumentCaptor.getValue();
+    assertThat(query.toString())
+        .isEqualTo(
+            "Query: { \"parentId\" : \"parentId\", \"status\" : { \"$in\" : [ { \"$java\" : RUNNING }, { \"$java\" : INTERVENTION_WAITING }, { \"$java\" : TIMED_WAITING }, { \"$java\" : ASYNC_WAITING }, { \"$java\" : TASK_WAITING }, { \"$java\" : DISCONTINUING }, { \"$java\" : APPROVAL_WAITING } ] }, \"oldRetry\" : false }, Fields: {}, Sort: {}");
   }
 }
