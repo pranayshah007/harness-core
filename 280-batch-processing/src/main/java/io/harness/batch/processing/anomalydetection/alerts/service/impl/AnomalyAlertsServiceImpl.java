@@ -20,6 +20,7 @@ import io.harness.batch.processing.anomalydetection.alerts.service.itfc.AnomalyA
 import io.harness.batch.processing.shard.AccountShardService;
 import io.harness.ccm.anomaly.entities.AnomalyEntity;
 import io.harness.ccm.anomaly.service.itfc.AnomalyService;
+import io.harness.ccm.anomaly.utility.AnomalyUtility;
 import io.harness.ccm.commons.dao.notifications.CCMNotificationsDao;
 import io.harness.ccm.commons.entities.anomaly.AnomalyData;
 import io.harness.ccm.commons.entities.notifications.CCMNotificationChannel;
@@ -175,6 +176,10 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
 
     log.info("Perspective anomalies: {}", perspectiveAnomalies);
 
+    if (perspectiveAnomalies.isEmpty()) {
+      return;
+    }
+
     List<CCMNotificationChannel> channels = perspectiveNotificationSetting.getChannels();
     List<String> eMails = getChannelUrls(channels, EMAIL);
     log.info("Emails: {}", eMails);
@@ -205,7 +210,8 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
 
     Map<String, String> templateData = new HashMap<>();
     templateData.put("perspective_name", perspectiveNotificationSetting.getPerspectiveName());
-    templateData.put("anomalies", slackMessageGenerator.getAnomalyDetailsTemplateString(perspectiveAnomalies.get(0)));
+//    templateData.put("anomalies", slackMessageGenerator.getAnomalyDetailsTemplateString(perspectiveAnomalies.get(0)));
+    templateData.put("perspective_url", "https://google.co.in");
 
     // Sending email alerts
     emailChannelBuilder.templateData(templateData);
@@ -242,7 +248,15 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     Map<String, String> slackTemplateData = new HashMap<>();
     slackTemplateData.put("perspective_name", perspectiveNotificationSetting.getPerspectiveName());
     slackTemplateData.put("count_of_anomalies", String.valueOf(perspectiveAnomalies.size()));
-    slackTemplateData.put("date", date.toString());
+    slackTemplateData.put("date", AnomalyUtility.convertInstantToDate2(date));
+    StringBuilder anomaliesDetails = new StringBuilder();
+    for(int i=0;  i < perspectiveAnomalies.size(); i++) {
+      anomaliesDetails.append(slackMessageGenerator.getAnomalyDetailsTemplateString(perspectiveAnomalies.get(i)));
+      if (i < perspectiveAnomalies.size() - 1) {
+        anomaliesDetails.append(" \n\n");
+      }
+    }
+    slackTemplateData.put("anomalies_details", anomaliesDetails.toString());
 
     // Sending slack alerts
     slackChannelBuilder.templateData(slackTemplateData);

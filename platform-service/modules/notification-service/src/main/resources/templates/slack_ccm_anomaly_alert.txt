@@ -11,8 +11,15 @@
 			"type": "section",
 			"text": {
 				"type": "mrkdwn",
-				"text": "${top_n} Cost Anomalies:"
+				"text": "${count_of_anomalies} Cost Anomalies:"
 			}
-		}
+		},
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "${anomalies_details}"
+             }
+        }
 	]
 }
