@@ -93,7 +93,6 @@ import static software.wings.sm.StateType.PHASE;
 import static software.wings.sm.StateType.PHASE_STEP;
 import static software.wings.sm.states.ArtifactCollectLoopState.ArtifactCollectLoopStateKeys;
 
-import static io.fabric8.utils.Lists.isNullOrEmpty;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static java.time.Duration.ofDays;
@@ -6181,7 +6180,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         }
       }
     } else {
-      if (!isNullOrEmpty(workflowExecution.getServiceIds())) {
+      if (!isEmpty(workflowExecution.getServiceIds())) {
         serviceIds.addAll(workflowExecution.getServiceIds());
       }
     }
@@ -6210,7 +6209,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         }
       }
     } else {
-      if (!isNullOrEmpty(workflowExecution.getCloudProviderIds())) {
+      if (!isEmpty(workflowExecution.getCloudProviderIds())) {
         cloudProviderIds.addAll(workflowExecution.getCloudProviderIds());
       }
     }

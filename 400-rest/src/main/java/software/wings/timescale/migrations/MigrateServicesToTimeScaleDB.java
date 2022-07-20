@@ -7,6 +7,7 @@
 
 package software.wings.timescale.migrations;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.beans.Service.ServiceKeys;

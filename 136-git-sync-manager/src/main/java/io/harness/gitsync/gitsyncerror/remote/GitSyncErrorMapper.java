@@ -9,8 +9,6 @@ package io.harness.gitsync.gitsyncerror.remote;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import static io.fabric8.utils.Strings.nullIfEmpty;
-
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.gitsync.common.dtos.RepoProviders;
