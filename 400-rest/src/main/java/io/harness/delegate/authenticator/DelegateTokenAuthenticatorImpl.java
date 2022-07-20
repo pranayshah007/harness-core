@@ -371,10 +371,11 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
 
     // cache miss
     if (delegateJWTCacheValue == null) {
+      log.info("Arpit: cache miss ", new Exception());
       delegateMetricsService.recordDelegateMetricsPerAccount(accountId, DELEGATE_JWT_CACHE_MISS);
       return false;
     }
-
+    log.info("Arpit: cache hit ", new Exception());
     // cache hit
     delegateMetricsService.recordDelegateMetricsPerAccount(accountId, DELEGATE_JWT_CACHE_HIT);
 

@@ -24,7 +24,7 @@ public class DelegateJWTCache {
   ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
   private final Cache<String, DelegateJWTCacheValue> delegateJWTCache =
-      Caffeine.newBuilder().maximumSize(50000).expireAfterWrite(25, TimeUnit.MINUTES).build();
+      Caffeine.newBuilder().maximumSize(100000).expireAfterWrite(25, TimeUnit.MINUTES).build();
 
   // if delegateTokenName is null that means delegate is not reusing the jwt.
   public void setDelegateJWTCache(
