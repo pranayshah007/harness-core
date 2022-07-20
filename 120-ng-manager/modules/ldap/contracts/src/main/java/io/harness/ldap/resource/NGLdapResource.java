@@ -45,8 +45,8 @@ import javax.ws.rs.QueryParam;
 import org.hibernate.validator.constraints.NotBlank;
 
 @OwnedBy(PL)
-@Api("ng/ldap")
-@Path("ng/ldap")
+@Api("ldap")
+@Path("ldap")
 @Produces({"application/json", "application/yaml"})
 @Consumes({"application/json", "application/yaml"})
 @ApiResponses(value =
@@ -139,4 +139,22 @@ public interface NGLdapResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
       String projectIdentifier, @QueryParam("name") @NotBlank String name);
+
+  @GET
+  @Path("/sync-groups")
+  @Hidden
+  @ApiOperation(value = "Sync Ldap groups within an account", nickname = "syncLdapGroups")
+  @Operation(operationId = "syncLdapGroups", summary = "Triggers Ldap groups sync based on linked SSO groups",
+      description = "Returns Boolean status whether Ldap groups sync got triggered on not.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns status whether Ldap groups sync started")
+      })
+  RestResponse<Boolean>
+  syncLdapGroups(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                     NGCommonEntityConstants.ACCOUNT_KEY) @NotBlank String accountId,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier);
 }

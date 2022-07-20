@@ -111,9 +111,10 @@ public class StackDriverServiceImpl implements StackDriverService {
       final SettingAttribute settingAttribute = settingsService.get(setupTestNodeData.getSettingId());
       List<EncryptedDataDetail> encryptionDetails =
           secretManager.getEncryptionDetails((EncryptableSetting) settingAttribute.getValue(), null, null);
+      String appId = setupTestNodeData.getAppId() == null ? GLOBAL_APP_ID : setupTestNodeData.getAppId();
       SyncTaskContext syncTaskContext = SyncTaskContext.builder()
                                             .accountId(settingAttribute.getAccountId())
-                                            .appId(GLOBAL_APP_ID)
+                                            .appId(appId)
                                             .timeout(TaskData.DEFAULT_SYNC_CALL_TIMEOUT * 3)
                                             .build();
 
@@ -140,14 +141,14 @@ public class StackDriverServiceImpl implements StackDriverService {
   }
 
   @Override
-  public Object getLogSample(String accountId, String serverConfigId, String query, String guid) {
+  public Object getLogSample(String accountId, String appId, String serverConfigId, String query, String guid) {
     try {
       final SettingAttribute settingAttribute = settingsService.get(serverConfigId);
       List<EncryptedDataDetail> encryptionDetails =
           secretManager.getEncryptionDetails((EncryptableSetting) settingAttribute.getValue(), null, null);
       SyncTaskContext syncTaskContext = SyncTaskContext.builder()
                                             .accountId(settingAttribute.getAccountId())
-                                            .appId(GLOBAL_APP_ID)
+                                            .appId(appId != null ? appId : GLOBAL_APP_ID)
                                             .timeout(TaskData.DEFAULT_SYNC_CALL_TIMEOUT * 3)
                                             .build();
 
@@ -224,7 +225,7 @@ public class StackDriverServiceImpl implements StackDriverService {
         secretManager.getEncryptionDetails((EncryptableSetting) settingAttribute.getValue(), null, null);
     SyncTaskContext syncTaskContext = SyncTaskContext.builder()
                                           .accountId(accountId)
-                                          .appId(GLOBAL_APP_ID)
+                                          .appId(appId != null ? appId : GLOBAL_APP_ID)
                                           .timeout(TaskData.DEFAULT_SYNC_CALL_TIMEOUT * 3)
                                           .build();
 

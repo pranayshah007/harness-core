@@ -367,13 +367,11 @@ public class PerspectiveTimeSeriesHelper {
         limitProcessedValues.add(others);
       }
 
-      if (includeUnallocatedCost) {
+      if (includeUnallocatedCost && Objects.nonNull(unallocatedCostMapping)) {
         limitProcessedValues.add(
             DataPoint.builder()
                 .key(Reference.builder().id(UNALLOCATED_COST).name(UNALLOCATED_COST).type(type).build())
-                .value(Objects.nonNull(unallocatedCostMapping)
-                        ? unallocatedCostMapping.getOrDefault(dataPoint.getTime(), 0D)
-                        : 0D)
+                .value(unallocatedCostMapping.getOrDefault(dataPoint.getTime(), 0D))
                 .build());
       }
 

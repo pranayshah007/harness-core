@@ -47,6 +47,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
+import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppFetchPreDeploymentDataRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSlotDeploymentRequest;
@@ -126,8 +127,8 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
         .prepareGitFetchTaskRequest(any(StepElementParameters.class), eq(ambiance), anyMap(), anyList());
     doAnswer(invocation -> {
       GitFetchResponse fetchResponse = invocation.getArgument(1);
-      return fetchResponse.getFilesFromMultipleRepo().entrySet().stream().collect(
-          Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getFiles().get(0).getFileContent()));
+      return fetchResponse.getFilesFromMultipleRepo().entrySet().stream().collect(Collectors.toMap(
+          Map.Entry::getKey, entry -> AppSettingsFile.create(entry.getValue().getFiles().get(0).getFileContent())));
     })
         .when(azureWebAppStepHelper)
         .getConfigValuesFromGitFetchResponse(eq(ambiance), any(GitFetchResponse.class));
@@ -154,9 +155,9 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
     AzureWebAppFetchPreDeploymentDataRequest dataRequest = (AzureWebAppFetchPreDeploymentDataRequest) taskParameters;
     assertThat(dataRequest.getArtifact()).isSameAs(azureArtifactConfig);
     assertThat(dataRequest.getInfrastructure()).isSameAs(infraDelegateConfig);
-    assertThat(dataRequest.getApplicationSettings()).isEmpty();
-    assertThat(dataRequest.getConnectionStrings()).isEmpty();
-    assertThat(dataRequest.getStartupCommand()).isNullOrEmpty();
+    assertThat(dataRequest.getApplicationSettings()).isNull();
+    assertThat(dataRequest.getConnectionStrings()).isNull();
+    assertThat(dataRequest.getStartupCommand()).isNull();
     assertThat(dataRequest.getTimeoutIntervalInMin()).isEqualTo(10);
     assertThat(taskChainResponse.isChainEnd()).isFalse();
     assertThat(taskChainResponse.getTaskRequest()).isSameAs(taskRequest);
@@ -236,7 +237,7 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
             .build();
     final AzureSlotDeploymentPassThroughData passThroughData =
         AzureSlotDeploymentPassThroughData.builder()
-            .configs(ImmutableMap.of(STARTUP_SCRIPT, "echo 'test'"))
+            .configs(ImmutableMap.of(STARTUP_SCRIPT, AppSettingsFile.create("echo 'test'")))
             .unprocessedConfigs(emptyMap())
             .build();
 
@@ -256,8 +257,8 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
     AzureSlotDeploymentPassThroughData newPassThroughData =
         (AzureSlotDeploymentPassThroughData) taskChainResponse.getPassThroughData();
     assertThat(newPassThroughData.getConfigs()).containsKeys(APPLICATION_SETTINGS, CONNECTION_STRINGS, STARTUP_SCRIPT);
-    assertThat(newPassThroughData.getConfigs())
-        .containsValues(APP_SETTINGS_FILE_CONTENT, CONN_STRINGS_FILE_CONTENT, STARTUP_SCRIPT_FILE_CONTENT);
+    assertThat(newPassThroughData.getConfigs().values().stream().map(AppSettingsFile::fetchFileContent))
+        .containsExactlyInAnyOrder(APP_SETTINGS_FILE_CONTENT, CONN_STRINGS_FILE_CONTENT, STARTUP_SCRIPT_FILE_CONTENT);
   }
 
   @Test
@@ -275,7 +276,7 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
     final AzureSlotDeploymentPassThroughData passThroughData =
         AzureSlotDeploymentPassThroughData.builder()
             .unprocessedConfigs(allUnprocessedConfigs)
-            .configs(ImmutableMap.of(CONNECTION_STRINGS, CONN_STRINGS_FILE_CONTENT))
+            .configs(ImmutableMap.of(CONNECTION_STRINGS, AppSettingsFile.create(CONN_STRINGS_FILE_CONTENT)))
             .build();
     final AzureWebAppTaskResponse azureWebAppTaskResponse = AzureWebAppTaskResponse.builder().build();
 
@@ -306,13 +307,13 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
     final AzureSlotDeploymentPassThroughData passThroughData =
         AzureSlotDeploymentPassThroughData.builder()
             .unprocessedConfigs(allUnprocessedConfigs)
-            .configs(ImmutableMap.of(CONNECTION_STRINGS, CONN_STRINGS_FILE_CONTENT))
+            .configs(ImmutableMap.of(CONNECTION_STRINGS, AppSettingsFile.create(CONN_STRINGS_FILE_CONTENT)))
             .preDeploymentData(AzureAppServicePreDeploymentData.builder().build())
             .build();
     final AzureWebAppTaskResponse azureWebAppTaskResponse = AzureWebAppTaskResponse.builder().build();
     final ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
 
-    doReturn(ImmutableMap.of(APPLICATION_SETTINGS, APP_SETTINGS_FILE_CONTENT))
+    doReturn(ImmutableMap.of(APPLICATION_SETTINGS, AppSettingsFile.create(APP_SETTINGS_FILE_CONTENT)))
         .when(azureWebAppStepHelper)
         .fetchWebAppConfigsFromHarnessStore(ambiance, unprocessedHarnessStore);
 

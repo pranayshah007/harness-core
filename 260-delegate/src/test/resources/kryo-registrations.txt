@@ -440,6 +440,7 @@
 5290:io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskParameters
 5291:io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskResponse
 5293:software.wings.api.PcfInstanceElement
+5294:io.harness.delegate.beans.ldap.NGLdapGroupSyncTaskResponse
 5296:software.wings.beans.PcfConfig
 5297:io.harness.delegate.beans.ldap.NGLdapDelegateTaskResponse
 5298:io.harness.delegate.beans.ldap.NGLdapDelegateTaskParameters
@@ -1727,6 +1728,9 @@
 55404:io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig
 55405:io.harness.delegate.task.localstore.LocalStoreFetchFilesResult
 55406:io.harness.delegate.task.localstore.ManifestFiles
+55407:io.harness.delegate.task.azure.appservice.settings.AppSettingsFile
+55408:io.harness.delegate.task.azure.appservice.settings.EncryptedAppSettingsFile
+55409:io.harness.delegate.task.azure.appservice.webapp.ng.exception.AzureWebAppSlotDeploymentExceptionData
 56403:io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO

@@ -419,6 +419,43 @@ public class HelmChartServiceTest extends WingsBaseTest {
     assertThat(appManifestHelmChartMap.get(APP_MANIFEST_NAME + 3)).containsOnly(newHelmChart3);
   }
 
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void shouldCreateHelmChartWithAppVersion() {
+    helmChartService.create(helmChart);
+    HelmChart newHelmChart = generateHelmChartWithVersion("2.0");
+    newHelmChart.setAppVersion("1.0.0");
+    HelmChart outHelmChart = helmChartService.createOrUpdateAppVersion(newHelmChart);
+    assertThat(outHelmChart.getVersion()).isEqualTo("2.0");
+    assertThat(outHelmChart.getAppVersion()).isEqualTo("1.0.0");
+    assertThat(outHelmChart.getUuid()).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void shouldUpdateHelmChartWithAppVersion() {
+    helmChartService.create(helmChart);
+    HelmChart newHelmChart = generateHelmChartWithVersion("1.0");
+    newHelmChart.setAppVersion("1.0.0");
+    HelmChart outHelmChart = helmChartService.createOrUpdateAppVersion(newHelmChart);
+    assertThat(outHelmChart.getVersion()).isEqualTo("1.0");
+    assertThat(outHelmChart.getAppVersion()).isEqualTo("1.0.0");
+    assertThat(outHelmChart.getUuid()).isEqualTo(newHelmChart.getUuid());
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void shouldNotUpdateHelmChartWithNullAppVersion() {
+    helmChartService.create(helmChart);
+    HelmChart newHelmChart = generateHelmChartWithVersion("1.0");
+    HelmChart outHelmChart = helmChartService.createOrUpdateAppVersion(newHelmChart);
+    assertThat(outHelmChart.getVersion()).isEqualTo("1.0");
+    assertThat(outHelmChart.getUuid()).isEqualTo(helmChart.getUuid());
+  }
+
   private ApplicationManifest generateAppManifestWithCollectionEnabled(
       String id, String name, Boolean collectionEnabled) {
     ApplicationManifest applicationManifest =

@@ -24,6 +24,7 @@ import io.harness.accesscontrol.scopes.harness.OrganizationClientConfiguration;
 import io.harness.accesscontrol.scopes.harness.ProjectClientConfiguration;
 import io.harness.aggregator.AggregatorConfiguration;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.ff.FeatureFlagClientConfiguration;
 import io.harness.lock.DistributedLockImplementation;
@@ -133,6 +134,7 @@ public class AccessControlConfiguration extends Configuration {
             -> StringUtils.startsWithAny(clazz.getPackage().getName(), PERMISSION_PACKAGE, ROLES_PACKAGE,
                 ROLE_ASSIGNMENTS_PACKAGE, ACL_PACKAGE, ACCESSCONTROL_PREFERENCE_PACKAGE, AGGREGATOR_PACKAGE,
                 HEALTH_PACKAGE, ENFORCEMENT_PACKAGE))
+        .filter(clazz -> clazz.isInterface() || EmptyPredicate.isEmpty(clazz.getInterfaces()))
         .collect(Collectors.toSet());
   }
 

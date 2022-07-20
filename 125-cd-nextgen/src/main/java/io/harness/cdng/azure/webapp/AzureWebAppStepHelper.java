@@ -25,6 +25,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.beans.FileReference;
+import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -49,18 +50,22 @@ import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
+import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
+import io.harness.delegate.task.azure.appservice.settings.EncryptedAppSettingsFile;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -73,7 +78,10 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.utils.IdentifierRefHelper;
 
 import software.wings.beans.TaskType;
 
@@ -101,6 +109,7 @@ public class AzureWebAppStepHelper {
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private NGEncryptedDataService ngEncryptedDataService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
 
   public AzureAppServicePreDeploymentData getPreDeploymentData(Ambiance ambiance, String sweepingOutputName) {
@@ -176,7 +185,7 @@ public class AzureWebAppStepHelper {
         TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectors)));
   }
 
-  public Map<String, String> fetchWebAppConfigsFromHarnessStore(
+  public Map<String, AppSettingsFile> fetchWebAppConfigsFromHarnessStore(
       Ambiance ambiance, Map<String, HarnessStore> harnessStoreConfigs) {
     return harnessStoreConfigs.entrySet().stream().collect(Collectors.toMap(
         Map.Entry::getKey, entry -> fetchFileContentFromHarnessStore(ambiance, entry.getKey(), entry.getValue())));
@@ -233,15 +242,16 @@ public class AzureWebAppStepHelper {
     }
   }
 
-  public Map<String, String> getConfigValuesFromGitFetchResponse(Ambiance ambiance, GitFetchResponse gitFetchResponse) {
+  public Map<String, AppSettingsFile> getConfigValuesFromGitFetchResponse(
+      Ambiance ambiance, GitFetchResponse gitFetchResponse) {
     return gitFetchResponse.getFilesFromMultipleRepo()
         .entrySet()
         .stream()
         .filter(entry -> isNotEmpty(entry.getValue().getFiles()))
         .collect(Collectors.toMap(Map.Entry::getKey,
             entry
-            -> engineExpressionService.renderExpression(
-                ambiance, entry.getValue().getFiles().get(0).getFileContent())));
+            -> AppSettingsFile.create(engineExpressionService.renderExpression(
+                ambiance, entry.getValue().getFiles().get(0).getFileContent()))));
   }
 
   public static <T extends StoreConfig> Map<String, T> filterAndMapConfigs(
@@ -312,15 +322,30 @@ public class AzureWebAppStepHelper {
     }
   }
 
-  private String fetchFileContentFromHarnessStore(Ambiance ambiance, String settingsType, HarnessStore harnessStore) {
-    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+  private AppSettingsFile fetchFileContentFromHarnessStore(
+      Ambiance ambiance, String settingsType, HarnessStore harnessStore) {
     HarnessStore renderedHarnessStore = (HarnessStore) cdExpressionResolver.updateExpressions(ambiance, harnessStore);
-    List<String> harnessStoreFiles = renderedHarnessStore.getFiles().getValue();
-    String firstFile = harnessStoreFiles.stream().findFirst().orElseThrow(
-        () -> new InvalidArgumentsException(Pair.of(settingsType, "No file configured for harness file store")));
+    if (!ParameterField.isNull(renderedHarnessStore.getFiles())
+        && isNotEmpty(renderedHarnessStore.getFiles().getValue())) {
+      List<String> harnessStoreFiles = renderedHarnessStore.getFiles().getValue();
+      String firstFile = harnessStoreFiles.stream().findFirst().orElseThrow(
+          () -> new InvalidArgumentsException(Pair.of(settingsType, "No file configured for harness file store")));
+      return fetchFileContentFromFileStore(ambiance, settingsType, firstFile);
+    } else if (!ParameterField.isNull(renderedHarnessStore.getSecretFiles())
+        && isNotEmpty(renderedHarnessStore.getSecretFiles().getValue())) {
+      List<String> harnessStoreSecretFiles = renderedHarnessStore.getSecretFiles().getValue();
+      String firstSecretFile = harnessStoreSecretFiles.stream().findFirst().orElseThrow(
+          () -> new InvalidArgumentsException(Pair.of(settingsType, "No secret file configured for harness store")));
+      return fetchSecretFile(ambiance, settingsType, firstSecretFile);
+    }
 
+    throw new InvalidArgumentsException(Pair.of(settingsType, "Either 'files' or 'secretFiles' is required"));
+  }
+
+  private AppSettingsFile fetchFileContentFromFileStore(Ambiance ambiance, String settingsType, String filePath) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     FileReference fileReference = FileReference.of(
-        firstFile, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+        filePath, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
     FileStoreNodeDTO fileStoreNodeDTO =
         fileStoreService
             .getWithChildrenByPath(fileReference.getAccountIdentifier(), fileReference.getOrgIdentifier(),
@@ -337,14 +362,32 @@ public class AzureWebAppStepHelper {
     if (fileStoreNodeDTO instanceof FileNodeDTO) {
       FileNodeDTO fileNode = (FileNodeDTO) fileStoreNodeDTO;
       if (isNotEmpty(fileNode.getContent())) {
-        return engineExpressionService.renderExpression(ambiance, fileNode.getContent());
+        return AppSettingsFile.create(engineExpressionService.renderExpression(ambiance, fileNode.getContent()));
       }
 
       log.warn("Received empty or null content for file: {}", fileStoreNodeDTO.getPath());
-      return "";
+      return AppSettingsFile.create("");
     }
 
     log.error("Unknown file store node: {}", fileStoreNodeDTO.getClass().getSimpleName());
     throw new InvalidArgumentsException(Pair.of(settingsType, "Unsupported file store node"));
+  }
+
+  private AppSettingsFile fetchSecretFile(Ambiance ambiance, String settingsType, String secretRef) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    IdentifierRef fileRef = IdentifierRefHelper.getIdentifierRef(
+        secretRef, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    EncryptedAppSettingsFile encryptedAppSettingsFile =
+        EncryptedAppSettingsFile.builder()
+            .secretFileReference(SecretRefHelper.createSecretRef(fileRef.getIdentifier()))
+            .build();
+    List<EncryptedDataDetail> encryptedDataDetails =
+        ngEncryptedDataService.getEncryptionDetails(ngAccess, encryptedAppSettingsFile);
+    if (encryptedDataDetails == null) {
+      throw new InvalidArgumentsException(
+          Pair.of(settingsType, format("No encrypted data details found for secret file %s", secretRef)));
+    }
+
+    return AppSettingsFile.create(encryptedAppSettingsFile, encryptedDataDetails);
   }
 }

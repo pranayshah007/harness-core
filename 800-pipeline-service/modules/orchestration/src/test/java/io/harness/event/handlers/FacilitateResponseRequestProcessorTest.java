@@ -8,7 +8,10 @@
 package io.harness.event.handlers;
 
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
@@ -17,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutionMode;
+import io.harness.pms.contracts.execution.events.AddStepDetailsInstanceRequest;
 import io.harness.pms.contracts.execution.events.FacilitatorResponseRequest;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
@@ -66,5 +70,17 @@ public class FacilitateResponseRequestProcessorTest extends CategoryTest {
     verify(waitNotifyEngine)
         .doneWith(request.getNotifyId(),
             BinaryResponseData.builder().data(request.getFacilitatorResponse().toByteArray()).build());
+  }
+
+  @Test
+  @Owner(developers = SOUMYAJIT)
+  @Category(UnitTests.class)
+  public void shouldValidatehandleEvent() {
+    facilitateResponseRequestHandler.handleEvent(
+        SdkResponseEventProto.newBuilder()
+            .setStepDetailsInstanceRequest(
+                AddStepDetailsInstanceRequest.newBuilder().setStepDetails("{\"a\":\"b\"}").build())
+            .build());
+    verify(orchestrationEngine, times(1)).processStepResponse(any(), any());
   }
 }

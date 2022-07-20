@@ -109,7 +109,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
         invite.setRoleBindings(
             Collections.singletonList(RoleBinding.builder().roleIdentifier(ACCOUNT_VIEWER_ROLE).build()));
       }
-      inviteService.create(invite, true);
+      inviteService.create(invite, true, false);
 
       userOptional = ngUserService.getUserByEmail(primaryEmail, true);
 
