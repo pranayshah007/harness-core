@@ -16,6 +16,7 @@ import io.harness.migrations.timescaledb.AddCDNGEntitiesColumns;
 import io.harness.migrations.timescaledb.AddCostEvents;
 import io.harness.migrations.timescaledb.AddDeploymentTagsToDeployment;
 import io.harness.migrations.timescaledb.AddExplorerV2Indices;
+import io.harness.migrations.timescaledb.AddFailureDetailsToDeployment;
 import io.harness.migrations.timescaledb.AddFeedbackToAnomalies;
 import io.harness.migrations.timescaledb.AddFieldsToServiceGuardStats;
 import io.harness.migrations.timescaledb.AddFieldsToWorkflowCVMetrics;
@@ -154,6 +155,7 @@ public class TimescaleDBMigrationList {
         .add(Pair.of(65, CreateUserTable.class))
         .add(Pair.of(66, CreateCloudProviderTable.class))
         .add(Pair.of(67, AddAzureColumnAnomaly.class))
+        .add(Pair.of(68, AddFailureDetailsToDeployment.class))
         .build();
   }
 }

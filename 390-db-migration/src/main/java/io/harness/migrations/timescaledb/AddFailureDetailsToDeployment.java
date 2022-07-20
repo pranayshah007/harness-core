@@ -5,16 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ng.overview.dto;
+package io.harness.migrations.timescaledb;
 
-import lombok.Builder;
-import lombok.Getter;
-
-@Getter
-@Builder
-public class ActiveServiceDeploymentsInfo {
-  private String envId;
-  private String envName;
-  private String tag;
-  private String pipelineExecutionId;
+public class AddFailureDetailsToDeployment extends AbstractTimeScaleDBMigration {
+  @Override
+  public String getFileName() {
+    return "timescaledb/add_failure_details_to_deployment.sql";
+  }
 }
