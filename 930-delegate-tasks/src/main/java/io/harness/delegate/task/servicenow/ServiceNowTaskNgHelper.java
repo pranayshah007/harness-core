@@ -224,7 +224,7 @@ public class ServiceNowTaskNgHelper {
       handleResponse(response, "Failed to update ServiceNow ticket");
       JsonNode responseObj = response.body().get("result");
       String ticketNumber = responseObj.get("record_number").asText();
-      String ticketSysId = responseObj.get("record_sys_id").asText();
+      String ticketSysId = parseTicketSysIdFromResponse(responseObj);
 
       ServiceNowTicketNGBuilder serviceNowTicketNGBuilder =
           fetchServiceNowTicketUsingSysId(ticketSysId, serviceNowTaskNGParameters);
@@ -236,9 +236,18 @@ public class ServiceNowTaskNgHelper {
           .ticket(serviceNowTicketNGBuilder.url(ticketUrlFromSysId).build())
           .build();
     } catch (Exception e) {
-      log.error("Failed to create ServiceNow ticket ");
+      log.error("Failed to update ServiceNow ticket ");
       throw new ServiceNowException(ExceptionUtils.getMessage(e), SERVICENOW_ERROR, USER, e);
     }
+  }
+
+  private String parseTicketSysIdFromResponse(JsonNode responseObj) {
+    JsonNode sysIdNode = responseObj.get("record_sys_id");
+    if (sysIdNode != null) {
+      return sysIdNode.asText();
+    }
+    String[] entries = responseObj.get("record_link").asText().split("[&=]");
+    return entries[1];
   }
 
   private String getIssueIdFromIssueNumber(ServiceNowTaskNGParameters parameters) {
