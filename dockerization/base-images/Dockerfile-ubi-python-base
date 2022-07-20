@@ -17,6 +17,8 @@ FROM us.gcr.io/platform-205701/ubi/ubi-base:latest
 
 USER root
 
+RUN microdnf install yum
+
 ENV PYTHON_VERSION=3.8 \
     PATH=$HOME/.local/bin/:$PATH \
     PYTHONUNBUFFERED=1 \
