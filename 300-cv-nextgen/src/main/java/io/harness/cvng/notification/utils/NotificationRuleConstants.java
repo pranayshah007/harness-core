@@ -20,6 +20,7 @@ public class NotificationRuleConstants {
   public static final String SLO_NAME = "SLO_NAME";
   public static final String HEADER_MESSAGE = "HEADER_MESSAGE";
   public static final String TRIGGER_MESSAGE = "TRIGGER_MESSAGE";
+  public static final String ANOMALOUS_METRIC = "ANOMALOUS_METRIC";
   public static final String MODULE_NAME = "cv";
 
   public static final String THEME_COLOR = "#EC372E";
@@ -31,4 +32,9 @@ public class NotificationRuleConstants {
   public static final String START_TS_SECS = "START_TS_SECS";
   public static final String START_DATE = "START_DATE";
   public static final String URL = "URL";
+
+  public static final String NO_METRIC_ASSIGNED_TO_MONITORED_SERVICE =
+      "No metric has been assigned to this monitored service";
+  public static final int N_TOP_MOST_ANOMALOUS_METRICS = 5;
+  public static final int ANOMALOUS_METRICS_PAGE_NUMBER = 0;
 }
