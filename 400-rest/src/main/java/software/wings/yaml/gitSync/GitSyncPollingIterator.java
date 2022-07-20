@@ -3,8 +3,6 @@ package software.wings.yaml.gitSync;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
-import static software.wings.yaml.gitSync.YamlGitConfig.YamlGitConfigKeys;
-
 import static java.time.Duration.ofMinutes;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -16,6 +14,7 @@ import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.yaml.YamlChangeSetService;
+import software.wings.yaml.gitSync.YamlGitConfig.YamlGitConfigKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
