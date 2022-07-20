@@ -31,6 +31,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Singular;
 import lombok.experimental.FieldNameConstants;
 import org.mongodb.morphia.annotations.Entity;
@@ -43,6 +44,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
+@EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "UserGroupKeys")
 @Entity(value = "user-groups", noClassnameStored = true)
 @Document("user-groups")

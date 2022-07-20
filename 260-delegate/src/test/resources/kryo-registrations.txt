@@ -440,6 +440,7 @@
 5290:io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskParameters
 5291:io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskResponse
 5293:software.wings.api.PcfInstanceElement
+5294:io.harness.delegate.beans.ldap.NGLdapGroupSyncTaskResponse
 5296:software.wings.beans.PcfConfig
 5297:io.harness.delegate.beans.ldap.NGLdapDelegateTaskResponse
 5298:io.harness.delegate.beans.ldap.NGLdapDelegateTaskParameters
