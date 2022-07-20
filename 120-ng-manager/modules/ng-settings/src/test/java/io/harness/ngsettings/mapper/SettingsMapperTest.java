@@ -130,7 +130,7 @@ public class SettingsMapperTest extends CategoryTest {
     SettingConfiguration settingConfiguration = SettingConfiguration.builder().identifier(identifier).build();
     SettingDTO settingDTO = SettingDTO.builder().identifier(identifier).build();
     when(settingsMapper.writeSettingDTO(settingConfiguration, true)).thenReturn(settingDTO);
-    SettingResponseDTO settingResponseDTO = settingsMapper.writeSettingResponseDTO(settingConfiguration);
+    SettingResponseDTO settingResponseDTO = settingsMapper.writeSettingResponseDTO(settingConfiguration, true);
     assertThat(settingResponseDTO)
         .hasFieldOrPropertyWithValue("setting", settingDTO)
         .hasFieldOrPropertyWithValue("lastModifiedAt", null);

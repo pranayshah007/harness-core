@@ -43,6 +43,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -70,33 +72,31 @@ public class SettingsServiceImpl implements SettingsService {
       SettingCategory category, String group) {
     Map<String, SettingConfiguration> settingConfigurations =
         getSettingConfigurations(accountIdentifier, orgIdentifier, projectIdentifier, category, group);
-    Map<String, Setting> settings = getSettings(accountIdentifier, orgIdentifier, projectIdentifier, category, group);
-    // get parent scopes settings
-
+    Map<Pair<String, Scope>, Setting> settings = getSettings(accountIdentifier, category, group);
     List<SettingResponseDTO> settingResponseDTOList = new ArrayList<>();
     settingConfigurations.forEach((identifier, settingConfiguration) -> {
-      if (settings.containsKey(identifier)) {
+      Pair<String, Scope> currentScopeSettingKey =
+          new ImmutablePair<>(identifier, Scope.of(accountIdentifier, orgIdentifier, projectIdentifier));
+      if (settings.containsKey(currentScopeSettingKey)) {
         settingResponseDTOList.add(
-            settingsMapper.writeSettingResponseDTO(settings.get(identifier), settingConfiguration, true));
+            settingsMapper.writeSettingResponseDTO(settings.get(currentScopeSettingKey), settingConfiguration, true));
       } else {
-        // check for parent scopes in hierarchy
         Scope currentScope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
-        settingResponseDTOList.add(getSettingResponseDTOFromParentScopes(currentScope, settingConfiguration));
+        settingResponseDTOList.add(getSettingResponseDTOFromParentScopes(currentScope, settingConfiguration, settings));
       }
     });
     return settingResponseDTOList;
   }
 
   private SettingResponseDTO getSettingResponseDTOFromParentScopes(
-      Scope currentScope, SettingConfiguration settingConfiguration) {
+      Scope currentScope, SettingConfiguration settingConfiguration, Map<Pair<String, Scope>, Setting> settings) {
     while ((currentScope = getParentScope(currentScope)) != null) {
-      Optional<Setting> setting =
-          settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
-              currentScope.getAccountIdentifier(), currentScope.getOrgIdentifier(), currentScope.getProjectIdentifier(),
-              settingConfiguration.getIdentifier());
-      if (setting.isPresent()) {
-        return settingsMapper.writeSettingResponseDTO(
-            setting.get(), settingConfiguration, setting.get().getAllowOverrides());
+      Pair<String, Scope> currentScopeSettingKey = new ImmutablePair<>(settingConfiguration.getIdentifier(),
+          Scope.of(currentScope.getAccountIdentifier(), currentScope.getOrgIdentifier(),
+              currentScope.getProjectIdentifier()));
+      Setting setting = settings.get(currentScopeSettingKey);
+      if (setting != null) {
+        return settingsMapper.writeSettingResponseDTO(setting, settingConfiguration, setting.getAllowOverrides());
       }
     }
     return settingsMapper.writeSettingResponseDTO(settingConfiguration, settingConfiguration.getAllowOverrides());
@@ -210,17 +210,18 @@ public class SettingsServiceImpl implements SettingsService {
     return settingConfigurationRepository.save(settingConfiguration);
   }
 
-  private Map<String, Setting> getSettings(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      SettingCategory category, String group) {
+  private Map<Pair<String, Scope>, Setting> getSettings(
+      String accountIdentifier, SettingCategory category, String group) {
     List<Setting> settings;
     if (group != null) {
-      settings = settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndCategoryAndGroup(
-          accountIdentifier, orgIdentifier, projectIdentifier, category, group);
+      settings = settingRepository.findByAccountIdentifierAndCategoryAndGroup(accountIdentifier, category, group);
     } else {
-      settings = settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndCategory(
-          accountIdentifier, orgIdentifier, projectIdentifier, category);
+      settings = settingRepository.findByAccountIdentifierAndCategory(accountIdentifier, category);
     }
-    return settings.stream().collect(Collectors.toMap(Setting::getIdentifier, Function.identity()));
+    return settings.stream().collect(Collectors.toMap(setting
+        -> new ImmutablePair<>(setting.getIdentifier(),
+            Scope.of(accountIdentifier, setting.getOrgIdentifier(), setting.getProjectIdentifier())),
+        Function.identity()));
   }
 
   private Map<String, SettingConfiguration> getSettingConfigurations(String accountIdentifier, String orgIdentifier,

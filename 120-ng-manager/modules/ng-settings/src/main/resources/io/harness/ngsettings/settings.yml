@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 1
+version : 3
 settings :
   - identifier: test_setting_CI
     name: Test CI setting
@@ -8,7 +8,6 @@ settings :
     group: group_1
     defaultValue: default
     valueType : STRING
-    allowedValues : ~
     allowOverrides : false
     allowedScopes :
       - ACCOUNT
@@ -20,11 +19,9 @@ settings :
     defaultValue: 2
     valueType: NUMBER
     group: group_1
-    allowedValues: ~
     allowedScopes:
       - ACCOUNT
       - ORGANIZATION
-      - PROJECT
   - identifier: test_setting_CI_3
     name: Test CI setting
     category: CI
@@ -32,11 +29,8 @@ settings :
     defaultValue: default
     valueType: STRING
     allowedValues: ~
-    allowOverrides: false
     allowedScopes:
       - ACCOUNT
-      - ORGANIZATION
-      - PROJECT
   - identifier: test_setting_CI_4
     name: Test CI setting
     category: CI
@@ -104,17 +98,17 @@ settings :
       - ACCOUNT
       - ORGANIZATION
       - PROJECT
-#  - identifier: test_setting_CD_3
-#    name: Test CD setting 3
-#    category : CD
-#    defaultValue: ~
-#    valueType : STRING
-#    allowedValues : ~
-#    allowOverrides : true
-#    allowedScopes :
-#      - ACCOUNT
-#      - ORGANIZATION
-#      - PROJECT
+  - identifier: test_setting_CD_3
+    name: Test CD setting 3
+    category : CD
+    defaultValue: ~
+    valueType : STRING
+    allowedValues : ~
+    allowOverrides : true
+    allowedScopes :
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
 #  - identifier: test_setting_CI_1
 #    name: Test CI setting 1
 #    category : CI

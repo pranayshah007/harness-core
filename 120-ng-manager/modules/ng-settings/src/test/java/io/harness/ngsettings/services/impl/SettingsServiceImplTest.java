@@ -84,16 +84,16 @@ public class SettingsServiceImplTest extends CategoryTest {
         .thenReturn(new ArrayList<>());
     when(settingConfigurationRepository.findByCategoryAndAllowedScopesIn(any(), any()))
         .thenReturn(List.of(settingConfigurations.get(identifier)));
-    when(settingsMapper.writeSettingResponseDTO(settingConfiguration))
+    when(settingsMapper.writeSettingResponseDTO(settingConfiguration, true))
         .thenReturn(SettingResponseDTO.builder().setting(SettingDTO.builder().identifier(identifier).build()).build());
-    List<SettingResponseDTO> dtoList = settingsService.list(accountIdentifier, null, null, SettingCategory.CORE);
+    List<SettingResponseDTO> dtoList = settingsService.list(accountIdentifier, null, null, SettingCategory.CORE, null);
     verify(settingRepository, times(1))
         .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndCategory(
             accountIdentifier, null, null, SettingCategory.CORE);
     verify(settingConfigurationRepository, times(1))
         .findByCategoryAndAllowedScopesIn(SettingCategory.CORE, List.of(ScopeLevel.ACCOUNT));
     verify(settingsMapper, times(0)).writeSettingResponseDTO(any(), any());
-    verify(settingsMapper, times(settingConfigurations.size())).writeSettingResponseDTO(any());
+    verify(settingsMapper, times(settingConfigurations.size())).writeSettingResponseDTO(any(), any());
     assertThat(dtoList.size()).isEqualTo(settingConfigurations.size());
   }
 
@@ -114,15 +114,15 @@ public class SettingsServiceImplTest extends CategoryTest {
         .thenReturn(List.of(settings.get(identifier)));
     when(settingConfigurationRepository.findByCategoryAndAllowedScopesIn(any(), any()))
         .thenReturn(List.of(settingConfigurations.get(identifier)));
-    when(settingsMapper.writeSettingResponseDTO(setting, settingConfiguration))
+    when(settingsMapper.writeSettingResponseDTO(setting, settingConfiguration, true))
         .thenReturn(SettingResponseDTO.builder().setting(SettingDTO.builder().identifier(identifier).build()).build());
-    List<SettingResponseDTO> dtoList = settingsService.list(accountIdentifier, null, null, SettingCategory.CORE);
+    List<SettingResponseDTO> dtoList = settingsService.list(accountIdentifier, null, null, SettingCategory.CORE, null);
     verify(settingRepository, times(1))
         .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndCategory(
             accountIdentifier, null, null, SettingCategory.CORE);
     verify(settingConfigurationRepository, times(1))
         .findByCategoryAndAllowedScopesIn(SettingCategory.CORE, List.of(ScopeLevel.ACCOUNT));
-    verify(settingsMapper, times(0)).writeSettingResponseDTO(any());
+    verify(settingsMapper, times(0)).writeSettingResponseDTO(any(), any());
     verify(settingsMapper, times(settings.size())).writeSettingResponseDTO(any(), any());
     assertThat(dtoList.size()).isEqualTo(settingConfigurations.size());
   }
@@ -150,7 +150,7 @@ public class SettingsServiceImplTest extends CategoryTest {
     doNothing().when(settingRepository).delete(setting);
     when(settingConfigurationRepository.findByIdentifierAndAllowedScopesIn(anyString(), any()))
         .thenReturn(ofNullable(settingConfiguration));
-    when(settingsMapper.writeSettingResponseDTO(settingConfiguration)).thenReturn(settingResponseDTO);
+    when(settingsMapper.writeSettingResponseDTO(settingConfiguration, true)).thenReturn(settingResponseDTO);
     when(settingsMapper.writeBatchResponseDTO(settingResponseDTO)).thenReturn(settingBatchResponseDTO);
     List<SettingUpdateResponseDTO> batchResponse =
         settingsService.update(accountIdentifier, null, null, List.of(settingRequestDTO));
@@ -193,7 +193,7 @@ public class SettingsServiceImplTest extends CategoryTest {
     when(settingsMapper.writeNewDTO(setting, settingRequestDTO, settingConfiguration)).thenReturn(settingDTO);
     when(settingRepository.upsert(newSetting)).thenReturn(newSetting);
     when(settingsMapper.toSetting(accountIdentifier, settingDTO)).thenReturn(newSetting);
-    when(settingsMapper.writeSettingResponseDTO(newSetting, settingConfiguration)).thenReturn(settingResponseDTO);
+    when(settingsMapper.writeSettingResponseDTO(newSetting, settingConfiguration, true)).thenReturn(settingResponseDTO);
     when(settingsMapper.writeBatchResponseDTO(settingResponseDTO)).thenReturn(settingBatchResponseDTO);
     List<SettingUpdateResponseDTO> batchResponse =
         settingsService.update(accountIdentifier, null, null, List.of(settingRequestDTO));

@@ -32,4 +32,7 @@ public interface SettingRepository extends PagingAndSortingRepository<Setting, S
   void deleteByAccountIdentifierAndIdentifier(String accountIdentifier, String identifier);
   void deleteByAccountIdentifierAndOrgIdentifierAndIdentifier(
       String accountIdentifier, String orgIdentifier, String identifier);
+  List<Setting> findByAccountIdentifierAndCategoryAndGroup(
+      String accountIdentifier, SettingCategory category, String group);
+  List<Setting> findByAccountIdentifierAndCategory(String accountIdentifier, SettingCategory category);
 }
