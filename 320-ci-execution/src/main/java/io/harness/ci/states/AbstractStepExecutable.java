@@ -22,6 +22,7 @@ import static io.harness.steps.StepUtils.buildAbstractions;
 
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
@@ -112,7 +113,6 @@ import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
-import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -184,7 +184,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
     String logKey = getLogKey(ambiance);
     String stepGroupIdentifier = AmbianceUtils.obtainStepGroupIdentifier(ambiance);
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
-    if (Strings.isNotBlank(stepGroupIdentifier)) {
+    if (isNotBlank(stepGroupIdentifier)) {
       stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
     }
     String accountId = AmbianceUtils.getAccountId(ambiance);

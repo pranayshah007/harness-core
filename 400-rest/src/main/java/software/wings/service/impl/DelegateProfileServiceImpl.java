@@ -18,6 +18,7 @@ import static io.harness.persistence.HPersistence.returnNewOptions;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.jsoup.helper.StringUtil.isBlank;
 import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.annotations.dev.BreakDependencyOn;
@@ -67,7 +68,6 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
 import io.dropwizard.jersey.validation.JerseyViolationException;
-import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -318,7 +318,7 @@ public class DelegateProfileServiceImpl implements DelegateProfileService, Accou
 
   @Override
   public DelegateProfile add(DelegateProfile delegateProfile) {
-    if (Strings.isNullOrBlank(delegateProfile.getIdentifier())) {
+    if (isBlank(delegateProfile.getIdentifier())) {
       delegateProfile.setIdentifier(Utils.normalizeIdentifier(delegateProfile.getName()));
     }
     if (delegateProfile.isNg()) {
@@ -333,7 +333,7 @@ public class DelegateProfileServiceImpl implements DelegateProfileService, Accou
                   .reduce("", (i, j) -> i + " <" + j + "> "));
       }
     }
-    if (Strings.isNotBlank(delegateProfile.getIdentifier())
+    if (isNotBlank(delegateProfile.getIdentifier())
         && identifierExists(
             delegateProfile.getAccountId(), delegateProfile.getOwner(), delegateProfile.getIdentifier())) {
       throw new InvalidRequestException(

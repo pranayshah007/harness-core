@@ -14,6 +14,7 @@ import static software.wings.service.impl.instance.ServerlessDashboardServiceImp
 import static software.wings.service.impl.instance.ServerlessDashboardServiceImpl.SERVICE_ID;
 
 import static java.util.Collections.singletonList;
+import static org.apache.commons.collections.MapUtils.isEmpty;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
@@ -158,7 +159,7 @@ public class ServerlessDashboardServiceImplTest extends CategoryTest {
         Arrays.asList(EntityType.SERVICE.name(), SettingCategory.CLOUD_PROVIDER.name(), SERVERLESS_FUNCTION_INVOCATION),
         0);
     assertThat(appInstanceSummaryStats.getTotalCount()).isEqualTo(0);
-    assertThat(Maps.isNullOrEmpty(appInstanceSummaryStats.getCountMap())).isTrue();
+    assertThat(isEmpty(appInstanceSummaryStats.getCountMap())).isTrue();
   }
 
   @Test

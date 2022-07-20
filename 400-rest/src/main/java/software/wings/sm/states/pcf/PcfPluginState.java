@@ -99,7 +99,6 @@ import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Ints;
 import com.google.inject.Inject;
-import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -246,7 +245,7 @@ public class PcfPluginState extends State {
   }
 
   private String canonacalizePath(String path) {
-    return Strings.defaultIfEmpty(path.trim(), "/");
+    return defaultIfEmpty(path.trim(), "/");
   }
 
   private boolean isServiceManifestRemote(ApplicationManifest serviceManifest) {

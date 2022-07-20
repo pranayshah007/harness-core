@@ -9,6 +9,8 @@ package io.harness.ci.utils;
 
 import static io.harness.exception.WingsException.USER;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.BranchWebhookEvent;
@@ -28,7 +30,6 @@ import io.harness.product.ci.scm.proto.PushHook;
 import io.harness.product.ci.scm.proto.Signature;
 import io.harness.product.ci.scm.proto.User;
 
-import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.experimental.UtilityClass;
@@ -152,7 +153,7 @@ public class WebhookTriggerProcessorUtils {
 
   public String getShortCommitSha(String commitSha) {
     String shortCommitSha = null;
-    if (Strings.isNotBlank(commitSha)) {
+    if (isNotBlank(commitSha)) {
       shortCommitSha = commitSha.substring(0, Math.min(commitSha.length(), 7));
     }
     return shortCommitSha;

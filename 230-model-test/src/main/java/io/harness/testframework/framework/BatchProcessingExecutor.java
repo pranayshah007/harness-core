@@ -20,7 +20,6 @@ import io.harness.testframework.framework.utils.ExecutorUtils;
 import io.harness.threading.Poller;
 
 import com.google.inject.Singleton;
-import io.fabric8.utils.Strings;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -29,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.StartedProcess;
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
@@ -92,7 +92,7 @@ public class BatchProcessingExecutor {
         command.add("--ensure-timescale=false");
         // yaml config file is read from the root directory, '--config-file' param doesn't make any difference.
 
-        log.info(Strings.join(command, " "));
+        log.info(StringUtils.join(command, " "));
 
         ProcessExecutor processExecutor = new ProcessExecutor();
         processExecutor.directory(directory);

@@ -21,6 +21,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -73,7 +74,6 @@ import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -204,7 +204,7 @@ public class K8InitializeStepUtils {
       OSType os, int maxAllocatableMemoryRequest, int maxAllocatableCpuRequest, int stepIndex,
       String stepGroupIdOfParent) {
     StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
-    if (Strings.isNotBlank(stepGroupIdOfParent)) {
+    if (isNotBlank(stepGroupIdOfParent)) {
       stepElementConfig.setIdentifier(stepGroupIdOfParent + "_" + stepElementConfig.getIdentifier());
     }
 

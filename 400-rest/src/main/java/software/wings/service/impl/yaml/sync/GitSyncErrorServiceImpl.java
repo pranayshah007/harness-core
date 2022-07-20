@@ -15,6 +15,7 @@ import static io.harness.beans.SearchFilter.Operator.IN;
 import static io.harness.beans.SortOrder.OrderType.DESC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.HarnessStringUtils.nullIfEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.CreatedAtAware.CREATED_AT_KEY;
 
@@ -44,6 +45,7 @@ import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
+import io.harness.data.structure.HarnessStringUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.git.model.ChangeType;
@@ -84,7 +86,6 @@ import software.wings.yaml.gitSync.YamlGitConfig.YamlGitConfigKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -672,9 +673,9 @@ public class GitSyncErrorServiceImpl implements GitSyncErrorService {
         : yamlGitService.fetchYamlGitConfig(appId, failedGitFileChange.getAccountId());
 
     if (yamlGitConfig != null) {
-      final String gitConnectorId = Strings.emptyIfNull(yamlGitConfig.getGitConnectorId());
-      final String branchName = Strings.emptyIfNull(yamlGitConfig.getBranchName());
-      final String repositoryName = Strings.nullIfEmpty(yamlGitConfig.getRepositoryName());
+      final String gitConnectorId = HarnessStringUtils.emptyIfNull(yamlGitConfig.getGitConnectorId());
+      final String branchName = HarnessStringUtils.emptyIfNull(yamlGitConfig.getBranchName());
+      final String repositoryName = nullIfEmpty(yamlGitConfig.getRepositoryName());
       failedUpdateOperations.set(GitSyncErrorKeys.gitConnectorId, gitConnectorId);
       failedUpdateOperations.set(GitSyncErrorKeys.branchName, branchName);
       failedUpdateOperations.set(GitSyncErrorKeys.yamlGitConfigId, yamlGitConfig.getUuid());

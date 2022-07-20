@@ -31,6 +31,7 @@ import static io.harness.azure.model.AzureConstants.VMSS_IDS_IS_NULL_VALIDATION_
 import static io.harness.azure.model.AzureConstants.VM_INSTANCE_IDS_LIST_EMPTY_VALIDATION_MSG;
 import static io.harness.azure.model.AzureConstants.VM_INSTANCE_IDS_NOT_NUMBERS_VALIDATION_MSG;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.NullCheckUtils.notNull;
 
 import static com.microsoft.azure.management.compute.PowerState.RUNNING;
 import static java.lang.String.format;
@@ -73,7 +74,6 @@ import com.microsoft.azure.management.network.implementation.PublicIPAddressInne
 import com.microsoft.azure.management.resources.ResourceGroup;
 import com.microsoft.azure.management.resources.Subscription;
 import com.microsoft.azure.management.resources.fluentcore.arm.models.HasName;
-import io.fabric8.utils.Objects;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -128,7 +128,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
 
     Azure azure = getAzureClient(azureConfig, subscriptionId);
 
-    Objects.notNull(azure.virtualMachineScaleSets().getByResourceGroup(resourceGroupName, virtualScaleSetName),
+    notNull(azure.virtualMachineScaleSets().getByResourceGroup(resourceGroupName, virtualScaleSetName),
         format("There is no virtual machine scale set with name %s", virtualScaleSetName));
 
     log.debug("Start deleting Virtual Machine Scale Sets by resourceGroupName: {}", resourceGroupName);
@@ -137,7 +137,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
 
   @Override
   public void bulkDeleteVirtualMachineScaleSets(AzureConfig azureConfig, String subscriptionId, List<String> vmssIDs) {
-    Objects.notNull(vmssIDs, VMSS_IDS_IS_NULL_VALIDATION_MSG);
+    notNull(vmssIDs, VMSS_IDS_IS_NULL_VALIDATION_MSG);
     if (vmssIDs.isEmpty()) {
       return;
     }
@@ -186,7 +186,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
 
     Azure azure = getAzureClient(azureConfig, subscriptionId);
 
-    Objects.notNull(azure.virtualMachineScaleSets().getById(virtualMachineScaleSetId),
+    notNull(azure.virtualMachineScaleSets().getById(virtualMachineScaleSetId),
         format("There is no virtual machine scale set with virtualMachineScaleSetId %s", virtualMachineScaleSetId));
 
     log.debug("Start deleting Virtual Machine Scale Sets by virtualMachineScaleSetId: {}", virtualMachineScaleSetId);
@@ -233,7 +233,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
   @Override
   public List<Subscription> listSubscriptions(AzureConfig azureConfig) {
     Azure azure = getAzureClientWithDefaultSubscription(azureConfig);
-    Objects.notNull(azure, AZURE_MANAGEMENT_CLIENT_NULL_VALIDATION_MSG);
+    notNull(azure, AZURE_MANAGEMENT_CLIENT_NULL_VALIDATION_MSG);
 
     log.debug("Start listing subscriptions for tenantId {}", azureConfig.getTenantId());
     PagedList<Subscription> subscriptions = azure.subscriptions().list();
@@ -244,7 +244,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
   public List<String> listWebAppNamesBySubscriptionIdAndResourceGroup(
       AzureConfig azureConfig, String subscriptionId, String resourceGroup) {
     Azure azure = getAzureClient(azureConfig, subscriptionId);
-    Objects.notNull(azure, AZURE_MANAGEMENT_CLIENT_NULL_VALIDATION_MSG);
+    notNull(azure, AZURE_MANAGEMENT_CLIENT_NULL_VALIDATION_MSG);
     log.debug("Start listing Web App Names for tenantId {}", azureConfig.getTenantId());
     PagedList<WebApp> webAppNames = azure.webApps().listByResourceGroup(resourceGroup);
     return webAppNames.stream().map(HasName::name).collect(Collectors.toList());
@@ -254,7 +254,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
   public List<DeploymentSlot> listWebAppDeploymentSlots(
       AzureConfig azureConfig, String subscriptionId, String resourceGroup, String webAppName) {
     Azure azure = getAzureClient(azureConfig, subscriptionId);
-    Objects.notNull(azure, AZURE_MANAGEMENT_CLIENT_NULL_VALIDATION_MSG);
+    notNull(azure, AZURE_MANAGEMENT_CLIENT_NULL_VALIDATION_MSG);
     log.debug("Start listing Web App deployment slots for tenantId {}", azureConfig.getTenantId());
     WebApp webApp = getWebApp(azure, resourceGroup, webAppName);
 
@@ -332,7 +332,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
       throw new IllegalArgumentException(NEW_VIRTUAL_MACHINE_SCALE_SET_NAME_IS_NULL_VALIDATION_MSG);
     }
 
-    Objects.notNull(baseVirtualMachineScaleSet, BASE_VIRTUAL_MACHINE_SCALE_SET_IS_NULL_VALIDATION_MSG);
+    notNull(baseVirtualMachineScaleSet, BASE_VIRTUAL_MACHINE_SCALE_SET_IS_NULL_VALIDATION_MSG);
 
     Azure azure = getAzureClient(azureConfig, subscriptionId);
 
@@ -455,8 +455,8 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
   public VirtualMachineScaleSet attachVMSSToBackendPools(AzureConfig azureConfig,
       VirtualMachineScaleSet virtualMachineScaleSet, LoadBalancer primaryInternetFacingLoadBalancer,
       final String... backendPools) {
-    Objects.notNull(virtualMachineScaleSet, VIRTUAL_MACHINE_SCALE_SET_NULL_VALIDATION_MSG);
-    Objects.notNull(primaryInternetFacingLoadBalancer, PRIMARY_INTERNET_FACING_LOAD_BALANCER_NULL_VALIDATION_MSG);
+    notNull(virtualMachineScaleSet, VIRTUAL_MACHINE_SCALE_SET_NULL_VALIDATION_MSG);
+    notNull(primaryInternetFacingLoadBalancer, PRIMARY_INTERNET_FACING_LOAD_BALANCER_NULL_VALIDATION_MSG);
     if (backendPools.length == 0) {
       throw new IllegalArgumentException(BACKEND_POOLS_LIST_EMPTY_VALIDATION_MSG);
     }
@@ -486,7 +486,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
   @Override
   public VirtualMachineScaleSet detachVMSSFromBackendPools(
       AzureConfig azureConfig, VirtualMachineScaleSet virtualMachineScaleSet, final String... backendPools) {
-    Objects.notNull(virtualMachineScaleSet, VIRTUAL_MACHINE_SCALE_SET_NULL_VALIDATION_MSG);
+    notNull(virtualMachineScaleSet, VIRTUAL_MACHINE_SCALE_SET_NULL_VALIDATION_MSG);
     if (backendPools.length == 0) {
       throw new IllegalArgumentException(BACKEND_POOLS_LIST_EMPTY_VALIDATION_MSG);
     }

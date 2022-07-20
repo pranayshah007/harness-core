@@ -14,6 +14,7 @@ import static io.harness.testframework.framework.utils.ExecutorUtils.addJar;
 
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
+import static org.apache.commons.lang3.StringUtils.join;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,7 +22,6 @@ import io.harness.filesystem.FileIo;
 import io.harness.resource.Project;
 import io.harness.threading.Poller;
 
-import io.fabric8.utils.Strings;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -74,7 +74,7 @@ public class WatcherExecutor {
         addJar(jar, command);
         addConfig(config, command);
 
-        log.info(Strings.join(command, " "));
+        log.info(join(command, " "));
 
         ProcessExecutor processExecutor = new ProcessExecutor();
         processExecutor.directory(directory);

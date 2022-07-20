@@ -32,7 +32,6 @@ import software.wings.service.intfc.DelegateService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Strings;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -43,6 +42,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.ws.rs.core.GenericType;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.StartedProcess;
 
@@ -106,7 +106,7 @@ public class DelegateExecutor {
         addJar(jar, command);
         addConfig(config, command);
 
-        log.info(Strings.join(command, " "));
+        log.info(StringUtils.join(command, " "));
 
         ProcessExecutor processExecutor = new ProcessExecutor();
         processExecutor.directory(directory);

@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.System.currentTimeMillis;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -67,7 +68,6 @@ import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.util.Durations;
 import com.google.protobuf.util.Timestamps;
-import io.fabric8.utils.Strings;
 import io.grpc.StatusRuntimeException;
 import java.time.Duration;
 import java.util.Collections;
@@ -116,7 +116,7 @@ public class DelegateServiceGrpcClient {
         submitTaskInternal(TaskMode.SYNC, taskRequest, delegateCallbackToken, Duration.ZERO);
     final String taskId = submitTaskResponse.getTaskId().getId();
     return delegateSyncService.waitForTask(taskId,
-        Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
+        defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
         Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null);
   }
 
@@ -142,7 +142,7 @@ public class DelegateServiceGrpcClient {
         submitTaskInternal(TaskMode.SYNC, taskRequest, delegateCallbackToken, Duration.ZERO);
     final String taskId = submitTaskResponse.getTaskId().getId();
     return delegateSyncService.waitForTask(taskId,
-        Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
+        defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
         Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null);
   }
 

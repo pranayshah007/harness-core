@@ -12,6 +12,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.validation.Validator.notNullCheck;
 
+import static org.apache.commons.lang3.StringUtils.join;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.event.handler.marketo.MarketoRestClient;
 import io.harness.event.model.marketo.Error;
@@ -32,7 +34,6 @@ import software.wings.service.intfc.UserService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Strings;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -179,7 +180,7 @@ public class MarketoHelper {
     }
 
     if (userInvite != null && isNotEmpty(userInvite.getFreemiumProducts())) {
-      lead.setFreemium_Products__c(Strings.join(userInvite.getFreemiumProducts(), ";"));
+      lead.setFreemium_Products__c(join(userInvite.getFreemiumProducts(), ";"));
     }
 
     if (userInvite != null && userInvite.getFreemiumAssistedOption() != null) {

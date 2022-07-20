@@ -16,6 +16,7 @@ import static io.harness.testframework.framework.utils.ExecutorUtils.getJar;
 
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
+import static org.apache.commons.lang3.StringUtils.join;
 
 import io.harness.filesystem.FileIo;
 import io.harness.project.Alpn;
@@ -23,7 +24,6 @@ import io.harness.resource.Project;
 import io.harness.threading.Poller;
 
 import com.google.inject.Singleton;
-import io.fabric8.utils.Strings;
 import io.grpc.Channel;
 import io.grpc.health.v1.HealthCheckRequest;
 import io.grpc.health.v1.HealthCheckResponse.ServingStatus;
@@ -101,7 +101,7 @@ public class EventServerExecutor {
         addJar(jar, command);
         addConfig(config, command);
 
-        log.info(Strings.join(command, " "));
+        log.info(join(command, " "));
 
         ProcessExecutor processExecutor = new ProcessExecutor();
         processExecutor.directory(directory);

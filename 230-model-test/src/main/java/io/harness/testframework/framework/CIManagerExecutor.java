@@ -23,7 +23,6 @@ import io.harness.project.Alpn;
 import io.harness.resource.Project;
 import io.harness.threading.Poller;
 
-import io.fabric8.utils.Strings;
 import io.restassured.RestAssured;
 import io.restassured.config.RestAssuredConfig;
 import java.io.File;
@@ -34,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.params.CoreConnectionPNames;
 import org.zeroturnaround.exec.ProcessExecutor;
@@ -107,7 +107,7 @@ public class CIManagerExecutor {
     command.add(verb);
     addConfig(config, command);
 
-    log.info(Strings.join(command, " "));
+    log.info(StringUtils.join(command, " "));
 
     ProcessExecutor processExecutor = new ProcessExecutor();
     processExecutor.directory(directory);

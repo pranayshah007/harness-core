@@ -10,6 +10,8 @@ package software.wings.security.authentication.oauth;
 import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import static org.jsoup.helper.StringUtil.isBlank;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.WingsException;
@@ -17,7 +19,6 @@ import io.harness.exception.WingsException;
 import software.wings.security.JWT_CATEGORY;
 import software.wings.security.SecretManager;
 
-import io.fabric8.utils.Strings;
 import java.net.URI;
 import java.net.URISyntaxException;
 import lombok.extern.slf4j.Slf4j;
@@ -56,7 +57,7 @@ public class BaseOauthClient {
     String email = oauthUserInfo.getEmail();
     String handle = email.substring(0, email.indexOf('@'));
     log.info("Populating the name, from email. Email is {} and the new name is {} ", email, handle);
-    oauthUserInfo.setLogin(Strings.isNullOrBlank(oauthUserInfo.getLogin()) ? handle : oauthUserInfo.getEmail());
-    oauthUserInfo.setName(Strings.isNullOrBlank(oauthUserInfo.getName()) ? handle : oauthUserInfo.getName());
+    oauthUserInfo.setLogin(isBlank(oauthUserInfo.getLogin()) ? handle : oauthUserInfo.getEmail());
+    oauthUserInfo.setName(isBlank(oauthUserInfo.getName()) ? handle : oauthUserInfo.getName());
   }
 }
