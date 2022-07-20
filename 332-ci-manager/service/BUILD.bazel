@@ -13,6 +13,8 @@ shared_dependencies = [
     "//960-ng-license-usage-beans:module",
     "@maven//:org_projectlombok_lombok",
 
+    "//323-sto-utilities:module",
+
     "//878-ng-common-utilities:module",
     "//930-delegate-tasks:module",
     "//960-persistence:module",
@@ -401,6 +403,8 @@ shared_dependencies = [
 java_library(
     name = "module",
     srcs = glob(["src/main/java/**/*.java"]),
+#    srcs = glob(["src/main/java/io/harness/ci/app/**/*.java", "src/main/java/io/harness/ci/beans/**/*.java", "src/main/java/io/harness/ci/serializer/**/*.java"]),
+#    srcs = glob(["src/main/java/io/harness/ci/beans/**/*.java", "src/main/java/io/harness/ci/execution/**/*.java", "src/main/java/io/harness/ci/serializer/**/*.java"]),
     resources = [
         "//332-ci-manager/service/src/main/resources:resource",
     ],
