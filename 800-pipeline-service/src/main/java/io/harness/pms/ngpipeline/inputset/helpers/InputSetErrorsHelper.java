@@ -20,6 +20,7 @@ import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.InputSetYamlHelper;
+import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.merger.helpers.YamlSubMapExtractor;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
@@ -111,14 +112,23 @@ public class InputSetErrorsHelper {
   // TODO(BRIJESH): This method is duplicated in ExecutionInputServiceImpl. Do the refactoring and keep this at only one
   // place.
   public Map<FQN, String> getInvalidFQNsInInputSet(String templateYaml, String inputSetPipelineCompYaml) {
-    Map<FQN, String> errorMap = new LinkedHashMap<>();
     YamlConfig inputSetConfig = new YamlConfig(inputSetPipelineCompYaml);
+    YamlConfig templateConfig = new YamlConfig(templateYaml);
+    return getInvalidFQNsInInputSetFromTemplateConfig(templateConfig, inputSetConfig);
+  }
+
+  public Map<FQN, String> getInvalidFQNsInInputSet(YamlConfig pipelineYamlConfig, YamlConfig inputSetConfig) {
+    YamlConfig templateYamlConfig = RuntimeInputFormHelper.createRuntimeInputFormYamlConfig(pipelineYamlConfig, true);
+    return getInvalidFQNsInInputSetFromTemplateConfig(templateYamlConfig, inputSetConfig);
+  }
+
+  Map<FQN, String> getInvalidFQNsInInputSetFromTemplateConfig(YamlConfig templateConfig, YamlConfig inputSetConfig) {
+    Map<FQN, String> errorMap = new LinkedHashMap<>();
     Set<FQN> inputSetFQNs = new LinkedHashSet<>(inputSetConfig.getFqnToValueMap().keySet());
-    if (EmptyPredicate.isEmpty(templateYaml)) {
+    if (EmptyPredicate.isEmpty(templateConfig.getFqnToValueMap())) {
       inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Pipeline no longer contains any runtime input"));
       return errorMap;
     }
-    YamlConfig templateConfig = new YamlConfig(templateYaml);
 
     templateConfig.getFqnToValueMap().keySet().forEach(key -> {
       if (inputSetFQNs.contains(key)) {

@@ -32,6 +32,8 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import java.util.List;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -42,7 +44,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.validator.constraints.NotEmpty;
 import retrofit2.http.Body;
 
 @Api("/delegate")
@@ -66,7 +67,7 @@ public class DelegateTagsResource {
   @ExceptionMetered
   @AuthRule(permissionType = MANAGE_DELEGATES)
   @ApiKeyAuthorized(permissionType = MANAGE_DELEGATES)
-  public RestResponse<DelegateDTO> updateTags(
+  public RestResponse<DelegateDTO> listTags(
       @PathParam("delegateId") @NotEmpty String delegateId, @QueryParam("accountId") @NotEmpty String accountId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
@@ -113,6 +114,19 @@ public class DelegateTagsResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
       return new RestResponse<>(delegateService.deleteDelegateTags(accountId, delegateId));
+    }
+  }
+
+  @POST
+  @Path("/filter-with-tags")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = MANAGE_DELEGATES)
+  @ApiKeyAuthorized(permissionType = MANAGE_DELEGATES)
+  public RestResponse<List<DelegateDTO>> listDelegatesHavingTags(
+      @QueryParam("accountId") @NotEmpty String accountId, @Body @NotNull DelegateTags delegateTags) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      return new RestResponse<>(delegateService.listDelegatesHavingTags(accountId, delegateTags));
     }
   }
 }

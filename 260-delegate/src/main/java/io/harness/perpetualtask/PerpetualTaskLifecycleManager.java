@@ -37,10 +37,11 @@ public class PerpetualTaskLifecycleManager {
   private final PerpetualTaskExecutor perpetualTaskExecutor;
   private final PerpetualTaskServiceAgentClient perpetualTaskServiceAgentClient;
   private final AtomicInteger currentlyExecutingPerpetualTasksCount;
+  private final String accountId;
 
   PerpetualTaskLifecycleManager(PerpetualTaskId taskId, PerpetualTaskExecutionContext context,
       Map<String, PerpetualTaskExecutor> factoryMap, PerpetualTaskServiceAgentClient perpetualTaskServiceAgentClient,
-      TimeLimiter timeLimiter, AtomicInteger currentlyExecutingPerpetualTasksCount) {
+      TimeLimiter timeLimiter, AtomicInteger currentlyExecutingPerpetualTasksCount, String accountId) {
     this.taskId = taskId;
     this.context = context;
     this.timeLimiter = timeLimiter;
@@ -49,6 +50,7 @@ public class PerpetualTaskLifecycleManager {
     perpetualTaskExecutor = factoryMap.get(getTaskType(params));
     timeoutMillis = Durations.toMillis(context.getTaskSchedule().getTimeout());
     this.currentlyExecutingPerpetualTasksCount = currentlyExecutingPerpetualTasksCount;
+    this.accountId = accountId;
   }
 
   void startTask() {
@@ -91,7 +93,7 @@ public class PerpetualTaskLifecycleManager {
       log.error("Exception is ", ex);
       decrementTaskCounter();
     }
-    perpetualTaskServiceAgentClient.heartbeat(taskId, taskStartTime, perpetualTaskResponse);
+    perpetualTaskServiceAgentClient.heartbeat(taskId, taskStartTime, perpetualTaskResponse, accountId);
     return null;
   }
 

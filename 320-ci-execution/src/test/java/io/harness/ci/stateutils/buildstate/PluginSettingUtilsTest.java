@@ -116,6 +116,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     Map<String, String> expected = new HashMap<>();
     expected.put("PLUGIN_REGISTRY", "6874654867.dkr.ecr.eu-central-1.amazonaws.com");
+    expected.put("PLUGIN_REGION", "eu-central-1");
     expected.put("PLUGIN_REPO", "harness");
     expected.put("PLUGIN_TAGS", "tag1,tag2");
     expected.put("PLUGIN_DOCKERFILE", "Dockerfile");

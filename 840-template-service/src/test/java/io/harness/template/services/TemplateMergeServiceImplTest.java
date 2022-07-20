@@ -30,7 +30,6 @@ import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.exception.NGTemplateResolveException;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
-import io.harness.template.helpers.TemplateMergeHelper;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
 
 import com.google.common.io.Resources;
@@ -51,9 +50,7 @@ import org.mockito.Mock;
 public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   @InjectMocks private TemplateMergeServiceImpl templateMergeService;
 
-  @InjectMocks private TemplateMergeHelper templateMergeHelper;
-
-  @Mock private NGTemplateService templateService;
+  @Mock private NGTemplateServiceHelper templateServiceHelper;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
 
   private static final String ACCOUNT_ID = "accountId";
@@ -71,9 +68,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
 
   @Before
   public void setup() throws IllegalAccessException {
-    on(templateMergeServiceHelper).set("templateService", templateService);
-    on(templateMergeHelper).set("templateMergeServiceHelper", templateMergeServiceHelper);
-    on(templateMergeService).set("templateMergeHelper", templateMergeHelper);
+    on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(templateMergeService).set("templateMergeServiceHelper", templateMergeServiceHelper);
   }
 
@@ -83,7 +78,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   public void testCreateTemplateInputsFromStepTemplateWithRuntimeInputs() {
     String filename = "template-step.yaml";
     String yaml = readFile(filename);
-    String templateYaml = templateMergeHelper.createTemplateInputsFromTemplate(yaml);
+    String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml);
     assertThat(templateYaml).isNotNull();
 
     String resFile = "template-step-templateInputs.yaml";
@@ -97,7 +92,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   public void testCreateTemplateInputsFromStepTemplateWithoutRuntimeInputs() {
     String filename = "step-template-without-runtime-inputs.yaml";
     String yaml = readFile(filename);
-    String templateYaml = templateMergeHelper.createTemplateInputsFromTemplate(yaml);
+    String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml);
     assertThat(templateYaml).isNullOrEmpty();
   }
 
@@ -107,7 +102,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   public void testCreateTemplateInputsFromPipelineTemplateWithRuntimeInputs() {
     String filename = "template-pipeline.yaml";
     String yaml = readFile(filename);
-    String templateYaml = templateMergeHelper.createTemplateInputsFromTemplate(yaml);
+    String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml);
     assertThat(templateYaml).isNotNull();
 
     String resFile = "template-pipeline-templateInputs.yaml";
@@ -121,7 +116,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   public void testCreateTemplateInputsFromPipelineTemplateWithoutRuntimeInputs() {
     String filename = "pipeline-template-without-runtime-inputs.yaml";
     String yaml = readFile(filename);
-    String templateYaml = templateMergeHelper.createTemplateInputsFromTemplate(yaml);
+    String templateYaml = templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml);
     assertThat(templateYaml).isNullOrEmpty();
   }
 
@@ -153,9 +148,9 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .templateScope(Scope.PROJECT)
                                          .build();
 
-    when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, null, "template1", "1", false))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, null, "template1", "1", false))
         .thenReturn(Optional.of(templateEntity));
-    when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "", false))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "", false))
         .thenReturn(Optional.of(templateEntity2));
 
     String approvalTemplateStepYaml = readFile("approval-step-template.yaml");
@@ -168,7 +163,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                                 .identifier("template2")
                                                 .templateScope(Scope.ACCOUNT)
                                                 .build();
-    when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, null, null, "template2", "1", false))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, null, null, "template2", "1", false))
         .thenReturn(Optional.of(approvalTemplateEntity));
 
     String pipelineYamlFile = "pipeline-with-template-step-diff-scope.yaml";
@@ -229,9 +224,9 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                         .versionLabel("1")
                                         .build();
 
-    when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "1", false))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "1", false))
         .thenReturn(Optional.of(templateEntity));
-    when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "", false))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "", false))
         .thenReturn(Optional.of(templateEntity));
 
     String approvalTemplateStepYaml = readFile("approval-step-template.yaml");
@@ -245,7 +240,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                                 .templateScope(Scope.PROJECT)
                                                 .deleted(false)
                                                 .build();
-    when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "template2", "1", false))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "template2", "1", false))
         .thenReturn(Optional.of(approvalTemplateEntity));
 
     String pipelineYamlFile = "pipeline-with-template-step.yaml";
@@ -328,11 +323,13 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                                 .deleted(false)
                                                 .build();
 
-    when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "1", false))
+    when(
+        templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "1", false))
         .thenReturn(Optional.of(stageTemplateEntity));
-    when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
         .thenReturn(Optional.of(httpTemplateEntity));
-    when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", "1", false))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", "1", false))
         .thenReturn(Optional.of(approvalTemplateEntity));
 
     String pipelineYamlFile = "pipeline-with-stage-template.yaml";
@@ -369,7 +366,8 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                          .projectIdentifier(PROJECT_ID)
                                          .yaml(yaml)
                                          .build();
-    when(templateService.getOrThrowExceptionIfInvalid(anyString(), anyString(), anyString(), any(), any(), eq(false)))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(
+             anyString(), anyString(), anyString(), any(), any(), eq(false)))
         .thenReturn(Optional.of(templateEntity1));
 
     String pipelineYamlFile = "pipeline-temp-inf-rec.yaml";
@@ -395,7 +393,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                         .deleted(false)
                                         .build();
 
-    when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "1", false))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "1", false))
         .thenReturn(Optional.of(templateEntity));
 
     String approvalTemplateStepYaml = readFile("approval-step-template-without-runtime-inputs.yaml");
@@ -406,7 +404,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                                 .yaml(approvalTemplateStepYaml)
                                                 .deleted(false)
                                                 .build();
-    when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "template2", "2", false))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "template2", "2", false))
         .thenReturn(Optional.of(approvalTemplateEntity));
 
     String pipelineYamlFile = "pipeline-with-invalid-template-steps.yaml";
@@ -436,7 +434,7 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                         .versionLabel("1")
                                         .build();
 
-    when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
         .thenReturn(Optional.of(templateEntity));
 
     String pipelineYamlFile = "pipeline-with-template-field.yaml";
@@ -492,10 +490,11 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
                                              .versionLabel("1")
                                              .build();
 
-    when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "PipelineTemplevel1", "1", false))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "PipelineTemplevel1", "1", false))
         .thenReturn(Optional.of(pipelineTemplateEntity));
 
-    when(templateService.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "stg_temp2", "1", false))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_ID, PROJECT_ID, "stg_temp2", "1", false))
         .thenReturn(Optional.of(stageTemplateEntity));
 
     String pipelineYamlFile = "pipeline-with-template-for-opa-policy.yaml";

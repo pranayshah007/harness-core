@@ -77,7 +77,7 @@ public class TriggerAuthHandler {
             authService.checkIfUserAllowedToDeployWorkflowToEnv(appId, envId);
           } else {
             authService.checkIfUserAllowedToDeployPipelineToEnv(appId, envId);
-            if (featureFlagService.isEnabled(PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION, trigger.getPipelineId())) {
+            if (featureFlagService.isEnabled(PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION, trigger.getAccountId())) {
               deploymentAuthHandler.authorizeExecutableDeployableInEnv(Collections.singleton(envId), appId,
                   trigger.getPipelineId(), ExecutableElementsFilter.FilterType.PIPELINE);
             }

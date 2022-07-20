@@ -116,7 +116,7 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
             .commandUnitsProgress(UnitProgressData.builder().build())
             .commandExecutionStatus(SUCCESS)
             .build();
-    when(nativeHelmStepHelper.getReleaseName(any(), any())).thenReturn("releaseName");
+    when(cdStepHelper.getReleaseName(any(), any())).thenReturn("releaseName");
     StepOutcome stepOutcome = StepOutcome.builder()
                                   .name(OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME)
                                   .outcome(DeploymentInfoOutcome.builder().build())
@@ -204,14 +204,13 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
             .commandUnitsProgress(UnitProgressData.builder().build())
             .commandExecutionStatus(SUCCESS)
             .build();
-    when(nativeHelmStepHelper.getReleaseName(any(), any())).thenReturn("releaseName");
+    when(cdStepHelper.getReleaseName(any(), any())).thenReturn("releaseName");
     StepResponse.StepOutcome stepOutcome = StepResponse.StepOutcome.builder()
                                                .name(OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME)
                                                .outcome(DeploymentInfoOutcome.builder().build())
                                                .build();
     doReturn(stepOutcome).when(instanceInfoService).saveServerInstancesIntoSweepingOutput(any(), any());
-    when(nativeHelmStepHelper.handleGitTaskFailure(any()))
-        .thenReturn(StepResponse.builder().status(Status.SUCCEEDED).build());
+    when(cdStepHelper.handleGitTaskFailure(any())).thenReturn(StepResponse.builder().status(Status.SUCCEEDED).build());
     StepResponse response = helmDeployStep.finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
         GitFetchResponsePassThroughData.builder().build(), () -> helmCmdExecResponseNG);
     assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
@@ -224,7 +223,7 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
                    .getStatus())
         .isEqualTo(Status.SUCCEEDED);
 
-    when(nativeHelmStepHelper.handleStepExceptionFailure(any()))
+    when(cdStepHelper.handleStepExceptionFailure(any()))
         .thenReturn(StepResponse.builder().status(Status.SUCCEEDED).build());
     assertThat(helmDeployStep
                    .finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,

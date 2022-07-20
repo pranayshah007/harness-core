@@ -232,7 +232,11 @@ public class GitFilePathHelperTest extends CategoryTest {
   public void testGetFileUrlForAzureRepo_ForProjectTypeConnector() {
     String repoUrl = "https://dev.azure.com/org/project";
     AzureRepoConnectorDTO azureRepoConnectorDTO =
-        AzureRepoConnectorDTO.builder().connectionType(AzureRepoConnectionTypeDTO.PROJECT).url(repoUrl).build();
+        AzureRepoConnectorDTO.builder()
+            .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
+            .authentication(AzureRepoAuthenticationDTO.builder().authType(GitAuthType.HTTP).build())
+            .url(repoUrl)
+            .build();
     GitRepositoryDTO gitRepository = GitRepositoryDTO.builder().name(repoName).build();
     doReturn(azureRepoConnectorDTO)
         .when(gitSyncConnectorHelper)
@@ -247,7 +251,11 @@ public class GitFilePathHelperTest extends CategoryTest {
   public void testGetFileUrlForAzureRepo_ForProjectTypeSSHConnector() {
     String repoUrl = "git@ssh.dev.azure.com:v3/repoOrg/repoProject";
     AzureRepoConnectorDTO azureRepoConnectorDTO =
-        AzureRepoConnectorDTO.builder().connectionType(AzureRepoConnectionTypeDTO.PROJECT).url(repoUrl).build();
+        AzureRepoConnectorDTO.builder()
+            .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
+            .authentication(AzureRepoAuthenticationDTO.builder().authType(GitAuthType.SSH).build())
+            .url(repoUrl)
+            .build();
     GitRepositoryDTO gitRepository = GitRepositoryDTO.builder().name(repoName).build();
     doReturn(azureRepoConnectorDTO)
         .when(gitSyncConnectorHelper)

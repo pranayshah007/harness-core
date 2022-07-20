@@ -8,7 +8,6 @@
 package io.harness.grpc;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.MARKO;
 import static io.harness.rule.OwnerRule.SANJA;
 
@@ -16,8 +15,10 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -37,8 +38,6 @@ import io.harness.delegate.AccountId;
 import io.harness.delegate.Capability;
 import io.harness.delegate.DelegateServiceAgentClient;
 import io.harness.delegate.DelegateServiceGrpc;
-import io.harness.delegate.ExecuteParkedTaskResponse;
-import io.harness.delegate.FetchParkedTaskStatusResponse;
 import io.harness.delegate.TaskDetails;
 import io.harness.delegate.TaskExecutionStage;
 import io.harness.delegate.TaskId;
@@ -50,7 +49,6 @@ import io.harness.delegate.beans.DelegateStringProgressData;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.beans.executioncapability.SystemEnvCheckerCapability;
 import io.harness.exception.DelegateServiceDriverException;
-import io.harness.exception.DelegateServiceLiteException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskClientContextDetails;
@@ -90,6 +88,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import org.apache.commons.lang3.NotImplementedException;
 import org.junit.Before;
@@ -137,7 +137,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
         DelegateServiceGrpc.newBlockingStub(channel);
     delegateServiceGrpcClient = new DelegateServiceGrpcClient(
         delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
-    delegateServiceAgentClient = new DelegateServiceAgentClient(delegateServiceBlockingStub);
+    delegateServiceAgentClient = mock(DelegateServiceAgentClient.class);
     delegateSyncService = mock(DelegateSyncService.class);
 
     delegateCallbackRegistry = mock(DelegateCallbackRegistry.class);
@@ -306,62 +306,6 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   }
 
   @Test
-  @Owner(developers = ALEKSANDAR)
-  @Category(UnitTests.class)
-  public void testExecuteParkedTask() {
-    String accountId = generateUuid();
-    String taskId = generateUuid();
-    when(delegateTaskServiceClassic.queueParkedTask(accountId, taskId)).thenReturn(taskId);
-
-    ExecuteParkedTaskResponse executeParkedTaskResponse = delegateServiceAgentClient.executeParkedTask(
-        AccountId.newBuilder().setId(accountId).build(), TaskId.newBuilder().setId(taskId).build());
-    assertThat(executeParkedTaskResponse).isNotNull();
-    assertThat(executeParkedTaskResponse)
-        .isEqualTo(ExecuteParkedTaskResponse.newBuilder().setTaskId(TaskId.newBuilder().setId(taskId).build()).build());
-
-    doThrow(InvalidRequestException.class).when(delegateTaskServiceClassic).queueParkedTask(accountId, taskId);
-    assertThatThrownBy(
-        ()
-            -> delegateServiceAgentClient.executeParkedTask(
-                AccountId.newBuilder().setId(accountId).build(), TaskId.newBuilder().setId(taskId).build()))
-        .isInstanceOf(DelegateServiceLiteException.class)
-        .hasMessage("Unexpected error occurred while executing parked task.");
-  }
-
-  @Test
-  @Owner(developers = ALEKSANDAR)
-  @Category(UnitTests.class)
-  public void getParkedTaskResults() {
-    String accountId = generateUuid();
-    String taskId = generateUuid();
-    String driverId = generateUuid();
-    byte[] bytes = {69, 121, 101, 45, 62, 118, 101, 114, 61, 101, 98};
-    when(delegateTaskServiceClassic.getParkedTaskResults(accountId, taskId, driverId)).thenReturn(bytes);
-
-    FetchParkedTaskStatusResponse fetchParkedTaskStatusResponse =
-        delegateServiceAgentClient.fetchParkedTaskStatus(AccountId.newBuilder().setId(accountId).build(),
-            TaskId.newBuilder().setId(taskId).build(), DelegateCallbackToken.newBuilder().setToken(driverId).build());
-
-    assertThat(fetchParkedTaskStatusResponse).isNotNull();
-    assertThat(fetchParkedTaskStatusResponse)
-        .isEqualTo(FetchParkedTaskStatusResponse.newBuilder()
-                       .setFetchResults(true)
-                       .setSerializedTaskResults(ByteString.copyFrom(bytes))
-                       .build());
-
-    doThrow(InvalidRequestException.class)
-        .when(delegateTaskServiceClassic)
-        .getParkedTaskResults(accountId, taskId, driverId);
-    assertThatThrownBy(
-        ()
-            -> delegateServiceAgentClient.fetchParkedTaskStatus(AccountId.newBuilder().setId(accountId).build(),
-                TaskId.newBuilder().setId(taskId).build(),
-                DelegateCallbackToken.newBuilder().setToken(driverId).build()))
-        .isInstanceOf(DelegateServiceLiteException.class)
-        .hasMessage("Unexpected error occurred fetching parked task results.");
-  }
-
-  @Test
   @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void testTaskProgressUpdates() {
@@ -380,11 +324,13 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   @Test
   @Owner(developers = SANJA)
   @Category(UnitTests.class)
-  public void testSendTaskProgress() {
+  public void testSendTaskProgress() throws ExecutionException, InterruptedException {
     String accountId = generateUuid();
     String taskId = generateUuid();
-    when(delegateTaskServiceClassic.fetchDelegateTask(accountId, taskId)).thenReturn(Optional.ofNullable(null));
-
+    when(delegateTaskService.fetchDelegateTask(accountId, taskId)).thenReturn(Optional.ofNullable(null));
+    doReturn(CompletableFuture.completedFuture(true).get())
+        .when(delegateServiceAgentClient)
+        .sendTaskProgressUpdate(anyObject(), anyObject(), anyObject(), anyObject());
     DelegateCallback delegateCallback =
         DelegateCallback.newBuilder()
             .setMongoDatabase(MongoDatabase.newBuilder().setConnection("test").setCollectionNamePrefix("test").build())

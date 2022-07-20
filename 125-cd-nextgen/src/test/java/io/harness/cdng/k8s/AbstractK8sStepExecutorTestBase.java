@@ -18,6 +18,7 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
@@ -39,7 +40,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(CDP)
 public abstract class AbstractK8sStepExecutorTestBase extends CategoryTest {
   @Mock protected K8sStepHelper k8sStepHelper;
-
+  @Mock protected CDStepHelper cdStepHelper;
   @Mock protected InfrastructureOutcome infrastructureOutcome;
   @Mock protected K8sInfraDelegateConfig infraDelegateConfig;
   @Mock protected StoreConfig storeConfig;
@@ -59,10 +60,12 @@ public abstract class AbstractK8sStepExecutorTestBase extends CategoryTest {
                           .skipResourceVersioning(ParameterField.createValueField(true))
                           .store(storeConfig)
                           .build();
-    doReturn(infraDelegateConfig).when(k8sStepHelper).getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
-    doReturn(manifestDelegateConfig).when(k8sStepHelper).getManifestDelegateConfig(manifestOutcome, ambiance);
+    doReturn(infraDelegateConfig).when(cdStepHelper).getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
+    doReturn(manifestDelegateConfig)
+        .when(k8sStepHelper)
+        .getManifestDelegateConfigWrapper(any(), eq(manifestOutcome), eq(ambiance), any());
     doReturn(true).when(k8sStepHelper).getSkipResourceVersioning(manifestOutcome);
-    doReturn(releaseName).when(k8sStepHelper).getReleaseName(ambiance, infrastructureOutcome);
+    doReturn(releaseName).when(cdStepHelper).getReleaseName(ambiance, infrastructureOutcome);
     doReturn(TaskChainResponse.builder().chainEnd(true).build())
         .when(k8sStepHelper)
         .startChainLink(any(), any(), any());

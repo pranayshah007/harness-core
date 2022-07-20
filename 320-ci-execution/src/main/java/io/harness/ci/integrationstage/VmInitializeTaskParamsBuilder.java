@@ -9,8 +9,16 @@ package io.harness.ci.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
+import static io.harness.data.encoding.EncodingUtils.decodeBase64;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.vm.CIVMConstants.DRONE_COMMIT_BRANCH;
+import static io.harness.vm.CIVMConstants.DRONE_COMMIT_LINK;
+import static io.harness.vm.CIVMConstants.DRONE_COMMIT_SHA;
+import static io.harness.vm.CIVMConstants.DRONE_REMOTE_URL;
+import static io.harness.vm.CIVMConstants.DRONE_SOURCE_BRANCH;
+import static io.harness.vm.CIVMConstants.DRONE_TARGET_BRANCH;
+import static io.harness.vm.CIVMConstants.NETWORK_ID;
 
 import static java.lang.String.format;
 
@@ -24,10 +32,12 @@ import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.ContextElement;
+import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.beans.yaml.extended.infrastrucutre.RunsOnInfra;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
@@ -37,10 +47,17 @@ import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.tiserviceclient.TIServiceUtils;
 import io.harness.ci.utils.CIVmSecretEvaluator;
+import io.harness.ci.utils.InfrastructureUtils;
 import io.harness.ci.utils.ValidationUtils;
+import io.harness.connector.SecretSpecBuilder;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.ci.pod.SecretParams;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
+import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
+import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest;
+import io.harness.delegate.beans.ci.vm.runner.SetupVmRequest;
 import io.harness.delegate.beans.ci.vm.steps.VmServiceDependency;
+import io.harness.delegate.task.citasks.vm.helper.StepExecutionHelper;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.ng.core.NGAccess;
@@ -54,6 +71,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepUtils;
 import io.harness.stoserviceclient.STOServiceUtils;
+import io.harness.vm.VmExecuteStepUtils;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.google.inject.Inject;
@@ -64,6 +82,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
@@ -86,28 +105,64 @@ public class VmInitializeTaskParamsBuilder {
   @Inject private VmInitializeUtils vmInitializeUtils;
   @Inject ValidationUtils validationUtils;
 
+  @Inject SecretSpecBuilder secretSpecBuilder;
+
+  @Inject StepExecutionHelper stepExecutionHelper;
+  @Inject private VmExecuteStepUtils vmExecuteStepUtils;
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
 
-  public CIVmInitializeTaskParams getVmInitializeTaskParams(
-      InitializeStepInfo initializeStepInfo, Ambiance ambiance, String logPrefix) {
+  public DliteVmInitializeTaskParams getHostedVmInitializeTaskParams(
+      InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
+    RunsOnInfra runsOnInfra = (RunsOnInfra) initializeStepInfo.getInfrastructure();
+    String poolId = runsOnInfra.getSpec().getRunsOn();
+
+    CIVmInitializeTaskParams params = getVmInitializeParams(initializeStepInfo, ambiance, poolId);
+    SetupVmRequest setupVmRequest = convertHostedSetupParams(params);
+    List<ExecuteStepRequest> services = new ArrayList<>();
+    if (isNotEmpty(params.getServiceDependencies())) {
+      for (VmServiceDependency serviceDependency : params.getServiceDependencies()) {
+        services.add(vmExecuteStepUtils.convertService(serviceDependency, params).build());
+      }
+    }
+
+    return DliteVmInitializeTaskParams.builder().setupVmRequest(setupVmRequest).services(services).build();
+  }
+
+  public CIVmInitializeTaskParams getDirectVmInitializeTaskParams(
+      InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
+    Infrastructure infrastructure = initializeStepInfo.getInfrastructure();
+    validateInfrastructure(infrastructure);
+
+    VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();
+    String poolId = getPoolName(vmPoolYaml);
+    return getVmInitializeParams(initializeStepInfo, ambiance, poolId);
+  }
+
+  private CIVmInitializeTaskParams getVmInitializeParams(
+      InitializeStepInfo initializeStepInfo, Ambiance ambiance, String poolId) {
     Infrastructure infrastructure = initializeStepInfo.getInfrastructure();
     String accountID = AmbianceUtils.getAccountId(ambiance);
 
     validateInfrastructure(infrastructure);
 
-    VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();
     IntegrationStageConfig integrationStageConfig = initializeStepInfo.getStageElementConfig();
     vmInitializeUtils.validateStageConfig(integrationStageConfig, accountID);
 
-    String poolId = getPoolName(vmPoolYaml);
     OSType os = vmInitializeUtils.getOS(infrastructure);
     Map<String, String> volToMountPath =
         vmInitializeUtils.getVolumeToMountPath(integrationStageConfig.getSharedPaths(), os);
     String workDir = vmInitializeUtils.getWorkDir(os);
 
-    saveStageInfraDetails(
-        ambiance, poolId, workDir, vmPoolYaml.getSpec().getHarnessImageConnectorRef().getValue(), volToMountPath);
+    String harnessImageConnectorRef = null;
+    Optional<ParameterField<String>> optionalHarnessImageConnectorRef =
+        InfrastructureUtils.getHarnessImageConnector(infrastructure);
+    if (optionalHarnessImageConnectorRef.isPresent()) {
+      harnessImageConnectorRef = optionalHarnessImageConnectorRef.get().getValue();
+    }
+
+    saveStageInfraDetails(ambiance, poolId, workDir, harnessImageConnectorRef, volToMountPath,
+        initializeStepInfo.getInfrastructure().getType());
     StageDetails stageDetails = getStageDetails(ambiance);
 
     CIExecutionArgs ciExecutionArgs = CIExecutionArgs.builder()
@@ -158,7 +213,15 @@ public class VmInitializeTaskParamsBuilder {
   }
 
   private void validateInfrastructure(Infrastructure infrastructure) {
-    if (infrastructure == null || ((VmInfraYaml) infrastructure).getSpec() == null) {
+    if (infrastructure == null) {
+      throw new CIStageExecutionException("Input infrastructure can not be empty");
+    }
+
+    if (infrastructure.getType() == Infrastructure.Type.RUNS_ON) {
+      return;
+    }
+
+    if (((VmInfraYaml) infrastructure).getSpec() == null) {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
 
@@ -183,15 +246,26 @@ public class VmInitializeTaskParamsBuilder {
   }
 
   private void saveStageInfraDetails(Ambiance ambiance, String poolId, String workDir, String harnessImageConnectorRef,
-      Map<String, String> volToMountPath) {
-    consumeSweepingOutput(ambiance,
-        VmStageInfraDetails.builder()
-            .poolId(poolId)
-            .workDir(workDir)
-            .volToMountPathMap(volToMountPath)
-            .harnessImageConnectorRef(harnessImageConnectorRef)
-            .build(),
-        STAGE_INFRA_DETAILS);
+      Map<String, String> volToMountPath, Infrastructure.Type infraType) {
+    if (infraType == Infrastructure.Type.VM) {
+      consumeSweepingOutput(ambiance,
+          VmStageInfraDetails.builder()
+              .poolId(poolId)
+              .workDir(workDir)
+              .volToMountPathMap(volToMountPath)
+              .harnessImageConnectorRef(harnessImageConnectorRef)
+              .build(),
+          STAGE_INFRA_DETAILS);
+    } else if (infraType == Infrastructure.Type.RUNS_ON) {
+      consumeSweepingOutput(ambiance,
+          DliteVmStageInfraDetails.builder()
+              .poolId(poolId)
+              .workDir(workDir)
+              .volToMountPathMap(volToMountPath)
+              .harnessImageConnectorRef(harnessImageConnectorRef)
+              .build(),
+          STAGE_INFRA_DETAILS);
+    }
   }
 
   private StageDetails getStageDetails(Ambiance ambiance) {
@@ -340,5 +414,83 @@ public class VmInitializeTaskParamsBuilder {
   private String getLogPrefix(Ambiance ambiance) {
     LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STAGE");
     return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+  }
+
+  private SetupVmRequest convertHostedSetupParams(CIVmInitializeTaskParams params) {
+    Map<String, String> env = new HashMap<>();
+    List<String> secrets = new ArrayList<>();
+    if (isNotEmpty(params.getSecrets())) {
+      secrets.addAll(params.getSecrets());
+    }
+    if (isNotEmpty(params.getEnvironment())) {
+      env = params.getEnvironment();
+    }
+
+    if (params.getGitConnector() != null) {
+      Map<String, SecretParams> secretVars = secretSpecBuilder.decryptGitSecretVariables(params.getGitConnector());
+      for (Map.Entry<String, SecretParams> entry : secretVars.entrySet()) {
+        String secret = new String(decodeBase64(entry.getValue().getValue()));
+        env.put(entry.getKey(), secret);
+        secrets.add(secret);
+      }
+    }
+
+    SetupVmRequest.Config config = SetupVmRequest.Config.builder()
+                                       .envs(env)
+                                       .secrets(secrets)
+                                       .network(SetupVmRequest.Network.builder().id(NETWORK_ID).build())
+                                       .logConfig(SetupVmRequest.LogConfig.builder()
+                                                      .url(params.getLogStreamUrl())
+                                                      .token(params.getLogSvcToken())
+                                                      .accountID(params.getAccountID())
+                                                      .indirectUpload(params.isLogSvcIndirectUpload())
+                                                      .build())
+                                       .tiConfig(getTIConfig(params, env))
+                                       .volumes(getVolumes(params.getVolToMountPath()))
+                                       .build();
+    return SetupVmRequest.builder()
+        .id(params.getStageRuntimeId())
+        //            .correlationID(taskId)
+        .poolID(params.getPoolID())
+        .config(config)
+        .logKey(params.getLogKey())
+        .build();
+  }
+
+  private List<SetupVmRequest.Volume> getVolumes(Map<String, String> volToMountPath) {
+    List<SetupVmRequest.Volume> volumes = new ArrayList<>();
+    if (isEmpty(volToMountPath)) {
+      return volumes;
+    }
+
+    for (Map.Entry<String, String> entry : volToMountPath.entrySet()) {
+      volumes.add(SetupVmRequest.Volume.builder()
+                      .hostVolume(SetupVmRequest.HostVolume.builder()
+                                      .id(entry.getKey())
+                                      .name(entry.getKey())
+                                      .path(entry.getValue())
+                                      .build())
+                      .build());
+    }
+    return volumes;
+  }
+
+  private SetupVmRequest.TIConfig getTIConfig(CIVmInitializeTaskParams params, Map<String, String> env) {
+    return SetupVmRequest.TIConfig.builder()
+        .url(params.getTiUrl())
+        .token(params.getTiSvcToken())
+        .accountID(params.getAccountID())
+        .orgID(params.getOrgID())
+        .projectID(params.getProjectID())
+        .pipelineID(params.getPipelineID())
+        .stageID(params.getStageID())
+        .buildID(params.getBuildID())
+        .repo(env.getOrDefault(DRONE_REMOTE_URL, ""))
+        .sha(env.getOrDefault(DRONE_COMMIT_SHA, ""))
+        .sourceBranch(env.getOrDefault(DRONE_SOURCE_BRANCH, ""))
+        .targetBranch(env.getOrDefault(DRONE_TARGET_BRANCH, ""))
+        .commitBranch(env.getOrDefault(DRONE_COMMIT_BRANCH, ""))
+        .commitLink(env.getOrDefault(DRONE_COMMIT_LINK, ""))
+        .build();
   }
 }

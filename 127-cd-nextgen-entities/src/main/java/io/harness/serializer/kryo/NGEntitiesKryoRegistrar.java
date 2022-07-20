@@ -40,6 +40,7 @@ import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig;
 import io.harness.cdng.manifest.yaml.AzureRepoStore;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
+import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.GitLabStore;
 import io.harness.cdng.manifest.yaml.GitStore;
@@ -201,6 +202,7 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(AzureWebAppServiceSpec.class, 12599);
     kryo.register(AmazonS3ArtifactConfig.class, 12569);
     kryo.register(AzureRepoStore.class, 12570);
+    kryo.register(CustomRemoteStoreConfig.class, 12589);
     kryo.register(JenkinsArtifactConfig.class, 130012);
   }
 }

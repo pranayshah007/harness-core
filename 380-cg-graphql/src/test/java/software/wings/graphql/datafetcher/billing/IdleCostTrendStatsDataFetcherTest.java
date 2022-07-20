@@ -161,6 +161,7 @@ public class IdleCostTrendStatsDataFetcherTest extends AbstractDataFetcherTestBa
         Arrays.asList(makeCpuIdleCostAggregation(), makeAvgCpuUtilizationAggregation());
     List<QLBillingDataFilter> filters = createFilter();
     filters.add(makeWorkloadNameFilter(new String[] {WORKLOAD_NAME}));
+    filters.add(makeNodeFilter(new String[] {NODE1}));
     QLIdleCostTrendStats data = (QLIdleCostTrendStats) idleCostTrendStatsDataFetcher.fetch(
         ACCOUNT1_ID, aggregationFunction, filters, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     assertThat(data).isNotNull();
@@ -184,6 +185,7 @@ public class IdleCostTrendStatsDataFetcherTest extends AbstractDataFetcherTestBa
         Arrays.asList(makeMemoryIdleCostAggregation(), makeAvgMemoryUtilizationAggregation());
     List<QLBillingDataFilter> filters = createFilter();
     filters.add(makeWorkloadNameFilter(new String[] {WORKLOAD_NAME}));
+    filters.add(makeNodeFilter(new String[] {"NODE_ID"}));
     QLIdleCostTrendStats data = (QLIdleCostTrendStats) idleCostTrendStatsDataFetcher.fetch(
         ACCOUNT1_ID, aggregationFunction, filters, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     assertThat(data).isNotNull();
@@ -207,6 +209,7 @@ public class IdleCostTrendStatsDataFetcherTest extends AbstractDataFetcherTestBa
         Arrays.asList(makeBillingAmtAggregation(), makeIdleCostAggregation(), makeCpuIdleCostAggregation(),
             makeAvgCpuUtilizationAggregation(), makeMemoryIdleCostAggregation(), makeAvgMemoryUtilizationAggregation());
     List<QLBillingDataFilter> filters = createFilter();
+    filters.add(makeNodeFilter(new String[] {"NODE_ID"}));
     QLIdleCostTrendStats data = (QLIdleCostTrendStats) idleCostTrendStatsDataFetcher.fetch(
         ACCOUNT1_ID, aggregationFunction, filters, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     assertThat(data).isNotNull();
@@ -311,6 +314,11 @@ public class IdleCostTrendStatsDataFetcherTest extends AbstractDataFetcherTestBa
   private QLBillingDataFilter makeWorkloadNameFilter(String[] values) {
     QLIdFilter workloadNameFilter = QLIdFilter.builder().operator(QLIdOperator.NOT_NULL).values(values).build();
     return QLBillingDataFilter.builder().workloadName(workloadNameFilter).build();
+  }
+
+  private QLBillingDataFilter makeNodeFilter(String[] values) {
+    QLIdFilter podFilter = QLIdFilter.builder().operator(QLIdOperator.NOT_NULL).values(values).build();
+    return QLBillingDataFilter.builder().nodeInstanceId(podFilter).build();
   }
 
   public QLBillingDataFilter startTimeFilter(Instant instant) {

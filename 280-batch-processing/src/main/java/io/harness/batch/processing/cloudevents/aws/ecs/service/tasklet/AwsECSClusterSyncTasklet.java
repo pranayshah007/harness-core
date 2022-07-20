@@ -13,6 +13,7 @@ import static software.wings.settings.SettingVariableTypes.CE_AWS;
 import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.intfc.AwsAccountService;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.intfc.AwsECSClusterService;
+import io.harness.batch.processing.cloudevents.aws.ecs.service.support.intfc.AWSOrganizationHelperService;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.entities.billing.CECloudAccount;
@@ -29,6 +30,8 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.ce.CEAwsConfig;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
+import com.amazonaws.services.organizations.model.AWSOrganizationsNotInUseException;
+import com.amazonaws.services.organizations.model.AccessDeniedException;
 import com.google.inject.Singleton;
 import java.util.Arrays;
 import java.util.List;
@@ -47,6 +50,7 @@ public class AwsECSClusterSyncTasklet implements Tasklet {
   @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
   @Autowired private CECloudAccountDao ceCloudAccountDao;
   @Autowired private NGConnectorHelper ngConnectorHelper;
+  @Autowired private AWSOrganizationHelperService awsOrganizationHelperService;
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
@@ -83,6 +87,7 @@ public class AwsECSClusterSyncTasklet implements Tasklet {
       ConnectorInfoDTO connectorInfo = connector.getConnector();
       CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfo.getConnectorConfig();
       if (ceAwsConnectorDTO != null && ceAwsConnectorDTO.getCrossAccountAccess() != null) {
+        syncNGConnectorLinkedAccounts(accountId, connectorInfo.getIdentifier(), ceAwsConnectorDTO);
         AwsCrossAccountAttributes crossAccountAttributes =
             AwsCrossAccountAttributes.builder()
                 .crossAccountRoleArn(ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn())
@@ -97,6 +102,21 @@ public class AwsECSClusterSyncTasklet implements Tasklet {
                                           .build();
         awsECSClusterService.syncCEClusters(cloudAccount);
       }
+    }
+  }
+
+  private void syncNGConnectorLinkedAccounts(String accountId, String settingId, CEAwsConnectorDTO ceAwsConnectorDTO) {
+    try {
+      awsAccountService.syncNgLinkedAccounts(accountId, settingId, ceAwsConnectorDTO);
+      log.info("Synced Accounts");
+    } catch (AWSOrganizationsNotInUseException ex) {
+      log.info("AWSOrganizationsNotInUseException for AWS Connector: {}", ceAwsConnectorDTO.getAwsAccountId(), ex);
+    } catch (AccessDeniedException accessDeniedException) {
+      log.info("AccessDeniedException for AWS Connector: {}, Not Processing Create AWS Account Metadata",
+          ceAwsConnectorDTO.getAwsAccountId(), accessDeniedException);
+    } catch (Exception ex) {
+      log.info("Exception for AWS Connector:, {}, Not Processing Create AWS Account Metadata",
+          ceAwsConnectorDTO.getAwsAccountId(), ex);
     }
   }
 

@@ -19,6 +19,7 @@ import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageRequest.UNLIMITED;
 import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.beans.SearchFilter.Operator.IN;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -323,6 +324,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
@@ -451,6 +453,14 @@ public class WorkflowServiceImpl implements WorkflowService {
   @Override
   public PageResponse<StateMachine> listStateMachines(PageRequest<StateMachine> req) {
     return wingsPersistence.query(StateMachine.class, req);
+  }
+
+  @Override
+  public List<Workflow> list(String accountId, List<String> projectFields) {
+    Query<Workflow> workflowQuery =
+        wingsPersistence.createQuery(Workflow.class).filter(WorkflowKeys.accountId, accountId);
+    emptyIfNull(projectFields).forEach(field -> { workflowQuery.project(field, true); });
+    return emptyIfNull(workflowQuery.asList());
   }
 
   /**
@@ -1298,7 +1308,13 @@ public class WorkflowServiceImpl implements WorkflowService {
     Workflow finalWorkflow = readWorkflow(appId, workflowId, workflow.getDefaultVersion());
 
     if (!migration) {
-      yamlPushService.pushYamlChangeSet(accountId, savedWorkflow, finalWorkflow, Type.UPDATE, isSyncFromGit, isRename);
+      if (cloned) {
+        yamlPushService.pushYamlChangeSet(
+            accountId, savedWorkflow, finalWorkflow, Type.CREATE, isSyncFromGit, isRename);
+      } else {
+        yamlPushService.pushYamlChangeSet(
+            accountId, savedWorkflow, finalWorkflow, Type.UPDATE, isSyncFromGit, isRename);
+      }
     }
 
     if (workflowName != null) {

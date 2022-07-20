@@ -36,8 +36,8 @@ import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.grpc.utils.StringValueUtils;
-import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.governance.PipelineSaveResponse;
@@ -432,15 +432,15 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     String importedPipelineYAML =
         pmsPipelineServiceHelper.importPipelineFromRemote(accountId, orgIdentifier, projectIdentifier);
 
-    String updatedImportedPipeline = PMSPipelineServiceHelper.updateFieldsInImportedPipeline(
+    PMSPipelineServiceHelper.checkAndThrowMismatchInImportedPipelineMetadata(
         orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineImportRequest, importedPipelineYAML);
 
     PipelineEntity pipelineEntity =
-        PMSPipelineDtoMapper.toPipelineEntity(accountId, orgIdentifier, projectIdentifier, updatedImportedPipeline);
+        PMSPipelineDtoMapper.toPipelineEntity(accountId, orgIdentifier, projectIdentifier, importedPipelineYAML);
     try {
       PipelineEntity entityWithUpdatedInfo = pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity);
-      PipelineEntity savedPipelineEntity = pmsPipelineRepository.savePipelineEntityForImportedYAML(
-          entityWithUpdatedInfo, !updatedImportedPipeline.equals(importedPipelineYAML));
+      PipelineEntity savedPipelineEntity =
+          pmsPipelineRepository.savePipelineEntityForImportedYAML(entityWithUpdatedInfo);
       pmsPipelineServiceHelper.sendPipelineSaveTelemetryEvent(savedPipelineEntity, CREATING_PIPELINE);
       return savedPipelineEntity;
     } catch (DuplicateKeyException ex) {

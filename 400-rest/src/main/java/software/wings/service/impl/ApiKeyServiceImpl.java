@@ -56,6 +56,7 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.ApiKeyService;
 import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.UserGroupService;
+import software.wings.service.intfc.UserService;
 import software.wings.utils.CryptoUtils;
 
 import com.google.common.base.Charsets;
@@ -94,6 +95,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   @Inject private AuthService authService;
   @Inject private ExecutorService executorService;
   @Inject private AuditServiceHelper auditServiceHelper;
+  @Inject private UserService userService;
 
   private static String DELIMITER = "::";
 

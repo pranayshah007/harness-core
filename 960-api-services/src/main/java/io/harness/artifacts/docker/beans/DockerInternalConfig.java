@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
 
 import java.net.URI;
 import javax.ws.rs.core.UriBuilder;
@@ -27,6 +28,7 @@ public class DockerInternalConfig {
   String username;
   String password;
   boolean isCertValidationRequired;
+  DockerRegistryProviderType providerType;
 
   public boolean hasCredentials() {
     return isNotEmpty(username);

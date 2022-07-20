@@ -658,7 +658,7 @@ public class CloudformationStepHelper {
     GitStoreConfig gitStoreConfig = (GitStoreConfig) store;
     cdStepHelper.validateGitStoreConfig(gitStoreConfig);
     String connectorId = getParameterFieldValue(gitStoreConfig.getConnectorRef());
-    ConnectorInfoDTO connectorDTO = k8sStepHelper.getConnector(connectorId, ambiance);
+    ConnectorInfoDTO connectorDTO = cdStepHelper.getConnector(connectorId, ambiance);
 
     GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO((ScmConnector) connectorDTO.getConnectorConfig());
     NGAccess basicNGAccessObject = AmbianceUtils.getNgAccess(ambiance);

@@ -67,7 +67,7 @@ public class K8SSyncEventTasklet extends EventWriter implements Tasklet {
 
       instanceDataBulkWriteService.updateLifecycle(lifecycleList);
 
-      if (featureFlagService.isEnabled(FeatureName.NODE_RECOMMENDATION_1, jobConstants.getAccountId())) {
+      if (featureFlagService.isEnabled(FeatureName.NODE_RECOMMENDATION_AGGREGATE, jobConstants.getAccountId())) {
         updateInactiveInstancesInTimescale(jobConstants, publishedMessageList);
       }
 

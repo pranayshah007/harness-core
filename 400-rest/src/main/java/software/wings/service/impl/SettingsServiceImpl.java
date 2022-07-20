@@ -266,6 +266,17 @@ public class SettingsServiceImpl implements SettingsService {
 
   private static final String OPEN_SSH = "OPENSSH";
 
+  @Override
+  public List<String> getSettingIdsForAccount(String accountId) {
+    return wingsPersistence.createQuery(SettingAttribute.class)
+        .filter(SettingAttributeKeys.accountId, accountId)
+        .project(SettingAttributeKeys.uuid, true)
+        .asList()
+        .stream()
+        .map(SettingAttribute::getUuid)
+        .collect(toList());
+  }
+
   public List<SettingAttribute> list(String accountId, SettingCategory category) {
     return settingAttributeDao.list(accountId, category);
   }

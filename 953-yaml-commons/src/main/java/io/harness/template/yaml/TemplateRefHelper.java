@@ -22,8 +22,12 @@ public class TemplateRefHelper {
   public final String TEMPLATE_REF = "templateRef";
   public final String TEMPLATE = "template";
 
-  public boolean hasTemplateRef(String pipelineYaml) {
-    YamlConfig yamlConfig = new YamlConfig(pipelineYaml);
+  public boolean hasTemplateRef(String yaml) {
+    YamlConfig yamlConfig = new YamlConfig(yaml);
+    return hasTemplateRef(yamlConfig);
+  }
+
+  public boolean hasTemplateRef(YamlConfig yamlConfig) {
     Set<FQN> fqnSet = new LinkedHashSet<>(yamlConfig.getFqnToValueMap().keySet());
     for (FQN key : fqnSet) {
       if (key.getFqnList().size() >= 2) {

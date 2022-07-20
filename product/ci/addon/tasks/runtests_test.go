@@ -8,10 +8,10 @@ package tasks
 import (
 	"bytes"
 	"context"
+	"path/filepath"
 
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -51,7 +51,7 @@ func TestCreateJavaAgentArg(t *testing.T) {
 		addonLogger:          log.Sugar(),
 	}
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -89,7 +89,7 @@ func TestCreateJavaAgentArg_WithWriteFailure(t *testing.T) {
 		addonLogger:          log.Sugar(),
 	}
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -119,7 +119,7 @@ func TestGetCmd_WithNoFilesChanged(t *testing.T) {
 	tmpFilePath := "/test/tmp"
 	packages := "p1, p2, p3"
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -192,7 +192,7 @@ func TestGetCmd_SelectAll(t *testing.T) {
 	tmpFilePath := "/test/tmp"
 	packages := "p1, p2, p3"
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -262,7 +262,7 @@ func TestGetCmd_RunAll(t *testing.T) {
 	tmpFilePath := "/test/tmp"
 	packages := "p1, p2, p3"
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -330,7 +330,7 @@ func TestGetCmd_ManualExecution(t *testing.T) {
 	tmpFilePath := "/test/tmp"
 	packages := "p1, p2, p3"
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -398,7 +398,7 @@ func TestGetCmd_ErrorIncorrectBuildTool(t *testing.T) {
 	tmpFilePath := "/test/tmp"
 	packages := "p1, p2, p3"
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -502,7 +502,7 @@ func TestRun_Success(t *testing.T) {
 	tmpFilePath := "/test/tmp"
 	packages := "p1, p2, p3"
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -612,7 +612,7 @@ func TestRun_Execution_Failure(t *testing.T) {
 	tmpFilePath := "/test/tmp"
 	packages := "p1, p2, p3"
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -732,7 +732,7 @@ func TestRun_Execution_Cg_Failure(t *testing.T) {
 	tmpFilePath := "/test/tmp"
 	packages := "p1, p2, p3"
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false
@@ -847,7 +847,7 @@ func TestRun_Execution_Reports_Failure(t *testing.T) {
 	tmpFilePath := "/test/tmp"
 	packages := "p1, p2, p3"
 
-	expDir := fmt.Sprintf(outDir, tmpFilePath)
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
 	expData := `outDir: /test/tmp/ti/callgraph/
 logLevel: 0
 logConsole: false

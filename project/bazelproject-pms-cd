@@ -18,21 +18,14 @@ directories:
   470-alert
   490-ce-commons
   800-pipeline-service
-  810-ng-triggers
   platform-service
-  860-orchestration-visualization
   865-cg-events
   867-polling-contracts
   870-cg-orchestration
-  870-orchestration
   874-orchestration-delay
-  876-orchestration-beans
   878-ng-common-utilities
-  879-pms-sdk
   880-pipeline-cd-commons
-  882-pms-sdk-core
   884-pms-commons
-  888-pms-client
   890-sm-core
   900-git-sync-sdk
   910-delegate-service-driver
@@ -70,7 +63,6 @@ directories:
   953-git-sync-commons
   953-yaml-commons
   954-connector-beans
-  954-pms-contracts
   955-alert-beans
   955-cg-yaml
   955-delegate-beans

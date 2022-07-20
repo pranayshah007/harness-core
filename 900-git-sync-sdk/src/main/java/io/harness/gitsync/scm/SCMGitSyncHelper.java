@@ -28,6 +28,8 @@ import io.harness.gitsync.ErrorDetails;
 import io.harness.gitsync.FileInfo;
 import io.harness.gitsync.GetFileRequest;
 import io.harness.gitsync.GetFileResponse;
+import io.harness.gitsync.GetRepoUrlRequest;
+import io.harness.gitsync.GetRepoUrlResponse;
 import io.harness.gitsync.GitMetaData;
 import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub;
 import io.harness.gitsync.PushFileResponse;
@@ -48,6 +50,7 @@ import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
 import io.harness.gitsync.scm.beans.ScmCreatePRResponse;
 import io.harness.gitsync.scm.beans.ScmErrorDetails;
 import io.harness.gitsync.scm.beans.ScmGetFileResponse;
+import io.harness.gitsync.scm.beans.ScmGetRepoUrlResponse;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitsync.scm.beans.ScmPushResponse;
 import io.harness.gitsync.scm.beans.ScmUpdateFileGitRequest;
@@ -231,6 +234,32 @@ public class SCMGitSyncHelper {
     return ScmCreatePRResponse.builder().prNumber(createPRResponse.getPrNumber()).build();
   }
 
+  public ScmGetRepoUrlResponse getRepoUrl(
+      Scope scope, String repoName, String connectorRef, Map<String, String> contextMap) {
+    contextMap = GitSyncLogContextHelper.setContextMap(scope, repoName, "", "", GitOperation.GET_REPO_URL, contextMap);
+    try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
+         MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
+      final GetRepoUrlRequest getRepoUrlRequest =
+          GetRepoUrlRequest.newBuilder()
+              .setRepoName(repoName)
+              .setConnectorRef(connectorRef)
+              .setScopeIdentifiers(ScopeIdentifierMapper.getScopeIdentifiersFromScope(scope))
+              .putAllContextMap(contextMap)
+              .build();
+
+      final GetRepoUrlResponse getRepoUrlResponse = GitSyncGrpcClientUtils.retryAndProcessException(
+          harnessToGitPushInfoServiceBlockingStub::getRepoUrl, getRepoUrlRequest);
+
+      if (isFailureResponse(getRepoUrlResponse.getStatusCode())) {
+        log.error("Git SDK getRepoUrl Failure: {}", getRepoUrlResponse);
+        scmErrorHandler.processAndThrowException(
+            getRepoUrlResponse.getStatusCode(), getScmErrorDetailsFromGitProtoResponse(getRepoUrlResponse.getError()));
+      }
+
+      return ScmGetRepoUrlResponse.builder().repoUrl(getRepoUrlResponse.getRepoUrl()).build();
+    }
+  }
+
   @VisibleForTesting
   protected void throwDifferentExceptionInCaseOfChangeTypeAdd(
       GitEntityInfo gitBranchInfo, ChangeType changeType, WingsException e) {
@@ -349,6 +378,7 @@ public class SCMGitSyncHelper {
         .filePath(gitMetaData.getFilePath())
         .commitId(gitMetaData.getCommitId())
         .fileUrl(gitMetaData.getFileUrl())
+        .repoUrl(gitMetaData.getRepoUrl())
         .build();
   }
 

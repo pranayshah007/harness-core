@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.ci.vm;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -14,15 +15,15 @@ import lombok.Data;
 @Data
 @Builder
 public class VmServiceStatus {
-  @NotNull String identifier;
-  String name;
-  String image;
-  String logKey;
+  @JsonProperty("identifier") @NotNull String identifier;
+  @JsonProperty("name") String name;
+  @JsonProperty("image") String image;
+  @JsonProperty("log_key") String logKey;
 
   public enum Status {
-    RUNNING,
-    ERROR;
+    @JsonProperty("RUNNING") RUNNING,
+    @JsonProperty("ERROR") ERROR;
   }
-  Status status;
-  String errorMessage;
+  @JsonProperty("status") Status status;
+  @JsonProperty("error_message") String errorMessage;
 }

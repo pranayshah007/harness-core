@@ -27,6 +27,7 @@ service HarnessToGitPushInfoService {
   rpc createFile(CreateFileRequest) returns (CreateFileResponse);
   rpc updateFile(UpdateFileRequest) returns (UpdateFileResponse);
   rpc createPullRequest(CreatePRRequest) returns (CreatePRResponse);
+  rpc getRepoUrl(GetRepoUrlRequest) returns (GetRepoUrlResponse);
 }
 
 message PushInfo {
@@ -173,6 +174,19 @@ message CreatePRResponse {
   ErrorDetails error = 3;
 }
 
+message GetRepoUrlRequest {
+  string connectorRef = 1;
+  string repoName = 2;
+  ScopeIdentifiers scopeIdentifiers = 3;
+  map<string, string> contextMap = 4;
+}
+
+message GetRepoUrlResponse {
+  int32 statusCode = 1;
+  string repoUrl = 2;
+  ErrorDetails error = 3;
+}
+
 message GitMetaData {
   string repoName = 1;
   string branchName = 2;
@@ -180,6 +194,7 @@ message GitMetaData {
   string filePath = 4;
   string blobId = 5;
   string fileUrl = 6;
+  string repoUrl = 7;
 }
 
 message ErrorDetails {

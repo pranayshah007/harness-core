@@ -66,6 +66,7 @@ public class SetupSweepingOutputPcf implements SweepingOutput {
   private boolean nonVersioning;
   private Integer activeAppRevision;
   private String existingAppNamingStrategy;
+  private boolean isWebProcessCountZero;
 
   public InfoVariables fetchPcfVariableInfo() {
     InfoVariablesBuilder infoVariablesBuilder = InfoVariables.builder();

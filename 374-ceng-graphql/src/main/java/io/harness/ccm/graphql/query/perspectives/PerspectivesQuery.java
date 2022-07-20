@@ -200,7 +200,7 @@ public class PerspectivesQuery {
     PerspectiveTimeSeriesData data = perspectiveTimeSeriesHelper.fetch(
         viewsBillingService.getTimeSeriesStatsNg(bigQuery, filters, groupBy, aggregateFunction, sortCriteria,
             cloudProviderTableName, includeOthers, limit, viewQueryParams),
-        timePeriod, conversionField, businessMappingId, accountId);
+        timePeriod, conversionField, businessMappingId, accountId, groupBy);
 
     Map<Long, Double> unallocatedCost = null;
     if (includeUnallocatedCost) {
@@ -208,7 +208,7 @@ public class PerspectivesQuery {
           bigQuery, filters, groupBy, Collections.emptyList(), cloudProviderTableName, viewQueryParams);
     }
 
-    return perspectiveTimeSeriesHelper.postFetch(data, limit, includeOthers, unallocatedCost);
+    return perspectiveTimeSeriesHelper.postFetch(data, limit, includeOthers, includeUnallocatedCost, unallocatedCost);
   }
 
   @GraphQLQuery(name = "perspectiveFields", description = "Fields for perspective explorer")

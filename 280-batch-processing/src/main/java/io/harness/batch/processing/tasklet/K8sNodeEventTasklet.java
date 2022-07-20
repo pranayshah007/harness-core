@@ -62,7 +62,7 @@ public class K8sNodeEventTasklet implements Tasklet {
                                                   .collect(Collectors.toList());
 
       instanceDataBulkWriteService.updateInstanceEvent(instanceEventList);
-      if (featureFlagService.isEnabled(FeatureName.NODE_RECOMMENDATION_1, jobConstants.getAccountId())) {
+      if (featureFlagService.isEnabled(FeatureName.NODE_RECOMMENDATION_AGGREGATE, jobConstants.getAccountId())) {
         // we are not using START event now-a-days.
         instanceInfoTimescaleDAO.updateNodeStopEvent(
             instanceEventList.stream().filter(e -> EventType.STOP.equals(e.getType())).collect(Collectors.toList()));

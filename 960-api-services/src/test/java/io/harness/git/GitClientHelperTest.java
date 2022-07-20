@@ -663,7 +663,7 @@ public class GitClientHelperTest extends CategoryTest {
   @Test
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
-  public void testGetCompleteHTTPUrlFromSSHUrlForBitbucketClone() {
+  public void testGetCompleteHTTPUrlFromHTTPCloneUrlForBitbucket() {
     assertThat(GitClientHelper.getCompleteHTTPUrlForBitbucketSaas("https://bhavya181@bitbucket.org/repoOrg/repo.git"))
         .isEqualTo("https://bitbucket.org/repoOrg/repo");
   }
@@ -693,5 +693,13 @@ public class GitClientHelperTest extends CategoryTest {
     assertThat(GitClientHelper.getCompleteHTTPRepoUrlForAzureRepoSaas(
                    "https://owner@dev.azure.com/repoOrg/repoProject/_git/repoName"))
         .isEqualTo("https://dev.azure.com/repoOrg/repoProject/_git/repoName");
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetAzureRepoOrgAndProjectSSHForProjectTypeConnector() {
+    assertThat(GitClientHelper.getAzureRepoOrgAndProjectSSH("git@ssh.dev.azure.com:v3/repoOrg/repoProject"))
+        .isEqualTo("repoOrg/repoProject");
   }
 }

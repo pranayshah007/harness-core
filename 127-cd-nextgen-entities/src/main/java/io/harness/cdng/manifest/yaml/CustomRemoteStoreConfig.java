@@ -1,0 +1,83 @@
+package io.harness.cdng.manifest.yaml;
+
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+
+import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.manifest.ManifestStoreType;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.plancreator.steps.TaskSelectorYaml;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.yaml.YamlSchemaTypes;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
+import javax.validation.constraints.NotNull;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.experimental.Wither;
+import org.springframework.data.annotation.TypeAlias;
+
+@OwnedBy(CDP)
+@Data
+@Builder
+@EqualsAndHashCode(callSuper = false)
+@JsonTypeName(ManifestStoreType.CUSTOM_REMOTE)
+@TypeAlias("CustomRemoteStoreConfig")
+@RecasterAlias("io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig")
+public class CustomRemoteStoreConfig implements StoreConfig {
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private String uuid;
+
+  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Wither
+  private ParameterField<String> extractionScript;
+
+  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Wither
+  private ParameterField<String> filePath;
+
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+
+  @Override
+  public String getKind() {
+    return ManifestStoreType.CUSTOM_REMOTE;
+  }
+
+  @Override
+  public StoreConfig cloneInternal() {
+    return CustomRemoteStoreConfig.builder().extractionScript(extractionScript).filePath(filePath).build();
+  }
+
+  @Override
+  public ParameterField<String> getConnectorReference() {
+    return null;
+  }
+
+  @Override
+  public StoreConfig applyOverrides(StoreConfig overrideConfig) {
+    CustomRemoteStoreConfig customRemoteStoreConfig = (CustomRemoteStoreConfig) overrideConfig;
+    CustomRemoteStoreConfig resultantStoreConfig = this;
+    if (!ParameterField.isNull(customRemoteStoreConfig.getExtractionScript())) {
+      resultantStoreConfig = resultantStoreConfig.withExtractionScript(customRemoteStoreConfig.getExtractionScript());
+    }
+    if (!ParameterField.isNull(customRemoteStoreConfig.getFilePath())) {
+      resultantStoreConfig = resultantStoreConfig.withFilePath(customRemoteStoreConfig.getFilePath());
+    }
+
+    return resultantStoreConfig;
+  }
+}

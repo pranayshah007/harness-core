@@ -22,7 +22,8 @@ import lombok.Data;
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
 public class ContainerState {
   private final String namespace;
-  private final String podName;
+  private final String workloadKind;
+  private final String workloadName;
   private final String containerName;
 
   /*
@@ -36,9 +37,10 @@ public class ContainerState {
   private Instant lastSampleStart;
   private int totalSamplesCount;
 
-  public ContainerState(String namespace, String podName, String containerName) {
+  public ContainerState(String namespace, String workloadKind, String workloadName, String containerName) {
     this.namespace = namespace;
-    this.podName = podName;
+    this.workloadKind = workloadKind;
+    this.workloadName = workloadName;
     this.containerName = containerName;
     this.cpuHistogram = newCpuHistogram();
     this.cpuHistogramV2 = newCpuHistogramV2();

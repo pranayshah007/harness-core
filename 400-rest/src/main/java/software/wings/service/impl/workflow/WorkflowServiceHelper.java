@@ -991,11 +991,36 @@ public class WorkflowServiceHelper {
     if (isDynamicInfrastructure) {
       phaseSteps.add(aPhaseStep(PhaseStepType.PROVISION_INFRASTRUCTURE, PROVISION_INFRASTRUCTURE).build());
     }
-    if (CANARY == orchestrationWorkflowType) {
-      generateAppServiceCanaryPhaseSteps(isFirstPhase, phaseSteps, commandMap);
-    } else if (BLUE_GREEN == orchestrationWorkflowType) {
-      generateAppServiceBlueGreenPhaseSteps(phaseSteps, commandMap);
+    switch (orchestrationWorkflowType) {
+      case BASIC:
+        generateAppServiceBasicPhaseSteps(phaseSteps, commandMap);
+        break;
+      case CANARY:
+        generateAppServiceCanaryPhaseSteps(isFirstPhase, phaseSteps, commandMap);
+        break;
+      case BLUE_GREEN:
+        generateAppServiceBlueGreenPhaseSteps(phaseSteps, commandMap);
+        break;
+      default:
+        return;
     }
+  }
+
+  private void generateAppServiceBasicPhaseSteps(
+      List<PhaseStep> phaseSteps, Map<CommandType, List<Command>> commandMap) {
+    phaseSteps.add(aPhaseStep(PhaseStepType.AZURE_WEBAPP_SLOT_SETUP, AZURE_WEBAPP_SLOT_SETUP)
+                       .addStep(GraphNode.builder()
+                                    .id(generateUuid())
+                                    .type(StateType.AZURE_WEBAPP_SLOT_SETUP.name())
+                                    .name(AZURE_WEBAPP_SLOT_DEPLOYMENT)
+                                    .build())
+                       .build());
+
+    phaseSteps.add(aPhaseStep(PhaseStepType.VERIFY_SERVICE, VERIFY_SERVICE)
+                       .addAllSteps(commandNodes(commandMap, CommandType.VERIFY))
+                       .build());
+
+    phaseSteps.add(aPhaseStep(PhaseStepType.WRAP_UP, WRAP_UP).build());
   }
 
   private void generateAppServiceCanaryPhaseSteps(
@@ -1069,14 +1094,14 @@ public class WorkflowServiceHelper {
     if (!isAzureWebAppSupportedWorkflowType(orchestrationWorkflowType)) {
       throw new InvalidRequestException(
           format(
-              "Unsupported workflow type [%s] for Azure Web App deployment. Canary & Blue/Green deployment are supported",
+              "Unsupported workflow type [%s] for Azure Web App deployment. Basic, Canary & Blue/Green deployment are supported",
               orchestrationWorkflowType != null ? orchestrationWorkflowType.name() : ""),
           USER);
     }
   }
 
   private boolean isAzureWebAppSupportedWorkflowType(OrchestrationWorkflowType workflowType) {
-    return (CANARY == workflowType) || (BLUE_GREEN == workflowType);
+    return (BASIC == workflowType) || (CANARY == workflowType) || (BLUE_GREEN == workflowType);
   }
 
   public void generateNewWorkflowPhaseStepsForAWSLambda(String appId, WorkflowPhase workflowPhase) {

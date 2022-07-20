@@ -26,7 +26,7 @@ import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncSdkService;
-import io.harness.pms.contracts.governance.GovernanceMetadata;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;

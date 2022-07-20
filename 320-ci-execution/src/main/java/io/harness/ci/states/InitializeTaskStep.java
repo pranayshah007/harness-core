@@ -41,6 +41,7 @@ import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.VmServiceStatus;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.ng.core.EntityDetail;
@@ -62,8 +63,12 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
 import io.harness.steps.executable.TaskExecutableWithRbac;
 import io.harness.supplier.ThrowingSupplier;
+import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.timeout.Timeout;
+
+import software.wings.beans.SerializationFormat;
+import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -82,11 +87,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CI)
 public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementParameters, CITaskExecutionResponse> {
-  public static final String TASK_TYPE_INITIALIZATION_PHASE = "INITIALIZATION_PHASE";
   public static final String LE_STATUS_TASK_TYPE = "CI_LE_STATUS";
   public static final Long TASK_BUFFER_TIMEOUT_MILLIS = 30 * 1000L;
 
   @Inject private BuildSetupUtils buildSetupUtils;
+  @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
   @Inject private K8InitializeServiceUtils k8InitializeServiceUtils;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private KryoSerializer kryoSerializer;
@@ -141,11 +146,12 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
       StepElementParameters stepElementParameters, ThrowingSupplier<CITaskExecutionResponse> responseSupplier)
       throws Exception {
-    CITaskExecutionResponse ciTaskExecutionResponse = responseSupplier.get();
+    ResponseData responseData = serializedResponseDataHelper.deserialize(responseSupplier.get());
+    CITaskExecutionResponse ciTaskExecutionResponse = (CITaskExecutionResponse) responseData;
     if (ciTaskExecutionResponse.getType() == CITaskExecutionResponse.Type.K8) {
       return handleK8TaskResponse(ambiance, stepElementParameters, ciTaskExecutionResponse);
     } else if (ciTaskExecutionResponse.getType() == CITaskExecutionResponse.Type.VM) {
-      return handleVmTaskResponse(ambiance, stepElementParameters, ciTaskExecutionResponse);
+      return handleVmTaskResponse(ciTaskExecutionResponse);
     } else {
       throw new CIStageExecutionException(
           format("Invalid infra type for task response: %s", ciTaskExecutionResponse.getType()));
@@ -156,11 +162,18 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       StepElementParameters stepElementParameters, CIInitializeTaskParams buildSetupTaskParams) {
     long timeout =
         Timeout.fromString((String) stepElementParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis();
+    SerializationFormat serializationFormat = SerializationFormat.KRYO;
+    String taskType = TaskType.INITIALIZATION_PHASE.getDisplayName();
+    if (buildSetupTaskParams.getType() == CIInitializeTaskParams.Type.DLITE_VM) {
+      serializationFormat = SerializationFormat.JSON;
+      taskType = TaskType.DLITE_CI_VM_INITIALIZE_TASK.getDisplayName();
+    }
 
     return TaskData.builder()
         .async(true)
         .timeout(timeout + TASK_BUFFER_TIMEOUT_MILLIS)
-        .taskType(TASK_TYPE_INITIALIZATION_PHASE)
+        .taskType(taskType)
+        .serializationFormat(serializationFormat)
         .parameters(new Object[] {buildSetupTaskParams})
         .build();
   }
@@ -206,8 +219,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     }
   }
 
-  private StepResponse handleVmTaskResponse(
-      Ambiance ambiance, StepElementParameters stepElementParameters, CITaskExecutionResponse ciTaskExecutionResponse) {
+  private StepResponse handleVmTaskResponse(CITaskExecutionResponse ciTaskExecutionResponse) {
     VmTaskExecutionResponse vmTaskExecutionResponse = (VmTaskExecutionResponse) ciTaskExecutionResponse;
     DependencyOutcome dependencyOutcome = getVmDependencyOutcome(vmTaskExecutionResponse);
     StepResponse.StepOutcome stepOutcome =
@@ -358,7 +370,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
 
     List<String> connectorRefs =
         IntegrationStageUtils.getStageConnectorRefs(initializeStepInfo.getStageElementConfig());
-    if (infrastructure.getType() == Infrastructure.Type.VM) {
+    if (infrastructure.getType() == Infrastructure.Type.VM || infrastructure.getType() == Infrastructure.Type.RUNS_ON) {
       if (!isEmpty(connectorRefs)) {
         entityDetails.addAll(
             connectorRefs.stream()

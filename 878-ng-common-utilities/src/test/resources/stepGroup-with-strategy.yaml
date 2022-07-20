@@ -1,9 +1,15 @@
+
+__uuid: "stepGroupParent"
 stepGroup:
     name: searching
     identifier: searching
+    __uuid: "sg1"
     steps:
-      - parallel:
-          - step:
+      - __uuid: "steps1"
+        parallel:
+          - __uuid: "parallel1"
+            step:
+              __uuid: "step1"
               type: Http
               name: <+strategy.iterations>
               identifier: <+strategy.iteration>
@@ -15,7 +21,10 @@ stepGroup:
                 headers: []
                 outputVariables: []
               timeout: 1m
-          - step:
+
+          - __uuid: "parallel2"
+            step:
+              __uuid: "step3"
               type: Http
               name: bing
               identifier: bing
@@ -25,7 +34,8 @@ stepGroup:
                 headers: []
                 outputVariables: []
               timeout: 10s
-      - step:
+      - __uuid: "step4"
+        step:
           type: Http
           name: <+strategy.iterations>
           identifier: <+strategy.iteration>

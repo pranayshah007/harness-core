@@ -22,14 +22,16 @@ import lombok.EqualsAndHashCode;
 public class AzureWebAppRollbackParameters extends AzureAppServiceTaskParameters {
   private AzureAppServicePreDeploymentData preDeploymentData;
   private boolean blueGreen;
+  private boolean isBasicDeployment;
 
   @Builder
   public AzureWebAppRollbackParameters(String appId, String accountId, String activityId, String subscriptionId,
       String resourceGroupName, String appName, AzureAppServicePreDeploymentData preDeploymentData, String commandName,
-      Integer timeoutIntervalInMin, boolean blueGreen) {
+      Integer timeoutIntervalInMin, boolean blueGreen, boolean isBasicDeployment) {
     super(appId, accountId, activityId, subscriptionId, resourceGroupName, appName, commandName, timeoutIntervalInMin,
         SLOT_ROLLBACK, WEB_APP);
     this.preDeploymentData = preDeploymentData;
     this.blueGreen = blueGreen;
+    this.isBasicDeployment = isBasicDeployment;
   }
 }

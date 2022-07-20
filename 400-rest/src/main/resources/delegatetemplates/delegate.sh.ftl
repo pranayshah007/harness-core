@@ -5,6 +5,8 @@ if [ -z "$1" ]; then
   exit 0
 fi
 
+rm config-delegate.yml
+
 ULIM=$(ulimit -n)
 echo "ulimit -n is set to $ULIM"
 if [[ "$ULIM" == "unlimited" || $ULIM -lt 10000 ]]; then

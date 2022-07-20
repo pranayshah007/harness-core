@@ -26,7 +26,8 @@ public enum JWT_CATEGORY {
   MARKETPLACE_SIGNUP(24 * 60 * 60 * 1000), // 1 day
   API_KEY(10 * 60 * 1000), // 10 mins; API_KEY secret is not configured in config.yml!
   DATA_HANDLER_SECRET(60 * 60 * 1000),
-  NEXT_GEN_MANAGER_SECRET(60 * 60 * 1000);
+  NEXT_GEN_MANAGER_SECRET(60 * 60 * 1000),
+  MANAGER_SECRET(60 * 60 * 1000);
   private int validityDuration;
 
   JWT_CATEGORY(int validityDuration) {

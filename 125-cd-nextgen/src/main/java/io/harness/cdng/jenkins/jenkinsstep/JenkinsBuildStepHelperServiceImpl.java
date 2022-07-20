@@ -103,8 +103,8 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
     }
 
     JenkinsConnectorDTO connectorDTO = (JenkinsConnectorDTO) configDTO;
-    BaseNGAccess baseNGAccess = getBaseNGAccess(
-        identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier());
+    BaseNGAccess baseNGAccess =
+        getBaseNGAccess(ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
     paramsBuilder.jenkinsConnectorDTO(connectorDTO);
     paramsBuilder.encryptedDataDetails(
         secretManagerClientService.getEncryptionDetails(ngAccess, connectorDTO.getAuth().getCredentials()));

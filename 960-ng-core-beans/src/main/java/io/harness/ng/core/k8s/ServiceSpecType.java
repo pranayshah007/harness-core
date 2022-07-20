@@ -16,5 +16,5 @@ public interface ServiceSpecType {
   String PCF = "Pcf";
   String SERVERLESS_AWS_LAMBDA = "ServerlessAwsLambda";
   String WINRM = "WinRm";
-  String AZURE_WEBAPPS = "AzureWebApps";
+  String AZURE_WEBAPP = "AzureWebApp";
 }

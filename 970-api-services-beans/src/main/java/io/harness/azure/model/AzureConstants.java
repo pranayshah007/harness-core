@@ -168,6 +168,7 @@ public interface AzureConstants {
   String REPOSITORY_NAME_BLANK_VALIDATION_MSG = "Parameter repositoryName cannot be null or empty";
   String REGISTRY_HOST_BLANK_VALIDATION_MSG = "Parameter registryHost cannot be null or empty";
   String REGISTRY_NAME_BLANK_VALIDATION_MSG = "Parameter registryName cannot be null or empty";
+  String OS_TYPE_NULL_VALIDATION_MSG = "Parameter osType is required and cannot be null";
 
   // Patterns
   String GALLERY_IMAGE_ID_PATTERN =
