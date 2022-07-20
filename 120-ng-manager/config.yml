@@ -327,7 +327,7 @@ subscriptionConfig:
   stripeApiKey: dummy
 
 accessControlClient:
-  enableAccessControl: false
+  enableAccessControl: true
   accessControlServiceConfig:
     baseUrl: http://localhost:9006/api/
     connectTimeOutSeconds: 15
@@ -343,7 +343,7 @@ accessControlAdminClient:
     readTimeOutSeconds: 15
     enableHttpLogging: ${ENABLE_HTTP_LOGGING:-false}
   accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
-  mockAccessControlService: true
+  mockAccessControlService: false
 
 gitGrpcClientConfigs:
   cf:

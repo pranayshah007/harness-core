@@ -106,6 +106,20 @@ public interface RoleAssignmentResource {
           required = true) @Body RoleAssignmentFilterDTO roleAssignmentFilter);
 
   @POST
+  @Path("filter/user/{userIdentifier}")
+  @ApiOperation(value = "Get Filtered Role Assignments By Scopes", nickname = "getFilteredRoleAssignmentByScopeList")
+  @Operation(operationId = "getFilteredRoleAssignmentByScopeList", summary = "List Role Assignments by scope filter",
+      description = "List role assignments in the scope according to the given filter",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Paginated list of role assignments in the scope according to the given filter")
+      })
+  ResponseDTO<PageResponse<RoleAssignmentAggregateWithScope>>
+  getList(@BeanParam PageRequest pageRequest, @PathParam("userIdentifier") String userIdentifier,
+      @BeanParam HarnessScopeParams harnessScopeParams, @Body UserRoleAssignmentFilter userRoleAssignmentFilter);
+
+  @POST
   @Path("filter/internal/childscopes")
   @InternalApi
   @ApiOperation(value = "Get Filtered Role Assignments including child scopes",

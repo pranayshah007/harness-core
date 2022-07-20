@@ -8,9 +8,11 @@
 package io.harness.accesscontrol.principals.usergroups;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.principals.Principal;
 import io.harness.accesscontrol.principals.PrincipalType;
+import io.harness.accesscontrol.principals.usergroups.persistence.UserGroupDBO;
 import io.harness.accesscontrol.principals.usergroups.persistence.UserGroupDao;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
@@ -27,11 +29,13 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -66,6 +70,11 @@ public class UserGroupServiceImpl implements UserGroupService {
   @Override
   public PageResponse<UserGroup> list(PageRequest pageRequest, String scopeIdentifier) {
     return userGroupDao.list(pageRequest, scopeIdentifier);
+  }
+
+  @Override
+  public List<UserGroup> list(String userIdentifier) {
+    return userGroupDao.list(userIdentifier);
   }
 
   @Override
