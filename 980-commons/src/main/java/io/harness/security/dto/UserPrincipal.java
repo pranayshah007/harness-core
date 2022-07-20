@@ -18,7 +18,6 @@ import static io.harness.security.dto.PrincipalType.USER;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.auth0.jwt.interfaces.Claim;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,7 +45,6 @@ public class UserPrincipal extends Principal {
     this.accountId = accountId;
   }
 
-  @JsonIgnore
   @Override
   public Map<String, String> getJWTClaims() {
     Map<String, String> claims = new HashMap<>();
