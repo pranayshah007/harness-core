@@ -10,21 +10,18 @@ errors=()
 TEMP_DIR=`mktemp -d`
 touch $TEMP_DIR/codehash-out.text
 
-git fetch origin develop
-git checkout develop
-git checkout "$ghprbSourceBranch"
-
-COMMIT=$(git log develop.."$GIT_BRANCH" --pretty=format:"%h" | tail -1)
-git checkout $COMMIT
-
 bazel run "//001-microservice-intfc-tool:delegate" | tee $TEMP_DIR/codehash-out.text
 CODEBASE_HASH_STRING=`cat $TEMP_DIR/codehash-out.text | grep "Codebase Hash:"`
 
 HASH=${CODEBASE_HASH_STRING:14:64}
 echo "New hash: " $HASH
 
-git checkout develop
 touch $TEMP_DIR/codehash-out-develop.text
+git fetch origin develop
+git checkout develop
+DEVELOP_COMMIT=$(git merge-base $ghprbSourceBranch develop)
+git checkout "$DEVELOP_COMMIT"
+
 bazel run "//001-microservice-intfc-tool:delegate" | tee $TEMP_DIR/codehash-out-develop.text
 CODEBASE_HASH_STRING=`cat $TEMP_DIR/codehash-out-develop.text | grep "Codebase Hash:"`
 EXISTING_HASH=${CODEBASE_HASH_STRING:14:64}
