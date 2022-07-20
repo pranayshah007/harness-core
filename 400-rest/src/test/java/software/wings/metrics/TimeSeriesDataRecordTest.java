@@ -22,8 +22,8 @@ import software.wings.service.intfc.analysis.ClusterLevel;
 import software.wings.sm.StateType;
 
 import com.google.common.collect.HashBasedTable;
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -90,8 +90,8 @@ public class TimeSeriesDataRecordTest extends CategoryTest {
     String transaction2 = "/get-transactions";
     String metric1 = "response-time";
     String metric2 = "throughput";
-    List<String> metrics = Lists.newArrayList(metric1, metric2);
-    List<NewRelicMetricDataRecord> inputRecords = Lists.newArrayList(
+    List<String> metrics = Arrays.asList(metric1, metric2);
+    List<NewRelicMetricDataRecord> inputRecords = Arrays.asList(
         getNewRelicInputForTest(now.getMillis(), 0, host1, null, transaction1, metrics),
         getNewRelicInputForTest(now.getMillis(), 0, host1, null, transaction2, metrics),
         getNewRelicInputForTest(now.getMillis(), 0, host2, null, transaction1, metrics),
@@ -109,7 +109,7 @@ public class TimeSeriesDataRecordTest extends CategoryTest {
     transactionMap.put(transaction1, metrics);
     transactionMap.put(transaction2, metrics);
     List<TimeSeriesDataRecord> expectedOutput =
-        Lists.newArrayList(getTimeSeriesInputForTest(now.getMillis(), 0, host1, null, transactionMap),
+        Arrays.asList(getTimeSeriesInputForTest(now.getMillis(), 0, host1, null, transactionMap),
             getTimeSeriesInputForTest(now.getMillis(), 0, host2, null, transactionMap),
             getTimeSeriesInputForTest(now.getMillis(), 0, null, ClusterLevel.H0, new HashMap<>()),
             getTimeSeriesInputForTest(now.getMillis(), 1, host1, null, transactionMap),
@@ -138,14 +138,14 @@ public class TimeSeriesDataRecordTest extends CategoryTest {
     String transaction2 = "/get-transactions";
     String metric1 = "response-time";
     String metric2 = "throughput";
-    List<String> metrics = Lists.newArrayList(metric1, metric2);
+    List<String> metrics = Arrays.asList(metric1, metric2);
 
     Map<String, List<String>> transactionMap = new HashMap<>();
     transactionMap.put(transaction1, metrics);
     transactionMap.put(transaction2, metrics);
 
     List<TimeSeriesDataRecord> inputRecords =
-        Lists.newArrayList(getTimeSeriesInputForTest(now.getMillis(), 0, host1, null, transactionMap),
+        Arrays.asList(getTimeSeriesInputForTest(now.getMillis(), 0, host1, null, transactionMap),
             getTimeSeriesInputForTest(now.getMillis(), 0, host2, null, transactionMap),
             getTimeSeriesInputForTest(now.getMillis(), 0, null, ClusterLevel.H0, new HashMap<>()),
             getTimeSeriesInputForTest(now.getMillis(), 1, host1, null, transactionMap),
@@ -155,7 +155,7 @@ public class TimeSeriesDataRecordTest extends CategoryTest {
     List<NewRelicMetricDataRecord> dataRecords =
         TimeSeriesDataRecord.getNewRelicDataRecordsFromTimeSeriesDataRecords(inputRecords);
 
-    List<NewRelicMetricDataRecord> expectedOutput = Lists.newArrayList(
+    List<NewRelicMetricDataRecord> expectedOutput = Arrays.asList(
         getNewRelicInputForTest(now.getMillis(), 0, host1, null, transaction1, metrics),
         getNewRelicInputForTest(now.getMillis(), 0, host1, null, transaction2, metrics),
         getNewRelicInputForTest(now.getMillis(), 0, host2, null, transaction1, metrics),

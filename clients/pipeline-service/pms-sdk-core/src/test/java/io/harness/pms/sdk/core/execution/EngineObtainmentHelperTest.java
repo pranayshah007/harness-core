@@ -30,7 +30,6 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.rule.Owner;
 
-import io.fabric8.utils.Lists;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -60,7 +59,7 @@ public class EngineObtainmentHelperTest extends PmsSdkCoreTestBase {
                            .setName("output")
                            .setRefType(RefType.newBuilder().setType(OrchestrationRefType.SWEEPING_OUTPUT).build())
                            .build();
-    List<RefObject> refObjects = Lists.newArrayList(outcome, output);
+    List<RefObject> refObjects = Arrays.asList(outcome, output);
     Ambiance ambiance = AmbianceTestUtils.buildAmbiance();
     TestStepTransput testStepTransput = TestStepTransput.builder().build();
     when(outcomeService.resolve(ambiance, outcome)).thenReturn(testStepTransput);

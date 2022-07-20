@@ -32,7 +32,6 @@ import io.harness.rule.Owner;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
-import io.fabric8.utils.Lists;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
@@ -80,9 +79,9 @@ public class FilterCreatorServiceTest extends PmsSdkCoreTestBase {
   @Category(UnitTests.class)
   public void testMergeResponses() {
     FilterCreationResponse finalCreationResponse =
-        FilterCreationResponse.builder().stageCount(10).stageNames(Lists.newArrayList("stage1")).build();
+        FilterCreationResponse.builder().stageCount(10).stageNames(Arrays.asList("stage1")).build();
     FilterCreationResponse filterCreationResponse =
-        FilterCreationResponse.builder().stageCount(10).stageNames(Lists.newArrayList("stage2")).build();
+        FilterCreationResponse.builder().stageCount(10).stageNames(Arrays.asList("stage2")).build();
 
     filterCreatorService.mergeResponses(finalCreationResponse, filterCreationResponse, Dependencies.newBuilder());
 

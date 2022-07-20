@@ -42,7 +42,7 @@ import io.harness.steps.barriers.service.BarrierService;
 import io.harness.timeout.TimeoutInstance;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTracker;
 
-import io.fabric8.utils.Lists;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -101,17 +101,17 @@ public class PMSBarrierServiceTest extends PipelineServiceTestBase {
                     .stages(Sets.newSet(
                         StageDetail.builder().name(planNode.getName()).identifier(planNode.getIdentifier()).build()))
                     .build())
-            .positionInfo(BarrierPositionInfo.builder()
-                              .barrierPositionList(
-                                  Lists.newArrayList(BarrierPosition.builder().stepRuntimeId(nodeRuntimeId).build()))
-                              .build())
+            .positionInfo(
+                BarrierPositionInfo.builder()
+                    .barrierPositionList(Arrays.asList(BarrierPosition.builder().stepRuntimeId(nodeRuntimeId).build()))
+                    .build())
             .build();
 
     when(nodeExecutionService.getByPlanNodeUuid(stageNode.getUuid(), ambiance.getPlanExecutionId()))
         .thenReturn(stageNode);
 
     when(barrierService.findByStageIdentifierAndPlanExecutionIdAnsStateIn(anyString(), anyString(), anySet()))
-        .thenReturn(Lists.newArrayList(instance1));
+        .thenReturn(Arrays.asList(instance1));
 
     when(nodeExecutionService.get(nodeRuntimeId)).thenThrow(new InvalidRequestException("Exception"));
 
@@ -163,7 +163,7 @@ public class PMSBarrierServiceTest extends PipelineServiceTestBase {
                            .build())
             .positionInfo(
                 BarrierPositionInfo.builder()
-                    .barrierPositionList(Lists.newArrayList(BarrierPosition.builder().stepSetupId(planNodeId).build()))
+                    .barrierPositionList(Arrays.asList(BarrierPosition.builder().stepSetupId(planNodeId).build()))
                     .build())
             .build();
 
@@ -171,7 +171,7 @@ public class PMSBarrierServiceTest extends PipelineServiceTestBase {
         .thenReturn(instance1);
     when(nodeExecutionService.getByPlanNodeUuid(planNodeId, ambiance.getPlanExecutionId())).thenReturn(nodeExecution);
     when(timeoutInstanceRepository.findAllById(nodeExecution.getTimeoutInstanceIds()))
-        .thenReturn(Lists.newArrayList(timeoutInstance));
+        .thenReturn(Arrays.asList(timeoutInstance));
 
     BarrierExecutionInfo barrierExecutionInfo =
         pmsBarrierService.getBarrierExecutionInfo(planNodeId, ambiance.getPlanExecutionId());

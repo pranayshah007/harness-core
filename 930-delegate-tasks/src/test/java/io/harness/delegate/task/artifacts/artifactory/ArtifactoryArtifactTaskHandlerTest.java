@@ -38,8 +38,8 @@ import io.harness.security.encryption.SecretDecryptionService;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.utils.RepositoryFormat;
 
-import io.fabric8.utils.Lists;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Rule;
@@ -206,7 +206,7 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
                                                               .artifactoryConnectorDTO(artifactoryConnectorDTO)
                                                               .build();
 
-    doReturn(Lists.newArrayList(buildDetailsInternal))
+    doReturn(Arrays.asList(buildDetailsInternal))
         .when(artifactoryRegistryService)
         .getBuilds(
             artifactoryInternalConfig, REPO_NAME, IMAGE_NAME, RepositoryFormat.docker.name(), MAX_NO_OF_TAGS_PER_IMAGE);
@@ -263,7 +263,7 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
     String artifactDirectory = sourceAttributes.getArtifactDirectory();
     String filePath = Paths.get(artifactDirectory, DEFAULT_ARTIFACT_FILTER).toString();
 
-    doReturn(Lists.newArrayList(buildDetailsInternal))
+    doReturn(Arrays.asList(buildDetailsInternal))
         .when(artifactoryNgService)
         .getArtifactList(
             artifactoryInternalConfig, sourceAttributes.getRepositoryName(), filePath, MAX_NO_OF_BUILDS_PER_ARTIFACT);

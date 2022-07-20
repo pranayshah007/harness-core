@@ -39,7 +39,6 @@ import io.harness.metrics.service.api.MetricService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
-import io.fabric8.utils.Lists;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -404,7 +403,7 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
             .field(DataCollectionTaskKeys.verificationTaskId)
             .in(verificationTaskIds)
             .field(DataCollectionTaskKeys.status)
-            .in(Lists.newArrayList(DataCollectionExecutionStatus.WAITING, DataCollectionExecutionStatus.QUEUED));
+            .in(Arrays.asList(DataCollectionExecutionStatus.WAITING, DataCollectionExecutionStatus.QUEUED));
     UpdateOperations<DataCollectionTask> abortDCTaskOperation =
         hPersistence.createUpdateOperations(DataCollectionTask.class)
             .set(DataCollectionTaskKeys.status, DataCollectionExecutionStatus.ABORTED);

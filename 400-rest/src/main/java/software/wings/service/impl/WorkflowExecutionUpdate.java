@@ -82,7 +82,6 @@ import software.wings.sm.status.StateStatusUpdateInfo;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -724,19 +723,19 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
     final List<String> deployedCloudProviders =
         workflowExecutionService.getCloudProviderIdsForExecution(workflowExecution);
 
-    if (!Lists.isNullOrEmpty(deployedCloudProviders)) {
+    if (!isEmpty(deployedCloudProviders)) {
       update = true;
       setUnset(updateOps, WorkflowExecutionKeys.deployedCloudProviders, deployedCloudProviders);
     }
     final List<String> deployedServices = workflowExecutionService.getServiceIdsForExecution(workflowExecution);
-    if (!Lists.isNullOrEmpty(deployedServices)) {
+    if (!isEmpty(deployedServices)) {
       update = true;
       setUnset(updateOps, WorkflowExecutionKeys.deployedServices, deployedServices);
     }
     final List<EnvSummary> deployedEnvironments =
         workflowExecutionService.getEnvironmentsForExecution(workflowExecution);
 
-    if (!Lists.isNullOrEmpty(deployedEnvironments)) {
+    if (!isEmpty(deployedEnvironments)) {
       update = true;
       setUnset(updateOps, WorkflowExecutionKeys.deployedEnvironments, deployedEnvironments);
     }

@@ -29,7 +29,6 @@ import io.harness.rule.Owner;
 
 import software.wings.utils.RepositoryFormat;
 
-import io.fabric8.utils.Lists;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Rule;
@@ -127,7 +126,7 @@ public class NexusArtifactTaskHandlerTest extends CategoryTest {
     NexusRequest nexusInternalConfig = createNexusConfigWithUrl(nexusUsernamePasswordAuthDTO, nexusConnectorDTO);
     NexusArtifactDelegateRequest sourceAttributes = createNexusDelegateRequestWithTagAndUrl(nexusConnectorDTO);
 
-    doReturn(Lists.newArrayList(buildDetailsInternal))
+    doReturn(Arrays.asList(buildDetailsInternal))
         .when(nexusRegistryService)
         .getBuilds(
             nexusInternalConfig, REPO_NAME, null, IMAGE_NAME, RepositoryFormat.docker.name(), MAX_NO_OF_TAGS_PER_IMAGE);

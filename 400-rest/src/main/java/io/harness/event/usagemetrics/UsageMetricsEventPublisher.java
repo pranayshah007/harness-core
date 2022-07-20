@@ -27,9 +27,9 @@ import software.wings.service.intfc.WorkflowExecutionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Lists;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +76,7 @@ public class UsageMetricsEventPublisher {
     if (workflowExecution.getPipelineExecution() != null) {
       stringData.put(EventProcessor.PIPELINE, workflowExecution.getPipelineExecution().getPipelineId());
     } else {
-      listData.put(EventProcessor.WORKFLOW_LIST, Lists.newArrayList(workflowExecution.getWorkflowId()));
+      listData.put(EventProcessor.WORKFLOW_LIST, Arrays.asList(workflowExecution.getWorkflowId()));
     }
 
     stringData.put(EventProcessor.APPID, workflowExecution.getAppId());
@@ -85,7 +85,7 @@ public class UsageMetricsEventPublisher {
 
     List<String> cloudProviderIds = workflowExecution.getDeployedCloudProviders();
 
-    if (!Lists.isNullOrEmpty(cloudProviderIds)) {
+    if (!isEmpty(cloudProviderIds)) {
       listData.put(EventProcessor.CLOUD_PROVIDER_LIST, cloudProviderIds);
     }
 
@@ -97,19 +97,19 @@ public class UsageMetricsEventPublisher {
       stringData.put(EventProcessor.PARENT_EXECUTION, workflowExecution.getPipelineExecutionId());
     }
 
-    if (!Lists.isNullOrEmpty(workflowExecution.getArtifacts())) {
+    if (!isEmpty(workflowExecution.getArtifacts())) {
       listData.put(EventProcessor.ARTIFACT_LIST,
           workflowExecution.getArtifacts().stream().map(Artifact::getBuildNo).collect(Collectors.toList()));
     }
 
     List<String> serviceIds = workflowExecution.getDeployedServices();
-    if (!Lists.isNullOrEmpty(serviceIds)) {
+    if (!isEmpty(serviceIds)) {
       listData.put(EventProcessor.SERVICE_LIST, serviceIds);
     }
 
     List<EnvSummary> environments = workflowExecution.getDeployedEnvironments();
 
-    if (!Lists.isNullOrEmpty(environments)) {
+    if (!isEmpty(environments)) {
       listData.put(EventProcessor.ENVTYPES,
           new ArrayList<>(
               environments.stream().map(env -> env.getEnvironmentType().name()).collect(Collectors.toSet())));

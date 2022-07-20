@@ -17,7 +17,6 @@ import io.harness.serializer.JsonUtils;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +45,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
     for (int i = 0; i < harnessForConfig.getIteration().getValue(); i++) {
       JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StageStrategyUtils.replaceExpressions(
           jsonNode.deepCopy().toString(), new HashMap<>(), i, harnessForConfig.getIteration().getValue())));
-      StageStrategyUtils.modifyJsonNode(clonedNode, Lists.newArrayList(String.valueOf(i)));
+      StageStrategyUtils.modifyJsonNode(clonedNode, Arrays.asList(String.valueOf(i)));
       jsonNodes.add(clonedNode);
     }
     int maxConcurrency = jsonNodes.size();

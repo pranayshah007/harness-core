@@ -34,9 +34,9 @@ import io.harness.ng.core.entities.ApiKey;
 import io.harness.repositories.ng.core.spring.ApiKeyRepository;
 import io.harness.rule.Owner;
 
-import io.fabric8.utils.Lists;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -147,12 +147,12 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void listServiceAccountDTO() {
-    doReturn(Lists.newArrayList(ApiKey.builder()
-                                    .identifier(identifier)
-                                    .accountIdentifier(accountIdentifier)
-                                    .orgIdentifier(orgIdentifier)
-                                    .projectIdentifier(projectIdentifier)
-                                    .build()))
+    doReturn(Arrays.asList(ApiKey.builder()
+                               .identifier(identifier)
+                               .accountIdentifier(accountIdentifier)
+                               .orgIdentifier(orgIdentifier)
+                               .projectIdentifier(projectIdentifier)
+                               .build()))
         .when(apiKeyRepository)
         .findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, SERVICE_ACCOUNT, parentIdentifier);

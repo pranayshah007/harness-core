@@ -31,7 +31,6 @@ import com.healthmarketscience.sqlbuilder.OrderObject;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import com.healthmarketscience.sqlbuilder.UnaryCondition;
 import com.healthmarketscience.sqlbuilder.dbspec.basic.DbColumn;
-import io.fabric8.utils.Lists;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +53,7 @@ public class EventsDataQueryBuilder {
 
     selectQuery.addCustomFromTable(schema.getCeEventsTable());
 
-    if (!Lists.isNullOrEmpty(filters)) {
+    if (!isEmpty(filters)) {
       decorateQueryWithFilters(selectQuery, filters);
     }
 

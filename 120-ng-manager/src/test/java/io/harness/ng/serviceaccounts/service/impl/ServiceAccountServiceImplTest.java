@@ -30,7 +30,7 @@ import io.harness.rule.Owner;
 import io.harness.serviceaccount.ServiceAccountDTO;
 
 import io.dropwizard.jersey.validation.JerseyViolationException;
-import io.fabric8.utils.Lists;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -148,13 +148,13 @@ public class ServiceAccountServiceImplTest extends NgManagerTestBase {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void listServiceAccountDTO() {
-    doReturn(Lists.newArrayList(ServiceAccount.builder()
-                                    .name(name)
-                                    .identifier(identifier)
-                                    .accountIdentifier(accountIdentifier)
-                                    .orgIdentifier(orgIdentifier)
-                                    .projectIdentifier(projectIdentifier)
-                                    .build()))
+    doReturn(Arrays.asList(ServiceAccount.builder()
+                               .name(name)
+                               .identifier(identifier)
+                               .accountIdentifier(accountIdentifier)
+                               .orgIdentifier(orgIdentifier)
+                               .projectIdentifier(projectIdentifier)
+                               .build()))
         .when(serviceAccountRepository)
         .findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier);
@@ -167,13 +167,13 @@ public class ServiceAccountServiceImplTest extends NgManagerTestBase {
   @Owner(developers = RAJ)
   @Category(UnitTests.class)
   public void listServiceAccountDTOWithIdentifiers() {
-    doReturn(Lists.newArrayList(ServiceAccount.builder()
-                                    .name(name)
-                                    .identifier(identifier)
-                                    .accountIdentifier(accountIdentifier)
-                                    .orgIdentifier(orgIdentifier)
-                                    .projectIdentifier(projectIdentifier)
-                                    .build()))
+    doReturn(Arrays.asList(ServiceAccount.builder()
+                               .name(name)
+                               .identifier(identifier)
+                               .accountIdentifier(accountIdentifier)
+                               .orgIdentifier(orgIdentifier)
+                               .projectIdentifier(projectIdentifier)
+                               .build()))
         .when(serviceAccountRepository)
         .findAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifierIsIn(
             accountIdentifier, orgIdentifier, projectIdentifier, Collections.singletonList(identifier));

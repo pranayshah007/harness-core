@@ -16,8 +16,8 @@ import io.harness.serializer.JsonUtils;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -49,7 +49,7 @@ public class ParallelismStrategyConfigService implements StrategyConfigService {
     for (int i = 0; i < parallelism; i++) {
       JsonNode clonedJsonNode = JsonPipelineUtils.asTree(JsonUtils.asMap(
           StageStrategyUtils.replaceExpressions(jsonNode.deepCopy().toString(), new HashMap<>(), i, parallelism)));
-      StageStrategyUtils.modifyJsonNode(clonedJsonNode, Lists.newArrayList(String.valueOf(i)));
+      StageStrategyUtils.modifyJsonNode(clonedJsonNode, Arrays.asList(String.valueOf(i)));
       jsonNodes.add(clonedJsonNode);
     }
     return StrategyInfo.builder().expandedJsonNodes(jsonNodes).maxConcurrency(jsonNodes.size()).build();

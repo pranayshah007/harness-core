@@ -84,9 +84,9 @@ import software.wings.yaml.workflow.RollingWorkflowYaml;
 import software.wings.yaml.workflow.StepYaml;
 
 import com.google.inject.Inject;
-import io.fabric8.utils.Lists;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -107,10 +107,8 @@ public class WorkflowMigrationService extends NgMigrationService {
   @Inject private ApplicationManifestService applicationManifestService;
   @Inject private MigratorExpressionUtils migratorExpressionUtils;
 
-  private static final List<String> SUPPORTED_STEPS = Lists.newArrayList(K8S_DEPLOYMENT_ROLLING, SHELL_SCRIPT)
-                                                          .stream()
-                                                          .map(StepType::name)
-                                                          .collect(Collectors.toList());
+  private static final List<String> SUPPORTED_STEPS =
+      Arrays.asList(K8S_DEPLOYMENT_ROLLING, SHELL_SCRIPT).stream().map(StepType::name).collect(Collectors.toList());
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {

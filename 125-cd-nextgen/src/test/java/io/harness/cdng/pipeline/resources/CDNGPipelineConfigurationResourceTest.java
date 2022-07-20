@@ -22,7 +22,6 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.Status;
 import io.harness.rule.Owner;
 
-import io.fabric8.utils.Lists;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -55,32 +54,32 @@ public class CDNGPipelineConfigurationResourceTest extends CategoryTest {
     assertThat(executionStrategyResponse.keySet().size()).isEqualTo(6);
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.KUBERNETES))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.BLUE_GREEN,
+        .isEqualTo(Arrays.asList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.BLUE_GREEN,
             ExecutionStrategyType.CANARY, ExecutionStrategyType.DEFAULT));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.NATIVE_HELM))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.DEFAULT));
+        .isEqualTo(Arrays.asList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.DEFAULT));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.SSH))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.DEFAULT));
+        .isEqualTo(Arrays.asList(ExecutionStrategyType.DEFAULT));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.WINRM))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.DEFAULT));
+        .isEqualTo(Arrays.asList(ExecutionStrategyType.DEFAULT));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT));
+        .isEqualTo(Arrays.asList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT));
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.AZURE_WEBAPP))
-        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN,
+        .isEqualTo(Arrays.asList(ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN,
             ExecutionStrategyType.CANARY, ExecutionStrategyType.DEFAULT));
 
     /*
     Assertions commented as these service definitions are currently not supported
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.PCF))
-        .isEqualTo(Lists.newArrayList(
+        .isEqualTo(Arrays.asList(
             ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY));
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.ECS))
-        .isEqualTo(Lists.newArrayList(
+        .isEqualTo(Arrays.asList(
             ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY));
      */
   }

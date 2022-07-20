@@ -8,6 +8,7 @@
 package software.wings.graphql.datafetcher.budget;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -42,7 +43,6 @@ import com.healthmarketscience.sqlbuilder.InsertQuery;
 import com.healthmarketscience.sqlbuilder.OrderObject;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import com.healthmarketscience.sqlbuilder.dbspec.basic.DbColumn;
-import io.fabric8.utils.Lists;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -243,7 +243,7 @@ public class BudgetTimescaleQueryHelper {
 
     selectQuery.addCustomFromTable(billingDataTableSchema.getBillingDataTable());
 
-    if (!Lists.isNullOrEmpty(filters)) {
+    if (!isEmpty(filters)) {
       addFilters(selectQuery, filters);
     }
 
@@ -272,7 +272,7 @@ public class BudgetTimescaleQueryHelper {
             BillingDataMetaDataFields.COUNT.getFieldName()));
     fieldNames.add(BillingDataMetaDataFields.COUNT);
 
-    if (!Lists.isNullOrEmpty(filters)) {
+    if (!isEmpty(filters)) {
       addFilters(selectQuery, getAlertTimeFilters(filters));
     }
 

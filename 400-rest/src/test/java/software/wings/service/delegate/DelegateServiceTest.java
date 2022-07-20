@@ -206,7 +206,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.io.CharStreams;
 import com.google.inject.Inject;
 import freemarker.template.TemplateException;
-import io.fabric8.utils.Lists;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -3925,7 +3924,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .uuid("delegateId1")
                             .accountId(ACCOUNT_ID)
                             .ng(false)
-                            .tags(Lists.newArrayList("tag123", "tag456"))
+                            .tags(Arrays.asList("tag123", "tag456"))
                             .delegateType(KUBERNETES)
                             .delegateName("delegate1")
                             .description("description1")
@@ -3950,7 +3949,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .uuid("delegateId1")
                             .accountId(ACCOUNT_ID)
                             .ng(false)
-                            .tags(Lists.newArrayList("tag123", "tag456"))
+                            .tags(Arrays.asList("tag123", "tag456"))
                             .delegateType(KUBERNETES)
                             .delegateName("delegate1")
                             .description("description1")
@@ -3977,7 +3976,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .uuid("delegateId1")
                             .accountId(ACCOUNT_ID)
                             .ng(false)
-                            .tags(Lists.newArrayList("tag123", "tag456"))
+                            .tags(Arrays.asList("tag123", "tag456"))
                             .delegateType(KUBERNETES)
                             .delegateName("delegate1")
                             .description("description1")
@@ -4004,7 +4003,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                             .uuid("delegateId1")
                             .accountId(ACCOUNT_ID)
                             .ng(false)
-                            .tags(Lists.newArrayList("tag123", "tag456"))
+                            .tags(Arrays.asList("tag123", "tag456"))
                             .delegateType(KUBERNETES)
                             .delegateName("delegate1")
                             .description("description1")

@@ -35,7 +35,6 @@ import software.wings.graphql.schema.type.instance.QLPcfInstance;
 import software.wings.graphql.schema.type.instance.QLPhysicalHostInstance;
 
 import com.google.inject.Inject;
-import io.fabric8.utils.Lists;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -192,11 +191,11 @@ public class InstanceControllerManagerTest extends GraphQLMockTestBase {
                                               .podName("TESTPOD")
                                               .releaseName("TESTRELEASE")
                                               .clusterName("TESTCLUSTER")
-                                              .containers(Lists.newArrayList(K8sContainerInfo.builder()
-                                                                                 .containerId("TESTCONTAINER")
-                                                                                 .image("TESTIMAGE")
-                                                                                 .name("TESTNAME")
-                                                                                 .build()))
+                                              .containers(Arrays.asList(K8sContainerInfo.builder()
+                                                                            .containerId("TESTCONTAINER")
+                                                                            .image("TESTIMAGE")
+                                                                            .name("TESTNAME")
+                                                                            .build()))
                                               .build())
                             .build();
 

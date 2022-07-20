@@ -36,8 +36,8 @@ import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.PrincipalType;
 import io.harness.rule.Owner;
 
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -261,7 +261,7 @@ public class PipelineRbacHelperTest extends CategoryTest {
             .type(EntityType.CONNECTORS)
             .build();
 
-    return Lists.newArrayList(entityDetailAccountLevel, entityDetailOrgLevel, entityDetailProjectLevel);
+    return Arrays.asList(entityDetailAccountLevel, entityDetailOrgLevel, entityDetailProjectLevel);
   }
 
   private EntityDetail getEntityDetailWithMetadata() {

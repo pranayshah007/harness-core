@@ -7,6 +7,7 @@
 
 package io.harness.migrations.timescaledb.data;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.beans.ExecutionStatus;
@@ -23,7 +24,6 @@ import software.wings.dl.WingsPersistence;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.ReadPreference;
-import io.fabric8.utils.Lists;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -207,7 +207,7 @@ public class MigrateWorkflowsToTimeScaleDB implements TimeScaleDBDataMigration {
 
   private void insertArrayData(
       int index, Connection dbConnection, PreparedStatement preparedStatement, List<String> data) throws SQLException {
-    if (!Lists.isNullOrEmpty(data)) {
+    if (!isEmpty(data)) {
       Array array = dbConnection.createArrayOf("text", data.toArray());
       preparedStatement.setArray(index, array);
     } else {
@@ -216,7 +216,7 @@ public class MigrateWorkflowsToTimeScaleDB implements TimeScaleDBDataMigration {
   }
 
   private List<String> getEnvTypes(WorkflowExecution workflowExecution) {
-    if (!Lists.isNullOrEmpty(workflowExecution.getEnvironments())) {
+    if (!isEmpty(workflowExecution.getEnvironments())) {
       return workflowExecution.getEnvironments()
           .stream()
           .map(envSummary -> envSummary.getEnvironmentType().name())

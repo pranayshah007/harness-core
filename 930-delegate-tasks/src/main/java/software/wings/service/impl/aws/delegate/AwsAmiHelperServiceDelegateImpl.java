@@ -92,7 +92,6 @@ import com.amazonaws.services.ec2.model.RequestLaunchTemplateData;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1382,11 +1381,11 @@ public class AwsAmiHelperServiceDelegateImpl
       createAutoScalingGroupRequest.withLaunchConfigurationName(newAutoScalingGroupName);
     }
 
-    if (!Lists.isNullOrEmpty(infraMappingClassisLbs)) {
+    if (!isEmpty(infraMappingClassisLbs)) {
       createAutoScalingGroupRequest.setLoadBalancerNames(infraMappingClassisLbs);
     }
 
-    if (!Lists.isNullOrEmpty(infraMappingTargetGroupArns)) {
+    if (!isEmpty(infraMappingTargetGroupArns)) {
       createAutoScalingGroupRequest.setTargetGroupARNs(infraMappingTargetGroupArns);
     }
 

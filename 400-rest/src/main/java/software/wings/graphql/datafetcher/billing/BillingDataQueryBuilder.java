@@ -71,7 +71,6 @@ import com.healthmarketscience.sqlbuilder.SelectQuery;
 import com.healthmarketscience.sqlbuilder.SqlObject;
 import com.healthmarketscience.sqlbuilder.UnaryCondition;
 import com.healthmarketscience.sqlbuilder.dbspec.basic.DbColumn;
-import io.fabric8.utils.Lists;
 import java.lang.reflect.Field;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -198,7 +197,7 @@ public class BillingDataQueryBuilder {
       addWorkloadTypeFilter(filters);
     }
 
-    if (!Lists.isNullOrEmpty(filters)) {
+    if (!isEmpty(filters)) {
       filters = processFilterForTagsAndLabels(accountId, filters);
       decorateQueryWithFilters(selectQuery, filters);
     }
@@ -245,7 +244,7 @@ public class BillingDataQueryBuilder {
       addInstanceTypeFilter(filters);
     }
 
-    if (!Lists.isNullOrEmpty(filters)) {
+    if (!isEmpty(filters)) {
       filters = processFilterForTagsAndLabels(accountId, filters);
       decorateQueryWithFilters(selectQuery, filters);
     }
@@ -303,7 +302,7 @@ public class BillingDataQueryBuilder {
       addWorkloadTypeFilter(filters);
     }
 
-    if (!Lists.isNullOrEmpty(filters)) {
+    if (!isEmpty(filters)) {
       filters = processFilterForTagsAndLabels(accountId, filters);
       filters = filters.stream()
                     .filter(filter -> filter.getLabelSearch() == null && filter.getTagSearch() == null)
@@ -338,7 +337,7 @@ public class BillingDataQueryBuilder {
 
     selectQuery.addCustomFromTable(schema.getBillingDataTable());
 
-    if (!Lists.isNullOrEmpty(filters)) {
+    if (!isEmpty(filters)) {
       decorateQueryWithFilters(selectQuery, filters);
     }
 
@@ -408,7 +407,7 @@ public class BillingDataQueryBuilder {
       decorateQueryWithNodeOrPodGroupBy(fieldNames, selectQuery, groupBy, groupByFields, filters);
     }
 
-    if (!Lists.isNullOrEmpty(filters)) {
+    if (!isEmpty(filters)) {
       filters = processFilterForTagsAndLabels(accountId, filters);
       decorateQueryWithFilters(selectQuery, filters);
     }
@@ -460,7 +459,7 @@ public class BillingDataQueryBuilder {
       addWorkloadTypeFilter(filters);
     }
 
-    if (!Lists.isNullOrEmpty(timeFilters)) {
+    if (!isEmpty(timeFilters)) {
       decorateQueryWithFilters(selectQuery, timeFilters);
     }
 
@@ -483,7 +482,7 @@ public class BillingDataQueryBuilder {
 
     addFieldsForPodCountDataFetcher(selectQuery, fieldNames);
 
-    if (!Lists.isNullOrEmpty(filters)) {
+    if (!isEmpty(filters)) {
       decorateQueryWithFilters(selectQuery, filters);
     }
 
@@ -1852,7 +1851,7 @@ public class BillingDataQueryBuilder {
       decorateQueryWithGroupBy(fieldNames, query, groupBy, groupByFields);
     }
 
-    if (!Lists.isNullOrEmpty(filters)) {
+    if (!isEmpty(filters)) {
       decorateQueryWithFilters(query, filters);
     }
 

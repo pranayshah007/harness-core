@@ -30,7 +30,6 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableSet;
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -144,7 +143,7 @@ public class SdkOrchestrationEventHandlerTest extends PmsSdkCoreTestBase {
                            orchestrationEvent.getStepParameters().toStringUtf8(), StepParameters.class))
                        .serviceName(orchestrationEvent.getServiceName())
                        .triggerPayload(orchestrationEvent.getTriggerPayload())
-                       .tags(Lists.newArrayList("a"))
+                       .tags(Arrays.asList("a"))
                        .build());
   }
 

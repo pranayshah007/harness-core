@@ -20,18 +20,18 @@ import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo
 import software.wings.beans.infrastructure.instance.info.PcfInstanceInfo;
 import software.wings.beans.infrastructure.instance.info.PhysicalHostInstanceInfo;
 
-import io.fabric8.utils.Lists;
+import java.util.Arrays;
 import java.util.List;
 
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
 public enum QLInstanceType {
-  PHYSICAL_HOST_INSTANCE(Lists.newArrayList(PhysicalHostInstanceInfo.class)),
-  EC2_INSTANCE(Lists.newArrayList(Ec2InstanceInfo.class)),
-  AUTOSCALING_GROUP_INSTANCE(Lists.newArrayList(AutoScalingGroupInstanceInfo.class)),
-  CODE_DEPLOY_INSTANCE(Lists.newArrayList(CodeDeployInstanceInfo.class)),
-  ECS_CONTAINER_INSTANCE(Lists.newArrayList(EcsContainerInfo.class)),
-  KUBERNETES_CONTAINER_INSTANCE(Lists.newArrayList(KubernetesContainerInfo.class, K8sPodInfo.class)),
-  PCF_INSTANCE(Lists.newArrayList(PcfInstanceInfo.class));
+  PHYSICAL_HOST_INSTANCE(Arrays.asList(PhysicalHostInstanceInfo.class)),
+  EC2_INSTANCE(Arrays.asList(Ec2InstanceInfo.class)),
+  AUTOSCALING_GROUP_INSTANCE(Arrays.asList(AutoScalingGroupInstanceInfo.class)),
+  CODE_DEPLOY_INSTANCE(Arrays.asList(CodeDeployInstanceInfo.class)),
+  ECS_CONTAINER_INSTANCE(Arrays.asList(EcsContainerInfo.class)),
+  KUBERNETES_CONTAINER_INSTANCE(Arrays.asList(KubernetesContainerInfo.class, K8sPodInfo.class)),
+  PCF_INSTANCE(Arrays.asList(PcfInstanceInfo.class));
 
   List<Class<? extends InstanceInfo>> instanceInfos;
 

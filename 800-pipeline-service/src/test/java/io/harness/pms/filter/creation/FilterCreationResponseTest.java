@@ -20,7 +20,6 @@ import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
 import io.harness.rule.Owner;
 
 import com.google.protobuf.StringValue;
-import io.fabric8.utils.Lists;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,11 +31,11 @@ public class FilterCreationResponseTest extends PipelineServiceTestBase {
   public void testAddReferredEntities() {
     FilterCreationResponse filterCreationResponse = FilterCreationResponse.builder().build();
     List<EntityDetailProtoDTO> entityDetailProtoDTOS =
-        Lists.newArrayList(EntityDetailProtoDTO.newBuilder()
-                               .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
-                                                     .setIdentifier(StringValue.newBuilder().setValue("test").build())
-                                                     .build())
-                               .build());
+        Arrays.asList(EntityDetailProtoDTO.newBuilder()
+                          .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
+                                                .setIdentifier(StringValue.newBuilder().setValue("test").build())
+                                                .build())
+                          .build());
     filterCreationResponse.addReferredEntities(entityDetailProtoDTOS);
     assertThat(filterCreationResponse.getReferredEntities()).isEqualTo(entityDetailProtoDTOS);
     filterCreationResponse.addReferredEntities(entityDetailProtoDTOS);
@@ -48,12 +47,12 @@ public class FilterCreationResponseTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testAddStageNames() {
     FilterCreationResponse filterCreationResponse = FilterCreationResponse.builder().build();
-    List<String> stageNames = Lists.newArrayList("stage1");
+    List<String> stageNames = Arrays.asList("stage1");
     filterCreationResponse.addStageNames(stageNames);
     assertThat(filterCreationResponse.getStageNames().get(0)).isEqualTo("stage1");
-    filterCreationResponse.addStageNames(Lists.newArrayList("stage2"));
+    filterCreationResponse.addStageNames(Arrays.asList("stage2"));
     assertThat(filterCreationResponse.getStageNames().size()).isEqualTo(2);
-    assertThat(filterCreationResponse.getStageNames()).isEqualTo(Lists.newArrayList("stage1", "stage2"));
+    assertThat(filterCreationResponse.getStageNames()).isEqualTo(Arrays.asList("stage1", "stage2"));
   }
 
   @Test
@@ -82,17 +81,17 @@ public class FilterCreationResponseTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testToBlobResponse() {
     List<EntityDetailProtoDTO> entityDetailProtoDTOS =
-        Lists.newArrayList(EntityDetailProtoDTO.newBuilder()
-                               .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
-                                                     .setIdentifier(StringValue.newBuilder().setValue("test").build())
-                                                     .build())
-                               .build());
+        Arrays.asList(EntityDetailProtoDTO.newBuilder()
+                          .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
+                                                .setIdentifier(StringValue.newBuilder().setValue("test").build())
+                                                .build())
+                          .build());
     Dependencies dependencies = Dependencies.newBuilder().setYaml("yaml").putDependencies("a", "b").build();
     FilterCreationResponse filterCreationResponse = FilterCreationResponse.builder()
                                                         .dependencies(dependencies)
                                                         .resolvedDependencies(dependencies)
                                                         .referredEntities(entityDetailProtoDTOS)
-                                                        .stageNames(Lists.newArrayList("test"))
+                                                        .stageNames(Arrays.asList("test"))
                                                         .stageCount(1)
                                                         .build();
     FilterCreationBlobResponse response = FilterCreationBlobResponse.newBuilder()

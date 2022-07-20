@@ -51,8 +51,8 @@ import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import io.fabric8.utils.Lists;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -262,7 +262,7 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
 
     List<ResourceRestraintInstance> instances =
         resourceRestraintInstanceService.getAllByRestraintIdAndResourceUnitAndStates(
-            instance.getResourceRestraintId(), instance.getResourceUnit(), Lists.newArrayList(ACTIVE));
+            instance.getResourceRestraintId(), instance.getResourceUnit(), Arrays.asList(ACTIVE));
 
     assertThat(instances).isNotEmpty();
     assertThat(instances.size()).isEqualTo(1);

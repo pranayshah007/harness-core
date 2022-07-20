@@ -34,7 +34,6 @@ import io.harness.pms.sdk.core.data.StringOutcome;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.rule.Owner;
 
-import io.fabric8.utils.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -78,7 +77,7 @@ public class OutcomeGrpcServiceImplTest extends PmsSdkCoreTestBase {
     when(outcomeProtoServiceBlockingStub.fetchOutcomes(
              OutcomeFetchOutcomesBlobRequest.newBuilder().addOutcomeInstanceIds(RUNTIME_ID).build()))
         .thenReturn(OutcomeFetchOutcomesBlobResponse.newBuilder().build());
-    assertThat(outcomeGrpcService.fetchOutcomes(Lists.newArrayList(RUNTIME_ID)).size()).isEqualTo(0);
+    assertThat(outcomeGrpcService.fetchOutcomes(Arrays.asList(RUNTIME_ID)).size()).isEqualTo(0);
     Mockito.verify(outcomeProtoServiceBlockingStub)
         .fetchOutcomes(OutcomeFetchOutcomesBlobRequest.newBuilder().addOutcomeInstanceIds(RUNTIME_ID).build());
   }

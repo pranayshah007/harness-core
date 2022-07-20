@@ -21,7 +21,6 @@ import software.wings.dl.WingsPersistence;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.ReadPreference;
-import io.fabric8.utils.Lists;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -173,7 +172,7 @@ public class MigrateServicesToTimeScaleDB {
 
   private void insertArrayData(
       int index, Connection dbConnection, PreparedStatement preparedStatement, List<String> data) throws SQLException {
-    if (!Lists.isNullOrEmpty(data)) {
+    if (!isEmpty(data)) {
       Array array = dbConnection.createArrayOf("text", data.toArray());
       preparedStatement.setArray(index, array);
     } else {

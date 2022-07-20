@@ -13,35 +13,33 @@ import io.harness.ng.core.k8s.ServiceSpecType;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
-import io.fabric8.utils.Lists;
 import java.util.Arrays;
 import java.util.List;
 
 public enum ServiceDefinitionType {
   @JsonProperty(ServiceSpecType.KUBERNETES)
   KUBERNETES(ServiceSpecType.KUBERNETES,
-      Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY,
+      Arrays.asList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY,
           ExecutionStrategyType.DEFAULT),
       ServiceSpecType.KUBERNETES),
 
   @JsonProperty(ServiceSpecType.NATIVE_HELM)
-  NATIVE_HELM(ServiceSpecType.NATIVE_HELM,
-      Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.DEFAULT), ServiceSpecType.NATIVE_HELM),
+  NATIVE_HELM(ServiceSpecType.NATIVE_HELM, Arrays.asList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.DEFAULT),
+      ServiceSpecType.NATIVE_HELM),
 
   @JsonProperty(ServiceSpecType.SSH)
-  SSH(ServiceSpecType.SSH, Lists.newArrayList(ExecutionStrategyType.DEFAULT), ServiceSpecType.SSH),
+  SSH(ServiceSpecType.SSH, Arrays.asList(ExecutionStrategyType.DEFAULT), ServiceSpecType.SSH),
 
   @JsonProperty(ServiceSpecType.WINRM)
-  WINRM(ServiceSpecType.WINRM, Lists.newArrayList(ExecutionStrategyType.DEFAULT), ServiceSpecType.WINRM),
+  WINRM(ServiceSpecType.WINRM, Arrays.asList(ExecutionStrategyType.DEFAULT), ServiceSpecType.WINRM),
 
   @JsonProperty(ServiceSpecType.SERVERLESS_AWS_LAMBDA)
   SERVERLESS_AWS_LAMBDA("Serverless Aws Lambda",
-      Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT),
-      ServiceSpecType.SERVERLESS_AWS_LAMBDA),
+      Arrays.asList(ExecutionStrategyType.BASIC, ExecutionStrategyType.DEFAULT), ServiceSpecType.SERVERLESS_AWS_LAMBDA),
 
   @JsonProperty(ServiceSpecType.AZURE_WEBAPP)
   AZURE_WEBAPP("Azure Web Apps",
-      Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY,
+      Arrays.asList(ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY,
           ExecutionStrategyType.DEFAULT),
       ServiceSpecType.AZURE_WEBAPP);
 
@@ -51,15 +49,15 @@ public enum ServiceDefinitionType {
   125-cd-nextgen/src/test/java/io/harness/cdng/pipeline/resources/CDNGPipelineConfigurationResourceTest.java
   //Also add test in "CDNGPipelineConfigurationHelperTest"
   @JsonProperty(ServiceSpecType.NATIVE_HELM)
-  NATIVE_HELM("NativeHelm", Lists.newArrayList(ExecutionStrategyType.BASIC), ServiceSpecType.NATIVE_HELM);
+  NATIVE_HELM("NativeHelm", Arrays.asList(ExecutionStrategyType.BASIC), ServiceSpecType.NATIVE_HELM);
   @JsonProperty(ServiceSpecType.ECS)
   ECS("Ecs",
-    Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY),
+    Arrays.asList(ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY),
     ServiceSpecType.ECS),
-  @JsonProperty(ServiceSpecType.SSH) SSH("Ssh", Lists.newArrayList(ExecutionStrategyType.BASIC), ServiceSpecType.SSH),
+  @JsonProperty(ServiceSpecType.SSH) SSH("Ssh", Arrays.asList(ExecutionStrategyType.BASIC), ServiceSpecType.SSH),
   @JsonProperty(ServiceSpecType.PCF)
   PCF("Pcf",
-      Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY),
+      Arrays.asList(ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY),
       ServiceSpecType.PCF);
   */
 

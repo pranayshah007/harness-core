@@ -23,7 +23,7 @@ import io.harness.pms.sdk.execution.beans.StageModuleInfo;
 import io.harness.rule.Owner;
 import io.harness.steps.approval.stage.ApprovalStageStep;
 
-import io.fabric8.utils.Lists;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.apache.groovy.util.Maps;
@@ -49,8 +49,7 @@ public class PmsExecutionInfoProviderTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetPipelineLevelModuleInfo() {
     String levelIdentifier = "levelIdentifier";
-    List<Level> levels =
-        Lists.newArrayList(Level.newBuilder().setIdentifier(levelIdentifier).setRuntimeId("node1").build());
+    List<Level> levels = Arrays.asList(Level.newBuilder().setIdentifier(levelIdentifier).setRuntimeId("node1").build());
 
     OrchestrationEvent orchestrationEvent =
         OrchestrationEvent.builder().ambiance(Ambiance.newBuilder().addAllLevels(levels).build()).build();
@@ -80,8 +79,7 @@ public class PmsExecutionInfoProviderTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldRun() {
     String levelIdentifier = "levelIdentifier";
-    List<Level> levels =
-        Lists.newArrayList(Level.newBuilder().setIdentifier(levelIdentifier).setRuntimeId("node1").build());
+    List<Level> levels = Arrays.asList(Level.newBuilder().setIdentifier(levelIdentifier).setRuntimeId("node1").build());
 
     OrchestrationEvent orchestrationEvent =
         OrchestrationEvent.builder().ambiance(Ambiance.newBuilder().addAllLevels(levels).build()).build();
@@ -90,11 +88,11 @@ public class PmsExecutionInfoProviderTest extends CategoryTest {
     assertThat(isAmbianceOfTypeApprovalStage).isFalse();
 
     // event having ambiance with level of type ApprovalStage
-    levels = Lists.newArrayList(Level.newBuilder()
-                                    .setIdentifier(levelIdentifier)
-                                    .setRuntimeId("node1")
-                                    .setStepType(ApprovalStageStep.STEP_TYPE)
-                                    .build());
+    levels = Arrays.asList(Level.newBuilder()
+                               .setIdentifier(levelIdentifier)
+                               .setRuntimeId("node1")
+                               .setStepType(ApprovalStageStep.STEP_TYPE)
+                               .build());
     orchestrationEvent =
         OrchestrationEvent.builder().ambiance(Ambiance.newBuilder().addAllLevels(levels).build()).build();
     isAmbianceOfTypeApprovalStage = pmsExecutionServiceInfoProvider.shouldRun(orchestrationEvent);

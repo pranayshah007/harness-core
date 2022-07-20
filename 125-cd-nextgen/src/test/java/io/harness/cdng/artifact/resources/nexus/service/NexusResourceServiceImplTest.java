@@ -43,8 +43,8 @@ import io.harness.service.DelegateGrpcClientWrapper;
 
 import software.wings.utils.RepositoryFormat;
 
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 import org.junit.Before;
@@ -103,8 +103,7 @@ public class NexusResourceServiceImplTest extends CategoryTest {
     when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
         .thenReturn(Optional.of(connectorResponse));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
-    when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+    when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(Arrays.asList(encryptedDataDetail));
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(
             ArtifactTaskResponse.builder()
@@ -140,14 +139,13 @@ public class NexusResourceServiceImplTest extends CategoryTest {
     when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
         .thenReturn(Optional.of(connectorDTO));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
-    when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+    when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(Arrays.asList(encryptedDataDetail));
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(
             ArtifactTaskResponse.builder()
                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                 .artifactTaskExecutionResponse(ArtifactTaskExecutionResponse.builder()
-                                                   .artifactDelegateResponses(Lists.newArrayList(
+                                                   .artifactDelegateResponses(Arrays.asList(
                                                        NexusArtifactDelegateResponse.builder()
                                                            .buildDetails(ArtifactBuildDetailsNG.builder().build())
                                                            .build()))
@@ -181,14 +179,13 @@ public class NexusResourceServiceImplTest extends CategoryTest {
     when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
         .thenReturn(Optional.of(connectorDTO));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
-    when(secretManagerClientService.getEncryptionDetails(any(), any()))
-        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+    when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(Arrays.asList(encryptedDataDetail));
     when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(
             ArtifactTaskResponse.builder()
                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                 .artifactTaskExecutionResponse(ArtifactTaskExecutionResponse.builder()
-                                                   .artifactDelegateResponses(Lists.newArrayList(
+                                                   .artifactDelegateResponses(Arrays.asList(
                                                        NexusArtifactDelegateResponse.builder()
                                                            .buildDetails(ArtifactBuildDetailsNG.builder().build())
                                                            .build()))

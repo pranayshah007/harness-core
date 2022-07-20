@@ -7,6 +7,7 @@
 
 package software.wings.timescale.migrations;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.beans.Pipeline.PipelineKeys;
@@ -23,7 +24,6 @@ import software.wings.dl.WingsPersistence;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.ReadPreference;
-import io.fabric8.utils.Lists;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -234,7 +234,7 @@ public class MigratePipelinesToTimeScaleDB {
 
   private void insertArrayData(
       int index, Connection dbConnection, PreparedStatement preparedStatement, List<String> data) throws SQLException {
-    if (!Lists.isNullOrEmpty(data)) {
+    if (!isEmpty(data)) {
       Array array = dbConnection.createArrayOf("text", data.toArray());
       preparedStatement.setArray(index, array);
     } else {

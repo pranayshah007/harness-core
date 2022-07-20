@@ -37,8 +37,8 @@ import software.wings.service.intfc.DelegateTaskServiceClassic;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Lists;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -139,7 +139,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
     if (Objects.isNull(nonAssignableDelegates)) {
       return;
     }
-    List<String> excludeGroups = Lists.newArrayList(CAN_NOT_ASSIGN_OWNER, CAN_NOT_ASSIGN_CG_NG_TASK_GROUP);
+    List<String> excludeGroups = Arrays.asList(CAN_NOT_ASSIGN_OWNER, CAN_NOT_ASSIGN_CG_NG_TASK_GROUP);
     List<String> nonAssignables =
         nonAssignableDelegates.keySet()
             .stream()

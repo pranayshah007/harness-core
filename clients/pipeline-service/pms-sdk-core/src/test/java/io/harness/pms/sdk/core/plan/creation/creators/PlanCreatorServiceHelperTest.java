@@ -24,10 +24,10 @@ import io.harness.rule.Owner;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
-import io.fabric8.utils.Lists;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,7 +40,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testFindPlanCreator() throws IOException {
-    List<PartialPlanCreator<?>> planCreators = Lists.newArrayList(new DummyChildrenPlanCreator());
+    List<PartialPlanCreator<?>> planCreators = Arrays.asList(new DummyChildrenPlanCreator());
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource("pipeline.yaml");
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
@@ -85,7 +85,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
     final URL testFile = classLoader.getResource("pipeline.yaml");
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
     Dependencies dependencies =
-        PlanCreatorServiceHelper.handlePlanCreationResponses(Lists.newArrayList(planCreationResponse), finalResponse,
+        PlanCreatorServiceHelper.handlePlanCreationResponses(Arrays.asList(planCreationResponse), finalResponse,
             yamlContent, Dependencies.newBuilder().build(), new ArrayList<>());
     assertThat(dependencies).isEqualTo(Dependencies.newBuilder().build());
     assertThat(finalResponse.getErrorMessages().size()).isEqualTo(1);
@@ -106,7 +106,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
     List<Map.Entry<String, String>> dependenciesList = new ArrayList<>(deps.getDependenciesMap().entrySet());
 
     Dependencies dependencies =
-        PlanCreatorServiceHelper.handlePlanCreationResponses(Lists.newArrayList(planCreationResponse), finalResponse,
+        PlanCreatorServiceHelper.handlePlanCreationResponses(Arrays.asList(planCreationResponse), finalResponse,
             yamlContent, Dependencies.newBuilder().build(), dependenciesList);
     assertThat(dependencies).isEqualTo(Dependencies.newBuilder().setYaml(yamlContent).build());
     assertThat(finalResponse.getErrorMessages().size()).isEqualTo(0);
