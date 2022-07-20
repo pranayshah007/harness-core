@@ -9,7 +9,17 @@ package io.harness.ngsettings.dto;
 
 import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
-import static io.harness.ngsettings.SettingConstants.*;
+import static io.harness.ngsettings.SettingConstants.ALLOWED_VALUES;
+import static io.harness.ngsettings.SettingConstants.ALLOW_EDIT;
+import static io.harness.ngsettings.SettingConstants.ALLOW_OVERRIDES;
+import static io.harness.ngsettings.SettingConstants.CATEGORY;
+import static io.harness.ngsettings.SettingConstants.DEFAULT_VALUE;
+import static io.harness.ngsettings.SettingConstants.GROUP_ID;
+import static io.harness.ngsettings.SettingConstants.IDENTIFIER;
+import static io.harness.ngsettings.SettingConstants.NAME;
+import static io.harness.ngsettings.SettingConstants.SOURCE;
+import static io.harness.ngsettings.SettingConstants.VALUE;
+import static io.harness.ngsettings.SettingConstants.VALUE_TYPE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,6 +31,7 @@ import io.harness.ngsettings.SettingValueType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Set;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -41,4 +52,5 @@ public class SettingDTO {
   @Schema(description = VALUE) String value;
   @Schema(description = DEFAULT_VALUE) String defaultValue;
   @Schema(description = SOURCE) SettingSource settingSource;
+  @NotNull @NotEmpty @Schema(description = ALLOW_EDIT) Boolean isSettingEditable;
 }

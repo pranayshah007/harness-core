@@ -8,11 +8,14 @@
 package io.harness.ngsettings.services.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ngsettings.SettingCategory;
 import io.harness.ngsettings.SettingUpdateType;
 import io.harness.ngsettings.dto.SettingDTO;
@@ -84,9 +87,11 @@ public class SettingsServiceImpl implements SettingsService {
   public List<SettingUpdateResponseDTO> update(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<SettingRequestDTO> settingRequestDTOList) {
     List<SettingUpdateResponseDTO> settingResponses = new ArrayList<>();
+    Scope currentScope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
     settingRequestDTOList.forEach(settingRequestDTO -> {
       try {
         SettingResponseDTO settingResponseDTO;
+        checkOverridesAreAllowedInParentScope(currentScope, settingRequestDTO);
         if (settingRequestDTO.getUpdateType() == SettingUpdateType.RESTORE) {
           SettingConfiguration settingConfiguration =
               restoreSetting(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO);
@@ -101,6 +106,34 @@ public class SettingsServiceImpl implements SettingsService {
       }
     });
     return settingResponses;
+  }
+
+  private void checkOverridesAreAllowedInParentScope(Scope currentScope, SettingRequestDTO settingRequestDTO) {
+    if (getParentScope(currentScope) == null) {
+      return;
+    }
+    while ((currentScope = getParentScope(currentScope)) != null) {
+      Optional<Setting> setting =
+          settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+              currentScope.getAccountIdentifier(), currentScope.getOrgIdentifier(), currentScope.getProjectIdentifier(),
+              settingRequestDTO.getIdentifier());
+      if (setting.isPresent()) {
+        if (setting.get().getAllowOverrides()) {
+          return;
+        }
+        throw new InvalidRequestException(
+            String.format("Setting- %s cannot be overridden at the current scope", settingRequestDTO.getIdentifier()));
+      }
+    }
+    Optional<SettingConfiguration> settingConfiguration =
+        settingConfigurationRepository.findByIdentifier(settingRequestDTO.getIdentifier());
+    if (settingConfiguration.isEmpty()) {
+      throw new InvalidRequestException(String.format("Setting- %s does not exist", settingRequestDTO.getIdentifier()));
+    }
+    if (!settingConfiguration.get().getAllowOverrides()) {
+      throw new InvalidRequestException(
+          String.format("Setting- %s cannot be overridden at the current scope", settingRequestDTO.getIdentifier()));
+    }
   }
 
   @Override
@@ -179,13 +212,15 @@ public class SettingsServiceImpl implements SettingsService {
     Optional<Setting> settingOptional =
         settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO.getIdentifier());
-
     SettingDTO newSettingDTO;
     if (settingOptional.isPresent()) {
       newSettingDTO = settingsMapper.writeNewDTO(settingOptional.get(), settingRequestDTO, settingConfiguration);
     } else {
       newSettingDTO =
           settingsMapper.writeNewDTO(orgIdentifier, projectIdentifier, settingRequestDTO, settingConfiguration);
+    }
+    if (settingRequestDTO.getAllowOverrides() == false) {
+      deleteSettingInSubScopes(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO);
     }
     SettingUtils.validate(newSettingDTO);
     Setting setting = settingRepository.upsert(settingsMapper.toSetting(accountIdentifier, newSettingDTO));
@@ -210,8 +245,37 @@ public class SettingsServiceImpl implements SettingsService {
     Optional<Setting> setting =
         settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO.getIdentifier());
-    setting.ifPresent(settingRepository::delete);
-    return getSettingConfiguration(
-        accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO.getIdentifier());
+    SettingConfiguration settingConfiguration =
+        getSettingConfiguration(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO.getIdentifier());
+    setting.ifPresent(existingSetting -> {
+      settingRepository.delete(existingSetting);
+      if (settingConfiguration.getAllowOverrides() == false) {
+        deleteSettingInSubScopes(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO);
+      }
+    });
+    return settingConfiguration;
+  }
+
+  private void deleteSettingInSubScopes(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingRequestDTO settingRequestDTO) {
+    if (isEmpty(orgIdentifier)) {
+      settingRepository.deleteByAccountIdentifierAndIdentifier(accountIdentifier, settingRequestDTO.getIdentifier());
+    } else if (isEmpty(projectIdentifier)) {
+      settingRepository.deleteByAccountIdentifierAndOrgIdentifierAndIdentifier(
+          accountIdentifier, orgIdentifier, settingRequestDTO.getIdentifier());
+    }
+  }
+
+  private Scope getParentScope(Scope currentScope) {
+    if (isNotEmpty(currentScope.getProjectIdentifier())) {
+      return Scope.builder()
+          .accountIdentifier(currentScope.getAccountIdentifier())
+          .orgIdentifier(currentScope.getOrgIdentifier())
+          .build();
+    } else if (isNotEmpty(currentScope.getOrgIdentifier())) {
+      return Scope.builder().accountIdentifier(currentScope.getAccountIdentifier()).build();
+    } else {
+      return null;
+    }
   }
 }

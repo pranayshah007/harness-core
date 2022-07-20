@@ -27,4 +27,5 @@ public final class SettingConstants {
   public static final String BATCH_ITEM_ERROR_MESSAGE = "Error message";
   public static final String GROUP_ID = "Group Id of the setting";
   public static final String GROUP_KEY = "group";
+  public static final String ALLOW_EDIT = "Is the setting editable at the current scope";
 }
