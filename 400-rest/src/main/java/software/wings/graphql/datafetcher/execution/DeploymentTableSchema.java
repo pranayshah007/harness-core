@@ -75,6 +75,7 @@ public class DeploymentTableSchema {
   DbColumn rollbackDuration;
   DbColumn instancesDeployed;
   DbColumn tags;
+  DbColumn parentPipelineId;
 
   public DeploymentTableSchema() {
     dbSpec = new DbSpec();
@@ -104,5 +105,6 @@ public class DeploymentTableSchema {
     rollbackDuration = deploymentTable.addColumn("ROLLBACK_DURATION", "bigint", null);
     instancesDeployed = deploymentTable.addColumn("INSTANCES_DEPLOYED", "int", null);
     tags = deploymentTable.addColumn("TAGS", "hstore", null);
+    parentPipelineId = deploymentTable.addColumn("PARENT_PIPELINE_ID", "text", null);
   }
 }
