@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
@@ -35,15 +36,12 @@ import io.harness.repositories.ngsettings.spring.SettingRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -93,6 +91,7 @@ public class SettingsServiceImpl implements SettingsService {
 
   private SettingResponseDTO getSettingResponseDTOFromParentScopes(
       Scope currentScope, SettingConfiguration settingConfiguration, Map<Pair<String, Scope>, Setting> settings) {
+    ScopeLevel currentScopeLevel = ScopeLevel.of(currentScope);
     while ((currentScope = getParentScope(currentScope)) != null) {
       Pair<String, Scope> currentScopeSettingKey = new ImmutablePair<>(settingConfiguration.getIdentifier(),
           Scope.of(currentScope.getAccountIdentifier(), currentScope.getOrgIdentifier(),
@@ -102,7 +101,21 @@ public class SettingsServiceImpl implements SettingsService {
         return settingsMapper.writeSettingResponseDTO(setting, settingConfiguration, setting.getAllowOverrides());
       }
     }
-    return settingsMapper.writeSettingResponseDTO(settingConfiguration, settingConfiguration.getAllowOverrides());
+    Boolean isSettingEditable = settingConfiguration.getAllowOverrides();
+    if (getHighestScopeForSetting(settingConfiguration.getAllowedScopes()) == currentScopeLevel) {
+      isSettingEditable = true;
+    }
+    return settingsMapper.writeSettingResponseDTO(settingConfiguration, isSettingEditable);
+  }
+
+  private ScopeLevel getHighestScopeForSetting(Set<ScopeLevel> allowedScopes) {
+    if (allowedScopes.contains(ScopeLevel.ACCOUNT)) {
+      return ScopeLevel.ACCOUNT;
+    } else if (allowedScopes.contains(ScopeLevel.ORGANIZATION)) {
+      return ScopeLevel.ORGANIZATION;
+    } else {
+      return ScopeLevel.PROJECT;
+    }
   }
 
   @Override
