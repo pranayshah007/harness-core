@@ -17,7 +17,8 @@ import io.harness.ngsettings.entities.SettingConfiguration;
 import io.harness.ngsettings.utils.SettingUtils;
 
 public class SettingsMapper {
-  public SettingDTO writeSettingDTO(Setting setting, SettingConfiguration settingConfiguration) {
+  public SettingDTO writeSettingDTO(
+      Setting setting, SettingConfiguration settingConfiguration, Boolean isSettingEditable) {
     return SettingDTO.builder()
         .identifier(setting.getIdentifier())
         .name(settingConfiguration.getName())
@@ -31,10 +32,11 @@ public class SettingsMapper {
         .defaultValue(settingConfiguration.getDefaultValue())
         .value(setting.getValue())
         .settingSource(SettingUtils.getSettingSource(setting))
+        .isSettingEditable(isSettingEditable)
         .build();
   }
 
-  public SettingDTO writeSettingDTO(SettingConfiguration settingConfiguration) {
+  public SettingDTO writeSettingDTO(SettingConfiguration settingConfiguration, Boolean isSettingEditable) {
     return SettingDTO.builder()
         .identifier(settingConfiguration.getIdentifier())
         .name(settingConfiguration.getName())
@@ -46,18 +48,21 @@ public class SettingsMapper {
         .allowedValues(settingConfiguration.getAllowedValues())
         .allowOverrides(settingConfiguration.getAllowOverrides())
         .settingSource(SettingSource.DEFAULT)
+        .isSettingEditable(isSettingEditable)
         .build();
   }
 
-  public SettingResponseDTO writeSettingResponseDTO(Setting setting, SettingConfiguration settingConfiguration) {
+  public SettingResponseDTO writeSettingResponseDTO(
+      Setting setting, SettingConfiguration settingConfiguration, Boolean isSettingEditable) {
     return SettingResponseDTO.builder()
-        .setting(writeSettingDTO(setting, settingConfiguration))
+        .setting(writeSettingDTO(setting, settingConfiguration, isSettingEditable))
         .lastModifiedAt(setting.getLastModifiedAt())
         .build();
   }
 
-  public SettingResponseDTO writeSettingResponseDTO(SettingConfiguration settingConfiguration) {
-    return SettingResponseDTO.builder().setting(writeSettingDTO(settingConfiguration)).build();
+  public SettingResponseDTO writeSettingResponseDTO(
+      SettingConfiguration settingConfiguration, Boolean isSettingEditable) {
+    return SettingResponseDTO.builder().setting(writeSettingDTO(settingConfiguration, isSettingEditable)).build();
   }
 
   public SettingDTO writeNewDTO(
