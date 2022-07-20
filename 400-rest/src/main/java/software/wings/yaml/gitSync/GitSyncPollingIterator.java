@@ -3,6 +3,8 @@ package software.wings.yaml.gitSync;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
+import static software.wings.yaml.gitSync.YamlGitConfig.YamlGitConfigKeys;
+
 import static java.time.Duration.ofMinutes;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -14,14 +16,12 @@ import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.yaml.YamlChangeSetService;
-import software.wings.yaml.gitSync.YamlGitConfig;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import lombok.AllArgsConstructor;
 
 @Singleton
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
+@AllAregsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(DX)
 public class GitSyncPollingIterator implements MongoPersistenceIterator.Handler<YamlGitConfig> {
   @Inject PersistenceIteratorFactory persistenceIteratorFactory;
@@ -40,7 +40,7 @@ public class GitSyncPollingIterator implements MongoPersistenceIterator.Handler<
         YamlGitConfig.class,
         MongoPersistenceIterator.<YamlGitConfig, MorphiaFilterExpander<YamlGitConfig>>builder()
             .clazz(YamlGitConfig.class)
-            .fieldName(YamlGitConfig.YamlGitConfigKeys.gitPollingIterator)
+            .fieldName(YamlGitConfigKeys.gitPollingIterator)
             .targetInterval(ofMinutes(5))
             .acceptableNoAlertDelay(ofMinutes(1))
             .acceptableExecutionTime(ofMinutes(1))
