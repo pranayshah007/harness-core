@@ -35,7 +35,6 @@ import io.harness.rule.Owner;
 
 import software.wings.delegatetasks.azure.AzureSecretHelper;
 
-import java.util.Collections;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -62,8 +61,6 @@ public class AzureWebAppFetchPreDeploymentDataRequestHandlerTest extends Categor
     final AzureWebAppFetchPreDeploymentDataRequest request =
         AzureWebAppFetchPreDeploymentDataRequest.builder()
             .accountId("accountId")
-            .applicationSettings(Collections.emptyList())
-            .connectionStrings(Collections.emptyList())
             .artifact(AzureTestUtils.createTestContainerArtifactConfig())
             .infraDelegateConfig(AzureTestUtils.createTestWebAppInfraDelegateConfig())
             .build();

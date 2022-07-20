@@ -1728,6 +1728,9 @@
 55404:io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig
 55405:io.harness.delegate.task.localstore.LocalStoreFetchFilesResult
 55406:io.harness.delegate.task.localstore.ManifestFiles
+55407:io.harness.delegate.task.azure.appservice.settings.AppSettingsFile
+55408:io.harness.delegate.task.azure.appservice.settings.EncryptedAppSettingsFile
+55409:io.harness.delegate.task.azure.appservice.webapp.ng.exception.AzureWebAppSlotDeploymentExceptionData
 56403:io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
