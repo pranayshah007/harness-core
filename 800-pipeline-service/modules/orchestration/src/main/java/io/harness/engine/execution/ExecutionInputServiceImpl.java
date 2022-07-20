@@ -18,7 +18,6 @@ import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.merger.helpers.YamlSubMapExtractor;
-import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.repositories.ExecutionInputRepository;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -41,6 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ExecutionInputServiceImpl implements ExecutionInputService {
   @Inject WaitNotifyEngine waitNotifyEngine;
   @Inject ExecutionInputRepository executionInputRepository;
+  @Inject ExecutionInputServiceHelper executionInputServiceHelper;
   @Override
   // TODO(BRIJESH): Use lock so that only one input can be processed and only one doneWith should be called.
   public boolean continueExecution(String nodeExecutionId, String executionInputYaml) {
@@ -94,7 +94,8 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
       }
       JsonNode mergedJsonNode = MergeHelper.mergeExecutionInputIntoOriginalYamlJsonNode(
           executionInputInstance.getTemplate(), executionInputInstance.getUserInput(), false);
-      executionInputInstance.setMergedInputTemplate(RecastOrchestrationUtils.fromJson(mergedJsonNode.toString()));
+      executionInputInstance.setMergedInputTemplate(
+          executionInputServiceHelper.getExecutionInputMap(executionInputInstance.getTemplate(), mergedJsonNode));
       return executionInputRepository.save(executionInputInstance);
     } else {
       throw new InvalidRequestException(

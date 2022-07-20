@@ -97,6 +97,18 @@ public class UsageMetricsEventPublisher {
       stringData.put(EventProcessor.PARENT_EXECUTION, workflowExecution.getPipelineExecutionId());
     }
 
+    if (workflowExecution.getFailureDetails() != null) {
+      stringData.put(EventProcessor.FAILURE_DETAILS, workflowExecution.getFailureDetails());
+    }
+
+    if (workflowExecution.getFailedStepNames() != null) {
+      stringData.put(EventProcessor.FAILED_STEP_NAMES, workflowExecution.getFailedStepNames());
+    }
+
+    if (workflowExecution.getFailedStepTypes() != null) {
+      stringData.put(EventProcessor.FAILED_STEP_TYPES, workflowExecution.getFailedStepTypes());
+    }
+
     if (!Lists.isNullOrEmpty(workflowExecution.getArtifacts())) {
       listData.put(EventProcessor.ARTIFACT_LIST,
           workflowExecution.getArtifacts().stream().map(Artifact::getBuildNo).collect(Collectors.toList()));

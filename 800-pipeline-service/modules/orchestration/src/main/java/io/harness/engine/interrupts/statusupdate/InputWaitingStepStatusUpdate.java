@@ -35,6 +35,7 @@ public class InputWaitingStepStatusUpdate implements NodeStatusUpdateHandler {
       planExecutionService.updateCalculatedStatus(nodeStatusUpdateInfo.getPlanExecutionId());
       return;
     }
+    // flowingChildren will always be empty currently. Will see later.
     List<NodeExecution> flowingChildren =
         nodeExecutionService.findByParentIdAndStatusIn(nodeExecution.getParentId(), EnumSet.noneOf(Status.class));
     if (isEmpty(flowingChildren)) {

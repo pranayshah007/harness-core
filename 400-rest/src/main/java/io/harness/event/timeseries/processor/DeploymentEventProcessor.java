@@ -61,16 +61,16 @@ public class DeploymentEventProcessor implements EventProcessor<TimeSeriesEventI
   private static final String query_statement = "SELECT * FROM DEPLOYMENT WHERE EXECUTIONID=?";
   private static final String delete_statement = "DELETE FROM DEPLOYMENT WHERE EXECUTIONID=?";
   private static final String insert_statement =
-      "INSERT INTO DEPLOYMENT (EXECUTIONID,STARTTIME,ENDTIME,ACCOUNTID,APPID,TRIGGERED_BY,TRIGGER_ID,STATUS,SERVICES,WORKFLOWS,CLOUDPROVIDERS,ENVIRONMENTS,PIPELINE,DURATION,ARTIFACTS,ENVTYPES,PARENT_EXECUTION,STAGENAME,ROLLBACK_DURATION, INSTANCES_DEPLOYED, TAGS) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "INSERT INTO DEPLOYMENT (EXECUTIONID,STARTTIME,ENDTIME,ACCOUNTID,APPID,TRIGGERED_BY,TRIGGER_ID,STATUS,SERVICES,WORKFLOWS,CLOUDPROVIDERS,ENVIRONMENTS,PIPELINE,DURATION,ARTIFACTS,ENVTYPES,PARENT_EXECUTION,FAILURE_DETAILS,FAILED_STEP_NAMES,FAILED_STEP_TYPES,STAGENAME,ROLLBACK_DURATION, INSTANCES_DEPLOYED, TAGS) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
   private static final String delete_statement_migration_parent_table =
       "DELETE FROM DEPLOYMENT_PARENT WHERE EXECUTIONID=?";
   private static final String delete_statement_migration_stage_table =
       "DELETE FROM DEPLOYMENT_STAGE WHERE EXECUTIONID=?";
   private static final String insert_statement_migration_parent_table =
-      "INSERT INTO DEPLOYMENT_PARENT (EXECUTIONID,STARTTIME,ENDTIME,ACCOUNTID,APPID,TRIGGERED_BY,TRIGGER_ID,STATUS,SERVICES,WORKFLOWS,CLOUDPROVIDERS,ENVIRONMENTS,PIPELINE,DURATION,ARTIFACTS,ENVTYPES,PARENT_EXECUTION,STAGENAME,ROLLBACK_DURATION, INSTANCES_DEPLOYED, TAGS) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "INSERT INTO DEPLOYMENT_PARENT (EXECUTIONID,STARTTIME,ENDTIME,ACCOUNTID,APPID,TRIGGERED_BY,TRIGGER_ID,STATUS,SERVICES,WORKFLOWS,CLOUDPROVIDERS,ENVIRONMENTS,PIPELINE,DURATION,ARTIFACTS,ENVTYPES,PARENT_EXECUTION,FAILURE_DETAILS,FAILED_STEP_NAMES,FAILED_STEP_TYPES,STAGENAME,ROLLBACK_DURATION, INSTANCES_DEPLOYED, TAGS) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
   private static final String insert_statement_migration_stage_table =
-      "INSERT INTO DEPLOYMENT_STAGE (EXECUTIONID,STARTTIME,ENDTIME,ACCOUNTID,APPID,TRIGGERED_BY,TRIGGER_ID,STATUS,SERVICES,WORKFLOWS,CLOUDPROVIDERS,ENVIRONMENTS,PIPELINE,DURATION,ARTIFACTS,ENVTYPES,PARENT_EXECUTION,STAGENAME,ROLLBACK_DURATION, INSTANCES_DEPLOYED, TAGS) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      "INSERT INTO DEPLOYMENT_STAGE (EXECUTIONID,STARTTIME,ENDTIME,ACCOUNTID,APPID,TRIGGERED_BY,TRIGGER_ID,STATUS,SERVICES,WORKFLOWS,CLOUDPROVIDERS,ENVIRONMENTS,PIPELINE,DURATION,ARTIFACTS,ENVTYPES,PARENT_EXECUTION,FAILURE_DETAILS,FAILED_STEP_NAMES,FAILED_STEP_TYPES,STAGENAME,ROLLBACK_DURATION, INSTANCES_DEPLOYED, TAGS) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
   private static final String fetch_account_executions_deployment_in_interval =
       "SELECT EXECUTIONID,STARTTIME,ENDTIME,ACCOUNTID,APPID,TRIGGERED_BY,TRIGGER_ID,STATUS,SERVICES,WORKFLOWS,CLOUDPROVIDERS,ENVIRONMENTS,PIPELINE,DURATION,ARTIFACTS,ENVTYPES,PARENT_EXECUTION,STAGENAME,ROLLBACK_DURATION,INSTANCES_DEPLOYED,TAGS FROM DEPLOYMENT WHERE ACCOUNTID = ? AND STARTTIME >= ? AND STARTTIME <= ? ORDER BY STARTTIME DESC OFFSET ? LIMIT ?";
@@ -398,6 +398,9 @@ public class DeploymentEventProcessor implements EventProcessor<TimeSeriesEventI
       eventInfo.put(EventProcessor.ARTIFACT_LIST, resultSet.getArray(index++));
       eventInfo.put(EventProcessor.ENVTYPES, resultSet.getArray(index++));
       eventInfo.put(EventProcessor.PARENT_EXECUTION, resultSet.getString(index++));
+      eventInfo.put(EventProcessor.FAILURE_DETAILS, resultSet.getString(index++));
+      eventInfo.put(EventProcessor.FAILED_STEP_NAMES, resultSet.getString(index++));
+      eventInfo.put(EventProcessor.FAILED_STEP_TYPES, resultSet.getString(index++));
       eventInfo.put(EventProcessor.STAGENAME, resultSet.getString(index++));
       eventInfo.put(EventProcessor.ROLLBACK_DURATION, resultSet.getLong(index++));
       eventInfo.put(EventProcessor.INSTANCES_DEPLOYED, resultSet.getInt(index++));
@@ -495,6 +498,9 @@ public class DeploymentEventProcessor implements EventProcessor<TimeSeriesEventI
     insertArrayData(dbConnection, insertStatement, getListData(eventInfo, EventProcessor.ENVTYPES), ++index);
 
     insertStatement.setString(++index, eventInfo.getStringData().get(EventProcessor.PARENT_EXECUTION));
+    insertStatement.setString(++index, eventInfo.getStringData().get(EventProcessor.FAILURE_DETAILS));
+    insertStatement.setString(++index, eventInfo.getStringData().get(EventProcessor.FAILED_STEP_NAMES));
+    insertStatement.setString(++index, eventInfo.getStringData().get(EventProcessor.FAILED_STEP_TYPES));
     insertStatement.setString(++index, eventInfo.getStringData().get(EventProcessor.STAGENAME));
 
     Long rollbackDuration = getRollbackDuration(eventInfo);

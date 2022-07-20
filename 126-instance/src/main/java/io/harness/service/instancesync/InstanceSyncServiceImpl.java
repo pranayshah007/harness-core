@@ -142,15 +142,14 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
           InstanceSyncLocalCacheManager.setDeploymentSummary(
               deploymentSummaryDTO.getInstanceSyncKey(), deploymentSummaryDTO);
           // Sync only for deployment infos / instance sync handler keys from instances from server
-          AbstractInstanceSyncHandler instanceSyncHandler = instanceSyncHandlerFactoryService.getInstanceSyncHandler(
-              deploymentSummaryDTO.getDeploymentInfoDTO().getType());
           performInstanceSync(instanceSyncPerpetualTaskInfoDTO, infrastructureMappingDTO,
-              deploymentSummaryDTO.getServerInstanceInfoList(), instanceSyncHandler, true, infraIdentifier, infraName);
+              deploymentSummaryDTO.getServerInstanceInfoList(), abstractInstanceSyncHandler, true, infraIdentifier,
+              infraName);
 
           log.info("Instance sync completed for infrastructure mapping id : {}", infrastructureMappingDTO.getId());
           return;
         } catch (Exception exception) {
-          log.error("Attempt {} : Exception occured during instance sync", retryCount + 1, exception);
+          log.error("Attempt {} : Exception occurred during instance sync", retryCount + 1, exception);
           retryCount += 1;
         }
       }
@@ -593,6 +592,6 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     StringBuilder stringBuilder = new StringBuilder();
     serverInstanceInfoList.forEach(
         serverInstanceInfo -> stringBuilder.append(serverInstanceInfo.toString()).append(" :: "));
-    log.info("Server Instances in the perpetual task response : {}", stringBuilder.toString());
+    log.info("Server Instances in the perpetual task response : {}", stringBuilder);
   }
 }
