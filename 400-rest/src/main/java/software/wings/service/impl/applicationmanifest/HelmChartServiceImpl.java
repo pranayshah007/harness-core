@@ -29,6 +29,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SortOrder;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 
 import software.wings.beans.Base;
@@ -270,10 +271,14 @@ public class HelmChartServiceImpl implements HelmChartService {
     HelmChart existingHelmChart = getManifestByVersionNumber(
         helmChart.getAccountId(), helmChart.getApplicationManifestId(), helmChart.getVersion());
     if (existingHelmChart != null) {
+      if (EmptyPredicate.isEmpty(helmChart.getAppVersion())) {
+        return existingHelmChart;
+      }
+      Query<HelmChart> query =
+          wingsPersistence.createQuery(HelmChart.class).filter(HelmChartKeys.uuid, existingHelmChart.getUuid());
       UpdateOperations<HelmChart> updateOperations = wingsPersistence.createUpdateOperations(HelmChart.class)
                                                          .set(HelmChartKeys.appVersion, helmChart.getAppVersion());
-      wingsPersistence.update(existingHelmChart, updateOperations);
-      return wingsPersistence.get(HelmChart.class, existingHelmChart.getUuid());
+      return wingsPersistence.findAndModify(query, updateOperations, WingsPersistence.upsertReturnNewOptions);
     } else {
       return create(helmChartService.create(helmChart));
     }
