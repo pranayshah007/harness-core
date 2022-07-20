@@ -9,6 +9,7 @@ package io.harness.steps.approval.step.harness.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -21,6 +22,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
+@RecasterAlias("io.harness.steps.approval.step.harness.beans.ApproverInput")
 public class ApproverInput {
   @NotEmpty String name;
   @NotNull String value;

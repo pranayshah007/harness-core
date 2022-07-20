@@ -431,7 +431,7 @@ def ingest_data_to_costagg(jsonData):
         ]
     )
 
-    run_batch_query(client, query, job_config, timeout=120)
+    run_batch_query(client, query, job_config, timeout=180)
 
 def update_datatransfer_job_config(jsonData):
     query = """INSERT INTO `%s.%s.%s` (accountId, connectorId, dataTransferConfig, createdAt, sourceGcpTableName) 
@@ -460,7 +460,7 @@ def fetch_acc_from_gcp_conn_info(jsonData):
         query_job = client.query(query)
         results = query_job.result()  # wait for job to complete
         for row in results:
-            jsonData["accountId"] = row.accountID
+            jsonData["accountId"] = row.accountId
             jsonData["connectorId"] = row.connectorId
             jsonData["sourceGcpTableName"] = row.sourceGcpTableName
             jsonData["tableName"] = row.sourceGcpTableName

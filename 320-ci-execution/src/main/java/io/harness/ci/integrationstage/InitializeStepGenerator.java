@@ -19,6 +19,7 @@ import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.steps.matrix.ExpandedExecutionWrapperInfo;
 import io.harness.steps.matrix.StrategyHelper;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
@@ -45,7 +46,8 @@ public class InitializeStepGenerator {
     boolean pipelineMatrixEnabled = ciFeatureFlagService.isEnabled(FeatureName.PIPELINE_MATRIX, accountId);
     if (pipelineMatrixEnabled) {
       for (ExecutionWrapperConfig config : executionElement.getSteps()) {
-        expandedExecutionElement.addAll(strategyHelper.expandExecutionWrapperConfig(config));
+        ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo = strategyHelper.expandExecutionWrapperConfig(config);
+        expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
       }
     }
 

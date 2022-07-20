@@ -171,6 +171,11 @@ public class VmInitializeUtils {
   }
 
   public OSType getOS(Infrastructure infrastructure) {
+    // Only linux is supported now for runs on infrastructure
+    if (infrastructure.getType() == Infrastructure.Type.RUNS_ON) {
+      return OSType.Linux;
+    }
+
     if (infrastructure.getType() != Infrastructure.Type.VM) {
       throw new CIStageExecutionException(format("Invalid infrastructure type: %s", infrastructure.getType()));
     }

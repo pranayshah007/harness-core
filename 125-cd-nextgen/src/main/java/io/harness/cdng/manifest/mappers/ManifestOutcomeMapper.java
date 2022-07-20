@@ -138,6 +138,7 @@ public class ManifestOutcomeMapper {
         .skipResourceVersioning(kustomizeManifest.getSkipResourceVersioning())
         .pluginPath(kustomizeManifest.getPluginPath())
         .patchesPaths(kustomizeManifest.getPatchesPaths())
+        .manifestScope(kustomizeManifest.getManifestScope())
         .build();
   }
 

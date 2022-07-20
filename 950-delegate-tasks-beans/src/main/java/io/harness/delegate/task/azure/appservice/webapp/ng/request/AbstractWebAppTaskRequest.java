@@ -26,12 +26,14 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.Setter;
 
 @OwnedBy(CDP)
 @NoArgsConstructor
 @AllArgsConstructor
 public abstract class AbstractWebAppTaskRequest implements AzureWebAppTaskRequest {
+  @Getter @Setter @NonNull String accountId;
   @Getter @Setter private CommandUnitsProgress commandUnitsProgress;
   @Getter private AzureWebAppInfraDelegateConfig infrastructure;
 

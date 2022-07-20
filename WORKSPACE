@@ -1022,8 +1022,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:ydIzFACT2VH9euHfBZuHxFu7AGN21xStbernowJvlHY=",
-    version = "v1.26.0",
+    sum = "h1:tx7Xgpt64DYq90WFPVi9T/5c7IuNQ8ckbb8qUEK05gU=",
+    version = "v1.26.1-0.20220718061611-2e3f1a56c8dd",
 )
 
 go_repository(
@@ -4451,8 +4451,8 @@ plain_artifacts = [
     "com.google.inject:guice:4.2.3",
     "com.google.j2objc:j2objc-annotations:1.3",
     "com.google.oauth-client:google-oauth-client:1.34.0",
-    "com.google.protobuf:protobuf-java-util:3.11.4",
-    "com.google.protobuf:protobuf-java:3.11.4",
+    "com.google.protobuf:protobuf-java-util:3.19.2",
+    "com.google.protobuf:protobuf-java:3.19.2",
     "com.googlecode.javaewah:JavaEWAH:1.1.6",
     "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20200713.1",
     "com.graphql-java:graphql-java:12.0",
@@ -4535,6 +4535,7 @@ plain_artifacts = [
     "com.squareup.okhttp3:okhttp-urlconnection:3.12.2",
     "com.squareup.okhttp3:okhttp:3.12.2",
     "com.squareup.okio:okio:1.15.0",
+    "com.squareup.retrofit2:converter-protobuf:2.9.0",
     "com.squareup.retrofit2:adapter-rxjava:2.7.2",
     "com.squareup.retrofit2:converter-gson:2.3.0",
     "com.squareup.retrofit2:converter-jackson:2.6.0",
@@ -4620,6 +4621,7 @@ plain_artifacts = [
     "io.dropwizard:dropwizard-metrics-graphite:2.0.21",
     "io.dropwizard:dropwizard-metrics:2.0.21",
     "io.dropwizard:dropwizard-request-logging:2.0.21",
+    "io.dropwizard.modules:dropwizard-protobuf:2.0.12-1",
     "io.dropwizard:dropwizard-servlets:2.0.21",
     "io.dropwizard:dropwizard-util:2.0.21",
     "io.dropwizard:dropwizard-validation:2.0.21",
@@ -4746,7 +4748,7 @@ plain_artifacts = [
     "net.sf.jopt-simple:jopt-simple:5.0.2",
     "net.sf.json-lib:json-lib:jdk15:2.4",
     "net.sf.opencsv:opencsv:2.3",
-    "net.shibboleth.utilities:java-support:8.0.0",
+    "net.shibboleth.utilities:java-support:7.5.0",
     "net.sourceforge.argparse4j:argparse4j:0.8.1",
     "org.antlr:antlr4-runtime:4.7.2",
     "org.apache.avro:avro:1.9.2",

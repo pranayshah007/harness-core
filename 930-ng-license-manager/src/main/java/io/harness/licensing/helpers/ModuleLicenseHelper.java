@@ -223,6 +223,9 @@ public class ModuleLicenseHelper {
         if (ceLicense.getSpendLimit() != null && !ceLicense.getSpendLimit().equals(currentCELicense.getSpendLimit())) {
           currentCELicense.setSpendLimit(ceLicense.getSpendLimit());
         }
+        if (ceLicense.getStartTime() != 0 && ceLicense.getStartTime() != currentCELicense.getStartTime()) {
+          currentCELicense.setStartTime(ceLicense.getStartTime());
+        }
         break;
       case CF:
         CFModuleLicense cfLicense = (CFModuleLicense) update;

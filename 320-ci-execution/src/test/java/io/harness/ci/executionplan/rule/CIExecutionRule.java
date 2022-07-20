@@ -19,6 +19,8 @@ import io.harness.ScmConnectionConfig;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.AwsClient;
+import io.harness.aws.AwsClientImpl;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
@@ -141,6 +143,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
         bind(BitbucketService.class).to(BitbucketServiceImpl.class);
         bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
         bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);
+        bind(AwsClient.class).to(AwsClientImpl.class);
       }
     });
 

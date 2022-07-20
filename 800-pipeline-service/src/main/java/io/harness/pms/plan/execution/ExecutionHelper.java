@@ -42,9 +42,10 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.pms.helpers.PrincipalInfoHelper;
 import io.harness.pms.helpers.TriggeredByHelper;
+import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
-import io.harness.pms.merger.helpers.InputSetTemplateHelper;
+import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetErrorsHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -63,6 +64,7 @@ import io.harness.pms.rbac.validator.PipelineRbacService;
 import io.harness.pms.stages.StagesExpressionExtractor;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.threading.Morpheus;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -234,27 +236,46 @@ public class ExecutionHelper {
 
   @VisibleForTesting
   TemplateMergeResponseDTO getPipelineYamlAndValidate(String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) {
-    String pipelineYaml;
+    YamlConfig pipelineYamlConfig;
+    YamlConfig pipelineYamlConfigForSchemaValidations;
+
     long start = System.currentTimeMillis();
     if (isEmpty(mergedRuntimeInputYaml)) {
-      pipelineYaml = pipelineEntity.getYaml();
+      pipelineYamlConfig = new YamlConfig(pipelineEntity.getYaml());
+      pipelineYamlConfigForSchemaValidations = pipelineYamlConfig;
     } else {
-      Map<FQN, String> invalidFQNsInInputSet = InputSetErrorsHelper.getInvalidFQNsInInputSet(
-          InputSetTemplateHelper.createTemplateFromPipeline(pipelineEntity.getYaml()), mergedRuntimeInputYaml);
+      YamlConfig pipelineEntityYamlConfig = new YamlConfig(pipelineEntity.getYaml());
+      YamlConfig runtimeInputYamlConfig = new YamlConfig(mergedRuntimeInputYaml);
+      Map<FQN, String> invalidFQNsInInputSet =
+          InputSetErrorsHelper.getInvalidFQNsInInputSet(pipelineEntityYamlConfig, runtimeInputYamlConfig);
       if (EmptyPredicate.isNotEmpty(invalidFQNsInInputSet)) {
         throw new InvalidRequestException("Some fields are not valid: "
             + invalidFQNsInInputSet.entrySet()
                   .stream()
                   .map(o -> o.getKey().getExpressionFqn() + ": " + o.getValue())
-                  .collect(Collectors.toList())
-                  .toString());
+                  .collect(Collectors.toList()));
       }
-      pipelineYaml =
-          InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineEntity.getYaml(), mergedRuntimeInputYaml, true);
+      pipelineYamlConfig =
+          MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(pipelineEntityYamlConfig, runtimeInputYamlConfig, true);
+
+      /*
+      For schema validations, we don't want input set validators to be appended. For example, if some timeout field in
+      the pipeline is <+input>.allowedValues(12h, 1d), and the runtime input gives a value 12h, the value for this field
+      in pipelineYamlConfig will be 12h.allowedValues(12h, 1d) for validation during execution. However, this value will
+      give an error in schema validation. That's why we need a value that doesn't have this validator appended.
+       */
+      pipelineYamlConfigForSchemaValidations =
+          MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(pipelineEntityYamlConfig, runtimeInputYamlConfig, false);
     }
+    pipelineYamlConfig = InputSetSanitizer.trimValues(pipelineYamlConfig);
+    pipelineYamlConfigForSchemaValidations = InputSetSanitizer.trimValues(pipelineYamlConfigForSchemaValidations);
+
+    String pipelineYaml = pipelineYamlConfig.getYaml();
+    String pipelineYamlForSchemaValidations = pipelineYamlConfigForSchemaValidations.getYaml();
     log.info("[PMS_EXECUTE] Pipeline input set merge total time took {}ms", System.currentTimeMillis() - start);
+
     String pipelineYamlWithTemplateRef = pipelineYaml;
-    if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
+    if (Boolean.TRUE.equals(TemplateRefHelper.hasTemplateRef(pipelineYamlConfig))) {
       TemplateMergeResponseDTO templateMergeResponseDTO =
           pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(),
               pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, true,
@@ -265,10 +286,8 @@ public class ExecutionHelper {
           ? pipelineYaml
           : templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
     }
-    pipelineYaml = InputSetSanitizer.trimValues(pipelineYaml);
-    pipelineYamlWithTemplateRef = InputSetSanitizer.trimValues(pipelineYamlWithTemplateRef);
     pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-        pipelineEntity.getProjectIdentifier(), pipelineYaml);
+        pipelineEntity.getProjectIdentifier(), pipelineYamlForSchemaValidations);
     if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType() == StoreType.INLINE) {
       // For REMOTE Pipelines, entity setup usage framework cannot be relied upon. That is because the setup usages can
       // be outdated wrt the YAML we find on Git during execution. This means the fail fast approach that we have for

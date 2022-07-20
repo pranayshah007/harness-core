@@ -10,6 +10,7 @@ package io.harness.pms.ngpipeline.inputset.observers;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.pms.events.PipelineDeleteEvent;
 import io.harness.pms.events.PipelineUpdateEvent;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
@@ -40,6 +41,9 @@ public class InputSetPipelineObserver implements PipelineActionObserver {
   @Override
   public void onUpdate(PipelineUpdateEvent pipelineUpdateEvent) {
     PipelineEntity pipelineEntity = pipelineUpdateEvent.getNewPipeline();
+    if (pipelineEntity.getStoreType() == StoreType.REMOTE) {
+      return;
+    }
     Criteria criteria = PMSInputSetFilterHelper.createCriteriaForGetListForBranchAndRepo(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
         InputSetListTypePMS.INPUT_SET);

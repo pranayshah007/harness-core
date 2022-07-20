@@ -95,6 +95,9 @@ public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extend
     List<AdviserObtainment> adviserObtainmentFromMetaData = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
+    stepElement.setIdentifier(StageStrategyUtils.getIdentifierWithExpression(ctx, stepElement.getIdentifier()));
+    stepElement.setName(StageStrategyUtils.getIdentifierWithExpression(ctx, stepElement.getName()));
+
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
     addStrategyFieldDependencyIfPresent(ctx, stepElement, dependenciesNodeMap, metadataMap);
     PlanNode stepPlanNode =

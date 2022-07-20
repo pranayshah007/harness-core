@@ -9,6 +9,8 @@ package io.harness.repositories.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import static org.springframework.data.mongodb.core.query.Query.query;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.pipeline.PipelineMetadata;
@@ -16,6 +18,7 @@ import io.harness.pms.pipeline.PipelineMetadataV2;
 import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
 
 import com.google.inject.Inject;
+import java.util.List;
 import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -27,7 +30,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
-@AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
+@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(PIPELINE)
 public class PipelineMetadataV2RepositoryCustomImpl implements PipelineMetadataV2RepositoryCustom {
@@ -65,6 +68,20 @@ public class PipelineMetadataV2RepositoryCustomImpl implements PipelineMetadataV
   }
 
   @Override
+  public List<PipelineMetadataV2> getMetadataForGivenPipelineIds(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> identifiers) {
+    Criteria criteria = Criteria.where(PipelineMetadataV2Keys.accountIdentifier)
+                            .is(accountId)
+                            .and(PipelineMetadataV2Keys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(PipelineMetadataV2Keys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(PipelineMetadataV2Keys.identifier)
+                            .in(identifiers);
+    return mongoTemplate.find(query(criteria), PipelineMetadataV2.class);
+  }
+
+  @Override
   public Optional<PipelineMetadataV2> cloneFromPipelineMetadata(
       String accountId, String orgId, String projectIdentifier, String identifier) {
     Update update = new Update();
@@ -96,5 +113,12 @@ public class PipelineMetadataV2RepositoryCustomImpl implements PipelineMetadataV
                                               .identifier(identifier)
                                               .runSequence(pipelineMetadata.getRunSequence() + 1)
                                               .build()));
+  }
+
+  @Override
+  public PipelineMetadataV2 update(Criteria criteria, Update update) {
+    Query query = query(criteria);
+    return mongoTemplate.findAndModify(
+        query, update, new FindAndModifyOptions().returnNew(true), PipelineMetadataV2.class);
   }
 }

@@ -14,4 +14,6 @@ public interface ErrorMetadataConstants {
   String SCM_ERROR = "ScmErrorMetadataDTO";
   String INPUT_SET_ERROR = "InputSetErrorWrapperDTOPMS";
   String OVERLAY_INPUT_SET_ERROR = "OverlayInputSetErrorWrapperDTOPMS";
+  String TEMPLATE_INPUTS_VALIDATION_ERROR = "TemplateInputsErrorMetadataV2";
+  String INVALID_FIELDS_ERROR = "InvalidFieldsDTO";
 }

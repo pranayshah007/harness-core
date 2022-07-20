@@ -34,6 +34,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.CODECOMMIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
+import static io.harness.delegate.beans.connector.scm.adapter.AzureRepoToGitMapper.mapToGitConnectionType;
 
 import static java.lang.String.format;
 
@@ -177,7 +178,8 @@ public class CodebaseUtils {
     } else if (gitConnector.getConnectorType() == AZURE_REPO) {
       AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
       validateAzureRepoConnectorAuth(gitConfigDTO);
-      envVars = retrieveGitSCMEnvVar(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      GitConnectionType gitConnectionType = mapToGitConnectionType(gitConfigDTO.getConnectionType());
+      envVars = retrieveGitSCMEnvVar(ciCodebase, gitConnectionType, gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == GITLAB) {
       GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
       validateGitlabConnectorAuth(gitConfigDTO);
@@ -270,7 +272,8 @@ public class CodebaseUtils {
       case HTTP:
         GitlabHttpCredentialsDTO gitAuth = (GitlabHttpCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
         if (gitAuth.getType() != GitlabHttpAuthenticationType.USERNAME_AND_PASSWORD
-            && gitAuth.getType() != GitlabHttpAuthenticationType.USERNAME_AND_TOKEN) {
+            && gitAuth.getType() != GitlabHttpAuthenticationType.USERNAME_AND_TOKEN
+            && gitAuth.getType() != GitlabHttpAuthenticationType.OAUTH) {
           throw new CIStageExecutionException("Unsupported gitlab connector auth type" + gitAuth.getType());
         }
         break;
@@ -373,22 +376,18 @@ public class CodebaseUtils {
     return connectorUtils.getConnectorDetails(ngAccess, codeBase.getConnectorRef().getValue());
   }
 
-  public static String getCompleteURLFromConnector(
-      ConnectorDetails connectorDetails, String projectName, String repoName) {
+  public static String getCompleteURLFromConnector(ConnectorDetails connectorDetails, String repoName) {
     ScmConnector scmConnector = (ScmConnector) connectorDetails.getConnectorConfig();
     GitConnectionType gitConnectionType = getGitConnectionType(connectorDetails);
     String completeURL = scmConnector.getUrl();
 
-    if (isNotEmpty(repoName) && (gitConnectionType == null || gitConnectionType == GitConnectionType.ACCOUNT)) {
-      if (scmConnector instanceof AzureRepoConnectorDTO) {
-        if (isEmpty(projectName)) {
-          throw new IllegalArgumentException("Project name is not set for azure repo");
-        }
-        completeURL = GitClientHelper.getCompleteUrlForAccountLevelAzureConnector(completeURL, projectName, repoName);
-      } else {
-        completeURL = StringUtils.join(StringUtils.stripEnd(scmConnector.getUrl(), PATH_SEPARATOR), PATH_SEPARATOR,
-            StringUtils.stripStart(repoName, PATH_SEPARATOR));
+    if (isNotEmpty(repoName) && gitConnectionType == GitConnectionType.PROJECT) {
+      if (scmConnector.getConnectorType() == AZURE_REPO) {
+        completeURL = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(completeURL, repoName);
       }
+    } else if (isNotEmpty(repoName) && (gitConnectionType == null || gitConnectionType == GitConnectionType.ACCOUNT)) {
+      completeURL = StringUtils.join(StringUtils.stripEnd(scmConnector.getUrl(), PATH_SEPARATOR), PATH_SEPARATOR,
+          StringUtils.stripStart(repoName, PATH_SEPARATOR));
     }
 
     return completeURL;
@@ -404,7 +403,7 @@ public class CodebaseUtils {
       return gitConfigDTO.getConnectionType();
     } else if (gitConnector.getConnectorType() == AZURE_REPO) {
       AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
-      return gitConfigDTO.getConnectionType();
+      return mapToGitConnectionType(gitConfigDTO.getConnectionType());
     } else if (gitConnector.getConnectorType() == GITLAB) {
       GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getConnectionType();

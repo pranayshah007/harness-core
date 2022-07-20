@@ -24,6 +24,8 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.connector.ImageSecretBuilder;
+import io.harness.connector.SecretSpecBuilder;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.SecretParams;
 import io.harness.exception.PodNotFoundException;

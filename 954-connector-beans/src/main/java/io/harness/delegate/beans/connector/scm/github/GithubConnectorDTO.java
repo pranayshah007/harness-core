@@ -54,7 +54,10 @@ import org.hibernate.validator.constraints.NotBlank;
 @Schema(name = "GithubConnector", description = "This contains details of Github connectors")
 public class GithubConnectorDTO
     extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable {
-  @NotNull @JsonProperty("type") GitConnectionType connectionType;
+  @NotNull
+  @JsonProperty("type")
+  @Schema(type = "string", allowableValues = {"Account", "Repo"})
+  GitConnectionType connectionType;
   @NotBlank @NotNull String url;
   String validationRepo;
   @Valid @NotNull GithubAuthenticationDTO authentication;
@@ -119,9 +122,9 @@ public class GithubConnectorDTO
             String.format("Provided repoName [%s] does not match with the repoName [%s] provided in connector.",
                 gitRepositoryDTO.getName(), linkedRepo));
       }
-      return getUrl();
+      return url;
     }
-    return FilePathUtils.addEndingSlashIfMissing(getUrl()) + gitRepositoryDTO.getName();
+    return FilePathUtils.addEndingSlashIfMissing(url) + gitRepositoryDTO.getName();
   }
 
   @Override
@@ -139,8 +142,9 @@ public class GithubConnectorDTO
   public String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
     ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
     String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
+    String httpRepoUrl = GitClientHelper.getCompleteHTTPUrlForGithub(repoUrl);
     filePath = removeStartingAndEndingSlash(filePath);
-    return String.format("%s/blob/%s/%s", repoUrl, branchName, filePath);
+    return String.format("%s/blob/%s/%s", httpRepoUrl, branchName, filePath);
   }
 
   @Override

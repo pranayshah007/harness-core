@@ -41,6 +41,53 @@
         ]
       }
     ],
+    "controlClusterHostFrequencies" : [
+      {
+        "label" : 0,
+        "frequencyData" : [
+          {
+            "host": "host1",
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 101.0
+              }, {
+                "timeStamp": 200,
+                "count": 122.0
+              }, {
+                "timeStamp": 300,
+                "count": 155.0
+              }, {
+                "timeStamp": 400,
+                "count": 185.0
+              }, {
+                "timeStamp": 500,
+                "count": 166.0
+              }
+            ]
+          }
+        ]
+      },{
+        "label" : 1,
+        "frequencyData" : [
+          {
+            "host": "host1",
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 1.0
+              }, {
+                "timeStamp": 200,
+                "count": 2.0
+              }, {
+                "timeStamp": 300,
+                "count": 1.0
+              }
+            ]
+          }
+        ]
+      }
+    ],
     "testClusterSummaries" : [
       {
         "label" : 0,
@@ -50,6 +97,17 @@
         "count" : 152,
         "testFrequencyData" : [
           152.0
+        ] ,
+        "frequencyData" : [
+          {
+            "host": "host1",
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 152.0
+              }
+            ]
+          }
         ]
       },
       {
@@ -60,6 +118,26 @@
         "count" : 1,
         "testFrequencyData" : [
           1100.0
+        ],
+        "frequencyData" : [
+          {
+            "host": "host1",
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 1200.0
+              }
+            ]
+          },
+          {
+            "host": "host2",
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 1000.0
+              }
+            ]
+          }
         ]
       },
       {
@@ -71,6 +149,26 @@
         "testFrequencyData" : [
           12.0,
           13.0
+        ],
+        "frequencyData" : [
+          {
+            "host": "host1",
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 12.0
+              }
+            ]
+          },
+          {
+            "host": "host2",
+            "frequencies": [
+              {
+                "timeStamp": 200,
+                "count": 13.0
+              }
+            ]
+          }
         ]
       },
       {
@@ -83,6 +181,29 @@
           12.0,
           13.0,
           14.0
+        ],
+        "frequencyData" : [
+          {
+            "host": "host1",
+            "frequencies": [
+              {
+                "timeStamp": 100,
+                "count": 12.0
+              },{
+                "timeStamp": 200,
+                "count": 13.0
+              }
+            ]
+          },
+          {
+            "host": "host2",
+            "frequencies": [
+              {
+                "timeStamp": 300,
+                "count": 14.0
+              }
+            ]
+          }
         ]
       }
     ]

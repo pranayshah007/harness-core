@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.ERSHAD_MOHAMMAD;
 import static io.harness.rule.OwnerRule.MOUNIK;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static software.wings.beans.BasicOrchestrationWorkflow.BasicOrchestrationWorkflowBuilder.aBasicOrchestrationWorkflow;
 import static software.wings.beans.CanaryOrchestrationWorkflow.CanaryOrchestrationWorkflowBuilder.aCanaryOrchestrationWorkflow;
@@ -56,6 +57,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -77,6 +79,7 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.CanaryOrchestrationWorkflow;
+import software.wings.beans.Event;
 import software.wings.beans.FailureStrategy;
 import software.wings.beans.GraphNode;
 import software.wings.beans.HelmChartConfig;
@@ -111,6 +114,7 @@ import software.wings.service.intfc.PipelineService;
 import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.applicationmanifest.HelmChartService;
+import software.wings.service.intfc.yaml.YamlPushService;
 import software.wings.sm.PipelineSummary;
 import software.wings.sm.StateMachine;
 import software.wings.sm.StateMachine.StateMachineBuilder;
@@ -158,6 +162,7 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
   @Mock private Query<WorkflowExecution> emptyQuery;
   @Mock private FieldEnd fieldEnd;
   @Mock UpdateOperations<Workflow> updateOperations;
+  @Mock private YamlPushService yamlPushService;
 
   @Before
   public void setUp() {
@@ -1232,5 +1237,57 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
       assertThat(updatedWorkflowPhase.getInfraDefinitionId()).isNull();
       assertThat(updatedWorkflowPhase.getServiceId()).isNull();
     });
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_clonedWorkflowActionType() {
+    WorkflowServiceImpl workflowServiceImpl = (WorkflowServiceImpl) workflowService;
+    WorkflowPhase workflowPhase =
+        aWorkflowPhase().uuid(PHASE_ID).serviceId(SERVICE_ID).infraDefinitionId(INFRA_DEFINITION_ID).build();
+    CanaryOrchestrationWorkflow canaryOrchestrationWorkflow =
+        aCanaryOrchestrationWorkflow().addWorkflowPhase(workflowPhase).build();
+    Workflow oldWorkflow = aWorkflow()
+                               .name(WORKFLOW_NAME)
+                               .uuid(WORKFLOW_ID)
+                               .accountId(ACCOUNT_ID)
+                               .appId(APP_ID)
+                               .orchestrationWorkflow(canaryOrchestrationWorkflow)
+                               .build();
+    Workflow newWorkflow = aWorkflow().name("Cloned").uuid(WORKFLOW_ID).accountId(ACCOUNT_ID).appId(APP_ID).build();
+    Map<String, String> serviceMappings = new HashMap<>();
+    CloneMetadata cloneMetadata =
+        CloneMetadata.builder().workflow(newWorkflow).serviceMapping(serviceMappings).targetAppId("NewApp").build();
+    doNothing().when(workflowServiceHelper).validateServiceMapping(any(), any(), any());
+    mockStatic(LimitEnforcementUtils.class)
+        .when(() -> LimitEnforcementUtils.withLimitCheck(any(), any()))
+        .thenReturn(newWorkflow);
+
+    when(wingsPersistence.createUpdateOperations(Workflow.class)).thenReturn(updateOperations);
+    when(wingsPersistence.getWithAppId(any(), anyString(), anyString())).thenReturn(newWorkflow);
+    when(wingsPersistence.createQuery(StateMachine.class)).thenReturn(stateMachineQuery);
+    when(stateMachineQuery.filter(anyString(), any())).thenReturn(stateMachineQuery);
+    when(wingsPersistence.createQuery(Workflow.class)).thenReturn(workflowQuery);
+    when(workflowQuery.filter(anyString(), any())).thenReturn(workflowQuery);
+    when(wingsPersistence.createUpdateOperations(Workflow.class)).thenReturn(updateOperations);
+    when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
+    when(updateOperations.set(anyString(), any())).thenReturn(updateOperations);
+
+    Workflow updatedWorkFLow = workflowServiceImpl.cloneWorkflow(APP_ID, oldWorkflow, cloneMetadata);
+
+    assertThat(updatedWorkFLow).isNotNull();
+    ArgumentCaptor<Event.Type> typeArgumentCaptor1 = ArgumentCaptor.forClass(Event.Type.class);
+    verify(yamlPushService, times(1))
+        .pushYamlChangeSet(eq(ACCOUNT_ID), any(), any(), typeArgumentCaptor1.capture(), eq(false), eq(false));
+    assertThat(typeArgumentCaptor1.getValue()).isEqualTo(Event.Type.CREATE);
+    ArgumentCaptor<Event.Type> typeArgumentCaptor2 = ArgumentCaptor.forClass(Event.Type.class);
+
+    Workflow updateWorkFLow1 = workflowServiceImpl.updateWorkflow(oldWorkflow, canaryOrchestrationWorkflow, false);
+
+    assertThat(updateWorkFLow1).isNotNull();
+    verify(yamlPushService, times(1))
+        .pushYamlChangeSet(eq(ACCOUNT_ID), any(), any(), typeArgumentCaptor2.capture(), eq(false), eq(true));
+    assertThat(typeArgumentCaptor2.getValue()).isEqualTo(Event.Type.UPDATE);
   }
 }

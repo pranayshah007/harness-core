@@ -35,7 +35,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
-  @Mock private NGTemplateService templateService;
+  @Mock private NGTemplateServiceHelper templateServiceHelper;
 
   @InjectMocks TemplateInputsRefreshHelper templateInputsRefreshHelper;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
@@ -53,7 +53,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
 
   @Before
   public void setup() throws IllegalAccessException {
-    on(templateMergeServiceHelper).set("templateService", templateService);
+    on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(templateInputsRefreshHelper).set("templateMergeServiceHelper", templateMergeServiceHelper);
   }
 
@@ -77,7 +77,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
                                         .versionLabel("v1")
                                         .build();
 
-    when(templateService.getOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false))
         .thenReturn(Optional.of(templateEntity));
 
     String pipelineYamlFile = "pipeline-with-one-runtime-input.yaml";
@@ -118,7 +118,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
                                         .versionLabel("v1")
                                         .build();
 
-    when(templateService.getOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false))
         .thenReturn(Optional.of(templateEntity));
 
     String pipelineYamlFile = "pipeline-with-two-runtime-inputs.yaml";
@@ -159,7 +159,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
                                         .versionLabel("v1")
                                         .build();
 
-    when(templateService.getOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false))
         .thenReturn(Optional.of(templateEntity));
 
     String pipelineYamlFile = "pipeline-with-two-runtime-inputs.yaml";
@@ -200,7 +200,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
                                         .versionLabel("v1")
                                         .build();
 
-    when(templateService.getOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false))
         .thenReturn(Optional.of(templateEntity));
 
     String pipelineYamlFile = "pipeline-with-zero-runtime-inputs.yaml";
@@ -241,7 +241,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
                                         .versionLabel("v1")
                                         .build();
 
-    when(templateService.getOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false))
+    when(templateServiceHelper.getOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false))
         .thenReturn(Optional.of(templateEntity));
 
     String pipelineYamlFile = "pipeline-with-zero-runtime-inputs.yaml";

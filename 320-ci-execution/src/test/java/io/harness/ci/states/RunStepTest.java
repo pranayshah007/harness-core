@@ -36,6 +36,7 @@ import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.sweepingoutputs.CodeBaseConnectorRefSweepingOutput;
 import io.harness.beans.sweepingoutputs.ContainerPortDetails;
 import io.harness.beans.sweepingoutputs.ContextElement;
+import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.StepLogKeyDetails;
@@ -52,12 +53,14 @@ import io.harness.ci.serializer.RunStepProtobufSerializer;
 import io.harness.ci.serializer.vm.VmStepSerializer;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
+import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
 import io.harness.delegate.task.stepstatus.StepStatus;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.exception.exceptionmanager.ExceptionManager;
+import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -81,6 +84,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
+import io.harness.vm.VmExecuteStepUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
@@ -88,6 +92,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -113,8 +118,10 @@ public class RunStepTest extends CIExecutionTestBase {
   @Mock private RunStepProtobufSerializer runStepProtobufSerializer;
   @Mock private CIExecutionServiceConfig ciExecutionServiceConfig;
   @Mock private VmStepSerializer vmStepSerializer;
+  @Mock private VmExecuteStepUtils vmExecuteStepUtils;
   @Mock CILogServiceUtils logServiceUtils;
   @Mock WaitNotifyEngine waitNotifyEngine;
+  @Mock SerializedResponseDataHelper serializedResponseDataHelper;
   @Inject private ExceptionManager exceptionManager;
   @InjectMocks RunStep runStep;
 
@@ -258,10 +265,13 @@ public class RunStepTest extends CIExecutionTestBase {
   @Owner(developers = ALEKSANDAR)
   @Category(UnitTests.class)
   public void shouldHandleFailureAsyncResponse() {
-    responseDataMap.put(STEP_RESPONSE,
+    ResponseData responseData =
         StepStatusTaskResponseData.builder()
             .stepStatus(StepStatus.builder().stepExecutionStatus(StepExecutionStatus.FAILURE).error(ERROR).build())
-            .build());
+            .build();
+    responseDataMap.put(STEP_RESPONSE, responseData);
+
+    when(serializedResponseDataHelper.deserialize(responseData)).thenReturn(responseData);
     when(executionSweepingOutputResolver.resolveOptional(
              ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
         .thenReturn(
@@ -285,10 +295,14 @@ public class RunStepTest extends CIExecutionTestBase {
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
   public void shouldHandleSkippedAsyncResponse() {
-    responseDataMap.put(STEP_RESPONSE,
+    ResponseData responseData =
         StepStatusTaskResponseData.builder()
             .stepStatus(StepStatus.builder().stepExecutionStatus(StepExecutionStatus.SKIPPED).build())
-            .build());
+            .build();
+    responseDataMap.put(STEP_RESPONSE, responseData);
+
+    when(serializedResponseDataHelper.deserialize(responseData)).thenReturn(responseData);
+
     when(executionSweepingOutputResolver.resolveOptional(
              ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
         .thenReturn(
@@ -305,7 +319,10 @@ public class RunStepTest extends CIExecutionTestBase {
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
   public void shouldHandleLiteEngineTaskFailure() {
-    responseDataMap.put(STEP_RESPONSE, ErrorNotifyResponseData.builder().errorMessage("error message").build());
+    ResponseData responseData = ErrorNotifyResponseData.builder().errorMessage("error message").build();
+    responseDataMap.put(STEP_RESPONSE, responseData);
+
+    when(serializedResponseDataHelper.deserialize(responseData)).thenReturn(responseData);
 
     when(executionSweepingOutputResolver.resolveOptional(
              ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
@@ -338,9 +355,10 @@ public class RunStepTest extends CIExecutionTestBase {
     List<String> callbackIds = new ArrayList<>();
     callbackIds.add("callbackId1");
     callbackIds.add("callbackId2");
+    ResponseData responseData = ErrorNotifyResponseData.builder().errorMessage("error message").build();
 
-    runStep.handleForCallbackId(ambiance, stepElementParameters, callbackIds, "callbackId1",
-        ErrorNotifyResponseData.builder().errorMessage("error message").build());
+    when(serializedResponseDataHelper.deserialize(responseData)).thenReturn(responseData);
+    runStep.handleForCallbackId(ambiance, stepElementParameters, callbackIds, "callbackId1", responseData);
     verify(waitNotifyEngine, times(1)).doneWith(any(), any());
   }
 
@@ -429,9 +447,55 @@ public class RunStepTest extends CIExecutionTestBase {
   @Test
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
+  public void shouldExecuteAsyncHostedVmWithDelegateId() {
+    Map<String, List<String>> logKeys = new HashMap<>();
+    String key =
+        "accountId:accountId/orgId:orgId/projectId:projectId/pipelineId:pipelineId/runSequence:1/level0:runStepId_1";
+    logKeys.put(STEP_ID, Collections.singletonList(key));
+    RefObject refObject = RefObjectUtils.getSweepingOutputRefObject(CODE_BASE_CONNECTOR_REF);
+
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
+        .thenReturn(
+            OptionalSweepingOutput.builder().found(true).output(DliteVmStageInfraDetails.builder().build()).build());
+    when(executionSweepingOutputResolver.resolveOptional(eq(ambiance), eq(refObject)))
+        .thenReturn(OptionalSweepingOutput.builder().found(true).output(codeBaseConnectorRefSweepingOutput).build());
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails)))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(StageDetails.builder().stageRuntimeID("test").build())
+                        .build());
+    when(outcomeService.resolveOptional(
+             ambiance, RefObjectUtils.getOutcomeRefObject(VmDetailsOutcome.VM_DETAILS_OUTCOME)))
+        .thenReturn(OptionalOutcome.builder()
+                        .found(true)
+                        .outcome(VmDetailsOutcome.builder().ipAddress("1.1.1.1").build())
+                        .build());
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
+        .thenReturn(OptionalSweepingOutput.builder().found(true).output(VmStageInfraDetails.builder().build()).build());
+
+    when(vmStepSerializer.serialize(any(), any(), any(), any(), any())).thenReturn(VmRunStep.builder().build());
+    when(vmStepSerializer.getStepSecrets(any(), any())).thenReturn(new HashSet<>());
+    when(vmExecuteStepUtils.convertStep(any())).thenReturn(ExecuteStepRequest.builder());
+    when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any())).thenReturn(callbackId);
+
+    AsyncExecutableResponse asyncExecutableResponse =
+        runStep.executeAsync(ambiance, stepElementParameters, stepInputPackage, null);
+    assertThat(asyncExecutableResponse)
+        .isEqualTo(AsyncExecutableResponse.newBuilder().addCallbackIds(callbackId).addLogKeys(key).build());
+  }
+
+  @Test
+  @Owner(developers = SHUBHAM)
+  @Category(UnitTests.class)
   public void shouldHandleSuccessVmAsyncResponse() {
-    responseDataMap.put(STEP_RESPONSE,
-        VmTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build());
+    ResponseData responseData =
+        VmTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+    responseDataMap.put(STEP_RESPONSE, responseData);
+
+    when(serializedResponseDataHelper.deserialize(responseData)).thenReturn(responseData);
     when(executionSweepingOutputResolver.resolveOptional(
              ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
         .thenReturn(OptionalSweepingOutput.builder().found(true).output(VmStageInfraDetails.builder().build()).build());

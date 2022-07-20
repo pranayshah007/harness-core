@@ -9,7 +9,7 @@ package io.harness.yaml.core.variables;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.yaml.core.VariableExpression.IteratePolicy.REGULAR_WITH_CUSTOM_FIELD;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.numberString;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
@@ -51,7 +51,7 @@ public class NumberNGVariable implements NGVariable {
   @VariableExpression(skipVariableExpression = true)
   NGVariableType type = NGVariableType.NUMBER;
   @NotNull
-  @YamlSchemaTypes({string})
+  @YamlSchemaTypes({numberString})
   @ApiModelProperty(dataType = SwaggerConstants.DOUBLE_CLASSPATH)
   @VariableExpression(policy = REGULAR_WITH_CUSTOM_FIELD, skipInnerObjectTraversal = true)
   ParameterField<Double> value;

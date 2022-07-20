@@ -354,7 +354,7 @@ public class DelegateSetupResourceTest extends CategoryTest {
                                             .delegateType(DelegateType.KUBERNETES)
                                             .build();
 
-    when(delegateService.validateKubernetesYaml(accountId, setupDetails)).thenReturn(setupDetails);
+    when(delegateService.validateKubernetesSetupDetails(accountId, setupDetails)).thenReturn(setupDetails);
     RestResponse<DelegateSetupDetails> restResponse =
         RESOURCES.client()
             .target("/setup/delegates/validate-kubernetes-yaml?accountId=" + accountId)
@@ -867,7 +867,7 @@ public class DelegateSetupResourceTest extends CategoryTest {
                                 .get();
     DelegateSetupDetails details = DelegateSetupDetails.builder().delegateType(DOCKER).name("name1").build();
     verify(delegateService, atLeastOnce())
-        .validateDelegateSetupDetails(anyString(), eq(details), eq(DelegateType.DOCKER));
+        .validateDockerDelegateSetupDetails(anyString(), eq(details), eq(DelegateType.DOCKER));
 
     assertThat(restResponse.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
   }

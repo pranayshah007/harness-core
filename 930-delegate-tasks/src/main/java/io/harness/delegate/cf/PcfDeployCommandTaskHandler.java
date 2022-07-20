@@ -160,8 +160,8 @@ public class PcfDeployCommandTaskHandler extends PcfCommandTaskHandler {
 
     } catch (Exception e) {
       exceptionOccured = true;
-      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      logException(executionLogCallback, cfCommandDeployRequest, sanitizedException);
+      exception = ExceptionMessageSanitizer.sanitizeException(e);
+      logException(executionLogCallback, cfCommandDeployRequest, exception);
     } finally {
       try {
         if (workingDirectory != null) {

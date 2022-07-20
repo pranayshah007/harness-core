@@ -75,6 +75,10 @@ public abstract class GenericStagePlanCreator extends ChildrenPlanCreator<StageE
   @Override
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, StageElementConfig stageElementConfig, List<String> childrenNodeIds) {
+    stageElementConfig.setIdentifier(
+        StageStrategyUtils.getIdentifierWithExpression(ctx, stageElementConfig.getIdentifier()));
+    stageElementConfig.setName(StageStrategyUtils.getIdentifierWithExpression(ctx, stageElementConfig.getName()));
+
     StageElementParametersBuilder stageParameters = StepParameterCommonUtils.getStageParameters(stageElementConfig);
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));

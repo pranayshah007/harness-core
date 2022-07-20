@@ -65,6 +65,12 @@ public class DeploymentTableSchema {
   DbColumn artifacts;
   DbColumn envTypes;
   DbColumn parentExecution;
+
+  DbColumn failureDetails;
+
+  DbColumn failedStepNames;
+
+  DbColumn failedStepTypes;
   DbColumn stageName;
   DbColumn rollbackDuration;
   DbColumn instancesDeployed;
@@ -91,6 +97,9 @@ public class DeploymentTableSchema {
     artifacts = deploymentTable.addColumn("ARTIFACTS", "text[]", null);
     envTypes = deploymentTable.addColumn("ENVTYPES", "text[]", null);
     parentExecution = deploymentTable.addColumn("PARENT_EXECUTION", "text", null);
+    failureDetails = deploymentTable.addColumn("FAILURE_DETAILS", "text", null);
+    failedStepNames = deploymentTable.addColumn("FAILED_STEP_NAMES", "text", null);
+    failedStepTypes = deploymentTable.addColumn("FAILED_STEP_TYPES", "text", null);
     stageName = deploymentTable.addColumn("STAGENAME", "text", null);
     rollbackDuration = deploymentTable.addColumn("ROLLBACK_DURATION", "bigint", null);
     instancesDeployed = deploymentTable.addColumn("INSTANCES_DEPLOYED", "int", null);

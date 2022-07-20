@@ -24,10 +24,14 @@ import io.harness.grpc.exception.GrpcExceptionMapper;
 import io.harness.grpc.exception.WingsExceptionGrpcMapper;
 import io.harness.grpc.server.GrpcServerExceptionHandler;
 import io.harness.grpc.server.GrpcServerModule;
+import io.harness.metrics.impl.DelegateMetricsServiceImpl;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.metrics.service.api.MetricsPublisher;
 import io.harness.persistence.HPersistence;
 import io.harness.security.DelegateTokenAuthenticator;
+import io.harness.service.impl.AgentMtlsEndpointServiceReadOnlyImpl;
+import io.harness.service.intfc.AgentMtlsEndpointService;
 
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.dl.WingsPersistence;
@@ -66,7 +70,12 @@ public class EventServiceModule extends AbstractModule {
     bind(EventServiceConfig.class).toInstance(eventServiceConfig);
     bind(HPersistence.class).to(WingsMongoPersistence.class).in(Singleton.class);
     bind(WingsPersistence.class).to(WingsMongoPersistence.class).in(Singleton.class);
+
+    // event service only needs reading capabilities for datapath authority validation
+    bind(AgentMtlsEndpointService.class).to(AgentMtlsEndpointServiceReadOnlyImpl.class);
     bind(DelegateTokenAuthenticator.class).to(DelegateTokenAuthenticatorImpl.class).in(Singleton.class);
+    bind(DelegateMetricsService.class).to(DelegateMetricsServiceImpl.class);
+
     bind(SecretManager.class).to(NoOpSecretManagerImpl.class);
     bind(EncryptedSettingAttributes.class).to(NoOpSecretManagerImpl.class);
     bind(LastReceivedPublishedMessageRepository.class).to(LastReceivedPublishedMessageRepositoryImpl.class);

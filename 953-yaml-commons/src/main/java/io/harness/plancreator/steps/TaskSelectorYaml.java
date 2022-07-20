@@ -7,6 +7,7 @@
 
 package io.harness.plancreator.steps;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.TaskSelector;
@@ -19,6 +20,7 @@ import lombok.Data;
 
 @Data
 @OwnedBy(HarnessTeam.PIPELINE)
+@RecasterAlias("io.harness.plancreator.steps.TaskSelectorYaml")
 public class TaskSelectorYaml {
   String delegateSelectors;
   String origin;

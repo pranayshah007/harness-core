@@ -38,6 +38,7 @@ public class SecretManagerDescriptionConstants {
   public static final String VAULT_K8S_AUTH_ROLE = "This is the role where K8s auth will happen.";
   public static final String SERVICE_ACCOUNT_TOKEN_PATH =
       "This is the SA token path where the token is mounted in the K8s Pod.";
+  public static final String K8S_AUTH_ENDPOINT = "This is the path where kubernetes auth is enabled in Vault.";
   public static final String ACCESS_KEY = "Access Key for AWS authentication.";
   public static final String SECRET_KEY = "Secret Key for AWS authentication.";
   public static final String ROLE_ARN = "Role ARN for the Delegate with STS Role.";

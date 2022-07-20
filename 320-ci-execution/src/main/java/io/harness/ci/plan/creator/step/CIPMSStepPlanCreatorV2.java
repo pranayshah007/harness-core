@@ -100,6 +100,9 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
     List<AdviserObtainment> adviserObtainmentFromMetaData = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
+    stepElement.setIdentifier(StageStrategyUtils.getIdentifierWithExpression(ctx, stepElement.getIdentifier()));
+    stepElement.setName(StageStrategyUtils.getIdentifierWithExpression(ctx, stepElement.getName()));
+
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
     // Adds a strategy field as dependency if present.
     addStrategyFieldDependencyIfPresent(ctx, stepElement, dependenciesNodeMap, metadataMap);

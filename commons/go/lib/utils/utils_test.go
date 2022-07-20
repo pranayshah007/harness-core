@@ -44,7 +44,7 @@ func Test_ParseFileNames(t *testing.T) {
 		"320-ci-execution/src/main/java/io/harness/stateutils/buildstate/ConnectorUtils.java",     // Source file
 		"320-ci-execution/src/test/java/io/harness/stateutils/buildstate/TestConnectorUtils.java", // Test file
 		"810-ci-manager/src/test/resources/data/ng-trigger-config.yaml",                           // Resource file
-		"330-ci-beans/pom.xml",
+		"332-ci-manager/pom.xml",
 		"320-ci-execution/src/main/java/io/harness/stateutils/buildstate/ConnectorUtils", //.java extension is missing
 	}
 	node1 := Node{

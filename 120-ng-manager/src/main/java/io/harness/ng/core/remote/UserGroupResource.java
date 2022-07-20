@@ -49,6 +49,7 @@ import io.harness.ng.core.utils.UserGroupMapper;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
+import software.wings.beans.sso.LdapLinkGroupRequest;
 import software.wings.beans.sso.SSOType;
 import software.wings.beans.sso.SamlLinkGroupRequest;
 
@@ -165,7 +166,6 @@ public class UserGroupResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(USERGROUP, userGroupDTO.getIdentifier()), MANAGE_USERGROUP_PERMISSION);
     validateScopes(accountIdentifier, orgIdentifier, projectIdentifier, userGroupDTO);
-    checkExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, userGroupDTO.getIdentifier());
     userGroupDTO.setAccountIdentifier(accountIdentifier);
     userGroupDTO.setOrgIdentifier(orgIdentifier);
     userGroupDTO.setProjectIdentifier(projectIdentifier);
@@ -507,6 +507,34 @@ public class UserGroupResource {
     checkExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId);
     return new RestResponse<>(userGroupService.linkToSsoGroup(accountIdentifier, orgIdentifier, projectIdentifier,
         userGroupId, SSOType.SAML, samlId, groupRequest.getSamlGroupName(), groupRequest.getSamlGroupName()));
+  }
+
+  @PUT
+  @Path("{userGroupId}/link/ldap/{ldapId}")
+  @ApiOperation(value = "Link to an LDAP group", nickname = "linkToLdapGroup")
+  @Operation(operationId = "linkUserGroupToLDAP",
+      summary = "Link LDAP Group to the User Group to an account/org/project",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the updated User Group after linking LDAP Group")
+      })
+  public RestResponse<UserGroup>
+  linkToLdapGroup(@Parameter(description = "Identifier of the user group", required = true) @PathParam(
+                      "userGroupId") String userGroupId,
+      @Parameter(description = "LDAP entity identifier", required = true) @PathParam("ldapId") String ldapId,
+      @RequestBody(
+          description = "LDAP Link Group Request", required = true) @NotNull @Valid LdapLinkGroupRequest groupRequest,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(USERGROUP, userGroupId), MANAGE_USERGROUP_PERMISSION);
+    checkExternallyManaged(accountIdentifier, orgIdentifier, projectIdentifier, userGroupId);
+    return new RestResponse<>(userGroupService.linkToSsoGroup(accountIdentifier, orgIdentifier, projectIdentifier,
+        userGroupId, SSOType.LDAP, ldapId, groupRequest.getLdapGroupDN(), groupRequest.getLdapGroupName()));
   }
 
   private void checkExternallyManaged(

@@ -28,6 +28,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -90,12 +91,14 @@ public class ACLServiceImpl implements ACLService {
       ResourceAttributeProvider resourceAttributeProvider) {
     Set<ResourceInfo> resourcesWhoseAttributesAreRequired = new HashSet<>();
     Boolean[] accessCheckResults = new Boolean[permissionChecks.size()];
+    Map<ResourceInfo, Map<String, String>> attributesProvidedByClient = new HashMap<>();
     for (int i = 0; i < permissionChecks.size(); i++) {
       if (matchedACLs.get(i).isEmpty()) {
         accessCheckResults[i] = Boolean.FALSE;
       } else if (matchedACLs.get(i).stream().anyMatch(acl -> !acl.isConditional())) {
         accessCheckResults[i] = Boolean.TRUE;
-      } else if (isNotEmpty(permissionChecks.get(i).getResourceIdentifier())) {
+      } else if (isNotEmpty(permissionChecks.get(i).getResourceIdentifier())
+          || isNotEmpty(permissionChecks.get(i).getResourceAttributes())) {
         resourcesWhoseAttributesAreRequired.add(permissionChecks.get(i).getResourceInfo());
       } else {
         accessCheckResults[i] = Boolean.FALSE;
@@ -108,11 +111,12 @@ public class ACLServiceImpl implements ACLService {
     } catch (Exception ex) {
       log.error("Exception occurred fetching attributes for {}", permissionChecks, ex);
     }
+
     for (int i = 0; i < permissionChecks.size(); i++) {
       if (accessCheckResults[i] == null) {
-        accessCheckResults[i] = (attributes != null) ? evaluateAccessFromConditionalACLs(permissionChecks.get(i),
+        accessCheckResults[i] = attributes != null ? evaluateAccessFromConditionalACLs(permissionChecks.get(i),
                                     matchedACLs.get(i), attributes.get(permissionChecks.get(i).getResourceInfo()))
-                                                     : Boolean.FALSE;
+                                                   : Boolean.FALSE;
       }
     }
 

@@ -76,6 +76,7 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
 
   @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> skipResourceVersioning;
   @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) @SkipAutoEvaluation ParameterField<String> pluginPath;
+  @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) @SkipAutoEvaluation ParameterField<String> manifestScope;
 
   @Override
   public String getKind() {
@@ -107,6 +108,10 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
       resultantManifest = resultantManifest.withPluginPath(kustomizeManifest.getPluginPath());
     }
 
+    if (kustomizeManifest.getManifestScope() != null) {
+      resultantManifest = resultantManifest.withManifestScope(kustomizeManifest.getManifestScope());
+    }
+
     return resultantManifest;
   }
 
@@ -114,7 +119,7 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
   public ManifestAttributeStepParameters getManifestAttributeStepParameters() {
     return new KustomizeManifestStepParameters(identifier,
         StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), skipResourceVersioning, pluginPath,
-        patchesPaths);
+        patchesPaths, manifestScope);
   }
 
   @Value
@@ -124,5 +129,6 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
     ParameterField<Boolean> skipResourceVersioning;
     ParameterField<String> pluginPath;
     ParameterField<List<String>> patchesPaths;
+    ParameterField<String> manifestScope;
   }
 }

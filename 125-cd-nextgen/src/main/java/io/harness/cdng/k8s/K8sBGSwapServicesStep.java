@@ -59,6 +59,7 @@ public class K8sBGSwapServicesStep extends TaskExecutableWithRollbackAndRbac<K8s
       "Stage Deployment (Blue Green Deploy) is not configured. \nHint: Add Stage Deployment in the execution step.";
 
   @Inject private K8sStepHelper k8sStepHelper;
+  @Inject private CDStepHelper cdStepHelper;
   @Inject private OutcomeService outcomeService;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
 
@@ -98,17 +99,17 @@ public class K8sBGSwapServicesStep extends TaskExecutableWithRollbackAndRbac<K8s
     }
     K8sBlueGreenOutcome k8sBlueGreenOutcome = (K8sBlueGreenOutcome) optionalSweepingOutput.getOutput();
 
-    InfrastructureOutcome infrastructure = k8sStepHelper.getInfrastructureOutcome(ambiance);
-    String releaseName = k8sStepHelper.getReleaseName(ambiance, infrastructure);
+    InfrastructureOutcome infrastructure = cdStepHelper.getInfrastructureOutcome(ambiance);
+    String releaseName = cdStepHelper.getReleaseName(ambiance, infrastructure);
     K8sSwapServiceSelectorsRequest swapServiceSelectorsRequest =
         K8sSwapServiceSelectorsRequest.builder()
             .service1(k8sBlueGreenOutcome.getPrimaryServiceName())
             .service2(k8sBlueGreenOutcome.getStageServiceName())
-            .k8sInfraDelegateConfig(k8sStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
+            .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
             .commandName(K8S_BG_SWAP_SERVICES_COMMAND_NAME)
             .taskType(K8sTaskType.SWAP_SERVICE_SELECTORS)
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
-            .useNewKubectlVersion(k8sStepHelper.isUseNewKubectlVersion(AmbianceUtils.getAccountId(ambiance)))
+            .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(AmbianceUtils.getAccountId(ambiance)))
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);

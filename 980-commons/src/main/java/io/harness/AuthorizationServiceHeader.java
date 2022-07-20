@@ -38,7 +38,8 @@ public enum AuthorizationServiceHeader {
   DEFAULT("Default"),
   DASHBOAD_AGGREGATION_SERVICE("DashboardAggregationService"),
   DMS("DelegateManagementService"),
-  DEBEZIUM_SERVICE("DebeziumService");
+  DEBEZIUM_SERVICE("DebeziumService"),
+  SUBSCRIPTION_SERVICE("SubscriptionService");
 
   private final String serviceId;
 

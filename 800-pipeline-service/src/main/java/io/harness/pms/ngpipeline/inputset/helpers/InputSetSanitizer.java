@@ -67,6 +67,11 @@ public class InputSetSanitizer {
 
   public String trimValues(String yaml) {
     YamlConfig config = new YamlConfig(yaml);
+    YamlConfig config1 = trimValues(config);
+    return config1.getYaml();
+  }
+
+  public YamlConfig trimValues(YamlConfig config) {
     Map<FQN, Object> fqnToValueMap = config.getFqnToValueMap();
     for (FQN fqn : fqnToValueMap.keySet()) {
       Object value = fqnToValueMap.get(fqn);
@@ -75,8 +80,6 @@ public class InputSetSanitizer {
         fqnToValueMap.put(fqn, new TextNode(trimValue));
       }
     }
-
-    YamlConfig config1 = new YamlConfig(fqnToValueMap, config.getYamlMap());
-    return config1.getYaml();
+    return new YamlConfig(fqnToValueMap, config.getYamlMap());
   }
 }

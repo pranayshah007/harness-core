@@ -8,8 +8,6 @@
 package software.wings.graphql.datafetcher.billing;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
-import static io.harness.beans.FeatureName.CE_BILLING_DATA_HOURLY_PRE_AGGREGATION;
-import static io.harness.beans.FeatureName.CE_BILLING_DATA_PRE_AGGREGATION;
 import static io.harness.rule.OwnerRule.HITESH;
 import static io.harness.rule.OwnerRule.ROHIT;
 import static io.harness.rule.OwnerRule.SHUBHANSHU;
@@ -169,8 +167,6 @@ public class BillingEntityDataFetcherTest extends AbstractDataFetcherTestBase {
     doCallRealMethod().when(billingDataHelper).calculateEfficiencyScore(anyObject());
     doCallRealMethod().when(billingDataHelper).calculateTrendPercentage(anyDouble(), anyDouble());
     doCallRealMethod().when(billingDataHelper).calculateTrendPercentage((BigDecimal) anyObject(), anyObject());
-    when(featureFlagService.isEnabled(CE_BILLING_DATA_PRE_AGGREGATION, ACCOUNT1_ID)).thenReturn(false);
-    when(featureFlagService.isEnabled(CE_BILLING_DATA_HOURLY_PRE_AGGREGATION, ACCOUNT1_ID)).thenReturn(false);
     doNothing().when(accountChecker).checkIsCeEnabled(anyString());
   }
 
@@ -242,7 +238,7 @@ public class BillingEntityDataFetcherTest extends AbstractDataFetcherTestBase {
         ACCOUNT1_ID, aggregationFunction, filters, Collections.EMPTY_LIST, Collections.EMPTY_LIST, LIMIT, OFFSET);
     assertThat(data.getData().get(0).getTotalCost()).isEqualTo(10.0);
     assertThat(data.getData().get(0).getIdleCost()).isEqualTo(5.0);
-    assertThat(data.getData().get(0).getNetworkCost()).isEqualTo(2.5);
+    assertThat(data.getData().get(0).getNetworkCost()).isEqualTo(0.0);
   }
 
   @Test
@@ -406,10 +402,10 @@ public class BillingEntityDataFetcherTest extends AbstractDataFetcherTestBase {
     assertThat(data.getData().get(0).getCpuIdleCost()).isEqualTo(BillingStatsDefaultKeys.CPUIDLECOST);
     assertThat(data.getData().get(0).getMemoryIdleCost()).isEqualTo(BillingStatsDefaultKeys.MEMORYIDLECOST);
     assertThat(data.getData().get(0).getTotalCost()).isEqualTo(10.0);
-    assertThat(data.getData().get(0).getMaxCpuUtilization()).isEqualTo(50.0);
-    assertThat(data.getData().get(0).getMaxMemoryUtilization()).isEqualTo(50.0);
-    assertThat(data.getData().get(0).getAvgCpuUtilization()).isEqualTo(40.0);
-    assertThat(data.getData().get(0).getAvgMemoryUtilization()).isEqualTo(40.0);
+    assertThat(data.getData().get(0).getMaxCpuUtilization()).isEqualTo(1.0);
+    assertThat(data.getData().get(0).getMaxMemoryUtilization()).isEqualTo(1.0);
+    assertThat(data.getData().get(0).getAvgCpuUtilization()).isEqualTo(1.0);
+    assertThat(data.getData().get(0).getAvgMemoryUtilization()).isEqualTo(1.0);
   }
 
   @Test

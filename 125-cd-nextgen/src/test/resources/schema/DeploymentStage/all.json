@@ -191,6 +191,20 @@
               "type": "string"
             }
           }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "filePath"
+              ]
+            },
+            {
+              "required": [
+                "filePathRegex"
+              ]
+            }
+          ]
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -435,17 +449,11 @@
           "type": "object",
           "required": [
             "connectorRef",
-            "deploymentSlot",
             "resourceGroup",
-            "subscriptionId",
-            "webApp"
+            "subscriptionId"
           ],
           "properties": {
             "connectorRef": {
-              "type": "string",
-              "minLength": 1
-            },
-            "deploymentSlot": {
               "type": "string",
               "minLength": 1
             },
@@ -454,13 +462,6 @@
               "minLength": 1
             },
             "subscriptionId": {
-              "type": "string",
-              "minLength": 1
-            },
-            "targetSlot": {
-              "type": "string"
-            },
-            "webApp": {
               "type": "string",
               "minLength": 1
             }
@@ -526,6 +527,10 @@
         },
         {
           "type": "object",
+          "required": [
+            "deploymentSlot",
+            "webApp"
+          ],
           "properties": {
             "delegateSelectors": {
               "oneOf": [
@@ -541,6 +546,12 @@
                   "minLength": 1
                 }
               ]
+            },
+            "deploymentSlot": {
+              "type": "string"
+            },
+            "webApp": {
+              "type": "string"
             }
           }
         }
@@ -554,6 +565,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "targetSlot"
+          ],
           "properties": {
             "delegateSelectors": {
               "oneOf": [
@@ -569,6 +583,9 @@
                   "minLength": 1
                 }
               ]
+            },
+            "targetSlot": {
+              "type": "string"
             }
           }
         }
@@ -1488,6 +1505,44 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CustomRemoteStoreConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StoreConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "extractionScript",
+            "filePath"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "extractionScript": {
+              "type": "string"
+            },
+            "filePath": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "DeleteManifestPathSpec": {
       "allOf": [
         {
@@ -1657,7 +1712,7 @@
             "Ssh",
             "WinRm",
             "ServerlessAwsLambda",
-            "AzureWebApps"
+            "AzureWebApp"
           ]
         },
         "environment": {
@@ -1878,8 +1933,20 @@
         "envGroupRef"
       ],
       "properties": {
+        "__uuid": {
+          "type": "string"
+        },
         "deployToAll": {
-          "type": "boolean"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "minLength": 1
+            }
+          ]
         },
         "envGroupRef": {
           "type": "string"
@@ -1936,7 +2003,16 @@
       ],
       "properties": {
         "deployToAll": {
-          "type": "boolean"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "minLength": 1
+            }
+          ]
         },
         "environmentInputs": {
           "oneOf": [
@@ -2413,7 +2489,7 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -2427,7 +2503,7 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -3107,6 +3183,35 @@
         }
       ]
     },
+    "JenkinsArtifactConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ArtifactConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "jobName"
+          ],
+          "properties": {
+            "artifactPath": {
+              "type": "string"
+            },
+            "build": {
+              "type": "string"
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "jobName": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "JenkinsBuildStepInfo": {
       "allOf": [
         {
@@ -3755,6 +3860,9 @@
         {
           "type": "object",
           "properties": {
+            "manifestScope": {
+              "type": "string"
+            },
             "metadata": {
               "type": "string"
             },
@@ -4125,7 +4233,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -4379,7 +4487,8 @@
                   "format": "double"
                 },
                 {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*))"
                 }
               ]
             }
@@ -5260,6 +5369,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "Jenkins"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JenkinsArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Nexus3Registry"
               }
             }
@@ -5757,7 +5882,7 @@
             "Ssh",
             "WinRm",
             "ServerlessAwsLambda",
-            "AzureWebApps"
+            "AzureWebApp"
           ]
         }
       },
@@ -5767,7 +5892,7 @@
           "if": {
             "properties": {
               "type": {
-                "const": "AzureWebApps"
+                "const": "AzureWebApp"
               }
             }
           },
@@ -6162,6 +6287,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GcrArtifactConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Jenkins"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JenkinsArtifactConfig"
               }
             }
           }
@@ -7140,6 +7281,7 @@
         "type": {
           "type": "string",
           "enum": [
+            "CustomRemote",
             "Git",
             "Github",
             "Bitbucket",
@@ -7203,6 +7345,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/BitbucketStore"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CustomRemote"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CustomRemoteStoreConfig"
               }
             }
           }
@@ -7419,7 +7577,7 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]

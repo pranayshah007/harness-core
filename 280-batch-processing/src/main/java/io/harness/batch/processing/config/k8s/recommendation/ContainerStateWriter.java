@@ -45,6 +45,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.batch.item.ItemWriter;
@@ -73,29 +74,58 @@ class ContainerStateWriter implements ItemWriter<PublishedMessage> {
     Map<ResourceId, WorkloadState> workloadToRecommendation = new HashMap<>();
     Map<ResourceId, WorkloadStateV2> workloadToPartialHistogram = new HashMap<>();
     for (PublishedMessage item : items) {
-      String accountId = item.getAccountId();
       ContainerStateProto containerStateProto = (ContainerStateProto) item.getMessage();
-
       if (!ACCEPTED_VERSIONS.contains(containerStateProto.getVersion())) {
         log.warn("Skip incompatible version: {}. Accepted: {}", containerStateProto.getVersion(), ACCEPTED_VERSIONS);
         continue;
       }
+
+      String accountId = item.getAccountId();
       String clusterId = containerStateProto.getClusterId();
       String namespace = containerStateProto.getNamespace();
       String podName = containerStateProto.getPodName();
-      ResourceId podId = ResourceId.builder()
-                             .accountId(accountId)
-                             .clusterId(clusterId)
-                             .namespace(namespace)
-                             .name(podName)
-                             .kind("Pod")
-                             .build();
-      ResourceId workloadId = Objects.requireNonNull(podToWorkload.get(podId));
-      // intentional reference equality
-      if (workloadId == NOT_FOUND) {
-        // pod to workload mapping not found in instanceData. Skip this item.
-        log.debug("Skipping sample {} as pod to workload mapping not found", containerStateProto);
+      String workloadKind = containerStateProto.getWorkloadKind();
+      String workloadName = containerStateProto.getWorkloadName();
+
+      if (StringUtils.isEmpty(podName) && StringUtils.isEmpty(workloadName)) {
+        log.warn("At least one of the podName and workloadName must be set.");
         continue;
+      }
+      if (StringUtils.isNotEmpty(podName) && StringUtils.isNotEmpty(workloadName)) {
+        log.warn("Only one of podName('{}') or workloadName('{}') must be set.", podName, workloadName);
+        continue;
+      }
+      if (StringUtils.isNotEmpty(workloadName) && StringUtils.isEmpty(workloadKind)) {
+        log.warn("workloadName('{}'} is set but workloadKind is not set", workloadName);
+        continue;
+      }
+
+      ResourceId workloadId;
+      // Newer delegates should send messages with workloadName and workloadKind. To process the messages published by
+      // older delegates, keep the code-path that finds workloadId based on podName.
+      if (StringUtils.isNotEmpty(podName)) {
+        ResourceId podId = ResourceId.builder()
+                               .accountId(accountId)
+                               .clusterId(clusterId)
+                               .namespace(namespace)
+                               .name(podName)
+                               .kind("Pod")
+                               .build();
+        workloadId = Objects.requireNonNull(podToWorkload.get(podId));
+        // intentional reference equality
+        if (workloadId == NOT_FOUND) {
+          // pod to workload mapping not found in instanceData. Skip this item.
+          log.debug("Skipping sample {} as pod to workload mapping not found", containerStateProto);
+          continue;
+        }
+      } else {
+        workloadId = ResourceId.builder()
+                         .accountId(accountId)
+                         .clusterId(clusterId)
+                         .namespace(namespace)
+                         .name(workloadName)
+                         .kind(workloadKind)
+                         .build();
       }
       WorkloadState workloadState = workloadToRecommendation.computeIfAbsent(workloadId, this::getWorkloadState);
       updateContainerStateMap(workloadState.getContainerStateMap(), containerStateProto);

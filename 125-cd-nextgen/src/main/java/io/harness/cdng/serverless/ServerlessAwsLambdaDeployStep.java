@@ -24,7 +24,6 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.ServerlessNGException;
 import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
-import io.harness.delegate.task.serverless.ServerlessArtifactsConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.ServerlessDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
@@ -102,11 +101,13 @@ public class ServerlessAwsLambdaDeployStep
         serverlessArtifactConfig =
             serverlessStepCommonHelper.getArtifactConfig(artifactsOutcome.get().getPrimary(), ambiance);
       }
-      artifactsOutcome.get().getSidecars().forEach((key, value) -> {
-        if (value != null) {
-          sidecarServerlessArtifactConfigMap.put(key, serverlessStepCommonHelper.getArtifactConfig(value, ambiance));
-        }
-      });
+      if (artifactsOutcome.get().getSidecars() != null) {
+        artifactsOutcome.get().getSidecars().forEach((key, value) -> {
+          if (value != null) {
+            sidecarServerlessArtifactConfigMap.put(key, serverlessStepCommonHelper.getArtifactConfig(value, ambiance));
+          }
+        });
+      }
     }
 
     ServerlessDeployConfig serverlessDeployConfig = serverlessStepCommonHelper.getServerlessDeployConfig(
@@ -117,10 +118,6 @@ public class ServerlessAwsLambdaDeployStep
     manifestParams.put("manifestFilePathContent", serverlessAwsLambdaStepExecutorParams.getManifestFilePathContent());
     ServerlessManifestConfig serverlessManifestConfig = serverlessStepCommonHelper.getServerlessManifestConfig(
         manifestParams, serverlessManifestOutcome, ambiance, serverlessAwsLambdaStepHelper);
-    ServerlessArtifactsConfig serverlessArtifactsConfig = ServerlessArtifactsConfig.builder()
-                                                              .primary(serverlessArtifactConfig)
-                                                              .sidecars(sidecarServerlessArtifactConfigMap)
-                                                              .build();
     ServerlessDeployRequest serverlessDeployRequest =
         ServerlessDeployRequest.builder()
             .commandName(SERVERLESS_AWS_LAMBDA_DEPLOY_COMMAND_NAME)
@@ -129,7 +126,8 @@ public class ServerlessAwsLambdaDeployStep
             .serverlessInfraConfig(serverlessStepCommonHelper.getServerlessInfraConfig(infrastructureOutcome, ambiance))
             .serverlessDeployConfig(serverlessDeployConfig)
             .serverlessManifestConfig(serverlessManifestConfig)
-            .serverlessArtifactsConfig(serverlessArtifactsConfig)
+            .serverlessArtifactConfig(serverlessArtifactConfig)
+            .sidecarServerlessArtifactConfigs(sidecarServerlessArtifactConfigMap)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .manifestContent(serverlessAwsLambdaStepExecutorParams.getManifestFileOverrideContent())

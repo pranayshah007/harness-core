@@ -7,6 +7,8 @@
 
 package io.harness.accesscontrol.acl.api;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static java.util.stream.Collectors.groupingBy;
 
 import io.harness.accesscontrol.ResourceInfo;
@@ -35,8 +37,18 @@ public class ResourceAttributeProviderImpl implements ResourceAttributeProvider 
   @Override
   public Map<ResourceInfo, Map<String, String>> getAttributes(Set<ResourceInfo> resources) {
     Map<ResourceInfo, Map<String, String>> result = new HashMap<>();
+
+    Set<ResourceInfo> resourcesToFetchAttributes =
+        resources.stream()
+            .filter(resourceInfo -> isNotEmpty(resourceInfo.getResourceIdentifier()))
+            .collect(Collectors.toSet());
+
+    resources.stream()
+        .filter(resourceInfo -> isNotEmpty(resourceInfo.getResourceAttributes()))
+        .forEach(resourceInfo -> result.put(resourceInfo, resourceInfo.getResourceAttributes()));
+
     Map<Scope, List<ResourceInfo>> resourcesByScope =
-        resources.stream().collect(groupingBy(ResourceInfo::getResourceScope));
+        resourcesToFetchAttributes.stream().collect(groupingBy(ResourceInfo::getResourceScope));
 
     for (Scope resourceScope : resourcesByScope.keySet()) {
       List<ResourceInfo> resourcesInScope = resourcesByScope.get(resourceScope);

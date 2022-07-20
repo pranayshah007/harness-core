@@ -1241,6 +1241,14 @@ public class WorkflowServiceHelperTest extends WingsBaseTest {
         .containsExactly(AZURE_WEBAPP_SLOT_SETUP, VERIFY_SERVICE, AZURE_WEBAPP_SLOT_SWAP, WRAP_UP);
     workflowPhase.getPhaseSteps().clear();
 
+    // basic deployment test
+    workflowServiceHelper.generateNewWorkflowPhaseStepsForAzureWebApp(
+        APP_ID, ACCOUNT_ID, workflowPhase, OrchestrationWorkflowType.BASIC, false, true);
+    phaseStepTypes =
+        workflowPhase.getPhaseSteps().stream().map(PhaseStep::getPhaseStepType).collect(Collectors.toList());
+    assertThat(phaseStepTypes).containsExactly(AZURE_WEBAPP_SLOT_SETUP, VERIFY_SERVICE, WRAP_UP);
+    workflowPhase.getPhaseSteps().clear();
+
     // dynamic provisioner test
     workflowServiceHelper.generateNewWorkflowPhaseStepsForAzureWebApp(
         APP_ID, ACCOUNT_ID, workflowPhase, OrchestrationWorkflowType.CANARY, true, true);
@@ -1269,7 +1277,7 @@ public class WorkflowServiceHelperTest extends WingsBaseTest {
     // unsupported deployment type test
     assertThatThrownBy(()
                            -> workflowServiceHelper.generateNewWorkflowPhaseStepsForAzureWebApp(
-                               APP_ID, ACCOUNT_ID, workflowPhase, OrchestrationWorkflowType.BASIC, true, false))
+                               APP_ID, ACCOUNT_ID, workflowPhase, OrchestrationWorkflowType.MULTI_SERVICE, true, false))
         .isInstanceOf(InvalidRequestException.class);
     assertThatThrownBy(()
                            -> workflowServiceHelper.generateNewWorkflowPhaseStepsForAzureWebApp(

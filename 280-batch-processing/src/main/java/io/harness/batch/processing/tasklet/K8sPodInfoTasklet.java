@@ -118,7 +118,7 @@ public class K8sPodInfoTasklet implements Tasklet {
                       != null)
               .collect(Collectors.toList()));
 
-      if (featureFlagService.isEnabled(FeatureName.NODE_RECOMMENDATION_1, jobConstants.getAccountId())) {
+      if (featureFlagService.isEnabled(FeatureName.NODE_RECOMMENDATION_AGGREGATE, jobConstants.getAccountId())) {
         instanceInfoTimescaleDAO.insertIntoPodInfo(instanceInfoList);
       }
 

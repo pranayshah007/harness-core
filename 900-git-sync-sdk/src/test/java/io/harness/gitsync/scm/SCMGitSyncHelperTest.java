@@ -42,6 +42,8 @@ import io.harness.gitsync.ErrorDetails;
 import io.harness.gitsync.FileInfo;
 import io.harness.gitsync.GetFileRequest;
 import io.harness.gitsync.GetFileResponse;
+import io.harness.gitsync.GetRepoUrlRequest;
+import io.harness.gitsync.GetRepoUrlResponse;
 import io.harness.gitsync.GitMetaData;
 import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc;
 import io.harness.gitsync.PushFileResponse;
@@ -55,6 +57,7 @@ import io.harness.gitsync.scm.beans.ScmCreateFileGitRequest;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
 import io.harness.gitsync.scm.beans.ScmCreatePRResponse;
 import io.harness.gitsync.scm.beans.ScmGetFileResponse;
+import io.harness.gitsync.scm.beans.ScmGetRepoUrlResponse;
 import io.harness.gitsync.scm.beans.ScmPushResponse;
 import io.harness.gitsync.scm.beans.ScmUpdateFileGitRequest;
 import io.harness.gitsync.scm.beans.ScmUpdateFileGitResponse;
@@ -102,6 +105,7 @@ public class SCMGitSyncHelperTest extends GitSdkTestBase {
   private final String targetBranch = "targetBranch";
   private final String title = "title";
   private final int prNumber = 0;
+  private final String repoUrl = "repoUrl";
   private final Map<String, String> contextMap = new HashMap<>();
 
   @InjectMocks SCMGitSyncHelper scmGitSyncHelper;
@@ -370,6 +374,36 @@ public class SCMGitSyncHelperTest extends GitSdkTestBase {
     assertThatThrownBy(()
                            -> scmGitSyncHelper.createPullRequest(
                                getDefaultScope(), repo, connectorRef, sourceBranch, targetBranch, title, contextMap))
+        .isInstanceOf(ScmInternalServerErrorException.class)
+        .hasMessage(error);
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetRepoUrlRequest() {
+    GetRepoUrlResponse getRepoUrlResponse =
+        GetRepoUrlResponse.newBuilder().setStatusCode(200).setRepoUrl(repoUrl).build();
+    when(GitSyncGrpcClientUtils.retryAndProcessException(
+             harnessToGitPushInfoServiceBlockingStub::getRepoUrl, any(GetRepoUrlRequest.class)))
+        .thenReturn(getRepoUrlResponse);
+
+    ScmGetRepoUrlResponse response = scmGitSyncHelper.getRepoUrl(getDefaultScope(), repo, connectorRef, contextMap);
+    assertThat(response).isNotNull();
+    assertThat(response.getRepoUrl()).isEqualTo(repoUrl);
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetRepoUrlRequestInCaseOfError() {
+    GetRepoUrlResponse getRepoUrlResponse =
+        GetRepoUrlResponse.newBuilder().setStatusCode(500).setError(getDefaultErrorDetails()).build();
+    when(GitSyncGrpcClientUtils.retryAndProcessException(
+             harnessToGitPushInfoServiceBlockingStub::getRepoUrl, any(GetRepoUrlRequest.class)))
+        .thenReturn(getRepoUrlResponse);
+
+    assertThatThrownBy(() -> scmGitSyncHelper.getRepoUrl(getDefaultScope(), repo, connectorRef, contextMap))
         .isInstanceOf(ScmInternalServerErrorException.class)
         .hasMessage(error);
   }

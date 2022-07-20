@@ -11,11 +11,13 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.NativeHelmDeployOutcome.NativeHelmDeployOutcomeBuilder;
 import io.harness.cdng.helm.beans.NativeHelmExecutionPassThroughData;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
+import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
@@ -67,6 +69,7 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
   public static final String HELM_COMMAND_NAME = "Helm Deploy";
 
   @Inject NativeHelmStepHelper nativeHelmStepHelper;
+  @Inject CDStepHelper cdStepHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private InstanceInfoService instanceInfoService;
@@ -96,8 +99,12 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+    if (passThroughData instanceof CustomFetchResponsePassThroughData) {
+      return nativeHelmStepHelper.handleCustomTaskFailure((CustomFetchResponsePassThroughData) passThroughData);
+    }
+
     if (passThroughData instanceof GitFetchResponsePassThroughData) {
-      return nativeHelmStepHelper.handleGitTaskFailure((GitFetchResponsePassThroughData) passThroughData);
+      return cdStepHelper.handleGitTaskFailure((GitFetchResponsePassThroughData) passThroughData);
     }
 
     if (passThroughData instanceof HelmValuesFetchResponsePassThroughData) {
@@ -106,7 +113,7 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
     }
 
     if (passThroughData instanceof StepExceptionPassThroughData) {
-      return nativeHelmStepHelper.handleStepExceptionFailure((StepExceptionPassThroughData) passThroughData);
+      return cdStepHelper.handleStepExceptionFailure((StepExceptionPassThroughData) passThroughData);
     }
 
     log.info("Finalizing execution with passThroughData: " + passThroughData.getClass().getName());
@@ -179,7 +186,7 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
       NativeHelmExecutionPassThroughData executionPassThroughData, boolean shouldOpenFetchFilesLogStream,
       UnitProgressData unitProgressData) {
     InfrastructureOutcome infrastructure = executionPassThroughData.getInfrastructure();
-    String releaseName = nativeHelmStepHelper.getReleaseName(ambiance, infrastructure);
+    String releaseName = cdStepHelper.getReleaseName(ambiance, infrastructure);
     List<String> manifestFilesContents =
         nativeHelmStepHelper.renderValues(manifestOutcome, ambiance, valuesFileContents);
     HelmChartManifestOutcome helmChartManifestOutcome = (HelmChartManifestOutcome) manifestOutcome;
@@ -189,13 +196,15 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
             .accountId(AmbianceUtils.getAccountId(ambiance))
             .commandName(HELM_COMMAND_NAME)
             .valuesYamlList(manifestFilesContents)
-            .k8sInfraDelegateConfig(nativeHelmStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
-            .manifestDelegateConfig(nativeHelmStepHelper.getManifestDelegateConfig(manifestOutcome, ambiance))
+            .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
+            .manifestDelegateConfig(
+                nativeHelmStepHelper.getManifestDelegateConfigWrapper(executionPassThroughData.getZippedManifestId(),
+                    manifestOutcome, ambiance, executionPassThroughData.getManifestFiles()))
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .releaseName(releaseName)
             .helmVersion(nativeHelmStepHelper.getHelmVersionBasedOnFF(
                 helmChartManifestOutcome.getHelmVersion(), AmbianceUtils.getAccountId(ambiance)))
-            .namespace(nativeHelmStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance).getNamespace())
+            .namespace(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance).getNamespace())
             .k8SteadyStateCheckEnabled(cdFeatureFlagHelper.isEnabled(
                 AmbianceUtils.getAccountId(ambiance), FeatureName.HELM_STEADY_STATE_CHECK_1_16))
             .useLatestKubectlVersion(

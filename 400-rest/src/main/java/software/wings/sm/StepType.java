@@ -359,7 +359,7 @@ public enum StepType {
   AZURE_WEBAPP_SLOT_SETUP(AzureWebAppSlotSetup.class, WorkflowServiceHelper.AZURE_WEBAPP_SLOT_SETUP,
       singletonList(WorkflowStepType.AZURE_WEBAPP), singletonList(PhaseStepType.AZURE_WEBAPP_SLOT_SETUP),
       Lists.newArrayList(DeploymentType.AZURE_WEBAPP), singletonList(PhaseType.NON_ROLLBACK),
-      asList(CANARY, BLUE_GREEN)),
+      asList(BASIC, CANARY, BLUE_GREEN)),
   AZURE_WEBAPP_SLOT_SWAP(AzureWebAppSlotSwap.class, WorkflowServiceHelper.AZURE_WEBAPP_SLOT_SWAP,
       singletonList(WorkflowStepType.AZURE_WEBAPP), singletonList(PhaseStepType.AZURE_WEBAPP_SLOT_SWAP),
       Lists.newArrayList(DeploymentType.AZURE_WEBAPP), singletonList(PhaseType.NON_ROLLBACK),
@@ -369,7 +369,8 @@ public enum StepType {
       Lists.newArrayList(DeploymentType.AZURE_WEBAPP), singletonList(PhaseType.NON_ROLLBACK), singletonList(CANARY)),
   AZURE_WEBAPP_SLOT_ROLLBACK(AzureWebAppSlotRollback.class, WorkflowServiceHelper.AZURE_WEBAPP_SLOT_ROLLBACK,
       singletonList(WorkflowStepType.AZURE_WEBAPP), singletonList(PhaseStepType.AZURE_WEBAPP_SLOT_ROLLBACK),
-      Lists.newArrayList(DeploymentType.AZURE_WEBAPP), singletonList(PhaseType.ROLLBACK), asList(CANARY, BLUE_GREEN)),
+      Lists.newArrayList(DeploymentType.AZURE_WEBAPP), singletonList(PhaseType.ROLLBACK),
+      asList(BASIC, CANARY, BLUE_GREEN)),
 
   // AWS CodeDeploy
   AWS_CODEDEPLOY_STATE(AwsCodeDeployState.class, AWS_CODE_DEPLOY, asList(WorkflowStepType.AWS_CODE_DEPLOY),

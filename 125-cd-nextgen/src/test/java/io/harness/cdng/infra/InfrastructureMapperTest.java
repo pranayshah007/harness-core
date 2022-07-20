@@ -403,8 +403,6 @@ public class InfrastructureMapperTest extends CategoryTest {
             .connectorRef(ParameterField.createValueField("connectorId"))
             .subscriptionId(ParameterField.createValueField("subscriptionId"))
             .resourceGroup(ParameterField.createValueField("resourceGroup"))
-            .webApp(ParameterField.createValueField("webApp"))
-            .deploymentSlot(ParameterField.createValueField("deploymentSlot"))
             .build();
 
     InfrastructureOutcome infrastructureOutcome =
@@ -414,8 +412,6 @@ public class InfrastructureMapperTest extends CategoryTest {
                                           .connectorRef("connectorId")
                                           .subscription("subscriptionId")
                                           .resourceGroup("resourceGroup")
-                                          .webApp("webApp")
-                                          .deploymentSlot("deploymentSlot")
                                           .environment(environment)
                                           .build(),
             "infrastructureKey");

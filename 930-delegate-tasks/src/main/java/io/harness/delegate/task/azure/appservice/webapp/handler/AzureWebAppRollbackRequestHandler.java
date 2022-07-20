@@ -9,6 +9,7 @@ package io.harness.delegate.task.azure.appservice.webapp.handler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.azure.model.AzureConstants.DEPLOY_TO_SLOT;
+import static io.harness.azure.model.AzureConstants.NO_TRAFFIC_SHIFT_REQUIRED;
 import static io.harness.azure.model.AzureConstants.SLOT_TRAFFIC_PERCENTAGE;
 import static io.harness.azure.model.AzureConstants.START_DEPLOYMENT_SLOT;
 import static io.harness.azure.model.AzureConstants.STOP_DEPLOYMENT_SLOT;
@@ -18,6 +19,8 @@ import static io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploym
 import static io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress.STOP_SLOT;
 import static io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress.UPDATE_SLOT_CONFIGURATIONS_SETTINGS;
 import static io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress.UPDATE_SLOT_CONTAINER_SETTINGS;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.logging.LogLevel.INFO;
 
 import static java.lang.String.format;
 
@@ -55,14 +58,11 @@ public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler
   protected AzureWebAppRequestResponse execute(
       AzureWebAppRollbackRequest taskRequest, AzureConfig azureConfig, AzureLogCallbackProvider logCallbackProvider) {
     AzureArtifactConfig artifactConfig = taskRequest.getArtifact();
-    switch (artifactConfig.getArtifactType()) {
-      case CONTAINER:
-        return executeContainer(taskRequest, azureConfig, logCallbackProvider);
-      case PACKAGE:
-      default:
-        throw new UnsupportedOperationException(
-            format("Artifact type [%s] is not supported yet", artifactConfig.getArtifactType()));
+    if (taskRequest.getArtifact() == null) {
+      return executeContainer(taskRequest, azureConfig, logCallbackProvider);
     }
+    throw new UnsupportedOperationException(
+        format("Artifact type [%s] is not supported yet", artifactConfig.getArtifactType()));
   }
 
   @Override
@@ -72,13 +72,14 @@ public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler
 
   private AzureWebAppRequestResponse executeContainer(
       AzureWebAppRollbackRequest taskRequest, AzureConfig azureConfig, AzureLogCallbackProvider logCallbackProvider) {
+    azureSecretHelper.decryptAzureWebAppRollbackParameters(taskRequest.getPreDeploymentData());
     AzureWebClientContext azureWebClientContext =
         buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig);
     AzureAppServiceDockerDeploymentContext dockerDeploymentContext =
         toAzureAppServiceDockerDeploymentContext(taskRequest, azureWebClientContext, logCallbackProvider);
 
     try {
-      performRollback(logCallbackProvider, taskRequest, azureWebClientContext, dockerDeploymentContext);
+      performRollback(logCallbackProvider, taskRequest, azureWebClientContext, dockerDeploymentContext, azureConfig);
       List<AzureAppDeploymentData> azureAppDeploymentData =
           getAppServiceDeploymentData(taskRequest, azureWebClientContext);
 
@@ -95,7 +96,8 @@ public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler
   }
 
   private void performRollback(AzureLogCallbackProvider logCallbackProvider, AzureWebAppRollbackRequest taskRequest,
-      AzureWebClientContext azureWebClientContext, AzureAppServiceDockerDeploymentContext deploymentContext) {
+      AzureWebClientContext azureWebClientContext, AzureAppServiceDockerDeploymentContext deploymentContext,
+      AzureConfig azureConfig) {
     AppServiceDeploymentProgress progressMarker = getProgressMarker(taskRequest);
     log.info(String.format("Starting rollback from previous marker - [%s]", progressMarker.getStepName()));
 
@@ -111,8 +113,10 @@ public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler
         break;
       case UPDATE_SLOT_CONTAINER_SETTINGS:
       case DEPLOY_TO_SLOT:
-      case UPDATE_TRAFFIC_PERCENT:
+        rollbackDeploymentAndTrafficShift(logCallbackProvider, taskRequest, azureWebClientContext, deploymentContext);
+        break;
       case SWAP_SLOT:
+        swapSlots(azureConfig, logCallbackProvider, taskRequest);
         rollbackDeploymentAndTrafficShift(logCallbackProvider, taskRequest, azureWebClientContext, deploymentContext);
         break;
       case DEPLOYMENT_COMPLETE:
@@ -122,6 +126,14 @@ public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler
       default:
         break;
     }
+  }
+
+  private void swapSlots(
+      AzureConfig azureConfig, AzureLogCallbackProvider logCallbackProvider, AzureWebAppRollbackRequest taskRequest) {
+    AzureWebClientContext webClientContext = buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig);
+    azureAppServiceResourceUtilities.swapSlots(webClientContext, logCallbackProvider,
+        taskRequest.getInfrastructure().getDeploymentSlot(), taskRequest.getTargetSlot(),
+        taskRequest.getTimeoutIntervalInMin());
   }
 
   private AzureAppServiceDockerDeploymentContext toAzureAppServiceDockerDeploymentContext(
@@ -170,8 +182,13 @@ public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler
       AzureAppServiceDockerDeploymentContext deploymentContext) {
     AzureAppServicePreDeploymentData preDeploymentData = taskRequest.getPreDeploymentData();
     rollbackSetupSlot(taskRequest, deploymentContext);
-    if (!taskRequest.isBlueGreen()) {
+    double slotTrafficWeight =
+        azureAppServiceService.getSlotTrafficWeight(azureWebClientContext, deploymentContext.getSlotName());
+    if (slotTrafficWeight != preDeploymentData.getTrafficWeight()) {
       rollbackUpdateSlotTrafficWeight(preDeploymentData, azureWebClientContext, logCallbackProvider);
+    } else {
+      LogCallback rerouteTrafficLogCallback = logCallbackProvider.obtainLogCallback(SLOT_TRAFFIC_PERCENTAGE);
+      rerouteTrafficLogCallback.saveExecutionLog(NO_TRAFFIC_SHIFT_REQUIRED, INFO, SUCCESS);
     }
   }
 

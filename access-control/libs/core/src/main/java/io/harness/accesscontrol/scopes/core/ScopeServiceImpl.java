@@ -75,6 +75,7 @@ public class ScopeServiceImpl implements ScopeService {
     String instanceId = scopeIdentifierElements.get(scopeIdentifierElements.size() - 1);
     ScopeLevel scopeLevel =
         scopeLevelsByResourceType.get(scopeIdentifierElements.get(scopeIdentifierElements.size() - 2));
+
     if (isEmpty(instanceId)) {
       throw new InvalidArgumentsException("The instance id is invalid or empty in the scopeIdentifier");
     }
@@ -106,6 +107,9 @@ public class ScopeServiceImpl implements ScopeService {
   }
 
   private ScopeDBO fromScope(Scope scope) {
-    return ScopeDBO.builder().identifier(scope.toString()).build();
+    return ScopeDBO.builder()
+        .identifier(scope.toString())
+        .name(Optional.ofNullable(scope.getInstanceName()).orElse(scope.getInstanceId()))
+        .build();
   }
 }

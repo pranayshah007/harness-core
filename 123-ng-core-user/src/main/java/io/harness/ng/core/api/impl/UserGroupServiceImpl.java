@@ -42,6 +42,7 @@ import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.eraro.ErrorCode;
@@ -214,10 +215,25 @@ public class UserGroupServiceImpl implements UserGroupService {
   public UserGroup update(UserGroupDTO userGroupDTO) {
     UserGroup savedUserGroup = getOrThrow(userGroupDTO.getAccountIdentifier(), userGroupDTO.getOrgIdentifier(),
         userGroupDTO.getProjectIdentifier(), userGroupDTO.getIdentifier());
+    checkIfUsersAreNotUpdatedInExternallyManagedGroup(userGroupDTO, savedUserGroup);
     UserGroup userGroup = toEntity(userGroupDTO);
     userGroup.setId(savedUserGroup.getId());
     userGroup.setVersion(savedUserGroup.getVersion());
     return updateInternal(userGroup, toDTO(savedUserGroup));
+  }
+
+  private void checkIfUsersAreNotUpdatedInExternallyManagedGroup(
+      UserGroupDTO toBeSavedUserGroup, UserGroup savedUserGroup) {
+    if (!isExternallyManaged(toBeSavedUserGroup.getAccountIdentifier(), toBeSavedUserGroup.getOrgIdentifier(),
+            toBeSavedUserGroup.getProjectIdentifier(), toBeSavedUserGroup.getIdentifier())) {
+      return;
+    }
+    List<String> newUsersToBeAdded = toBeSavedUserGroup.getUsers();
+    List<String> savedUsers = savedUserGroup.getUsers();
+    if (!CollectionUtils.isEqualCollection(newUsersToBeAdded, savedUsers)) {
+      throw new InvalidRequestException(
+          "Update is not supported for externally managed group " + toBeSavedUserGroup.getIdentifier());
+    }
   }
 
   @Override

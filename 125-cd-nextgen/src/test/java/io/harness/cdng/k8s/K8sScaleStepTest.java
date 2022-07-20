@@ -24,6 +24,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
@@ -70,6 +71,7 @@ import org.mockito.MockitoAnnotations;
 public class K8sScaleStepTest extends CategoryTest {
   @Mock private OutcomeService outcomeService;
   @Mock private K8sStepHelper k8sStepHelper;
+  @Mock private CDStepHelper cdStepHelper;
   @Mock private InfrastructureOutcome infrastructureOutcome;
   @Mock private K8sInfraDelegateConfig infraDelegateConfig;
   @Mock private ManifestDelegateConfig manifestDelegateConfig;
@@ -85,7 +87,7 @@ public class K8sScaleStepTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    doReturn(infraDelegateConfig).when(k8sStepHelper).getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
+    doReturn(infraDelegateConfig).when(cdStepHelper).getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
     doReturn(manifestDelegateConfig).when(k8sStepHelper).getManifestDelegateConfig(manifestOutcome, ambiance);
   }
 
@@ -195,7 +197,7 @@ public class K8sScaleStepTest extends CategoryTest {
     doReturn(infrastructureOutcome)
         .when(outcomeService)
         .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-    doReturn("test-scale-count-release").when(k8sStepHelper).getReleaseName(ambiance, infrastructureOutcome);
+    doReturn("test-scale-count-release").when(cdStepHelper).getReleaseName(ambiance, infrastructureOutcome);
     doReturn(manifestOutcome).when(k8sStepHelper).getK8sSupportedManifestOutcome(any(Collection.class));
 
     scaleStep.obtainTask(ambiance, stepElementParameters, stepInputPackage);
@@ -254,7 +256,7 @@ public class K8sScaleStepTest extends CategoryTest {
     doReturn(infrastructureOutcome)
         .when(outcomeService)
         .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-    doReturn("test-scale-percentage-release").when(k8sStepHelper).getReleaseName(ambiance, infrastructureOutcome);
+    doReturn("test-scale-percentage-release").when(cdStepHelper).getReleaseName(ambiance, infrastructureOutcome);
     doReturn(manifestOutcome).when(k8sStepHelper).getK8sSupportedManifestOutcome(any(Collection.class));
 
     scaleStep.obtainTask(ambiance, stepElementParameters, stepInputPackage);

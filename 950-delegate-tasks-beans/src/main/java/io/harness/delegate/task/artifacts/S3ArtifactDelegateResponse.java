@@ -20,15 +20,19 @@ public class S3ArtifactDelegateResponse extends ArtifactDelegateResponse {
   /** Buckets in repos*/
   String bucketName;
 
-  /** artifactPath refers to exact tag number */
-  String artifactPath;
+  /** filePath refers to exact tag number */
+  String filePath;
+
+  /** filePathRegex refers to tag regex */
+  String filePathRegex;
 
   @Builder
-  public S3ArtifactDelegateResponse(
-      ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType, String bucketName, String artifactPath) {
+  public S3ArtifactDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType,
+      String bucketName, String filePath, String filePathRegex) {
     super(buildDetails, sourceType);
 
     this.bucketName = bucketName;
-    this.artifactPath = artifactPath;
+    this.filePath = filePath;
+    this.filePathRegex = filePathRegex;
   }
 }

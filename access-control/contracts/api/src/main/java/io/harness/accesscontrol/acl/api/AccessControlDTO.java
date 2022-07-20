@@ -16,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -34,6 +35,7 @@ public class AccessControlDTO {
   String permission;
   ResourceScope resourceScope;
   String resourceType;
+  Map<String, String> resourceAttributes;
   String resourceIdentifier;
   boolean permitted;
 }

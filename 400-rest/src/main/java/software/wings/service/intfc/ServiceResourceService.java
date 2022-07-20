@@ -62,6 +62,8 @@ public interface ServiceResourceService extends OwnedByApplication {
   PageResponse<Service> list(PageRequest<Service> request, boolean withBuildSource, boolean withServiceCommands,
       boolean withTags, String tagFilter);
 
+  List<Service> list(String accountId, List<String> projectFields);
+
   /**
    * Save.
    *

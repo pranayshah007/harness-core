@@ -97,6 +97,7 @@ import javax.ws.rs.NotFoundException;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.util.Precision;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -577,7 +578,10 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     switch (condition.getType()) {
       case ERROR_BUDGET_REMAINING_PERCENTAGE:
         return new HashMap<String, String>() {
-          { put(REMAINING_PERCENTAGE, String.valueOf(sloHealthIndicator.getErrorBudgetRemainingPercentage())); }
+          {
+            put(REMAINING_PERCENTAGE,
+                String.valueOf(Precision.round(sloHealthIndicator.getErrorBudgetRemainingPercentage(), 2)));
+          }
         };
       case ERROR_BUDGET_REMAINING_MINUTES:
         return new HashMap<String, String>() {
@@ -585,7 +589,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
         };
       case ERROR_BUDGET_BURN_RATE:
         return new HashMap<String, String>() {
-          { put(BURN_RATE, String.valueOf(sloHealthIndicator.getErrorBudgetBurnRate())); }
+          { put(BURN_RATE, String.valueOf(Precision.round(sloHealthIndicator.getErrorBudgetBurnRate(), 2))); }
         };
       default:
         throw new InvalidArgumentsException("Not a valid Notification Rule Condition " + condition.getType());
@@ -750,6 +754,60 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
         .tags(TagMapper.convertToMap(serviceLevelObjective.getTags()))
         .userJourneyRef(serviceLevelObjective.getUserJourneyIdentifier())
         .build();
+  }
+
+  @Override
+  public void deleteByProjectIdentifier(
+      Class<ServiceLevelObjective> clazz, String accountId, String orgIdentifier, String projectIdentifier) {
+    List<ServiceLevelObjective> serviceLevelObjectives =
+        hPersistence.createQuery(ServiceLevelObjective.class)
+            .filter(ServiceLevelObjectiveKeys.accountId, accountId)
+            .filter(ServiceLevelObjectiveKeys.orgIdentifier, orgIdentifier)
+            .filter(ServiceLevelObjectiveKeys.projectIdentifier, projectIdentifier)
+            .asList();
+
+    serviceLevelObjectives.forEach(serviceLevelObjective -> {
+      delete(ProjectParams.builder()
+                 .accountIdentifier(serviceLevelObjective.getAccountId())
+                 .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                 .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                 .build(),
+          serviceLevelObjective.getIdentifier());
+    });
+  }
+
+  @Override
+  public void deleteByOrgIdentifier(Class<ServiceLevelObjective> clazz, String accountId, String orgIdentifier) {
+    List<ServiceLevelObjective> serviceLevelObjectives =
+        hPersistence.createQuery(ServiceLevelObjective.class)
+            .filter(ServiceLevelObjectiveKeys.accountId, accountId)
+            .filter(ServiceLevelObjectiveKeys.orgIdentifier, orgIdentifier)
+            .asList();
+
+    serviceLevelObjectives.forEach(serviceLevelObjective -> {
+      delete(ProjectParams.builder()
+                 .accountIdentifier(serviceLevelObjective.getAccountId())
+                 .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                 .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                 .build(),
+          serviceLevelObjective.getIdentifier());
+    });
+  }
+
+  @Override
+  public void deleteByAccountIdentifier(Class<ServiceLevelObjective> clazz, String accountId) {
+    List<ServiceLevelObjective> serviceLevelObjectives = hPersistence.createQuery(ServiceLevelObjective.class)
+                                                             .filter(ServiceLevelObjectiveKeys.accountId, accountId)
+                                                             .asList();
+
+    serviceLevelObjectives.forEach(serviceLevelObjective -> {
+      delete(ProjectParams.builder()
+                 .accountIdentifier(serviceLevelObjective.getAccountId())
+                 .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                 .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                 .build(),
+          serviceLevelObjective.getIdentifier());
+    });
   }
 
   @Value
