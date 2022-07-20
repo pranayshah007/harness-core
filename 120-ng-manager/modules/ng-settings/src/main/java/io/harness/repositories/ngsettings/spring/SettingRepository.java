@@ -24,15 +24,10 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 public interface SettingRepository extends PagingAndSortingRepository<Setting, String>, SettingRepositoryCustom {
   List<Setting> findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndCategory(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category);
-  List<Setting> findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndCategoryAndGroup(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category, String group);
   Optional<Setting> findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
   List<Setting> findByIdentifier(String identifier);
   void deleteByAccountIdentifierAndIdentifier(String accountIdentifier, String identifier);
   void deleteByAccountIdentifierAndOrgIdentifierAndIdentifier(
       String accountIdentifier, String orgIdentifier, String identifier);
-  List<Setting> findByAccountIdentifierAndCategoryAndGroup(
-      String accountIdentifier, SettingCategory category, String group);
-  List<Setting> findByAccountIdentifierAndCategory(String accountIdentifier, SettingCategory category);
 }

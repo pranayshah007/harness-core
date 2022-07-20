@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 3
+version : 4
 settings :
   - identifier: test_setting_CI
     name: Test CI setting
@@ -109,66 +109,25 @@ settings :
       - ACCOUNT
       - ORGANIZATION
       - PROJECT
-#  - identifier: test_setting_CI_1
-#    name: Test CI setting 1
-#    category : CI
-#    defaultValue: 1
-#    valueType : NUMBER
-#    allowedValues :
-#      - 1
-#      - 2
-#      - 3
-#      - 4
-#      - 5
-#    allowOverrides : true
-#    allowedScopes :
-#      - ACCOUNT
-#      - ORGANIZATION
-#      - PROJECT
-#  - identifier: test_setting_CI_2
-#    name: Test CI setting 2
-#    category : CI
-#    defaultValue: ~
-#    valueType : NUMBER
-#    allowedValues :
-#      - 1
-#      - 2
-#      - 3
-#      - 4
-#    allowOverrides : true
-#    allowedScopes :
-#      - ACCOUNT
-#      - ORGANIZATION
-#      - PROJECT
-#  - identifier: test_setting_CORE_1
-#    name: Test CORE setting 1
-#    category : CORE
-#    defaultValue: false
-#    valueType : BOOLEAN
-#    allowedValues :
-#      - true
-#      - false
-#    allowOverrides : true
-#    allowedScopes :
-#      - ACCOUNT
-#      - ORGANIZATION
-#      - PROJECT
-#  - identifier: test_setting_CORE_2
-#    name: Test CORE setting 2
-#    category : CORE
-#    defaultValue: ~
-#    valueType : STRING
-#    allowedValues : ~
-#    allowOverrides : true
-#    allowedScopes :
-#      - ACCOUNT
-#  - identifier: test_setting_CI_3
-#    name: Test CI setting 3
-#    category : CI
-#    defaultValue: 10
-#    valueType : NUMBER
-#    allowedValues : ~
-#    allowOverrides : true
-#    allowedScopes :
-#      - ORGANIZATION
-#      - PROJECT
+  - identifier: test_setting_CORE_1
+    name: Test CORE setting 1
+    category : CORE
+    defaultValue: false
+    valueType : BOOLEAN
+    allowedValues :
+      - true
+      - false
+    allowOverrides : true
+    allowedScopes :
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: test_setting_CORE_2
+    name: Test CORE setting 2
+    category : CORE
+    defaultValue: ~
+    valueType : STRING
+    allowedValues : ~
+    allowOverrides : true
+    allowedScopes :
+      - ACCOUNT

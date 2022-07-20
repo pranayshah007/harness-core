@@ -45,7 +45,7 @@ public class SettingDTO {
   @Schema(description = ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = PROJECT_PARAM_MESSAGE) String projectIdentifier;
   @NotNull @NotBlank @Schema(description = CATEGORY) SettingCategory category;
-  @NotNull @NotBlank @Schema(description = GROUP_ID) String group;
+  @NotNull @NotBlank @Schema(description = GROUP_ID) String groupIdentifier;
   @NotNull @NotBlank @Schema(description = VALUE_TYPE) SettingValueType valueType;
   @Schema(description = ALLOWED_VALUES) Set<String> allowedValues;
   @NotNull @NotBlank @Schema(description = ALLOW_OVERRIDES) Boolean allowOverrides;

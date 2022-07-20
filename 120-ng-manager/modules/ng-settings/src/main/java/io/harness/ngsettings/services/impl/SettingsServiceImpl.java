@@ -24,6 +24,7 @@ import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.ngsettings.dto.SettingUpdateResponseDTO;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.ngsettings.entities.Setting;
+import io.harness.ngsettings.entities.Setting.SettingKeys;
 import io.harness.ngsettings.entities.SettingConfiguration;
 import io.harness.ngsettings.mapper.SettingsMapper;
 import io.harness.ngsettings.services.SettingsService;
@@ -45,6 +46,7 @@ import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -69,10 +71,11 @@ public class SettingsServiceImpl implements SettingsService {
 
   @Override
   public List<SettingResponseDTO> list(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      SettingCategory category, String group) {
+      SettingCategory category, String groupIdentifier) {
     Map<String, SettingConfiguration> settingConfigurations =
-        getSettingConfigurations(accountIdentifier, orgIdentifier, projectIdentifier, category, group);
-    Map<Pair<String, Scope>, Setting> settings = getSettings(accountIdentifier, category, group);
+        getSettingConfigurations(accountIdentifier, orgIdentifier, projectIdentifier, category, groupIdentifier);
+    Map<Pair<String, Scope>, Setting> settings =
+        getSettings(accountIdentifier, orgIdentifier, projectIdentifier, category, groupIdentifier);
     List<SettingResponseDTO> settingResponseDTOList = new ArrayList<>();
     settingConfigurations.forEach((identifier, settingConfiguration) -> {
       Pair<String, Scope> currentScopeSettingKey =
@@ -210,14 +213,25 @@ public class SettingsServiceImpl implements SettingsService {
     return settingConfigurationRepository.save(settingConfiguration);
   }
 
-  private Map<Pair<String, Scope>, Setting> getSettings(
-      String accountIdentifier, SettingCategory category, String group) {
+  private Map<Pair<String, Scope>, Setting> getSettings(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, SettingCategory category, String groupIdentifier) {
     List<Setting> settings;
-    if (group != null) {
-      settings = settingRepository.findByAccountIdentifierAndCategoryAndGroup(accountIdentifier, category, group);
-    } else {
-      settings = settingRepository.findByAccountIdentifierAndCategory(accountIdentifier, category);
+    Criteria criteria =
+        Criteria.where(SettingKeys.accountIdentifier)
+            .is(accountIdentifier)
+            .and(SettingKeys.category)
+            .is(category)
+            .andOperator(new Criteria().orOperator(
+                Criteria.where(SettingKeys.orgIdentifier).is(null).and(SettingKeys.projectIdentifier).is(null),
+                Criteria.where(SettingKeys.orgIdentifier).is(orgIdentifier).and(SettingKeys.projectIdentifier).is(null),
+                Criteria.where(SettingKeys.orgIdentifier)
+                    .is(orgIdentifier)
+                    .and(SettingKeys.projectIdentifier)
+                    .is(projectIdentifier)));
+    if (groupIdentifier != null) {
+      criteria.and(SettingKeys.groupIdentifier).is(groupIdentifier);
     }
+    settings = settingRepository.findAll(criteria);
     return settings.stream().collect(Collectors.toMap(setting
         -> new ImmutablePair<>(setting.getIdentifier(),
             Scope.of(accountIdentifier, setting.getOrgIdentifier(), setting.getProjectIdentifier())),
@@ -231,7 +245,7 @@ public class SettingsServiceImpl implements SettingsService {
     List<SettingConfiguration> defaultSettingConfigurations;
     if (group != null) {
       defaultSettingConfigurations =
-          settingConfigurationRepository.findByCategoryAndGroupAndAllowedScopesIn(category, group, scopes);
+          settingConfigurationRepository.findByCategoryAndGroupIdentifierAndAllowedScopesIn(category, group, scopes);
     } else {
       defaultSettingConfigurations = settingConfigurationRepository.findByCategoryAndAllowedScopesIn(category, scopes);
     }
@@ -282,12 +296,10 @@ public class SettingsServiceImpl implements SettingsService {
             accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO.getIdentifier());
     SettingConfiguration settingConfiguration =
         getSettingConfiguration(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO.getIdentifier());
-    setting.ifPresent(existingSetting -> {
-      settingRepository.delete(existingSetting);
-      if (settingConfiguration.getAllowOverrides() == false) {
-        deleteSettingInSubScopes(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO);
-      }
-    });
+    setting.ifPresent(settingRepository::delete);
+    if (!settingConfiguration.getAllowOverrides()) {
+      deleteSettingInSubScopes(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO);
+    }
     return settingConfiguration;
   }
 
