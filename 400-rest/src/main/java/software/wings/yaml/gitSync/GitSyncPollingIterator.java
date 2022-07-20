@@ -18,9 +18,10 @@ import software.wings.yaml.gitSync.YamlGitConfig.YamlGitConfigKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import lombok.AllArgsConstructor;
 
 @Singleton
-@AllAregsConstructor(onConstructor = @__({ @Inject }))
+@AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(DX)
 public class GitSyncPollingIterator implements MongoPersistenceIterator.Handler<YamlGitConfig> {
   @Inject PersistenceIteratorFactory persistenceIteratorFactory;
