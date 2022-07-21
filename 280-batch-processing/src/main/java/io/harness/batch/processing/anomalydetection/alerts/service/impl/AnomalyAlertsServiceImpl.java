@@ -191,14 +191,14 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
                                                   .accountId(accountId)
                                                   .emailRecipients(eMails)
                                                   .team(Team.OTHER)
-                                                  .templateId("email_ccm_anomaly_alert")
+                                                  .templateId("email_ccm_anomaly_alert.txt")
                                                   .userGroups(Collections.emptyList());
 
     NotificationChannelDTOBuilder slackChannelBuilder = NotificationChannelDTO.builder()
                                                   .accountId(accountId)
                                                   .webhookUrls(slackWebHookUrls)
                                                   .team(Team.OTHER)
-                                                  .templateId("slack_ccm_anomaly_alert")
+                                                  .templateId("slack_ccm_anomaly_alert.txt")
                                                   .userGroups(Collections.emptyList());
 
 //    MSTeamChannelBuilder msTeamChannelBuilder = MSTeamChannel.builder()
@@ -214,7 +214,6 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     templateData.put("perspective_url", "https://google.co.in");
 
     // Sending email alerts
-    /*
     emailChannelBuilder.templateData(templateData);
     Call<RestResponse<NotificationResult>> call = notificationResourceClient.sendNotification(accountId, emailChannelBuilder.build());
     Request request = call.request();
@@ -227,7 +226,7 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     log.info("REQUEST method: {}", request.method());
     log.info("REQUEST url: {}", request.url());
     log.info("REQUEST toString: {}", request.toString());
-     response = call.execute();
+    Response<RestResponse<NotificationResult>> response = call.execute();
     log.info("RESPONSE isSuccessful: {}", response.isSuccessful());
     log.info("RESPONSE code: {}", response.code());
     log.info("RESPONSE headers: {}", response.headers());
@@ -245,7 +244,6 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
       log.info("RESPONSE errorBody: {}", response.errorBody().string());
     }
     log.info("RESPONSE body: {}", response.body());
-     */
 
     Map<String, String> slackTemplateData = new HashMap<>();
     slackTemplateData.put("perspective_name", perspectiveNotificationSetting.getPerspectiveName());
@@ -262,8 +260,8 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
 
     // Sending slack alerts
     slackChannelBuilder.templateData(slackTemplateData);
-    Call<RestResponse<NotificationResult>> call = notificationResourceClient.sendNotification(accountId, slackChannelBuilder.build());
-    Request request = call.request();
+    call = notificationResourceClient.sendNotification(accountId, slackChannelBuilder.build());
+    request = call.request();
     log.info("REQUEST: {}", request);
     log.info("REQUEST body: {}", request.body());
     if (request.body()!=null) {
@@ -274,7 +272,7 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     log.info("REQUEST method: {}", request.method());
     log.info("REQUEST url: {}", request.url());
     log.info("REQUEST toString: {}", request.toString());
-    Response<RestResponse<NotificationResult>> response = call.execute();
+    response = call.execute();
     log.info("RESPONSE isSuccessful: {}", response.isSuccessful());
     log.info("RESPONSE code: {}", response.code());
     log.info("RESPONSE headers: {}", response.headers());
