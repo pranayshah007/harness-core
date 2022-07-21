@@ -166,6 +166,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     }
 
     final FileModifyRequest.Builder fileModifyRequestBuilder = getFileModifyRequest(scmConnector, gitFileDetails);
+    handleUpdateFileRequestIfBBOnPrem(fileModifyRequestBuilder, scmConnector, gitFileDetails);
     final FileModifyRequest fileModifyRequest =
         fileModifyRequestBuilder.setBlobId(Strings.nullToEmpty(gitFileDetails.getOldFileSha())).build();
     UpdateFileResponse updateFileResponse =
@@ -958,6 +959,13 @@ public class ScmServiceClientImpl implements ScmServiceClient {
       }
     }
     return Optional.empty();
+  }
+
+  private void handleUpdateFileRequestIfBBOnPrem(
+      FileModifyRequest.Builder fileModifyRequestBuilder, ScmConnector scmConnector, GitFileDetails gitFileDetails) {
+    if (isBitbucketOnPrem(scmConnector)) {
+      fileModifyRequestBuilder.setCommitId(gitFileDetails.getCommitId());
+    }
   }
 
   private boolean isFailureResponse(int statusCode) {
