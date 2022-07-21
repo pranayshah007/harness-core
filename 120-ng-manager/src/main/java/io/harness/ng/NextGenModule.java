@@ -70,6 +70,7 @@ import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
+import io.harness.encryptors.CustomEncryptor;
 import io.harness.encryptors.Encryptors;
 import io.harness.encryptors.KmsEncryptor;
 import io.harness.encryptors.VaultEncryptor;
@@ -134,6 +135,7 @@ import io.harness.ng.core.api.impl.NGSecretServiceV2Impl;
 import io.harness.ng.core.api.impl.TokenServiceImpl;
 import io.harness.ng.core.api.impl.UserGroupServiceImpl;
 import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClientModule;
+import io.harness.ng.core.encryptors.NGManagerCustomEncryptor;
 import io.harness.ng.core.encryptors.NGManagerKmsEncryptor;
 import io.harness.ng.core.encryptors.NGManagerVaultEncryptor;
 import io.harness.ng.core.entityactivity.event.EntityActivityCrudEventMessageListener;
@@ -790,6 +792,10 @@ public class NextGenModule extends AbstractModule {
         .bind(KmsEncryptor.class)
         .annotatedWith(Names.named(Encryptors.GLOBAL_GCP_KMS_ENCRYPTOR.getName()))
         .to(GcpKmsEncryptor.class);
+    binder()
+        .bind(CustomEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.CUSTOM_ENCRYPTOR_NG.getName()))
+        .to(NGManagerCustomEncryptor.class);
   }
 
   private void registerOutboxEventHandlers() {

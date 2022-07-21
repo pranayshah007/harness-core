@@ -23,10 +23,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.encryption.SecretRefData;
-import io.harness.encryptors.KmsEncryptor;
-import io.harness.encryptors.KmsEncryptorsRegistry;
-import io.harness.encryptors.VaultEncryptor;
-import io.harness.encryptors.VaultEncryptorsRegistry;
+import io.harness.encryptors.*;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.ng.core.BaseNGAccess;
@@ -49,12 +46,16 @@ public class NGEncryptorServiceImpl implements NGEncryptorService {
   private final KmsEncryptorsRegistry kmsEncryptorsRegistry;
   private final VaultEncryptorsRegistry vaultEncryptorsRegistry;
 
+  private final CustomEncryptorsRegistry customEncryptorsRegistry;
+
   @Inject
   public NGEncryptorServiceImpl(NGEncryptedDataService encryptedDataService,
-      KmsEncryptorsRegistry kmsEncryptorsRegistry, VaultEncryptorsRegistry vaultEncryptorsRegistry) {
+      KmsEncryptorsRegistry kmsEncryptorsRegistry, VaultEncryptorsRegistry vaultEncryptorsRegistry,
+      CustomEncryptorsRegistry customEncryptorsRegistry) {
     this.encryptedDataService = encryptedDataService;
     this.kmsEncryptorsRegistry = kmsEncryptorsRegistry;
     this.vaultEncryptorsRegistry = vaultEncryptorsRegistry;
+    this.customEncryptorsRegistry = customEncryptorsRegistry;
   }
 
   @Override
