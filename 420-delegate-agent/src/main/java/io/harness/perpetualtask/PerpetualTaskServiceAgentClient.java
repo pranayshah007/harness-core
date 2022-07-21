@@ -7,6 +7,8 @@
 
 package io.harness.perpetualtask;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.rest.CallbackWithRetry;
@@ -64,6 +66,9 @@ public class PerpetualTaskServiceAgentClient {
                                               .setResponseCode(perpetualTaskResponse.getResponseCode())
                                               .setResponseMessage(perpetualTaskResponse.getResponseMessage())
                                               .build();
+      if (isEmpty(accountId)) {
+        log.warn("Account id is null while sending heartbeat");
+      }
       Call<HeartbeatResponse> call = delegateAgentManagerClient.heartbeat(accountId, heartbeatRequest);
       executeAsyncCallWithRetry(call, result);
     } catch (IOException ex) {
