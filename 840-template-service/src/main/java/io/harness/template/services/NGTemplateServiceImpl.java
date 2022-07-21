@@ -498,7 +498,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         existingTemplate.withObjectIdOfYaml(EntityObjectIdUtils.getObjectIdOfYaml(invalidYaml))
             .withYaml(invalidYaml)
             .withIsEntityInvalid(true);
-    templateRepository.updateTemplateYaml(
+    templateRepository.updateTemplateYamlForOldGitSync(
         updatedTemplate, existingTemplate, ChangeType.NONE, "", TemplateUpdateEventType.OTHERS_EVENT, true);
     return true;
   }
@@ -645,8 +645,13 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   private TemplateEntity makeTemplateUpdateCall(TemplateEntity templateToUpdate, TemplateEntity oldTemplateEntity,
       ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
     try {
-      TemplateEntity updatedTemplate = templateRepository.updateTemplateYaml(
-          templateToUpdate, oldTemplateEntity, changeType, comments, templateUpdateEventType, skipAudits);
+      TemplateEntity updatedTemplate;
+      if(templateServiceHelper.isOldGitSync(oldTemplateEntity)) {
+        updatedTemplate = templateRepository.updateTemplateYamlForOldGitSync(
+                templateToUpdate, oldTemplateEntity, changeType, comments, templateUpdateEventType, skipAudits);
+      } else {
+        updatedTemplate = templateRepository.updateTemplateYaml(templateToUpdate);
+      }
       if (updatedTemplate == null) {
         throw new InvalidRequestException(format(
             "Template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s] could not be updated.",

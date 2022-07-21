@@ -27,6 +27,8 @@ import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
+import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.mappers.PMSPipelineFilterHelper;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateCreateEvent;
@@ -258,8 +260,8 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
-  public TemplateEntity updateTemplateYaml(TemplateEntity templateToUpdate, TemplateEntity oldTemplateEntity,
-      ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
+  public TemplateEntity updateTemplateYamlForOldGitSync(TemplateEntity templateToUpdate, TemplateEntity oldTemplateEntity,
+                                                        ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
     Supplier<OutboxEvent> supplier = null;
     if (shouldLogAudits(templateToUpdate.getAccountId(), templateToUpdate.getOrgIdentifier(),
             templateToUpdate.getProjectIdentifier())
@@ -272,6 +274,36 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     }
     return gitAwarePersistence.save(
         templateToUpdate, templateToUpdate.getYaml(), changeType, TemplateEntity.class, supplier);
+  }
+
+  @Override
+  public TemplateEntity updateTemplateYaml(TemplateEntity templateEntity) {
+    Criteria criteria =
+            PMSPipelineFilterHelper.getCriteriaForFind(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
+                    templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(), true);
+    Query query = new Query(criteria);
+    long timeOfUpdate = System.currentTimeMillis();
+    Update updateOperations = PMSPipelineFilterHelper.getUpdateOperations(pipelineToUpdate, timeOfUpdate);
+
+    PipelineEntity updatedPipelineEntity = transactionHelper.performTransaction(
+            () -> updatePipelineEntityInDB(query, updateOperations, pipelineToUpdate, timeOfUpdate));
+
+    if (updatedPipelineEntity == null) {
+      return null;
+    }
+
+    updatedPipelineEntity = onboardToInlineIfNullStoreType(updatedPipelineEntity, query);
+    if (updatedPipelineEntity == null) {
+      return null;
+    }
+
+    if (updatedPipelineEntity.getStoreType() == StoreType.REMOTE
+            && gitSyncSdkService.isGitSimplificationEnabled(pipelineToUpdate.getAccountIdentifier(),
+            pipelineToUpdate.getOrgIdentifier(), pipelineToUpdate.getProjectIdentifier())) {
+      Scope scope = buildScope(updatedPipelineEntity);
+      gitAwareEntityHelper.updateEntityOnGit(updatedPipelineEntity, pipelineToUpdate.getYaml(), scope);
+    }
+    return updatedPipelineEntity;
   }
 
   @Override
