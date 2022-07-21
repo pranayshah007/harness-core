@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 git fetch origin $1:$1
 git checkout $1
 echo $2
@@ -443,4 +448,3 @@ echo "API Backward Incompatibility issues in services : "$issues
 echo "Compilation Failure : "$comp
 echo "OpenApiDiff Failure : "$other
 exit $exit_code
-

@@ -16,9 +16,9 @@ import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentCondition;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
 
 @SuperBuilder
 @Slf4j
@@ -54,10 +54,10 @@ public class ChangeIntelDeploymentHandler extends BaseChangeHandler<V1Deployment
 
       String newYaml = k8sHandlerUtils.yamlDump(v1Deployment);
       ((KubernetesChangeEventMetadata) eventDTO.getMetadata()).setNewYaml(newYaml);
-      DateTime dateTime = v1Deployment.getMetadata().getCreationTimestamp();
+      OffsetDateTime dateTime = v1Deployment.getMetadata().getCreationTimestamp();
       if (dateTime != null) {
         ((KubernetesChangeEventMetadata) eventDTO.getMetadata())
-            .setTimestamp(Instant.ofEpochMilli(dateTime.toDateTime().toInstant().getMillis()));
+            .setTimestamp(Instant.ofEpochMilli(dateTime.toInstant().toEpochMilli()));
       }
       ((KubernetesChangeEventMetadata) eventDTO.getMetadata()).setAction(Action.Add);
       sendEvent(accountId, eventDTO);

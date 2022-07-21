@@ -1022,8 +1022,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:ydIzFACT2VH9euHfBZuHxFu7AGN21xStbernowJvlHY=",
-    version = "v1.26.0",
+    sum = "h1:tx7Xgpt64DYq90WFPVi9T/5c7IuNQ8ckbb8qUEK05gU=",
+    version = "v1.26.1-0.20220718061611-2e3f1a56c8dd",
 )
 
 go_repository(
@@ -4665,10 +4665,11 @@ plain_artifacts = [
     "io.harness:ff-java-server-sdk:1.0.5.1",
     "io.harness:ng-manager-server-spec:1.0.3",
     "io.jsonwebtoken:jjwt:0.9.1",
-    "io.kubernetes:client-java-api:11.0.2",
-    "io.kubernetes:client-java-extended:11.0.2",
-    "io.kubernetes:client-java-proto:11.0.2",
-    "io.kubernetes:client-java:11.0.2",
+    "io.kubernetes:client-java-api:13.0.1",
+    "io.kubernetes:client-java-extended:13.0.1",
+    "io.kubernetes:client-java-proto:13.0.1",
+    "io.kubernetes:client-java:13.0.1",
+    "io.kubernetes:client-java-api-fluent:13.0.1",
     "io.leangen.graphql:spqr:0.11.2",
     "io.netty:netty-all:4.1.77.Final",
     "io.netty:netty-buffer:4.1.77.Final",

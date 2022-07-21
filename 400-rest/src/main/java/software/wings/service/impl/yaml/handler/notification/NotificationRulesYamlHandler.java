@@ -19,9 +19,11 @@ import static java.util.stream.Collectors.toList;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.HarnessException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.ExecutionScope;
 import software.wings.beans.NotificationGroup;
@@ -31,6 +33,7 @@ import software.wings.beans.NotificationRule.Yaml;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.yaml.ChangeContext;
 import software.wings.service.impl.yaml.handler.BaseYamlHandler;
+import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.NotificationSetupService;
 import software.wings.service.intfc.UserGroupService;
 import software.wings.utils.Utils;
@@ -40,15 +43,19 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author rktummala on 10/28/17
  */
 @Singleton
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class NotificationRulesYamlHandler extends BaseYamlHandler<NotificationRule.Yaml, NotificationRule> {
   @Inject NotificationSetupService notificationSetupService;
   @Inject UserGroupService userGroupService;
+  @Inject FeatureFlagService featureFlagService;
+  @Inject AppService appService;
 
   private NotificationRule toBean(ChangeContext<Yaml> changeContext, List<ChangeContext> changeContextList) {
     Yaml yaml = changeContext.getYaml();
@@ -127,13 +134,23 @@ public class NotificationRulesYamlHandler extends BaseYamlHandler<NotificationRu
               return notificationGroup.getName();
             })
             .collect(toList());
+    String accountId = appService.getAccountIdByAppId(appId);
 
     List<String> userGroupNames = new ArrayList<>();
     if (isNotEmpty(notificationRule.getUserGroupIds())) {
       notificationRule.getUserGroupIds().forEach(userGroupId -> {
         UserGroup userGroup = userGroupService.get(userGroupId);
-        notNullCheck(String.format("User group with id %s doesnot exist.", userGroupId), userGroup);
-        userGroupNames.add(userGroup.getName());
+        if (!featureFlagService.isEnabled(FeatureName.REMOVE_USERGROUP_CHECK, accountId)) {
+          notNullCheck(String.format("User group with id %s doesnot exist.", userGroupId), userGroup);
+        } else {
+          if (userGroup == null) {
+            log.error("User group with id {} does not exist for notification rule {}", userGroupId, notificationRule,
+                new Exception());
+          }
+        }
+        if (userGroup != null) {
+          userGroupNames.add(userGroup.getName());
+        }
       });
     }
 

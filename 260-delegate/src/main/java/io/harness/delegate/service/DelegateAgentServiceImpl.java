@@ -319,7 +319,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private final boolean delegateNg = isNotBlank(System.getenv().get("DELEGATE_SESSION_IDENTIFIER"))
       || (isNotBlank(System.getenv().get("NEXT_GEN")) && Boolean.parseBoolean(System.getenv().get("NEXT_GEN")));
   public static final String JAVA_VERSION = "java.version";
-  private final double RESOURCE_USAGE_THRESHOLD = 0.75;
+  private final double RESOURCE_USAGE_THRESHOLD = 0.90;
   private String MANAGER_PROXY_CURL = System.getenv().get("MANAGER_PROXY_CURL");
   private String MANAGER_HOST_AND_PORT = System.getenv().get("MANAGER_HOST_AND_PORT");
 

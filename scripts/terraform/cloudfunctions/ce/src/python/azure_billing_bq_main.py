@@ -236,6 +236,7 @@ def ingest_data_from_csv(jsonData):
     for blob in blobs:
         blob.delete()
         print_("Cleaned up {}.".format(blob.name))
+    return True
 
 def send_event(jsonData):
     message_json = json.dumps(jsonData)

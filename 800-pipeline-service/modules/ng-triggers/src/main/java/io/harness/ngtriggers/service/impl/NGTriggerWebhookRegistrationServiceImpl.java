@@ -26,6 +26,7 @@ import io.harness.ng.webhook.UpsertWebhookRequestDTO;
 import io.harness.ng.webhook.UpsertWebhookResponseDTO;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatus;
+import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.service.NGTriggerWebhookRegistrationService;
 import io.harness.product.ci.scm.proto.WebhookResponse;
@@ -47,7 +48,7 @@ public class NGTriggerWebhookRegistrationServiceImpl implements NGTriggerWebhook
   private final WebhookEventClient webhookEventClient;
 
   @Override
-  public WebhookRegistrationStatus registerWebhook(NGTriggerEntity ngTriggerEntity) {
+  public WebhookAutoRegistrationStatus registerWebhook(NGTriggerEntity ngTriggerEntity) {
     BaseNGAccess ngAccess = BaseNGAccess.builder()
                                 .accountIdentifier(ngTriggerEntity.getAccountId())
                                 .orgIdentifier(ngTriggerEntity.getOrgIdentifier())
@@ -79,7 +80,7 @@ public class NGTriggerWebhookRegistrationServiceImpl implements NGTriggerWebhook
         ngTriggerEntity.getMetadata().getWebhook().getGit().getConnectorIdentifier());
   }
 
-  private WebhookRegistrationStatus registerWebhookInternal(String projectIdentifier, String orgIdentifier,
+  private WebhookAutoRegistrationStatus registerWebhookInternal(String projectIdentifier, String orgIdentifier,
       String accountIdentifier, String repoUrl, String connectorIdentifierRef) {
     UpsertWebhookRequestDTO upsertWebhookRequestDTO = UpsertWebhookRequestDTO.builder()
                                                           .projectIdentifier(projectIdentifier)
@@ -94,15 +95,21 @@ public class NGTriggerWebhookRegistrationServiceImpl implements NGTriggerWebhook
       upsertWebhookResponseDTO = getResponse(webhookEventClient.upsertWebhook(upsertWebhookRequestDTO));
     } catch (Exception ex) {
       log.error("Failed to register webhook", ex);
-      return WebhookRegistrationStatus.ERROR;
+      return WebhookAutoRegistrationStatus.builder()
+          .registrationResult(WebhookRegistrationStatus.ERROR)
+          .detailedMessage(ex.getMessage())
+          .build();
     }
     if (upsertWebhookResponseDTO.getStatus() > 300) {
-      return WebhookRegistrationStatus.FAILED;
+      return WebhookAutoRegistrationStatus.builder()
+          .registrationResult(WebhookRegistrationStatus.FAILED)
+          .detailedMessage(upsertWebhookResponseDTO.getError())
+          .build();
     }
     WebhookResponse webhookResponse = upsertWebhookResponseDTO.getWebhookResponse();
     if (webhookResponse != null) {
       log.info("Auto registered webhook with following events: {}", webhookResponse.getName());
     }
-    return WebhookRegistrationStatus.SUCCESS;
+    return WebhookAutoRegistrationStatus.builder().registrationResult(WebhookRegistrationStatus.SUCCESS).build();
   }
 }

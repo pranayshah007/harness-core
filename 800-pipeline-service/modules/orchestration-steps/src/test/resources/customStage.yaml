@@ -1,0 +1,19 @@
+spec:
+  execution:
+    steps:
+      - step:
+          type: ShellScript
+          name: ech
+          identifier: ech
+          spec:
+            shell: Bash
+            onDelegate: true
+            source:
+              type: Inline
+              spec:
+                script: echo sdsaa
+            environmentVariables: []
+            outputVariables: []
+            executionTarget: {}
+          timeout: 10m
+tags: {}

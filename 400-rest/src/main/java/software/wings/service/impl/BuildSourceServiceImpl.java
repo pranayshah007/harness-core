@@ -349,7 +349,8 @@ public class BuildSourceServiceImpl implements BuildSourceService {
     String settingId = artifactStream.getSettingId();
     // Collect labels for only DOCKER.
     if (!DOCKER.name().equals(artifactStream.getArtifactStreamType())
-        && !ECR.name().equals(artifactStream.getArtifactStreamType())) {
+        && !ECR.name().equals(artifactStream.getArtifactStreamType())
+        && !ARTIFACTORY.name().equals(artifactStream.getArtifactStreamType())) {
       return Collections.emptyList();
     }
 

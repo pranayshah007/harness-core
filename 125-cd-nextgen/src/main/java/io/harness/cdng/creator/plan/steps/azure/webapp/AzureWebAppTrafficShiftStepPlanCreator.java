@@ -7,13 +7,18 @@
 
 package io.harness.cdng.creator.plan.steps.azure.webapp;
 
+import static io.harness.cdng.visitor.YamlTypes.AZURE_SLOT_DEPLOYMENT;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepNode;
+import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepParameters;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
@@ -33,5 +38,15 @@ public class AzureWebAppTrafficShiftStepPlanCreator extends CDPMSStepPlanCreator
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, AzureWebAppTrafficShiftStepNode stepElement) {
     return super.createPlanForField(ctx, stepElement);
+  }
+
+  @Override
+  protected StepParameters getStepParameters(PlanCreationContext ctx, AzureWebAppTrafficShiftStepNode stepElement) {
+    final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
+    AzureWebAppTrafficShiftStepParameters azureWebAppTrafficShiftStepParameters =
+        (AzureWebAppTrafficShiftStepParameters) ((StepElementParameters) stepParameters).getSpec();
+    String slotDeploymentStepFqn = getExecutionStepFqn(ctx.getCurrentField(), AZURE_SLOT_DEPLOYMENT);
+    azureWebAppTrafficShiftStepParameters.setSlotDeploymentStepFqn(slotDeploymentStepFqn);
+    return stepParameters;
   }
 }
