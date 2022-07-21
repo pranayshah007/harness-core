@@ -213,9 +213,10 @@ public class ArtifactDelegateRequestUtils {
         .build();
   }
 
-  public CustomArtifactDelegateRequest getCusotmDelegateRequest(String artifactsArrayPath, String versionRegex,
+  public CustomArtifactDelegateRequest getCustomDelegateRequest(String artifactsArrayPath, String versionRegex,
       String ShellType, ArtifactSourceType sourceType, ScriptType scriptType, String versionPath, String script,
-      Map<String, Object> attributes, Map<String, Object> inputs, String version, long timeout) {
+      Map<String, String> attributes, Map<String, String> inputs, String version, String executionId, long timeout,
+      String accountId) {
     return CustomArtifactDelegateRequest.builder()
         .artifactsArrayPath(artifactsArrayPath)
         .attributes(attributes)
@@ -228,6 +229,10 @@ public class ArtifactDelegateRequestUtils {
         .timeout(timeout)
         .inputs(inputs)
         .version(version)
+        .executeOnDelegate(true)
+        .executionId(executionId)
+        .workingDirectory("/tmp")
+        .accountId(accountId)
         .build();
   }
 

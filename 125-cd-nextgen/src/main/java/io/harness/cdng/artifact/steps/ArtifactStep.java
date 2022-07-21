@@ -108,7 +108,7 @@ public class ArtifactStep implements TaskExecutable<ArtifactStepParameters, Arti
     }
     List<TaskSelector> delegateSelectors = artifactStepHelper.getDelegateSelectors(finalArtifact, ambiance);
     return StepUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, kryoSerializer,
-        TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), false, taskName, delegateSelectors);
+        TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), true, taskName, delegateSelectors);
   }
 
   @Override

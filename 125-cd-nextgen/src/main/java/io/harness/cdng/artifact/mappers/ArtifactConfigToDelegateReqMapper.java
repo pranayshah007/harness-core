@@ -41,13 +41,19 @@ import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
+import io.harness.exception.InvalidRequestException;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -87,13 +93,14 @@ public class ArtifactConfigToDelegateReqMapper {
     return ArtifactDelegateRequestUtils.getJenkinsDelegateRequest(connectorRef, connectorDTO, encryptedDataDetails,
         ArtifactSourceType.JENKINS, null, null, jobName, Arrays.asList(artifactPath));
   }
-  public CustomArtifactDelegateRequest getCustomDelegateRequest(CustomArtifactConfig artifactConfig) {
+  public CustomArtifactDelegateRequest getCustomDelegateRequest(
+      CustomArtifactConfig artifactConfig, Ambiance ambiance) {
     CustomScriptInlineSource customScriptInlineSource = (CustomScriptInlineSource) artifactConfig.getScripts()
                                                             .getFetchAllArtifacts()
                                                             .getShellScriptBaseStepInfo()
                                                             .getSource()
                                                             .getSpec();
-    return ArtifactDelegateRequestUtils.getCusotmDelegateRequest(
+    return ArtifactDelegateRequestUtils.getCustomDelegateRequest(
         artifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath().getValue(),
         artifactConfig.getVersionRegex().getValue(),
         artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getSource().getType(),
@@ -101,9 +108,11 @@ public class ArtifactConfigToDelegateReqMapper {
         artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getShell().getScriptType(),
         artifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().getValue(),
         customScriptInlineSource.getScript().fetchFinalValue().toString(),
-        NGVariablesUtils.getMapOfVariables(artifactConfig.getScripts().getFetchAllArtifacts().getAttributes(), 0L),
-        NGVariablesUtils.getMapOfVariables(artifactConfig.getInputs(), 0L), artifactConfig.getVersion().getValue(),
-        artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getTimeout());
+        NGVariablesUtils.getStringMapVariables(artifactConfig.getScripts().getFetchAllArtifacts().getAttributes(), 0L),
+        NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L), artifactConfig.getVersion().getValue(),
+        AmbianceUtils.obtainCurrentRuntimeId(ambiance),
+        artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getTimeout(),
+        AmbianceUtils.getAccountId(ambiance));
   }
 
   public GcrArtifactDelegateRequest getGcrDelegateRequest(GcrArtifactConfig gcrArtifactConfig,

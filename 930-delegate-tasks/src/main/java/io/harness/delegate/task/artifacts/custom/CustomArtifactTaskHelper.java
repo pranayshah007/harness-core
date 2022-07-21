@@ -10,6 +10,9 @@ package io.harness.delegate.task.artifacts.custom;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.context.MdcGlobalContextData;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
@@ -34,8 +37,11 @@ public class CustomArtifactTaskHelper {
   private final CustomArtifactTaskHandler customArtifactTaskHandler;
 
   public ArtifactTaskResponse getArtifactCollectResponse(
-      ArtifactTaskParameters artifactTaskParameters, LogCallback executionLogCallback) {
+      ArtifactTaskParameters artifactTaskParameters, ILogStreamingTaskClient logStreamingTaskClient) {
     CustomArtifactDelegateRequest attributes = (CustomArtifactDelegateRequest) artifactTaskParameters.getAttributes();
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    LogCallback executionLogCallback =
+        new NGDelegateLogCallback(logStreamingTaskClient, "Execute", false, commandUnitsProgress);
     ArtifactTaskResponse artifactTaskResponse;
     try {
       switch (artifactTaskParameters.getArtifactTaskType()) {
@@ -46,7 +52,8 @@ public class CustomArtifactTaskHelper {
           break;
         case GET_LAST_SUCCESSFUL_BUILD:
           saveLogs(executionLogCallback, "Get the Jenkins Build");
-          artifactTaskResponse = getSuccessTaskResponse(customArtifactTaskHandler.getLastSuccessfulBuild(attributes));
+          artifactTaskResponse = getSuccessTaskResponse(
+              customArtifactTaskHandler.getLastSuccessfulBuild(attributes, logStreamingTaskClient));
           saveLogs(executionLogCallback, "Get the Jenkins Build ");
           break;
         default:

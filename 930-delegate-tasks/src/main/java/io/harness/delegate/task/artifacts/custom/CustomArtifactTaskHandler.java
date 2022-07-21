@@ -7,14 +7,16 @@
 
 package io.harness.delegate.task.artifacts.custom;
 
-import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
-import io.harness.delegate.task.shell.ShellScriptTaskNG;
+import io.harness.delegate.task.shell.ShellScriptExecutionOnDelegateNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
+import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
@@ -25,7 +27,8 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
 public class CustomArtifactTaskHandler extends DelegateArtifactTaskHandler<CustomArtifactDelegateRequest> {
-  @Inject ShellScriptTaskNG shellScriptTaskNG;
+  @Inject private ShellScriptExecutionOnDelegateNG shellScriptExecutionOnDelegateNG;
+
   @Override
   public void decryptRequestDTOs(CustomArtifactDelegateRequest dto) {}
 
@@ -38,20 +41,27 @@ public class CustomArtifactTaskHandler extends DelegateArtifactTaskHandler<Custo
                                                                   .scriptType(attributesRequest.getScriptType())
                                                                   .environmentVariables(environmentVariables)
                                                                   .build();
-    DelegateResponseData shellScriptTaskResponseNG = shellScriptTaskNG.run(shellScriptTaskParametersNG);
+    ShellScriptTaskResponseNG shellScriptTaskResponseNG =
+        shellScriptExecutionOnDelegateNG.executeOnDelegate(shellScriptTaskParametersNG, null);
+    //    DelegateResponseData shellScriptTaskResponseNG = shellScriptTaskNG.run(shellScriptTaskParametersNG);
     return null;
   }
 
-  @Override
-  public ArtifactTaskExecutionResponse getLastSuccessfulBuild(CustomArtifactDelegateRequest attributesRequest) {
-    Map<String, String> environmentVariables = attributesRequest.getInputs().entrySet().stream().collect(
-        Collectors.toMap(Map.Entry::getKey, e -> (String) e.getValue()));
-    ShellScriptTaskParametersNG shellScriptTaskParametersNG = ShellScriptTaskParametersNG.builder()
-                                                                  .script(attributesRequest.getScript())
-                                                                  .scriptType(attributesRequest.getScriptType())
-                                                                  .environmentVariables(environmentVariables)
-                                                                  .build();
-    DelegateResponseData shellScriptTaskResponseNG = shellScriptTaskNG.run(shellScriptTaskParametersNG);
+  public ArtifactTaskExecutionResponse getLastSuccessfulBuild(
+      CustomArtifactDelegateRequest attributesRequest, ILogStreamingTaskClient logStreamingTaskClient) {
+    ShellScriptTaskParametersNG shellScriptTaskParametersNG =
+        ShellScriptTaskParametersNG.builder()
+            .script(attributesRequest.getScript())
+            .scriptType(attributesRequest.getScriptType())
+            .environmentVariables(attributesRequest.getInputs())
+            .outputVars(Collections.singletonList("test"))
+            .executionId(attributesRequest.getExecutionId())
+            .workingDirectory(attributesRequest.getWorkingDirectory())
+            .executeOnDelegate(attributesRequest.isExecuteOnDelegate())
+            .build();
+    ShellScriptTaskResponseNG shellScriptTaskResponseNG =
+        shellScriptExecutionOnDelegateNG.executeOnDelegate(shellScriptTaskParametersNG, logStreamingTaskClient);
+    //    DelegateResponseData shellScriptTaskResponseNG = shellScriptTaskNG.run(shellScriptTaskParametersNG);
     return null;
   }
 }

@@ -50,11 +50,8 @@ public class CustomArtifactTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public ArtifactTaskResponse run(TaskParameters parameters) {
     ArtifactTaskParameters taskParameters = (ArtifactTaskParameters) parameters;
-    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     if (getLogStreamingTaskClient() != null) {
-      LogCallback executionLogCallback =
-          new NGDelegateLogCallback(getLogStreamingTaskClient(), "Execute", false, commandUnitsProgress);
-      return customArtifactTaskHelper.getArtifactCollectResponse(taskParameters, executionLogCallback);
+      return customArtifactTaskHelper.getArtifactCollectResponse(taskParameters, getLogStreamingTaskClient());
     } else {
       return customArtifactTaskHelper.getArtifactCollectResponse(taskParameters);
     }

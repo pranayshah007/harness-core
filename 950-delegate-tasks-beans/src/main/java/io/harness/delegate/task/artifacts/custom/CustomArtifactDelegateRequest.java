@@ -41,13 +41,17 @@ public class CustomArtifactDelegateRequest implements ArtifactSourceDelegateRequ
   List<EncryptedDataDetail> encryptedDataDetails;
   /** Artifact Source type.*/
   ArtifactSourceType sourceType;
-  Map<String, Object> attributes;
-  Map<String, Object> inputs;
+  Map<String, String> attributes;
+  Map<String, String> inputs;
   String script;
   String type;
   ScriptType scriptType;
   String versionPath;
+  boolean executeOnDelegate;
+  String executionId;
+  String workingDirectory;
   private long timeout;
+  String accountId;
   List<String> delegateSelectors;
 
   public Set<String> getDelegateSelectors() {

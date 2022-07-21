@@ -217,7 +217,7 @@ public class ArtifactStepHelper {
             encryptedDataDetails, jenkinsArtifactConfig.getConnectorRef().getValue());
       case CUSTOM_ARTIFACT:
         CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
-        return ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig);
+        return ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, ambiance);
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
