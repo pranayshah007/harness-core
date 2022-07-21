@@ -191,14 +191,14 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
                                                   .accountId(accountId)
                                                   .emailRecipients(eMails)
                                                   .team(Team.OTHER)
-                                                  .templateId("email_ccm_anomaly_alert.txt")
+                                                  .templateId("email_ccm_anomaly_alert")
                                                   .userGroups(Collections.emptyList());
 
     NotificationChannelDTOBuilder slackChannelBuilder = NotificationChannelDTO.builder()
                                                   .accountId(accountId)
                                                   .webhookUrls(slackWebHookUrls)
                                                   .team(Team.OTHER)
-                                                  .templateId("slack_ccm_anomaly_alert.txt")
+                                                  .templateId("slack_ccm_anomaly_alert")
                                                   .userGroups(Collections.emptyList());
 
 //    MSTeamChannelBuilder msTeamChannelBuilder = MSTeamChannel.builder()
