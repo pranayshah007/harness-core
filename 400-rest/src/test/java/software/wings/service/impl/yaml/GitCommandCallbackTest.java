@@ -335,7 +335,7 @@ public class GitCommandCallbackTest extends CategoryTest {
                                                   .gitCommandStatus(GitCommandStatus.FAILURE)
                                                   .errorCode(ErrorCode.GIT_UNSEEN_REMOTE_HEAD_COMMIT)
                                                   .build();
-    doReturn(false).when(featureFlagService).isEnabled(FeatureName.CG_GIT_POLLING, any());
+    doReturn(false).when(featureFlagService).isEnabled(eq(FeatureName.CG_GIT_POLLING), any());
     Map<String, Supplier<ResponseData>> map = new HashMap<>();
     map.put("key", () -> notifyResponseData);
     commandCallback.notify(map);
