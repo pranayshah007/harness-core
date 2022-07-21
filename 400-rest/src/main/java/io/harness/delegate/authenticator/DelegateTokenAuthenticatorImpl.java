@@ -112,11 +112,12 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
     this.validateMtlsHeader(accountId, agentMtlsAuthority);
 
     final String tokenHash = DigestUtils.md5Hex(tokenString);
-    // first validate it from DelegateJWTCache
-    if (validateDelegateJWTFromCache(accountId, tokenHash, shouldSetTokenNameInGlobalContext)) {
-      return;
-    } else if (isEmpty(delegateTokenName)) {
+
+    // we should validate from cache first, when watcher 754xx is deployed.
+    if (isEmpty(delegateTokenName)) {
       log.warn("Delegate token name is empty.");
+    } else if (validateDelegateJWTFromCache(accountId, tokenHash, shouldSetTokenNameInGlobalContext)) {
+      return;
     }
 
     EncryptedJWT encryptedJWT;
