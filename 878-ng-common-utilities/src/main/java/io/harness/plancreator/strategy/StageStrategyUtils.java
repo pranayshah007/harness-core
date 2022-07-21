@@ -14,6 +14,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.IDENTIFIER;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.NAME;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
+import static io.harness.strategy.StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX_ESCAPED;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.jackson.JsonNodeUtils;
@@ -178,8 +179,8 @@ public class StageStrategyUtils {
                                                                  .strategyNodeId(uuid)
                                                                  .adviserObtainments(adviserObtainments)
                                                                  .childNodeId(strategyField.getNode().getUuid())
-                                                                 .strategyNodeName(name)
-                                                                 .strategyNodeIdentifier(identifier)
+                                                                 .strategyNodeName(refineIdentifier(name))
+                                                                 .strategyNodeIdentifier(refineIdentifier(identifier))
                                                                  .build())));
       planCreationResponseMap.put(uuid,
           PlanCreationResponse.builder()
@@ -201,13 +202,14 @@ public class StageStrategyUtils {
       // This is mandatory because it is the parent's responsibility to pass the nodeId and the childNodeId to the
       // strategy node
       metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyField.getNode().getUuid(),
-          ByteString.copyFrom(kryoSerializer.asDeflatedBytes(StrategyMetadata.builder()
-                                                                 .strategyNodeId(fieldUuid)
-                                                                 .adviserObtainments(adviserObtainments)
-                                                                 .childNodeId(strategyField.getNode().getUuid())
-                                                                 .strategyNodeIdentifier(fieldIdentifier)
-                                                                 .strategyNodeName(fieldName)
-                                                                 .build())));
+          ByteString.copyFrom(
+              kryoSerializer.asDeflatedBytes(StrategyMetadata.builder()
+                                                 .strategyNodeId(fieldUuid)
+                                                 .adviserObtainments(adviserObtainments)
+                                                 .childNodeId(strategyField.getNode().getUuid())
+                                                 .strategyNodeIdentifier(refineIdentifier(fieldIdentifier))
+                                                 .strategyNodeName(refineIdentifier(fieldName))
+                                                 .build())));
     }
   }
 
@@ -242,5 +244,12 @@ public class StageStrategyUtils {
     expressionsMap.put(EXPR_START_ESC + "strategy.iteration" + EXPR_END_ESC, String.valueOf(currentIteration));
     expressionsMap.put(EXPR_START_ESC + "strategy.iterations" + EXPR_END, String.valueOf(totalIteration));
     return expressionsMap;
+  }
+
+  /**
+   * This function remove <+strategy.identifierPostFix> if present on the passed string
+   */
+  private String refineIdentifier(String identifier) {
+    return identifier.replaceAll(STRATEGY_IDENTIFIER_POSTFIX_ESCAPED, "");
   }
 }

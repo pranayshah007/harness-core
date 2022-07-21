@@ -8,6 +8,7 @@
 package io.harness.service.instancesynchandler;
 
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -15,8 +16,10 @@ import io.harness.InstancesTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
@@ -24,7 +27,9 @@ import io.harness.dtos.deploymentinfo.NativeHelmDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
 import io.harness.entities.InstanceType;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.k8s.model.HelmVersion;
+import io.harness.models.infrastructuredetails.K8sInfrastructureDetails;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.perpetualtask.PerpetualTaskType;
 import io.harness.rule.Owner;
@@ -44,6 +49,18 @@ public class NativeHelmInstanceSyncHandlerTest extends InstancesTestBase {
   private static final HelmChartInfo HELM_CHART_INFO = HelmChartInfo.builder().build();
   private static final HelmVersion HELM_VERSION = HelmVersion.V3;
   @InjectMocks private NativeHelmInstanceSyncHandler nativeHelmInstanceSyncHandler;
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testGetInfrastructureDetails() {
+    InstanceInfoDTO instanceInfoDTO = getInstanceInfo();
+    K8sInfrastructureDetails infrastructureDetails =
+        (K8sInfrastructureDetails) nativeHelmInstanceSyncHandler.getInfrastructureDetails(instanceInfoDTO);
+
+    assertThat(infrastructureDetails.getNamespace()).isEqualTo(NAMESPACE);
+    assertThat(infrastructureDetails.getReleaseName()).isEqualTo(RELEASE_NAME);
+  }
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
@@ -98,6 +115,13 @@ public class NativeHelmInstanceSyncHandlerTest extends InstancesTestBase {
     assertThat(nativeHelmInstanceInfoDTO.getHelmChartInfo()).isEqualTo(HELM_CHART_INFO);
   }
 
+  @Test(expected = InvalidArgumentsException.class)
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testGetInstanceInfoForServerInstanceWhenInvalidArgumentsException() {
+    nativeHelmInstanceSyncHandler.getInstanceInfoForServerInstance(K8sServerInstanceInfo.builder().build());
+  }
+
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
@@ -115,6 +139,22 @@ public class NativeHelmInstanceSyncHandlerTest extends InstancesTestBase {
     assertThat(nativeHelmDeploymentInfoDTO.getNamespaces()).contains(NAMESPACE);
   }
 
+  @Test(expected = InvalidArgumentsException.class)
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testGetDeploymentInfoWhenEmptyListShouldThrowInvalidArgumentsException() {
+    K8sDirectInfrastructureOutcome k8sDirectInfrastructureOutcome = K8sDirectInfrastructureOutcome.builder().build();
+    nativeHelmInstanceSyncHandler.getDeploymentInfo(k8sDirectInfrastructureOutcome, Collections.emptyList());
+  }
+
+  @Test(expected = InvalidArgumentsException.class)
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testGetDeploymentInfoWhenNotInstanceOfK8sShouldThrowInvalidArgumentsException() {
+    AzureWebAppInfrastructureOutcome infrastructureOutcome = AzureWebAppInfrastructureOutcome.builder().build();
+    nativeHelmInstanceSyncHandler.getDeploymentInfo(infrastructureOutcome, getServiceInstanceInfos());
+  }
+
   private List<ServerInstanceInfo> getServiceInstanceInfos() {
     return Collections.singletonList(NativeHelmServerInstanceInfo.builder()
                                          .podName(POD_NAME)
@@ -123,5 +163,15 @@ public class NativeHelmInstanceSyncHandlerTest extends InstancesTestBase {
                                          .helmChartInfo(HELM_CHART_INFO)
                                          .helmVersion(HELM_VERSION)
                                          .build());
+  }
+
+  private InstanceInfoDTO getInstanceInfo() {
+    return NativeHelmInstanceInfoDTO.builder()
+        .podName(POD_NAME)
+        .namespace(NAMESPACE)
+        .releaseName(RELEASE_NAME)
+        .helmChartInfo(HELM_CHART_INFO)
+        .helmVersion(HELM_VERSION)
+        .build();
   }
 }

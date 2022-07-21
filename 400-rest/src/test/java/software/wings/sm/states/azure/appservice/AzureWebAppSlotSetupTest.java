@@ -414,7 +414,7 @@ public class AzureWebAppSlotSetupTest extends WingsBaseTest {
     assertThat(state.validateFields().size()).isEqualTo(1);
 
     state.setDeploymentSlot(APP_NAME);
-    assertThat(state.validateFields().size()).isEqualTo(1);
+    assertThat(state.validateFields().size()).isEqualTo(0);
   }
 
   @Test

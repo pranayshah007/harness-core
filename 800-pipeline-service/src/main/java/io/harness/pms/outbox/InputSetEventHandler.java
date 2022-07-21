@@ -77,7 +77,7 @@ public class InputSetEventHandler {
                                 .action(Action.UPDATE)
                                 .module(ModuleType.PMS)
                                 .timestamp(outboxEvent.getCreatedAt())
-                                .oldYaml(event.getOldInputSet().getYaml())
+                                .oldYaml(event.getOldInputSet() == null ? null : event.getOldInputSet().getYaml())
                                 .newYaml(event.getNewInputSet().getYaml())
                                 .build();
     Principal principal = null;
@@ -86,7 +86,7 @@ public class InputSetEventHandler {
     } else if (globalContext.get(PRINCIPAL_CONTEXT) != null) {
       principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
     }
-    if (event.getIsForOldGitSync()) {
+    if (event.getIsForOldGitSync() || event.getOldInputSet() == null) {
       return true;
     }
     return auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);

@@ -34,10 +34,10 @@ import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1NodeList;
 import io.kubernetes.client.util.CallGeneratorParams;
+import java.time.OffsetDateTime;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
 
 @OwnedBy(HarnessTeam.CE)
 @Slf4j
@@ -109,8 +109,9 @@ public class NodeWatcher implements ResourceEventHandler<V1Node> {
     try {
       log.debug(NODE_EVENT_MSG, node.getMetadata().getUid(), EventType.ADDED);
 
-      DateTime creationTimestamp = node.getMetadata().getCreationTimestamp();
-      if (!isClusterSeen || creationTimestamp == null || creationTimestamp.isAfter(DateTime.now().minusHours(2))) {
+      OffsetDateTime creationTimestamp = node.getMetadata().getCreationTimestamp();
+      if (!isClusterSeen || creationTimestamp == null
+          || creationTimestamp.isAfter(OffsetDateTime.now().minusHours(2))) {
         publishNodeInfo(node);
       } else {
         publishedNodes.add(node.getMetadata().getUid());
@@ -133,7 +134,7 @@ public class NodeWatcher implements ResourceEventHandler<V1Node> {
 
   public void publishNodeStoppedEvent(V1Node node) {
     final Timestamp timestamp = HTimestamps.fromMillis(
-        ofNullable(node.getMetadata().getDeletionTimestamp()).orElse(DateTime.now()).getMillis());
+        ofNullable(node.getMetadata().getDeletionTimestamp()).orElse(OffsetDateTime.now()).toInstant().toEpochMilli());
 
     NodeEvent nodeStoppedEvent = NodeEvent.newBuilder(nodeEventPrototype)
                                      .setNodeUid(node.getMetadata().getUid())
@@ -150,7 +151,8 @@ public class NodeWatcher implements ResourceEventHandler<V1Node> {
 
   public void publishNodeInfo(V1Node node) {
     if (!publishedNodes.contains(node.getMetadata().getUid())) {
-      final Timestamp timestamp = HTimestamps.fromMillis(node.getMetadata().getCreationTimestamp().getMillis());
+      final Timestamp timestamp =
+          HTimestamps.fromMillis(node.getMetadata().getCreationTimestamp().toInstant().toEpochMilli());
 
       NodeInfo nodeInfo =
           NodeInfo.newBuilder(nodeInfoPrototype)

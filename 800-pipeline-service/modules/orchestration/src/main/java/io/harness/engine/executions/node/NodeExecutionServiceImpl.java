@@ -445,7 +445,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
                                     .in(statuses)
                                     .and(NodeExecutionKeys.oldRetry)
                                     .is(false);
-    Criteria queuedNodeCriteria = where(NodeExecutionKeys.status).in(Status.QUEUED);
+    Criteria queuedNodeCriteria = where(NodeExecutionKeys.status).in(Status.QUEUED, Status.INPUT_WAITING);
     Query query = query(
         where(NodeExecutionKeys.planExecutionId).is(planExecutionId).orOperator(leafNodeCriteria, queuedNodeCriteria));
     UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeExecution.class);

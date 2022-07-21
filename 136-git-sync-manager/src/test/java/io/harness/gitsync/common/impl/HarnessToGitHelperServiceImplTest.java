@@ -38,6 +38,7 @@ import io.harness.gitsync.ErrorDetails;
 import io.harness.gitsync.FileInfo;
 import io.harness.gitsync.GetFileRequest;
 import io.harness.gitsync.GetFileResponse;
+import io.harness.gitsync.GetRepoUrlRequest;
 import io.harness.gitsync.GitMetaData;
 import io.harness.gitsync.RepoDetails;
 import io.harness.gitsync.UpdateFileRequest;
@@ -89,6 +90,7 @@ public class HarnessToGitHelperServiceImplTest extends CategoryTest {
   String repoName = "repoName";
   String hintMessage = "hintMessage";
   String explanationMessage = "explanationMessage";
+  String repoUrl = "repoUrl";
   ScopeIdentifiers scopeIdentifiers;
   int prNumber = 0;
 
@@ -349,6 +351,51 @@ public class HarnessToGitHelperServiceImplTest extends CategoryTest {
     assertThat(createPRResponse.getPrNumber()).isEqualTo(prNumber);
   }
 
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetRepoUrlWhenSuccess() {
+    when(scmFacilitatorService.getRepoUrl(any(), any(), any())).thenReturn(repoUrl);
+    io.harness.gitsync.GetRepoUrlResponse response =
+        harnessToGitHelperService.getRepoUrl(GetRepoUrlRequest.newBuilder()
+                                                 .setConnectorRef(connectorRef)
+                                                 .setRepoName(repoName)
+                                                 .setScopeIdentifiers(scopeIdentifiers)
+                                                 .build());
+
+    assertThat(response.getStatusCode()).isEqualTo(HTTP_200);
+    assertThat(response.getRepoUrl()).isEqualTo(repoUrl);
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetRepoUrlWhenExceptionOccurs() {
+    when(scmFacilitatorService.getRepoUrl(any(), any(), any())).thenThrow(getInvalidCredsDefaultException());
+    io.harness.gitsync.GetRepoUrlResponse response =
+        harnessToGitHelperService.getRepoUrl(getGetRepoUrlRequestDefault());
+
+    assertThat(response.getStatusCode()).isEqualTo(401);
+    assertGitErrorDetails(response.getError(),
+        ErrorDetails.newBuilder()
+            .setErrorMessage(errorMessage)
+            .setHintMessage(hintMessage)
+            .setExplanationMessage(explanationMessage)
+            .build());
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetRepoUrlWhenWingsExceptionOccurs() {
+    when(scmFacilitatorService.getRepoUrl(any(), any(), any())).thenThrow(getDefaultWingsException());
+    io.harness.gitsync.GetRepoUrlResponse response =
+        harnessToGitHelperService.getRepoUrl(getGetRepoUrlRequestDefault());
+
+    assertThat(response.getStatusCode()).isEqualTo(400);
+    assertThat(response.getError().getErrorMessage()).isEqualTo(ExceptionUtils.getMessage(getDefaultWingsException()));
+  }
+
   private FileInfo getFileInfoDefault(String commitId, ChangeType changeType) {
     return getFileInfoDefault(commitId, changeType, false);
   }
@@ -423,6 +470,14 @@ public class HarnessToGitHelperServiceImplTest extends CategoryTest {
         .setRepoName(repoName)
         .setScopeIdentifiers(scopeIdentifiers)
         .setConnectorRef(connectorRef)
+        .build();
+  }
+
+  private GetRepoUrlRequest getGetRepoUrlRequestDefault() {
+    return GetRepoUrlRequest.newBuilder()
+        .setConnectorRef(connectorRef)
+        .setRepoName(repoName)
+        .setScopeIdentifiers(scopeIdentifiers)
         .build();
   }
 

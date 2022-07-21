@@ -370,4 +370,5 @@ public interface AzureConstants {
   String KUBECFG_CLIENT_ID = "client-id";
   String KUBECFG_CONFIG_MODE = "config-mode";
   String KUBECFG_TENANT_ID = "tenant-id";
+  String ACR_DEFAULT_DOCKER_USERNAME = "00000000-0000-0000-0000-000000000000";
 }

@@ -134,6 +134,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -141,7 +142,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import okhttp3.Call;
-import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -966,7 +966,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
                               .addNewItem() // With deletion timestamp
                               .withNewMetadata()
                               .withName("pod-2")
-                              .withDeletionTimestamp(DateTime.now())
+                              .withDeletionTimestamp(OffsetDateTime.now())
                               .endMetadata()
                               .withStatus(terminatedStatus)
                               .endItem()

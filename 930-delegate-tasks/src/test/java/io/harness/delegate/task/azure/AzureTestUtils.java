@@ -14,6 +14,14 @@ import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.model.AzureAuthenticationType;
 import io.harness.azure.model.AzureConfig;
 import io.harness.delegate.beans.azure.registry.AzureRegistryType;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
+import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureSecretType;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
 import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
@@ -45,12 +53,19 @@ public class AzureTestUtils {
   public static final byte[] CERT = "test-cert".getBytes();
   public static final String TAG = "tag";
   public static final String IMAGE = "image";
+  public static final String REGISTRY_HOSTNAME = "test.registry.io";
 
-  public AzureArtifactConfig createTestContainerArtifactConfig() {
+  public AzureContainerArtifactConfig createTestContainerArtifactConfig() {
+    return createTestContainerArtifactConfig(null);
+  }
+
+  public AzureContainerArtifactConfig createTestContainerArtifactConfig(ConnectorConfigDTO connector) {
     return AzureContainerArtifactConfig.builder()
+        .connectorConfig(connector)
         .image(TEST_IMAGE)
         .tag(TEST_IMAGE_TAG)
         .registryType(AzureRegistryType.DOCKER_HUB_PRIVATE)
+        .registryHostname(REGISTRY_HOSTNAME)
         .build();
   }
 
@@ -102,6 +117,22 @@ public class AzureTestUtils {
                 .build())
         .tag(TAG)
         .image(IMAGE)
+        .build();
+  }
+
+  public AzureConnectorDTO createAzureConnectorDTO() {
+    return AzureConnectorDTO.builder()
+        .credential(AzureCredentialDTO.builder()
+                        .azureCredentialType(AzureCredentialType.MANUAL_CREDENTIALS)
+                        .config(AzureManualDetailsDTO.builder()
+                                    .tenantId(TENANT_ID)
+                                    .clientId(CLIENT_ID)
+                                    .authDTO(AzureAuthDTO.builder()
+                                                 .azureSecretType(AzureSecretType.SECRET_KEY)
+                                                 .credentials(AzureClientSecretKeyDTO.builder().build())
+                                                 .build())
+                                    .build())
+                        .build())
         .build();
   }
 }

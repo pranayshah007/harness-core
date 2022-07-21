@@ -109,6 +109,7 @@ java_library(
         "@maven//:io_harness_cv_data_collection_dsl",
         "@maven//:io_kubernetes_client_java",
         "@maven//:io_kubernetes_client_java_api",
+        "@maven//:io_kubernetes_client_java_api_fluent",
         "@maven//:junit_junit",
         "@maven//:org_apache_commons_commons_email",
         "@maven//:org_apache_commons_commons_lang3",

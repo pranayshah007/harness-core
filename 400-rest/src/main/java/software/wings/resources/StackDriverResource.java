@@ -93,7 +93,8 @@ public class StackDriverResource {
   @ExceptionMetered
   public RestResponse<Object> getSampleLogRecord(
       @QueryParam("accountId") String accountId, @Valid StackDriverSetupTestNodeData stackDriverSetupTestNodeData) {
-    return new RestResponse<>(stackDriverService.getLogSample(accountId, stackDriverSetupTestNodeData.getSettingId(),
-        stackDriverSetupTestNodeData.getQuery(), stackDriverSetupTestNodeData.getGuid()));
+    return new RestResponse<>(stackDriverService.getLogSample(accountId, stackDriverSetupTestNodeData.getAppId(),
+        stackDriverSetupTestNodeData.getSettingId(), stackDriverSetupTestNodeData.getQuery(),
+        stackDriverSetupTestNodeData.getGuid()));
   }
 }

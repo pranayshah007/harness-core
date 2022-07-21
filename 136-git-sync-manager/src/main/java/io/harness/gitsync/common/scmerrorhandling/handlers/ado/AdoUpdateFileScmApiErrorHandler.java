@@ -24,13 +24,14 @@ import lombok.extern.slf4j.Slf4j;
 public class AdoUpdateFileScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String UPDATE_FILE_REQUEST_FAILURE =
       "The requested file<FILEPATH> couldn't be updated in Azure. ";
-  public static final String CREATE_FILE_BAD_REQUEST_ERROR_EXPLANATION =
-      "There was issue while updating file<FILEPATH> in Azure. Possible reasons can be:\n"
-      + "1. The requested branch<BRANCH> doesn't exist in given Azure repository<REPO>."
-      + "2. The current version of file is outdated with respect to git branch head";
-  public static final String CREATE_FILE_BAD_REQUEST_ERROR_HINT = "Please check the following:\n"
-      + "1. If the requested branch<BRANCH> exists or not in given Azure repository<REPO>."
-      + "2. Try and make changes on updated version of the file.";
+  public static final String UPDATE_FILE_BAD_REQUEST_ERROR_EXPLANATION =
+      "There was issue while updating file in Azure. The requested branch<BRANCH> doesn't exist in given Azure repository.";
+  public static final String UPDATE_FILE_BAD_REQUEST_ERROR_HINT =
+      "Please check if requested branch<BRANCH> exists or not.";
+  public static final String UPDATE_FILE_CONFLICT_ERROR_HINT =
+      "Please resolve the conflicts with latest remote file<FILEPATH>";
+  public static final String UPDATE_FILE_CONFLICT_ERROR_EXPLANATION =
+      "The requested file<FILEPATH> has conflicts with remote file.";
 
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
@@ -43,14 +44,19 @@ public class AdoUpdateFileScmApiErrorHandler implements ScmApiErrorHandler {
             new ScmUnauthorizedException(errorMessage));
       case 400:
         throw NestedExceptionUtils.hintWithExplanationException(
-            ErrorMessageFormatter.formatMessage(CREATE_FILE_BAD_REQUEST_ERROR_HINT, errorMetadata),
-            ErrorMessageFormatter.formatMessage(CREATE_FILE_BAD_REQUEST_ERROR_EXPLANATION, errorMetadata),
+            ErrorMessageFormatter.formatMessage(UPDATE_FILE_BAD_REQUEST_ERROR_HINT, errorMetadata),
+            ErrorMessageFormatter.formatMessage(UPDATE_FILE_BAD_REQUEST_ERROR_EXPLANATION, errorMetadata),
             new ScmBadRequestException(errorMessage));
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(
             ErrorMessageFormatter.formatMessage(REPO_NOT_FOUND, errorMetadata),
             ErrorMessageFormatter.formatMessage(
                 UPDATE_FILE_REQUEST_FAILURE + ScmErrorExplanations.REPO_NOT_FOUND, errorMetadata),
+            new ScmBadRequestException(errorMessage));
+      case 409:
+        throw NestedExceptionUtils.hintWithExplanationException(
+            ErrorMessageFormatter.formatMessage(UPDATE_FILE_CONFLICT_ERROR_HINT, errorMetadata),
+            ErrorMessageFormatter.formatMessage(UPDATE_FILE_CONFLICT_ERROR_EXPLANATION, errorMetadata),
             new ScmBadRequestException(errorMessage));
       default:
         log.error(String.format("Error while updating Azure file: [%s: %s]", statusCode, errorMessage));
