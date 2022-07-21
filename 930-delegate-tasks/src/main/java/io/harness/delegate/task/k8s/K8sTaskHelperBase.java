@@ -169,7 +169,6 @@ import io.harness.manifest.CustomManifestSource;
 import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.serializer.YamlUtils;
 import io.harness.shell.SshSessionConfig;
 import io.harness.yaml.BooleanPatchedRepresenter;
 
@@ -196,7 +195,6 @@ import io.fabric8.istio.api.networking.v1alpha3.TCPRoute;
 import io.fabric8.istio.api.networking.v1alpha3.TLSRoute;
 import io.fabric8.istio.api.networking.v1alpha3.VirtualService;
 import io.fabric8.istio.api.networking.v1alpha3.VirtualServiceList;
-import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.github.resilience4j.retry.Retry;
 import io.kubernetes.client.openapi.ApiException;
@@ -762,7 +760,7 @@ public class K8sTaskHelperBase {
     VirtualService virtualService = (VirtualService) kubernetesClient.load(inputStream).get().get(0);
     updateVirtualServiceWithDestinationWeights(istioDestinationWeights, virtualService, executionLogCallback);
 
-    kubernetesResource.setSpec(KubernetesHelper.toYaml(virtualService));
+    kubernetesResource.setSpec(YamlUtils.toYaml(virtualService));
 
     return virtualService;
   }
@@ -807,7 +805,7 @@ public class K8sTaskHelperBase {
     DestinationRule destinationRule = (DestinationRule) kubernetesClient.load(inputStream).get().get(0);
     destinationRule.getSpec().setSubsets(generateSubsetsForDestinationRule(subsets));
 
-    kubernetesResource.setSpec(KubernetesHelper.toYaml(destinationRule));
+    kubernetesResource.setSpec(YamlUtils.toYaml(destinationRule));
 
     return destinationRule;
   }

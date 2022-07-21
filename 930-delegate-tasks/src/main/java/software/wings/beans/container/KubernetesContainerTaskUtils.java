@@ -25,7 +25,6 @@ import io.harness.exception.WingsException;
 import io.harness.k8s.KubernetesConvention;
 import io.harness.yaml.YamlUtils;
 
-import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;

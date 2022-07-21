@@ -112,7 +112,6 @@ import io.fabric8.istio.api.networking.v1alpha3.VirtualService;
 import io.fabric8.istio.api.networking.v1alpha3.VirtualServiceList;
 import io.fabric8.istio.api.networking.v1alpha3.VirtualServiceSpec;
 import io.fabric8.istio.client.IstioClient;
-import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerStateRunning;

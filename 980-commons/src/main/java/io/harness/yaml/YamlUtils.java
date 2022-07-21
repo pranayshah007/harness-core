@@ -100,4 +100,9 @@ public class YamlUtils {
     objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
     return objectMapper;
   }
+
+  public static String toYaml(Object data) throws IOException {
+    ObjectMapper mapper = createYamlObjectMapper();
+    return mapper.writeValueAsString(data);
+  }
 }

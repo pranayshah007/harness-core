@@ -20,6 +20,7 @@ java_library(
         "@maven//:ch_qos_logback_contrib_logback_jackson",
         "@maven//:ch_qos_logback_contrib_logback_json_classic",
         "@maven//:com_auth0_java_jwt",
+        "@maven//:io_fabric8_kubernetes_model_core",
         "@maven//:com_fasterxml_uuid_java_uuid_generator",
         "@maven//:com_github_ben_manes_caffeine_caffeine",
         "@maven//:com_github_reinert_jjschema",
