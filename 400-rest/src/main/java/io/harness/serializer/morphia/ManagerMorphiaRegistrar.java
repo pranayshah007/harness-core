@@ -9,6 +9,7 @@ package io.harness.serializer.morphia;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.agent.beans.AgentMtlsEndpoint;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.cluster.entities.AzureKubernetesCluster;
 import io.harness.ccm.cluster.entities.ClusterRecord;
@@ -844,6 +845,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(DeletedEntity.class);
     set.add(ARMInfrastructureProvisioner.class);
     set.add(AccessRequest.class);
+    set.add(AgentMtlsEndpoint.class);
     set.add(ArtifactView.class);
   }
 

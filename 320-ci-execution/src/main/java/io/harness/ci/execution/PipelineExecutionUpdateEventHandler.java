@@ -33,6 +33,9 @@ import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepUtils;
 
+import software.wings.beans.SerializationFormat;
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Duration;
@@ -80,19 +83,9 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
 
           log.info("Received event with status {} to clean planExecutionId {}, stage {}", status,
               ambiance.getPlanExecutionId(), level.getIdentifier());
-          List<TaskSelector> taskSelectors = stageCleanupUtility.fetchDelegateSelector(ambiance);
 
-          Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
           DelegateTaskRequest delegateTaskRequest =
-              DelegateTaskRequest.builder()
-                  .accountId(accountId)
-                  .taskSelectors(taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()))
-                  .taskSetupAbstractions(abstractions)
-                  .executionTimeout(java.time.Duration.ofSeconds(900))
-                  .taskType("CI_CLEANUP")
-                  .taskParameters(ciCleanupTaskParams)
-                  .taskDescription("CI cleanup pod task")
-                  .build();
+              getDelegateCleanupTaskRequest(ambiance, ciCleanupTaskParams, accountId);
 
           String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
           log.info("Submitted cleanup request with taskId {} for planExecutionId {}, stage {}", taskId,
@@ -136,6 +129,30 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
       log.error("Failed to send git status update task for node {}, planExecutionId {}", level.getRuntimeId(),
           ambiance.getPlanExecutionId(), ex);
     }
+  }
+
+  private DelegateTaskRequest getDelegateCleanupTaskRequest(
+      Ambiance ambiance, CICleanupTaskParams ciCleanupTaskParams, String accountId) {
+    List<TaskSelector> taskSelectors = stageCleanupUtility.fetchDelegateSelector(ambiance);
+
+    Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
+    String taskType = "CI_CLEANUP";
+    SerializationFormat serializationFormat = SerializationFormat.KRYO;
+    if (ciCleanupTaskParams.getType() == CICleanupTaskParams.Type.DLITE_VM) {
+      taskType = TaskType.DLITE_CI_VM_CLEANUP_TASK.getDisplayName();
+      serializationFormat = SerializationFormat.JSON;
+    }
+
+    return DelegateTaskRequest.builder()
+        .accountId(accountId)
+        .taskSelectors(taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()))
+        .taskSetupAbstractions(abstractions)
+        .executionTimeout(java.time.Duration.ofSeconds(900))
+        .taskType(taskType)
+        .serializationFormat(serializationFormat)
+        .taskParameters(ciCleanupTaskParams)
+        .taskDescription("CI cleanup pod task")
+        .build();
   }
 
   // When trigger has "Auto Abort Prev Executions" ebanled, it will abort prev running execution and start a new one.

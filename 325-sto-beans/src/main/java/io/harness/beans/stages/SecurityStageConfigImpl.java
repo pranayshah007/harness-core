@@ -7,6 +7,7 @@
 
 package io.harness.beans.stages;
 
+import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -60,6 +61,8 @@ public class SecurityStageConfigImpl implements IntegrationStageConfig {
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = UseFromStageInfraYaml.class)
   Infrastructure infrastructure;
+
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> runsOn;
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = "[Lio.harness.beans.dependencies.DependencyElement;")
   ParameterField<List<DependencyElement>> serviceDependencies;

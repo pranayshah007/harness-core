@@ -62,11 +62,11 @@ import io.kubernetes.client.openapi.models.V1VolumeBuilder;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.Watch;
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -85,8 +85,8 @@ public class PodWatcherTest extends CategoryTest {
   private PVCFetcher pvcFetcher;
   private NamespaceFetcher namespaceFetcher;
 
-  private static final DateTime TIMESTAMP = DateTime.now();
-  private static final DateTime DELETION_TIMESTAMP = TIMESTAMP.plusMinutes(5);
+  private static final OffsetDateTime TIMESTAMP = OffsetDateTime.now();
+  private static final OffsetDateTime DELETION_TIMESTAMP = TIMESTAMP.plusMinutes(5);
   private static final String START_RV = "1001";
   private static final String END_RV = "1002";
   private static final String MAP_KEY_WITH_DOT = "harness.io/created.by";
@@ -343,19 +343,19 @@ public class PodWatcherTest extends CategoryTest {
   private void deletedMessageAssertions(PodEvent podEvent) {
     assertThat(podEvent.getPodUid()).isEqualTo("948e988d-d300-11e9-b63d-4201ac100a04");
     assertThat(podEvent.getType()).isEqualTo(EVENT_TYPE_TERMINATED);
-    assertThat(HTimestamps.toMillis(podEvent.getTimestamp())).isEqualTo(DELETION_TIMESTAMP.getMillis());
+    assertThat(HTimestamps.toMillis(podEvent.getTimestamp())).isEqualTo(DELETION_TIMESTAMP.toInstant().toEpochMilli());
   }
 
   private void scheduledMessageAssertions(PodEvent podEvent) {
     assertThat(podEvent.getPodUid()).isEqualTo("948e988d-d300-11e9-b63d-4201ac100a04");
     assertThat(podEvent.getType()).isEqualTo(EVENT_TYPE_SCHEDULED);
-    assertThat(HTimestamps.toMillis(podEvent.getTimestamp())).isEqualTo(TIMESTAMP.getMillis());
+    assertThat(HTimestamps.toMillis(podEvent.getTimestamp())).isEqualTo(TIMESTAMP.toInstant().toEpochMilli());
   }
 
   private void infoMessageAssertions(PodInfo podInfo) {
     assertThat(podInfo.getPodUid()).isEqualTo("948e988d-d300-11e9-b63d-4201ac100a04");
     assertThat(podInfo.getPodName()).isEqualTo("manager-79cc97bdfb-r6kzs");
-    assertThat(HTimestamps.toMillis(podInfo.getCreationTimestamp())).isEqualTo(TIMESTAMP.getMillis());
+    assertThat(HTimestamps.toMillis(podInfo.getCreationTimestamp())).isEqualTo(TIMESTAMP.toInstant().toEpochMilli());
     assertThat(podInfo.getNamespace()).isEqualTo("harness");
     assertThat(podInfo.getNodeName()).isEqualTo("gke-pr-private-pool-1-49d0f375-12xx");
     assertThat(podInfo.getContainersList())

@@ -59,6 +59,7 @@ public class K8sScaleStep extends TaskExecutableWithRollbackAndRbac<K8sDeployRes
   public static final String K8S_SCALE_COMMAND_NAME = "Scale";
   @Inject private OutcomeService outcomeService;
   @Inject private K8sStepHelper k8sStepHelper;
+  @Inject private CDStepHelper cdStepHelper;
   @Inject private InstanceInfoService instanceInfoService;
 
   @Override
@@ -79,7 +80,7 @@ public class K8sScaleStep extends TaskExecutableWithRollbackAndRbac<K8sDeployRes
 
     boolean skipSteadyCheck = CDStepHelper.getParameterFieldBooleanValue(scaleStepParameter.getSkipSteadyStateCheck(),
         K8sScaleBaseStepInfoKeys.skipSteadyStateCheck, stepElementParameters);
-    String releaseName = k8sStepHelper.getReleaseName(ambiance, infrastructure);
+    String releaseName = cdStepHelper.getReleaseName(ambiance, infrastructure);
     String accountId = AmbianceUtils.getAccountId(ambiance);
 
     K8sScaleRequest request =
@@ -94,9 +95,9 @@ public class K8sScaleStep extends TaskExecutableWithRollbackAndRbac<K8sDeployRes
             .taskType(K8sTaskType.SCALE)
             .timeoutIntervalInMin(
                 NGTimeConversionHelper.convertTimeStringToMinutes(stepElementParameters.getTimeout().getValue()))
-            .k8sInfraDelegateConfig(k8sStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
-            .useNewKubectlVersion(k8sStepHelper.isUseNewKubectlVersion(accountId))
-            .useK8sApiForSteadyStateCheck(k8sStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
+            .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
+            .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
+            .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);

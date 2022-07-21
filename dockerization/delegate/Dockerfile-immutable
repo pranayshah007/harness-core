@@ -31,6 +31,8 @@ RUN rm /opt/harness-delegate/client_tools.sh
 COPY --from=adoptopenjdk/openjdk11:x86_64-ubi-minimal-jre-11.0.14_9 /opt/java/openjdk/ /opt/java/openjdk/
 
 ENV HOME=/opt/harness-delegate
+ENV CLIENT_TOOLS_DOWNLOAD_DISABLED=$disable_client_tools
+ENV INSTALL_CLIENT_TOOLS_IN_BACKGROUND=$disable_client_tools
 ENV JAVA_HOME=/opt/java/openjdk/
 ENV PATH="$JAVA_HOME/bin:${PATH}"
 

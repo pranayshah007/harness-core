@@ -34,7 +34,6 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(CI)
 public class AzureRepoIssueCommentSpec implements AzureRepoEventSpec {
   String connectorRef;
-  String projectName;
   String repoName;
   List<AzureRepoIssueCommentAction> actions;
   List<TriggerEventDataCondition> headerConditions;

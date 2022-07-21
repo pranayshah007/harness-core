@@ -13,9 +13,9 @@ import io.harness.cvng.beans.change.KubernetesChangeEventMetadata;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
 
 @SuperBuilder
 @Slf4j
@@ -50,10 +50,10 @@ public class ChangeIntelStatefulSetHandler extends BaseChangeHandler<V1StatefulS
       log.info("StatefulSet doesn't have an ownerReference. Sending event Data");
       String newYaml = k8sHandlerUtils.yamlDump(v1StatefulSet);
       ((KubernetesChangeEventMetadata) eventDTO.getMetadata()).setNewYaml(newYaml);
-      DateTime dateTime = v1StatefulSet.getMetadata().getCreationTimestamp();
+      OffsetDateTime dateTime = v1StatefulSet.getMetadata().getCreationTimestamp();
       if (dateTime != null) {
         ((KubernetesChangeEventMetadata) eventDTO.getMetadata())
-            .setTimestamp(Instant.ofEpochMilli(dateTime.toDateTime().toInstant().getMillis()));
+            .setTimestamp(Instant.ofEpochMilli(dateTime.toInstant().toEpochMilli()));
       }
       ((KubernetesChangeEventMetadata) eventDTO.getMetadata()).setAction(KubernetesChangeEventMetadata.Action.Add);
       sendEvent(accountId, eventDTO);

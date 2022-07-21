@@ -95,6 +95,9 @@ import org.mindrot.jbcrypt.BCrypt;
 @Singleton
 @OwnedBy(GTM)
 public class SignupServiceImpl implements SignupService {
+  public static final String INTENT = "module";
+  public static final String SIGNUP_ACTION = "license_type";
+  public static final String EDITION = "plan";
   private AccountService accountService;
   private UserClient userClient;
   private SignupValidator signupValidator;
@@ -441,6 +444,16 @@ public class SignupServiceImpl implements SignupService {
     AccountDTO account = createAccount(signupDTO);
     UserInfo oAuthUser = createOAuthUser(dto, account);
 
+    if (dto.getIntent() != null && !dto.getIntent().equals("")) {
+      oAuthUser.setIntent(dto.getIntent().toString());
+    }
+    if (dto.getEdition() != null) {
+      oAuthUser.setEdition(dto.getEdition().toString());
+    }
+    if (dto.getSignupAction() != null) {
+      oAuthUser.setSignupAction(dto.getSignupAction().toString());
+    }
+
     sendSucceedTelemetryEvent(
         dto.getEmail(), dto.getUtmInfo(), account.getIdentifier(), oAuthUser, SignupType.OAUTH_FLOW, account.getName());
 
@@ -623,9 +636,20 @@ public class SignupServiceImpl implements SignupService {
 
     // Wait 20 seconds, to ensure identify is sent before track
     ScheduledExecutorService tempExecutor = Executors.newSingleThreadScheduledExecutor();
+    HashMap<String, Object> trackProperties = properties;
+
+    if (userInfo.getIntent() != null && !userInfo.getIntent().equals("")) {
+      trackProperties.put(INTENT, userInfo.getIntent());
+    }
+    if (userInfo.getSignupAction() != null) {
+      trackProperties.put(SIGNUP_ACTION, userInfo.getSignupAction());
+    }
+    if (userInfo.getEdition() != null) {
+      trackProperties.put(EDITION, userInfo.getEdition());
+    }
     tempExecutor.schedule(
         ()
-            -> telemetryReporter.sendTrackEvent(SUCCEED_EVENT_NAME, email, accountId, properties,
+            -> telemetryReporter.sendTrackEvent(SUCCEED_EVENT_NAME, email, accountId, trackProperties,
                 ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build(), Category.SIGN_UP),
         20, TimeUnit.SECONDS);
     log.info("Signup telemetry sent");

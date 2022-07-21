@@ -1,5 +1,7 @@
 parallel:
-      - step:
+      - __uuid: parallel1
+        step:
+          __uuid: "test"
           type: Http
           name: <+strategy.iterations>
           identifier: <+strategy.iteration>
@@ -11,7 +13,9 @@ parallel:
             headers: []
             outputVariables: []
           timeout: 1m
-      - step:
+      - __uuid: parallel2
+        step:
+          _uuid: "test1"
           type: Http
           name: bing
           identifier: bing

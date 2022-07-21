@@ -7,8 +7,6 @@ directories:
   420-delegate-service
   460-capability
   470-alert
-  882-pms-sdk-core
-  879-pms-sdk
   910-delegate-service-driver
   910-delegate-task-grpc-service
   920-delegate-agent-beans

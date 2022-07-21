@@ -17,6 +17,7 @@ import static java.util.Arrays.asList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppSlotDeploymentDataOutput;
@@ -69,7 +70,10 @@ public class AzureWebAppRollbackStep extends TaskExecutableWithRollbackAndRbac<A
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    AzureAppServicePreDeploymentData azureAppServicePreDeploymentData = getPreDeploymentData(ambiance, stepParameters);
+    AzureAppServicePreDeploymentData azureAppServicePreDeploymentData =
+        azureWebAppStepHelper.getPreDeploymentData(ambiance,
+            ((AzureWebAppRollbackStepParameters) stepParameters.getSpec()).slotDeploymentStepFqn + "."
+                + AzureWebAppPreDeploymentDataOutput.OUTPUT_NAME);
     if (azureAppServicePreDeploymentData == null) {
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(SkipTaskRequest.newBuilder()
@@ -85,19 +89,31 @@ public class AzureWebAppRollbackStep extends TaskExecutableWithRollbackAndRbac<A
         lastDeploymentProgressMarker = AppServiceDeploymentProgress.DEPLOY_TO_SLOT.name();
       }
       azureAppServicePreDeploymentData.setDeploymentProgressMarker(lastDeploymentProgressMarker);
+      getTargetSlotFromSweepingOutput(swapSlotsSweepingOutput);
 
       AzureWebAppRollbackRequest azureWebAppRollbackRequest =
           AzureWebAppRollbackRequest.builder()
               .accountId(AmbianceUtils.getAccountId(ambiance))
               .preDeploymentData(azureAppServicePreDeploymentData)
               .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-              .infrastructure(azureWebAppStepHelper.getInfraDelegateConfig(ambiance))
+              .infrastructure(azureWebAppStepHelper.getInfraDelegateConfig(ambiance,
+                  azureAppServicePreDeploymentData.getAppName(), azureAppServicePreDeploymentData.getSlotName()))
+              .targetSlot(
+                  AzureResourceUtility.fixDeploymentSlotName(getTargetSlotFromSweepingOutput(swapSlotsSweepingOutput),
+                      azureAppServicePreDeploymentData.getAppName()))
               .build();
 
       List<String> units = getUnits(swapSlotsSweepingOutput);
       return azureWebAppStepHelper.prepareTaskRequest(
           stepParameters, ambiance, azureWebAppRollbackRequest, TaskType.AZURE_WEB_APP_TASK_NG, units);
     }
+  }
+
+  private String getTargetSlotFromSweepingOutput(OptionalSweepingOutput swapSlotsSweepingOutput) {
+    if (swapSlotsSweepingOutput.isFound()) {
+      return ((AzureWebAppSwapSlotsDataOutput) swapSlotsSweepingOutput.getOutput()).getTargetSlot();
+    }
+    return null;
   }
 
   @Override
@@ -148,18 +164,6 @@ public class AzureWebAppRollbackStep extends TaskExecutableWithRollbackAndRbac<A
         RefObjectUtils.getSweepingOutputRefObject(
             ((AzureWebAppRollbackStepParameters) stepParameters.getSpec()).getSwapSlotStepFqn() + "."
             + AzureWebAppSwapSlotsDataOutput.OUTPUT_NAME));
-  }
-
-  private AzureAppServicePreDeploymentData getPreDeploymentData(
-      Ambiance ambiance, StepElementParameters stepParameters) {
-    OptionalSweepingOutput sweepingOutput = executionSweepingOutputService.resolveOptional(ambiance,
-        RefObjectUtils.getSweepingOutputRefObject(
-            ((AzureWebAppRollbackStepParameters) stepParameters.getSpec()).slotDeploymentStepFqn + "."
-            + AzureWebAppPreDeploymentDataOutput.OUTPUT_NAME));
-    if (sweepingOutput.isFound()) {
-      return ((AzureWebAppPreDeploymentDataOutput) sweepingOutput.getOutput()).getPreDeploymentData();
-    }
-    return null;
   }
 
   @Override

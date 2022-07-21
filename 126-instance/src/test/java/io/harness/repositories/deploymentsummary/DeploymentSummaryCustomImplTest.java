@@ -8,7 +8,9 @@
 package io.harness.repositories.deploymentsummary;
 
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
+import static junit.framework.TestCase.assertFalse;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -19,7 +21,9 @@ import io.harness.entities.DeploymentSummary.DeploymentSummaryKeys;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -48,5 +52,20 @@ public class DeploymentSummaryCustomImplTest extends InstancesTestBase {
     List<DeploymentSummary> deploymentSummaryList = Arrays.asList(deploymentSummary);
     when(mongoTemplate.find(query, DeploymentSummary.class)).thenReturn(deploymentSummaryList);
     assertThat(deploymentSummaryCustom.fetchNthRecordFromNow(N, INSTANCE_SYNC_KEY).get()).isEqualTo(deploymentSummary);
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testFetchNthRecordFromNowWhenDocumentsAreNotPresent() {
+    int n = 5;
+    Criteria criteria = Criteria.where(DeploymentSummaryKeys.instanceSyncKey).is(INSTANCE_SYNC_KEY);
+    Query query = new Query().addCriteria(criteria);
+    query.with(Sort.by(Sort.Direction.DESC, DeploymentSummaryKeys.createdAt));
+    query.skip((long) n - 1);
+    query.limit(1);
+    when(mongoTemplate.find(query, DeploymentSummary.class)).thenReturn(Collections.emptyList());
+    Optional<DeploymentSummary> record = deploymentSummaryCustom.fetchNthRecordFromNow(n, INSTANCE_SYNC_KEY);
+    assertFalse(record.isPresent());
   }
 }

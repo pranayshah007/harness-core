@@ -12,15 +12,16 @@ import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ScopeLevel;
 import io.harness.data.validator.EntityIdentifier;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
+import javax.validation.constraints.NotEmpty;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(GITOPS)
 @Value
@@ -33,4 +34,6 @@ public class ClusterRequest {
   @Schema(description = "organization identifier of the cluster") String orgIdentifier;
   @Schema(description = "project identifier of the cluster") String projectIdentifier;
   @Schema(description = "environment identifier of the cluster") @NotEmpty String envRef;
+  @Schema(description = "scope at which the cluster exists in harness gitops, project vs org vs account")
+  ScopeLevel scope;
 }

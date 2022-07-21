@@ -720,8 +720,6 @@ public class InfrastructureStepTest extends CategoryTest {
                                                    .connectorRef(ParameterField.createValueField("connector-ref"))
                                                    .subscriptionId(ParameterField.createValueField("subscription-id"))
                                                    .resourceGroup(ParameterField.createValueField("resource-group"))
-                                                   .webApp(ParameterField.createValueField("webApp"))
-                                                   .deploymentSlot(ParameterField.createValueField("deployment-slot"))
                                                    .build();
 
     infrastructureStep.validateInfrastructure(infrastructure, null);

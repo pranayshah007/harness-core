@@ -13,6 +13,8 @@ import io.harness.pms.pipeline.PipelineMetadataV2;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 
 public interface PipelineMetadataService {
   int incrementRunSequence(PipelineEntity entity);
@@ -21,6 +23,8 @@ public interface PipelineMetadataService {
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
 
   PipelineMetadataV2 save(PipelineMetadataV2 metadata);
+
+  PipelineMetadataV2 update(Criteria criteria, Update update);
 
   Optional<PipelineMetadataV2> getMetadata(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier);

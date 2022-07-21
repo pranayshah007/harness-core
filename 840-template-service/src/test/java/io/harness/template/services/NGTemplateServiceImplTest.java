@@ -82,7 +82,7 @@ import retrofit2.Response;
 public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock EnforcementClientService enforcementClientService;
   @InjectMocks private NGTemplateServiceHelper templateServiceHelper;
-  @Inject private GitSyncSdkService gitSyncSdkService;
+  @Mock private GitSyncSdkService gitSyncSdkService;
   @Inject private NGTemplateRepository templateRepository;
   @Inject private TransactionHelper transactionHelper;
   @Mock private ProjectClient projectClient;

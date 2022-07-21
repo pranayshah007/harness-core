@@ -110,8 +110,8 @@ ciExecutionServiceConfig:
   defaultInternalImageConnector: ''
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.14.7
-  liteEngineImage: harness/ci-lite-engine:1.14.7
+  addonImage: harness/ci-addon:1.14.9
+  liteEngineImage: harness/ci-lite-engine:1.14.9
   isLocal: false
   stepConfig:
     # The below config is for K8 steps
@@ -124,15 +124,15 @@ ciExecutionServiceConfig:
         - "pwsh"
         - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
-      image: plugins/kaniko:1.6.0
+      image: plugins/kaniko:1.6.1
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.6.0
+      image: plugins/kaniko-ecr:1.6.1
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
-      image: plugins/kaniko-gcr:1.6.0
+      image: plugins/kaniko-gcr:1.6.1
       entrypoint:
         - /kaniko/kaniko-gcr
     gcsUploadConfig:

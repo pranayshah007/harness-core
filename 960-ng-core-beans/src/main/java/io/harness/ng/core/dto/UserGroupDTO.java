@@ -55,6 +55,7 @@ public class UserGroupDTO {
   @Schema(description = "Name of the linked SSO.") private String linkedSsoDisplayName;
   @Schema(description = "Identifier of the userGroup in SSO.") private String ssoGroupId;
   @Schema(description = "Name of the SSO userGroup.") private String ssoGroupName;
+  @Schema(description = "Type of linked SSO") private String linkedSsoType;
 
   @Schema(description = "Specifies whether or not the userGroup is externally managed.")
   private boolean externallyManaged;

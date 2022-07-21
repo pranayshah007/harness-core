@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
@@ -58,6 +59,7 @@ public class K8sRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<K8
   public static final String K8S_DEPLOYMENT_ROLLING_ROLLBACK_COMMAND_NAME = "Rolling Deployment Rollback";
 
   @Inject K8sStepHelper k8sStepHelper;
+  @Inject private CDStepHelper cdStepHelper;
   @Inject private OutcomeService outcomeService;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
@@ -122,9 +124,9 @@ public class K8sRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<K8
         .taskType(K8sTaskType.DEPLOYMENT_ROLLING_ROLLBACK)
         .timeoutIntervalInMin(
             NGTimeConversionHelper.convertTimeStringToMinutes(stepElementParameters.getTimeout().getValue()))
-        .k8sInfraDelegateConfig(k8sStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
-        .useNewKubectlVersion(k8sStepHelper.isUseNewKubectlVersion(accountId))
-        .pruningEnabled(k8sStepHelper.isPruningEnabled(accountId))
+        .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
+        .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
+        .pruningEnabled(cdStepHelper.isPruningEnabled(accountId))
         .build();
 
     return k8sStepHelper

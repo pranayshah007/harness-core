@@ -11,11 +11,14 @@ import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterTyp
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.collections4.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 
 @Data
@@ -30,8 +33,23 @@ public class LogAnalysisRadarChartListDTO implements Comparable<LogAnalysisRadar
   @JsonIgnore Double angle;
   DeploymentLogAnalysisDTO.ClusterType clusterType;
   int count;
-  List<Double> frequencyData;
+  @Deprecated List<Double> frequencyData;
+  List<DeploymentLogAnalysisDTO.HostFrequencyData> hostFrequencyData = new ArrayList<>();
   LogAnalysisRadarChartListDTO baseline;
+  List<DeploymentLogAnalysisDTO.TimestampFrequencyCount> averageFrequencyData;
+  public List<DeploymentLogAnalysisDTO.TimestampFrequencyCount> getAverageFrequencyData() {
+    if (CollectionUtils.isNotEmpty(hostFrequencyData)) {
+      return DeploymentLogAnalysisDTO.HostFrequencyData.generateAverageTimeFrequencyList(hostFrequencyData);
+    }
+    return Collections.emptyList();
+  }
+
+  public List<Double> getFrequencyData() {
+    if (CollectionUtils.isNotEmpty(hostFrequencyData)) {
+      return DeploymentLogAnalysisDTO.HostFrequencyData.generateAverageFrequencyList(hostFrequencyData);
+    }
+    return frequencyData;
+  }
 
   @JsonProperty(value = "hasControlData")
   public boolean hasControlData() {

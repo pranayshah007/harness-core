@@ -31,6 +31,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
@@ -72,6 +73,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(HarnessTeam.CDP)
 public class K8sBGSwapServicesStepTest extends CategoryTest {
   @Mock private K8sStepHelper k8sStepHelper;
+  @Mock private CDStepHelper cdStepHelper;
   @Mock private OutcomeService outcomeService;
   @Mock private InfrastructureOutcome infrastructureOutcome;
   @Mock private K8sInfraDelegateConfig infraDelegateConfig;
@@ -99,8 +101,8 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    doReturn(infraDelegateConfig).when(k8sStepHelper).getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
-    doReturn(releaseName).when(k8sStepHelper).getReleaseName(ambiance, infrastructureOutcome);
+    doReturn(infraDelegateConfig).when(cdStepHelper).getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
+    doReturn(releaseName).when(cdStepHelper).getReleaseName(ambiance, infrastructureOutcome);
   }
 
   private void setupPreConditions(Ambiance ambiance) {
@@ -113,7 +115,7 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
         .resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(
                 bgStepFqn + "." + OutcomeExpressionConstants.K8S_BLUE_GREEN_OUTCOME));
-    doReturn(infrastructureOutcome).when(k8sStepHelper).getInfrastructureOutcome(ambiance);
+    doReturn(infrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(ambiance);
   }
 
   @Test
@@ -288,7 +290,7 @@ public class K8sBGSwapServicesStepTest extends CategoryTest {
                 bgSwapServicesStepFqn + "." + OutcomeExpressionConstants.K8S_BG_SWAP_SERVICES_OUTCOME));
 
     doThrow(new InvalidRequestException(MISSING_INFRASTRUCTURE_ERROR))
-        .when(k8sStepHelper)
+        .when(cdStepHelper)
         .getInfrastructureOutcome(ambiance);
     assertThatThrownBy(() -> k8sBGSwapServicesStep.obtainTask(ambiance, stepElementParameters, stepInputPackage))
         .isInstanceOf(InvalidRequestException.class)

@@ -17,4 +17,6 @@ FROM us.gcr.io/platform-205701/ubi/ubi-python:latest
 
 USER root
 
+RUN yum install -y jq \
+    && yum clean all
 RUN pip install urllib3 pygithub

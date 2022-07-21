@@ -30,7 +30,6 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(CI)
 public class AzureRepoPushSpec implements AzureRepoEventSpec {
   String connectorRef;
-  String projectName;
   String repoName;
   List<TriggerEventDataCondition> headerConditions;
   List<TriggerEventDataCondition> payloadConditions;

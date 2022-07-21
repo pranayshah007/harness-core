@@ -226,28 +226,27 @@ public class NgTriggersTestHelper {
                                      .build())
                         .build())
                 .build())
-        .ngTriggerConfigV2(
-            NGTriggerConfigV2.builder()
-                .source(NGTriggerSourceV2.builder()
-                            .type(NGTriggerType.WEBHOOK)
-                            .spec(WebhookTriggerConfigV2.builder()
-                                      .type(WebhookTriggerType.AZURE)
-                                      .spec(AzureRepoSpec.builder()
-                                                .type(AzureRepoTriggerEvent.PUSH)
-                                                .spec(AzureRepoPushSpec.builder().projectName("test").build())
-                                                .build())
-                                      .build())
-                            .build())
-                .build())
+        .ngTriggerConfigV2(NGTriggerConfigV2.builder()
+                               .source(NGTriggerSourceV2.builder()
+                                           .type(NGTriggerType.WEBHOOK)
+                                           .spec(WebhookTriggerConfigV2.builder()
+                                                     .type(WebhookTriggerType.AZURE)
+                                                     .spec(AzureRepoSpec.builder()
+                                                               .type(AzureRepoTriggerEvent.PUSH)
+                                                               .spec(AzureRepoPushSpec.builder().build())
+                                                               .build())
+                                                     .build())
+                                           .build())
+                               .build())
         .build();
   }
 
-  public ConnectorResponseDTO getAzureRepoAccountConnectorResponsesDTO() {
+  public ConnectorResponseDTO getAzureRepoProjectConnectorResponsesDTO() {
     return ConnectorResponseDTO.builder()
         .connector(ConnectorInfoDTO.builder()
                        .connectorConfig(AzureRepoConnectorDTO.builder()
                                             .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
-                                            .url("https://dev.azure.com/org/")
+                                            .url("https://dev.azure.com/org/test/")
                                             .build())
                        .orgIdentifier("org")
                        .projectIdentifier("proj")
@@ -256,12 +255,12 @@ public class NgTriggersTestHelper {
         .build();
   }
 
-  public ConnectorResponseDTO getAzureRepoSSHAccountConnectorResponsesDTO() {
+  public ConnectorResponseDTO getAzureRepoSSHProjectConnectorResponsesDTO() {
     return ConnectorResponseDTO.builder()
         .connector(ConnectorInfoDTO.builder()
                        .connectorConfig(AzureRepoConnectorDTO.builder()
                                             .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
-                                            .url("git@ssh.dev.azure.com:v3/org/")
+                                            .url("git@ssh.dev.azure.com:v3/org/test/")
                                             .build())
                        .orgIdentifier("org")
                        .projectIdentifier("proj")

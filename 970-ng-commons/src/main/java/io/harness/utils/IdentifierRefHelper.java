@@ -16,7 +16,7 @@ import io.harness.beans.IdentifierRef.IdentifierRefBuilder;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.encryption.ScopeHelper;
-import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidIdentifierRefException;
 
 import java.util.Map;
 import lombok.experimental.UtilityClass;
@@ -54,7 +54,7 @@ public class IdentifierRefHelper {
     }
 
     if (isEmpty(scopedIdentifierConfig)) {
-      throw new InvalidRequestException("Empty identifier ref cannot be given");
+      throw new InvalidIdentifierRefException("Empty identifier ref cannot be given");
     }
     String[] identifierConfigStringSplit = scopedIdentifierConfig.split(IDENTIFIER_REF_DELIMITER);
 
@@ -72,7 +72,7 @@ public class IdentifierRefHelper {
       scope = getScope(identifierConfigStringSplit[0]);
       identifierRefBuilder = identifierRefBuilder.identifier(identifier).scope(scope);
       if (scope == Scope.PROJECT || scope == null) {
-        throw new InvalidRequestException("Invalid Identifier Reference, Scope.PROJECT invalid.");
+        throw new InvalidIdentifierRefException("Invalid Identifier Reference, Scope.PROJECT invalid.");
       } else if (scope == Scope.ORG) {
         verifyFieldExistence(scope, accountId, orgIdentifier);
         return identifierRefBuilder.orgIdentifier(orgIdentifier).build();
@@ -80,7 +80,7 @@ public class IdentifierRefHelper {
       verifyFieldExistence(scope, accountId);
       return identifierRefBuilder.build();
     } else {
-      throw new InvalidRequestException("Invalid Identifier Reference.");
+      throw new InvalidIdentifierRefException("Invalid Identifier Reference.");
     }
   }
 
@@ -104,7 +104,7 @@ public class IdentifierRefHelper {
       verifyFieldExistence(scope, accountId, orgIdentifier, projectIdentifier);
       return identifierRefBuilder.orgIdentifier(orgIdentifier).projectIdentifier(projectIdentifier).build();
     } else {
-      throw new InvalidRequestException("Invalid Identifier Reference.");
+      throw new InvalidIdentifierRefException("Invalid Identifier Reference.");
     }
   }
 
@@ -137,7 +137,7 @@ public class IdentifierRefHelper {
 
   public String getIdentifier(String scopedIdentifierConfig) {
     if (isEmpty(scopedIdentifierConfig)) {
-      throw new InvalidRequestException("scopedIdentifierConfig is null");
+      throw new InvalidIdentifierRefException("scopedIdentifierConfig is null");
     }
     String identifier;
     String[] identifierConfigStringSplit = scopedIdentifierConfig.split(IDENTIFIER_REF_DELIMITER);
@@ -147,10 +147,10 @@ public class IdentifierRefHelper {
       identifier = identifierConfigStringSplit[1];
       Scope scope = getScope(identifierConfigStringSplit[0]);
       if (scope == Scope.PROJECT || scope == null) {
-        throw new InvalidRequestException("Invalid Identifier Reference, Scope.PROJECT invalid.");
+        throw new InvalidIdentifierRefException("Invalid Identifier Reference, Scope.PROJECT invalid.");
       }
     } else {
-      throw new InvalidRequestException("Invalid Identifier Reference.");
+      throw new InvalidIdentifierRefException("Invalid Identifier Reference.");
     }
     return identifier;
   }
@@ -159,7 +159,7 @@ public class IdentifierRefHelper {
   private void verifyFieldExistence(Scope scope, String... fields) {
     for (int fieldNum = 0; fieldNum < fields.length; fieldNum++) {
       if (isEmpty(fields[fieldNum])) {
-        throw new InvalidRequestException(
+        throw new InvalidIdentifierRefException(
             String.format("%s cannot be empty for %s scope", getEmptyFieldName(fieldNum), scope));
       }
     }

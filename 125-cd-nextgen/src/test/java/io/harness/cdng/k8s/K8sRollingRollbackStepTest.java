@@ -24,6 +24,7 @@ import io.harness.CategoryTest;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
 import io.harness.cdng.k8s.beans.K8sRollingReleaseOutput;
@@ -74,6 +75,7 @@ public class K8sRollingRollbackStepTest extends CategoryTest {
   @Mock private OutcomeService outcomeService;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private K8sStepHelper k8sStepHelper;
+  @Mock private CDStepHelper cdStepHelper;
   @Mock private InstanceInfoService instanceInfoService;
   @InjectMocks private K8sRollingRollbackStep k8sRollingRollbackStep;
   @Mock private AccountService accountService;

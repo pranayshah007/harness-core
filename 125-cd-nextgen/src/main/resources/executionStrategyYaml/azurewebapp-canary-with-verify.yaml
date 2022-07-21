@@ -12,7 +12,9 @@ spec:
           identifier: slotDeployment
           type: AzureSlotDeployment
           timeout: 10m
-          spec: {}
+          spec:
+            webApp: ""
+            deploymentSlot: ""
       - step:
           name: "Traffic shift"
           identifier: trafficShift
@@ -31,7 +33,8 @@ spec:
           identifier: swapSlots
           type: AzureSwapSlot
           timeout: 10m
-          spec: {}
+          spec:
+            targetSlot: ""
     rollbackSteps:
       - step:
           name: "WebApp rollback"

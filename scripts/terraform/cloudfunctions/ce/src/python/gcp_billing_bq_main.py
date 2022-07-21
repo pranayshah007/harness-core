@@ -460,7 +460,7 @@ def fetch_acc_from_gcp_conn_info(jsonData):
         query_job = client.query(query)
         results = query_job.result()  # wait for job to complete
         for row in results:
-            jsonData["accountId"] = row.accountID
+            jsonData["accountId"] = row.accountId
             jsonData["connectorId"] = row.connectorId
             jsonData["sourceGcpTableName"] = row.sourceGcpTableName
             jsonData["tableName"] = row.sourceGcpTableName

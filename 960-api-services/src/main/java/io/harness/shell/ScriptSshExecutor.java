@@ -217,7 +217,7 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
     }
   }
 
-  private ExecuteCommandResponse getExecuteCommandResponse(
+  public ExecuteCommandResponse getExecuteCommandResponse(
       String command, List<String> envVariablesToCollect, List<String> secretEnvVariablesToCollect, boolean isRetry) {
     ShellExecutionDataBuilder executionDataBuilder = ShellExecutionData.builder();
     ExecuteCommandResponseBuilder executeCommandResponseBuilder = ExecuteCommandResponse.builder();

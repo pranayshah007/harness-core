@@ -48,12 +48,15 @@ import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.exception.ArtifactServerException;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.api.NGEncryptedDataService;
+import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
@@ -76,6 +79,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Singleton
 @OwnedBy(CDP)
@@ -85,6 +89,7 @@ public class AzureHelperService {
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private FileStoreService fileStoreService;
   @Inject private CDExpressionResolver cdExpressionResolver;
+  @Inject private NGEncryptedDataService ngEncryptedDataService;
   @VisibleForTesting static final int defaultTimeoutInSecs = 30;
 
   public AzureConnectorDTO getConnector(IdentifierRef azureConnectorRef) {
@@ -248,21 +253,47 @@ public class AzureHelperService {
   }
 
   private void validateSettingsFileRefs(HarnessStore harnessStore, Ambiance ambiance, String entityType) {
-    if (harnessStore.getFiles() == null || harnessStore.getFiles().isExpression()) {
-      return;
+    if (ParameterField.isNull(harnessStore.getFiles()) && ParameterField.isNull(harnessStore.getSecretFiles())) {
+      throw new InvalidArgumentsException(
+          Pair.of(entityType, "Either 'files' or 'secretFiles' should be present in Harness store"));
     }
 
-    List<String> fileReferences = harnessStore.getFiles().getValue();
-    if (isEmpty(fileReferences)) {
-      throw new InvalidRequestException(
-          format("Cannot find any file for %s, store kind: %s", entityType, harnessStore.getKind()));
-    }
-    if (fileReferences.size() > 1) {
-      throw new InvalidRequestException(
-          format("Only one file should be provided for %s, store kind: %s", entityType, harnessStore.getKind()));
+    if (!ParameterField.isNull(harnessStore.getFiles()) && !ParameterField.isNull(harnessStore.getSecretFiles())) {
+      throw new InvalidArgumentsException(Pair.of(
+          entityType, "Only one of 'files' or 'secretFiles' can be present. Please use only one of these fields"));
     }
 
-    validateSettingsFileByPath(harnessStore, ambiance, harnessStore.getFiles().getValue().get(0), entityType);
+    if (!ParameterField.isNull(harnessStore.getFiles())) {
+      if (harnessStore.getFiles().isExpression()) {
+        return;
+      }
+
+      List<String> fileReferences = harnessStore.getFiles().getValue();
+      if (isEmpty(fileReferences)) {
+        throw new InvalidRequestException(
+            format("Cannot find any file for %s, store kind: %s", entityType, harnessStore.getKind()));
+      }
+      if (fileReferences.size() > 1) {
+        throw new InvalidRequestException(
+            format("Only one file should be provided for %s, store kind: %s", entityType, harnessStore.getKind()));
+      }
+
+      validateSettingsFileByPath(harnessStore, ambiance, harnessStore.getFiles().getValue().get(0), entityType);
+    }
+
+    if (!ParameterField.isNull(harnessStore.getSecretFiles())) {
+      if (harnessStore.getSecretFiles().isExpression()) {
+        return;
+      }
+      List<String> secretFileReferences = harnessStore.getSecretFiles().getValue();
+
+      if (secretFileReferences.size() > 1) {
+        throw new InvalidArgumentsException(Pair.of(entityType,
+            format("Only one secret file reference should be provided for store kind: %s", harnessStore.getKind())));
+      }
+
+      validateSecretFileReference(ambiance, entityType, secretFileReferences.get(0));
+    }
   }
 
   private void validateSettingsFileByPath(
@@ -307,5 +338,18 @@ public class AzureHelperService {
     }
 
     ConnectorUtils.checkForConnectorValidityOrThrow(connectorDTO.get());
+  }
+
+  private void validateSecretFileReference(Ambiance ambiance, String entityType, String secretFile) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    IdentifierRef secretFileRef = IdentifierRefHelper.getIdentifierRef(
+        secretFile, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    NGEncryptedData ngEncryptedData = ngEncryptedDataService.get(secretFileRef.getAccountIdentifier(),
+        secretFileRef.getOrgIdentifier(), secretFileRef.getProjectIdentifier(), secretFileRef.getIdentifier());
+
+    if (ngEncryptedData == null) {
+      throw new InvalidArgumentsException(
+          Pair.of(entityType, format("Secret file with reference: %s not found", secretFile)));
+    }
   }
 }

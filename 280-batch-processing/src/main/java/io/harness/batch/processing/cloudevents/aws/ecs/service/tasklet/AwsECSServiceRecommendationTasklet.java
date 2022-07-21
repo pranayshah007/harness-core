@@ -24,7 +24,6 @@ import io.harness.batch.processing.cloudevents.aws.ecs.service.CEClusterDao;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.util.ClusterIdAndServiceArn;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.util.ECSUtilizationData;
 import io.harness.batch.processing.dao.intfc.ECSServiceDao;
-import io.harness.beans.FeatureName;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.Resource;
 import io.harness.ccm.commons.dao.recommendation.ECSRecommendationDAO;
@@ -83,10 +82,6 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
     final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
     String accountId = jobConstants.getAccountId();
-    if (!featureFlagService.isEnabled(FeatureName.ECS_RECOMMENDATION, accountId)) {
-      log.debug("ECS Recommendation FF not enabled for account: {}", accountId);
-      return null;
-    }
     Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
     Instant endTime = Instant.ofEpochMilli(jobConstants.getJobEndTime());
     // Get all clusters for current account

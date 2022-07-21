@@ -357,6 +357,9 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
   private boolean isRollbackProvisionerAfterPhases;
   private boolean canOverrideFreeze;
 
+  @Transient private String failedStepNames;
+  @Transient private String failedStepTypes;
+
   // Making this consistent with data retention default of 183 days instead of "6 months"
   @Default
   @JsonIgnore

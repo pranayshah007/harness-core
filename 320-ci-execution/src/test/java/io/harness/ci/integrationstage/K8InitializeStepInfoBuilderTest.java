@@ -92,7 +92,8 @@ public class K8InitializeStepInfoBuilderTest extends CIExecutionTestBase {
     Map<EnvVariableEnum, String> awsConnectorMap = new HashMap<>();
     awsConnectorMap.put(EnvVariableEnum.AWS_ACCESS_KEY, CIExecutionConstants.PLUGIN_ACCESS_KEY);
     awsConnectorMap.put(EnvVariableEnum.AWS_SECRET_KEY, CIExecutionConstants.PLUGIN_SECRET_KEY);
-    awsConnectorMap.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_ROLE_ARN, CIExecutionConstants.AWS_ROLE_ARN);
+    awsConnectorMap.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_ROLE_ARN, CIExecutionConstants.PLUGIN_ASSUME_ROLE);
+    //    awsConnectorMap.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_EXTERNAL_ID, CIExecutionConstants.PLUGIN_EXTERNAL_ID);
 
     Map<EnvVariableEnum, String> dockerConnectorMap = new HashMap<>();
     dockerConnectorMap.put(EnvVariableEnum.DOCKER_PASSWORD, CIExecutionConstants.PLUGIN_PASSW);
@@ -131,7 +132,8 @@ public class K8InitializeStepInfoBuilderTest extends CIExecutionTestBase {
     Map<EnvVariableEnum, String> awsConnectorMap = new HashMap<>();
     awsConnectorMap.put(EnvVariableEnum.AWS_ACCESS_KEY, CIExecutionConstants.PLUGIN_ACCESS_KEY);
     awsConnectorMap.put(EnvVariableEnum.AWS_SECRET_KEY, CIExecutionConstants.PLUGIN_SECRET_KEY);
-    awsConnectorMap.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_ROLE_ARN, CIExecutionConstants.AWS_ROLE_ARN);
+    awsConnectorMap.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_ROLE_ARN, CIExecutionConstants.PLUGIN_ASSUME_ROLE);
+    //    awsConnectorMap.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_EXTERNAL_ID, CIExecutionConstants.PLUGIN_EXTERNAL_ID);
 
     List<K8BuildJobEnvInfo.ConnectorConversionInfo> expectedConversionInfo =
         Arrays.asList(K8BuildJobEnvInfo.ConnectorConversionInfo.builder()

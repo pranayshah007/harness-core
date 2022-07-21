@@ -19,6 +19,8 @@ import io.harness.gitsync.CreatePRResponse;
 import io.harness.gitsync.FileInfo;
 import io.harness.gitsync.GetFileRequest;
 import io.harness.gitsync.GetFileResponse;
+import io.harness.gitsync.GetRepoUrlRequest;
+import io.harness.gitsync.GetRepoUrlResponse;
 import io.harness.gitsync.PushFileResponse;
 import io.harness.gitsync.PushInfo;
 import io.harness.gitsync.RepoDetails;
@@ -47,4 +49,6 @@ public interface HarnessToGitHelperService {
   UpdateFileResponse updateFile(UpdateFileRequest updateFileRequest);
 
   CreatePRResponse createPullRequest(CreatePRRequest createPRRequest);
+
+  GetRepoUrlResponse getRepoUrl(GetRepoUrlRequest getRepoUrlRequest);
 }

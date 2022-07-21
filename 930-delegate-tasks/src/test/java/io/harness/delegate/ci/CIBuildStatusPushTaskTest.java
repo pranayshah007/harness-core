@@ -62,7 +62,7 @@ public class CIBuildStatusPushTaskTest extends CategoryTest {
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
   public void testDelegatePushStatusSuccessForGithub() throws IOException {
-    when(gitStatusCheckHelper.sendStatus(any(), any())).thenReturn(true);
+    when(gitStatusCheckHelper.sendStatus(any())).thenReturn(true);
 
     BuildStatusPushResponse buildStatusPushResponse =
         (BuildStatusPushResponse) ciBuildStatusPushTask.run(CIBuildStatusPushParameters.builder()

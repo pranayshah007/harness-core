@@ -9,15 +9,18 @@ package io.harness.artifactory;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.jfrog.artifactory.client.model.impl.PackageTypeImpl.docker;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
@@ -164,5 +167,36 @@ public class ArtifactoryClientImplTest extends CategoryTest {
     Long fileSize = artifactoryClient.getFileSize(artifactoryConfig, metadata, "artifactPath");
     assertThat(fileSize).isNotNull();
     assertThat(fileSize).isEqualTo(1776799L);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldGetLabels() {
+    List<Map<String, String>> labels = artifactoryClient.getLabels(artifactoryConfig, "image", "docker", "version");
+    Map<String, String> assertionMap = ImmutableMap.copyOf(labels.get(0));
+    assertThat(assertionMap.size()).isGreaterThan(0);
+    assertThat(assertionMap.containsKey("harness.test"));
+    assertThat(assertionMap.containsKey("maintainer"));
+    assertThat(assertionMap.get("harness.test").equals("passed"));
+    assertThat(assertionMap.get("maintainer").equals("Test Harness.io"));
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldGetLabelsIsEmpty() {
+    List<Map<String, String>> labels =
+        artifactoryClient.getLabels(artifactoryConfig, "image", "docker", "versionEmpty");
+    Map<String, String> assertionMap = ImmutableMap.copyOf(labels.get(0));
+    assertThat(assertionMap.size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldGetLabelsIs401() {
+    assertThatThrownBy(() -> artifactoryClient.getLabels(artifactoryConfig, "image", "docker", "version407"))
+        .isInstanceOf(WingsException.class);
   }
 }

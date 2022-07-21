@@ -22,7 +22,9 @@ import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
+import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -52,6 +54,12 @@ public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode
   public abstract Class<T> getFieldClass();
 
   @Override
+  public String getExecutionInputTemplateAndModifyYamlField(YamlField yamlField) {
+    return RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(
+        yamlField.getNode().getParentNode().getCurrJsonNode());
+  }
+
+  @Override
   public Map<String, Set<String>> getSupportedTypes() {
     Set<String> stageTypes = getSupportedStageTypes();
     if (EmptyPredicate.isEmpty(stageTypes)) {
@@ -69,20 +77,24 @@ public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
-    return PlanNode.builder()
-        .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
-        .name(stageNode.getName())
-        .identifier(stageNode.getIdentifier())
-        .group(StepOutcomeGroup.STAGE.name())
-        .stepParameters(stageParameters.build())
-        .stepType(getStepType(stageNode))
-        .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
-        .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
-        .facilitatorObtainment(
-            FacilitatorObtainment.newBuilder()
-                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
-                .build())
-        .adviserObtainments(getAdviserObtainmentFromMetaData(ctx.getCurrentField()))
-        .build();
+    PlanNodeBuilder builder =
+        PlanNode.builder()
+            .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
+            .name(stageNode.getName())
+            .identifier(stageNode.getIdentifier())
+            .group(StepOutcomeGroup.STAGE.name())
+            .stepParameters(stageParameters.build())
+            .stepType(getStepType(stageNode))
+            .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
+            .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
+                    .build())
+            .adviserObtainments(getAdviserObtainmentFromMetaData(ctx.getCurrentField()));
+    if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
+      builder.executionInputTemplate(ctx.getExecutionInputTemplate());
+    }
+    return builder.build();
   }
 }

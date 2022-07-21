@@ -22,8 +22,8 @@ import io.harness.rule.Owner;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
+import java.time.OffsetDateTime;
 import java.util.List;
-import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -71,7 +71,7 @@ public class JobStatusViewerTest extends CategoryTest {
     V1JobStatus status = new V1JobStatus();
     V1JobCondition condition = new V1JobCondition().type("Complete").status("True");
     status.setConditions(List.of(condition));
-    status.setCompletionTime(DateTime.now());
+    status.setCompletionTime(OffsetDateTime.now());
     job.setStatus(status);
 
     K8ApiResponseDTO response = statusViewer.extractRolloutStatus(job);

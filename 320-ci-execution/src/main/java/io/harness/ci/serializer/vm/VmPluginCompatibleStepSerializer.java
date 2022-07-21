@@ -8,8 +8,8 @@
 package io.harness.ci.serializer.vm;
 
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
+import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
-import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.execution.CIExecutionConfigService;
@@ -37,7 +37,7 @@ public class VmPluginCompatibleStepSerializer {
   @Inject private HarnessImageUtils harnessImageUtils;
 
   public VmPluginStep serialize(Ambiance ambiance, PluginCompatibleStep pluginCompatibleStep,
-      VmStageInfraDetails vmStageInfraDetails, String identifier, ParameterField<Timeout> parameterFieldTimeout,
+      StageInfraDetails stageInfraDetails, String identifier, ParameterField<Timeout> parameterFieldTimeout,
       String stepName) {
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, pluginCompatibleStep.getDefaultTimeout());
     Map<String, String> envVars =
@@ -53,7 +53,7 @@ public class VmPluginCompatibleStepSerializer {
     connectorDetails.setEnvToSecretsMap(connectorSecretEnvMap);
 
     ConnectorDetails harnessInternalImageConnector =
-        harnessImageUtils.getHarnessImageConnectorDetailsForVM(ngAccess, vmStageInfraDetails);
+        harnessImageUtils.getHarnessImageConnectorDetailsForVM(ngAccess, stageInfraDetails);
     return VmPluginStep.builder()
         .image(IntegrationStageUtils.getFullyQualifiedImageName(image, harnessInternalImageConnector))
         .connector(connectorDetails)

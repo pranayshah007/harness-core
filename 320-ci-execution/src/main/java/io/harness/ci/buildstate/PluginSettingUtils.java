@@ -14,7 +14,6 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMap
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveListParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
-import static io.harness.ci.commonconstants.CIExecutionConstants.AWS_ROLE_ARN;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ACCESS_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ARTIFACT_FILE_VALUE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ASSUME_ROLE;
@@ -143,7 +142,9 @@ public class PluginSettingUtils {
       case ECR:
         map.put(EnvVariableEnum.AWS_ACCESS_KEY, PLUGIN_ACCESS_KEY);
         map.put(EnvVariableEnum.AWS_SECRET_KEY, PLUGIN_SECRET_KEY);
-        map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_ROLE_ARN, AWS_ROLE_ARN);
+        map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_ROLE_ARN, PLUGIN_ASSUME_ROLE);
+        // TODO: uncomment in the next release to ensure fix with delegateq backward compatibility.
+        //        map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_EXTERNAL_ID, PLUGIN_EXTERNAL_ID);
         return map;
       case RESTORE_CACHE_S3:
       case SAVE_CACHE_S3:

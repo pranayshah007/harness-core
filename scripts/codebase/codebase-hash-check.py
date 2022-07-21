@@ -30,18 +30,24 @@ class codebaseHash(object):
 
         delegate_team = []
         for member in members:
-            delegate_team.append(member.email)
+            if member.email is not None:
+                delegate_team.append(member.email)
+
         print(delegate_team)
 
         f = open("STATUS.txt", "a")
-        for review in pr_reviews:
-            if review.user.email in delegate_team and review.state == 'APPROVED':
-                print("Changes have been approved by DELEGATE Team member:", review.user.email +
-                      ". Re-Running CodeBaseHashCheck is not required.")
-                f.write("STATUS=0\n")
-                break
-            else:
-                print("CodeBaseHashCheck logic will execute.")
+        if pr_reviews.totalCount > 0:
+            for review in pr_reviews:
+                if review.user.email is not None:
+                    if review.user.email in delegate_team and review.state == 'APPROVED':
+                        print("Changes have been approved by DELEGATE Team member:", review.user.email +
+                              ". Re-Running CodeBaseHashCheck is not required.")
+                        f.write("STATUS=0\n")
+                        break
+                    else:
+                        print("CodeBaseHashCheck logic will execute.")
+                else:
+                    print("User Email is private, CodeBaseHashCheck logic will execute.")
         f.close()
 
 if __name__ == '__main__':

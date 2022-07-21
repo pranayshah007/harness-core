@@ -26,6 +26,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Singleton
@@ -83,6 +85,11 @@ public class PipelineMetadataServiceImpl implements PipelineMetadataService {
   @Override
   public PipelineMetadataV2 save(PipelineMetadataV2 metadata) {
     return pipelineMetadataV2Repository.save(metadata);
+  }
+
+  @Override
+  public PipelineMetadataV2 update(Criteria criteria, Update update) {
+    return pipelineMetadataV2Repository.update(criteria, update);
   }
 
   @Override

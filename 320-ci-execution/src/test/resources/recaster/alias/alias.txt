@@ -22,6 +22,7 @@ io.harness.beans.steps.stepinfo.RestoreCacheGCSStepInfo
 io.harness.beans.sweepingoutputs.PodCleanupDetails
 io.harness.beans.sweepingoutputs.VmStageInfraDetails
 io.harness.beans.sweepingoutputs.K8StageInfraDetails
+io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails
 io.harness.advisers.rollback.OnFailRollbackParameters
 io.harness.beans.steps.outcome.CIStepArtifactOutcome
 io.harness.beans.steps.stepinfo.RestoreCacheS3StepInfo
@@ -70,7 +71,6 @@ io.harness.yaml.core.failurestrategy.marksuccess.MarkAsSuccessFailureActionConfi
 io.harness.yaml.core.failurestrategy.rollback.StageRollbackFailureActionConfig
 io.harness.advisers.rollback.RollbackTriggeredOutput
 io.harness.beans.stages.IntegrationStageNode
-io.harness.beans.stages.SecurityStageNode
 io.harness.beans.steps.nodes.RunStepNode
 io.harness.beans.steps.nodes.RunTestsStepNode
 io.harness.beans.steps.nodes.ArtifactoryUploadNode
@@ -145,6 +145,7 @@ io.harness.beans.yaml.extended.reports.JUnitTestReport
 io.harness.beans.environment.K8BuildJobEnvInfo
 io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml
 io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml
+io.harness.beans.yaml.extended.infrastrucutre.RunsOnInfra
 io.harness.ci.beans.entities.LogServiceConfig
 io.harness.beans.execution.ManualExecutionSource
 io.harness.beans.yaml.extended.infrastrucutre.OSType
