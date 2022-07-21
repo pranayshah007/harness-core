@@ -13,7 +13,6 @@ import static io.harness.helpers.GlobalSecretManagerUtils.GLOBAL_ACCOUNT_ID;
 import static io.harness.remote.client.RestClientUtils.getResponse;
 import static io.harness.security.encryption.EncryptionType.AWS_SECRETS_MANAGER;
 import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
-import static io.harness.security.encryption.EncryptionType.CUSTOM;
 import static io.harness.security.encryption.EncryptionType.CUSTOM_NG;
 import static io.harness.security.encryption.EncryptionType.VAULT;
 
@@ -30,14 +29,14 @@ import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.WingsException;
 import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.api.NGSecretManagerService;
-import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
-import io.harness.secretmanagerclient.dto.SecretManagerConfigUpdateDTO;
-import io.harness.secretmanagerclient.dto.SecretManagerMetadataDTO;
-import io.harness.secretmanagerclient.dto.SecretManagerMetadataRequestDTO;
+import io.harness.secretmanagerclient.dto.*;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
 import io.harness.security.encryption.EncryptionConfig;
+import io.harness.template.entity.TemplateEntity;
+import io.harness.template.services.NGTemplateService;
 
 import software.wings.beans.VaultConfig;
+import software.wings.beans.template.Template;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -45,6 +44,7 @@ import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import io.github.resilience4j.retry.RetryRegistry;
+import java.util.Optional;
 import java.util.function.Supplier;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -70,6 +70,8 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
   ;
   private final RetryRegistry registry = RetryRegistry.of(config);
   private final Retry retry = registry.retry("cgManagerSecretService", config);
+
+  private final NGTemplateService templateService;
 
   @Override
   public SecretManagerConfigDTO createSecretManager(@NotNull SecretManagerConfigDTO secretManagerConfig) {
@@ -119,6 +121,21 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
             validationResult = kmsEncryptor.validateKmsConfiguration(encryptionConfig.getAccountId(), encryptionConfig);
             break;
           case CUSTOM:
+            CustomSecretManagerConfigDTO customNGSecretManagerConfigDTO =
+                (CustomSecretManagerConfigDTO) secretManagerConfigDTO;
+            Optional<TemplateEntity> template =
+                templateService.get(customNGSecretManagerConfigDTO.getAccountIdentifier(),
+                    customNGSecretManagerConfigDTO.getOrgIdentifier(),
+                    customNGSecretManagerConfigDTO.getProjectIdentifier(),
+                    customNGSecretManagerConfigDTO.getTemplateId(), customNGSecretManagerConfigDTO.getVersion(), false);
+            String yaml = template.get().getYaml();
+            // resolve the yaml
+            // get the script out of resolved yaml
+            // pass the script to encryptor
+
+            // Get template id , version , name all will be in secManagerConfigDTO-> template service (id, ver) ->
+            // template (yaml) yeml -> resolve -> yaml -> filter relevant fields ( script field ) -> encryptor( resolved
+            // yaml / script , config
             encryptionConfig.setEncryptionType(CUSTOM_NG);
 
             CustomEncryptor customEncryptor = customEncryptorsRegistry.getCustomEncryptor(CUSTOM_NG);

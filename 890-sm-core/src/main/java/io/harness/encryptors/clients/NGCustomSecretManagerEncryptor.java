@@ -18,6 +18,7 @@ import io.harness.security.encryption.EncryptionConfig;
 import java.util.Set;
 
 public class NGCustomSecretManagerEncryptor implements CustomEncryptor {
+  // use ng taks
   @Override
   public boolean validateReference(
       String accountId, Set<EncryptedDataParams> params, EncryptionConfig encryptionConfig) {
