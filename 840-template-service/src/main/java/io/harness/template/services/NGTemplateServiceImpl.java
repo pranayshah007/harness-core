@@ -646,11 +646,12 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
     try {
       TemplateEntity updatedTemplate;
-      if(templateServiceHelper.isOldGitSync(oldTemplateEntity)) {
+      if (templateServiceHelper.isOldGitSync(oldTemplateEntity)) {
         updatedTemplate = templateRepository.updateTemplateYamlForOldGitSync(
-                templateToUpdate, oldTemplateEntity, changeType, comments, templateUpdateEventType, skipAudits);
+            templateToUpdate, oldTemplateEntity, changeType, comments, templateUpdateEventType, skipAudits);
       } else {
-        updatedTemplate = templateRepository.updateTemplateYaml(templateToUpdate);
+        updatedTemplate =
+            templateRepository.updateTemplateYaml(oldTemplateEntity, templateToUpdate, templateUpdateEventType);
       }
       if (updatedTemplate == null) {
         throw new InvalidRequestException(format(

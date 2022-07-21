@@ -27,6 +27,7 @@ import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
+import io.harness.pms.events.PipelineUpdateEvent;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.mappers.PMSPipelineFilterHelper;
 import io.harness.template.entity.TemplateEntity;
@@ -260,8 +261,9 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
-  public TemplateEntity updateTemplateYamlForOldGitSync(TemplateEntity templateToUpdate, TemplateEntity oldTemplateEntity,
-                                                        ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
+  public TemplateEntity updateTemplateYamlForOldGitSync(TemplateEntity templateToUpdate,
+      TemplateEntity oldTemplateEntity, ChangeType changeType, String comments,
+      TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
     Supplier<OutboxEvent> supplier = null;
     if (shouldLogAudits(templateToUpdate.getAccountId(), templateToUpdate.getOrgIdentifier(),
             templateToUpdate.getProjectIdentifier())
@@ -277,33 +279,62 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
-  public TemplateEntity updateTemplateYaml(TemplateEntity templateEntity) {
+  public TemplateEntity updateTemplateYaml(TemplateEntity oldTemplateEntity, TemplateEntity newTemplateEntity,
+      TemplateUpdateEventType templateUpdateEventType) {
     Criteria criteria =
-            PMSPipelineFilterHelper.getCriteriaForFind(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
-                    templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(), true);
+        buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
+            oldTemplateEntity.getAccountId(), oldTemplateEntity.getOrgIdentifier(),
+            oldTemplateEntity.getProjectIdentifier(), oldTemplateEntity.getIdentifier(),
+            oldTemplateEntity.getVersionLabel(), true);
+
     Query query = new Query(criteria);
     long timeOfUpdate = System.currentTimeMillis();
-    Update updateOperations = PMSPipelineFilterHelper.getUpdateOperations(pipelineToUpdate, timeOfUpdate);
+    Update updateOperations = TemplateUtils.getUpdateOperations(oldTemplateEntity, timeOfUpdate);
 
-    PipelineEntity updatedPipelineEntity = transactionHelper.performTransaction(
-            () -> updatePipelineEntityInDB(query, updateOperations, pipelineToUpdate, timeOfUpdate));
+    TemplateEntity updatedTemplateEntity =  updateTemplateEntityInDB(query, updateOperations, oldTemplateEntity, timeOfUpdate, templateUpdateEventType));
 
-    if (updatedPipelineEntity == null) {
+    if (updatedTemplateEntity == null) {
       return null;
     }
 
-    updatedPipelineEntity = onboardToInlineIfNullStoreType(updatedPipelineEntity, query);
-    if (updatedPipelineEntity == null) {
+    updatedTemplateEntity = onboardToInlineIfNullStoreType(updatedTemplateEntity, query);
+    if (updatedTemplateEntity == null) {
       return null;
     }
 
-    if (updatedPipelineEntity.getStoreType() == StoreType.REMOTE
-            && gitSyncSdkService.isGitSimplificationEnabled(pipelineToUpdate.getAccountIdentifier(),
-            pipelineToUpdate.getOrgIdentifier(), pipelineToUpdate.getProjectIdentifier())) {
-      Scope scope = buildScope(updatedPipelineEntity);
-      gitAwareEntityHelper.updateEntityOnGit(updatedPipelineEntity, pipelineToUpdate.getYaml(), scope);
+    //    isNewGitXEnabled(newTemplateEntity, gitEntityInfo)
+    if (updatedTemplateEntity.getStoreType() == StoreType.REMOTE
+        && gitSyncSdkService.isGitSimplificationEnabled(newTemplateEntity.getAccountIdentifier(),
+            newTemplateEntity.getOrgIdentifier(), newTemplateEntity.getProjectIdentifier())) {
+      Scope scope = TemplateUtils.buildScope(newTemplateEntity);
+      gitAwareEntityHelper.updateEntityOnGit(updatedTemplateEntity, newTemplateEntity.getYaml(), scope);
     }
-    return updatedPipelineEntity;
+    return updatedTemplateEntity;
+  }
+
+  TemplateEntity updateTemplateEntityInDB(Query query, Update updateOperations, TemplateEntity templateToUpdate,
+      long timeOfUpdate, TemplateUpdateEventType templateUpdateEventType) {
+    TemplateEntity oldEntityFromDB = mongoTemplate.findAndModify(
+        query, updateOperations, new FindAndModifyOptions().returnNew(false), TemplateEntity.class);
+    if (oldEntityFromDB == null) {
+      return null;
+    }
+    TemplateEntity templateEntityAfterUpdate =
+        PMSPipelineFilterHelper.updateFieldsInDBEntry(oldEntityFromDB, templateToUpdate, timeOfUpdate);
+    outboxService.save(
+        new TemplateUpdateEvent(templateToUpdate.getAccountIdentifier(), templateToUpdate.getOrgIdentifier(),
+                templateToUpdate.getProjectIdentifier(), oldEntityFromDB, templateEntityAfterUpdate, "", templateUpdateEventType != null ? templateUpdateEventType : TemplateUpdateEventType.OTHERS_EVENT)));
+    return templateEntityAfterUpdate;
+  }
+
+  TemplateEntity onboardToInlineIfNullStoreType(TemplateEntity updatedTemplateEntity, Query query) {
+    if (updatedTemplateEntity.getStoreType() == null) {
+      // onboarding old entities as INLINE
+      Update updateOperationsForOnboardingToInline = TemplateUtils.getUpdateOperationsForOnboardingToInline();
+      updatedTemplateEntity = mongoTemplate.findAndModify(query, updateOperationsForOnboardingToInline,
+          new FindAndModifyOptions().returnNew(true), TemplateEntity.class);
+    }
+    return updatedTemplateEntity;
   }
 
   @Override
