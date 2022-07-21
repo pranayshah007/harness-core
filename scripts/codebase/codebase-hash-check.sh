@@ -18,7 +18,7 @@ echo "New hash: " $HASH
 touch $TEMP_DIR/codehash-out-develop.text
 git fetch origin develop
 git checkout develop
-DEVELOP_COMMIT=$(git merge-base $ghprbSourceBranch develop)
+DEVELOP_COMMIT=$(git merge-base $ghprbSourceBranch $ghprbTargetBranch)
 git checkout "$DEVELOP_COMMIT"
 bazel run "//001-microservice-intfc-tool:delegate" | tee $TEMP_DIR/codehash-out-develop.text
 CODEBASE_HASH_STRING=`cat $TEMP_DIR/codehash-out-develop.text | grep "Codebase Hash:"`
