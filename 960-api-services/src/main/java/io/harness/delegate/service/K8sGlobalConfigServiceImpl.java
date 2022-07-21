@@ -99,7 +99,7 @@ public class K8sGlobalConfigServiceImpl implements K8sGlobalConfigService {
       // Temporary solution to ignore InstallUtils.getPath exception to handle the case when user manually installs only
       // required tools. We should improve our logic to fetch only tools that are required for a specific
       // deployment/manifest type
-      log.warn("Failed to get tool path", e);
+      log.warn("Failed to get tool path for {} and version {}", tool.getBinaryName(), version.getVersion(), e);
       return "";
     }
   }
