@@ -8,6 +8,7 @@
 package software.wings.security;
 
 import static io.harness.AuthorizationServiceHeader.DEFAULT;
+import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -397,10 +398,11 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       if (header != null && header.contains("Delegate")) {
         String delegateId = containerRequestContext.getHeaderString("delegateId");
         String delegateTokeName = containerRequestContext.getHeaderString("delegateTokenName");
+        String agentMtlsAuthority = containerRequestContext.getHeaderString(HEADER_AGENT_MTLS_AUTHORITY);
 
         authService.validateDelegateToken(accountId,
             substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate "), delegateId,
-            delegateTokeName, true);
+            delegateTokeName, agentMtlsAuthority, true);
       } else {
         throw new IllegalStateException("Invalid header:" + header);
       }
@@ -415,8 +417,10 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     try (AccountLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       String authHeader = containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
       if (authHeader != null && authHeader.contains("Delegate")) {
-        authService.validateDelegateToken(
-            accountId, substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate "));
+        String agentMtlsAuthority = containerRequestContext.getHeaderString(HEADER_AGENT_MTLS_AUTHORITY);
+        authService.validateDelegateToken(accountId,
+            substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate "),
+            agentMtlsAuthority);
       } else {
         throw new IllegalStateException("Invalid authentication header:" + authHeader);
       }

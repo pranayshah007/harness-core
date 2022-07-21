@@ -64,11 +64,14 @@ public class RuntimeInputFormHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateExecutionInputFormAndUpdateYamlField() throws JsonProcessingException {
     String filename = "execution-input-pipeline.yaml";
+    String inputTemplateFileName = "execution-input-pipeline-template.yaml";
+    String expectedTemplateYaml = readFile(inputTemplateFileName);
     String yaml = readFile(filename);
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     JsonNode jsonNode = mapper.readTree(yaml);
     String templateYaml = RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlField(jsonNode);
     assertNotNull(templateYaml);
+    assertEquals(templateYaml, expectedTemplateYaml);
     assertFalse(jsonNode.toString().contains("<+input>.executionInput()()"));
     assertTrue(yaml.contains("<+input>.executionInput()"));
     assertEquals(jsonNode.get("pipeline")
@@ -100,5 +103,54 @@ public class RuntimeInputFormHelperTest extends CategoryTest {
         "<+executionInput.pipeline.stages.sd.spec.execution.steps.ss.spec.source.spec.script>");
     assertEquals(jsonNode.get("pipeline").get("stages").get(0).get("stage").get("description").asText(),
         "<+executionInput.pipeline.stages.sd.description>");
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testCreateExecutionInputFormAndUpdateYamlFieldForStage() throws JsonProcessingException {
+    String filename = "execution-input-pipeline.yaml";
+    String expectedTemplateYaml = "stage:\n"
+        + "  identifier: \"sd\"\n"
+        + "  type: \"Approval\"\n"
+        + "  description: \"<+input>.executionInput()\"\n";
+    String yaml = readFile(filename);
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    JsonNode jsonNode = mapper.readTree(yaml);
+    String templateYaml = RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(
+        jsonNode.get("pipeline").get("stages").get(0));
+    assertNotNull(templateYaml);
+    assertEquals(templateYaml, expectedTemplateYaml);
+    assertFalse(jsonNode.toString().contains("<+input>.executionInput()()"));
+    assertTrue(yaml.contains("<+input>.executionInput()"));
+    assertEquals(jsonNode.get("pipeline")
+                     .get("stages")
+                     .get(0)
+                     .get("stage")
+                     .get("spec")
+                     .get("execution")
+                     .get("steps")
+                     .get(0)
+                     .get("step")
+                     .get("type")
+                     .asText(),
+        "<+input>.executionInput()");
+    assertEquals(jsonNode.get("pipeline")
+                     .get("stages")
+                     .get(0)
+                     .get("stage")
+                     .get("spec")
+                     .get("execution")
+                     .get("steps")
+                     .get(0)
+                     .get("step")
+                     .get("spec")
+                     .get("source")
+                     .get("spec")
+                     .get("script")
+                     .asText(),
+        "<+input>.executionInput()");
+    assertEquals(jsonNode.get("pipeline").get("stages").get(0).get("stage").get("description").asText(),
+        "<+executionInput.stage.description>");
   }
 }

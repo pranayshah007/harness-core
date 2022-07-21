@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.docker.DockerRegistryRestClient;
+import io.harness.artifacts.docker.HarborRestClient;
 import io.harness.artifacts.docker.beans.DockerInternalConfig;
 import io.harness.network.Http;
 
@@ -34,5 +35,16 @@ public class DockerRestClientFactoryImpl implements DockerRestClientFactory {
                             .addConverterFactory(JacksonConverterFactory.create())
                             .build();
     return retrofit.create(DockerRegistryRestClient.class);
+  }
+
+  public static HarborRestClient getHarborRestClient(DockerInternalConfig dockerConfig) {
+    OkHttpClient okHttpClient =
+        Http.getOkHttpClient(dockerConfig.getDockerRegistryUrl(), dockerConfig.isCertValidationRequired());
+    Retrofit retrofit = new Retrofit.Builder()
+                            .client(okHttpClient)
+                            .baseUrl(dockerConfig.getDockerRegistryUrl())
+                            .addConverterFactory(JacksonConverterFactory.create())
+                            .build();
+    return retrofit.create(HarborRestClient.class);
   }
 }

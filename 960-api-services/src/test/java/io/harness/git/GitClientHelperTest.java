@@ -663,7 +663,7 @@ public class GitClientHelperTest extends CategoryTest {
   @Test
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
-  public void testGetCompleteHTTPUrlFromSSHUrlForBitbucketClone() {
+  public void testGetCompleteHTTPUrlFromHTTPCloneUrlForBitbucket() {
     assertThat(GitClientHelper.getCompleteHTTPUrlForBitbucketSaas("https://bhavya181@bitbucket.org/repoOrg/repo.git"))
         .isEqualTo("https://bitbucket.org/repoOrg/repo");
   }

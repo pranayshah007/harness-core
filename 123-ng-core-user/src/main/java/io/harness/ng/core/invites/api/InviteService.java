@@ -26,7 +26,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PL)
 public interface InviteService {
-  InviteOperationResponse create(Invite invite, boolean isScimInvite);
+  InviteOperationResponse create(Invite invite, boolean isScimInvite, boolean isLdap);
 
   List<InviteOperationResponse> createInvitations(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, CreateInviteDTO createInviteDTO);

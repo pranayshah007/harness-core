@@ -12,13 +12,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.shell.CommandTaskParameters;
-import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.logging.CommandExecutionStatus;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface CommandHandler {
-  default String getExecutionStagingDir(SshCommandTaskParameters taskParameters) {
+  default String getExecutionStagingDir(CommandTaskParameters taskParameters) {
     return String.format("/tmp/%s", taskParameters.getExecutionId());
   }
 

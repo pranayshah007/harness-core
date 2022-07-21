@@ -159,7 +159,6 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
       + "              spec:\n"
       + "                releaseName: releaseName1";
   private static final String JEXL = "true";
-  private static final String PROJECT = "project";
   private static final String REPO = "myrepo";
   private static final String CONN = "conn";
   @Mock private TriggerEventHistoryRepository triggerEventHistoryRepository;
@@ -524,7 +523,6 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     assertThat(webhookTriggerConfigV2.getType()).isEqualTo(WebhookTriggerType.AZURE);
     assertThat(AzureRepoSpec.class.isAssignableFrom(webhookTriggerConfigV2.getSpec().getClass())).isTrue();
     AzureRepoSpec spec = (AzureRepoSpec) webhookTriggerConfigV2.getSpec();
-    assertThat(spec.getSpec().getProjectName()).isEqualTo(PROJECT);
     assertThat(spec.getType()).isEqualTo(AzureRepoTriggerEvent.PULL_REQUEST);
     assertThat(spec.fetchPayloadAware().fetchPayloadConditions()).containsAll(payloadConditions);
     assertThat(spec.fetchPayloadAware().fetchHeaderConditions()).containsAll(headerConditions);
@@ -553,7 +551,6 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     assertThat(webhookTriggerConfigV2.getType()).isEqualTo(WebhookTriggerType.AZURE);
     assertThat(AzureRepoSpec.class.isAssignableFrom(webhookTriggerConfigV2.getSpec().getClass())).isTrue();
     AzureRepoSpec spec = (AzureRepoSpec) webhookTriggerConfigV2.getSpec();
-    assertThat(spec.getSpec().getProjectName()).isEqualTo(PROJECT);
     assertThat(spec.getType()).isEqualTo(AzureRepoTriggerEvent.PUSH);
     assertThat(spec.fetchPayloadAware().fetchPayloadConditions()).containsAll(payloadConditions);
     assertThat(spec.fetchPayloadAware().fetchHeaderConditions()).containsAll(headerConditions);

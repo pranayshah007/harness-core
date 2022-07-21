@@ -257,7 +257,7 @@ public class StepUtils {
             .setType(TaskType.newBuilder().setType(taskData.getTaskType()).build());
 
     ObjectMapper objectMapper = new ObjectMapper();
-    if (taskData.getSerializationFormat().equals(SerializationFormat.JSON)) {
+    if (SerializationFormat.JSON.equals(taskData.getSerializationFormat())) {
       try {
         taskDetailsBuilder.setJsonParameters(ByteString.copyFrom(objectMapper.writeValueAsBytes(taskParameters)));
       } catch (JsonProcessingException e) {

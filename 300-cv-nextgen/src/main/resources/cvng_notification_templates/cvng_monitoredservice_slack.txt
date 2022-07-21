@@ -22,6 +22,16 @@
               "type": "divider"
             },
             {
+              "type" : "section",
+              "text" : {
+                "type" : "mrkdwn",
+                "text": "*Top metrics that are affected*\n${ANOMALOUS_METRIC}"
+              }
+            },
+            {
+              "type": "divider"
+            },
+            {
                 "type": "section",
                 "fields": [
                     {

@@ -294,7 +294,7 @@ public class PcfSetupState extends State {
     List<String> tempRouteMaps = fetchTempRoutes(context, pcfInfrastructureMapping);
     List<String> routeMaps = fetchRouteMaps(context, pcfManifestsPackage, pcfInfrastructureMapping);
     Integer maxCount = fetchMaxCount(pcfManifestsPackage);
-
+    boolean isWebProcessCountZero = maxCount == 0;
     Map<String, String> serviceVariables = context.getServiceVariables().entrySet().stream().collect(
         Collectors.toMap(Entry::getKey, e -> e.getValue().toString()));
     if (serviceVariables != null) {
@@ -394,6 +394,7 @@ public class PcfSetupState extends State {
             .artifactProcessingScript(artifactProcessingScript)
             .tags(tags)
             .cfAppNamePrefix(pcfAppNameSuffix)
+            .isWebProcessCountZero(isWebProcessCountZero)
             .build();
 
     String waitId = generateUuid();
@@ -682,6 +683,7 @@ public class PcfSetupState extends State {
             .existingAppNamingStrategy(isPcfSetupCommandResponseNull
                     ? AppNamingStrategy.VERSIONING.name()
                     : cfSetupCommandResponse.getExistingAppNamingStrategy())
+            .isWebProcessCountZero(stateExecutionData.isWebProcessCountZero())
             .isUseCfCli(true);
 
     if (!isPcfSetupCommandResponseNull) {

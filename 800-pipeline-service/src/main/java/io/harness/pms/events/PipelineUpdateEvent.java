@@ -36,6 +36,9 @@ public class PipelineUpdateEvent implements Event {
   private PipelineEntity oldPipeline;
   private Boolean isForOldGitSync;
 
+  // adding this back so that older records with this field can be read
+  private Boolean isFromGit;
+
   public PipelineUpdateEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       PipelineEntity newPipeline, PipelineEntity oldPipeline) {
     this.accountIdentifier = accountIdentifier;
@@ -73,6 +76,13 @@ public class PipelineUpdateEvent implements Event {
         .type(ResourceTypeConstants.PIPELINE)
         .labels(labels)
         .build();
+  }
+
+  public Boolean getIsForOldGitSync() {
+    if (isForOldGitSync == null) {
+      return isFromGit != null && isFromGit;
+    }
+    return isForOldGitSync;
   }
 
   @JsonIgnore

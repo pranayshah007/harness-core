@@ -12,8 +12,17 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
+import io.harness.beans.Scope;
+import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.dto.GitContextRequestParams;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.common.helper.EntityDistinctElementHelper;
+import io.harness.gitsync.helpers.GitContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.outbox.OutboxEvent;
@@ -24,8 +33,12 @@ import io.harness.template.events.TemplateCreateEvent;
 import io.harness.template.events.TemplateDeleteEvent;
 import io.harness.template.events.TemplateUpdateEvent;
 import io.harness.template.events.TemplateUpdateEventType;
+import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
+import io.harness.template.utils.TemplateUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -37,20 +50,23 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
 
-@AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
+@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(CDC)
 public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCustom {
   private final GitAwarePersistence gitAwarePersistence;
   private final GitSyncSdkService gitSyncSdkService;
+  private final GitAwareEntityHelper gitAwareEntityHelper;
   private final MongoTemplate mongoTemplate;
+  private final NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
   OutboxService outboxService;
 
   @Override
-  public TemplateEntity save(TemplateEntity templateToSave, String comments) {
+  public TemplateEntity saveForOldGitSync(TemplateEntity templateToSave, String comments) {
     Supplier<OutboxEvent> supplier = null;
     if (shouldLogAudits(
             templateToSave.getAccountId(), templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier())) {
@@ -63,61 +79,182 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
+  public TemplateEntity save(TemplateEntity templateToSave, String comments) throws InvalidRequestException {
+    GitAwareContextHelper.initDefaultScmGitMetaData();
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    if (gitEntityInfo == null || TemplateUtils.isInlineEntity(gitEntityInfo)) {
+      templateToSave.setStoreType(StoreType.INLINE);
+      TemplateEntity savedTemplateEntity = mongoTemplate.save(templateToSave);
+      if (shouldLogAudits(templateToSave.getAccountId(), templateToSave.getOrgIdentifier(),
+              templateToSave.getProjectIdentifier())) {
+        outboxService.save(new TemplateCreateEvent(templateToSave.getAccountIdentifier(),
+            templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier(), templateToSave, comments));
+      }
+      return savedTemplateEntity;
+    }
+    if (isNewGitXEnabled(templateToSave, gitEntityInfo)) {
+      Scope scope = TemplateUtils.buildScope(templateToSave);
+      String yamlToPush = templateToSave.getYaml();
+      addGitParamsToTemplateEntity(templateToSave, gitEntityInfo);
+
+      gitAwareEntityHelper.createEntityOnGit(templateToSave, yamlToPush, scope);
+    } else {
+      if (templateToSave.getProjectIdentifier() != null) {
+        throw new InvalidRequestException(String.format(
+            "Remote git simplification was not enabled for Project [%s] in Organisation [%s] in Account [%s]",
+            templateToSave.getProjectIdentifier(), templateToSave.getOrgIdentifier(),
+            templateToSave.getAccountIdentifier()));
+      } else {
+        throw new InvalidRequestException(String.format(
+            "Remote git simplification or feature flag was not enabled for Organisation [%s] or Account [%s]",
+            templateToSave.getOrgIdentifier(), templateToSave.getAccountIdentifier()));
+      }
+    }
+    TemplateEntity savedTemplateEntity = mongoTemplate.save(templateToSave);
+    if (shouldLogAudits(
+            templateToSave.getAccountId(), templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier())) {
+      outboxService.save(new TemplateCreateEvent(templateToSave.getAccountIdentifier(),
+          templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier(), templateToSave, comments));
+    }
+    return savedTemplateEntity;
+  }
+
+  @Override
+  public Optional<TemplateEntity>
+  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForOldGitSync(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
+      boolean notDeleted) {
+    Criteria criteria =
+        buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
+            accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, notDeleted);
+    return gitAwarePersistence.findOne(criteria, projectIdentifier, orgIdentifier, accountId, TemplateEntity.class);
+  }
+
+  @Override
   public Optional<TemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(String accountId,
       String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
       boolean notDeleted) {
-    return gitAwarePersistence.findOne(Criteria.where(TemplateEntityKeys.deleted)
-                                           .is(!notDeleted)
-                                           .and(TemplateEntityKeys.versionLabel)
-                                           .is(versionLabel)
-                                           .and(TemplateEntityKeys.identifier)
-                                           .is(templateIdentifier)
-                                           .and(TemplateEntityKeys.projectIdentifier)
-                                           .is(projectIdentifier)
-                                           .and(TemplateEntityKeys.orgIdentifier)
-                                           .is(orgIdentifier)
-                                           .and(TemplateEntityKeys.accountId)
-                                           .is(accountId),
-        projectIdentifier, orgIdentifier, accountId, TemplateEntity.class);
+    Criteria criteria =
+        buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
+            accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, notDeleted);
+    return getTemplateEntity(criteria, accountId, orgIdentifier, projectIdentifier);
+  }
+
+  @Override
+  public Optional<TemplateEntity>
+  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForOldGitSync(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted) {
+    Criteria criteria =
+        buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
+            accountId, orgIdentifier, projectIdentifier, templateIdentifier, notDeleted);
+    return gitAwarePersistence.findOne(criteria, projectIdentifier, orgIdentifier, accountId, TemplateEntity.class);
   }
 
   @Override
   public Optional<TemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted) {
-    return gitAwarePersistence.findOne(Criteria.where(TemplateEntityKeys.deleted)
-                                           .is(!notDeleted)
-                                           .and(TemplateEntityKeys.isStableTemplate)
-                                           .is(true)
-                                           .and(TemplateEntityKeys.identifier)
-                                           .is(templateIdentifier)
-                                           .and(TemplateEntityKeys.projectIdentifier)
-                                           .is(projectIdentifier)
-                                           .and(TemplateEntityKeys.orgIdentifier)
-                                           .is(orgIdentifier)
-                                           .and(TemplateEntityKeys.accountId)
-                                           .is(accountId),
-        projectIdentifier, orgIdentifier, accountId, TemplateEntity.class);
+    Criteria criteria =
+        buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
+            accountId, orgIdentifier, projectIdentifier, templateIdentifier, notDeleted);
+    return getTemplateEntity(criteria, accountId, orgIdentifier, projectIdentifier);
+  }
+
+  @Override
+  public Optional<TemplateEntity>
+  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNotForOldGitSync(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted) {
+    Criteria criteria =
+        buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNot(
+            accountId, orgIdentifier, projectIdentifier, templateIdentifier, notDeleted);
+    return gitAwarePersistence.findOne(criteria, projectIdentifier, orgIdentifier, accountId, TemplateEntity.class);
   }
 
   @Override
   public Optional<TemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNot(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted) {
-    return gitAwarePersistence.findOne(Criteria.where(TemplateEntityKeys.deleted)
-                                           .is(!notDeleted)
-                                           .and(TemplateEntityKeys.isLastUpdatedTemplate)
-                                           .is(true)
-                                           .and(TemplateEntityKeys.identifier)
-                                           .is(templateIdentifier)
-                                           .and(TemplateEntityKeys.projectIdentifier)
-                                           .is(projectIdentifier)
-                                           .and(TemplateEntityKeys.orgIdentifier)
-                                           .is(orgIdentifier)
-                                           .and(TemplateEntityKeys.accountId)
-                                           .is(accountId),
-        projectIdentifier, orgIdentifier, accountId, TemplateEntity.class);
+    Criteria criteria =
+        buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNot(
+            accountId, orgIdentifier, projectIdentifier, templateIdentifier, notDeleted);
+    return getTemplateEntity(criteria, accountId, orgIdentifier, projectIdentifier);
+  }
+
+  private Criteria
+  buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
+      boolean notDeleted) {
+    return Criteria.where(TemplateEntityKeys.deleted)
+        .is(!notDeleted)
+        .and(TemplateEntityKeys.versionLabel)
+        .is(versionLabel)
+        .and(TemplateEntityKeys.identifier)
+        .is(templateIdentifier)
+        .and(TemplateEntityKeys.projectIdentifier)
+        .is(projectIdentifier)
+        .and(TemplateEntityKeys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(TemplateEntityKeys.accountId)
+        .is(accountId);
+  }
+
+  private Criteria
+  buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted) {
+    return Criteria.where(TemplateEntityKeys.deleted)
+        .is(!notDeleted)
+        .and(TemplateEntityKeys.isStableTemplate)
+        .is(true)
+        .and(TemplateEntityKeys.identifier)
+        .is(templateIdentifier)
+        .and(TemplateEntityKeys.projectIdentifier)
+        .is(projectIdentifier)
+        .and(TemplateEntityKeys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(TemplateEntityKeys.accountId)
+        .is(accountId);
+  }
+
+  private Criteria
+  buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNot(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted) {
+    return Criteria.where(TemplateEntityKeys.deleted)
+        .is(!notDeleted)
+        .and(TemplateEntityKeys.isLastUpdatedTemplate)
+        .is(true)
+        .and(TemplateEntityKeys.identifier)
+        .is(templateIdentifier)
+        .and(TemplateEntityKeys.projectIdentifier)
+        .is(projectIdentifier)
+        .and(TemplateEntityKeys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(TemplateEntityKeys.accountId)
+        .is(accountId);
+  }
+
+  private Optional<TemplateEntity> getTemplateEntity(
+      Criteria criteria, String accountId, String orgIdentifier, String projectIdentifier) {
+    Query query = new Query(criteria);
+    TemplateEntity savedEntity = mongoTemplate.findOne(query, TemplateEntity.class);
+    if (savedEntity == null) {
+      return Optional.empty();
+    }
+    if (savedEntity.getStoreType() == StoreType.REMOTE) {
+      // fetch yaml from git
+      GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+      savedEntity = (TemplateEntity) gitAwareEntityHelper.fetchEntityFromRemote(savedEntity,
+          Scope.of(accountId, orgIdentifier, projectIdentifier),
+          GitContextRequestParams.builder()
+              .branchName(gitEntityInfo.getBranch())
+              .connectorRef(savedEntity.getConnectorRef())
+              .filePath(savedEntity.getFilePath())
+              .repoName(savedEntity.getRepo())
+              .build(),
+          Collections.emptyMap());
+    }
+
+    return Optional.of(savedEntity);
   }
 
   @Override
@@ -202,8 +339,63 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
         query(criteria), update, FindAndModifyOptions.options().returnNew(true), TemplateEntity.class);
   }
 
+  @Override
+  public TemplateEntity updateIsStableTemplate(TemplateEntity templateEntity, boolean value) {
+    Update update = new Update().set(TemplateEntityKeys.isStableTemplate, value);
+    return mongoTemplate.findAndModify(query(buildCriteria(templateEntity)), update,
+        FindAndModifyOptions.options().returnNew(true), TemplateEntity.class);
+  }
+
+  @Override
+  public TemplateEntity updateIsLastUpdatedTemplate(TemplateEntity templateEntity, boolean value) {
+    Update update = new Update().set(TemplateEntityKeys.isLastUpdatedTemplate, value);
+    return mongoTemplate.findAndModify(query(buildCriteria(templateEntity)), update,
+        FindAndModifyOptions.options().returnNew(true), TemplateEntity.class);
+  }
+
+  private Criteria buildCriteria(TemplateEntity templateEntity) {
+    return Criteria.where(TemplateEntityKeys.accountId)
+        .is(templateEntity.getAccountId())
+        .and(TemplateEntityKeys.orgIdentifier)
+        .is(templateEntity.getOrgIdentifier())
+        .and(TemplateEntityKeys.projectIdentifier)
+        .is(templateEntity.getProjectIdentifier())
+        .and(TemplateEntityKeys.identifier)
+        .is(templateEntity.getIdentifier())
+        .and(TemplateEntityKeys.versionLabel)
+        .is(templateEntity.getVersionLabel())
+        .and(TemplateEntityKeys.branch)
+        .is(templateEntity.getBranch())
+        .and(TemplateEntityKeys.yamlGitConfigRef)
+        .is(templateEntity.getYamlGitConfigRef());
+  }
+
   boolean shouldLogAudits(String accountId, String orgIdentifier, String projectIdentifier) {
     // if git sync is disabled or if git sync is enabled (only for default branch)
     return !gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier);
+  }
+
+  private void addGitParamsToTemplateEntity(TemplateEntity templateEntity, GitEntityInfo gitEntityInfo) {
+    templateEntity.setStoreType(StoreType.REMOTE);
+    templateEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
+    templateEntity.setRepo(gitEntityInfo.getRepoName());
+    templateEntity.setFilePath(gitEntityInfo.getFilePath());
+  }
+
+  @VisibleForTesting
+  boolean isNewGitXEnabled(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
+    if (templateToSave.getProjectIdentifier() != null) {
+      return isGitSimplificationEnabled(templateToSave, gitEntityInfo);
+    } else {
+      return ngTemplateFeatureFlagHelperService.isEnabled(
+                 templateToSave.getAccountId(), FeatureName.FF_TEMPLATE_GITSYNC)
+          && TemplateUtils.isRemoteEntity(gitEntityInfo);
+    }
+  }
+
+  private boolean isGitSimplificationEnabled(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
+    return gitSyncSdkService.isGitSimplificationEnabled(templateToSave.getAccountIdentifier(),
+               templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier())
+        && TemplateUtils.isRemoteEntity(gitEntityInfo);
   }
 }

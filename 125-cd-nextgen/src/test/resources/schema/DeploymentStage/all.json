@@ -191,6 +191,20 @@
               "type": "string"
             }
           }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "filePath"
+              ]
+            },
+            {
+              "required": [
+                "filePathRegex"
+              ]
+            }
+          ]
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -435,17 +449,11 @@
           "type": "object",
           "required": [
             "connectorRef",
-            "deploymentSlot",
             "resourceGroup",
-            "subscriptionId",
-            "webApp"
+            "subscriptionId"
           ],
           "properties": {
             "connectorRef": {
-              "type": "string",
-              "minLength": 1
-            },
-            "deploymentSlot": {
               "type": "string",
               "minLength": 1
             },
@@ -454,13 +462,6 @@
               "minLength": 1
             },
             "subscriptionId": {
-              "type": "string",
-              "minLength": 1
-            },
-            "targetSlot": {
-              "type": "string"
-            },
-            "webApp": {
               "type": "string",
               "minLength": 1
             }
@@ -526,6 +527,10 @@
         },
         {
           "type": "object",
+          "required": [
+            "deploymentSlot",
+            "webApp"
+          ],
           "properties": {
             "delegateSelectors": {
               "oneOf": [
@@ -541,6 +546,12 @@
                   "minLength": 1
                 }
               ]
+            },
+            "deploymentSlot": {
+              "type": "string"
+            },
+            "webApp": {
+              "type": "string"
             }
           }
         }
@@ -554,6 +565,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "targetSlot"
+          ],
           "properties": {
             "delegateSelectors": {
               "oneOf": [
@@ -569,6 +583,9 @@
                   "minLength": 1
                 }
               ]
+            },
+            "targetSlot": {
+              "type": "string"
             }
           }
         }
@@ -1482,6 +1499,44 @@
                   "type": "string"
                 }
               ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CustomRemoteStoreConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StoreConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "extractionScript",
+            "filePath"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "extractionScript": {
+              "type": "string"
+            },
+            "filePath": {
+              "type": "string"
             }
           }
         }
@@ -2434,7 +2489,7 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -2448,7 +2503,7 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -3805,6 +3860,9 @@
         {
           "type": "object",
           "properties": {
+            "manifestScope": {
+              "type": "string"
+            },
             "metadata": {
               "type": "string"
             },
@@ -4175,7 +4233,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -4429,7 +4487,8 @@
                   "format": "double"
                 },
                 {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*))"
                 }
               ]
             }
@@ -7222,6 +7281,7 @@
         "type": {
           "type": "string",
           "enum": [
+            "CustomRemote",
             "Git",
             "Github",
             "Bitbucket",
@@ -7285,6 +7345,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/BitbucketStore"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CustomRemote"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CustomRemoteStoreConfig"
               }
             }
           }
@@ -7501,7 +7577,7 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]

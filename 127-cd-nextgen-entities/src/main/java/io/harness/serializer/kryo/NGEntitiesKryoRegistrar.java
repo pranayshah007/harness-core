@@ -45,6 +45,7 @@ import io.harness.cdng.manifest.yaml.EcsScalableTargetDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsScalingPolicyDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsServiceDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsTaskDefinitionManifestOutcome;
+import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.GitLabStore;
 import io.harness.cdng.manifest.yaml.GitStore;
@@ -212,6 +213,7 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(AmazonS3ArtifactConfig.class, 12569);
     kryo.register(AzureRepoStore.class, 12570);
 
+    kryo.register(CustomRemoteStoreConfig.class, 12589);
     kryo.register(JenkinsArtifactConfig.class, 130012);
 
     kryo.register(EcsScalingPolicyDefinitionManifest.class,130013);

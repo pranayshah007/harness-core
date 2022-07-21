@@ -222,9 +222,11 @@ public class EnvState extends State implements WorkflowState {
                 .map(Entry::getKey)
                 .collect(toList());
         if (isNotEmpty(workflowVariablesWithExpressionValue)) {
-          workflowVariablesWithExpressionValue.forEach(variable
-              -> executionArgs.getWorkflowVariables().put(
-                  variable, context.renderExpression(executionArgs.getWorkflowVariables().get(variable))));
+          workflowVariablesWithExpressionValue.forEach(variable -> {
+            String value = context.renderExpression(executionArgs.getWorkflowVariables().get(variable));
+            executionArgs.getWorkflowVariables().put(variable,
+                value == null || "null".equals(value) ? executionArgs.getWorkflowVariables().get(variable) : value);
+          });
         }
       }
       WorkflowExecution execution = executionService.triggerOrchestrationExecution(

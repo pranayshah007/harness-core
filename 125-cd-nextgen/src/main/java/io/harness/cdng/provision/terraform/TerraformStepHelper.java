@@ -12,7 +12,6 @@ import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.provision.TerraformConstants.TF_DESTROY_NAME_PREFIX;
-import static io.harness.provision.TerraformConstants.TF_NAME_PREFIX;
 import static io.harness.validation.Validator.notEmptyCheck;
 
 import static java.lang.String.format;
@@ -113,6 +112,7 @@ import org.mongodb.morphia.query.Sort;
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformStepHelper {
   private static final String INHERIT_OUTPUT_FORMAT = "tfInheritOutput_%s";
+  public static final String TF_NAME_PREFIX_NG = "tfPlan_%s_%s";
   private static final String TF_INHERIT_OUTPUT_FORMAT = "tfInheritOutput_%s_%s";
   public static final String TF_CONFIG_FILES = "TF_CONFIG_FILES";
   public static final String TF_VAR_FILES = "TF_VAR_FILES_%d";
@@ -170,7 +170,7 @@ public class TerraformStepHelper {
     GitStoreConfig gitStoreConfig = (GitStoreConfig) store;
     cdStepHelper.validateGitStoreConfig(gitStoreConfig);
     String connectorId = gitStoreConfig.getConnectorRef().getValue();
-    ConnectorInfoDTO connectorDTO = k8sStepHelper.getConnector(connectorId, ambiance);
+    ConnectorInfoDTO connectorDTO = cdStepHelper.getConnector(connectorId, ambiance);
     String validationMessage = "";
     if (identifier.equals(TerraformStepHelper.TF_CONFIG_FILES)) {
       validationMessage = "Config Files";
@@ -178,7 +178,7 @@ public class TerraformStepHelper {
       validationMessage = format("Var Files with identifier: %s", identifier);
     }
     // TODO: fix manifest part, remove k8s dependency
-    k8sStepHelper.validateManifest(store.getKind(), connectorDTO, validationMessage);
+    cdStepHelper.validateManifest(store.getKind(), connectorDTO, validationMessage);
     GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO((ScmConnector) connectorDTO.getConnectorConfig());
     NGAccess basicNGAccessObject = AmbianceUtils.getNgAccess(ambiance);
     SSHKeySpecDTO sshKeySpecDTO =
@@ -224,7 +224,7 @@ public class TerraformStepHelper {
     ArtifactoryStoreConfig artifactoryStoreConfig = (ArtifactoryStoreConfig) store;
     validateArtifactoryStoreConfig(artifactoryStoreConfig);
     String connectorId = ParameterFieldHelper.getParameterFieldValue(artifactoryStoreConfig.getConnectorRef());
-    ConnectorInfoDTO connectorDTO = k8sStepHelper.getConnector(connectorId, ambiance);
+    ConnectorInfoDTO connectorDTO = cdStepHelper.getConnector(connectorId, ambiance);
     String validationMessage = "";
     if (identifier.equals(TerraformStepHelper.TF_CONFIG_FILES)) {
       if (ParameterFieldHelper.getParameterFieldValue(artifactoryStoreConfig.getArtifactPaths()).size() > 1) {
@@ -234,7 +234,7 @@ public class TerraformStepHelper {
     } else {
       validationMessage = format("Var Files with identifier: %s", identifier);
     }
-    k8sStepHelper.validateManifest(store.getKind(), connectorDTO, validationMessage);
+    cdStepHelper.validateManifest(store.getKind(), connectorDTO, validationMessage);
     NGAccess basicNGAccessObject = AmbianceUtils.getNgAccess(ambiance);
     List<EncryptedDataDetail> encryptedDataDetails = secretManagerClientService.getEncryptionDetails(
         basicNGAccessObject, ((ArtifactoryConnectorDTO) connectorDTO.getConnectorConfig()).getAuth().getCredentials());
@@ -312,7 +312,8 @@ public class TerraformStepHelper {
         .targets(ParameterFieldHelper.getParameterFieldValue(configuration.getTargets()))
         .encryptedTfPlan(terraformTaskNGResponse.getEncryptedTfPlan())
         .encryptionConfig(getEncryptionConfig(ambiance, planStepParameters))
-        .planName(getTerraformPlanName(planStepParameters.getConfiguration().getCommand(), ambiance));
+        .planName(getTerraformPlanName(planStepParameters.getConfiguration().getCommand(), ambiance,
+            planStepParameters.getProvisionerIdentifier().getValue()));
     String fullEntityId = generateFullIdentifier(
         ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance);
     String inheritOutputName =
@@ -365,9 +366,9 @@ public class TerraformStepHelper {
     }
   }
 
-  public String getTerraformPlanName(TerraformPlanCommand terraformPlanCommand, Ambiance ambiance) {
-    String prefix = TerraformPlanCommand.DESTROY == terraformPlanCommand ? TF_DESTROY_NAME_PREFIX : TF_NAME_PREFIX;
-    return format(prefix, ambiance.getPlanExecutionId()).replaceAll("_", "-");
+  public String getTerraformPlanName(TerraformPlanCommand terraformPlanCommand, Ambiance ambiance, String provisionId) {
+    String prefix = TerraformPlanCommand.DESTROY == terraformPlanCommand ? TF_DESTROY_NAME_PREFIX : TF_NAME_PREFIX_NG;
+    return format(prefix, ambiance.getPlanExecutionId(), provisionId).replaceAll("_", "-");
   }
 
   public EncryptionConfig getEncryptionConfig(Ambiance ambiance, TerraformPlanStepParameters planStepParameters) {

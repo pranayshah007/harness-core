@@ -13,6 +13,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.service.instancesynchandler.AbstractInstanceSyncHandler;
 import io.harness.service.instancesynchandler.AzureWebAppInstanceSyncHandler;
+import io.harness.service.instancesynchandler.GitOpsInstanceSyncHandler;
 import io.harness.service.instancesynchandler.K8sInstanceSyncHandler;
 import io.harness.service.instancesynchandler.NativeHelmInstanceSyncHandler;
 import io.harness.service.instancesynchandler.ServerlessAwsLambdaInstanceSyncHandler;
@@ -26,6 +27,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandlerFactoryService {
   private final K8sInstanceSyncHandler k8sInstanceSyncHandler;
+  private final GitOpsInstanceSyncHandler gitOpsInstanceSyncHandler;
   private final NativeHelmInstanceSyncHandler nativeHelmInstanceSyncHandler;
   private final ServerlessAwsLambdaInstanceSyncHandler serverlessAwsLambdaInstanceSyncHandler;
   private final AzureWebAppInstanceSyncHandler azureWebAppInstanceSyncHandler;
@@ -33,6 +35,8 @@ public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandle
   @Override
   public AbstractInstanceSyncHandler getInstanceSyncHandler(final String deploymentType) {
     switch (deploymentType) {
+      case ServiceSpecType.GITOPS:
+        return gitOpsInstanceSyncHandler;
       case ServiceSpecType.KUBERNETES:
         return k8sInstanceSyncHandler;
       case ServiceSpecType.NATIVE_HELM:

@@ -109,6 +109,7 @@ java_library(
         "@maven//:io_github_resilience4j_resilience4j_retry",
         "@maven//:io_kubernetes_client_java",
         "@maven//:io_kubernetes_client_java_api",
+        "@maven//:io_kubernetes_client_java_api_fluent",
         "@maven//:io_projectreactor_reactor_core",
         "@maven//:io_reactivex_rxjava",
         "@maven//:joda_time_joda_time",

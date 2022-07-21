@@ -7,8 +7,11 @@
 
 package io.harness.batch.processing.cloudevents.aws.ecs.service.intfc;
 
+import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
+
 import software.wings.beans.ce.CEAwsConfig;
 
 public interface AwsAccountService {
   void syncLinkedAccounts(String accountId, String settingId, CEAwsConfig ceAwsConfig);
+  void syncNgLinkedAccounts(String accountId, String settingId, CEAwsConnectorDTO ceAwsConnectorDTO);
 }

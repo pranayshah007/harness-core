@@ -32,6 +32,7 @@ import io.harness.cdng.service.steps.ServiceStepParameters;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 import io.harness.polling.bean.PollingDocument;
+import io.harness.telemetry.beans.CdTelemetrySentStatus;
 
 import java.util.Set;
 
@@ -56,6 +57,7 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(SshWinRmAwsInfraMapping.class);
     set.add(AzureWebAppInfraMapping.class);
     set.add(EcsInfraMapping.class);
+    set.add(CdTelemetrySentStatus.class);
   }
 
   @Override

@@ -51,7 +51,7 @@ public class WorkloadSpecWriterTest extends CategoryTest {
 
   @Before
   public void setUp() throws Exception {
-    when(featureFlagService.isEnabled(eq(FeatureName.NODE_RECOMMENDATION_1), eq(ACCOUNT_ID))).thenReturn(false);
+    when(featureFlagService.isEnabled(eq(FeatureName.NODE_RECOMMENDATION_AGGREGATE), eq(ACCOUNT_ID))).thenReturn(false);
   }
 
   @Test

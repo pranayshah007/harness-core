@@ -7,10 +7,10 @@
 
 package io.harness.delegate.task.citasks.cik8handler.k8java;
 
+import static io.harness.connector.SecretSpecBuilder.DOCKER_REGISTRY_SECRET_TYPE;
+import static io.harness.connector.SecretSpecBuilder.OPAQUE_SECRET_TYPE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.task.citasks.cik8handler.SecretSpecBuilder.DOCKER_REGISTRY_SECRET_TYPE;
-import static io.harness.delegate.task.citasks.cik8handler.SecretSpecBuilder.OPAQUE_SECRET_TYPE;
 import static io.harness.exception.WingsException.USER;
 
 import static java.lang.String.format;
@@ -18,11 +18,11 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.ImageSecretBuilder;
+import io.harness.connector.SecretSpecBuilder;
 import io.harness.delegate.beans.ci.k8s.CIContainerStatus;
 import io.harness.delegate.beans.ci.k8s.PodStatus;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
-import io.harness.delegate.task.citasks.cik8handler.ImageSecretBuilder;
-import io.harness.delegate.task.citasks.cik8handler.SecretSpecBuilder;
 import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.PodNotFoundException;

@@ -12,6 +12,7 @@ import io.harness.plancreator.strategy.StageStrategyUtils;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.StrategyMetadata;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.JsonUtils;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -39,7 +40,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
   }
 
   @Override
-  public List<JsonNode> expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode) {
+  public StrategyInfo expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode) {
     HarnessForConfig harnessForConfig = strategyConfig.getForConfig();
     List<JsonNode> jsonNodes = new ArrayList<>();
     for (int i = 0; i < harnessForConfig.getIteration().getValue(); i++) {
@@ -48,6 +49,10 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
       StageStrategyUtils.modifyJsonNode(clonedNode, Lists.newArrayList(String.valueOf(i)));
       jsonNodes.add(clonedNode);
     }
-    return jsonNodes;
+    int maxConcurrency = jsonNodes.size();
+    if (!ParameterField.isBlank(harnessForConfig.getMaxConcurrency())) {
+      maxConcurrency = harnessForConfig.getMaxConcurrency().getValue();
+    }
+    return StrategyInfo.builder().expandedJsonNodes(jsonNodes).maxConcurrency(maxConcurrency).build();
   }
 }

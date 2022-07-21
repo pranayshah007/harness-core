@@ -10,6 +10,7 @@ package io.harness.delegate.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 
@@ -17,6 +18,6 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateMetaInfo {
-  private String id;
-  private String hostName;
+  @JsonProperty("id") private String id;
+  @JsonProperty("host_name") private String hostName;
 }

@@ -14,7 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
-import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
+import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.ci.buildstate.ConnectorUtils;
@@ -47,8 +47,8 @@ public class VmPluginStepSerializer {
   @Inject ConnectorUtils connectorUtils;
   @Inject HarnessImageUtils harnessImageUtils;
 
-  public VmPluginStep serialize(PluginStepInfo pluginStepInfo, VmStageInfraDetails vmStageInfraDetails,
-      String identifier, ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance) {
+  public VmPluginStep serialize(PluginStepInfo pluginStepInfo, StageInfraDetails stageInfraDetails, String identifier,
+      ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance) {
     Map<String, JsonNode> settings =
         resolveJsonNodeMapParameter("settings", "Plugin", identifier, pluginStepInfo.getSettings(), false);
     Map<String, String> envVars = new HashMap<>();
@@ -79,7 +79,7 @@ public class VmPluginStepSerializer {
       String gitImage = ciExecutionServiceConfig.getStepConfig().getVmImageConfig().getGitClone();
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
       ConnectorDetails harnessInternalImageConnector =
-          harnessImageUtils.getHarnessImageConnectorDetailsForVM(ngAccess, vmStageInfraDetails);
+          harnessImageUtils.getHarnessImageConnectorDetailsForVM(ngAccess, stageInfraDetails);
       image = IntegrationStageUtils.getFullyQualifiedImageName(gitImage, harnessInternalImageConnector);
       pluginStepBuilder.image(image);
       pluginStepBuilder.imageConnector(harnessInternalImageConnector);

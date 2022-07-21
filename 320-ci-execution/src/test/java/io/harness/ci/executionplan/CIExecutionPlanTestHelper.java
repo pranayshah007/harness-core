@@ -1215,7 +1215,7 @@ public class CIExecutionPlanTestHelper {
                 .connectorType(ConnectorType.AZURE_REPO)
                 .connectorConfig(
                     AzureRepoConnectorDTO.builder()
-                        .url("https://dev.azure.com/harness/project/repo")
+                        .url("https://dev.azure.com/harness/project/_git/repo")
                         .connectionType(AzureRepoConnectionTypeDTO.REPO)
                         .authentication(
                             AzureRepoAuthenticationDTO.builder()

@@ -36,7 +36,6 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
-import io.harness.pms.expression.PmsEngineExpressionService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.rule.Owner;
 import io.harness.sto.beans.entities.STOServiceConfig;
@@ -57,7 +56,6 @@ public class BuildSetupUtilsTest extends CIExecutionTestBase {
   @Inject private K8BuildSetupUtils k8BuildSetupUtils;
   @Mock private ConnectorUtils connectorUtils;
   @Mock private SecretUtils secretUtils;
-  @Mock private PmsEngineExpressionService pmsEngineExpressionService;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Mock CILogServiceUtils logServiceUtils;
   @Mock TIServiceUtils tiServiceUtils;
@@ -111,7 +109,6 @@ public class BuildSetupUtilsTest extends CIExecutionTestBase {
     STOServiceConfig stoServiceConfig = STOServiceConfig.builder().baseUrl("endpoint").globalToken("token").build();
     when(stoServiceUtils.getStoServiceConfig()).thenReturn(stoServiceConfig);
     when(stoServiceUtils.getSTOServiceToken(any())).thenReturn("token");
-    when(pmsEngineExpressionService.renderExpression(any(), any())).thenReturn(CLUSTER_NAME);
     when(executionSweepingOutputResolver.resolve(any(), any()))
         .thenReturn(K8PodDetails.builder().stageID("stage").build());
 
@@ -161,7 +158,6 @@ public class BuildSetupUtilsTest extends CIExecutionTestBase {
     STOServiceConfig stoServiceConfig = STOServiceConfig.builder().baseUrl("endpoint").globalToken("token").build();
     when(stoServiceUtils.getStoServiceConfig()).thenReturn(stoServiceConfig);
     when(stoServiceUtils.getSTOServiceToken(any())).thenReturn("token");
-    when(pmsEngineExpressionService.renderExpression(any(), any())).thenReturn(CLUSTER_NAME);
     when(executionSweepingOutputResolver.resolve(any(), any()))
         .thenReturn(K8PodDetails.builder().stageID("stage").build());
 

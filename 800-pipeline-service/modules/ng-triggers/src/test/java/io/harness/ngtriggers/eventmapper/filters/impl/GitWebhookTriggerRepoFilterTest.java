@@ -415,7 +415,7 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
   public void shouldFilterAzureRepoTriggerForHTTPConnector() {
-    List<ConnectorResponseDTO> connectors = asList(NgTriggersTestHelper.getAzureRepoAccountConnectorResponsesDTO());
+    List<ConnectorResponseDTO> connectors = asList(NgTriggersTestHelper.getAzureRepoProjectConnectorResponsesDTO());
 
     doReturn(connectors).when(ngTriggerService).fetchConnectorsByFQN(eq("acc"), anyList());
 
@@ -447,7 +447,7 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
   public void shouldFilterAzureRepoTriggerForSSHConnector() {
-    List<ConnectorResponseDTO> connectors = asList(NgTriggersTestHelper.getAzureRepoSSHAccountConnectorResponsesDTO());
+    List<ConnectorResponseDTO> connectors = asList(NgTriggersTestHelper.getAzureRepoSSHProjectConnectorResponsesDTO());
 
     doReturn(connectors).when(ngTriggerService).fetchConnectorsByFQN(eq("acc"), anyList());
 

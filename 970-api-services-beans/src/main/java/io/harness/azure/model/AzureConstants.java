@@ -168,6 +168,7 @@ public interface AzureConstants {
   String REPOSITORY_NAME_BLANK_VALIDATION_MSG = "Parameter repositoryName cannot be null or empty";
   String REGISTRY_HOST_BLANK_VALIDATION_MSG = "Parameter registryHost cannot be null or empty";
   String REGISTRY_NAME_BLANK_VALIDATION_MSG = "Parameter registryName cannot be null or empty";
+  String OS_TYPE_NULL_VALIDATION_MSG = "Parameter osType is required and cannot be null";
 
   // Patterns
   String GALLERY_IMAGE_ID_PATTERN =
@@ -369,4 +370,5 @@ public interface AzureConstants {
   String KUBECFG_CLIENT_ID = "client-id";
   String KUBECFG_CONFIG_MODE = "config-mode";
   String KUBECFG_TENANT_ID = "tenant-id";
+  String ACR_DEFAULT_DOCKER_USERNAME = "00000000-0000-0000-0000-000000000000";
 }

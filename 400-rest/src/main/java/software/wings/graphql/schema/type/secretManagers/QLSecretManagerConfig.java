@@ -7,4 +7,6 @@
 
 package software.wings.graphql.schema.type.secretManagers;
 
-public interface QLSecretManagerConfig {}
+import software.wings.graphql.schema.type.QLObject;
+
+public interface QLSecretManagerConfig extends QLObject {}

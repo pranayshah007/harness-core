@@ -15,11 +15,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.delegate.task.helm.HelmFetchFileResult;
+import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
+import io.harness.delegate.task.localstore.ManifestFiles;
+import io.harness.manifest.CustomSourceFile;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -29,15 +34,23 @@ import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(CDP)
 @Value
-@Builder
+@Builder(toBuilder = true)
 @TypeAlias("k8sStepPassThroughData")
 @RecasterAlias("io.harness.cdng.k8s.K8sStepPassThroughData")
 public class K8sStepPassThroughData implements PassThroughData {
-  ManifestOutcome k8sManifestOutcome;
+  ManifestOutcome manifestOutcome;
   List<ManifestOutcome> manifestOutcomeList;
   InfrastructureOutcome infrastructure;
   Map<String, HelmFetchFileResult> helmValuesFileMapContents;
+  Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents;
   String helmValuesFileContent;
+  List<ManifestFiles> manifestFiles;
+
+  // for custom source manifest and values files
+  Map<String, Collection<CustomSourceFile>> customFetchContent;
+  String zippedManifestFileId;
+
+  boolean closeFetchFilesStream;
 
   public List<ValuesManifestOutcome> getValuesManifestOutcomes() {
     if (isEmpty(manifestOutcomeList)) {
@@ -50,5 +63,18 @@ public class K8sStepPassThroughData implements PassThroughData {
       }
     }
     return valuesOutcomeList;
+  }
+
+  public List<OpenshiftParamManifestOutcome> getOpenShiftParamsOutcomes() {
+    if (isEmpty(manifestOutcomeList)) {
+      return Collections.emptyList();
+    }
+    List<OpenshiftParamManifestOutcome> openshiftParamManifestOutcomes = new ArrayList<>();
+    for (ManifestOutcome manifestOutcome : manifestOutcomeList) {
+      if (ManifestType.OpenshiftParam.equals(manifestOutcome.getType())) {
+        openshiftParamManifestOutcomes.add((OpenshiftParamManifestOutcome) manifestOutcome);
+      }
+    }
+    return openshiftParamManifestOutcomes;
   }
 }

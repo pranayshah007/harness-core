@@ -7,7 +7,6 @@
 
 package io.harness.ccm.views.service.impl;
 
-import static io.harness.beans.FeatureName.CE_BILLING_DATA_PRE_AGGREGATION;
 import static io.harness.rule.OwnerRule.ROHIT;
 import static io.harness.rule.OwnerRule.SHUBHANSHU;
 
@@ -181,7 +180,6 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     currentTime = System.currentTimeMillis();
     startTime = currentTime - 7 * ONE_DAY_IN_MILLIS;
 
-    when(featureFlagService.isEnabled(CE_BILLING_DATA_PRE_AGGREGATION, ACCOUNT_ID)).thenReturn(true);
     when(row.get(CLUSTER_ID)).thenReturn(FieldValue.of(Attribute.PRIMITIVE, CLUSTER));
     when(row.get(CLUSTER_NAME)).thenReturn(FieldValue.of(Attribute.PRIMITIVE, CLUSTER));
     when(row.get(WORKLOAD_NAME)).thenReturn(FieldValue.of(Attribute.PRIMITIVE, WORKLOAD_NAME));

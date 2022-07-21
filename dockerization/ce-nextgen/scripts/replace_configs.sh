@@ -132,11 +132,11 @@ else
 fi
 
 if [[ "" != "$SEGMENT_ENABLED" ]]; then
-  yq write -i $CONFIG_FILE segmentConfig.enabled "$SEGMENT_ENABLED"
+  yq write -i $CONFIG_FILE segmentConfiguration.enabled "$SEGMENT_ENABLED"
 fi
 
 if [[ "" != "$SEGMENT_APIKEY" ]]; then
-  yq write -i $CONFIG_FILE segmentConfig.apiKey "$SEGMENT_APIKEY"
+  yq write -i $CONFIG_FILE segmentConfiguration.apiKey "$SEGMENT_APIKEY"
 fi
 
 if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then

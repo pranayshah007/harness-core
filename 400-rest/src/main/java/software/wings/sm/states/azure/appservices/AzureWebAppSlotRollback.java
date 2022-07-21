@@ -7,7 +7,7 @@
 
 package software.wings.sm.states.azure.appservices;
 
-import static io.harness.beans.OrchestrationWorkflowType.BLUE_GREEN;
+import static io.harness.beans.OrchestrationWorkflowType.CANARY;
 
 import static software.wings.sm.StateType.AZURE_WEBAPP_SLOT_ROLLBACK;
 
@@ -81,6 +81,7 @@ public class AzureWebAppSlotRollback extends AzureWebAppSlotSetup {
         .preDeploymentData(contextElement.getPreDeploymentData())
         .timeoutIntervalInMin(contextElement.getAppServiceSlotSetupTimeOut())
         .blueGreen(azureVMSSStateHelper.isBlueGreenWorkflow(context))
+        .isBasicDeployment(isBasicWorkflowOrchestrationType(context))
         .build();
   }
 
@@ -173,7 +174,7 @@ public class AzureWebAppSlotRollback extends AzureWebAppSlotSetup {
     List<CommandUnit> commandUnits = new ArrayList<>();
     commandUnits.add(new AzureWebAppCommandUnit(AzureConstants.UPDATE_SLOT_CONFIGURATION_SETTINGS));
     commandUnits.add(new AzureWebAppCommandUnit(AzureConstants.DEPLOY_TO_SLOT));
-    if (BLUE_GREEN != workflowType) {
+    if (CANARY == workflowType) {
       commandUnits.add(new AzureWebAppCommandUnit(AzureConstants.SLOT_TRAFFIC_PERCENTAGE));
     }
     commandUnits.add(new AzureWebAppCommandUnit(AzureConstants.DEPLOYMENT_STATUS));

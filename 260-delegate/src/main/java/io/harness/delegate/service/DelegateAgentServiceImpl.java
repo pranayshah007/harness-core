@@ -319,7 +319,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private final boolean delegateNg = isNotBlank(System.getenv().get("DELEGATE_SESSION_IDENTIFIER"))
       || (isNotBlank(System.getenv().get("NEXT_GEN")) && Boolean.parseBoolean(System.getenv().get("NEXT_GEN")));
   public static final String JAVA_VERSION = "java.version";
-  private final double RESOURCE_USAGE_THRESHOLD = 0.75;
+  private final double RESOURCE_USAGE_THRESHOLD = 0.90;
   private String MANAGER_PROXY_CURL = System.getenv().get("MANAGER_PROXY_CURL");
   private String MANAGER_HOST_AND_PORT = System.getenv().get("MANAGER_HOST_AND_PORT");
 
@@ -1023,6 +1023,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     } finally {
       if (response != null && !response.isSuccessful()) {
         String errorResponse = response.errorBody().string();
+
+        log.warn("Received Error Response: {}", errorResponse);
+
         if (errorResponse.contains(INVALID_TOKEN.name())) {
           log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
           initiateSelfDestruct();
@@ -1035,6 +1038,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           log.warn("Delegate used revoked token. It will be frozen and drained.");
           freeze();
         }
+
         response.errorBody().close();
       }
     }
@@ -1068,7 +1072,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
       if (restResponse == null || restResponse.getResource() == null) {
         log.error(
-            "Error occurred while registering delegate with manager for account {}. Please see the manager log for more information",
+            "Error occurred while registering delegate with manager for account '{}' - Please see the manager log for more information.",
             accountId);
         sleep(ofMinutes(1));
         continue;

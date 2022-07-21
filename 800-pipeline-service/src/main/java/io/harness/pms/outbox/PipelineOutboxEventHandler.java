@@ -89,7 +89,7 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
                                 .action(Action.UPDATE)
                                 .module(ModuleType.PMS)
                                 .newYaml(event.getNewPipeline().getYaml())
-                                .oldYaml(event.getOldPipeline().getYaml())
+                                .oldYaml(event.getOldPipeline() == null ? null : event.getOldPipeline().getYaml())
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
                                 .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
@@ -102,7 +102,7 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
       principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
     }
     pipelineActionObserverSubject.fireInform(PipelineActionObserver::onUpdate, event);
-    if (event.getIsForOldGitSync()) {
+    if (event.getIsForOldGitSync() || event.getOldPipeline() == null) {
       return true;
     }
     return auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);

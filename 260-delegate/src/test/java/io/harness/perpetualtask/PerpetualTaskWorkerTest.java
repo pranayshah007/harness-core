@@ -11,10 +11,11 @@ import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.VUK;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyObject;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import io.harness.DelegateTestBase;
 import io.harness.category.element.UnitTests;
@@ -33,11 +34,14 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.util.Durations;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import lombok.extern.slf4j.Slf4j;
@@ -83,7 +87,7 @@ public class PerpetualTaskWorkerTest extends DelegateTestBase {
   @Inject KryoSerializer kryoSerializer;
 
   @Before
-  public void setUp() {
+  public void setUp() throws ExecutionException, InterruptedException {
     kubernetesClusterConfig = KubernetesClusterConfig.builder().accountId(accountId).build();
     ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(kubernetesClusterConfig));
     K8sWatchTaskParams k8sWatchTaskParams =
@@ -94,7 +98,18 @@ public class PerpetualTaskWorkerTest extends DelegateTestBase {
     PerpetualTaskSchedule schedule = PerpetualTaskSchedule.newBuilder().setInterval(Durations.fromSeconds(1)).build();
     context = PerpetualTaskExecutionContext.newBuilder().setTaskParams(params).setTaskSchedule(schedule).build();
 
-    when(perpetualTaskServiceAgentClient.perpetualTaskContext(isA(PerpetualTaskId.class))).thenReturn(context);
+    doReturn(
+        CompletableFuture.completedFuture(Collections.singletonList(PerpetualTaskAssignDetails.newBuilder().build()))
+            .get())
+        .when(perpetualTaskServiceAgentClient)
+        .perpetualTaskList(anyString(), anyObject());
+
+    doReturn(CompletableFuture
+                 .completedFuture(PerpetualTaskContextResponse.newBuilder().setPerpetualTaskContext(context).build())
+                 .get()
+                 .getPerpetualTaskContext())
+        .when(perpetualTaskServiceAgentClient)
+        .perpetualTaskContext(isA(PerpetualTaskId.class), anyObject());
   }
 
   @Test
@@ -126,7 +141,7 @@ public class PerpetualTaskWorkerTest extends DelegateTestBase {
   @Category(UnitTests.class)
   public void testFetchAssignedTask() {
     worker.fetchAssignedTask();
-    verify(perpetualTaskServiceAgentClient).perpetualTaskList(anyString());
+    verify(perpetualTaskServiceAgentClient).perpetualTaskList(anyString(), anyObject());
   }
 
   @Test

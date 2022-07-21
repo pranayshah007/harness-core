@@ -296,7 +296,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   }
 
   public String queryBuilderServiceTag(String queryIdCdTable) {
-    String selectStatusQuery = "select service_name,tag,env_id,env_name,env_type,pipeline_execution_summary_cd_id from "
+    String selectStatusQuery =
+        "select service_name,tag,env_id,env_name,env_type,artifact_image,pipeline_execution_summary_cd_id from "
         + tableNameServiceAndInfra + " where ";
     StringBuilder totalBuildSqlBuilder = new StringBuilder(20480);
 
@@ -537,11 +538,12 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           String envId = resultSet.getString("env_id");
           String envName = resultSet.getString("env_name");
           String envType = resultSet.getString("env_type");
+          String image = resultSet.getString("artifact_image");
           if (serviceTagMap.containsKey(pipeline_execution_summary_cd_id)) {
-            serviceTagMap.get(pipeline_execution_summary_cd_id).add(getServiceDeployment(service_name, tag));
+            serviceTagMap.get(pipeline_execution_summary_cd_id).add(getServiceDeployment(service_name, tag, image));
           } else {
             List<ServiceDeploymentInfo> serviceDeploymentInfos = new ArrayList<>();
-            serviceDeploymentInfos.add(getServiceDeployment(service_name, tag));
+            serviceDeploymentInfos.add(getServiceDeployment(service_name, tag, image));
             serviceTagMap.put(pipeline_execution_summary_cd_id, serviceDeploymentInfos);
           }
           pipelineToEnvMap.putIfAbsent(pipeline_execution_summary_cd_id, new ArrayList<>());
@@ -1276,13 +1278,12 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         .build();
   }
 
-  private ServiceDeploymentInfo getServiceDeployment(String service_name, String tag) {
+  private ServiceDeploymentInfo getServiceDeployment(String service_name, String tag, String image) {
     if (service_name != null) {
-      if (tag != null) {
-        return ServiceDeploymentInfo.builder().serviceName(service_name).serviceTag(tag).build();
-      } else {
-        return ServiceDeploymentInfo.builder().serviceName(service_name).build();
+      if (image != null) {
+        return ServiceDeploymentInfo.builder().serviceName(service_name).serviceTag(tag).image(image).build();
       }
+      return ServiceDeploymentInfo.builder().serviceName(service_name).build();
     }
     return ServiceDeploymentInfo.builder().build();
   }

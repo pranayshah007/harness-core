@@ -66,7 +66,7 @@ public class CIExecutionConstants {
   // Container constants for setting up addon binary
   public static final String SETUP_ADDON_CONTAINER_NAME = "setup-addon";
   public static final String UNIX_SETUP_ADDON_ARGS =
-      "mkdir -p /addon/bin; mkdir -p /addon/tmp; chmod -R 776 /addon/tmp; cp /usr/local/bin/ci-addon-linux-amd64 /addon/bin/ci-addon; chmod +x /addon/bin/ci-addon; cp /usr/local/bin/java-agent.jar /addon/bin/java-agent.jar; chmod +x /addon/bin/java-agent.jar";
+      "mkdir -p /addon/bin; mkdir -p /addon/tmp; chmod -R 776 /addon/tmp; cp /usr/local/bin/ci-addon-linux-amd64 /addon/bin/ci-addon; chmod +x /addon/bin/ci-addon; cp /usr/local/bin/java-agent.jar /addon/bin/java-agent.jar; chmod +x /addon/bin/java-agent.jar; cp /usr/local/bin/split_tests /addon/bin/split_tests; chmod +x /addon/bin/split_tests; export PATH=$PATH:/addon/bin";
 
   public static final String WIN_SETUP_ADDON_ARGS =
       "mkdir /addon/bin; mkdir /addon/tmp; cp C:/addon.exe /addon/bin/addon.exe";
@@ -128,6 +128,8 @@ public class CIExecutionConstants {
   public static final String PLUGIN_ACCESS_KEY = "PLUGIN_ACCESS_KEY";
   public static final String PLUGIN_SECRET_KEY = "PLUGIN_SECRET_KEY";
   public static final String PLUGIN_ASSUME_ROLE = "PLUGIN_ASSUME_ROLE";
+  public static final String PLUGIN_EXTERNAL_ID = "PLUGIN_EXTERNAL_ID";
+
   public static final String AWS_ROLE_ARN = "AWS_ROLE_ARN";
   public static final String PLUGIN_JSON_KEY = "PLUGIN_JSON_KEY";
   public static final String PLUGIN_URL = "PLUGIN_URL";

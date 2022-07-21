@@ -646,9 +646,11 @@ public class DatadogState extends AbstractMetricAnalysisState {
   }
 
   private void resolveExpressionsInMetrics(ExecutionContext executionContext) {
-    customMetrics.values().stream().flatMap(a -> a.stream()).forEach(metric -> {
-      metric.setMetricName(getResolvedFieldValue(executionContext, "metricName", metric.getMetricName()));
-    });
+    if (customMetrics != null) {
+      customMetrics.values().stream().flatMap(a -> a.stream()).forEach(metric -> {
+        metric.setMetricName(getResolvedFieldValue(executionContext, "metricName", metric.getMetricName()));
+      });
+    }
   }
 
   @Data

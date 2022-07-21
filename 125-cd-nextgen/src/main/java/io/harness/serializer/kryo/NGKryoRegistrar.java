@@ -24,7 +24,6 @@ import io.harness.cdng.gitops.MergePRStepInfo;
 import io.harness.cdng.gitops.MergePRStepParams;
 import io.harness.cdng.helm.HelmDeployStepInfo;
 import io.harness.cdng.helm.HelmDeployStepParams;
-import io.harness.cdng.helm.NativeHelmStepPassThroughData;
 import io.harness.cdng.helm.rollback.HelmRollbackStepInfo;
 import io.harness.cdng.helm.rollback.HelmRollbackStepParams;
 import io.harness.cdng.infra.InfrastructureDef;
@@ -56,6 +55,7 @@ import io.harness.cdng.k8s.K8sRollingStepParameters;
 import io.harness.cdng.k8s.K8sScaleStepInfo;
 import io.harness.cdng.k8s.K8sScaleStepParameter;
 import io.harness.cdng.k8s.K8sStepPassThroughData;
+import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
@@ -86,6 +86,7 @@ import io.harness.cdng.ssh.CommandStepInfo;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.telemetry.beans.CdTelemetrySentStatus;
 
 import com.esotericsoftware.kryo.Kryo;
 
@@ -150,9 +151,9 @@ public class NGKryoRegistrar implements KryoRegistrar {
 
     kryo.register(HelmDeployStepInfo.class, 13001);
     kryo.register(HelmDeployStepParams.class, 13002);
-    kryo.register(NativeHelmStepPassThroughData.class, 13003);
     kryo.register(HelmRollbackStepInfo.class, 13004);
     kryo.register(HelmRollbackStepParams.class, 13005);
+    kryo.register(CdTelemetrySentStatus.class, 13006);
 
     kryo.register(K8sExecutionPassThroughData.class, 12546);
     kryo.register(CDAccountExecutionMetadata.class, 12550);
@@ -182,5 +183,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(MergePRStepParams.class, 12604);
     kryo.register(MergePRStepInfo.class, 12605);
     kryo.register(EcsInfrastructure.class, 12606);
+
+    kryo.register(CustomFetchResponsePassThroughData.class, 12705);
   }
 }

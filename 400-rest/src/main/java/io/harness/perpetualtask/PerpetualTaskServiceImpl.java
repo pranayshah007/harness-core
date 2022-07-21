@@ -241,7 +241,11 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   @Override
   public List<PerpetualTaskAssignDetails> listAssignedTasks(String delegateId) {
     String accountId = DelegateAuthServerInterceptor.ACCOUNT_ID_CTX_KEY.get(Context.current());
+    return listAssignedTasks(delegateId, accountId);
+  }
 
+  @Override
+  public List<PerpetualTaskAssignDetails> listAssignedTasks(String delegateId, String accountId) {
     List<PerpetualTaskRecord> taskRecords = perpetualTaskRecordDao.listAssignedTasks(delegateId, accountId);
 
     return taskRecords.stream()

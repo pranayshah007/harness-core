@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.pms.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
@@ -7,7 +14,9 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 
 import lombok.Builder;
+import lombok.Setter;
 import lombok.Value;
+import lombok.experimental.NonFinal;
 
 @Value
 @Builder
@@ -15,7 +24,7 @@ import lombok.Value;
 public class RecentExecutionInfo {
   ExecutionTriggerInfo executionTriggerInfo;
   String planExecutionId;
-  Status status;
+  @Setter @NonFinal Status status;
   Long startTs;
-  Long endTs;
+  @Setter @NonFinal Long endTs;
 }

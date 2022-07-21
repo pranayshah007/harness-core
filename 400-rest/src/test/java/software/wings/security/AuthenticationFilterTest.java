@@ -7,9 +7,11 @@
 
 package software.wings.security;
 
+import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.JOHANNES;
 import static io.harness.rule.OwnerRule.PHOENIKX;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.RUSHABH;
@@ -34,6 +36,7 @@ import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -83,6 +86,8 @@ import org.mockito.Mock;
 
 @OwnedBy(PL)
 public class AuthenticationFilterTest extends CategoryTest {
+  private static final String FQDN = "agent.some-fqdn.harness.io";
+
   @Mock ResourceInfo resourceInfo = mock(ResourceInfo.class);
   @Mock MainConfiguration configuration = mock(MainConfiguration.class);
   @Mock AuthService authService = mock(AuthService.class);
@@ -164,6 +169,30 @@ public class AuthenticationFilterTest extends CategoryTest {
     when(context.getUriInfo()).thenReturn(uriInfo);
     authenticationFilter.filter(context);
     assertThat(context.getSecurityContext().isSecure()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = JOHANNES)
+  @Category(UnitTests.class)
+  public void testDelegateRequestAuthenticationWithMtls() throws IOException {
+    when(context.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Delegate token");
+    when(context.getHeaderString(HEADER_AGENT_MTLS_AUTHORITY)).thenReturn(FQDN);
+    doReturn(false).when(authenticationFilter).authenticationExemptedRequests(any(ContainerRequestContext.class));
+    doReturn(false).when(authenticationFilter).externalFacingAPI();
+    doReturn(true).when(authenticationFilter).delegateAPI();
+    doReturn(false).when(authenticationFilter).identityServiceAPI();
+    doReturn(false).when(authenticationFilter).isAdminPortalRequest();
+    UriInfo uriInfo = mock(UriInfo.class);
+    MultivaluedHashMap<String, String> queryParams = new MultivaluedHashMap<>();
+    queryParams.put("accountId", Arrays.asList(ACCOUNT_ID));
+    when(uriInfo.getPathParameters()).thenReturn(queryParams);
+    when(uriInfo.getQueryParameters()).thenReturn(new MultivaluedHashMap<>());
+    when(context.getUriInfo()).thenReturn(uriInfo);
+    authenticationFilter.filter(context);
+    assertThat(context.getSecurityContext().isSecure()).isTrue();
+
+    verify(authService, times(1)).validateDelegateToken(any(), any(), any(), any(), any(), eq(true));
+    verify(authService, times(1)).validateDelegateToken(eq(ACCOUNT_ID), any(), any(), any(), eq(FQDN), eq(true));
   }
 
   @Test

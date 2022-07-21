@@ -72,6 +72,7 @@ def generate_schema_dynamically(jsonData):
             print_("saved in %s" % localname)
             o = io.StringIO()
             with open(localname, 'r') as f:
+                print_("Generating schema...")
                 generator = SchemaGenerator(
                     input_format='csv'
                 )
@@ -80,13 +81,20 @@ def generate_schema_dynamically(jsonData):
                 j = o.read()
                 j = json.loads(j)
                 o.close()
+                if len(j) == 0:
+                    print_("No schema generated. Please try manually")
+                    return
                 print_("Generated schema")
                 # Sanitize the file
+                # It is noticed that first schema entry is corrupt.
+                j[0]["name"] = j[0]["name"].replace("\ufeff","")
+                # Handle for other schema entries
                 for column in j:
-                    if column.get("name") == "\ufeffinvoiceId":
-                        column["name"] = "invoiceId"
+                    if column.get("name") in ["\ufeffinvoiceId", "\ufeffInvoiceSectionName"] :
+                        column["name"] = column["name"].replace("\ufeff","")
                         print_("Sanitized the schema")
                         break
+
                 print_(j)
                 schema = []
                 for column in j:
