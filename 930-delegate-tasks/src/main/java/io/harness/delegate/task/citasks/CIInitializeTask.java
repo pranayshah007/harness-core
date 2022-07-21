@@ -35,6 +35,7 @@ import org.apache.commons.lang3.NotImplementedException;
 @Slf4j
 public class CIInitializeTask extends AbstractDelegateRunnableTask {
   @Inject @Named(CITaskConstants.INIT_VM) private CIInitializeTaskHandler ciVmInitializeTaskHandler;
+  @Inject @Named(CITaskConstants.INIT_DOCKER) private CIInitializeTaskHandler ciDockerInitializeTaskHandler;
   @Inject @Named(CITaskConstants.INIT_K8) private CIInitializeTaskHandler ciK8InitializeTaskHandler;
 
   public CIInitializeTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
@@ -58,7 +59,12 @@ public class CIInitializeTask extends AbstractDelegateRunnableTask {
           ciInitializeTaskParams, getLogStreamingTaskClient(), getTaskId());
       response.setDelegateMetaInfo(DelegateMetaInfo.builder().id(getDelegateId()).build());
       return response;
-    } else {
+    }else if (ciInitializeTaskParams.getType() == CIInitializeTaskParams.Type.DOCKER) {
+      CITaskExecutionResponse response = ciDockerInitializeTaskHandler.executeTaskInternal(
+              ciInitializeTaskParams, getLogStreamingTaskClient(), getTaskId());
+      response.setDelegateMetaInfo(DelegateMetaInfo.builder().id(getDelegateId()).build());
+      return response;
+    }else {
       throw new CIStageExecutionException(
           format("Invalid infra type for initializing stage", ciInitializeTaskParams.getType()));
     }

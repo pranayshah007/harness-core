@@ -167,8 +167,12 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
         PodStatus podStatus = cik8JavaClientHandler.waitUntilPodIsReady(
             coreV1Api, podName, namespace, cik8InitializeTaskParams.getPodMaxWaitUntilReadySecs());
         if (watch != null) {
-          k8EventHandler.stopEventWatch(watch);
-        }
+          //k8EventHandler.stopEventWatch(watch);
+          new Thread(() -> {
+                                 if (watch != null) {
+                                        k8EventHandler.stopEventWatch(watch);
+                                   }
+                     }).start();        }
 
         k8sTaskResponse =
             CiK8sTaskResponse.builder().podStatus(podStatus).podName(podName).podNamespace(namespace).build();

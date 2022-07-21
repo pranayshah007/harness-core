@@ -12,7 +12,7 @@ import io.harness.delegate.beans.ci.CITaskExecutionResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 
 public interface CIInitializeTaskHandler {
-  enum Type { GCP_K8, VM }
+  enum Type { GCP_K8, VM, DOCKER }
 
   CIInitializeTaskHandler.Type getType();
 

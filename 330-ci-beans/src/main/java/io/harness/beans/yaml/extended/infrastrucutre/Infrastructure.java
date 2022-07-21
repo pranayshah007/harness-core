@@ -18,7 +18,8 @@ import org.springframework.data.annotation.TypeAlias;
   @JsonSubTypes.Type(value = K8sDirectInfraYaml.class, name = "KubernetesDirect")
   , @JsonSubTypes.Type(value = UseFromStageInfraYaml.class, name = "UseFromStage"),
       @JsonSubTypes.Type(value = VmInfraYaml.class, name = "VM"),
-      @JsonSubTypes.Type(value = K8sHostedInfraYaml.class, name = "KubernetesHosted")
+      @JsonSubTypes.Type(value = K8sHostedInfraYaml.class, name = "KubernetesHosted"),
+      @JsonSubTypes.Type(value = DockerHostedInfraYaml.class, name = "DOCKER")
 })
 
 public interface Infrastructure {
@@ -27,7 +28,8 @@ public interface Infrastructure {
     @JsonProperty("KubernetesDirect") KUBERNETES_DIRECT("KubernetesDirect"),
     @JsonProperty("UseFromStage") USE_FROM_STAGE("UseFromStage"),
     @JsonProperty("VM") VM("VM"),
-    @JsonProperty("KubernetesHosted") KUBERNETES_HOSTED("KubernetesHosted");
+    @JsonProperty("KubernetesHosted") KUBERNETES_HOSTED("KubernetesHosted"),
+    @JsonProperty("DOCKER") DOCKER("DOCKER");
 
     private final String yamlName;
 

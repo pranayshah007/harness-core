@@ -89,6 +89,14 @@ import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.CITaskExecutionResponse;
 import io.harness.delegate.beans.ci.ExecuteCommandTaskParams;
 import io.harness.delegate.beans.ci.ShellScriptType;
+import io.harness.delegate.beans.ci.docker.CIDockerInitializeTaskParams;
+import io.harness.delegate.beans.ci.docker.SetupDockerRequest;
+import io.harness.delegate.beans.ci.docker.SetupDockerResponse;
+import io.harness.delegate.beans.ci.docker.CIDockerExecuteStepTaskParams;
+import io.harness.delegate.beans.ci.docker.ExecuteStepDockerRequest;
+import io.harness.delegate.beans.ci.docker.ExecuteStepDockerResponse;
+import io.harness.delegate.beans.ci.docker.CIDockerCleanupTaskParams;
+import io.harness.delegate.beans.ci.docker.DestroyDockerRequest;
 import io.harness.delegate.beans.ci.k8s.CIContainerStatus;
 import io.harness.delegate.beans.ci.k8s.CIK8CleanupTaskParams;
 import io.harness.delegate.beans.ci.k8s.CIK8ExecuteStepTaskParams;
@@ -200,6 +208,7 @@ import io.harness.delegate.beans.connector.vaultconnector.VaultValidationParams;
 import io.harness.delegate.beans.executioncapability.AlwaysFalseValidationCapability;
 import io.harness.delegate.beans.executioncapability.AwsRegionCapability;
 import io.harness.delegate.beans.executioncapability.CIVmConnectionCapability;
+import io.harness.delegate.beans.executioncapability.CIDockerConnectionCapability;
 import io.harness.delegate.beans.executioncapability.CapabilityType;
 import io.harness.delegate.beans.executioncapability.ChartMuseumCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -1348,6 +1357,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EmptyDirVolume.class, 543486);
     kryo.register(HostPathVolume.class, 543487);
     kryo.register(PVCVolume.class, 543488);
+
     kryo.register(AwsCFTemplateParamsData.class, 5478);
     kryo.register(PhysicalDataCenterConnectorValidationParams.class, 543489);
     kryo.register(ContainerSecurityContext.class, 543490);
@@ -1457,6 +1467,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ArtifactoryBaseArtifactDelegateRequest.class, 563531);
     kryo.register(AzureK8sInfraDelegateConfig.class, 563532);
     kryo.register(AzureAcrTokenTaskResponse.class, 563533);
+
     kryo.register(LdapTestResponse.Status.class, 5500);
     kryo.register(LdapGroupSettings.class, 5498);
     kryo.register(LdapTestResponse.class, 5499);
@@ -1465,6 +1476,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsRunTaskDeployRequest.class, 7501);
     kryo.register(EcsRunTaskDeployResponse.class, 7502);
     kryo.register(EcsDeployRollbackDataFetchResponse.class, 8087);
+
     kryo.register(SlackTaskParams.class, 55210);
     kryo.register(MailTaskParams.class, 55211);
     kryo.register(PagerDutyTaskParams.class, 55212);
@@ -1478,5 +1490,29 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(JenkinsCapabilityHelper.class, 29302);
     kryo.register(JenkinsValidationParams.class, 29303);
     kryo.register(JenkinsArtifactDelegateRequest.class, 29304);
+
+    kryo.register(CIDockerInitializeTaskParams.class, 570001);
+    kryo.register(SetupDockerRequest.class, 570002);
+    kryo.register(SetupDockerResponse.class, 570003);
+    kryo.register(CIDockerExecuteStepTaskParams.class, 570004);
+    kryo.register(ExecuteStepDockerRequest.class, 570005);
+    kryo.register(ExecuteStepDockerResponse.class, 570006);
+    kryo.register(CIDockerCleanupTaskParams.class, 570007);
+    kryo.register(DestroyDockerRequest.class, 570008);
+    kryo.register(CIDockerConnectionCapability.class, 570009);
+    kryo.register(SetupDockerRequest.Config.class, 570010);
+    kryo.register(SetupDockerRequest.LogConfig.class, 570011);
+    kryo.register(SetupDockerRequest.TIConfig.class, 570012);
+    kryo.register(SetupDockerRequest.Network.class, 570013);
+    kryo.register(SetupDockerRequest.Volume.class, 570014);
+    kryo.register(SetupDockerRequest.HostVolume.class, 570015);
+    kryo.register(ExecuteStepDockerRequest.Config.class, 570016);
+    kryo.register(ExecuteStepDockerRequest.ImageAuth.class, 570017);
+    kryo.register(ExecuteStepDockerRequest.TestReport.class, 570018);
+    kryo.register(ExecuteStepDockerRequest.JunitReport.class, 570019);
+    kryo.register(ExecuteStepDockerRequest.VolumeMount.class, 570020);
+    kryo.register(ExecuteStepDockerRequest.RunConfig.class, 570021);
+    kryo.register(ExecuteStepDockerRequest.RunTestConfig.class, 570022);
+    kryo.register(SetupDockerRequest.EmptyDir.class, 570023);
   }
 }

@@ -15,6 +15,7 @@ import io.harness.delegate.beans.executioncapability.CapabilityType;
 import io.harness.delegate.task.executioncapability.AlwaysFalseValidationCapabilityCheck;
 import io.harness.delegate.task.executioncapability.AwsRegionCapabilityCheck;
 import io.harness.delegate.task.executioncapability.CIVmConnectionCapabilityCheck;
+import io.harness.delegate.task.executioncapability.CIDockerConnectionCapabilityCheck;
 import io.harness.delegate.task.executioncapability.CapabilityCheck;
 import io.harness.delegate.task.executioncapability.ChartMuseumCapabilityCheck;
 import io.harness.delegate.task.executioncapability.GitConnectionNGCapabilityChecker;
@@ -76,6 +77,7 @@ public class CapabilityCheckFactory {
   @Inject SmbConnectionCapabilityCheck smbConnectionCapabilityCheck;
   @Inject GitConnectionNGCapabilityChecker gitConnectionNGCapabilityCheck;
   @Inject NoOpCapabilityCheck noOpCapabilityCheck;
+  @Inject CIDockerConnectionCapabilityCheck ciDockerConnectionCapabilityCheck;
   @Inject CIVmConnectionCapabilityCheck ciVmConnectionCapabilityCheck;
   @Inject ServerlessInstallationCapabilityCheck serverlessInstallationCapabilityCheck;
 
@@ -131,6 +133,8 @@ public class CapabilityCheckFactory {
         return liteEngineConnectionCapabilityCheck;
       case CI_VM:
         return ciVmConnectionCapabilityCheck;
+      case CI_DOCKER:
+        return ciDockerConnectionCapabilityCheck;
       case SERVERLESS_INSTALL:
         return serverlessInstallationCapabilityCheck;
       case SELECTORS:

@@ -27,7 +27,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CI)
 @RecasterAlias("io.harness.beans.sweepingoutputs.StageInfraDetails")
 public interface StageInfraDetails extends ExecutionSweepingOutput {
-  enum Type { K8, VM }
+  enum Type { K8, VM, DOCKER }
 
   StageInfraDetails.Type getType();
   String STAGE_INFRA_DETAILS = "stageInfraDetails";

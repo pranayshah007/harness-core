@@ -11,7 +11,7 @@ import io.harness.delegate.beans.ci.CICleanupTaskParams;
 import io.harness.delegate.beans.ci.CITaskExecutionResponse;
 
 public interface CICleanupTaskHandler {
-  enum Type { GCP_K8, VM }
+  enum Type { GCP_K8, VM, DOCKER }
 
   CICleanupTaskHandler.Type getType();
 

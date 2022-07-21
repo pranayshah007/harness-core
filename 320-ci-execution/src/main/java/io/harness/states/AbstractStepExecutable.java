@@ -38,6 +38,7 @@ import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.sweepingoutputs.CodeBaseConnectorRefSweepingOutput;
 import io.harness.beans.sweepingoutputs.ContainerPortDetails;
 import io.harness.beans.sweepingoutputs.ContextElement;
+import io.harness.beans.sweepingoutputs.DockerStageInfraDetails;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
@@ -55,6 +56,8 @@ import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.CIExecuteStepTaskParams;
+import io.harness.delegate.beans.ci.docker.CIDockerExecuteStepTaskParams;
+import io.harness.delegate.beans.ci.docker.ExecuteStepDockerResponse;
 import io.harness.delegate.beans.ci.k8s.CIK8ExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.CIVmExecuteStepTaskParams;
@@ -106,6 +109,7 @@ import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -118,8 +122,10 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CI)
 public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<StepElementParameters> {
   public static final String CI_EXECUTE_STEP = "CI_EXECUTE_STEP";
+  //public static final String CI_DOCKER_EXECUTE_STEP = "CI_DOCKER_EXECUTE_TASK";
   public static final long bufferTimeMillis =
       5 * 1000; // These additional 5 seconds are approx time spent on creating delegate ask and receiving response
+
   @Inject private RunStepProtobufSerializer runStepProtobufSerializer;
   @Inject private PluginStepProtobufSerializer pluginStepProtobufSerializer;
   @Inject private RunTestsStepProtobufSerializer runTestsStepProtobufSerializer;
@@ -146,24 +152,24 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
   @Override
   public void handleForCallbackId(Ambiance ambiance, StepElementParameters stepParameters, List<String> allCallbackIds,
       String callbackId, ResponseData responseData) {
+    CommandExecutionStatus status = CommandExecutionStatus.SUCCESS;
     if (responseData instanceof VmTaskExecutionResponse) {
-      VmTaskExecutionResponse vmTaskExecutionResponse = (VmTaskExecutionResponse) responseData;
-      if (vmTaskExecutionResponse.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE
-          || vmTaskExecutionResponse.getCommandExecutionStatus() == CommandExecutionStatus.SKIPPED) {
-        abortTasks(allCallbackIds, callbackId, ambiance);
-      }
+      status = ((VmTaskExecutionResponse) responseData).getCommandExecutionStatus();
     }
-    if (responseData instanceof K8sTaskExecutionResponse) {
-      K8sTaskExecutionResponse k8sTaskExecutionResponse = (K8sTaskExecutionResponse) responseData;
-      if (k8sTaskExecutionResponse.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE
-          || k8sTaskExecutionResponse.getCommandExecutionStatus() == CommandExecutionStatus.SKIPPED) {
-        abortTasks(allCallbackIds, callbackId, ambiance);
-      }
+    else if (responseData instanceof K8sTaskExecutionResponse) {
+      status = ((K8sTaskExecutionResponse) responseData).getCommandExecutionStatus();
+    }
+    else if (responseData instanceof ExecuteStepDockerResponse) {
+      status = ((ExecuteStepDockerResponse) responseData).getCommandExecutionStatus();
+    }
+    else if (responseData instanceof ErrorNotifyResponseData) {
+      status = CommandExecutionStatus.FAILURE;
     }
 
-    if (responseData instanceof ErrorNotifyResponseData) {
+    if (status == CommandExecutionStatus.FAILURE || status == CommandExecutionStatus.SKIPPED) {
       abortTasks(allCallbackIds, callbackId, ambiance);
     }
+
   }
 
   @Override
@@ -199,6 +205,9 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
     } else if (stageInfraType == StageInfraDetails.Type.VM) {
       return executeVmAsyncAfterRbac(ambiance, stepIdentifier, runtimeId, ciStepInfo, accountId, logKey,
           timeoutInMillis, stringTimeout, (VmStageInfraDetails) stageInfraDetails);
+    } else if (stageInfraType == StageInfraDetails.Type.DOCKER) {
+      return executeDockerAsyncAfterRbac(
+          ambiance, stepIdentifier, runtimeId, ciStepInfo, accountId, logKey, timeoutInMillis, stringTimeout);
     } else {
       throw new CIStageExecutionException(format("Invalid infra type: %s", stageInfraType));
     }
@@ -287,6 +296,64 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
         .build();
   }
 
+  private AsyncExecutableResponse executeDockerAsyncAfterRbac(Ambiance ambiance, String stepIdentifier,
+      String runtimeId, CIStepInfo ciStepInfo, String accountId, String logKey, long timeoutInMillis,
+      String stringTimeout) {
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
+    if (!optionalSweepingOutput.isFound()) {
+      throw new CIStageExecutionException("Stage details sweeping output cannot be empty");
+    }
+    StageDetails stageDetails = (StageDetails) optionalSweepingOutput.getOutput();
+
+    OptionalSweepingOutput optionalInfraSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS));
+    if (!optionalInfraSweepingOutput.isFound()) {
+      throw new CIStageExecutionException("Stage infra details sweeping output cannot be empty");
+    }
+    DockerStageInfraDetails dockerStageInfraDetails = (DockerStageInfraDetails) optionalInfraSweepingOutput.getOutput();
+
+    // TODO: Remove the VmStageInfraDetails that the serializer takes.
+    VmStageInfraDetails vmStageInfraDetails = VmStageInfraDetails.builder().build();
+    // The VM serializers work perfectly fine for docker runners as well for now.
+    // TODO: Rename the serializer or add another implementation for docker if required.
+    VmStepInfo vmStepInfo = vmStepSerializer.serialize(ambiance, ciStepInfo, vmStageInfraDetails, stepIdentifier,
+        ParameterField.createValueField(Timeout.fromString(stringTimeout)));
+    Set<String> secrets = vmStepSerializer.getStepSecrets(vmStepInfo, ambiance);
+    CIDockerExecuteStepTaskParams params = CIDockerExecuteStepTaskParams.builder()
+                                           .volToMountPath(dockerStageInfraDetails.getVolToMountPathMap())
+                                           .stageRuntimeId(stageDetails.getStageRuntimeID())
+                                           .stepRuntimeId(runtimeId)
+                                           .stepId(stepIdentifier)
+                                           .stepInfo(vmStepInfo)
+                                           .secrets(new ArrayList<>(secrets))
+                                           .logKey(logKey)
+                                           .workingDir(dockerStageInfraDetails.getWorkDir())
+                                           .build();
+
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .parked(false)
+                                  .taskType(CI_EXECUTE_STEP)
+                                  .parameters(new Object[] {params})
+                                  .expressionFunctorToken((int) ambiance.getExpressionFunctorToken())
+                                  .build();
+
+    Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
+
+    HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
+
+    //TODO:xun
+    //String taskId = ciDelegateTaskExecutor.queueTask(abstractions, task, Collections.<String>emptyList());
+    String taskId = queueDelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor, params,
+            new ArrayList<>(), new ArrayList<>());
+
+    return AsyncExecutableResponse.newBuilder()
+        .addCallbackIds(taskId)
+        .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(logKey)))
+        .build();
+  }
+
   private void resolveGitAppFunctor(Ambiance ambiance, CIStepInfo ciStepInfo) {
     if (ciStepInfo.getNonYamlInfo().getStepInfoType() != CIStepInfoType.RUN) {
       return;
@@ -323,6 +390,8 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
       return handleK8AsyncResponse(ambiance, stepParameters, responseDataMap);
     } else if (stageInfraType == StageInfraDetails.Type.VM) {
       return handleVmStepResponse(stepIdentifier, responseDataMap);
+    } else if (stageInfraType == StageInfraDetails.Type.DOCKER) {
+      return handleDockerStepResponse(stepIdentifier, responseDataMap);
     } else {
       throw new CIStageExecutionException(format("Invalid infra type: %s", stageInfraType));
     }
@@ -395,6 +464,45 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
       String errMsg = "";
       if (isNotEmpty(taskResponse.getErrorMessage())) {
         errMsg = taskResponse.getErrorMessage();
+      }
+      return StepResponse.builder()
+          .status(Status.FAILED)
+          .failureInfo(FailureInfo.newBuilder()
+                           .setErrorMessage(errMsg)
+                           .addAllFailureTypes(EnumSet.of(FailureType.APPLICATION_FAILURE))
+                           .build())
+          .build();
+    }
+  }
+
+  private StepResponse handleDockerStepResponse(String stepIdentifier, Map<String, ResponseData> responseDataMap) {
+    log.info("Received response for step {}", stepIdentifier);
+    ExecuteStepDockerResponse ExecuteStepDockerResponse = filterDockerStepResponse(responseDataMap);
+    if (ExecuteStepDockerResponse == null) {
+      log.error("stepStatusTaskResponseData should not be null for step {}", stepIdentifier);
+      return StepResponse.builder()
+          .status(Status.FAILED)
+          .failureInfo(FailureInfo.newBuilder().addAllFailureTypes(EnumSet.of(FailureType.APPLICATION_FAILURE)).build())
+          .build();
+    }
+
+    if (ExecuteStepDockerResponse.getCommandExecutionStatus().equals("SUCCESS")) {
+      StepResponseBuilder stepResponseBuilder = StepResponse.builder().status(Status.SUCCEEDED);
+      if (isNotEmpty(ExecuteStepDockerResponse.getOutputVars())) {
+        StepResponse.StepOutcome stepOutcome =
+            StepResponse.StepOutcome.builder()
+                .outcome(CIStepOutcome.builder().outputVariables(ExecuteStepDockerResponse.getOutputVars()).build())
+                .name("output")
+                .build();
+        stepResponseBuilder.stepOutcome(stepOutcome);
+      }
+      return stepResponseBuilder.build();
+    } else if (ExecuteStepDockerResponse.getCommandExecutionStatus().equals("SKIPPED")) {
+      return StepResponse.builder().status(Status.SKIPPED).build();
+    } else {
+      String errMsg = "";
+      if (isNotEmpty(ExecuteStepDockerResponse.getErrorMessage())) {
+        errMsg = ExecuteStepDockerResponse.getErrorMessage();
       }
       return StepResponse.builder()
           .status(Status.FAILED)
@@ -605,5 +713,15 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
     }
 
     return (StageInfraDetails) optionalSweepingOutput.getOutput();
+  }
+
+  private ExecuteStepDockerResponse filterDockerStepResponse(Map<String, ResponseData> responseDataMap) {
+    // Filter final response from step
+    return responseDataMap.entrySet()
+        .stream()
+        .filter(entry -> entry.getValue() instanceof ExecuteStepDockerResponse)
+        .findFirst()
+        .map(obj -> (ExecuteStepDockerResponse) obj.getValue())
+        .orElse(null);
   }
 }

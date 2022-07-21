@@ -14,6 +14,7 @@ import io.harness.delegate.task.citasks.cik8handler.K8ExecuteCommandTaskHandler;
 import io.harness.delegate.task.citasks.vm.CIVMExecuteStepTaskHandler;
 import io.harness.delegate.task.citasks.vm.CIVmCleanupTaskHandler;
 import io.harness.delegate.task.citasks.vm.CIVmInitializeTaskHandler;
+import io.harness.delegate.task.citasks.docker.CIDockerInitializeTaskHandler;
 import io.harness.threading.Sleeper;
 import io.harness.threading.ThreadSleeper;
 import io.harness.time.ClockTimer;
@@ -35,6 +36,9 @@ public class CITaskFactoryModule extends AbstractModule {
     bind(CIInitializeTaskHandler.class)
         .annotatedWith(Names.named(CITaskConstants.INIT_K8))
         .to(CIK8InitializeTaskHandler.class);
+    bind(CIInitializeTaskHandler.class)
+            .annotatedWith(Names.named(CITaskConstants.INIT_DOCKER))
+            .to(CIDockerInitializeTaskHandler.class);
 
     bind(CIExecuteStepTaskHandler.class)
         .annotatedWith(Names.named(CITaskConstants.EXECUTE_STEP_VM))
