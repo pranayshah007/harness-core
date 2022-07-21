@@ -17,12 +17,13 @@ import static io.harness.k8s.KubernetesConvention.DASH;
 import static io.harness.network.Http.getOkHttpClientBuilder;
 import static io.harness.network.Http.joinHostPort;
 
+import static software.wings.utils.Utils.getSystemPropertyOrEnvVar;
+
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
 import static io.fabric8.kubernetes.client.Config.KUBERNETES_KUBECONFIG_FILE;
 import static io.fabric8.kubernetes.client.Config.KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH;
 import static io.fabric8.kubernetes.client.Config.KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH;
-import static io.fabric8.kubernetes.client.utils.Utils.isNotNullOrEmpty;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static okhttp3.ConnectionSpec.CLEARTEXT;
@@ -69,7 +70,6 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.internal.SSLUtils;
 import io.fabric8.kubernetes.client.okhttp.OkHttpClientImpl;
-import io.fabric8.kubernetes.client.utils.Utils;
 import io.fabric8.openshift.client.DefaultOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftConfig;
@@ -350,14 +350,14 @@ public class KubernetesHelperService {
         @Override
         public Response intercept(Chain chain) throws IOException {
           Request request = chain.request();
-          if (isNotNullOrEmpty(config.getUsername()) && isNotNullOrEmpty(config.getPassword())) {
+          if (isNotBlank(config.getUsername()) && isNotBlank(config.getPassword())) {
             Request authReq =
                 chain.request()
                     .newBuilder()
                     .addHeader("Authorization", Credentials.basic(config.getUsername(), config.getPassword()))
                     .build();
             return chain.proceed(authReq);
-          } else if (isNotNullOrEmpty(config.getOauthToken())) {
+          } else if (isNotBlank(config.getOauthToken())) {
             Request authReq =
                 chain.request().newBuilder().addHeader("Authorization", "Bearer " + config.getOauthToken()).build();
             return chain.proceed(authReq);
@@ -533,8 +533,8 @@ public class KubernetesHelperService {
   public static KubernetesConfig getKubernetesConfigFromServiceAccount(String namespace) {
     KubernetesConfigBuilder kubernetesConfigBuilder = KubernetesConfig.builder().namespace(namespace);
 
-    String masterHost = Utils.getSystemPropertyOrEnvVar("KUBERNETES_SERVICE_HOST", (String) null);
-    String masterPort = Utils.getSystemPropertyOrEnvVar("KUBERNETES_SERVICE_PORT", (String) null);
+    String masterHost = getSystemPropertyOrEnvVar("KUBERNETES_SERVICE_HOST", (String) null);
+    String masterPort = getSystemPropertyOrEnvVar("KUBERNETES_SERVICE_PORT", (String) null);
     if (masterHost != null && masterPort != null) {
       String hostPort = joinHostPort(masterHost, masterPort);
       kubernetesConfigBuilder.masterUrl("https://" + hostPort);
@@ -556,7 +556,7 @@ public class KubernetesHelperService {
   public static KubernetesConfig getKubernetesConfigFromDefaultKubeConfigFile(String namespace) {
     KubernetesConfigBuilder kubernetesConfigBuilder = KubernetesConfig.builder().namespace(namespace);
 
-    File kubeConfigFile = new File(Utils.getSystemPropertyOrEnvVar(
+    File kubeConfigFile = new File(getSystemPropertyOrEnvVar(
         KUBERNETES_KUBECONFIG_FILE, new File(getHomeDir(), ".kube" + File.separator + "config").toString()));
     boolean kubeConfigFileExists = Files.isRegularFile(kubeConfigFile.toPath());
 
@@ -592,7 +592,7 @@ public class KubernetesHelperService {
   }
 
   public static boolean isRunningInCluster() {
-    return Utils.getSystemPropertyOrEnvVar("KUBERNETES_SERVICE_HOST", (String) null) != null;
+    return getSystemPropertyOrEnvVar("KUBERNETES_SERVICE_HOST", (String) null) != null;
   }
 
   private static String getFileContent(String filename) {

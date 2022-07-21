@@ -66,7 +66,6 @@ import software.wings.service.intfc.instance.ServerlessInstanceService;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
-import io.fabric8.utils.Maps;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -175,7 +174,7 @@ public class ServerlessDashboardServiceImplTest extends CategoryTest {
         Arrays.asList(EntityType.SERVICE.name(), SettingCategory.CLOUD_PROVIDER.name(), SERVERLESS_FUNCTION_INVOCATION),
         0);
     assertThat(appInstanceSummaryStats.getTotalCount()).isEqualTo(0);
-    assertThat(Maps.isNullOrEmpty(appInstanceSummaryStats.getCountMap())).isTrue();
+    assertThat(isEmpty(appInstanceSummaryStats.getCountMap())).isTrue();
   }
 
   private void setup_getInstanceQueryAtTime() {

@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
@@ -235,5 +236,26 @@ public class Utils {
 
   public static String uuidToIdentifier(String uuid) {
     return UNDERSCORE + uuid.replaceAll(DASH, UNDERSCORE);
+  }
+
+  // To be used to replace io.fabric8.kubernetes.client.utils.Utils.getSystemPropertyOrEnvVar(java.lang.String,
+  // java.lang.String)
+  public static String getSystemPropertyOrEnvVar(String systemPropertyName, String defaultValue) {
+    return getSystemPropertyOrEnvVar(
+        systemPropertyName, convertSystemPropertyNameToEnvVar(systemPropertyName), defaultValue);
+  }
+
+  public static String getSystemPropertyOrEnvVar(String systemPropertyName, String envVarName, String defaultValue) {
+    String answer = System.getProperty(systemPropertyName);
+    if (isBlank(answer)) {
+      return answer;
+    } else {
+      answer = System.getenv(envVarName);
+      return isBlank(answer) ? answer : defaultValue;
+    }
+  }
+
+  public static String convertSystemPropertyNameToEnvVar(String systemPropertyName) {
+    return systemPropertyName.toUpperCase(Locale.ROOT).replaceAll("[.-]", "_");
   }
 }

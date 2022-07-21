@@ -31,6 +31,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
@@ -168,7 +169,7 @@ public class MigrateWorkflowsToTimeScaleDB implements TimeScaleDBDataMigration {
 
     } else {
       insertPreparedStatement.setString(13, null);
-      insertArrayData(10, dbConnection, insertPreparedStatement, Lists.newArrayList(workflowExecution.getWorkflowId()));
+      insertArrayData(10, dbConnection, insertPreparedStatement, Arrays.asList(workflowExecution.getWorkflowId()));
     }
 
     insertArrayData(12, dbConnection, insertPreparedStatement, workflowExecution.getEnvIds());
