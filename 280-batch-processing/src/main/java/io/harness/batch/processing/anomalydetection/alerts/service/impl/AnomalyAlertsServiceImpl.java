@@ -14,9 +14,11 @@ import static io.harness.notification.dtos.NotificationChannelDTO.NotificationCh
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.slack.api.webhook.WebhookPayloads.payload;
+import static java.lang.String.format;
 
 import io.harness.batch.processing.anomalydetection.alerts.SlackMessageGenerator;
 import io.harness.batch.processing.anomalydetection.alerts.service.itfc.AnomalyAlertsService;
+import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.shard.AccountShardService;
 import io.harness.ccm.anomaly.entities.AnomalyEntity;
 import io.harness.ccm.anomaly.service.itfc.AnomalyService;
@@ -33,13 +35,6 @@ import io.harness.ccm.views.service.PerspectiveAnomalyService;
 import io.harness.eraro.ResponseMessage;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.Team;
-import io.harness.notification.channeldetails.EmailChannel;
-import io.harness.notification.channeldetails.EmailChannel.EmailChannelBuilder;
-import io.harness.notification.channeldetails.MSTeamChannel;
-import io.harness.notification.channeldetails.MSTeamChannel.MSTeamChannelBuilder;
-import io.harness.notification.channeldetails.NotificationChannel;
-import io.harness.notification.channeldetails.SlackChannel;
-import io.harness.notification.channeldetails.SlackChannel.SlackChannelBuilder;
 import io.harness.notification.dtos.NotificationChannelDTO;
 import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.notifications.NotificationResourceClient;
@@ -51,6 +46,7 @@ import com.slack.api.methods.SlackApiException;
 import com.slack.api.model.block.LayoutBlock;
 import com.slack.api.webhook.WebhookResponse;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -62,6 +58,7 @@ import java.util.stream.Collectors;
 import io.harness.rest.RestResponse;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Request;
+import org.apache.http.client.utils.URIBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import retrofit2.Call;
@@ -82,6 +79,10 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
   @Autowired private PerspectiveAnomalyService perspectiveAnomalyService;
   @Autowired private CCMNotificationsDao notificationSettingsDao;
   @Autowired private NotificationResourceClient notificationResourceClient;
+  @Autowired private BatchMainConfig mainConfiguration;
+
+  private static final String NG_PATH_CONST = "ng/";
+  private static final String PERSPECTIVE_URL_FORMAT_NG = "/account/%s/ce/perspectives/%s/name/%s";
 
   int MAX_RETRY = 3;
 
@@ -161,14 +162,14 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
         notificationSetting -> {
           try {
             checkAndSendAnomalyAlertsForPerspective(notificationSetting, accountId, date);
-          } catch (IOException e) {
+          } catch (IOException | URISyntaxException e) {
             e.printStackTrace();
           }
         });
   }
 
   private void checkAndSendAnomalyAlertsForPerspective(
-      CCMPerspectiveNotificationChannelsDTO perspectiveNotificationSetting, String accountId, Instant date) throws IOException {
+      CCMPerspectiveNotificationChannelsDTO perspectiveNotificationSetting, String accountId, Instant date) throws IOException, URISyntaxException {
     log.info("Sending NG anomaly alerts -----");
     log.info("Perspective Notification settings: {}", perspectiveNotificationSetting);
     List<AnomalyData> perspectiveAnomalies = perspectiveAnomalyService.listPerspectiveAnomaliesForDate(
@@ -208,10 +209,13 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
 //                                                    .templateId("template-id-here")
 //                                                    .userGroups(Collections.emptyList());
 
+
+    String perspectiveUrl = getPerspectiveUrl(accountId, perspectiveNotificationSetting.getPerspectiveId(), perspectiveNotificationSetting.getPerspectiveName());
+
     Map<String, String> templateData = new HashMap<>();
     templateData.put("perspective_name", perspectiveNotificationSetting.getPerspectiveName());
-//    templateData.put("anomalies", slackMessageGenerator.getAnomalyDetailsTemplateString(perspectiveAnomalies.get(0)));
-    templateData.put("perspective_url", "https://google.co.in");
+    templateData.put("anomalies", slackMessageGenerator.getAnomalyDetailsTemplateString(perspectiveAnomalies.get(0)));
+    templateData.put("perspective_url", perspectiveUrl);
 
     // Sending email alerts
     emailChannelBuilder.templateData(templateData);
@@ -249,6 +253,7 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     slackTemplateData.put("perspective_name", perspectiveNotificationSetting.getPerspectiveName());
     slackTemplateData.put("count_of_anomalies", String.valueOf(perspectiveAnomalies.size()));
     slackTemplateData.put("date", AnomalyUtility.convertInstantToDate2(date));
+    slackTemplateData.put("perspective_url", perspectiveUrl);
     StringBuilder anomaliesDetails = new StringBuilder();
     for(int i=0;  i < perspectiveAnomalies.size(); i++) {
       anomaliesDetails.append(slackMessageGenerator.getAnomalyDetailsTemplateString(perspectiveAnomalies.get(i)));
@@ -317,5 +322,13 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     List<String> channelUrls = new ArrayList<>();
     relevantChannels.forEach(channel -> channelUrls.addAll(channel.getChannelUrls()));
     return channelUrls;
+  }
+
+  public String getPerspectiveUrl(String accountId, String perspectiveId, String perspectiveName) throws URISyntaxException {
+    String baseUrl = mainConfiguration.getBaseUrl();
+    URIBuilder uriBuilder = new URIBuilder(baseUrl);
+    uriBuilder.setPath(NG_PATH_CONST);
+    uriBuilder.setFragment(format(PERSPECTIVE_URL_FORMAT_NG, accountId, perspectiveId, perspectiveName));
+    return uriBuilder.toString();
   }
 }
