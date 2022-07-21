@@ -58,6 +58,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_TARGET", "repo/wings/software/module/1.0.0-SNAPSHOT");
     expected.put("PLUGIN_SOURCE", "target/libmodule.jar");
     expected.put("PLUGIN_ARTIFACT_FILE", "/addon/tmp/.plugin/artifact");
+    expected.put("PLUGIN_FLAT", "true");
 
     Map<String, String> actual =
         PluginSettingUtils.getPluginCompatibleEnvVariables(uploadToArtifactoryStepInfo, "identifier", 100, Type.K8);

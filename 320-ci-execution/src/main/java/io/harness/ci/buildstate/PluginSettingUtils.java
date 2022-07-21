@@ -66,6 +66,7 @@ public class PluginSettingUtils {
   public static final String PLUGIN_DOCKERFILE = "PLUGIN_DOCKERFILE";
   public static final String PLUGIN_CONTEXT = "PLUGIN_CONTEXT";
   public static final String PLUGIN_TARGET = "PLUGIN_TARGET";
+  public static final String PLUGIN_FLAT = "PLUGIN_FLAT";
   public static final String PLUGIN_STRIP_PREFIX = "PLUGIN_STRIP_PREFIX";
   public static final String PLUGIN_CACHE_REPO = "PLUGIN_CACHE_REPO";
   public static final String PLUGIN_ENABLE_CACHE = "PLUGIN_ENABLE_CACHE";
@@ -522,6 +523,7 @@ public class PluginSettingUtils {
         resolveStringParameter("sourcePath", "ArtifactoryUpload", identifier, stepInfo.getSourcePath(), true));
     setMandatoryEnvironmentVariable(map, PLUGIN_TARGET,
         resolveStringParameter("target", "ArtifactoryUpload", identifier, stepInfo.getTarget(), true));
+    setMandatoryEnvironmentVariable(map, PLUGIN_FLAT, "true");
     setOptionalEnvironmentVariable(map, PLUGIN_ARTIFACT_FILE, PLUGIN_ARTIFACT_FILE_VALUE);
 
     return map;
