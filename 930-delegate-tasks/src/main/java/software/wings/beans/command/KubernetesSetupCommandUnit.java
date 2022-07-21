@@ -72,6 +72,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logging.Misc;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.yaml.YamlUtils;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.AzureConfig;
@@ -965,7 +966,7 @@ public class KubernetesSetupCommandUnit extends ContainerSetupCommandUnit {
     ConfigMap configMap;
     if (isNotBlank(setupParams.getConfigMapYaml())) {
       try {
-        configMap = KubernetesHelper.loadYaml(setupParams.getConfigMapYaml());
+        configMap = YamlUtils.loadYaml(setupParams.getConfigMapYaml(), ConfigMap.class);
         if (configMap == null) {
           throw new InvalidArgumentsException(
               "Couldn't parse Config Map YAML: " + setupParams.getConfigMapYaml(), USER);
@@ -1067,7 +1068,7 @@ public class KubernetesSetupCommandUnit extends ContainerSetupCommandUnit {
   private Ingress createIngressDefinition(String ingressYaml, String ingressName, String namespace,
       Map<String, String> labels, ExecutionLogCallback executionLogCallback) {
     try {
-      Ingress ingress = KubernetesHelper.loadYaml(ingressYaml);
+      Ingress ingress = YamlUtils.loadYaml(ingressYaml);
       if (ingress == null) {
         throw new InvalidArgumentsException("Couldn't parse Ingress YAML: " + ingressYaml, USER);
       }
@@ -1111,7 +1112,7 @@ public class KubernetesSetupCommandUnit extends ContainerSetupCommandUnit {
       String namespace, Map<String, String> serviceLabels, KubernetesSetupParams setupParams) {
     try {
       HorizontalPodAutoscaler horizontalPodAutoscaler =
-          KubernetesHelper.loadYaml(setupParams.getCustomMetricYamlConfig(), HorizontalPodAutoscaler.class);
+          YamlUtils.loadYaml(setupParams.getCustomMetricYamlConfig(), HorizontalPodAutoscaler.class);
 
       if (horizontalPodAutoscaler == null) {
         throw new InvalidArgumentsException(
@@ -1319,7 +1320,7 @@ public class KubernetesSetupCommandUnit extends ContainerSetupCommandUnit {
       executionLogCallback.saveExecutionLog("Rolling back configMap: " + controllerName);
       ConfigMap configMap;
       try {
-        configMap = KubernetesHelper.loadYaml(configMapYaml);
+        configMap = YamlUtils.loadYaml(configMapYaml);
       } catch (Exception e) {
         throw new InvalidArgumentsException(
             "Couldn't parse configMap YAML: " + configMapYaml, ExceptionMessageSanitizer.sanitizeException(e), USER);
@@ -1344,7 +1345,7 @@ public class KubernetesSetupCommandUnit extends ContainerSetupCommandUnit {
       executionLogCallback.saveExecutionLog("Rolling back secretMap: " + controllerName);
       Secret secretMap;
       try {
-        secretMap = KubernetesHelper.loadYaml(secretMapYaml);
+        secretMap = YamlUtils.loadYaml(secretMapYaml);
       } catch (Exception e) {
         throw new InvalidArgumentsException(
             "Couldn't parse secretMap YAML: " + controllerName, ExceptionMessageSanitizer.sanitizeException(e), USER);
@@ -1375,7 +1376,7 @@ public class KubernetesSetupCommandUnit extends ContainerSetupCommandUnit {
     if (isNotBlank(controllerYaml)) {
       HasMetadata controller;
       try {
-        controller = KubernetesHelper.loadYaml(controllerYaml);
+        controller = YamlUtils.loadYaml(controllerYaml);
       } catch (Exception e) {
         throw new InvalidArgumentsException(
             "Couldn't parse controller YAML: " + controllerYaml, ExceptionMessageSanitizer.sanitizeException(e), USER);
@@ -1688,7 +1689,7 @@ public class KubernetesSetupCommandUnit extends ContainerSetupCommandUnit {
       KubernetesServiceSpecification serviceSpecification, ExecutionLogCallback executionLogCallback) {
     if (serviceSpecification.getServiceType() == KubernetesServiceType.Yaml) {
       try {
-        Service service = KubernetesHelper.loadYaml(serviceSpecification.getServiceYaml());
+        Service service = YamlUtils.loadYaml(serviceSpecification.getServiceYaml());
         if (service == null) {
           throw new InvalidArgumentsException(
               "Couldn't parse Service YAML: " + serviceSpecification.getServiceYaml(), USER);

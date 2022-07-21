@@ -23,6 +23,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.k8s.KubernetesConvention;
+import io.harness.yaml.YamlUtils;
 
 import io.fabric8.kubernetes.api.KubernetesHelper;
 import io.fabric8.kubernetes.api.model.Container;
@@ -80,7 +81,7 @@ public class KubernetesContainerTaskUtils {
                                   .replaceAll(REGISTRY_SECRET_NAME_PLACEHOLDER_REGEX, registrySecretName)
                                   .replaceAll(CONFIG_MAP_NAME_PLACEHOLDER_REGEX, configMapName)
                                   .replaceAll(SECRET_MAP_NAME_PLACEHOLDER_REGEX, secretMapName);
-      HasMetadata controller = KubernetesHelper.loadYaml(controllerYaml);
+      HasMetadata controller = YamlUtils.loadYaml(controllerYaml, HasMetadata.class);
       if (controller == null) {
         throw new WingsException(ErrorCode.INVALID_ARGUMENT, USER)
             .addParam("args", "Couldn't parse Controller YAML: " + controllerYaml);

@@ -29,7 +29,7 @@ java_library(
         "//980-commons:module",
         "//960-api-services:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
-        "@maven//:io_fabric8_fabric8_utils",
+
         "@maven//:io_grpc_grpc_alts",
         "@maven//:io_grpc_grpc_api",
         "@maven//:io_grpc_grpc_auth",

@@ -406,7 +406,7 @@ java_library(
         "@maven//:io_dropwizard_metrics_metrics_jvm",
         "@maven//:io_dropwizard_metrics_metrics_logback",
         "@maven//:io_dropwizard_metrics_metrics_servlets",
-        "@maven//:io_fabric8_fabric8_utils",
+
         "@maven//:io_fabric8_kubernetes_client",
         "@maven//:io_fabric8_kubernetes_client_project",
         "@maven//:io_fabric8_openshift_client",

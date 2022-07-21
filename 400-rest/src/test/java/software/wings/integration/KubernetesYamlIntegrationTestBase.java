@@ -23,6 +23,7 @@ import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import io.harness.CategoryTest;
 import io.harness.k8s.KubernetesContainerServiceImpl;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.yaml.YamlUtils;
 
 import software.wings.beans.GcpConfig;
 import software.wings.beans.SettingAttribute;
@@ -115,7 +116,7 @@ public abstract class KubernetesYamlIntegrationTestBase extends CategoryTest {
     String rcDefinition = yaml.replace("${DOCKER_IMAGE_NAME}", "gcr.io/exploration-161417/todolist:latest");
     try {
       kubernetesService.createOrReplaceController(
-          config, KubernetesHelper.loadYaml(rcDefinition, ReplicationController.class));
+          config, YamlUtils.loadYaml(rcDefinition, ReplicationController.class));
     } catch (IOException e) {
       log.error("", e);
     }
@@ -142,7 +143,7 @@ public abstract class KubernetesYamlIntegrationTestBase extends CategoryTest {
         + "    app: \"testApp\"\n"
         + "    tier: \"backend\"\n";
     try {
-      kubernetesService.createOrReplaceServiceFabric8(config, KubernetesHelper.loadYaml(yaml, Service.class));
+      kubernetesService.createOrReplaceServiceFabric8(config, YamlUtils.loadYaml(yaml, Service.class));
     } catch (IOException e) {
       log.error("", e);
     }
@@ -192,7 +193,7 @@ public abstract class KubernetesYamlIntegrationTestBase extends CategoryTest {
     rcDefinition = yaml.replace("${DOCKER_IMAGE_NAME}", "gcr.io/exploration-161417/todolist:latest");
     try {
       kubernetesService.createOrReplaceController(
-          config, KubernetesHelper.loadYaml(rcDefinition, ReplicationController.class));
+          config, YamlUtils.loadYaml(rcDefinition, ReplicationController.class));
     } catch (IOException e) {
       log.error("", e);
     }
@@ -220,7 +221,7 @@ public abstract class KubernetesYamlIntegrationTestBase extends CategoryTest {
         + "    tier: \"backend\"\n"
         + "  type: \"LoadBalancer\"";
     try {
-      kubernetesService.createOrReplaceServiceFabric8(config, KubernetesHelper.loadYaml(yaml, Service.class));
+      kubernetesService.createOrReplaceServiceFabric8(config, YamlUtils.loadYaml(yaml, Service.class));
     } catch (IOException e) {
       log.error("", e);
     }

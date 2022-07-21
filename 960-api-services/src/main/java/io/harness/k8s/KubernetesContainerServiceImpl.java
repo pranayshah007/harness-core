@@ -92,6 +92,7 @@ import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.logging.Misc;
 import io.harness.oidc.model.OidcTokenRequestData;
+import io.harness.yaml.YamlUtils;
 
 import com.github.scribejava.apis.openid.OpenIdOAuth2AccessToken;
 import com.google.api.client.util.Charsets;
@@ -707,7 +708,10 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     if (isNotBlank(autoscalerYaml)) {
       HasMetadata hasMetadata;
       try {
-        hasMetadata = KubernetesHelper.loadYaml(autoscalerYaml);
+        hasMetadata = YamlUtils.loadYaml(autoscalerYaml, HasMetadata.class);
+
+        YamlUtils.loadYaml(autoscalerYaml);
+
         hasMetadata.getMetadata().setResourceVersion(null);
       } catch (Exception e) {
         throw new WingsException(ErrorCode.INVALID_ARGUMENT, USER)

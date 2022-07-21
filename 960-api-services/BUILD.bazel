@@ -32,7 +32,7 @@ java_library(
         "@maven//:com_squareup_retrofit2_converter_simplexml",
         "@maven//:io_cloudsoft_windows_winrm4j_client",
         "@maven//:io_fabric8_istio_client",
-        "@maven//:io_fabric8_kubernetes_api",
+        "@maven//:io_fabric8_openshift_client",
         "@maven//:io_github_resilience4j_resilience4j_retry",
         "@maven//:javax_xml_ws_jaxws_api",
         "@maven//:net_jodah_expiringmap",

@@ -7,7 +7,12 @@
 
 package io.harness.yaml;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.fabric8.kubernetes.api.model.KubernetesResource;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.StringReader;
 import lombok.extern.slf4j.Slf4j;
 import org.yaml.snakeyaml.DumperOptions;
@@ -74,5 +79,25 @@ public class YamlUtils {
     dumpOpts.setIndent(2);
 
     return dumpOpts;
+  }
+
+  public static KubernetesResource loadYaml(String text) throws IOException {
+    return loadYaml(text, KubernetesResource.class);
+  }
+
+  public static <T> T loadYaml(String text, Class<T> clazz) throws IOException {
+    byte[] data = text.getBytes();
+    return loadYaml(data, clazz);
+  }
+
+  public static <T> T loadYaml(byte[] data, Class<T> clazz) throws IOException {
+    ObjectMapper mapper = createYamlObjectMapper();
+    return mapper.readValue(data, clazz);
+  }
+
+  public static ObjectMapper createYamlObjectMapper() {
+    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+    return objectMapper;
   }
 }

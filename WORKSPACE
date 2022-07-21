@@ -4629,7 +4629,6 @@ plain_artifacts = [
     "io.dropwizard:dropwizard-views-mustache:2.0.21",
     "io.dropwizard:dropwizard-views:2.0.21",
     "io.dropwizard.logback:logback-throttling-appender:1.1.0",
-    "io.fabric8:kubernetes-api:3.0.12",
     "io.fabric8:kubernetes-client:5.12.1",
     "io.fabric8:openshift-client:5.12.1",
     "io.fabric8:kubernetes-client-project:5.12.1",

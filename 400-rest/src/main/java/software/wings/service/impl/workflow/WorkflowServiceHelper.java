@@ -112,6 +112,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
+import io.harness.yaml.YamlUtils;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.AmiDeploymentType;
@@ -388,7 +389,7 @@ public class WorkflowServiceHelper {
           yamlForHPAWithCustomMetric.replaceAll(MIN_REPLICAS, String.valueOf(minAutoscaleInstances.intValue()))
               .replaceAll(MAX_REPLICAS, String.valueOf(maxAutoscaleInstances.intValue()))
               .replaceAll(UTILIZATION, String.valueOf(targetCpuUtilizationPercentage.intValue()));
-      if (KubernetesHelper.loadYaml(hpaYaml, HorizontalPodAutoscaler.class) == null) {
+      if (YamlUtils.loadYaml(hpaYaml, HorizontalPodAutoscaler.class) == null) {
         log.error("HPA couldn't be parsed: {}", hpaYaml);
       }
       return hpaYaml;

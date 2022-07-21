@@ -56,7 +56,7 @@ java_library(
         "//960-persistence:supporter-test",
         "//990-commons-test:module",
         "@maven//:com_github_tomakehurst_wiremock_jre8_standalone",
-        "@maven//:io_fabric8_fabric8_utils",
+
         "@maven//:junit_junit",
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_mockito_mockito_core",

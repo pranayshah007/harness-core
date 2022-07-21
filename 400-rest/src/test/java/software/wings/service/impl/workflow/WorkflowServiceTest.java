@@ -308,6 +308,7 @@ import io.harness.limits.LimitCheckerFactory;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
+import io.harness.yaml.YamlUtils;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.CloudProviderType;
@@ -3256,7 +3257,7 @@ public class WorkflowServiceTest extends WingsBaseTest {
     String yamlHPA = workflowService.getHPAYamlStringWithCustomMetric(
         minAutoscaleInstances, maxAutoscaleInstances, targetCpuUtilizationPercentage);
 
-    HorizontalPodAutoscaler horizontalPodAutoscaler = KubernetesHelper.loadYaml(yamlHPA);
+    HorizontalPodAutoscaler horizontalPodAutoscaler = YamlUtils.loadYaml(yamlHPA, HorizontalPodAutoscaler.class);
     assertThat(horizontalPodAutoscaler.getApiVersion()).isEqualTo("autoscaling/v2beta1");
     assertThat(horizontalPodAutoscaler.getKind()).isEqualTo("HorizontalPodAutoscaler");
     assertThat(horizontalPodAutoscaler.getSpec()).isNotNull();

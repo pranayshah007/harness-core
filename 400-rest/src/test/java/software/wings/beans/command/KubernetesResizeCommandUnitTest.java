@@ -36,6 +36,7 @@ import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
+import io.harness.yaml.YamlUtils;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.ContainerServiceData;
@@ -369,7 +370,7 @@ public class KubernetesResizeCommandUnitTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testDeleteAutoScalarIsCalled() throws IOException {
     String yamlHPA = workflowService.getHPAYamlStringWithCustomMetric(2, 10, 60);
-    HorizontalPodAutoscaler horizontalPodAutoscaler = KubernetesHelper.loadYaml(yamlHPA);
+    HorizontalPodAutoscaler horizontalPodAutoscaler = YamlUtils.loadYaml(yamlHPA, HorizontalPodAutoscaler.class);
     when(kubernetesContainerService.getAutoscaler(any(KubernetesConfig.class), anyString(), anyString()))
         .thenReturn(horizontalPodAutoscaler);
 

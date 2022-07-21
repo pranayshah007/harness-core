@@ -44,7 +44,7 @@ java_library(
         "@maven//:com_squareup_retrofit2_converter_jackson",
         "@maven//:com_squareup_retrofit2_retrofit",
         "@maven//:commons_collections_commons_collections",
-        "@maven//:io_fabric8_fabric8_utils",
+
         "@maven//:joda_time_joda_time",
         "@maven//:org_apache_commons_commons_collections4",
         "@maven//:org_apache_commons_commons_lang3",

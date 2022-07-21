@@ -79,7 +79,7 @@ java_library(
         "@maven//:de_bwaldvogel_mongo_java_server_core",
         "@maven//:de_bwaldvogel_mongo_java_server_memory_backend",
         "@maven//:de_flapdoodle_embed_de_flapdoodle_embed_process",
-        "@maven//:io_fabric8_fabric8_utils",
+
         "@maven//:junit_junit",
         "@maven//:org_apache_commons_commons_lang3",
         "@maven//:org_assertj_assertj_core",
