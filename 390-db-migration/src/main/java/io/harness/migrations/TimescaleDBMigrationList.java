@@ -156,8 +156,8 @@ public class TimescaleDBMigrationList {
         .add(Pair.of(65, CreateUserTable.class))
         .add(Pair.of(66, CreateCloudProviderTable.class))
         .add(Pair.of(67, AddAzureColumnAnomaly.class))
-        .add(Pair.of(68, AddParentPipelineToDeployment.class))
-        .add(Pair.of(69, AddFailureDetailsToDeployment.class))
+        .add(Pair.of(68, AddFailureDetailsToDeployment.class))
+        .add(Pair.of(69, AddParentPipelineToDeployment.class))
         .build();
   }
 }
