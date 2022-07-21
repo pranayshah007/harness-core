@@ -1769,6 +1769,7 @@ public class DelegateModule extends AbstractModule {
     binder()
         .bind(CustomEncryptor.class)
         .annotatedWith(Names.named(Encryptors.CUSTOM_ENCRYPTOR_NG.getName()))
+        // Use ng encryptor
         .to(CustomSecretsManagerEncryptor.class);
   }
 
