@@ -183,9 +183,7 @@ public class PerpetualTaskWorker {
     String delegateId = getDelegateId().orElse("UNREGISTERED");
     List<PerpetualTaskAssignDetails> assignedTasks =
         perpetualTaskServiceAgentClient.perpetualTaskList(delegateId, accountId);
-    if (log.isDebugEnabled()) {
-      log.debug("Refreshed list of assigned perpetual tasks {}", assignedTasks);
-    }
+    log.info("Refreshed list of assigned perpetual tasks for accountId {}, {} ", accountId, assignedTasks);
     return assignedTasks;
   }
 
