@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -127,11 +126,11 @@ public class CiTelemetryPublisherTest extends CategoryTest {
 
     telemetryPublisher.recordTelemetry();
     verify(telemetryReporter, times(1))
-            .sendGroupEvent("acc1", null, firstAccountExpectedMap, Collections.singletonMap(ALL, true),
-                    TelemetryOption.builder().sendForCommunity(true).build());
+        .sendGroupEvent("acc1", null, firstAccountExpectedMap, Collections.singletonMap(ALL, true),
+            TelemetryOption.builder().sendForCommunity(true).build());
     verify(telemetryReporter, times(1))
-            .sendGroupEvent("acc2", null, secondAccountExpectedMap, Collections.singletonMap(ALL, true),
-                    TelemetryOption.builder().sendForCommunity(true).build());
+        .sendGroupEvent("acc2", null, secondAccountExpectedMap, Collections.singletonMap(ALL, true),
+            TelemetryOption.builder().sendForCommunity(true).build());
   }
 
   @Test
@@ -163,11 +162,11 @@ public class CiTelemetryPublisherTest extends CategoryTest {
 
     telemetryPublisher.recordTelemetry();
     verify(telemetryReporter, times(1))
-            .sendGroupEvent("acc1", null, firstAccountExpectedMap, Collections.singletonMap(ALL, true),
-                    TelemetryOption.builder().sendForCommunity(true).build());
+        .sendGroupEvent("acc1", null, firstAccountExpectedMap, Collections.singletonMap(ALL, true),
+            TelemetryOption.builder().sendForCommunity(true).build());
     verify(telemetryReporter, times(1))
-            .sendGroupEvent("acc2", null, secondAccountExpectedMap, Collections.singletonMap(ALL, true),
-                    TelemetryOption.builder().sendForCommunity(true).build());
+        .sendGroupEvent("acc2", null, secondAccountExpectedMap, Collections.singletonMap(ALL, true),
+            TelemetryOption.builder().sendForCommunity(true).build());
   }
 
   @Test

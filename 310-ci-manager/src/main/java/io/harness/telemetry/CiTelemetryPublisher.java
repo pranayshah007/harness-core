@@ -20,13 +20,12 @@ import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.remote.client.RestClientUtils;
 import io.harness.repositories.CITelemetryStatusRepository;
+import io.harness.repositories.ModuleLicenseRepository;
 
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-
-import io.harness.repositories.ModuleLicenseRepository;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -46,7 +45,6 @@ public class CiTelemetryPublisher {
   private static final String GROUP_TYPE = "group_type";
   private static final String GROUP_ID = "group_id";
 
-
   public void recordTelemetry() {
     log.info("CiTelemetryPublisher recordTelemetry execute started.");
     try {
@@ -57,7 +55,7 @@ public class CiTelemetryPublisher {
           if (ciTelemetryStatusRepository.updateTimestampIfOlderThan(
                   accountId, System.currentTimeMillis() - A_DAY_MINUS_TEN_MINS, System.currentTimeMillis())) {
             List<ModuleLicense> existing =
-                    moduleLicenseRepository.findByAccountIdentifierAndModuleType(accountId, ModuleType.CI);
+                moduleLicenseRepository.findByAccountIdentifierAndModuleType(accountId, ModuleType.CI);
             HashMap<String, Object> map = new HashMap<>();
             map.put(GROUP_TYPE, ACCOUNT);
             map.put(GROUP_ID, accountId);
@@ -65,12 +63,12 @@ public class CiTelemetryPublisher {
             if (existing.size() != 0 || developersCount != 0) {
               map.put(COUNT_ACTIVE_DEVELOPERS, developersCount);
               telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
-                      TelemetryOption.builder().sendForCommunity(true).build());
+                  TelemetryOption.builder().sendForCommunity(true).build());
               log.info("Scheduled CiTelemetryPublisher event sent! for account {}", accountId);
             } else {
               map.put(COUNT_ACTIVE_DEVELOPERS, null);
               telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
-                      TelemetryOption.builder().sendForCommunity(true).build());
+                  TelemetryOption.builder().sendForCommunity(true).build());
               log.info("Account {} does not have CI Module, sending null as count", accountId);
             }
             map.put(ACCOUNT_DEPLOY_TYPE, System.getenv().get(DEPLOY_VERSION));
