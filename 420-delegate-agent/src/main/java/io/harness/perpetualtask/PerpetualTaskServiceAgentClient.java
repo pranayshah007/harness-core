@@ -55,8 +55,10 @@ public class PerpetualTaskServiceAgentClient {
       }
 
       executeAsyncCallWithRetry(perpetualTaskContextResponseCall, result);
+      log.info("scheduled perpetual task for context {}", taskId.getId());
       PerpetualTaskExecutionContext perpetualTaskExecutionContext = result.get().getPerpetualTaskContext();
       log.info("PT Context params: {}", perpetualTaskExecutionContext);
+      log.info("Got context for perpetual task {}", taskId.getId());
       return perpetualTaskExecutionContext;
     } catch (InterruptedException | ExecutionException | IOException e) {
       log.error("Error while getting perpetualTaskContext ", e);
@@ -89,6 +91,7 @@ public class PerpetualTaskServiceAgentClient {
   private <T> T executeAsyncCallWithRetry(Call<T> call, CompletableFuture<T> result)
       throws IOException, ExecutionException, InterruptedException {
     call.enqueue(new CallbackWithRetry<T>(call, result));
+    log.info("finished enqueing");
     return result.get();
   }
 }

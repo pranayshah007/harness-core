@@ -30,6 +30,7 @@ public class CallbackWithRetry<T> implements Callback<T> {
     if (retryCount++ < TOTAL_RETRIES) {
       retry();
     }
+    log.info("dropping call request");
   }
 
   private void retry() {

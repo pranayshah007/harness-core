@@ -121,7 +121,7 @@ public class PerpetualTaskWorker {
         stopTask(taskId);
       }
 
-      log.info("perpetual task to be executed: ", startTasks);
+      log.info("perpetual task to be executed: {} ", startTasks);
 
       for (PerpetualTaskAssignDetails task : startTasks) {
         log.info("handleTask start PT {} ", task.getTaskId().getId());
