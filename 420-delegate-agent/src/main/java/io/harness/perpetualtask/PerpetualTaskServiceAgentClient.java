@@ -22,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Call;
+import retrofit2.Response;
 
 @Singleton
 @Slf4j
@@ -29,12 +30,10 @@ public class PerpetualTaskServiceAgentClient {
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
 
   public List<PerpetualTaskAssignDetails> perpetualTaskList(String delegateId, String accountId) {
-    CompletableFuture<PerpetualTaskListResponse> result = new CompletableFuture<>();
     try {
       Call<PerpetualTaskListResponse> call = delegateAgentManagerClient.perpetualTaskList(delegateId, accountId);
-      executeAsyncCallWithRetry(call, result);
-      return result.get().getPerpetualTaskAssignDetailsList();
-
+      PerpetualTaskListResponse response = executeRestCall(call);
+      return response.getPerpetualTaskAssignDetailsList();
     } catch (Exception e) {
       log.error("Error while getting perpetualTaskList ", e);
     }
@@ -42,15 +41,14 @@ public class PerpetualTaskServiceAgentClient {
   }
 
   public PerpetualTaskExecutionContext perpetualTaskContext(PerpetualTaskId taskId, String accountId) {
-    CompletableFuture<PerpetualTaskContextResponse> result = new CompletableFuture<>();
     try {
       Call<PerpetualTaskContextResponse> perpetualTaskContextResponseCall =
           delegateAgentManagerClient.perpetualTaskContext(taskId.getId(), accountId);
-      executeAsyncCallWithRetry(perpetualTaskContextResponseCall, result);
-      PerpetualTaskExecutionContext perpetualTaskExecutionContext = result.get().getPerpetualTaskContext();
+      PerpetualTaskContextResponse response = executeRestCall(perpetualTaskContextResponseCall);
+      PerpetualTaskExecutionContext perpetualTaskExecutionContext = response.getPerpetualTaskContext();
       log.info("PT Context params: {}", perpetualTaskExecutionContext);
       return perpetualTaskExecutionContext;
-    } catch (InterruptedException | ExecutionException | IOException e) {
+    } catch (Exception e) {
       log.error("Error while getting perpetualTaskContext ", e);
     }
     return null;
@@ -58,7 +56,6 @@ public class PerpetualTaskServiceAgentClient {
 
   public void heartbeat(
       PerpetualTaskId taskId, Instant taskStartTime, PerpetualTaskResponse perpetualTaskResponse, String accountId) {
-    CompletableFuture<HeartbeatResponse> result = new CompletableFuture<>();
     try {
       HeartbeatRequest heartbeatRequest = HeartbeatRequest.newBuilder()
                                               .setId(taskId.getId())
@@ -70,10 +67,10 @@ public class PerpetualTaskServiceAgentClient {
         log.warn("Account id is null while sending heartbeat");
       }
       Call<HeartbeatResponse> call = delegateAgentManagerClient.heartbeat(accountId, heartbeatRequest);
-      executeAsyncCallWithRetry(call, result);
+      HeartbeatResponse response = executeRestCall(call);
     } catch (IOException ex) {
       log.error(ex.getMessage());
-    } catch (InterruptedException | ExecutionException e) {
+    } catch (Exception e) {
       log.error("Error on PT heartbeat ", e);
     }
   }
@@ -82,5 +79,26 @@ public class PerpetualTaskServiceAgentClient {
       throws IOException, ExecutionException, InterruptedException {
     call.enqueue(new CallbackWithRetry<T>(call, result));
     return result.get();
+  }
+
+  private <T> T executeRestCall(Call<T> call) throws IOException {
+    Response<T> response = null;
+    try {
+      response = call.execute();
+      if (response.isSuccessful()) {
+        return response.body();
+      }
+    } catch (Exception e) {
+      log.error("error executing rest call", e);
+      throw e;
+    } finally {
+      if (response != null && !response.isSuccessful()) {
+        String errorResponse = response.errorBody().string();
+        int errorCode = response.code();
+        log.warn("PT: Received {} Error Response: {}", errorCode, errorResponse);
+        response.errorBody().close();
+      }
+    }
+    return null;
   }
 }
