@@ -49,7 +49,7 @@ import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.integrationstage.K8InitializeStepUtils;
+import io.harness.ci.integrationstage.InitializeStepUtils;
 import io.harness.ci.serializer.PluginCompatibleStepSerializer;
 import io.harness.ci.serializer.PluginStepProtobufSerializer;
 import io.harness.ci.serializer.RunStepProtobufSerializer;
@@ -541,7 +541,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
             stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId, stepName);
       case GIT_CLONE:
         GitCloneStepInfo gitCloneStepInfo = ((GitCloneStepInfo) ciStepInfo);
-        PluginStepInfo pluginStepInfo = K8InitializeStepUtils.createPluginStepInfo(gitCloneStepInfo,
+        PluginStepInfo pluginStepInfo = InitializeStepUtils.createPluginStepInfo(gitCloneStepInfo,
                 ciExecutionConfigService, accountId, os );
         return pluginStepProtobufSerializer.serializeStepWithStepParameters(pluginStepInfo, port, taskId, logKey,
                 stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId, stepName);

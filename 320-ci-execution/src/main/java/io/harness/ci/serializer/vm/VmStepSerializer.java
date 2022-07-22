@@ -14,9 +14,7 @@ import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
-import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.utils.CIVmSecretEvaluator;
-import io.harness.ci.integrationstage.K8InitializeStepUtils;
 import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -33,8 +31,7 @@ public class VmStepSerializer {
   @Inject VmPluginStepSerializer vmPluginStepSerializer;
   @Inject VmRunStepSerializer vmRunStepSerializer;
   @Inject VmRunTestStepSerializer vmRunTestStepSerializer;
-  @Inject
-  CIExecutionConfigService ciExecutionConfigService;
+  @Inject VmGitCloneStepSerializer vmGitCloneStepSerializer;
 
   public Set<String> getStepSecrets(VmStepInfo vmStepInfo, Ambiance ambiance) {
     CIVmSecretEvaluator ciVmSecretEvaluator = CIVmSecretEvaluator.builder().build();
@@ -53,12 +50,8 @@ public class VmStepSerializer {
         return vmRunTestStepSerializer.serialize(
             (RunTestsStepInfo) stepInfo, identifier, parameterFieldTimeout, stepName, ambiance);
       case GIT_CLONE:
-        //TODO: this has not been tested yet and likely doesn't work
-        GitCloneStepInfo gitCloneStepInfo = ((GitCloneStepInfo) stepInfo);
-        //TODO: trying to reuse logic from K8, but this may just not make sense, need to look into this
-        PluginStepInfo pluginStepInfo = K8InitializeStepUtils.createPluginStepInfo(gitCloneStepInfo, ciExecutionConfigService);
-        return vmPluginStepSerializer.serialize(
-                pluginStepInfo, stageInfraDetails, identifier, parameterFieldTimeout, stepName, ambiance);
+        return vmGitCloneStepSerializer.serialize(
+            (GitCloneStepInfo) stepInfo, stageInfraDetails, identifier, parameterFieldTimeout, stepName, ambiance);
       case PLUGIN:
         return vmPluginStepSerializer.serialize(
             (PluginStepInfo) stepInfo, stageInfraDetails, identifier, parameterFieldTimeout, stepName, ambiance);

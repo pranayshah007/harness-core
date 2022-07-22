@@ -365,7 +365,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
             ciExecutionArgs, portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(),
             stepElement.getType(), timeout, accountId, os);
       case GIT_CLONE:
-        PluginStepInfo pluginStepInfo = K8InitializeStepUtils.createPluginStepInfo(((GitCloneStepInfo) ciStepInfo),
+        PluginStepInfo pluginStepInfo = InitializeStepUtils.createPluginStepInfo(((GitCloneStepInfo) ciStepInfo),
                 ciExecutionConfigService, accountId, os);
         return createPluginStepContainerDefinition(pluginStepInfo, integrationStage, ciExecutionArgs,
                 portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(), accountId, os);

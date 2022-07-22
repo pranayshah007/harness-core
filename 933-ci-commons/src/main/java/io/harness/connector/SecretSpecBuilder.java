@@ -159,17 +159,19 @@ public class SecretSpecBuilder {
   }
 
   public Map<String, SecretParams> decryptConnectorSecret(ConnectorDetails connectorDetails) {
-    log.info("Decrypting connector id:[{}], type:[{}]", connectorDetails.getIdentifier(),
-        connectorDetails.getConnectorType());
+    ConnectorType type = connectorDetails.getConnectorType();
+    log.info("Decrypting connector id:[{}], type:[{}]", connectorDetails.getIdentifier(), type);
     Map<String, SecretParams> secretParamsMap = new HashMap<>();
-    if (connectorDetails.getConnectorType() == ConnectorType.DOCKER) {
+    if (type == ConnectorType.DOCKER) {
       secretParamsMap = connectorEnvVariablesHelper.getDockerSecretVariables(connectorDetails);
-    } else if (connectorDetails.getConnectorType() == ConnectorType.AWS) {
+    } else if (type == ConnectorType.AWS) {
       secretParamsMap = connectorEnvVariablesHelper.getAwsSecretVariables(connectorDetails);
-    } else if (connectorDetails.getConnectorType() == ConnectorType.GCP) {
+    } else if (type == ConnectorType.GCP) {
       secretParamsMap = connectorEnvVariablesHelper.getGcpSecretVariables(connectorDetails);
-    } else if (connectorDetails.getConnectorType() == ConnectorType.ARTIFACTORY) {
+    } else if (type == ConnectorType.ARTIFACTORY) {
       secretParamsMap = connectorEnvVariablesHelper.getArtifactorySecretVariables(connectorDetails);
+    } else if (type == GITHUB || type == AZURE_REPO || type == GITLAB || type == BITBUCKET || type == CODECOMMIT || type == GIT) {
+      secretParamsMap = decryptGitSecretVariables(connectorDetails);
     } else {
       log.info("Decrypting connector of unknown type: {}", connectorDetails.getConnectorType());
     }
@@ -292,6 +294,7 @@ public class SecretSpecBuilder {
   private Map<String, SecretParams> retrieveGitHubSecretParams(
       GithubConnectorDTO gitConfigDTO, ConnectorDetails gitConnector) {
     Map<String, SecretParams> secretData = new HashMap<>();
+    String uniqueIdentifier = "_" + generateRandomAlphaNumericString(RANDOM_LENGTH);
 
     if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
       GithubHttpCredentialsDTO gitHTTPAuthenticationDTO =
@@ -313,7 +316,8 @@ public class SecretSpecBuilder {
           throw new CIStageExecutionException("Github connector should have not empty username");
         }
         secretData.put(DRONE_NETRC_USERNAME,
-            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME).value(encodeBase64(username)).type(TEXT).build());
+            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME + uniqueIdentifier)
+                        .value(encodeBase64(username)).type(TEXT).build());
 
         if (githubUsernamePasswordDTO.getPasswordRef() == null) {
           throw new CIStageExecutionException("Github connector should have not empty passwordRef");
@@ -324,7 +328,8 @@ public class SecretSpecBuilder {
               "Unsupported github connector auth" + gitConfigDTO.getAuthentication().getAuthType());
         }
         secretData.put(DRONE_NETRC_PASSWORD,
-            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD).value(encodeBase64(password)).type(TEXT).build());
+            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD + uniqueIdentifier)
+                        .value(encodeBase64(password)).type(TEXT).build());
 
       } else if (gitHTTPAuthenticationDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_TOKEN) {
         GithubUsernameTokenDTO githubUsernameTokenDTO = (GithubUsernameTokenDTO) decryptableEntity;
@@ -334,7 +339,6 @@ public class SecretSpecBuilder {
         if (isEmpty(username)) {
           throw new CIStageExecutionException("Github connector should have not empty username");
         }
-        String uniqueIdentifier = "_" + generateRandomAlphaNumericString(RANDOM_LENGTH);
         secretData.put(DRONE_NETRC_USERNAME,
             SecretParams.builder().secretKey(DRONE_NETRC_USERNAME + uniqueIdentifier)
                     .value(encodeBase64(username)).type(TEXT).build());
@@ -358,8 +362,8 @@ public class SecretSpecBuilder {
           throw new CIStageExecutionException("Github connector should have not empty username");
         }
         secretData.put(DRONE_NETRC_USERNAME,
-            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME).value(encodeBase64(username)).type(TEXT).build());
-
+            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME + uniqueIdentifier)
+                        .value(encodeBase64(username)).type(TEXT).build());
         if (githubOauthDTO.getTokenRef() == null) {
           throw new CIStageExecutionException("Github connector should have not empty tokenRef");
         }
@@ -368,7 +372,8 @@ public class SecretSpecBuilder {
           throw new CIStageExecutionException("Github connector should have not empty token");
         }
         secretData.put(DRONE_NETRC_PASSWORD,
-            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD).value(encodeBase64(token)).type(TEXT).build());
+            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD + uniqueIdentifier)
+                        .value(encodeBase64(token)).type(TEXT).build());
       } else {
         throw new CIStageExecutionException(
             "Unsupported github connector auth type" + gitHTTPAuthenticationDTO.getType());
@@ -401,6 +406,7 @@ public class SecretSpecBuilder {
   private Map<String, SecretParams> retrieveAzureRepoSecretParams(
       AzureRepoConnectorDTO gitConfigDTO, ConnectorDetails gitConnector) {
     Map<String, SecretParams> secretData = new HashMap<>();
+    String uniqueIdentifier = "_" + generateRandomAlphaNumericString(RANDOM_LENGTH);
 
     if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
       AzureRepoHttpCredentialsDTO gitHTTPAuthenticationDTO =
@@ -420,7 +426,8 @@ public class SecretSpecBuilder {
           throw new CIStageExecutionException("Azure repo connector should have not empty username");
         }
         secretData.put(DRONE_NETRC_USERNAME,
-            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME).value(encodeBase64(username)).type(TEXT).build());
+            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME + uniqueIdentifier)
+                        .value(encodeBase64(username)).type(TEXT).build());
 
         if (azureRepoUsernameTokenDTO.getTokenRef() == null) {
           throw new CIStageExecutionException("Azure repo connector should have not empty tokenRef");
@@ -430,7 +437,8 @@ public class SecretSpecBuilder {
           throw new CIStageExecutionException("Azure repo connector should have not empty token");
         }
         secretData.put(DRONE_NETRC_PASSWORD,
-            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD).value(encodeBase64(token)).type(TEXT).build());
+            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD + uniqueIdentifier)
+                        .value(encodeBase64(token)).type(TEXT).build());
 
       } else {
         throw new CIStageExecutionException(
@@ -460,6 +468,7 @@ public class SecretSpecBuilder {
   private Map<String, SecretParams> retrieveGitlabSecretParams(
       GitlabConnectorDTO gitConfigDTO, ConnectorDetails gitConnector) {
     Map<String, SecretParams> secretData = new HashMap<>();
+    String uniqueIdentifier = "_" + generateRandomAlphaNumericString(RANDOM_LENGTH);
 
     if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
       GitlabHttpCredentialsDTO gitHTTPAuthenticationDTO =
@@ -479,7 +488,8 @@ public class SecretSpecBuilder {
           throw new CIStageExecutionException("Gitlab connector should have not empty username");
         }
         secretData.put(DRONE_NETRC_USERNAME,
-            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME).value(encodeBase64(username)).type(TEXT).build());
+            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME + uniqueIdentifier)
+                        .value(encodeBase64(username)).type(TEXT).build());
 
         if (gitlabHttpCredentialsSpecDTO.getPasswordRef() == null) {
           throw new CIStageExecutionException("Gitlab connector should have not empty passwordRef");
@@ -490,7 +500,8 @@ public class SecretSpecBuilder {
               "Unsupported gitlab connector auth" + gitConfigDTO.getAuthentication().getAuthType());
         }
         secretData.put(DRONE_NETRC_PASSWORD,
-            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD).value(encodeBase64(password)).type(TEXT).build());
+            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD + uniqueIdentifier)
+                        .value(encodeBase64(password)).type(TEXT).build());
 
       } else if (gitHTTPAuthenticationDTO.getType() == GitlabHttpAuthenticationType.USERNAME_AND_TOKEN) {
         GitlabUsernameTokenDTO gitlabUsernameTokenDTO = (GitlabUsernameTokenDTO) decryptableEntity;
@@ -501,7 +512,8 @@ public class SecretSpecBuilder {
           throw new CIStageExecutionException("Gitlab connector should have not empty username");
         }
         secretData.put(DRONE_NETRC_USERNAME,
-            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME).value(encodeBase64(username)).type(TEXT).build());
+            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME + uniqueIdentifier)
+                        .value(encodeBase64(username)).type(TEXT).build());
 
         if (gitlabUsernameTokenDTO.getTokenRef() == null) {
           throw new CIStageExecutionException("Gitlab connector should have not empty tokenRef");
@@ -511,7 +523,8 @@ public class SecretSpecBuilder {
           throw new CIStageExecutionException("Gitlab connector should have not empty token");
         }
         secretData.put(DRONE_NETRC_PASSWORD,
-            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD).value(encodeBase64(token)).type(TEXT).build());
+            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD + uniqueIdentifier)
+                        .value(encodeBase64(token)).type(TEXT).build());
 
       } else if (gitHTTPAuthenticationDTO.getType() == GitlabHttpAuthenticationType.OAUTH) {
         GitlabOauthDTO gitlabOauthDTO = (GitlabOauthDTO) gitHTTPAuthenticationDTO.getHttpCredentialsSpec();
@@ -522,7 +535,8 @@ public class SecretSpecBuilder {
           throw new CIStageExecutionException("Gitlab connector should have not empty username");
         }
         secretData.put(DRONE_NETRC_USERNAME,
-            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME).value(encodeBase64(username)).type(TEXT).build());
+            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME + uniqueIdentifier)
+                        .value(encodeBase64(username)).type(TEXT).build());
 
         if (gitlabOauthDTO.getTokenRef() == null) {
           throw new CIStageExecutionException("Gitlab connector should have not empty tokenRef");
@@ -533,7 +547,8 @@ public class SecretSpecBuilder {
               "Unsupported gitlab connector auth:" + gitConfigDTO.getAuthentication().getAuthType());
         }
         secretData.put(DRONE_NETRC_PASSWORD,
-            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD).value(encodeBase64(password)).type(TEXT).build());
+            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD + uniqueIdentifier)
+                        .value(encodeBase64(password)).type(TEXT).build());
       } else {
         throw new CIStageExecutionException(
             "Unsupported gitlab connector auth type" + gitHTTPAuthenticationDTO.getType());
@@ -563,6 +578,7 @@ public class SecretSpecBuilder {
   private Map<String, SecretParams> retrieveBitbucketSecretParams(
       BitbucketConnectorDTO gitConfigDTO, ConnectorDetails gitConnector) {
     Map<String, SecretParams> secretData = new HashMap<>();
+    String uniqueIdentifier = "_" + generateRandomAlphaNumericString(RANDOM_LENGTH);
 
     if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
       BitbucketHttpCredentialsDTO gitHTTPAuthenticationDTO =
@@ -581,7 +597,8 @@ public class SecretSpecBuilder {
           throw new CIStageExecutionException("Bitbucket connector should have not empty username");
         }
         secretData.put(DRONE_NETRC_USERNAME,
-            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME).value(encodeBase64(username)).type(TEXT).build());
+            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME + uniqueIdentifier)
+                        .value(encodeBase64(username)).type(TEXT).build());
 
         if (bitbucketHttpCredentialsSpecDTO.getPasswordRef() == null) {
           throw new CIStageExecutionException("Bitbucket connector should have not empty passwordRef");
@@ -592,7 +609,8 @@ public class SecretSpecBuilder {
               "Unsupported bitbucket connector auth" + gitConfigDTO.getAuthentication().getAuthType());
         }
         secretData.put(DRONE_NETRC_PASSWORD,
-            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD).value(encodeBase64(password)).type(TEXT).build());
+            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD + uniqueIdentifier)
+                        .value(encodeBase64(password)).type(TEXT).build());
       }
     } else if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.SSH) {
       SSHKeyDetails sshKeyDetails = gitConnector.getSshKeyDetails();

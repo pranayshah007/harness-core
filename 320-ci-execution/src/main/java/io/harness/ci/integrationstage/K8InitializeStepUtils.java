@@ -12,19 +12,12 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerPara
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameterWithDefaultValue;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_TAG;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_CPU_POV;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_MEM_POV;
-import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
-import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
-import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_SSL_NO_VERIFY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_WORKSPACE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_PREFIX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MEMORY_MIB;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
-import static io.harness.ci.integrationstage.IntegrationStageUtils.BRANCH_EXPRESSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -54,7 +47,6 @@ import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.buildstate.StepContainerUtils;
-import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.utils.CIStepInfoUtils;
@@ -75,20 +67,13 @@ import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.core.variables.StringNGVariable;
-import io.harness.yaml.extended.ci.codebase.Build;
-import io.harness.yaml.extended.ci.codebase.BuildType;
-import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
-import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.fabric8.utils.Strings;
@@ -100,8 +85,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
 @Singleton
 @Slf4j
@@ -519,16 +502,16 @@ public class K8InitializeStepUtils {
       Integer extraCPUPerStep) {
 
     //Create a PluginStepInfo from the GitCloneStepInfo
-    PluginStepInfo pluginStepInfo = createPluginStepInfo(gitCloneStepInfo, ciExecutionConfigService, accountId, os);
+    PluginStepInfo pluginStepInfo = InitializeStepUtils.createPluginStepInfo(gitCloneStepInfo, ciExecutionConfigService, accountId, os);
 
     //Get the Git Connector
-    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    ConnectorDetails gitConnector = codebaseUtils.getGitConnector(ngAccess,
-            pluginStepInfo.getConnectorRef().getValue());
+    final String connectorRef = pluginStepInfo.getConnectorRef().getValue();
+    final NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(ngAccess, connectorRef);
 
     //Set the Git Connector Reference environment variables
-    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector,
-            gitCloneStepInfo.getRepoName().getValue());
+    final String repoName = gitCloneStepInfo.getRepoName().getValue();
+    final Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector, repoName);
     pluginStepInfo.getEnvVariables().putAll(gitEnvVars);
 
     String cloneDirectoryString = RunTimeInputHandler.resolveStringParameter("cloneDirectory", name,
@@ -999,119 +982,5 @@ public class K8InitializeStepUtils {
       default:
         return null;
     }
-  }
-
-  //TODO: it may not make sense to overload this method for VM usage, but if it does this method needs put somewhere more generic
-  //Overloaded for use with VMs - the base method is setup to handle nulls accountId and Os.
-  public static PluginStepInfo createPluginStepInfo(GitCloneStepInfo gitCloneStepInfo,
-                                                    CIExecutionConfigService ciExecutionConfigService) {
-    return createPluginStepInfo(gitCloneStepInfo, ciExecutionConfigService, null, null);
-  }
-
-  /**
-   * Create Plugin step info
-   * Given a gitCloneStepInfo convert it into a PluginStepInfo (which is what codebase used originally for git clone)
-   * @return PluginStepInfo with values set from GitCloneStepInfo
-   */
-  public static PluginStepInfo createPluginStepInfo(GitCloneStepInfo gitCloneStepInfo,
-                                                    CIExecutionConfigService ciExecutionConfigService, String accountId,
-                                                    OSType os) {
-    Map<String, JsonNode> settings = new HashMap<>();
-
-    Pair<String, String> buildEnvVar = getBuildEnvVar(gitCloneStepInfo);
-
-    Integer depth = null;
-    final ParameterField<Integer> depthParameter = gitCloneStepInfo.getDepth();
-    if (depthParameter == null || depthParameter.getValue() == null) {
-      if (buildEnvVar != null && isNotEmpty(buildEnvVar.getValue())) {
-        depth = GIT_CLONE_MANUAL_DEPTH;
-      }
-    }
-
-    if (depth != null && depth != 0) {
-      settings.put(GIT_CLONE_DEPTH_ATTRIBUTE, JsonNodeFactory.instance.textNode(depth.toString()));
-    }
-
-    Map<String, String> envVariables = new HashMap<>();
-    if (gitCloneStepInfo.getSslVerify() != null && gitCloneStepInfo.getSslVerify().getValue() != null
-            && !gitCloneStepInfo.getSslVerify().getValue()) {
-      envVariables.put(GIT_SSL_NO_VERIFY, "true");
-    }
-    if (buildEnvVar != null) {
-      String type = buildEnvVar.getKey();
-      envVariables.put(type, buildEnvVar.getValue());
-      if(DRONE_TAG.equals(type)) {
-        envVariables.put(DRONE_BUILD_EVENT, "tag");
-      }
-    }
-
-    CIExecutionServiceConfig ciExecutionServiceConfig = ciExecutionConfigService.getCiExecutionServiceConfig();
-    List<String> entrypoint = Collections.emptyList();
-    if (ciExecutionServiceConfig != null && ciExecutionServiceConfig.getStepConfig() != null
-            && ciExecutionServiceConfig.getStepConfig().getGitCloneConfig() != null) {
-      entrypoint = ciExecutionServiceConfig.getStepConfig().getGitCloneConfig().getEntrypoint();
-      if (OSType.Windows == os) {
-        entrypoint = ciExecutionServiceConfig.getStepConfig().getGitCloneConfig().getWindowsEntrypoint();
-      }
-    }
-
-    PluginStepInfo step = PluginStepInfo.builder()
-            .connectorRef(gitCloneStepInfo.getConnectorRef())
-            .identifier(gitCloneStepInfo.getIdentifier())
-            .name(gitCloneStepInfo.getName())
-            .settings(ParameterField.createValueField(settings))
-            .envVariables(envVariables)
-            .entrypoint(entrypoint)
-            .harnessManagedImage(true)
-            .resources(gitCloneStepInfo.getResources())
-            .privileged(ParameterField.createValueField(null))
-            .reports(ParameterField.createValueField(null))
-            .build();
-
-    if (isNotEmpty(accountId)) {
-      String gitCloneImage =
-              ciExecutionConfigService.getPluginVersionForK8(CIStepInfoType.GIT_CLONE, accountId).getImage();
-      step.setImage(ParameterField.createValueField(gitCloneImage));
-    }
-    return step;
-  }
-
-  /**
-   * Get Build Env variable - branch or tag
-   *
-   * @param gitCloneStepInfo gitCloneStepInfo
-   * @return a pair containing whether the build is configured for a branch or tag, and the value of the branch or tag
-   */
-  private static Pair<String, String> getBuildEnvVar(GitCloneStepInfo gitCloneStepInfo) {
-    final String identifier = gitCloneStepInfo.getIdentifier();
-    final String type = gitCloneStepInfo.getStepType().getType();
-    Pair<String, String> buildEnvVar = null;
-    Build build = RunTimeInputHandler.resolveBuild(gitCloneStepInfo.getBuild());
-    if (build != null) {
-      if (build.getType() == BuildType.PR) {
-        throw new CIStageExecutionException(format("%s is not a valid build type in step type %s with identifier %s",
-                BuildType.PR, type, identifier));
-      } else if (build.getType() == BuildType.BRANCH) {
-        ParameterField<String> branch = ((BranchBuildSpec) build.getSpec()).getBranch();
-        String branchString =
-                RunTimeInputHandler.resolveStringParameter("branch", type, identifier, branch, false);
-        if (isNotEmpty(branchString)) {
-          if (!branchString.equals(BRANCH_EXPRESSION)) {
-            buildEnvVar = new ImmutablePair<>(DRONE_COMMIT_BRANCH, branchString);
-          }
-        } else {
-          throw new CIStageExecutionException("Branch should not be empty for branch build type");
-        }
-      } else if (build.getType() == BuildType.TAG) {
-        ParameterField<String> tag = ((TagBuildSpec) build.getSpec()).getTag();
-        String tagString = RunTimeInputHandler.resolveStringParameter("tag", type, identifier, tag, false);
-        if (isNotEmpty(tagString)) {
-          buildEnvVar = new ImmutablePair<>(DRONE_TAG, tagString);
-        } else {
-          throw new CIStageExecutionException("Tag should not be empty for tag build type");
-        }
-      }
-    }
-    return buildEnvVar;
   }
 }

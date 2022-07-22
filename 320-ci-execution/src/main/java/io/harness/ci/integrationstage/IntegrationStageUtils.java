@@ -108,12 +108,14 @@ import java.util.Arrays;
 import java.util.List;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.CI)
 public class IntegrationStageUtils {
   private static final String TAG_EXPRESSION = "<+trigger.tag>";
-  public static final String BRANCH_EXPRESSION = "<+trigger.branch>";
+  private static final String BRANCH_EXPRESSION = "<+trigger.branch>";
   public static final String PR_EXPRESSION = "<+trigger.prNumber>";
 
   private static final String HARNESS_HOSTED = "Harness Hosted";
@@ -200,12 +202,14 @@ public class IntegrationStageUtils {
     String url = getGitURLFromConnector(connectorDetails, codeBase);
     WebhookExecutionSource webhookExecutionSource = WebhookTriggerProcessorUtils.convertWebhookResponse(parsedPayload);
     Build build = RunTimeInputHandler.resolveBuild(codeBase.getBuild());
-    if (build != null) {
-      if (build.getType() == BuildType.PR) {
-        ParameterField<String> number = ((PRBuildSpec) build.getSpec()).getNumber();
-        String numberString =
-            RunTimeInputHandler.resolveStringParameter("number", "Git Clone", "identifier", number, false);
-        if (!numberString.equals(PR_EXPRESSION)) {
+    Pair<BuildType, String> buildTypeAndValue = getBuildTypeAndValue(build);
+
+    if(buildTypeAndValue != null) {
+      BuildType buildType = buildTypeAndValue.getKey();
+      String buildValue = buildTypeAndValue.getValue();
+
+      if (buildType == BuildType.PR) {
+        if (!buildValue.equals(PR_EXPRESSION)) {
           return true;
         } else {
           if (webhookExecutionSource.getWebhookEvent().getType() == BRANCH) {
@@ -215,12 +219,9 @@ public class IntegrationStageUtils {
         }
       }
 
-      if (build.getType() == BuildType.BRANCH) {
-        ParameterField<String> branch = ((BranchBuildSpec) build.getSpec()).getBranch();
-        String branchString =
-            RunTimeInputHandler.resolveStringParameter("branch", "Git Clone", "identifier", branch, false);
-        if (isNotEmpty(branchString)) {
-          if (!branchString.equals(BRANCH_EXPRESSION)) {
+      if (buildType == BuildType.BRANCH) {
+        if (isNotEmpty(buildValue)) {
+          if (!buildValue.equals(BRANCH_EXPRESSION)) {
             return true;
           }
         } else {
@@ -228,10 +229,8 @@ public class IntegrationStageUtils {
         }
       }
 
-      if (build.getType() == BuildType.TAG) {
-        ParameterField<String> tag = ((TagBuildSpec) build.getSpec()).getTag();
-        String tagString = RunTimeInputHandler.resolveStringParameter("tag", "Git Clone", "identifier", tag, false);
-        if (isNotEmpty(tagString)) {
+      if (buildType == BuildType.TAG) {
+        if (isNotEmpty(buildValue)) {
           return true;
         } else {
           throw new CIStageExecutionException("Tag should not be empty for tag build type");
@@ -244,6 +243,32 @@ public class IntegrationStageUtils {
     } else {
       return true;
     }
+  }
+
+  public static Pair<BuildType, String> getBuildTypeAndValue(Build build) {
+    Pair<BuildType, String> buildTypeAndValue = null;
+    if (build != null) {
+      switch (build.getType()) {
+        case PR:
+          ParameterField<String> number = ((PRBuildSpec) build.getSpec()).getNumber();
+          String numberString =
+                  RunTimeInputHandler.resolveStringParameter("number", "Git Clone", "identifier", number, false);
+          buildTypeAndValue = new ImmutablePair<>(BuildType.PR, numberString);
+          break;
+        case BRANCH:
+          ParameterField<String> branch = ((BranchBuildSpec) build.getSpec()).getBranch();
+          String branchString =
+                  RunTimeInputHandler.resolveStringParameter("branch", "Git Clone", "identifier", branch, false);
+          buildTypeAndValue = new ImmutablePair<>(BuildType.BRANCH, branchString);
+          break;
+        case TAG:
+          ParameterField<String> tag = ((TagBuildSpec) build.getSpec()).getTag();
+          String tagString = RunTimeInputHandler.resolveStringParameter("tag", "Git Clone", "identifier", tag, false);
+          buildTypeAndValue = new ImmutablePair<>(BuildType.TAG, tagString);
+          break;
+      }
+    }
+    return buildTypeAndValue;
   }
 
   public boolean isURLSame(WebhookExecutionSource webhookExecutionSource, String url) {
