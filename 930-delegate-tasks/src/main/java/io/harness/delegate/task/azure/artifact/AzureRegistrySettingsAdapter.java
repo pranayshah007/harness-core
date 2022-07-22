@@ -27,6 +27,9 @@ public class AzureRegistrySettingsAdapter {
   @Inject private AzureDockerHubPrivateRegistrySettingsProvider dockerHubPrivateRegistrySettingsProvider;
   @Inject private AzureArtifactoryRegistrySettingsProvider artifactoryRegistrySettingsProvider;
   @Inject private AzureContainerRegistrySettingsProvider azureContainerRegistrySettingsProvider;
+  @Inject private AzureElasticContainerRegistrySettingsProvider azureElasticContainerRegistrySettingsProvider;
+  @Inject private AzureGoogleContainerRegistrySettingsProvider azureGoogleContainerRegistrySettingsProvider;
+  @Inject private AzureNexus3RegistrySettingsProvider azureNexus3RegistrySettingsProvider;
 
   public Map<String, AzureAppServiceApplicationSetting> getContainerSettings(
       AzureContainerArtifactConfig artifactConfig) {
@@ -39,6 +42,12 @@ public class AzureRegistrySettingsAdapter {
         return artifactoryRegistrySettingsProvider.getContainerSettings(artifactConfig);
       case ACR:
         return azureContainerRegistrySettingsProvider.getContainerSettings(artifactConfig);
+      case ECR:
+        return azureElasticContainerRegistrySettingsProvider.getContainerSettings(artifactConfig);
+      case GCR:
+        return azureGoogleContainerRegistrySettingsProvider.getContainerSettings(artifactConfig);
+      case NEXUS_PRIVATE_REGISTRY:
+        return azureNexus3RegistrySettingsProvider.getContainerSettings(artifactConfig);
       default:
         throw NestedExceptionUtils.hintWithExplanationException(
             "Use a different container registry supported by Harness",

@@ -46,7 +46,7 @@ public class AzureTestUtils {
   public static final String TARGET_SLOT = "target-slot";
   public static final String ROLLBACK = "rollback";
   public static final double TRAFFIC_WEIGHT = 20.0;
-  public static final String TEST_IMAGE = "test-image";
+  public static final String TEST_IMAGE = "test.registry.io/test-image:tag";
   public static final String TEST_IMAGE_TAG = "tag-image";
   public static final String TENANT_ID = "tenant-id";
   public static final String CLIENT_ID = "client-id";
@@ -54,6 +54,7 @@ public class AzureTestUtils {
   public static final String TAG = "tag";
   public static final String IMAGE = "image";
   public static final String REGISTRY_HOSTNAME = "test.registry.io";
+  public static final String TEST_REGION = "test-region";
 
   public AzureContainerArtifactConfig createTestContainerArtifactConfig() {
     return createTestContainerArtifactConfig(null);
@@ -66,6 +67,7 @@ public class AzureTestUtils {
         .tag(TEST_IMAGE_TAG)
         .registryType(AzureRegistryType.DOCKER_HUB_PRIVATE)
         .registryHostname(REGISTRY_HOSTNAME)
+        .region(TEST_REGION)
         .build();
   }
 

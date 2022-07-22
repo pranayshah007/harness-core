@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.azure.artifact;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.model.AzureAppServiceApplicationSetting;
@@ -24,7 +26,10 @@ public class AzureArtifactoryRegistrySettingsProvider extends AbstractAzureRegis
   public Map<String, AzureAppServiceApplicationSetting> getContainerSettings(
       AzureContainerArtifactConfig artifactConfig) {
     ArtifactoryConnectorDTO artifactoryConnectorDTO = (ArtifactoryConnectorDTO) artifactConfig.getConnectorConfig();
-    String dockerRegistryUrl = artifactoryConnectorDTO.getArtifactoryServerUrl();
+
+    String dockerRegistryUrl = !isBlank(artifactConfig.getRegistryHostname())
+        ? artifactConfig.getRegistryHostname()
+        : artifactoryConnectorDTO.getArtifactoryServerUrl();
     if (ArtifactoryAuthType.USER_PASSWORD == artifactoryConnectorDTO.getAuth().getAuthType()) {
       ArtifactoryUsernamePasswordAuthDTO artifactoryUsernamePasswordAuthDTO =
           (ArtifactoryUsernamePasswordAuthDTO) artifactoryConnectorDTO.getAuth().getCredentials();

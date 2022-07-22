@@ -28,6 +28,7 @@ public class AzureContainerArtifactConfig implements AzureArtifactConfig {
   private String tag;
   private List<EncryptedDataDetail> encryptedDataDetails;
   private String registryHostname;
+  private String region;
 
   @Override
   public AzureArtifactType getArtifactType() {

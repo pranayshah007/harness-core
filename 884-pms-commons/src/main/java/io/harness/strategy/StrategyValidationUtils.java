@@ -45,10 +45,9 @@ public class StrategyValidationUtils {
           }
         }
       }
-    } else if (config.getForConfig() != null) {
-      if (!ParameterField.isBlank(config.getForConfig().getIteration())
-          && config.getForConfig().getIteration().getValue() != null
-          && config.getForConfig().getIteration().getValue() == 0) {
+    } else if (config.getRepeat() != null) {
+      if (!ParameterField.isBlank(config.getRepeat().getTimes()) && config.getRepeat().getTimes().getValue() != null
+          && config.getRepeat().getTimes().getValue() == 0) {
         throw new InvalidYamlException(
             "Iteration can not be [zero]. Please provide some positive Integer for Iteration count");
       }

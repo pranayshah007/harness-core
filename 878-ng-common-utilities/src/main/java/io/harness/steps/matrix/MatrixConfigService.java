@@ -85,7 +85,7 @@ public class MatrixConfigService implements StrategyConfigService {
     int currentIteration = 0;
     for (List<Integer> matrixData : matrixMetadata) {
       JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StageStrategyUtils.replaceExpressions(
-          jsonNode.deepCopy().toString(), combinations.get(currentIteration), currentIteration, totalCount)));
+          jsonNode.deepCopy().toString(), combinations.get(currentIteration), currentIteration, totalCount, null)));
       StageStrategyUtils.modifyJsonNode(
           clonedNode, matrixData.stream().map(String::valueOf).collect(Collectors.toList()));
       jsonNodes.add(clonedNode);

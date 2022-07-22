@@ -68,7 +68,7 @@ public class AzureArtifactoryRegistrySettingsProviderTest extends CategoryTest {
         .containsKeys(DOCKER_REGISTRY_SERVER_URL_PROPERTY_NAME, DOCKER_REGISTRY_SERVER_USERNAME_PROPERTY_NAME,
             DOCKER_REGISTRY_SERVER_SECRET_PROPERTY_NAME);
     assertThat(dockerSettings.values().stream().map(AzureAppServiceApplicationSetting::getValue))
-        .containsExactlyInAnyOrder(artifactoryServerUrl, username, password);
+        .containsExactlyInAnyOrder("test.registry.io", username, password);
   }
 
   @Test
@@ -87,6 +87,6 @@ public class AzureArtifactoryRegistrySettingsProviderTest extends CategoryTest {
 
     assertThat(dockerSettings).containsKeys(DOCKER_REGISTRY_SERVER_URL_PROPERTY_NAME);
     assertThat(dockerSettings.values().stream().map(AzureAppServiceApplicationSetting::getValue))
-        .containsExactlyInAnyOrder(artifactoryServerUrl);
+        .containsExactlyInAnyOrder("test.registry.io");
   }
 }
