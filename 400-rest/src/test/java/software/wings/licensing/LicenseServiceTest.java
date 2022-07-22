@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.configuration.DeployMode;
 import io.harness.exception.WingsException;
 import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
@@ -91,6 +92,7 @@ public class LicenseServiceTest extends WingsBaseTest {
     Call<ResponseDTO<Boolean>> booleanResult = mock(Call.class);
     when(booleanResult.execute()).thenReturn(Response.success(ResponseDTO.newResponse(true)));
     when(ngLicenseHttpClient.softDelete(any())).thenReturn(booleanResult);
+    when(mainConfiguration.getDeployMode()).thenReturn(DeployMode.KUBERNETES);
   }
 
   @Test
