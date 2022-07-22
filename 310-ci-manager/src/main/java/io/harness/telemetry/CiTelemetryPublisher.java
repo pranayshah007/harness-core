@@ -61,8 +61,9 @@ public class CiTelemetryPublisher {
             HashMap<String, Object> map = new HashMap<>();
             map.put(GROUP_TYPE, ACCOUNT);
             map.put(GROUP_ID, accountId);
-            if (existing.size() != 0) {
-              map.put(COUNT_ACTIVE_DEVELOPERS, ciOverviewDashboardService.getActiveCommitterCount(accountId));
+            long developersCount = ciOverviewDashboardService.getActiveCommitterCount(accountId);
+            if (existing.size() != 0 || developersCount != 0) {
+              map.put(COUNT_ACTIVE_DEVELOPERS, developersCount);
               telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
                       TelemetryOption.builder().sendForCommunity(true).build());
               log.info("Scheduled CiTelemetryPublisher event sent! for account {}", accountId);
