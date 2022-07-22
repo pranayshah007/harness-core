@@ -1,6 +1,6 @@
 singleServerConfig:
   address: "redis://localhost:6379"
-  userName: ""
+  username: ""
   password: ""
   sslTruststore: ""
   sslTruststorePassword: ""

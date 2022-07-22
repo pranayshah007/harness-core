@@ -6,6 +6,7 @@
 
 CONFIG_FILE=/opt/harness/config.yml
 REDISSON_CACHE_FILE=/opt/harness/redisson-jcache.yaml
+ENTERPRISE_REDISSON_CACHE_FILE=/opt/harness/enterprise-redisson-jcache.yaml
 
 replace_key_value () {
   CONFIG_KEY="$1";
@@ -317,8 +318,39 @@ if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   yq write -i $REDISSON_CACHE_FILE nettyThreads "$REDIS_NETTY_THREADS"
 fi
 
+yq delete -i $ENTERPRISE_REDISSON_CACHE_FILE codec
+
+if [[ "$REDIS_SCRIPT_CACHE" == "false" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE useScriptCache false
+fi
+
+if [[ "" != "$EVENTS_FRAMEWORK_NETTY_THREADS" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE nettyThreads "$EVENTS_FRAMEWORK_NETTY_THREADS"
+fi
+
+if [[ "" != "$ENTERPRISE_REDIS_URL" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.address "$ENTERPRISE_REDIS_URL"
+fi
+
+if [[ "" != "$ENTERPRISE_REDIS_USERNAME" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.username "$ENTERPRISE_REDIS_USERNAME"
+fi
+
+if [[ "" != "$ENTERPRISE_REDIS_PASSWORD" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.password "$ENTERPRISE_REDIS_PASSWORD"
+fi
+
+if [[ "" != "$ENTERPRISE_REDIS_SSL_CA_TRUST_STORE_PATH" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.sslTruststore "$ENTERPRISE_REDIS_SSL_CA_TRUST_STORE_PATH"
+fi
+
+if [[ "" != "$ENTERPRISE_REDIS_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.sslTruststorePassword "$ENTERPRISE_REDIS_SSL_CA_TRUST_STORE_PASSWORD"
+fi
+
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
+replace_key_value cacheConfig.enterpriseCacheEnabled $CACHE_ENTERPRISE_ENABLED
 
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE
