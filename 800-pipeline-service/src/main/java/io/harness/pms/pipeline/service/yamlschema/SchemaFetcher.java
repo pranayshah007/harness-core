@@ -103,10 +103,12 @@ public class SchemaFetcher {
     log.info("[PMS] Yaml schema cache was successfully invalidated");
   }
 
-  public void testCache() {
+  public PartialSchemaDTOWrapperValue testCache() {
     SchemaCacheKey schemaCacheKey = SchemaCacheKey.builder().accountIdentifier("test").moduleType(ModuleType.CD).build();
     PartialSchemaDTOWrapperValue value = PartialSchemaDTOWrapperValue.builder().partialSchemaValueList(new ArrayList<>()).build();
     schemaCache.put(schemaCacheKey, value);
+
+    return schemaCache.get(schemaCacheKey);
   }
 
   private void logWarnIfExceedsThreshold(ModuleType moduleType, long startTs) {

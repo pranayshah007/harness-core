@@ -312,7 +312,6 @@ cacheConfig:
   cacheBackend: REDIS
   cacheNamespace: ""
   disabledCaches: [ ]
-  enterpriseCacheEnabled: true
 
 hostname: ${HOSTNAME:-localhost}
 

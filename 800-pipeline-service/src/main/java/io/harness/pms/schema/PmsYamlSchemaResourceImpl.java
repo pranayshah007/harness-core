@@ -19,6 +19,7 @@ import io.harness.ngtriggers.service.NGTriggerYamlSchemaService;
 import io.harness.plancreator.pipeline.PipelineConfig;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.service.PMSYamlSchemaService;
+import io.harness.pms.pipeline.service.yamlschema.cache.PartialSchemaDTOWrapperValue;
 import io.harness.pms.yaml.SchemaErrorResponse;
 import io.harness.pms.yaml.YamlSchemaResponse;
 import io.harness.yaml.schema.YamlSchemaResource;
@@ -55,6 +56,13 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
   public ResponseDTO<Boolean> invalidateYamlSchemaCache() {
     pmsYamlSchemaService.invalidateAllCache();
     return ResponseDTO.newResponse(true);
+  }
+
+  @Override
+  public ResponseDTO<PartialSchemaDTOWrapperValue> testCache() {
+    PartialSchemaDTOWrapperValue value = pmsYamlSchemaService.testCache();
+
+    return ResponseDTO.newResponse(value);
   }
 
   public ResponseDTO<io.harness.pms.yaml.YamlSchemaResponse> getIndividualYamlSchema(@NotNull String accountIdentifier,

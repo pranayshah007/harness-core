@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.Scope;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.harness.pms.pipeline.service.yamlschema.cache.PartialSchemaDTOWrapperValue;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PMSYamlSchemaService {
@@ -24,7 +25,7 @@ public interface PMSYamlSchemaService {
 
   void invalidateAllCache();
 
-  void testCache();
+  PartialSchemaDTOWrapperValue testCache();
 
   JsonNode getIndividualYamlSchema(String accountId, String orgIdentifier, String projectIdentifier, Scope scope,
       EntityType entityType, String yamlGroup);

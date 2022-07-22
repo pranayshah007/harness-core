@@ -38,6 +38,7 @@ import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper;
 import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.pipeline.service.yamlschema.approval.ApprovalYamlSchemaService;
+import io.harness.pms.pipeline.service.yamlschema.cache.PartialSchemaDTOWrapperValue;
 import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlService;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.CompletableFutures;
@@ -162,8 +163,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   }
 
   @Override
-  public void testCache() {
-    schemaFetcher.testCache();
+  public PartialSchemaDTOWrapperValue testCache() {
+    return schemaFetcher.testCache();
   }
 
   private JsonNode getPipelineYamlSchemaInternal(
