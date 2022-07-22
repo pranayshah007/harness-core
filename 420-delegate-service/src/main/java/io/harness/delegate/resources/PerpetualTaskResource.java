@@ -5,6 +5,7 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.perpetualtask.HeartbeatRequest;
+import io.harness.perpetualtask.HeartbeatResponse;
 import io.harness.perpetualtask.PerpetualTaskAssignDetails;
 import io.harness.perpetualtask.PerpetualTaskContextResponse;
 import io.harness.perpetualtask.PerpetualTaskListResponse;
@@ -56,7 +57,7 @@ public class PerpetualTaskResource {
   @DelegateAuth
   @ExceptionMetered
   @ApiOperation(value = "Get perpetual task context for given perpetual task", nickname = "perpetualTaskContext")
-  public Response perpetualTaskContext(@QueryParam("taskId") String taskId) {
+  public Response perpetualTaskContext(@QueryParam("taskId") String taskId, @QueryParam("accountId") String accountId) {
     PerpetualTaskContextResponse response =
         PerpetualTaskContextResponse.newBuilder()
             .setPerpetualTaskContext(perpetualTaskService.perpetualTaskContext(taskId))
@@ -70,13 +71,13 @@ public class PerpetualTaskResource {
   @ExceptionMetered
   @DelegateAuth
   @ApiOperation(value = "Heartbeat recording", nickname = "heartbeat")
-  public Response heartbeat(HeartbeatRequest heartbeatRequest) {
+  public Response heartbeat(@QueryParam("accountId") String accountId, HeartbeatRequest heartbeatRequest) {
     PerpetualTaskResponse perpetualTaskResponse = PerpetualTaskResponse.builder()
                                                       .responseMessage(heartbeatRequest.getResponseMessage())
                                                       .responseCode(heartbeatRequest.getResponseCode())
                                                       .build();
     long heartbeatMillis = HTimestamps.toInstant(heartbeatRequest.getHeartbeatTimestamp()).toEpochMilli();
     perpetualTaskService.triggerCallback(heartbeatRequest.getId(), heartbeatMillis, perpetualTaskResponse);
-    return Response.ok().build();
+    return Response.ok(HeartbeatResponse.newBuilder().build()).build();
   }
 }

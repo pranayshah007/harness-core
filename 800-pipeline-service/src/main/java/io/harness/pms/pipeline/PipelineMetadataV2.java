@@ -70,6 +70,7 @@ public class PipelineMetadataV2 {
   @NotEmpty String identifier;
 
   int runSequence;
+  // the zeroth element will be the most recent execution
   List<RecentExecutionInfo> recentExecutionInfoList;
   Long lastExecutedAt;
 }

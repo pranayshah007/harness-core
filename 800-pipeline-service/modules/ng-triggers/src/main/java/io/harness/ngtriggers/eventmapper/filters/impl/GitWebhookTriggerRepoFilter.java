@@ -41,9 +41,6 @@ import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
 import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
-import io.harness.ngtriggers.beans.source.WebhookTriggerType;
-import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
-import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.AzureRepoSpec;
 import io.harness.ngtriggers.eventmapper.TriggerGitConnectorWrapper;
 import io.harness.ngtriggers.eventmapper.filters.TriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
@@ -97,7 +94,9 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
 
       if (wrapper.getGitConnectionType() == GitConnectionType.REPO) {
         evaluateWrapperForRepoLevelGitConnector(urls, eligibleTriggers, wrapper);
-      } else {
+      } else if (wrapper.getGitConnectionType() == GitConnectionType.PROJECT) {
+        evaluateWrapperForProjectLevelGitConnector(urls, eligibleTriggers, wrapper);
+      } else if (wrapper.getGitConnectionType() == GitConnectionType.ACCOUNT) {
         evaluateWrapperForAccountLevelGitConnector(urls, eligibleTriggers, wrapper);
       }
     }
@@ -154,6 +153,28 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
     return urls;
   }
 
+  private void evaluateWrapperForProjectLevelGitConnector(
+      Set<String> urls, List<TriggerDetails> eligibleTriggers, TriggerGitConnectorWrapper wrapper) {
+    String accUrl = wrapper.getUrl();
+    accUrl = sanitizeUrl(accUrl);
+
+    for (TriggerDetails details : wrapper.getTriggers()) {
+      try {
+        if (wrapper.getConnectorType() == ConnectorType.AZURE_REPO) {
+          final String repoUrl = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(
+              accUrl, details.getNgTriggerEntity().getMetadata().getWebhook().getGit().getRepoName());
+          String finalUrl = urls.stream().filter(u -> u.equalsIgnoreCase(repoUrl)).findAny().orElse(null);
+
+          if (!isBlank(finalUrl)) {
+            eligibleTriggers.add(details);
+          }
+        }
+      } catch (Exception e) {
+        log.error(getTriggerSkipMessage(details.getNgTriggerEntity()));
+      }
+    }
+  }
+
   private void evaluateWrapperForAccountLevelGitConnector(
       Set<String> urls, List<TriggerDetails> eligibleTriggers, TriggerGitConnectorWrapper wrapper) {
     String accUrl = wrapper.getUrl();
@@ -161,7 +182,12 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
 
     for (TriggerDetails details : wrapper.getTriggers()) {
       try {
-        final String repoUrl = getRepoUrl(accUrl, details);
+        final String repoUrl =
+            new StringBuilder(128)
+                .append(accUrl)
+                .append(accUrl.endsWith("/") ? EMPTY : '/')
+                .append(details.getNgTriggerEntity().getMetadata().getWebhook().getGit().getRepoName())
+                .toString();
 
         String finalUrl = urls.stream().filter(u -> u.equalsIgnoreCase(repoUrl)).findAny().orElse(null);
 
@@ -296,24 +322,5 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
         triggerToConnectorMap.computeIfAbsent(fullyQualifiedIdentifier, k -> new ArrayList<>());
 
     triggerDetailList.add(triggerDetail);
-  }
-
-  private String getRepoUrl(String accUrl, TriggerDetails triggerDetails) {
-    WebhookTriggerConfigV2 webhookTriggerConfigV2 =
-        (WebhookTriggerConfigV2) triggerDetails.getNgTriggerConfigV2().getSource().getSpec();
-    WebhookTriggerType webhookTriggerType = webhookTriggerConfigV2.getType();
-
-    if (webhookTriggerType == WebhookTriggerType.AZURE) {
-      AzureRepoSpec azureRepoSpec = (AzureRepoSpec) webhookTriggerConfigV2.getSpec();
-      String projectName = azureRepoSpec.getSpec().getProjectName();
-      return GitClientHelper.getCompleteUrlForAccountLevelAzureConnector(
-          accUrl, projectName, triggerDetails.getNgTriggerEntity().getMetadata().getWebhook().getGit().getRepoName());
-    } else {
-      return new StringBuilder(128)
-          .append(accUrl)
-          .append(accUrl.endsWith("/") ? EMPTY : '/')
-          .append(triggerDetails.getNgTriggerEntity().getMetadata().getWebhook().getGit().getRepoName())
-          .toString();
-    }
   }
 }

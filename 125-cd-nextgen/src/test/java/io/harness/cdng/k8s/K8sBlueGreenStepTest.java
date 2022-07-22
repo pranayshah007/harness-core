@@ -118,7 +118,7 @@ public class K8sBlueGreenStepTest extends AbstractK8sStepExecutorTestBase {
                                                .outcome(DeploymentInfoOutcome.builder().build())
                                                .build();
     doReturn(stepOutcome).when(instanceInfoService).saveServerInstancesIntoSweepingOutput(any(), any());
-    when(k8sStepHelper.getReleaseName(any(), any())).thenReturn("releaseName");
+    when(cdStepHelper.getReleaseName(any(), any())).thenReturn("releaseName");
     StepResponse response = k8sBlueGreenStep.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, K8sExecutionPassThroughData.builder().build(), () -> k8sDeployResponse);
     assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);

@@ -114,4 +114,11 @@ public class PipelineMetadataV2RepositoryCustomImpl implements PipelineMetadataV
                                               .runSequence(pipelineMetadata.getRunSequence() + 1)
                                               .build()));
   }
+
+  @Override
+  public PipelineMetadataV2 update(Criteria criteria, Update update) {
+    Query query = query(criteria);
+    return mongoTemplate.findAndModify(
+        query, update, new FindAndModifyOptions().returnNew(true), PipelineMetadataV2.class);
+  }
 }

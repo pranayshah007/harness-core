@@ -167,7 +167,7 @@ public class ExecutionHelperTest extends CategoryTest {
 
   @Before
   public void setUp() {
-    MockitoAnnotations.initMocks(this);
+    MockitoAnnotations.openMocks(this);
     pipelineEntity = PipelineEntity.builder()
                          .accountId(accountId)
                          .orgIdentifier(orgId)
@@ -519,9 +519,45 @@ public class ExecutionHelperTest extends CategoryTest {
         + "      identifier: s2\n"
         + "      name: s2\n"
         + "      description: desc\n";
-    assertThatThrownBy(
-        () -> executionHelper.getPipelineYamlAndValidate(wrongRuntimeInputYaml, pipelineEntity).getMergedPipelineYaml())
+    assertThatThrownBy(() -> executionHelper.getPipelineYamlAndValidate(wrongRuntimeInputYaml, pipelineEntity))
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetPipelineYamlAndValidateForPipelineWithAllowedValues() {
+    String pipelineYamlWithAllowedValues = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: \"s1\"\n"
+        + "      description: \"<+input>.allowedValues(a, b)\"\n";
+    String runtimeInputYaml = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: \"s1\"\n"
+        + "      description: \"a\"\n";
+    String mergedYamlWithoutValidators = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: \"s1\"\n"
+        + "      description: \"a\"\n";
+    String mergedYamlWithValidators = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: \"s1\"\n"
+        + "      description: \"a.allowedValues(a, b)\"\n";
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountId)
+                                        .orgIdentifier(orgId)
+                                        .projectIdentifier(projectId)
+                                        .yaml(pipelineYamlWithAllowedValues)
+                                        .build();
+    TemplateMergeResponseDTO response = executionHelper.getPipelineYamlAndValidate(runtimeInputYaml, pipelineEntity);
+    assertThat(response.getMergedPipelineYaml()).isEqualTo(mergedYamlWithValidators);
+    assertThat(response.getMergedPipelineYamlWithTemplateRef()).isEqualTo(mergedYamlWithValidators);
+    verify(pmsYamlSchemaService, times(1)).validateYamlSchema(accountId, orgId, projectId, mergedYamlWithoutValidators);
+    verify(pmsYamlSchemaService, times(0)).validateYamlSchema(accountId, orgId, projectId, mergedYamlWithValidators);
   }
 
   @Test
@@ -561,11 +597,11 @@ public class ExecutionHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetPipelineYamlAndValidateWhenOPAFFisOff() {
     String yamlWithTempRef = "pipeline:\n"
-        + "    name: ww\n"
-        + "    template:\n"
-        + "        templateRef: new_pipeline_template_name\n"
-        + "        versionLabel: v1\n"
-        + "    tags: {}\n";
+        + "  name: \"ww\"\n"
+        + "  template:\n"
+        + "    templateRef: \"new_pipeline_template_name\"\n"
+        + "    versionLabel: \"v1\"\n"
+        + "  tags: {}\n";
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .accountId(accountId)
                                         .orgIdentifier(orgId)

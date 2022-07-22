@@ -10,7 +10,6 @@ package io.harness.ngtriggers.resource;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.constants.Constants.UNRECOGNIZED_WEBHOOK;
 
-import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.HeaderConfig;
 import io.harness.exception.InvalidRequestException;
@@ -40,8 +39,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -106,7 +103,7 @@ public class NGTriggerWebhookConfigResourceImpl implements NGTriggerWebhookConfi
   }
 
   public ResponseDTO<String> processWebhookEvent(@NotNull String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, @NotNull String eventPayload, @Context HttpHeaders httpHeaders) {
+      String projectIdentifier, @NotNull String eventPayload, HttpHeaders httpHeaders) {
     List<HeaderConfig> headerConfigs = new ArrayList<>();
     httpHeaders.getRequestHeaders().forEach(
         (k, v) -> headerConfigs.add(HeaderConfig.builder().key(k).values(v).build()));
@@ -123,10 +120,9 @@ public class NGTriggerWebhookConfigResourceImpl implements NGTriggerWebhookConfi
     }
   }
 
-  public ResponseDTO<String> processWebhookEvent(
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @NotNull String orgIdentifier,
+  public ResponseDTO<String> processWebhookEvent(@NotNull String accountIdentifier, @NotNull String orgIdentifier,
       @NotNull String projectIdentifier, String pipelineIdentifier, String triggerIdentifier,
-      @NotNull String eventPayload, @Context HttpHeaders httpHeaders) {
+      @NotNull String eventPayload, HttpHeaders httpHeaders) {
     List<HeaderConfig> headerConfigs = new ArrayList<>();
     httpHeaders.getRequestHeaders().forEach(
         (k, v) -> headerConfigs.add(HeaderConfig.builder().key(k).values(v).build()));

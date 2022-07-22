@@ -33,7 +33,6 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(CI)
 public class AzureRepoPRSpec implements AzureRepoEventSpec {
   String connectorRef;
-  String projectName;
   String repoName;
   List<AzureRepoPRAction> actions;
   List<TriggerEventDataCondition> headerConditions;

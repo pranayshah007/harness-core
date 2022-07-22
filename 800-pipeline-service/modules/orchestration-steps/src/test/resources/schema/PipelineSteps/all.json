@@ -1007,7 +1007,8 @@
                   "format": "double"
                 },
                 {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*))"
                 }
               ]
             }

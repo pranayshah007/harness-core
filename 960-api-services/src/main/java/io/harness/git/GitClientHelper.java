@@ -195,7 +195,7 @@ public class GitClientHelper {
 
   public static boolean isBitBucketSAAS(String url) {
     String host = getGitSCM(url);
-    return host.equals("bitbucket.org") || host.equals("www.bitbucket.org");
+    return host.equals("bitbucket.org") || host.equals("www.bitbucket.org") || host.equals("api.bitbucket.org");
   }
 
   public static boolean isAzureRepoSAAS(String url) {
@@ -512,9 +512,8 @@ public class GitClientHelper {
     }
   }
 
-  public static String getCompleteUrlForAccountLevelAzureConnector(String url, String projectName, String repoName) {
-    String azureCompleteUrl = StringUtils.join(
-        StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR, StringUtils.stripStart(projectName, PATH_SEPARATOR));
+  public static String getCompleteUrlForProjectLevelAzureConnector(String url, String repoName) {
+    String azureCompleteUrl = StringUtils.join(StringUtils.stripEnd(url, PATH_SEPARATOR));
     if (GitClientHelper.isHTTPProtocol(azureCompleteUrl)) {
       azureCompleteUrl = StringUtils.join(azureCompleteUrl, AZURE_REPO_GIT_LABEL);
     } else if (GitClientHelper.isSSHProtocol(azureCompleteUrl)) {

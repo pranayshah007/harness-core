@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.docker.beans.DockerInternalConfig;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
 
 import software.wings.beans.DockerConfig;
 
@@ -24,6 +25,7 @@ public class DockerConfigToInternalMapper {
         EmptyPredicate.isNotEmpty(dockerConfig.getPassword()) ? new String(dockerConfig.getPassword()) : null;
 
     return DockerInternalConfig.builder()
+        .providerType(DockerRegistryProviderType.OTHER)
         .dockerRegistryUrl(dockerConfig.getDockerRegistryUrl())
         .isCertValidationRequired(dockerConfig.isCertValidationRequired())
         .username(dockerConfig.getUsername())

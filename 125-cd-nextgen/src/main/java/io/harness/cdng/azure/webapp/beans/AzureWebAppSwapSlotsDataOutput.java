@@ -21,4 +21,5 @@ public class AzureWebAppSwapSlotsDataOutput implements ExecutionSweepingOutput {
   public static final String OUTPUT_NAME = "webAppSwapSlotsData";
 
   String deploymentProgressMarker;
+  String targetSlot;
 }

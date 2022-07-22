@@ -1022,8 +1022,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:ydIzFACT2VH9euHfBZuHxFu7AGN21xStbernowJvlHY=",
-    version = "v1.26.0",
+    sum = "h1:tx7Xgpt64DYq90WFPVi9T/5c7IuNQ8ckbb8qUEK05gU=",
+    version = "v1.26.1-0.20220718061611-2e3f1a56c8dd",
 )
 
 go_repository(
@@ -4451,8 +4451,8 @@ plain_artifacts = [
     "com.google.inject:guice:4.2.3",
     "com.google.j2objc:j2objc-annotations:1.3",
     "com.google.oauth-client:google-oauth-client:1.34.0",
-    "com.google.protobuf:protobuf-java-util:3.11.4",
-    "com.google.protobuf:protobuf-java:3.11.4",
+    "com.google.protobuf:protobuf-java-util:3.19.2",
+    "com.google.protobuf:protobuf-java:3.19.2",
     "com.googlecode.javaewah:JavaEWAH:1.1.6",
     "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20200713.1",
     "com.graphql-java:graphql-java:12.0",

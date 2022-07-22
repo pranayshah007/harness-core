@@ -132,7 +132,7 @@ public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler
       AzureConfig azureConfig, AzureLogCallbackProvider logCallbackProvider, AzureWebAppRollbackRequest taskRequest) {
     AzureWebClientContext webClientContext = buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig);
     azureAppServiceResourceUtilities.swapSlots(webClientContext, logCallbackProvider,
-        taskRequest.getInfrastructure().getDeploymentSlot(), taskRequest.getInfrastructure().getTargetSlot(),
+        taskRequest.getInfrastructure().getDeploymentSlot(), taskRequest.getTargetSlot(),
         taskRequest.getTimeoutIntervalInMin());
   }
 

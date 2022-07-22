@@ -30,6 +30,8 @@ activities {"name": "appId_1", "background": true} {"appId": 1}
 activities {"name": "app_status_createdAt", "background": true} {"appId": 1, "serviceInstanceId": 1, "status": 1, "createdAt": -1}
 activities {"name": "createdAt_1", "background": true} {"createdAt": 1}
 activities {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
+agentMtlsEndpoint {"name": "accountId_1", "unique": true} {"accountId": 1}
+agentMtlsEndpoint {"name": "fqdn_1", "unique": true} {"fqdn": 1}
 alertNotificationRules {"name": "accountId_1", "background": true} {"accountId": 1}
 alertNotificationRules {"name": "alertCategory_1", "background": true} {"alertCategory": 1}
 alertNotificationRules {"name": "appId_1", "background": true} {"appId": 1}
@@ -111,6 +113,7 @@ capabilityTaskSelectionDetails {"name": "accountId_1", "background": true} {"acc
 capabilityTaskSelectionDetails {"name": "blocked_1", "background": true} {"blocked": 1}
 capabilityTaskSelectionDetails {"name": "capabilityId_1", "background": true} {"capabilityId": 1}
 capabilityTaskSelectionDetails {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
+cdTelemetrySentStatus {"name": "no_dup_cd", "unique": true} {"accountId": 1}
 ceCloudAccount {"name": "no_dup_account", "unique": true} {"accountId": 1, "infraAccountId": 1, "infraMasterAccountId": 1, "masterAccountSettingId": 1}
 ceCommunications {"name": "account_email_type", "unique": true} {"accountId": 1, "emailId": 1, "type": 1}
 ceCommunications {"name": "account_enabled_type", "background": true} {"accountId": 1, "enabled": 1, "type": 1}
@@ -194,8 +197,6 @@ delegateGroups {"name": "unique_identification", "unique": true} {"accountId": 1
 delegateGroups {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 delegateInsightsSummary {"name": "byAcctGrpTimeType", "background": true} {"accountId": 1, "delegateGroupId": 1, "periodStartTime": 1, "insightsType": 1}
 delegateInsightsSummary {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-delegateMtlsEndpoint {"name": "accountId_1", "unique": true} {"accountId": 1}
-delegateMtlsEndpoint {"name": "fqdn_1", "unique": true} {"fqdn": 1}
 delegatePerpetualTaskUsageInsights {"name": "timestamp_1", "background": true} {"timestamp": 1}
 delegateProfiles {"name": "byAcctNgOwner", "background": true} {"accountId": 1, "ng": 1, "owner": 1}
 delegateProfiles {"name": "createdAt_1", "background": true} {"createdAt": 1}

@@ -67,7 +67,7 @@ public class MatrixConfigService implements StrategyConfigService {
     return children;
   }
 
-  public List<JsonNode> expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode) {
+  public StrategyInfo expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode) {
     MatrixConfig matrixConfig = (MatrixConfig) strategyConfig.getMatrixConfig();
     List<Map<String, String>> combinations = new ArrayList<>();
     List<List<Integer>> matrixMetadata = new ArrayList<>();
@@ -91,7 +91,11 @@ public class MatrixConfigService implements StrategyConfigService {
       jsonNodes.add(clonedNode);
       currentIteration++;
     }
-    return jsonNodes;
+    int maxConcurrency = jsonNodes.size();
+    if (!ParameterField.isBlank(matrixConfig.getMaxConcurrency())) {
+      maxConcurrency = matrixConfig.getMaxConcurrency().getValue();
+    }
+    return StrategyInfo.builder().expandedJsonNodes(jsonNodes).maxConcurrency(maxConcurrency).build();
   }
   /**
    *

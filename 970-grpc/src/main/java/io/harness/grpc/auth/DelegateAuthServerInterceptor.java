@@ -7,6 +7,8 @@
 
 package io.harness.grpc.auth;
 
+import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.grpc.InterceptorPriority;
@@ -37,6 +39,8 @@ import lombok.extern.slf4j.Slf4j;
 @InterceptorPriority(10)
 public class DelegateAuthServerInterceptor implements ServerInterceptor {
   public static final Context.Key<String> ACCOUNT_ID_CTX_KEY = Context.key("accountId");
+  public static final Metadata.Key<String> AGENT_MTLS_AUTHORITY_METADATA_KEY =
+      Metadata.Key.of(HEADER_AGENT_MTLS_AUTHORITY, Metadata.ASCII_STRING_MARSHALLER);
   private static final ServerCall.Listener NOOP_LISTENER = new ServerCall.Listener() {};
   private static final Set<String> INCLUDED_SERVICES =
       ImmutableSet.of("io.harness.perpetualtask.PerpetualTaskService", "io.harness.event.PingPongService",
@@ -60,6 +64,7 @@ public class DelegateAuthServerInterceptor implements ServerInterceptor {
     String token = metadata.get(DelegateAuthCallCredentials.TOKEN_METADATA_KEY);
     String delegateId = metadata.get(DelegateAuthCallCredentials.DELEGATE_ID_METADATA_KEY);
     String delegateTokenName = metadata.get(DelegateAuthCallCredentials.DELEGATE_TOKEN_NAME_METADATA_KEY);
+    String agentMtlsAuthority = metadata.get(AGENT_MTLS_AUTHORITY_METADATA_KEY);
 
     // Urgent fix for DEL-1954. We are allowing delegate service to be invoked by delegate agent, in which case
     // accountId is mandatory, but also by other backend services, in which case serviceId is mandatory. If accountId is
@@ -83,7 +88,8 @@ public class DelegateAuthServerInterceptor implements ServerInterceptor {
     }
     Context ctx;
     try {
-      tokenAuthenticator.validateDelegateToken(accountId, token, delegateId, delegateTokenName, false);
+      tokenAuthenticator.validateDelegateToken(
+          accountId, token, delegateId, delegateTokenName, agentMtlsAuthority, false);
       ctx = GrpcAuthUtils.newAuthenticatedContext().withValue(ACCOUNT_ID_CTX_KEY, accountId);
     } catch (Exception e) {
       log.warn("Token verification failed. Unauthenticated", e);

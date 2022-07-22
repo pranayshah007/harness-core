@@ -1134,6 +1134,8 @@ public class GitClientV2Impl implements GitClientV2 {
                                     .append(request.getFilePaths())
                                     .append(". Reason: ")
                                     .append(e.getMessage())
+                                    .append(", ")
+                                    .append(e.getCause() != null ? e.getCause().getMessage() : "")
                                     .toString(),
             e, USER);
       }

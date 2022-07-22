@@ -124,15 +124,15 @@ ciExecutionServiceConfig:
         - "pwsh"
         - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
-      image: plugins/kaniko:1.6.0
+      image: plugins/kaniko:1.6.1
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.6.0
+      image: plugins/kaniko-ecr:1.6.1
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
-      image: plugins/kaniko-gcr:1.6.0
+      image: plugins/kaniko-gcr:1.6.1
       entrypoint:
         - /kaniko/kaniko-gcr
     gcsUploadConfig:

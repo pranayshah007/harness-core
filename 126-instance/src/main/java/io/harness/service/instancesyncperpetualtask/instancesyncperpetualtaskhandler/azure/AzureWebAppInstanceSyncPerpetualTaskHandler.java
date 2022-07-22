@@ -114,7 +114,8 @@ public class AzureWebAppInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
       InfrastructureMappingDTO infrastructureMappingDTO, AzureWebAppDeploymentInfoDTO deploymentInfoDTO,
       InfrastructureOutcome infrastructureOutcome) {
     AzureWebAppInfraDelegateConfig azureWebAppInfraDelegateConfig =
-        getAzureWebAppInfraDelegateConfig(infrastructureMappingDTO, infrastructureOutcome);
+        getAzureWebAppInfraDelegateConfig(infrastructureMappingDTO, infrastructureOutcome,
+            deploymentInfoDTO.getAppName(), deploymentInfoDTO.getSlotName());
 
     return AzureWebAppDeploymentReleaseData.builder()
         .appName(deploymentInfoDTO.getAppName())
@@ -126,13 +127,10 @@ public class AzureWebAppInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
   }
 
   private AzureWebAppInfraDelegateConfig getAzureWebAppInfraDelegateConfig(
-      InfrastructureMappingDTO infrastructureMappingDTO, InfrastructureOutcome infrastructureOutcome) {
+      InfrastructureMappingDTO infrastructureMappingDTO, InfrastructureOutcome infrastructureOutcome, String appName,
+      String deploymentSlot) {
     BaseNGAccess baseNGAccess = getBaseNGAccess(infrastructureMappingDTO);
-    return getAzureWebAppInfraDelegateConfig(infrastructureOutcome, baseNGAccess);
-  }
 
-  private AzureWebAppInfraDelegateConfig getAzureWebAppInfraDelegateConfig(
-      InfrastructureOutcome infrastructureOutcome, BaseNGAccess baseNGAccess) {
     AzureWebAppInfrastructureOutcome azureWebAppInfrastructureOutcome =
         (AzureWebAppInfrastructureOutcome) infrastructureOutcome;
     IdentifierRef identifierRef =
@@ -142,8 +140,8 @@ public class AzureWebAppInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
     AzureConnectorDTO connectorDTO = azureHelperService.getConnector(identifierRef);
 
     return AzureWebAppInfraDelegateConfig.builder()
-        .appName(azureWebAppInfrastructureOutcome.getWebApp())
-        .deploymentSlot(azureWebAppInfrastructureOutcome.getDeploymentSlot())
+        .appName(appName)
+        .deploymentSlot(deploymentSlot)
         .subscription(azureWebAppInfrastructureOutcome.getSubscription())
         .resourceGroup(azureWebAppInfrastructureOutcome.getResourceGroup())
         .encryptionDataDetails(azureHelperService.getEncryptionDetails(connectorDTO, baseNGAccess))

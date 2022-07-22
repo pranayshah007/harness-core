@@ -16,8 +16,10 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
@@ -30,7 +32,16 @@ public class RuntimeInputFormHelper {
   }
 
   public String createRuntimeInputForm(String yaml, boolean keepInput) {
+    YamlConfig runtimeInputFormYamlConfig = createRuntimeInputFormYamlConfig(yaml, keepInput);
+    return runtimeInputFormYamlConfig.getYaml();
+  }
+
+  private YamlConfig createRuntimeInputFormYamlConfig(String yaml, boolean keepInput) {
     YamlConfig yamlConfig = new YamlConfig(yaml);
+    return createRuntimeInputFormYamlConfig(yamlConfig, keepInput);
+  }
+
+  public YamlConfig createRuntimeInputFormYamlConfig(YamlConfig yamlConfig, boolean keepInput) {
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
     Map<FQN, Object> templateMap = new LinkedHashMap<>();
     fullMap.keySet().forEach(key -> {
@@ -41,7 +52,8 @@ public class RuntimeInputFormHelper {
         templateMap.put(key, fullMap.get(key));
       }
     });
-    return (new YamlConfig(templateMap, yamlConfig.getYamlMap())).getYaml();
+
+    return new YamlConfig(templateMap, yamlConfig.getYamlMap());
   }
 
   public String createExecutionInputFormAndUpdateYamlField(JsonNode jsonNode) {
@@ -55,8 +67,43 @@ public class RuntimeInputFormHelper {
         fullMap.put(key,
             EXPR_START + NGExpressionUtils.EXPRESSION_INPUT_CONSTANT + "." + key.getExpressionFqnWithoutIgnoring()
                 + EXPR_END_ESC);
+      } else if (NGExpressionUtils.matchesUpdatedExecutionInputPattern(value)) {
+        templateMap.put(key, fullMap.get(key));
       }
     });
+    // Updating the executionInput field to expression in jsonNode.
+    JsonNodeUtils.merge(jsonNode, (new YamlConfig(fullMap, yamlConfig.getYamlMap())).getYamlMap());
+    return (new YamlConfig(templateMap, yamlConfig.getYamlMap())).getYaml();
+  }
+
+  public String createExecutionInputFormAndUpdateYamlFieldForStage(JsonNode jsonNode) {
+    JsonNode executionNode = jsonNode.get(YAMLFieldNameConstants.STAGE)
+                                 .get(YAMLFieldNameConstants.SPEC)
+                                 .get(YAMLFieldNameConstants.EXECUTION);
+
+    JsonNodeUtils.deletePropertiesInJsonNode(
+        (ObjectNode) jsonNode.get(YAMLFieldNameConstants.STAGE).get(YAMLFieldNameConstants.SPEC),
+        YAMLFieldNameConstants.EXECUTION);
+
+    YamlConfig yamlConfig = new YamlConfig(jsonNode);
+
+    Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
+    Map<FQN, Object> templateMap = new LinkedHashMap<>();
+
+    fullMap.keySet().forEach(key -> {
+      String value = fullMap.get(key).toString().replace("\\\"", "").replace("\"", "");
+      if (NGExpressionUtils.matchesExecutionInputPattern(value)) {
+        templateMap.put(key, fullMap.get(key));
+        fullMap.put(key,
+            EXPR_START + NGExpressionUtils.EXPRESSION_INPUT_CONSTANT + "." + key.getExpressionFqnWithoutIgnoring()
+                + EXPR_END_ESC);
+      } else if (NGExpressionUtils.matchesUpdatedExecutionInputPattern(value)) {
+        templateMap.put(key, fullMap.get(key));
+      }
+    });
+    ((ObjectNode) jsonNode.get(YAMLFieldNameConstants.STAGE).get(YAMLFieldNameConstants.SPEC))
+        .set(YAMLFieldNameConstants.EXECUTION, executionNode);
+
     // Updating the executionInput field to expression in jsonNode.
     JsonNodeUtils.merge(jsonNode, (new YamlConfig(fullMap, yamlConfig.getYamlMap())).getYamlMap());
     return (new YamlConfig(templateMap, yamlConfig.getYamlMap())).getYaml();

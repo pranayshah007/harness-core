@@ -16,6 +16,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.collections4.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 
 @Data
@@ -30,8 +31,20 @@ public class LogAnalysisRadarChartListDTO implements Comparable<LogAnalysisRadar
   @JsonIgnore Double angle;
   DeploymentLogAnalysisDTO.ClusterType clusterType;
   int count;
-  List<Double> frequencyData;
+  @Deprecated List<Double> frequencyData;
+  List<DeploymentLogAnalysisDTO.HostFrequencyData> hostFrequencyData;
   LogAnalysisRadarChartListDTO baseline;
+  List<DeploymentLogAnalysisDTO.TimestampFrequencyCount> averageFrequencyData;
+  public List<DeploymentLogAnalysisDTO.TimestampFrequencyCount> getAverageFrequencyData() {
+    return DeploymentLogAnalysisDTO.HostFrequencyData.generateAverageTimeFrequencyList(hostFrequencyData);
+  }
+
+  public List<Double> getFrequencyData() {
+    if (CollectionUtils.isNotEmpty(hostFrequencyData)) {
+      return DeploymentLogAnalysisDTO.HostFrequencyData.generateAverageFrequencyList(hostFrequencyData);
+    }
+    return frequencyData;
+  }
 
   @JsonProperty(value = "hasControlData")
   public boolean hasControlData() {

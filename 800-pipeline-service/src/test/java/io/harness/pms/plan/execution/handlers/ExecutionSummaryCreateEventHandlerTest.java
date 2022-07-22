@@ -40,6 +40,7 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.notification.NotificationHelper;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.metadata.RecentExecutionsInfoHelper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.creation.NodeTypeLookupService;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
@@ -66,14 +67,15 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
   @Mock private PmsExecutionSummaryRespository pmsExecutionSummaryRespository;
   @Mock private PmsGitSyncHelper pmsGitSyncHelper;
   @Mock private NotificationHelper notificationHelper;
+  @Mock private RecentExecutionsInfoHelper recentExecutionsInfoHelper;
 
   private ExecutionSummaryCreateEventHandler executionSummaryCreateEventHandler;
 
   @Before
   public void setUp() throws Exception {
-    executionSummaryCreateEventHandler =
-        new ExecutionSummaryCreateEventHandler(pmsPipelineService, planService, planExecutionService,
-            nodeTypeLookupService, pmsExecutionSummaryRespository, pmsGitSyncHelper, notificationHelper);
+    executionSummaryCreateEventHandler = new ExecutionSummaryCreateEventHandler(pmsPipelineService, planService,
+        planExecutionService, nodeTypeLookupService, pmsExecutionSummaryRespository, pmsGitSyncHelper,
+        notificationHelper, recentExecutionsInfoHelper);
   }
 
   @Test

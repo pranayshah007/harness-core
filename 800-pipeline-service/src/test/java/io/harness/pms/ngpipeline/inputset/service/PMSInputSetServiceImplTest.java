@@ -41,7 +41,6 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.repositories.inputset.PMSInputSetRepository;
 import io.harness.rule.Owner;
 import io.harness.utils.PageUtils;
-import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
@@ -372,35 +371,9 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     InputSetEntity inBetweenEntity = PMSInputSetElementMapper.toInputSetEntity(ACCOUNT_ID, YAML);
     InputSetImportRequestDTO inputSetImportRequest =
         InputSetImportRequestDTO.builder().inputSetName(name).inputSetDescription(description).build();
-    doReturn(inputSetEntity).when(inputSetRepository).saveForImportedYAML(inBetweenEntity, false);
+    doReturn(inputSetEntity).when(inputSetRepository).saveForImportedYAML(inBetweenEntity);
     InputSetEntity savedEntity = pmsInputSetServiceMock.importInputSetFromRemote(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, pipelineIdentifier, identifier, inputSetImportRequest);
     assertThat(savedEntity).isEqualTo(inputSetEntity);
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testUpdateFieldsInImportedInputSet() {
-    assertThatThrownBy(() -> pmsInputSetServiceMock.updateFieldsInImportedInputSet(null, null, null, null, null, ""))
-        .isInstanceOf(InvalidYamlException.class);
-
-    assertThatThrownBy(
-        () -> pmsInputSetServiceMock.updateFieldsInImportedInputSet(null, null, null, null, null, "this : "))
-        .isInstanceOf(InvalidYamlException.class);
-
-    assertThatThrownBy(()
-                           -> pmsInputSetServiceMock.updateFieldsInImportedInputSet(
-                               null, null, null, null, null, "this: notAnInputSet"))
-        .isInstanceOf(InvalidYamlException.class);
-
-    String importedInputSet = pmsInputSetServiceMock.updateFieldsInImportedInputSet(ORG_IDENTIFIER, PROJ_IDENTIFIER,
-        PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, InputSetImportRequestDTO.builder().inputSetName(NAME).build(), YAML);
-    InputSetEntity inputSetEntity = PMSInputSetElementMapper.toInputSetEntity(ACCOUNT_ID, importedInputSet);
-    assertThat(inputSetEntity.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
-    assertThat(inputSetEntity.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
-    assertThat(inputSetEntity.getPipelineIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
-    assertThat(inputSetEntity.getIdentifier()).isEqualTo(INPUT_SET_IDENTIFIER);
-    assertThat(inputSetEntity.getName()).isEqualTo(NAME);
   }
 }

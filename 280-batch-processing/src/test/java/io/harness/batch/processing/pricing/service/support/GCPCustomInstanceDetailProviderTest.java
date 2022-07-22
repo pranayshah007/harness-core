@@ -85,7 +85,7 @@ public class GCPCustomInstanceDetailProviderTest extends CategoryTest {
   @Owner(developers = OwnerRule.UTSAV)
   @Category(UnitTests.class)
   public void testDefaultCustomInstanceFamily() throws Exception {
-    final String instanceType = "custom-8-24576";
+    String instanceType = "custom-8-24576";
 
     ProductDetails pricingInfo = GCPCustomInstanceDetailProvider.getCustomVMPricingInfo(instanceType, REGION);
 
@@ -95,5 +95,16 @@ public class GCPCustomInstanceDetailProviderTest extends CategoryTest {
     assertThat(pricingInfo.getOnDemandPrice()).isCloseTo(0.033174D * 8D + 0.004446D * 24D, MAX_RELATIVE_ERROR_PCT);
     assertThat(pricingInfo.getSpotPrice().get(0).getPrice())
         .isCloseTo(0.00698D * 8D + 0.00094D * 24D, MAX_RELATIVE_ERROR_PCT);
+
+    instanceType = "n2d-custom-8-220160-ext";
+
+    pricingInfo = GCPCustomInstanceDetailProvider.getCustomVMPricingInfo(instanceType, REGION);
+
+    assertThat(pricingInfo.getCpusPerVm()).isCloseTo(8D, MAX_RELATIVE_ERROR_PCT);
+    assertThat(pricingInfo.getMemPerVm()).isCloseTo(220D, MAX_RELATIVE_ERROR_PCT);
+
+    assertThat(pricingInfo.getOnDemandPrice()).isCloseTo(0.028877D * 8D + 0.003870D * 220D, MAX_RELATIVE_ERROR_PCT);
+    assertThat(pricingInfo.getSpotPrice().get(0).getPrice())
+        .isCloseTo(0.00698D * 8D + 0.00094D * 220D, MAX_RELATIVE_ERROR_PCT);
   }
 }

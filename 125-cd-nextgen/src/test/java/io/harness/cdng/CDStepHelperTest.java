@@ -119,6 +119,7 @@ public class CDStepHelperTest extends CategoryTest {
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Spy @InjectMocks private K8sEntityHelper k8sEntityHelper;
   @Spy @InjectMocks private CDStepHelper CDStepHelper;
+  @Spy @InjectMocks private K8sHelmCommonStepHelper k8sHelmCommonStepHelper;
   private final Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", "test-account").build();
   private String id = "identifier";
   private ParameterField folderPath = ParameterField.createValueField("folderPath/");
@@ -761,7 +762,7 @@ public class CDStepHelperTest extends CategoryTest {
     doReturn(gitStoreDelegateConfig).when(CDStepHelper).getGitStoreDelegateConfig(any(), any(), any(), any(), any());
     ManifestOutcome valuesManifestOutcome = ValuesManifestOutcome.builder().identifier(id).store(githubStore).build();
     GitFetchFilesConfig valuesGitFetchFilesConfig =
-        CDStepHelper.getGitFetchFilesConfig(ambiance, githubStore, "passed", valuesManifestOutcome);
+        k8sHelmCommonStepHelper.getGitFetchFilesConfig(ambiance, githubStore, "passed", valuesManifestOutcome);
     assertThat(valuesGitFetchFilesConfig.getIdentifier().equals(id));
     assertThat(valuesGitFetchFilesConfig.getManifestType().equals(ManifestType.VALUES));
     assertThat(valuesGitFetchFilesConfig.getGitStoreDelegateConfig().getPaths().equals(paths));
@@ -787,7 +788,7 @@ public class CDStepHelperTest extends CategoryTest {
     ManifestOutcome kustomizeManifestOutcome = KustomizeManifestOutcome.builder().store(githubStore).build();
     ManifestOutcome patchesManifestOutcome =
         KustomizePatchesManifestOutcome.builder().identifier(id).store(inheritFromManifestStoreConfig).build();
-    GitFetchFilesConfig patchesGitFetchFilesConfig = CDStepHelper.getPathsFromInheritFromManifestStoreConfig(
+    GitFetchFilesConfig patchesGitFetchFilesConfig = k8sHelmCommonStepHelper.getPathsFromInheritFromManifestStoreConfig(
         ambiance, "passed", patchesManifestOutcome, (GitStoreConfig) kustomizeManifestOutcome.getStore());
     List<String> finalPaths = new ArrayList<>();
     for (String path : paths) {
@@ -807,7 +808,7 @@ public class CDStepHelperTest extends CategoryTest {
     List<ValuesManifestOutcome> valuesManifestOutcome = new ArrayList<>(
         asList(ValuesManifestOutcome.builder().identifier(id).store(inheritFromManifestStoreConfig).build()));
     List<HelmFetchFileConfig> helmFetchFileConfigList =
-        CDStepHelper.mapValuesManifestsToHelmFetchFileConfig(valuesManifestOutcome);
+        k8sHelmCommonStepHelper.mapValuesManifestsToHelmFetchFileConfig(valuesManifestOutcome);
     assertThat(helmFetchFileConfigList.get(0).getIdentifier().equals(id));
     assertThat(helmFetchFileConfigList.get(0).getManifestType().equals(ManifestType.VALUES));
     assertThat(helmFetchFileConfigList.get(0).getFilePaths().equals(paths));

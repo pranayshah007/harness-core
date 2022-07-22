@@ -137,7 +137,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("serviceScheduler") private SchedulerConfig serviceSchedulerConfig = new SchedulerConfig();
   @JsonProperty("watcherMetadataUrl") private String watcherMetadataUrl;
   @JsonProperty("delegateMetadataUrl") private String delegateMetadataUrl;
-  @JsonProperty("delegateMtlsSubdomain") private String delegateMtlsSubdomain;
+  @JsonProperty("agentMtlsSubdomain") private String agentMtlsSubdomain;
   @JsonProperty("awsInstanceTypes") private List<String> awsInstanceTypes;
   @JsonProperty("awsRegionIdToName") private Map<String, String> awsRegionIdToName;
   @JsonProperty("apiUrl") private String apiUrl;
@@ -207,6 +207,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("atmosphereBroadcaster") private AtmosphereBroadcaster atmosphereBroadcaster;
   @JsonProperty(value = "jobsFrequencyConfig") private JobsFrequencyConfig jobsFrequencyConfig;
   @JsonProperty("ngManagerServiceHttpClientConfig") private ServiceHttpClientConfig ngManagerServiceHttpClientConfig;
+  @JsonProperty("managerServiceHttpClientConfig") private ServiceHttpClientConfig managerServiceHttpClientConfig;
   @JsonProperty("mockServerConfig") private MockServerConfig mockServerConfig;
   @JsonProperty("numberOfRemindersBeforeAccountDeletion") private int numberOfRemindersBeforeAccountDeletion;
   @JsonProperty("delegateGrpcServicePort") private Integer delegateGrpcServicePort;

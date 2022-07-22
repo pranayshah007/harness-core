@@ -140,7 +140,7 @@ public class SSOResourceNG {
     final String clientSecretRef = getCGSecretManagerRefForClientSecret(accountId, true, clientId, clientSecret);
     return new RestResponse<>(ssoService.uploadSamlConfiguration(accountId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray()));
+        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), true));
   }
 
   @PUT
@@ -158,7 +158,7 @@ public class SSOResourceNG {
     final String clientSecretRef = getCGSecretManagerRefForClientSecret(accountId, false, clientId, clientSecret);
     return new RestResponse<>(ssoService.updateSamlConfiguration(accountId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray()));
+        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), true));
   }
 
   @DELETE

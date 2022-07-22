@@ -36,6 +36,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
+import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
@@ -303,7 +304,7 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
 
     assertThatThrownBy(
         () -> templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, null, pipelineYaml, false))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(InvalidIdentifierRefException.class)
         .hasMessage("ProjectIdentifier cannot be empty for PROJECT scope");
   }
 }

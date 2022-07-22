@@ -8,6 +8,7 @@
 package io.harness.ng.core.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
@@ -38,26 +39,27 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PL)
 public class UserGroupMapper {
   public static UserGroupDTO toDTO(UserGroup userGroup) {
-    return (userGroup == null)
-        ? null
-        : UserGroupDTO.builder()
-              .accountIdentifier(userGroup.getAccountIdentifier())
-              .orgIdentifier(userGroup.getOrgIdentifier())
-              .projectIdentifier(userGroup.getProjectIdentifier())
-              .identifier(userGroup.getIdentifier())
-              .description(userGroup.getDescription())
-              .tags(convertToMap(userGroup.getTags()))
-              .name(userGroup.getName())
-              .ssoGroupId(userGroup.getSsoGroupId())
-              .ssoGroupName(userGroup.getSsoGroupName())
-              .externallyManaged(userGroup.isExternallyManaged())
-              .linkedSsoDisplayName(userGroup.getLinkedSsoDisplayName())
-              .linkedSsoId(userGroup.getLinkedSsoId())
-              .isSsoLinked(TRUE.equals(userGroup.getIsSsoLinked()))
-              .notificationConfigs(
-                  userGroup.getNotificationConfigs().stream().map(UserGroupMapper::toDTO).collect(Collectors.toList()))
-              .users(userGroup.getUsers() == null ? emptyList() : userGroup.getUsers())
-              .build();
+    return (userGroup == null) ? null
+                               : UserGroupDTO.builder()
+                                     .accountIdentifier(userGroup.getAccountIdentifier())
+                                     .orgIdentifier(userGroup.getOrgIdentifier())
+                                     .projectIdentifier(userGroup.getProjectIdentifier())
+                                     .identifier(userGroup.getIdentifier())
+                                     .description(userGroup.getDescription())
+                                     .tags(convertToMap(userGroup.getTags()))
+                                     .name(userGroup.getName())
+                                     .ssoGroupId(userGroup.getSsoGroupId())
+                                     .ssoGroupName(userGroup.getSsoGroupName())
+                                     .externallyManaged(userGroup.isExternallyManaged())
+                                     .linkedSsoDisplayName(userGroup.getLinkedSsoDisplayName())
+                                     .linkedSsoId(userGroup.getLinkedSsoId())
+                                     .isSsoLinked(TRUE.equals(userGroup.getIsSsoLinked()))
+                                     .notificationConfigs(emptyIfNull(userGroup.getNotificationConfigs())
+                                                              .stream()
+                                                              .map(UserGroupMapper::toDTO)
+                                                              .collect(Collectors.toList()))
+                                     .users(userGroup.getUsers() == null ? emptyList() : userGroup.getUsers())
+                                     .build();
   }
 
   public static UserGroup toEntity(UserGroupDTO userGroupDTO) {
