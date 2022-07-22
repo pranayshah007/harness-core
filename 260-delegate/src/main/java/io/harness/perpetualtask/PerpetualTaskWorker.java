@@ -121,6 +121,8 @@ public class PerpetualTaskWorker {
         stopTask(taskId);
       }
 
+      log.info("perpetual task to be executed: ", startTasks);
+
       for (PerpetualTaskAssignDetails task : startTasks) {
         log.info("handleTask start PT {} ", task.getTaskId().getId());
         if (!firstFillUp.get()) {
@@ -128,6 +130,7 @@ public class PerpetualTaskWorker {
         }
         log.info("Calling StartTask PT with id {} ", task.getTaskId().getId());
         startTask(task);
+        log.info("Finished executing task with id {}",task.getTaskId().getId());
       }
       firstFillUp.set(false);
 
@@ -223,7 +226,9 @@ public class PerpetualTaskWorker {
           new PerpetualTaskLifecycleManager(task.getTaskId(), context, factoryMap, perpetualTaskServiceAgentClient,
               perpetualTaskTimeLimiter, currentlyExecutingPerpetualTasksCount, accountId);
 
+      log.info("StartTask: waiting for lock {}", task.getTaskId().getId());
       synchronized (runningTaskMap) {
+        log.info("StartTask: lock acquired {}", task.getTaskId().getId());
         runningTaskMap.computeIfAbsent(task.getTaskId(), k -> {
           log.info("Starting perpetual task with id: {}.", task.getTaskId().getId());
           ScheduledFuture<?> taskHandle = perpetualTaskTimeoutExecutor.scheduleWithFixedDelay(
