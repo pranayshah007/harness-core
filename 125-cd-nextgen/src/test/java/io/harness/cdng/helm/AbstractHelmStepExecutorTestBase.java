@@ -16,6 +16,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.beans.NativeHelmExecutionPassThroughData;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -37,7 +38,7 @@ import org.mockito.MockitoAnnotations;
 
 public abstract class AbstractHelmStepExecutorTestBase extends CategoryTest {
   @Mock protected NativeHelmStepHelper nativeHelmStepHelper;
-
+  @Mock protected CDStepHelper cdStepHelper;
   @Mock protected InfrastructureOutcome infrastructureOutcome;
   @Mock protected K8sInfraDelegateConfig infraDelegateConfig;
   @Mock protected CDFeatureFlagHelper cdFeatureFlagHelper;
@@ -59,9 +60,11 @@ public abstract class AbstractHelmStepExecutorTestBase extends CategoryTest {
                           .skipResourceVersioning(ParameterField.createValueField(true))
                           .store(storeConfig)
                           .build();
-    doReturn(infraDelegateConfig).when(nativeHelmStepHelper).getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
-    doReturn(manifestDelegateConfig).when(nativeHelmStepHelper).getManifestDelegateConfig(manifestOutcome, ambiance);
-    doReturn(releaseName).when(nativeHelmStepHelper).getReleaseName(ambiance, infrastructureOutcome);
+    doReturn(infraDelegateConfig).when(cdStepHelper).getK8sInfraDelegateConfig(infrastructureOutcome, ambiance);
+    doReturn(manifestDelegateConfig)
+        .when(nativeHelmStepHelper)
+        .getManifestDelegateConfigWrapper(any(), eq(manifestOutcome), eq(ambiance), any());
+    doReturn(releaseName).when(cdStepHelper).getReleaseName(ambiance, infrastructureOutcome);
     doReturn(TaskChainResponse.builder().chainEnd(true).build())
         .when(nativeHelmStepHelper)
         .startChainLink(any(), any(), any());

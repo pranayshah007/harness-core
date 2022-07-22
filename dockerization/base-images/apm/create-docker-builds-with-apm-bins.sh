@@ -68,7 +68,7 @@ export DOCKER_BUILDKIT=1
 export APPD_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/appd/AppServerAgent-1.8-21.11.2.33305.zip'
 export TAKIPI_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/overops/takipi-agent-latest.tar.gz'
 export ET_AGENT='https://get.et.harness.io/releases/latest/nix/harness-et-agent.tar.gz'
-export OCELET_AGENT='https://github.com/inspectIT/inspectit-ocelot/releases/download/1.16.0/inspectit-ocelot-agent-1.16.0.jar'
+export OCELET_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/inspectIT/inspectit-ocelot/releases/download/1.16.0/inspectit-ocelot-agent-1.16.0.jar'
 
 export REGISTRY_PATH='us.gcr.io/platform-205701'
 export SAAS_PATH=${SAAS_PATH}

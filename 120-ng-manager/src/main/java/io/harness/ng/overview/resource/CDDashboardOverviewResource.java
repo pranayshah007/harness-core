@@ -261,7 +261,7 @@ public class CDDashboardOverviewResource {
   @Path("/getActiveServiceInstances")
   @ApiOperation(
       value = "Get list of artifact version, last pipeline execution, environment, infrastructure with instance count",
-      nickname = "getActiveServiceInstances", hidden = true)
+      nickname = "getActiveServiceInstances")
   public ResponseDTO<InstanceGroupedByArtifactList>
   getEnvBuildInstanceCountV2(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,

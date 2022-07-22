@@ -34,6 +34,9 @@ public class PipelineDeleteEvent implements Event {
   private PipelineEntity pipeline;
   private Boolean isForOldGitSync;
 
+  // adding this back so that older records with this field can be read
+  private Boolean isFromGit;
+
   public PipelineDeleteEvent(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, PipelineEntity pipeline) {
     this.accountIdentifier = accountIdentifier;
@@ -70,9 +73,9 @@ public class PipelineDeleteEvent implements Event {
         .build();
   }
 
-  public boolean getIsForOldGitSync() {
+  public Boolean getIsForOldGitSync() {
     if (isForOldGitSync == null) {
-      return false;
+      return isFromGit != null && isFromGit;
     }
     return isForOldGitSync;
   }

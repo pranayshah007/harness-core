@@ -13,6 +13,8 @@ import io.harness.pms.pipeline.PipelineMetadataV2;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PipelineMetadataV2RepositoryCustom {
@@ -26,4 +28,6 @@ public interface PipelineMetadataV2RepositoryCustom {
 
   Optional<PipelineMetadataV2> cloneFromPipelineMetadata(
       String accountId, String orgId, String projectIdentifier, String identifier);
+
+  PipelineMetadataV2 update(Criteria criteria, Update update);
 }

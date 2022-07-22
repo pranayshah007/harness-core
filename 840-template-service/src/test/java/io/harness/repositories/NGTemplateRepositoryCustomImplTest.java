@@ -1,6 +1,13 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.repositories;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ADITHYA;
 
 import static junit.framework.TestCase.assertFalse;
@@ -29,6 +36,7 @@ import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,7 +44,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
-@OwnedBy(PIPELINE)
+@OwnedBy(PL)
 public class NGTemplateRepositoryCustomImplTest {
   NGTemplateRepositoryCustomImpl ngTemplateRepositoryCustom;
   @Mock GitAwarePersistence gitAwarePersistence;
@@ -49,7 +57,8 @@ public class NGTemplateRepositoryCustomImplTest {
   String accountIdentifier = "acc";
   String orgIdentifier = "org";
   String projectIdentifier = "proj";
-  String pipelineId = "pipeline";
+  String templateId = "template";
+  String templateVersion = "v1";
   String pipelineYaml = "pipeline: yaml";
 
   Scope scope = Scope.builder()
@@ -94,7 +103,7 @@ public class NGTemplateRepositoryCustomImplTest {
                                         .accountId(accountIdentifier)
                                         .orgIdentifier(orgIdentifier)
                                         .projectIdentifier(projectIdentifier)
-                                        .identifier(pipelineId)
+                                        .identifier(templateId)
                                         .yaml(pipelineYaml)
                                         .build();
 
@@ -127,7 +136,7 @@ public class NGTemplateRepositoryCustomImplTest {
                                         .accountId(accountIdentifier)
                                         .orgIdentifier(orgIdentifier)
                                         .projectIdentifier(projectIdentifier)
-                                        .identifier(pipelineId)
+                                        .identifier(templateId)
 
                                         .yaml(pipelineYaml)
                                         .build();
@@ -154,7 +163,7 @@ public class NGTemplateRepositoryCustomImplTest {
                                         .accountId(accountIdentifier)
                                         .orgIdentifier(orgIdentifier)
                                         .projectIdentifier(projectIdentifier)
-                                        .identifier(pipelineId)
+                                        .identifier(templateId)
                                         .yaml(pipelineYaml)
                                         .build();
 
@@ -177,7 +186,7 @@ public class NGTemplateRepositoryCustomImplTest {
     TemplateEntity templateToSave = TemplateEntity.builder()
                                         .accountId(accountIdentifier)
                                         .orgIdentifier(orgIdentifier)
-                                        .identifier(pipelineId)
+                                        .identifier(templateId)
                                         .yaml(pipelineYaml)
                                         .build();
 
@@ -200,7 +209,7 @@ public class NGTemplateRepositoryCustomImplTest {
     TemplateEntity templateToSave = TemplateEntity.builder()
                                         .accountId(accountIdentifier)
                                         .orgIdentifier(orgIdentifier)
-                                        .identifier(pipelineId)
+                                        .identifier(templateId)
                                         .yaml(pipelineYaml)
                                         .build();
 
@@ -217,5 +226,155 @@ public class NGTemplateRepositoryCustomImplTest {
 
     boolean isNewGitXEnabled = ngTemplateRepositoryCustom.isNewGitXEnabled(templateToSave, branchInfo);
     assertTrue(isNewGitXEnabled);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void
+  testFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForRemoteTemplate() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(templateId)
+                                        .yaml(pipelineYaml)
+                                        .storeType(StoreType.REMOTE)
+                                        .build();
+
+    doReturn(templateEntity).when(mongoTemplate).findOne(any(), any());
+    doReturn(templateEntity).when(gitAwareEntityHelper).fetchEntityFromRemote(any(), any(), any(), any());
+    Optional<TemplateEntity> optionalPipelineEntity =
+        ngTemplateRepositoryCustom
+            .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true);
+    assertThat(optionalPipelineEntity.isPresent()).isTrue();
+    assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
+    verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void
+  testFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForInlineTemplate() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(templateId)
+                                        .yaml(pipelineYaml)
+                                        .storeType(StoreType.INLINE)
+                                        .build();
+
+    doReturn(templateEntity).when(mongoTemplate).findOne(any(), any());
+
+    Optional<TemplateEntity> optionalPipelineEntity =
+        ngTemplateRepositoryCustom
+            .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true);
+    assertThat(optionalPipelineEntity.isPresent()).isTrue();
+    assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
+    verify(gitAwareEntityHelper, times(0)).fetchEntityFromRemote(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void
+  testFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForRemoteTemplate() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(templateId)
+                                        .yaml(pipelineYaml)
+                                        .storeType(StoreType.REMOTE)
+                                        .build();
+
+    doReturn(templateEntity).when(mongoTemplate).findOne(any(), any());
+    doReturn(templateEntity).when(gitAwareEntityHelper).fetchEntityFromRemote(any(), any(), any(), any());
+    Optional<TemplateEntity> optionalPipelineEntity =
+        ngTemplateRepositoryCustom
+            .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true);
+    assertThat(optionalPipelineEntity.isPresent()).isTrue();
+    assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
+    verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void
+  testFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForInlineTemplate() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(templateId)
+                                        .yaml(pipelineYaml)
+                                        .storeType(StoreType.INLINE)
+                                        .build();
+
+    doReturn(templateEntity).when(mongoTemplate).findOne(any(), any());
+
+    Optional<TemplateEntity> optionalPipelineEntity =
+        ngTemplateRepositoryCustom
+            .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true);
+    assertThat(optionalPipelineEntity.isPresent()).isTrue();
+    assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
+    verify(gitAwareEntityHelper, times(0)).fetchEntityFromRemote(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void
+  testFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNotForRemoteTemplate() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(templateId)
+                                        .yaml(pipelineYaml)
+                                        .storeType(StoreType.REMOTE)
+                                        .build();
+
+    doReturn(templateEntity).when(mongoTemplate).findOne(any(), any());
+    doReturn(templateEntity).when(gitAwareEntityHelper).fetchEntityFromRemote(any(), any(), any(), any());
+    Optional<TemplateEntity> optionalPipelineEntity =
+        ngTemplateRepositoryCustom
+            .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNot(
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true);
+    assertThat(optionalPipelineEntity.isPresent()).isTrue();
+    assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
+    verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void
+  testFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNotForInlineTemplate() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(templateId)
+                                        .yaml(pipelineYaml)
+                                        .storeType(StoreType.INLINE)
+                                        .build();
+
+    doReturn(templateEntity).when(mongoTemplate).findOne(any(), any());
+
+    Optional<TemplateEntity> optionalPipelineEntity =
+        ngTemplateRepositoryCustom
+            .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNot(
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true);
+    assertThat(optionalPipelineEntity.isPresent()).isTrue();
+    assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
+    verify(gitAwareEntityHelper, times(0)).fetchEntityFromRemote(any(), any(), any(), any());
   }
 }

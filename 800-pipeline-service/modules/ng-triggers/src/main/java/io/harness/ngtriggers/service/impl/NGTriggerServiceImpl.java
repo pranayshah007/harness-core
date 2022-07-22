@@ -44,7 +44,6 @@ import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent.TriggerWebhookEventsKeys;
-import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.PollingSubscriptionStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.StatusResult;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
@@ -165,8 +164,9 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   private void performPostUpsertFlow(NGTriggerEntity ngTriggerEntity) {
-    registerWebhookAsync(ngTriggerEntity);
-    registerPollingAsync(validateTrigger(ngTriggerEntity));
+    NGTriggerEntity validatedTrigger = validateTrigger(ngTriggerEntity);
+    registerWebhookAsync(validatedTrigger);
+    registerPollingAsync(validatedTrigger);
   }
 
   private void registerPollingAsync(NGTriggerEntity ngTriggerEntity) {
@@ -275,7 +275,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   private void registerWebhookAsync(NGTriggerEntity ngTriggerEntity) {
     if (ngTriggerEntity.getType() == WEBHOOK && ngTriggerEntity.getMetadata().getWebhook().getGit() != null) {
       executorService.submit(() -> {
-        WebhookRegistrationStatus registrationStatus =
+        WebhookAutoRegistrationStatus registrationStatus =
             ngTriggerWebhookRegistrationService.registerWebhook(ngTriggerEntity);
         updateWebhookRegistrationStatus(ngTriggerEntity, registrationStatus);
       });
@@ -759,30 +759,14 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   private void updateWebhookRegistrationStatus(
-      NGTriggerEntity ngTriggerEntity, WebhookRegistrationStatus registrationStatus) {
+      NGTriggerEntity ngTriggerEntity, WebhookAutoRegistrationStatus registrationStatus) {
     Criteria criteria = getTriggerEqualityCriteria(ngTriggerEntity, false);
-    stampWebhookRegistrationInfo(ngTriggerEntity, registrationStatus);
-    NGTriggerEntity updatedEntity = ngTriggerRepository.update(criteria, ngTriggerEntity);
+    TriggerHelper.stampWebhookRegistrationInfo(ngTriggerEntity, registrationStatus);
+    NGTriggerEntity updatedEntity = ngTriggerRepository.updateValidationStatus(criteria, ngTriggerEntity);
     if (updatedEntity == null) {
       throw new InvalidRequestException(
           String.format("NGTrigger [%s] couldn't be updated or doesn't exist", ngTriggerEntity.getIdentifier()));
     }
-  }
-
-  private void stampWebhookRegistrationInfo(
-      NGTriggerEntity ngTriggerEntity, WebhookRegistrationStatus registrationStatus) {
-    // TODO: Needs to be removed later, as will re replaced by new TriggerStatus
-    ngTriggerEntity.getMetadata().getWebhook().setRegistrationStatus(registrationStatus);
-    if (ngTriggerEntity.getTriggerStatus() == null) {
-      ngTriggerEntity.setTriggerStatus(
-          TriggerStatus.builder()
-              .webhookAutoRegistrationStatus(WebhookAutoRegistrationStatus.builder().build())
-              .build());
-    } else if (ngTriggerEntity.getTriggerStatus().getWebhookAutoRegistrationStatus() == null) {
-      ngTriggerEntity.getTriggerStatus().setWebhookAutoRegistrationStatus(
-          WebhookAutoRegistrationStatus.builder().build());
-    }
-    ngTriggerEntity.getTriggerStatus().getWebhookAutoRegistrationStatus().setRegistrationResult(registrationStatus);
   }
 
   private Criteria getTriggerWebhookEventEqualityCriteria(TriggerWebhookEvent webhookEventQueueRecord) {

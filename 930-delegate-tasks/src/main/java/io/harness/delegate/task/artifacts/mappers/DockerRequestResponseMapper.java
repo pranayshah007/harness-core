@@ -40,6 +40,7 @@ public class DockerRequestResponseMapper {
           credentials.getUsername(), credentials.getUsernameRef());
     }
     return DockerInternalConfig.builder()
+        .providerType(request.getDockerConnectorDTO().getProviderType())
         .dockerRegistryUrl(request.getDockerConnectorDTO().getDockerRegistryUrl())
         .username(username)
         .password(password)

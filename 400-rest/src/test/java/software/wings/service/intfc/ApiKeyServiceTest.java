@@ -32,12 +32,14 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
@@ -67,6 +69,7 @@ import org.mockito.Mock;
 @Slf4j
 public class ApiKeyServiceTest extends WingsBaseTest {
   @Mock private AccountService accountService;
+  @Mock private UserService userService;
   @Mock private UserGroupService userGroupService;
   @Mock private AuditServiceHelper auditServiceHelper;
   @Mock private Cache<String, ApiKeyEntry> apiKeyCache;
@@ -77,6 +80,7 @@ public class ApiKeyServiceTest extends WingsBaseTest {
   @Before
   public void init() {
     setUserRequestContext();
+    when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
   }
 
   private void setUserRequestContext() {
@@ -236,5 +240,65 @@ public class ApiKeyServiceTest extends WingsBaseTest {
     } catch (UnauthorizedException ex) {
       fail("Validation failed: " + ex.getMessage());
     }
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testGetApiKey() {
+    ApiKeyEntry apiKeyEntry = generateKey("name");
+    User user = User.Builder.anUser().uuid("uid").name("username").build();
+    UserThreadLocal.set(user);
+    when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
+    boolean exceptionThrown = false;
+    ApiKeyEntry apiKeyEntryFromGet = null;
+    try {
+      apiKeyEntryFromGet = apiKeyService.get(apiKeyEntry.getUuid(), ACCOUNT_ID);
+    } catch (InvalidRequestException ex) {
+      exceptionThrown = true;
+    }
+    assertThat(apiKeyEntryFromGet).isNotNull();
+    String key = apiKeyEntryFromGet.getDecryptedKey();
+    assertThat(key).isEqualTo(apiKeyEntry.getDecryptedKey());
+    assertThat(exceptionThrown).isFalse();
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testGetApiKey2() {
+    ApiKeyEntry apiKeyEntry = generateKey("name");
+    User user = User.Builder.anUser().uuid("uid").name("username").build();
+    UserThreadLocal.set(user);
+    when(userService.isUserAssignedToAccount(any(), any())).thenReturn(false);
+    ApiKeyEntry apiKeyEntryFromGet = null;
+    boolean exceptionThrown = false;
+    try {
+      apiKeyEntryFromGet = apiKeyService.get(apiKeyEntry.getUuid(), ACCOUNT_ID);
+    } catch (InvalidRequestException ex) {
+      exceptionThrown = true;
+    }
+    assertThat(apiKeyEntryFromGet).isNotNull();
+    assertThat(exceptionThrown).isFalse();
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testGetApiKey3() {
+    ApiKeyEntry apiKeyEntry = generateKey("name");
+    UserThreadLocal.set(null);
+    when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
+    boolean exceptionThrown = false;
+    ApiKeyEntry apiKeyEntryFromGet = null;
+    try {
+      apiKeyEntryFromGet = apiKeyService.get(apiKeyEntry.getUuid(), ACCOUNT_ID);
+    } catch (InvalidRequestException ex) {
+      exceptionThrown = true;
+    }
+    assertThat(apiKeyEntryFromGet).isNotNull();
+    String key = apiKeyEntryFromGet.getDecryptedKey();
+    assertThat(key).isEqualTo(apiKeyEntry.getDecryptedKey());
+    assertThat(exceptionThrown).isFalse();
   }
 }

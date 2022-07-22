@@ -12,7 +12,6 @@ import static io.harness.delegate.task.azure.AzureTestUtils.APP_NAME;
 import static io.harness.delegate.task.azure.AzureTestUtils.DEPLOYMENT_SLOT;
 import static io.harness.rule.OwnerRule.ABOSII;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -28,19 +27,19 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.context.AzureWebClientContext;
-import io.harness.azure.model.AzureAppServiceApplicationSetting;
-import io.harness.azure.model.AzureAppServiceConnectionString;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.azure.AzureTestUtils;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceResourceUtilities;
 import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDockerDeploymentContext;
+import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.delegate.task.azure.appservice.webapp.ng.exception.AzureWebAppSlotDeploymentExceptionData;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSlotDeploymentRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppRequestResponse;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSlotDeploymentResponse;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData;
+import io.harness.delegate.task.azure.artifact.AzureRegistrySettingsAdapter;
 import io.harness.delegate.task.azure.common.AzureAppServiceService;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.rule.Owner;
@@ -62,6 +61,7 @@ public class AzureWebAppSlotDeploymentRequestHandlerTest extends CategoryTest {
   @Mock private AzureAppServiceService azureAppServiceService;
   @Mock private AzureAppServiceResourceUtilities azureAppServiceResourceUtilities;
   @Mock private AzureLogCallbackProvider logCallbackProvider;
+  @Mock private AzureRegistrySettingsAdapter azureRegistrySettingsAdapter;
 
   @InjectMocks AzureWebAppSlotDeploymentRequestHandler requestHandler;
 
@@ -93,11 +93,10 @@ public class AzureWebAppSlotDeploymentRequestHandlerTest extends CategoryTest {
             .preDeploymentData(AzureAppServicePreDeploymentData.builder().deploymentProgressMarker("test").build())
             .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
             .artifact(AzureTestUtils.createTestContainerArtifactConfig())
-            .applicationSettings(
-                asList(AzureAppServiceApplicationSetting.builder().name("test1").value("test1").build(),
-                    AzureAppServiceApplicationSetting.builder().name("test2").value("test2").build()))
-            .connectionStrings(asList(AzureAppServiceConnectionString.builder().name("ctest1").value("ctest1").build(),
-                AzureAppServiceConnectionString.builder().name("ctest2").value("ctest2").build()))
+            .applicationSettings(AppSettingsFile.create(
+                "[{\"name\": \"test1\", \"value\": \"test1\"}, {\"name\": \"test2\", \"value\": \"test2\"}]"))
+            .connectionStrings(AppSettingsFile.create(
+                "[{\"name\": \"ctest1\", \"value\": \"ctest1\"}, {\"name\": \"ctest2\", \"value\": \"ctest2\"}]"))
             .timeoutIntervalInMin(10)
             .build();
 

@@ -57,6 +57,10 @@ public class InputSetUpdateEvent implements Event {
         .build();
   }
 
+  public Boolean getIsForOldGitSync() {
+    return isForOldGitSync != null && isForOldGitSync;
+  }
+
   @JsonIgnore
   @Override
   public String getEventType() {

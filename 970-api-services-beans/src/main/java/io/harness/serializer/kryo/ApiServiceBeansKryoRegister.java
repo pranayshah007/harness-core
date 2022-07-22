@@ -30,6 +30,7 @@ import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.NGInstanceUnitType;
 import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
+import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
 import io.harness.deployment.InstanceDetails;
 import io.harness.ecs.EcsContainerDetails;
 import io.harness.exception.HelmClientException;
@@ -431,5 +432,6 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(SecretManagementDelegateException.class, 5585);
     kryo.register(ServiceNowTemplate.class, 97113);
     kryo.register(FileSourceType.class, 97115);
+    kryo.register(DockerRegistryProviderType.class, 19434);
   }
 }

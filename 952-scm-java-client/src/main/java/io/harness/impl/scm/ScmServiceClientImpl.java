@@ -150,7 +150,6 @@ public class ScmServiceClientImpl implements ScmServiceClient {
         .setContent(gitFileDetails.getFileContent())
         .setMessage(gitFileDetails.getCommitMessage())
         .setProvider(gitProvider)
-        .setCommitId(Strings.nullToEmpty(gitFileDetails.getCommitId()))
         .setSignature(Signature.newBuilder()
                           .setEmail(gitFileDetails.getUserEmail())
                           .setName(gitFileDetails.getUserName())
@@ -167,6 +166,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     }
 
     final FileModifyRequest.Builder fileModifyRequestBuilder = getFileModifyRequest(scmConnector, gitFileDetails);
+    handleUpdateFileRequestIfBBOnPrem(fileModifyRequestBuilder, scmConnector, gitFileDetails);
     final FileModifyRequest fileModifyRequest =
         fileModifyRequestBuilder.setBlobId(Strings.nullToEmpty(gitFileDetails.getOldFileSha())).build();
     UpdateFileResponse updateFileResponse =
@@ -957,8 +957,25 @@ public class ScmServiceClientImpl implements ScmServiceClient {
                                .setCommitId(latestCommitResponse.getCommitId())
                                .build());
       }
+    } else if (ConnectorType.AZURE_REPO.equals(scmConnector.getConnectorType())) {
+      GetLatestCommitOnFileResponse latestCommitResponse = getLatestCommitOnFile(
+          scmConnector, scmBlockingStub, gitFileDetails.getBranch(), gitFileDetails.getFilePath());
+      if (!latestCommitResponse.getCommitId().equals(gitFileDetails.getCommitId())) {
+        return Optional.of(UpdateFileResponse.newBuilder()
+                               .setStatus(Constants.SCM_CONFLICT_ERROR_CODE)
+                               .setError(Constants.SCM_CONFLICT_ERROR_MESSAGE)
+                               .setCommitId(latestCommitResponse.getCommitId())
+                               .build());
+      }
     }
     return Optional.empty();
+  }
+
+  private void handleUpdateFileRequestIfBBOnPrem(
+      FileModifyRequest.Builder fileModifyRequestBuilder, ScmConnector scmConnector, GitFileDetails gitFileDetails) {
+    if (isBitbucketOnPrem(scmConnector)) {
+      fileModifyRequestBuilder.setCommitId(gitFileDetails.getCommitId());
+    }
   }
 
   private boolean isFailureResponse(int statusCode) {

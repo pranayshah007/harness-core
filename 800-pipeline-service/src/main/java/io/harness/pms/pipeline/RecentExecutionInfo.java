@@ -14,7 +14,9 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 
 import lombok.Builder;
+import lombok.Setter;
 import lombok.Value;
+import lombok.experimental.NonFinal;
 
 @Value
 @Builder
@@ -22,7 +24,7 @@ import lombok.Value;
 public class RecentExecutionInfo {
   ExecutionTriggerInfo executionTriggerInfo;
   String planExecutionId;
-  Status status;
+  @Setter @NonFinal Status status;
   Long startTs;
-  Long endTs;
+  @Setter @NonFinal Long endTs;
 }

@@ -42,6 +42,7 @@ import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
+import io.harness.shell.ScriptType;
 
 import com.google.inject.Inject;
 import java.util.Arrays;
@@ -52,6 +53,7 @@ import java.util.function.Consumer;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -72,7 +74,7 @@ public class CommandTaskNGTest extends CategoryTest {
   @Mock SshCleanupCommandHandler sshCleanupCommandHandler;
   @Mock SshScriptCommandHandler sshScriptCommandHandler;
   @Mock SshCopyCommandHandler sshCopyCommandHandler;
-  @Mock Map<String, CommandHandler> commandHandlers;
+  @Mock Map<Pair, CommandHandler> commandHandlers;
 
   final NgCommandUnit initCommandUnit = NgInitCommandUnit.builder().build();
   final NgCommandUnit scriptCommandUnit = ScriptCommandUnit.builder().build();
@@ -85,10 +87,14 @@ public class CommandTaskNGTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    doReturn(sshInitCommandHandler).when(commandHandlers).get(NGCommandUnitType.INIT);
-    doReturn(sshScriptCommandHandler).when(commandHandlers).get(NGCommandUnitType.SCRIPT);
-    doReturn(sshCopyCommandHandler).when(commandHandlers).get(NGCommandUnitType.COPY);
-    doReturn(sshCleanupCommandHandler).when(commandHandlers).get(NGCommandUnitType.CLEANUP);
+    doReturn(sshInitCommandHandler).when(commandHandlers).get(Pair.of(NGCommandUnitType.INIT, ScriptType.BASH.name()));
+    doReturn(sshScriptCommandHandler)
+        .when(commandHandlers)
+        .get(Pair.of(NGCommandUnitType.SCRIPT, ScriptType.BASH.name()));
+    doReturn(sshCopyCommandHandler).when(commandHandlers).get(Pair.of(NGCommandUnitType.COPY, ScriptType.BASH.name()));
+    doReturn(sshCleanupCommandHandler)
+        .when(commandHandlers)
+        .get(Pair.of(NGCommandUnitType.CLEANUP, ScriptType.BASH.name()));
   }
 
   @Test(expected = NotImplementedException.class)

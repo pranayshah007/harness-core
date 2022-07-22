@@ -12,7 +12,9 @@ spec:
           identifier: slotDeployment
           type: AzureSlotDeployment
           timeout: 10m
-          spec: {}
+          spec:
+            webApp: ""
+            deploymentSlot: ""
       - step:
           type: Verify
           name: Verify

@@ -19,13 +19,13 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.network.SafeHttpCall;
 import io.harness.opaclient.OpaServiceClient;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
 import io.harness.opaclient.model.PipelineOpaEvaluationContext;
 import io.harness.pms.PmsFeatureFlagService;
-import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.rule.Owner;
 
 import java.io.IOException;

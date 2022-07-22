@@ -13,8 +13,8 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
-import io.harness.pms.contracts.governance.GovernanceMetadata;
-import io.harness.pms.contracts.governance.PolicySetMetadata;
+import io.harness.governance.GovernanceMetadata;
+import io.harness.governance.PolicySetMetadata;
 
 import java.util.List;
 import java.util.stream.Collectors;

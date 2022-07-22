@@ -8,7 +8,6 @@
 package io.harness.ccm.views.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
-import static io.harness.beans.FeatureName.CE_BILLING_DATA_PRE_AGGREGATION;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.CLOUD_SERVICE_NAME_FIELD_ID;
@@ -1690,8 +1689,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       aggregateFunction = new ArrayList<>();
     }
 
-    if (featureFlagService.isEnabled(CE_BILLING_DATA_PRE_AGGREGATION, accountId) && !isPodQuery
-        && areAggregationsValidForPreAggregation(aggregateFunction) && isValidGroupByForPreAggregation(entityGroupBy)) {
+    if (!isPodQuery && areAggregationsValidForPreAggregation(aggregateFunction)
+        && isValidGroupByForPreAggregation(entityGroupBy)) {
       tableName = isGroupByHour(groupBy) || shouldUseHourlyData(getTimeFilters(filters))
           ? CLUSTER_TABLE_HOURLY_AGGREGRATED
           : CLUSTER_TABLE_AGGREGRATED;

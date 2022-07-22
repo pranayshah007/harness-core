@@ -8,10 +8,9 @@ shared_dependencies = [
     "@maven//:com_google_guava_guava",
     "@maven//:io_netty_netty_all",
 ] + [
-    "//320-ci-execution:module",
     "//323-sto-utilities:module",
     "//325-sto-beans:module",
-    "//330-ci-beans:module",
+    "//332-ci-manager/service:module",
     "//870-cg-orchestration:module",
     "//940-primary-version-manager:module",
     "//942-enforcement-sdk:module",

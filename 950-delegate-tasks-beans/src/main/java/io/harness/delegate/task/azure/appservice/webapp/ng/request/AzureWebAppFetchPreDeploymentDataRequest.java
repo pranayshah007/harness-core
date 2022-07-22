@@ -10,14 +10,12 @@ package io.harness.delegate.task.azure.appservice.webapp.ng.request;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.model.AzureAppServiceApplicationSetting;
-import io.harness.azure.model.AzureAppServiceConnectionString;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 
-import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -30,9 +28,8 @@ import lombok.NoArgsConstructor;
 public class AzureWebAppFetchPreDeploymentDataRequest extends AbstractSlotDataRequest {
   @Builder
   public AzureWebAppFetchPreDeploymentDataRequest(String accountId, CommandUnitsProgress commandUnitsProgress,
-      AzureWebAppInfraDelegateConfig infraDelegateConfig, String startupCommand,
-      List<AzureAppServiceApplicationSetting> applicationSettings,
-      List<AzureAppServiceConnectionString> connectionStrings, AzureArtifactConfig artifact,
+      AzureWebAppInfraDelegateConfig infraDelegateConfig, AppSettingsFile startupCommand,
+      AppSettingsFile applicationSettings, AppSettingsFile connectionStrings, AzureArtifactConfig artifact,
       Integer timeoutIntervalInMin) {
     super(accountId, commandUnitsProgress, infraDelegateConfig, startupCommand, applicationSettings, connectionStrings,
         artifact, timeoutIntervalInMin);

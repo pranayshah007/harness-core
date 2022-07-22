@@ -43,6 +43,7 @@ import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
 import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxDaoImpl;
@@ -235,6 +236,7 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
             .annotatedWith(Names.named(ClientMode.PRIVILEGED.name()))
             .toInstance(mock(SecretNGManagerClient.class));
         bind(FileStoreService.class).toInstance(mock(FileStoreService.class));
+        bind(NGEncryptedDataService.class).toInstance(mock(NGEncryptedDataService.class));
       }
     });
     modules.add(TimeModule.getInstance());

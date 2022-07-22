@@ -12,6 +12,7 @@ import static io.harness.data.encoding.EncodingUtils.decodeBase64ToString;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
+import static io.harness.eraro.ErrorCode.INVALID_AGENT_MTLS_AUTHORITY;
 import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_ADMIN;
@@ -22,6 +23,7 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_JWT_CA
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
 
+import io.harness.agent.utils.AgentMtlsVerifier;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -81,6 +83,7 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
   @Inject private DelegateTokenCacheHelper delegateTokenCacheHelper;
   @Inject private DelegateJWTCache delegateJWTCache;
   @Inject private DelegateMetricsService delegateMetricsService;
+  @Inject private AgentMtlsVerifier agentMtlsVerifier;
 
   private final LoadingCache<String, String> keyCache =
       Caffeine.newBuilder()
@@ -100,13 +103,21 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
   // it after 1-2 months.
   @Override
   public void validateDelegateToken(String accountId, String tokenString, String delegateId, String delegateTokenName,
-      boolean shouldSetTokenNameInGlobalContext) {
+      String agentMtlsAuthority, boolean shouldSetTokenNameInGlobalContext) {
+    if (accountId == null || GLOBAL_ACCOUNT_ID.equals(accountId)) {
+      throw new InvalidRequestException("Access denied", USER_ADMIN);
+    }
+
+    // Ensure that delegate connection satisfies mTLS configuration of the account
+    this.validateMtlsHeader(accountId, agentMtlsAuthority);
+
     final String tokenHash = DigestUtils.md5Hex(tokenString);
-    // first validate it from DelegateJWTCache
-    if (validateDelegateJWTFromCache(accountId, tokenHash, shouldSetTokenNameInGlobalContext)) {
-      return;
-    } else if (isEmpty(delegateTokenName)) {
+
+    // we should validate from cache first, when watcher 754xx is deployed.
+    if (isEmpty(delegateTokenName)) {
       log.warn("Delegate token name is empty.");
+    } else if (validateDelegateJWTFromCache(accountId, tokenHash, shouldSetTokenNameInGlobalContext)) {
+      return;
     }
 
     EncryptedJWT encryptedJWT;
@@ -169,7 +180,14 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
   }
 
   @Override
-  public void validateDelegateAuth2Token(String accountId, String tokenString) {
+  public void validateDelegateAuth2Token(String accountId, String tokenString, String agentMtlsAuthority) {
+    if (accountId == null || GLOBAL_ACCOUNT_ID.equals(accountId)) {
+      throw new InvalidRequestException("Access denied", USER_ADMIN);
+    }
+
+    // Ensure that delegate connection satisfies mTLS configuration of the account
+    this.validateMtlsHeader(accountId, agentMtlsAuthority);
+
     // First try to validate token with accountKey.
     if (validateDelegateAuth2TokenWithAccountKey(accountId, tokenString)) {
       return;
@@ -202,6 +220,15 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
       log.error("Error occurred during fetching list of delegate tokens from db while authenticating.");
       throw new InvalidRequestException("Unauthorized");
     }
+  }
+
+  private void validateMtlsHeader(String accountId, String agentMtlsAuthority) {
+    if (this.agentMtlsVerifier.isValidRequest(accountId, agentMtlsAuthority)) {
+      return;
+    }
+
+    log.warn("Failed verification of agent-mtls-authority '{}' for account '{}'.", agentMtlsAuthority, accountId);
+    throw new InvalidRequestException("Unauthorized", INVALID_AGENT_MTLS_AUTHORITY, null);
   }
 
   private boolean validateDelegateAuth2TokenWithAccountKey(String accountId, String tokenString) {

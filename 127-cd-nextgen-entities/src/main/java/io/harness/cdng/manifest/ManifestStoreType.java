@@ -29,6 +29,8 @@ public interface ManifestStoreType {
   String InheritFromManifest = "InheritFromManifest";
   String OCI = "OciHelmChart";
   String AZURE_REPO = "AzureRepo";
+  String CUSTOM_REMOTE = "CustomRemote";
+  String HARNESS = "Harness";
 
   static boolean isInGitSubset(String manifestType) {
     switch (manifestType) {

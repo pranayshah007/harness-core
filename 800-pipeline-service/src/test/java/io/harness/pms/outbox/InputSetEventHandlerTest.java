@@ -8,6 +8,7 @@
 package io.harness.pms.outbox;
 
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.NAMAN;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
@@ -157,6 +158,44 @@ public class InputSetEventHandlerTest extends CategoryTest {
     assertEquals(newYaml, auditEntry.getNewYaml());
     assertEquals(oldYaml, auditEntry.getOldYaml());
   }
+
+  // a bug was introduced where accidentally some events have old pipeline as null. Handing it here to ensure that those
+  // events are not audited and don't throw a Null Pointer Exception.
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testUpdateWithOldInputSetAsNull() throws IOException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String pipelineIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    InputSetEntity newInputSet =
+        InputSetEntity.builder().name(randomAlphabetic(10)).identifier(identifier).yaml(newYaml).build();
+    InputSetUpdateEvent inputSetUpdateEvent = new InputSetUpdateEvent(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, newInputSet, null, false);
+    String eventData = objectMapper.writeValueAsString(inputSetUpdateEvent);
+    GlobalContext globalContext = new GlobalContext();
+    Principal principal =
+        new UserPrincipal(randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10));
+    SourcePrincipalContextData sourcePrincipalContextData =
+        SourcePrincipalContextData.builder().principal(principal).build();
+    globalContext.upsertGlobalContextRecord(sourcePrincipalContextData);
+
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .resource(inputSetUpdateEvent.getResource())
+                                  .resourceScope(inputSetUpdateEvent.getResourceScope())
+                                  .eventType(PipelineOutboxEvents.INPUT_SET_UPDATED)
+                                  .blocked(false)
+                                  .globalContext(globalContext)
+                                  .createdAt(Long.valueOf(randomNumeric(6)))
+                                  .eventData(eventData)
+                                  .id(randomAlphabetic(10))
+                                  .build();
+    eventHandler.handleInputSetUpdateEvent(outboxEvent);
+    verify(auditClientService, times(0)).publishAudit(any(), any(), any());
+  }
+
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)

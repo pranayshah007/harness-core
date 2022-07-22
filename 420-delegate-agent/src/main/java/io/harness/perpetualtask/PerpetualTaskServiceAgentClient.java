@@ -45,15 +45,17 @@ public class PerpetualTaskServiceAgentClient {
       Call<PerpetualTaskContextResponse> perpetualTaskContextResponseCall =
           delegateAgentManagerClient.perpetualTaskContext(taskId.getId(), accountId);
       executeAsyncCallWithRetry(perpetualTaskContextResponseCall, result);
-      log.info("PT Context params: {}", result.get().getPerpetualTaskContext());
-      return result.get().getPerpetualTaskContext();
+      PerpetualTaskExecutionContext perpetualTaskExecutionContext = result.get().getPerpetualTaskContext();
+      log.info("PT Context params: {}", perpetualTaskExecutionContext);
+      return perpetualTaskExecutionContext;
     } catch (InterruptedException | ExecutionException | IOException e) {
       log.error("Error while getting perpetualTaskContext ", e);
     }
     return null;
   }
 
-  public void heartbeat(PerpetualTaskId taskId, Instant taskStartTime, PerpetualTaskResponse perpetualTaskResponse) {
+  public void heartbeat(
+      PerpetualTaskId taskId, Instant taskStartTime, PerpetualTaskResponse perpetualTaskResponse, String accountId) {
     CompletableFuture<HeartbeatResponse> result = new CompletableFuture<>();
     try {
       HeartbeatRequest heartbeatRequest = HeartbeatRequest.newBuilder()
@@ -62,7 +64,7 @@ public class PerpetualTaskServiceAgentClient {
                                               .setResponseCode(perpetualTaskResponse.getResponseCode())
                                               .setResponseMessage(perpetualTaskResponse.getResponseMessage())
                                               .build();
-      Call<HeartbeatResponse> call = delegateAgentManagerClient.heartbeat(heartbeatRequest);
+      Call<HeartbeatResponse> call = delegateAgentManagerClient.heartbeat(accountId, heartbeatRequest);
       executeAsyncCallWithRetry(call, result);
     } catch (IOException ex) {
       log.error(ex.getMessage());

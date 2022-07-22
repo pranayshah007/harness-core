@@ -29,4 +29,10 @@ public abstract class SLOTemplateDataGenerator<T extends SLONotificationRuleCond
         projectParams.getAccountIdentifier(), MODULE_NAME, projectParams.getOrgIdentifier(),
         projectParams.getProjectIdentifier(), identifier, endTime);
   }
+
+  @Override
+  public String getAnomalousMetrics(
+      ProjectParams projectParams, String identifier, long startTime, SLONotificationRuleCondition condition) {
+    return "";
+  }
 }

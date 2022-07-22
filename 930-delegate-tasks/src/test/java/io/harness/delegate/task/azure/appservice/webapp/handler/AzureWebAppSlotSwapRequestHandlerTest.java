@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.azure.AzureTestUtils.APP_NAME;
 import static io.harness.delegate.task.azure.AzureTestUtils.RESOURCE_GROUP;
 import static io.harness.delegate.task.azure.AzureTestUtils.SUBSCRIPTION_ID;
+import static io.harness.delegate.task.azure.AzureTestUtils.TARGET_SLOT;
 import static io.harness.rule.OwnerRule.ANIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -61,6 +62,7 @@ public class AzureWebAppSlotSwapRequestHandlerTest extends CategoryTest {
                                                        .accountId("accountId")
                                                        .infrastructure(azureWebAppInfraDelegateConfig)
                                                        .timeoutIntervalInMin(timeout)
+                                                       .targetSlot(TARGET_SLOT)
                                                        .build();
 
     requestHandler.execute(swapSlotsRequest, AzureTestUtils.createTestAzureConfig(), logCallbackProvider);
@@ -70,8 +72,7 @@ public class AzureWebAppSlotSwapRequestHandlerTest extends CategoryTest {
 
     verify(azureAppServiceResourceUtilities, times(1))
         .swapSlots(azureWebClientContextArgumentCaptor.capture(), eq(logCallbackProvider),
-            eq(azureWebAppInfraDelegateConfig.getDeploymentSlot()), eq(azureWebAppInfraDelegateConfig.getTargetSlot()),
-            eq(timeout));
+            eq(azureWebAppInfraDelegateConfig.getDeploymentSlot()), eq(TARGET_SLOT), eq(timeout));
 
     AzureWebClientContext azureWebClientContext = azureWebClientContextArgumentCaptor.getValue();
     assertThat(azureWebClientContext.getSubscriptionId()).isEqualTo(SUBSCRIPTION_ID);

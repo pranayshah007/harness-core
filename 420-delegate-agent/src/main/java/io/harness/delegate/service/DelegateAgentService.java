@@ -16,8 +16,6 @@ public interface DelegateAgentService {
 
   void freeze();
 
-  boolean isClientToolsInstallationFinished();
-
   boolean isHeartbeatHealthy();
 
   boolean isSocketHealthy();

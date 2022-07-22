@@ -26,7 +26,7 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /325-sto-beans/ @harness/sto
 /320-ci-execution/src/**/Security*.java @harness/sto
 /320-ci-execution/src/**/STO*.java @harness/sto
-/330-ci-beans/src/**/Security*.java @harness/sto
+/332-ci-manager/service/src/**/Security*.java @harness/sto
 
 ### All BUILD.bazel files 260-delegate depends on - to avoid the introduction of new, unnecessary dependencies increasing the delegate JAR size.
 /260-delegate/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
@@ -55,7 +55,6 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /952-scm-java-client/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /953-events-api/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /954-connector-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
-/954-pms-contracts/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /955-alert-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /955-cg-yaml/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /955-delegate-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io

@@ -33,6 +33,9 @@ public interface CfDeploymentManager {
 
   ApplicationDetail resizeApplication(CfRequestConfig cfRequestConfig) throws PivotalClientApiException;
 
+  ApplicationDetail upsizeApplication(CfRequestConfig pcfRequestConfig, LogCallback executionLogCallback)
+      throws PivotalClientApiException;
+
   void deleteApplication(CfRequestConfig cfRequestConfig) throws PivotalClientApiException;
 
   void renameApplication(CfRenameRequest cfRenameRequest, LogCallback logCallback) throws PivotalClientApiException;

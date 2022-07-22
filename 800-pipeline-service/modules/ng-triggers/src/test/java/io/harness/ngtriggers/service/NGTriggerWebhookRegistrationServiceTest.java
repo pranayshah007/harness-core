@@ -12,7 +12,6 @@ import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -23,7 +22,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.webhook.UpsertWebhookResponseDTO;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
@@ -32,6 +30,7 @@ import io.harness.ngtriggers.beans.entity.metadata.GitMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.NGTriggerMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatus;
+import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.service.impl.NGTriggerWebhookRegistrationServiceImpl;
 import io.harness.rule.Owner;
@@ -89,9 +88,9 @@ public class NGTriggerWebhookRegistrationServiceTest extends CategoryTest {
                                        .build())
                           .build())
             .build();
-    WebhookRegistrationStatus webhookRegistrationStatus =
+    WebhookAutoRegistrationStatus webhookRegistrationStatus =
         ngTriggerWebhookRegistrationService.registerWebhook(ngTriggerEntity);
-    assertThat(webhookRegistrationStatus).isEqualTo(WebhookRegistrationStatus.SUCCESS);
+    assertThat(webhookRegistrationStatus.getRegistrationResult()).isEqualTo(WebhookRegistrationStatus.SUCCESS);
   }
 
   public void shouldRegisterWebhookWithFailure() throws IOException {
@@ -112,9 +111,9 @@ public class NGTriggerWebhookRegistrationServiceTest extends CategoryTest {
                                        .build())
                           .build())
             .build();
-    WebhookRegistrationStatus webhookRegistrationStatus =
+    WebhookAutoRegistrationStatus webhookRegistrationStatus =
         ngTriggerWebhookRegistrationService.registerWebhook(ngTriggerEntity);
-    assertThat(webhookRegistrationStatus).isEqualTo(WebhookRegistrationStatus.FAILED);
+    assertThat(webhookRegistrationStatus.getRegistrationResult()).isEqualTo(WebhookRegistrationStatus.FAILED);
   }
 
   @Test
@@ -124,7 +123,7 @@ public class NGTriggerWebhookRegistrationServiceTest extends CategoryTest {
     ConnectorDetails connectorDetails = ConnectorDetails.builder().connectorType(ConnectorType.AZURE_REPO).build();
     when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(connectorDetails);
     when(connectorUtils.retrieveURL(connectorDetails)).thenReturn("https://dev.azure.com/org/project/_git/repo");
-    when(connectorUtils.getConnectionType(connectorDetails)).thenReturn(GitConnectionType.ACCOUNT);
+    when(connectorUtils.getConnectionType(connectorDetails)).thenReturn(GitConnectionType.PROJECT);
 
     ClassLoader classLoader = getClass().getClassLoader();
     String ngTriggerYaml_azurerepo_pr = Resources.toString(
@@ -152,48 +151,8 @@ public class NGTriggerWebhookRegistrationServiceTest extends CategoryTest {
                                        .build())
                           .build())
             .build();
-    WebhookRegistrationStatus webhookRegistrationStatus =
+    WebhookAutoRegistrationStatus webhookRegistrationStatus =
         ngTriggerWebhookRegistrationService.registerWebhook(ngTriggerEntity);
-    assertThat(webhookRegistrationStatus).isEqualTo(WebhookRegistrationStatus.SUCCESS);
-  }
-
-  @Test
-  @Owner(developers = RAGHAV_GUPTA)
-  @Category(UnitTests.class)
-  public void shouldRegisterWebhookAzureWithoutProject() throws IOException {
-    ConnectorDetails connectorDetails = ConnectorDetails.builder().connectorType(ConnectorType.AZURE_REPO).build();
-    when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(connectorDetails);
-    when(connectorUtils.retrieveURL(connectorDetails)).thenReturn("https://dev.azure.com/org/project/_git/repo");
-    when(connectorUtils.getConnectionType(connectorDetails)).thenReturn(GitConnectionType.ACCOUNT);
-
-    ClassLoader classLoader = getClass().getClassLoader();
-    String ngTriggerYaml_azurerepo_pr = Resources.toString(
-        Objects.requireNonNull(classLoader.getResource("ng-trigger-azurerepo-pr-v2-without-project.yaml")),
-        StandardCharsets.UTF_8);
-
-    when(ngTriggerElementMapper.toTriggerConfigV2(any(String.class))).thenCallRealMethod();
-    NGTriggerConfigV2 ngTriggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerYaml_azurerepo_pr);
-
-    when(ngTriggerElementMapper.toTriggerConfigV2(any(String.class))).thenReturn(ngTriggerConfigV2);
-
-    Call<ResponseDTO<UpsertWebhookResponseDTO>> requestCall = mock(Call.class);
-    when(requestCall.execute())
-        .thenReturn(Response.success(ResponseDTO.newResponse(UpsertWebhookResponseDTO.builder().status(200).build())));
-    when(webhookEventClient.upsertWebhook(any())).thenReturn(requestCall);
-    NGTriggerEntity ngTriggerEntity =
-        NGTriggerEntity.builder()
-            .projectIdentifier("proj")
-            .orgIdentifier("org")
-            .accountId("acct")
-            .yaml(ngTriggerYaml_azurerepo_pr)
-            .enabled(true)
-            .metadata(NGTriggerMetadata.builder()
-                          .webhook(WebhookMetadata.builder()
-                                       .git(GitMetadata.builder().connectorIdentifier("conn").repoName("repo").build())
-                                       .build())
-                          .build())
-            .build();
-    assertThatThrownBy(() -> ngTriggerWebhookRegistrationService.registerWebhook(ngTriggerEntity))
-        .isInstanceOf(InvalidRequestException.class);
+    assertThat(webhookRegistrationStatus.getRegistrationResult()).isEqualTo(WebhookRegistrationStatus.SUCCESS);
   }
 }

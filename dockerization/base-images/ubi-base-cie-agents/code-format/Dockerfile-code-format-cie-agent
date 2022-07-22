@@ -17,6 +17,8 @@ FROM us.gcr.io/platform-205701/ubi/cie-agents/java-go-cie-agent:latest
 
 USER root
 
+RUN microdnf install yum
+
 RUN yum install -y git-clang-format.x86_64 npm \
     && npm install --global prettier
 

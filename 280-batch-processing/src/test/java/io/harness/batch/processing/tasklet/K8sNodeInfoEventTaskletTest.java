@@ -102,7 +102,7 @@ public class K8sNodeInfoEventTaskletTest extends BaseTaskletTest {
   public void setup() {
     when(config.getBatchQueryConfig()).thenReturn(BatchQueryConfig.builder().queryBatchSize(50).build());
     when(instanceDataBulkWriteService.updateInstanceEvent(any())).thenReturn(true);
-    when(featureFlagService.isEnabled(eq(FeatureName.NODE_RECOMMENDATION_1), eq(ACCOUNT_ID))).thenReturn(false);
+    when(featureFlagService.isEnabled(eq(FeatureName.NODE_RECOMMENDATION_AGGREGATE), eq(ACCOUNT_ID))).thenReturn(false);
   }
 
   @Test

@@ -25,7 +25,6 @@ import io.harness.ci.plan.creator.filter.CIFilterCreationResponseMerger;
 import io.harness.ci.registrars.ExecutionAdvisers;
 import io.harness.ci.registrars.STOExecutionRegistrar;
 import io.harness.ci.serializer.CiExecutionRegistrars;
-import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
@@ -59,6 +58,7 @@ import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEvent
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.pms.serializer.json.PmsBeansJacksonModule;
+import io.harness.queue.QueueController;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
 import io.harness.resource.VersionInfoResource;
@@ -68,7 +68,6 @@ import io.harness.serializer.CiBeansRegistrars;
 import io.harness.serializer.ConnectorNextGenRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.serializer.StoBeansRegistrars;
 import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
@@ -90,6 +89,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -195,9 +195,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
       @Provides
       @Singleton
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
-        return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
-            .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
-            .build();
+        return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().build();
       }
 
       @Provides
@@ -226,6 +224,24 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
       @Singleton
       List<YamlSchemaRootClass> yamlSchemaRootClasses() {
         return ImmutableList.<YamlSchemaRootClass>builder().addAll(StoBeansRegistrars.yamlSchemaRegistrars).build();
+      }
+    });
+
+    // Inject QueueController required by DelegateAsyncServiceImpl
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(QueueController.class).toInstance(new QueueController() {
+          @Override
+          public boolean isPrimary() {
+            return true;
+          }
+
+          @Override
+          public boolean isNotPrimary() {
+            return false;
+          }
+        });
       }
     });
 
@@ -362,7 +378,6 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
   }
 
   private void scheduleJobs(Injector injector, STOManagerConfiguration config) {
-    injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
     injector.getInstance(NotifierScheduledExecutorService.class)
         .scheduleWithFixedDelay(
             injector.getInstance(NotifyResponseCleaner.class), random.nextInt(300), 300L, TimeUnit.SECONDS);

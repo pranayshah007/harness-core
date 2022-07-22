@@ -7,6 +7,9 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
@@ -14,6 +17,7 @@ import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -24,6 +28,8 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.summary.BaseSummary;
+import io.harness.ngmigration.beans.summary.ConnectorSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.connector.BaseConnector;
@@ -80,6 +86,17 @@ public class ConnectorMigrationService extends NgMigrationService {
         .fullyQualifiedIdentifier(MigratorMappingService.getFullyQualifiedIdentifier(basicInfo.getAccountId(),
             connectorInfo.getOrgIdentifier(), connectorInfo.getProjectIdentifier(), connectorInfo.getIdentifier()))
         .build();
+  }
+
+  @Override
+  public BaseSummary getSummary(List<CgEntityNode> entities) {
+    if (EmptyPredicate.isEmpty(entities)) {
+      return null;
+    }
+    Map<String, Long> summaryByType = entities.stream()
+                                          .map(entity -> (SettingAttribute) entity.getEntity())
+                                          .collect(groupingBy(entity -> entity.getValue().getType(), counting()));
+    return ConnectorSummary.builder().count(entities.size()).typeSummary(summaryByType).build();
   }
 
   @Override

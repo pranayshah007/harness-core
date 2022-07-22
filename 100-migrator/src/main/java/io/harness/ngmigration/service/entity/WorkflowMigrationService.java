@@ -18,6 +18,9 @@ import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
 import static software.wings.sm.StepType.K8S_DEPLOYMENT_ROLLING;
 import static software.wings.sm.StepType.SHELL_SCRIPT;
 
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
@@ -38,6 +41,8 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.summary.BaseSummary;
+import io.harness.ngmigration.beans.summary.WorkflowSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
@@ -110,6 +115,17 @@ public class WorkflowMigrationService extends NgMigrationService {
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
     throw new IllegalAccessError("Mapping not allowed for Workflow entities");
+  }
+
+  @Override
+  public BaseSummary getSummary(List<CgEntityNode> entities) {
+    if (EmptyPredicate.isEmpty(entities)) {
+      return null;
+    }
+    Map<String, Long> summaryByType = entities.stream()
+                                          .map(entity -> (Workflow) entity.getEntity())
+                                          .collect(groupingBy(entity -> entity.getWorkflowType().name(), counting()));
+    return WorkflowSummary.builder().count(entities.size()).typeSummary(summaryByType).build();
   }
 
   @Override

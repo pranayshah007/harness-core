@@ -761,6 +761,16 @@ public class ApprovalStateTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testParsePropertiesWithInvalidTimeout() {
+    Integer maximumTimeout = 2147400049;
+    final Map<String, Object> properties = new HashMap<>();
+    properties.put("timeoutMillis", maximumTimeout + 50);
+    assertThatThrownBy(() -> approvalState.parseProperties(properties)).isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
   @Owner(developers = ROHIT_KUMAR)
   @Category(UnitTests.class)
   public void testSetPipelineVariables() {

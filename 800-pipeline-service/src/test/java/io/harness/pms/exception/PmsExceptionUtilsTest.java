@@ -81,8 +81,7 @@ public class PmsExceptionUtilsTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testCheckAndThrowFilterCreatorException() {
-    PmsExceptionUtils.checkAndThrowFilterCreatorException(new ArrayList<>());
-    assertThatThrownBy(() -> PmsExceptionUtils.checkAndThrowFilterCreatorException(errorResponses))
+    assertThatThrownBy(() -> PmsExceptionUtils.checkAndThrowFilterCreatorException(errorResponses, new ArrayList<>()))
         .isInstanceOf(FilterCreatorException.class)
         .hasMessage("this is an error,this is also an error,an error,an error again");
   }
@@ -91,7 +90,6 @@ public class PmsExceptionUtilsTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void checkAndThrowPlanCreatorException() {
-    PmsExceptionUtils.checkAndThrowPlanCreatorException(new ArrayList<>());
     assertThatThrownBy(() -> PmsExceptionUtils.checkAndThrowPlanCreatorException(errorResponses))
         .isInstanceOf(PlanCreatorException.class)
         .hasMessage("Error creating Plan: this is an error,this is also an error,an error,an error again");

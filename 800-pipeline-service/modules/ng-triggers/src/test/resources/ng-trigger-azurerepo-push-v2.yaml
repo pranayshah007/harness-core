@@ -13,7 +13,6 @@ trigger:
         type: Push
         spec:
           connectorRef: conn
-          projectName: project
           repoName: myrepo
           payloadConditions:
             - key: k1

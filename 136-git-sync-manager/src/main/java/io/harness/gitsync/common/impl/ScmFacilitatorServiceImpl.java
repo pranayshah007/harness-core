@@ -15,7 +15,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.Scope;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.exception.InvalidRequestException;
+import io.harness.git.GitClientHelper;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.common.beans.ScmApis;
 import io.harness.gitsync.common.dtos.CreateGitFileRequestDTO;
@@ -345,6 +349,33 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           ErrorMetadata.builder().connectorRef(connectorRef).repoName(repoName).build());
     }
     return getUserRepoResponse.getRepo().getBranch();
+  }
+
+  @Override
+  public String getRepoUrl(Scope scope, String connectorRef, String repoName) {
+    final ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, repoName);
+    String gitConnectionUrl = scmConnector.getGitConnectionUrl(GitRepositoryDTO.builder().name(repoName).build());
+
+    switch (scmConnector.getConnectorType()) {
+      case GITHUB:
+        return GitClientHelper.getCompleteHTTPUrlForGithub(gitConnectionUrl);
+      case BITBUCKET:
+        if (GitClientHelper.isBitBucketSAAS(gitConnectionUrl)) {
+          return GitClientHelper.getCompleteHTTPUrlForBitbucketSaas(gitConnectionUrl);
+        }
+        BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) scmConnector;
+        if (GitAuthType.SSH.equals(bitbucketConnectorDTO.getAuthentication().getAuthType())) {
+          return GitClientHelper.getCompleteHTTPUrlFromSSHUrlForBitbucketServer(gitConnectionUrl);
+        } else {
+          return gitConnectionUrl;
+        }
+      case AZURE_REPO:
+        return GitClientHelper.getCompleteHTTPRepoUrlForAzureRepoSaas(gitConnectionUrl);
+      default:
+        throw new InvalidRequestException(
+            String.format("Connector of given type : %s isn't supported", scmConnector.getConnectorType()));
+    }
   }
 
   private List<GitRepositoryResponseDTO> prepareListRepoResponse(

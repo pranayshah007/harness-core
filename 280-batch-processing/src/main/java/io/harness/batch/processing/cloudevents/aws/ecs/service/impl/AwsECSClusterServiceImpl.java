@@ -71,8 +71,10 @@ public class AwsECSClusterServiceImpl implements AwsECSClusterService {
       ecsClusters.forEach(ecsCluster -> {
         Map<String, String> clusterTags = null;
         if (clusterArnTagsMap.get(ecsCluster) != null) {
-          clusterTags =
-              clusterArnTagsMap.get(ecsCluster).stream().collect(Collectors.toMap(Tag::getKey, Tag::getValue));
+          clusterTags = new HashMap<>();
+          for (Tag tag : clusterArnTagsMap.get(ecsCluster)) {
+            clusterTags.put(encode(tag.getKey()), tag.getValue());
+          }
         }
         CECluster ceCluster = CECluster.builder()
                                   .accountId(accountId)
@@ -88,6 +90,10 @@ public class AwsECSClusterServiceImpl implements AwsECSClusterService {
       });
     });
     return clusters;
+  }
+
+  private String encode(String decoded) {
+    return decoded.replace('.', '~');
   }
 
   private Map<String, List<Tag>> getClusterArnTagsMap(

@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.reflection.HarnessReflections;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.Sets;
@@ -20,14 +21,15 @@ import io.swagger.annotations.ApiOperation;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.reflections.Reflections;
 
 public class CVNGApiOperationTest extends CategoryTest {
   private static final String BASE_PACKAGE = "io.harness.cvng";
@@ -41,12 +43,17 @@ public class CVNGApiOperationTest extends CategoryTest {
         Sets.newHashSet(GET.class, POST.class, PUT.class, DELETE.class);
 
     final Set<String> uniqueOperationName = Sets.newHashSet();
-    Reflections ref = new Reflections(BASE_PACKAGE);
+    Set<Class<?>> reflections =
+        HarnessReflections.get()
+            .getTypesAnnotatedWith(Path.class)
+            .stream()
+            .filter(klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), BASE_PACKAGE))
+            .collect(Collectors.toSet());
 
     final Class<? extends Annotation> getMethodClass = GET.class;
     final Class<? extends Annotation> apiOperationClass = ApiOperation.class;
 
-    for (Class<?> klass : ref.getTypesAnnotatedWith(Path.class)) {
+    for (Class<?> klass : reflections) {
       for (final Method method : klass.getDeclaredMethods()) {
         supportedAnnotation.stream()
             .filter(annotation -> method.isAnnotationPresent(annotation))

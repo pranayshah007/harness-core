@@ -10,13 +10,13 @@ java_library(
     deps = [
         "//:lombok",
         "//120-ng-manager/modules/ng-variables/contracts:module",
-        "//882-pms-sdk-core:module",
         "//950-ng-project-n-orgs:module",
         "//955-outbox-sdk:module",
         "//960-persistence:module",
         "//970-ng-commons:module",
         "//980-commons:module",
         "//999-annotations:module",
+        "//clients/pipeline-service/pms-sdk-core:module",
         "//platform-service/modules/audit-service/contracts:module",
     ],
 )

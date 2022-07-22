@@ -24,7 +24,10 @@ import io.harness.models.constants.InstanceSyncConstants;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndReplaceOptions;
@@ -57,16 +60,30 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
 
   @Override
   public List<Instance> getActiveInstancesByAccount(String accountIdentifier, long timestamp) {
-    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
-    if (timestamp > 0) {
-      Criteria filterCreatedAt = Criteria.where(InstanceKeys.createdAt).lte(timestamp);
-      Criteria filterDeletedAt = Criteria.where(InstanceKeys.deletedAt).gte(timestamp);
-      Criteria filterNotDeleted = Criteria.where(InstanceKeys.isDeleted).is(false);
-      criteria.andOperator(filterCreatedAt.orOperator(filterNotDeleted, filterDeletedAt));
-    } else {
+    if (timestamp <= 0) {
+      Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
       criteria = criteria.andOperator(Criteria.where(InstanceKeys.isDeleted).is(false));
+      Query query = new Query().addCriteria(criteria);
+      return mongoTemplate.find(query, Instance.class);
     }
+    Set<Instance> instances = new HashSet<>();
+    instances.addAll(getInstancesCreatedBefore(accountIdentifier, timestamp));
+    instances.addAll(getInstancesDeletedAfter(accountIdentifier, timestamp));
+    return new ArrayList<>(instances);
+  }
 
+  private List<Instance> getInstancesCreatedBefore(String accountIdentifier, long timestamp) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
+    criteria.andOperator(Criteria.where(InstanceKeys.isDeleted).is(false));
+    criteria.andOperator(Criteria.where(InstanceKeys.createdAt).lte(timestamp));
+    Query query = new Query().addCriteria(criteria);
+    return mongoTemplate.find(query, Instance.class);
+  }
+
+  private List<Instance> getInstancesDeletedAfter(String accountIdentifier, long timestamp) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
+    criteria.andOperator(Criteria.where(InstanceKeys.deletedAt).gte(timestamp));
+    criteria.andOperator(Criteria.where(InstanceKeys.createdAt).lte(timestamp));
     Query query = new Query().addCriteria(criteria);
     return mongoTemplate.find(query, Instance.class);
   }
