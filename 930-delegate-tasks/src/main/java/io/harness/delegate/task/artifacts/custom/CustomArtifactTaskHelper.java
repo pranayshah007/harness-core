@@ -46,23 +46,24 @@ public class CustomArtifactTaskHelper {
     try {
       switch (artifactTaskParameters.getArtifactTaskType()) {
         case GET_BUILDS:
-          saveLogs(executionLogCallback, "Get the Jenkins Builds for Job");
-          artifactTaskResponse = getSuccessTaskResponse(customArtifactTaskHandler.getBuilds(attributes));
-          saveLogs(executionLogCallback, "Get the Jenkins Builds for Job ");
+          saveLogs(executionLogCallback, "Get the Custom Builds for Job");
+          artifactTaskResponse =
+              getSuccessTaskResponse(customArtifactTaskHandler.getBuilds(attributes, logStreamingTaskClient));
+          saveLogs(executionLogCallback, "Get the Custom Builds for Job ");
           break;
         case GET_LAST_SUCCESSFUL_BUILD:
-          saveLogs(executionLogCallback, "Get the Jenkins Build");
+          saveLogs(executionLogCallback, "Get the Custom Build");
           artifactTaskResponse = getSuccessTaskResponse(
               customArtifactTaskHandler.getLastSuccessfulBuild(attributes, logStreamingTaskClient));
-          saveLogs(executionLogCallback, "Get the Jenkins Build ");
+          saveLogs(executionLogCallback, "Get the Custom Build ");
           break;
         default:
           saveLogs(executionLogCallback,
-              "No corresponding Jenkins artifact task type [{}]: " + artifactTaskParameters.toString());
-          log.error("No corresponding Jenkins artifact task type [{}]", artifactTaskParameters.toString());
+              "No corresponding Custom artifact task type [{}]: " + artifactTaskParameters.toString());
+          log.error("No corresponding Custom artifact task type [{}]", artifactTaskParameters.toString());
           return ArtifactTaskResponse.builder()
               .commandExecutionStatus(CommandExecutionStatus.FAILURE)
-              .errorMessage("There is no Jenkins artifact task type impl defined for - "
+              .errorMessage("There is no Custom artifact task type impl defined for - "
                   + artifactTaskParameters.getArtifactTaskType().name())
               .errorCode(ErrorCode.INVALID_ARGUMENT)
               .build();

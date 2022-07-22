@@ -19,10 +19,10 @@ import lombok.Value;
 @Value
 @EqualsAndHashCode(callSuper = false)
 public class CustomArtifactDelegateResponse extends ArtifactDelegateResponse {
-  /** Jenkins Job build number */
+  /** Custom Artifact build number */
   String version;
 
-  /** Jenkins artifact path */
+  /** Custom Artifact metadata */
   Map<String, String> metadata;
 
   @Builder
