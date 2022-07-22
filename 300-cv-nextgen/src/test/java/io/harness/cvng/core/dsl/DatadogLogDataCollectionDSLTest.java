@@ -135,10 +135,8 @@ public class DatadogLogDataCollectionDSLTest extends HoverflyTestBase {
     DatadogConnectorDTO datadogConnectorDTO =
         DatadogConnectorDTO.builder()
             .url("https://app.datadoghq.com/api/")
-            .apiKeyRef(SecretRefData.builder().decryptedValue("504f915c8d11ac7a96ec7e40dca31dc5".toCharArray()).build())
-            .applicationKeyRef(SecretRefData.builder()
-                                   .decryptedValue("838cd5bc5cc75d525b4f59bafba35c832be8a086".toCharArray())
-                                   .build())
+            .apiKeyRef(SecretRefData.builder().decryptedValue("add key".toCharArray()).build())
+            .applicationKeyRef(SecretRefData.builder().decryptedValue("add key".toCharArray()).build())
             .build();
     return RuntimeParameters.builder()
         .baseUrl(dataCollectionInfo.getBaseUrl(datadogConnectorDTO))
