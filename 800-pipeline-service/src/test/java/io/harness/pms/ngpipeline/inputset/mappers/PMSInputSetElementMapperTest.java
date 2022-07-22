@@ -237,8 +237,8 @@ public class PMSInputSetElementMapperTest extends CategoryTest {
     InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS = null;
     Map<String, String> overlaySetErrorDetails = null;
 
-    InputSetSummaryResponseDTOPMS inputSetResponseDTOPMS = PMSInputSetElementMapper.toInputSetSummaryResponseDTOPMS(
-        entity, inputSetErrorWrapperDTOPMS, overlaySetErrorDetails);
+    InputSetSummaryResponseDTOPMS inputSetResponseDTOPMS = PMSInputSetElementMapper.toInputSetSummaryResponseDTO(
+        entity);
 
     assertThat(inputSetResponseDTOPMS.getPipelineIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
 
@@ -325,8 +325,8 @@ public class PMSInputSetElementMapperTest extends CategoryTest {
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, inputSetYaml);
     Page<InputSetEntity> inputSetEntities = new PageImpl<>(Collections.singletonList(entity));
-    PMSInputSetElementMapper.toInputSetSummaryResponseDTOPMSList(inputSetService, pipelineService, gitSyncSdkService,
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, inputSetEntities);
+    PMSInputSetElementMapper.toInputSetSummaryResponseDTOList(
+            inputSetEntities);
     verify(pipelineService, times(0)).get(any(), any(), any(), any(), anyBoolean());
     verify(inputSetService, times(0)).get(any(), any(), any(), any(), any(), anyBoolean());
   }

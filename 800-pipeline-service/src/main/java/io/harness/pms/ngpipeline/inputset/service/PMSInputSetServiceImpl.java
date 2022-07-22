@@ -191,7 +191,6 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
                                         .withDescription(inputSetEntity.getDescription())
                                         .withTags(inputSetEntity.getTags())
                                         .withInputSetReferences(inputSetEntity.getInputSetReferences())
-                                        .withIsInvalid(false)
                                         .withIsEntityInvalid(false);
 
     return makeInputSetUpdateCall(entityToUpdate, changeType, true);
@@ -215,32 +214,6 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
               pipelineId, projectId, orgId));
     }
     return makeInputSetUpdateCall(optionalInputSetEntity.get().withStoreType(null), ChangeType.ADD, true);
-  }
-
-  @Override
-  public boolean switchValidationFlag(InputSetEntity entity, boolean isInvalid) {
-    Criteria criteria = new Criteria();
-    criteria.and(InputSetEntityKeys.accountId)
-        .is(entity.getAccountId())
-        .and(InputSetEntityKeys.orgIdentifier)
-        .is(entity.getOrgIdentifier())
-        .and(InputSetEntityKeys.projectIdentifier)
-        .is(entity.getProjectIdentifier())
-        .and(InputSetEntityKeys.pipelineIdentifier)
-        .is(entity.getPipelineIdentifier())
-        .and(InputSetEntityKeys.identifier)
-        .is(entity.getIdentifier());
-    if (entity.getYamlGitConfigRef() != null) {
-      criteria.and(InputSetEntityKeys.yamlGitConfigRef)
-          .is(entity.getYamlGitConfigRef())
-          .and(InputSetEntityKeys.branch)
-          .is(entity.getBranch());
-    }
-
-    Update update = new Update();
-    update.set(InputSetEntityKeys.isInvalid, isInvalid);
-    InputSetEntity inputSetEntity = inputSetRepository.update(criteria, update);
-    return inputSetEntity != null;
   }
 
   @Override

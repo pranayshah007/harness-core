@@ -47,11 +47,6 @@ public class InputSetSummaryResponseDTOPMS {
   @Schema(description = PipelineResourceConstants.GIT_DETAILS_MESSAGE) EntityGitDetails gitDetails;
   @Schema(description = PipelineResourceConstants.CREATED_AT_MESSAGE) Long createdAt;
   @Schema(description = PipelineResourceConstants.UPDATED_AT_MESSAGE) Long lastUpdatedAt;
-  @Schema(description = InputSetSchemaConstants.INPUT_SET_OUTDATED_MESSAGE) Boolean isOutdated;
-  @Schema(description = InputSetSchemaConstants.INPUT_SET_ERROR_WRAPPER_MESSAGE)
-  InputSetErrorWrapperDTOPMS inputSetErrorDetails;
-  @Schema(description = InputSetSchemaConstants.OVERLAY_INPUT_SET_ERROR_MAP_MESSAGE)
-  Map<String, String> overlaySetErrorDetails;
   @Schema(description = PipelineResourceConstants.GIT_VALIDITY_MESSAGE) EntityValidityDetails entityValidityDetails;
   @Schema(description = InputSetSchemaConstants.INPUT_SET_MODULES_MESSAGE) Set<String> modules;
   @Schema(description = GitSyncApiConstants.STORE_TYPE_RESPONSE_PARAM_MESSAGE, hidden = true) StoreType storeType;

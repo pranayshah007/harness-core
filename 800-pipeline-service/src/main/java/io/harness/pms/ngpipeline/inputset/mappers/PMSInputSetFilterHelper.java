@@ -93,7 +93,6 @@ public class PMSInputSetFilterHelper {
     update.set(InputSetEntityKeys.inputSetReferences, inputSetEntity.getInputSetReferences());
     update.set(InputSetEntityKeys.lastUpdatedAt, timeOfUpdate);
     update.set(InputSetEntityKeys.deleted, false);
-    update.set(InputSetEntityKeys.isInvalid, false);
     return update;
   }
 
@@ -106,7 +105,6 @@ public class PMSInputSetFilterHelper {
         .withInputSetReferences(fieldsToUpdate.getInputSetReferences())
         .withLastUpdatedAt(timeOfUpdate)
         .withDeleted(false)
-        .withIsInvalid(false)
         .withVersion(entityFromDB.getVersion() == null ? 1 : entityFromDB.getVersion() + 1);
   }
 

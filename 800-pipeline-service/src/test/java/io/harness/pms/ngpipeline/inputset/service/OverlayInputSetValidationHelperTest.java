@@ -149,7 +149,7 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
     OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity);
 
     InputSetEntity inputSetEntityInvalid =
-        InputSetEntity.builder().inputSetEntityType(INPUT_SET).yaml(inputSetYaml2).isInvalid(true).build();
+        InputSetEntity.builder().inputSetEntityType(INPUT_SET).yaml(inputSetYaml2).build();
     doReturn(Optional.of(inputSetEntityInvalid))
         .when(inputSetService)
         .get(accountId, orgId, projectId, pipelineId, identifier2, false);

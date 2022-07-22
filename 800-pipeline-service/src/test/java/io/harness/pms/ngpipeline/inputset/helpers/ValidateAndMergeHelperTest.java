@@ -96,13 +96,13 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     doReturn(Optional.of(pipelineEntity)).when(pmsPipelineService).get(accountId, orgId, projectId, pipelineId, false);
 
     String invalidIdentifier = "invalidIdentifier";
-    InputSetEntity invalidEntity = InputSetEntity.builder().isInvalid(true).identifier(invalidIdentifier).build();
+    InputSetEntity invalidEntity = InputSetEntity.builder().identifier(invalidIdentifier).build();
     doReturn(Optional.of(invalidEntity))
         .when(pmsInputSetService)
         .get(accountId, orgId, projectId, pipelineId, invalidIdentifier, false);
 
     String validIdentifier = "validIdentifier";
-    InputSetEntity validEntity = InputSetEntity.builder().isInvalid(false).identifier(validIdentifier).build();
+    InputSetEntity validEntity = InputSetEntity.builder().identifier(validIdentifier).build();
     doReturn(Optional.of(validEntity))
         .when(pmsInputSetService)
         .get(accountId, orgId, projectId, pipelineId, validIdentifier, false);

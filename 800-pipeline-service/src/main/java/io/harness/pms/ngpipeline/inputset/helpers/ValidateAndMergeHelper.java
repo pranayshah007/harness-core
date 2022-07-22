@@ -207,9 +207,6 @@ public class ValidateAndMergeHelper {
         throw new InvalidRequestException(identifier + " does not exist");
       }
       InputSetEntity inputSet = entity.get();
-      if (inputSet.getIsInvalid()) {
-        throw new InvalidRequestException(identifier + " is invalid. Pipeline update has made this input set outdated");
-      }
       if (inputSet.getInputSetEntityType() == InputSetEntityType.INPUT_SET) {
         inputSetYamlList.add(entity.get().getYaml());
       } else {

@@ -149,9 +149,9 @@ public class InputSetErrorsHelperTest extends CategoryTest {
   public void testGetInvalidInputSetReferences() {
     List<String> identifiers = Arrays.asList("i1", "i2", "i3", "i4");
     List<Optional<InputSetEntity>> inputSets = new ArrayList<>();
-    inputSets.add(Optional.of(InputSetEntity.builder().isInvalid(false).inputSetEntityType(INPUT_SET).build()));
-    inputSets.add(Optional.of(InputSetEntity.builder().isInvalid(true).inputSetEntityType(INPUT_SET).build()));
-    inputSets.add(Optional.of(InputSetEntity.builder().isInvalid(false).inputSetEntityType(OVERLAY_INPUT_SET).build()));
+    inputSets.add(Optional.of(InputSetEntity.builder().inputSetEntityType(INPUT_SET).build()));
+    inputSets.add(Optional.of(InputSetEntity.builder().inputSetEntityType(INPUT_SET).build()));
+    inputSets.add(Optional.of(InputSetEntity.builder().inputSetEntityType(OVERLAY_INPUT_SET).build()));
     inputSets.add(Optional.empty());
     Map<String, String> invalidInputSetReferences =
         InputSetErrorsHelper.getInvalidInputSetReferences(inputSets, identifiers);

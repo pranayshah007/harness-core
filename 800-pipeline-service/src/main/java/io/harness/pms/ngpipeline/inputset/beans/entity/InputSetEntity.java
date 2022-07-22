@@ -38,7 +38,6 @@ import javax.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Setter;
 import lombok.Singular;
 import lombok.Value;
@@ -133,8 +132,6 @@ public class InputSetEntity
   @Setter @NonFinal String connectorRef;
   @Wither @Setter @NonFinal String repoURL;
 
-  @Wither @Builder.Default Boolean isInvalid = Boolean.FALSE;
-
   public String getData() {
     return yaml;
   }
@@ -147,14 +144,6 @@ public class InputSetEntity
   @Override
   public String getAccountIdentifier() {
     return accountId;
-  }
-
-  @NonNull
-  public Boolean getIsInvalid() {
-    if (isInvalid == null) {
-      return Boolean.FALSE;
-    }
-    return isInvalid;
   }
 
   @Override

@@ -330,15 +330,6 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   }
 
   @Test
-  @Owner(developers = BRIJESH)
-  @Category(UnitTests.class)
-  public void testSwitchValidationFlag() {
-    on(pmsInputSetService).set("inputSetRepository", inputSetRepository);
-    when(inputSetRepository.update(any(), any())).thenReturn(InputSetEntity.builder().build());
-    assertTrue(pmsInputSetService.switchValidationFlag(inputSetEntity, true));
-  }
-
-  @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testCheckForInputSetsForPipeline() {

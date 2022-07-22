@@ -35,8 +35,6 @@ public interface PMSInputSetService {
 
   InputSetEntity syncInputSetWithGit(EntityDetailProtoDTO entityDetail);
 
-  boolean switchValidationFlag(InputSetEntity entity, boolean isInvalid);
-
   boolean markGitSyncedInputSetInvalid(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, String invalidYaml);
 
