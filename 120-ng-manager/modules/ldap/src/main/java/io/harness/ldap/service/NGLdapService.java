@@ -28,4 +28,5 @@ public interface NGLdapService {
       @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @Valid LdapSettings settings);
   Collection<LdapGroupResponse> searchLdapGroupsByName(@NotNull String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotNull String ldapId, @NotNull String name);
+  void syncUserGroupsJob(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

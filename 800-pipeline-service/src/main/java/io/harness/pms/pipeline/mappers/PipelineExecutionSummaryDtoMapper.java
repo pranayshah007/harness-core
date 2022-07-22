@@ -56,6 +56,7 @@ public class PipelineExecutionSummaryDtoMapper {
         .startTs(pipelineExecutionSummaryEntity.getStartTs())
         .endTs(pipelineExecutionSummaryEntity.getEndTs())
         .status(pipelineExecutionSummaryEntity.getStatus())
+        .executionInputConfigured(pipelineExecutionSummaryEntity.isExecutionInputConfigured())
         .executionTriggerInfo(pipelineExecutionSummaryEntity.getExecutionTriggerInfo())
         .executionErrorInfo(pipelineExecutionSummaryEntity.getExecutionErrorInfo())
         .successfulStagesCount(getStagesCount(layoutNodeDTOMap, startingNodeId, ExecutionStatus.SUCCESS))

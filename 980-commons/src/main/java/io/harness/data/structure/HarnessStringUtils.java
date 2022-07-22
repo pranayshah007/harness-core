@@ -24,6 +24,7 @@ public class HarnessStringUtils {
   public static String join(@NonNull CharSequence delimiter, @NonNull CharSequence... elements) {
     return String.join(delimiter, elements);
   }
+
   public static String join(@NonNull CharSequence delimiter, @NonNull Iterable<? extends CharSequence> elements) {
     return String.join(delimiter, elements);
   }
@@ -32,5 +33,11 @@ public class HarnessStringUtils {
   }
   public static String emptyIfNull(String stringInput) {
     return stringInput == null ? "" : stringInput;
+  }
+  public static String removeLeadingAndTrailingQuotesBothOrNone(String str) {
+    if (str.length() > 1 && str.charAt(0) == '"' && str.charAt(str.length() - 1) == '"') {
+      return str.substring(1, str.length() - 1);
+    }
+    return str;
   }
 }

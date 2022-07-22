@@ -37,7 +37,7 @@ def sonarqube_test(
     if name == None:
         name = "sonarqube"
     if project_key == None:
-        project_key = native.package_name()
+        project_key = native.package_name().replace("/", ":")
     if project_name == None:
         project_name = "Portal :: " + native.package_name()
     if test_srcs == []:

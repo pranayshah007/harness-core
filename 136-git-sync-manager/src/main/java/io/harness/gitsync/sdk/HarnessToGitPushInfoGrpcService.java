@@ -23,6 +23,8 @@ import io.harness.gitsync.ErrorDetails;
 import io.harness.gitsync.FileInfo;
 import io.harness.gitsync.GetFileRequest;
 import io.harness.gitsync.GetFileResponse;
+import io.harness.gitsync.GetRepoUrlRequest;
+import io.harness.gitsync.GetRepoUrlResponse;
 import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceImplBase;
 import io.harness.gitsync.IsGitSimplificationEnabled;
 import io.harness.gitsync.IsGitSyncEnabled;
@@ -195,6 +197,27 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
                              .build();
     }
     responseObserver.onNext(createPRResponse);
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void getRepoUrl(GetRepoUrlRequest request, StreamObserver<GetRepoUrlResponse> responseObserver) {
+    GetRepoUrlResponse response;
+    Map<String, String> contextMap = GitSyncLogContextHelper.setContextMap(
+        ScopeIdentifierMapper.getScopeFromScopeIdentifiers(request.getScopeIdentifiers()), request.getRepoName(), "",
+        "", GitOperation.GET_FILE, request.getContextMapMap());
+    try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
+         MdcContextSetter ignore1 = new MdcContextSetter(request.getContextMapMap())) {
+      response = harnessToGitHelperService.getRepoUrl(request);
+      log.info("Git Sync Service getRepoUrl ops response : {}", response);
+    } catch (Exception ex) {
+      log.error("Faced exception during getRepoUrl GIT call", ex);
+      final String errorMessage = ExceptionUtils.getMessage(ex);
+      response = GetRepoUrlResponse.newBuilder()
+                     .setError(ErrorDetails.newBuilder().setErrorMessage(errorMessage).build())
+                     .build();
+    }
+    responseObserver.onNext(response);
     responseObserver.onCompleted();
   }
 

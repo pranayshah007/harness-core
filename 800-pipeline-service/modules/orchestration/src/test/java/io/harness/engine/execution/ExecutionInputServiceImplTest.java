@@ -55,6 +55,7 @@ import org.springframework.data.mongodb.core.query.Query;
 public class ExecutionInputServiceImplTest extends OrchestrationTestBase {
   @Mock private ExecutionInputRepository executionInputRepository;
   @Mock WaitNotifyEngine waitNotifyEngine;
+  @Mock ExecutionInputServiceHelper executionInputServiceHelper;
   @Mock MongoTemplate mongoTemplate;
   @InjectMocks ExecutionInputRepositoryCustomImpl executionInputRepositoryCustom;
   @InjectMocks private ExecutionInputServiceImpl inputService;
@@ -135,6 +136,7 @@ public class ExecutionInputServiceImplTest extends OrchestrationTestBase {
                                                          .template(template)
                                                          .build();
     doReturn(executionInputInstance1).when(executionInputRepository).save(any());
+    doReturn(fullExecutionInputYamlMap).when(executionInputServiceHelper).getExecutionInputMap(eq(template), any());
 
     ArgumentCaptor<ExecutionInputInstance> inputInstanceArgumentCaptor =
         ArgumentCaptor.forClass(ExecutionInputInstance.class);
@@ -155,6 +157,10 @@ public class ExecutionInputServiceImplTest extends OrchestrationTestBase {
 
     // Giving partial user input. MergedUserInput should contain provided field's value and other value should be
     // expression.
+    doReturn(mergedTemplateForPartialInputMap)
+        .when(executionInputServiceHelper)
+        .getExecutionInputMap(eq(template), any());
+
     assertTrue(inputService.continueExecution(nodeExecutionId, partialExecutionInputYaml));
     verify(executionInputRepository, times(2)).save(inputInstanceArgumentCaptor.capture());
     verify(waitNotifyEngine, times(2)).doneWith(inputInstanceIdCapture.capture(), any());

@@ -30,6 +30,7 @@ import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.event.GitlabTriggerE
 import io.harness.ngtriggers.helpers.WebhookConfigHelper;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.service.NGTriggerService;
+import io.harness.ngtriggers.validations.TriggerWebhookValidator;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.google.inject.Inject;
@@ -51,6 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 public class NGTriggerWebhookConfigResourceImpl implements NGTriggerWebhookConfigResource {
   private final NGTriggerService ngTriggerService;
   private final NGTriggerElementMapper ngTriggerElementMapper;
+  private final TriggerWebhookValidator triggerWebhookValidator;
 
   public ResponseDTO<Map<WebhookSourceRepo, List<WebhookEvent>>> getSourceRepoToEvent() {
     return ResponseDTO.newResponse(WebhookConfigHelper.getSourceRepoToEvent());
@@ -133,6 +135,7 @@ public class NGTriggerWebhookConfigResourceImpl implements NGTriggerWebhookConfi
                 triggerIdentifier, eventPayload, headerConfigs)
             .build();
     if (eventEntity != null) {
+      triggerWebhookValidator.applyValidationsForCustomWebhook(eventEntity);
       TriggerWebhookEvent newEvent = ngTriggerService.addEventToQueue(eventEntity);
       return ResponseDTO.newResponse(newEvent.getUuid());
     } else {

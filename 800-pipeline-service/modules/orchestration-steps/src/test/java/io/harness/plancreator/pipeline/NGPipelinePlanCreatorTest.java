@@ -8,6 +8,7 @@
 package io.harness.plancreator.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,9 +23,13 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.timeout.SdkTimeoutObtainment;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
@@ -112,5 +117,90 @@ public class NGPipelinePlanCreatorTest extends CategoryTest {
     assertThat(planForParentNode.getFacilitatorObtainments().get(0).getType().getType()).isEqualTo("CHILD");
 
     assertThat(planForParentNode.getStepParameters()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldCreatePlanForParentNodeWhenTimeoutNull() {
+    YamlField stagesField = pipelineYamlField.getNode().getField("stages");
+    String stagesUuid = Objects.requireNonNull(stagesField).getNode().getUuid();
+    List<String> childrenNodeIds = Collections.singletonList(stagesUuid);
+
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder().setRunSequence(860).setExecutionUuid("executionUuid").build();
+    context.setGlobalContext(Collections.singletonMap(
+        "metadata", PlanCreationContextValue.newBuilder().setMetadata(executionMetadata).build()));
+
+    NGPipelinePlanCreator ngPipelinePlanCreator = new NGPipelinePlanCreator();
+    pipelineInfoConfig.setTimeout(ParameterField.ofNull());
+    PlanNode planForParentNode =
+        ngPipelinePlanCreator.createPlanForParentNode(context, pipelineInfoConfig, childrenNodeIds);
+
+    assertThat(planForParentNode).isNotNull();
+
+    assertThat(planForParentNode.getUuid()).isEqualTo(pipelineInfoConfig.getUuid());
+    assertThat(planForParentNode.getIdentifier()).isEqualTo("pipeline");
+
+    assertThat(planForParentNode.getStepType())
+        .isEqualTo(StepType.newBuilder().setType("PIPELINE_SECTION").setStepCategory(StepCategory.PIPELINE).build());
+
+    assertThat(planForParentNode.getGroup()).isEqualTo("PIPELINE");
+    assertThat(planForParentNode.getName()).isEqualTo("plan creator");
+
+    assertThat(planForParentNode.isSkipUnresolvedExpressionsCheck()).isTrue();
+    assertThat(planForParentNode.isSkipExpressionChain()).isFalse();
+
+    assertThat(planForParentNode.getFacilitatorObtainments()).hasSize(1);
+    assertThat(planForParentNode.getFacilitatorObtainments().get(0).getType().getType()).isEqualTo("CHILD");
+
+    assertThat(planForParentNode.getStepParameters()).isNotNull();
+    assertThat(planForParentNode.getTimeoutObtainments()).isNotNull();
+    assertThat(planForParentNode.getTimeoutObtainments()).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldCreatePlanForParentNodeWhenTimeoutSet() {
+    YamlField stagesField = pipelineYamlField.getNode().getField("stages");
+    String stagesUuid = Objects.requireNonNull(stagesField).getNode().getUuid();
+    List<String> childrenNodeIds = Collections.singletonList(stagesUuid);
+
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder().setRunSequence(860).setExecutionUuid("executionUuid").build();
+    context.setGlobalContext(Collections.singletonMap(
+        "metadata", PlanCreationContextValue.newBuilder().setMetadata(executionMetadata).build()));
+
+    NGPipelinePlanCreator ngPipelinePlanCreator = new NGPipelinePlanCreator();
+    pipelineInfoConfig.setTimeout(ParameterField.createValueField(Timeout.fromString("5m")));
+    PlanNode planForParentNode =
+        ngPipelinePlanCreator.createPlanForParentNode(context, pipelineInfoConfig, childrenNodeIds);
+
+    assertThat(planForParentNode).isNotNull();
+
+    assertThat(planForParentNode.getUuid()).isEqualTo(pipelineInfoConfig.getUuid());
+    assertThat(planForParentNode.getIdentifier()).isEqualTo("pipeline");
+
+    assertThat(planForParentNode.getStepType())
+        .isEqualTo(StepType.newBuilder().setType("PIPELINE_SECTION").setStepCategory(StepCategory.PIPELINE).build());
+
+    assertThat(planForParentNode.getGroup()).isEqualTo("PIPELINE");
+    assertThat(planForParentNode.getName()).isEqualTo("plan creator");
+
+    assertThat(planForParentNode.isSkipUnresolvedExpressionsCheck()).isTrue();
+    assertThat(planForParentNode.isSkipExpressionChain()).isFalse();
+
+    assertThat(planForParentNode.getFacilitatorObtainments()).hasSize(1);
+    assertThat(planForParentNode.getFacilitatorObtainments().get(0).getType().getType()).isEqualTo("CHILD");
+
+    assertThat(planForParentNode.getStepParameters()).isNotNull();
+    assertThat(planForParentNode.getTimeoutObtainments()).isNotNull();
+    assertThat(planForParentNode.getTimeoutObtainments()).hasSize(1);
+
+    SdkTimeoutObtainment timeoutObtainment = planForParentNode.getTimeoutObtainments().get(0);
+    assertThat(timeoutObtainment.getDimension()).isEqualTo(AbsoluteTimeoutTrackerFactory.DIMENSION);
+    assertThat(timeoutObtainment.getParameters()).isNotNull();
+    assertThat(timeoutObtainment.getParameters().prepareTimeoutParameters().getTimeoutMillis()).isEqualTo(300000);
   }
 }

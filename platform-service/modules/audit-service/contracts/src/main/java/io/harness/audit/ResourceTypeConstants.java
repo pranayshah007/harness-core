@@ -58,4 +58,5 @@ public class ResourceTypeConstants {
   public static final String AUTOSTOPPING_RULE = "AUTOSTOPPING_RULE";
   public static final String AUTOSTOPPING_LB = "AUTOSTOPPING_LB";
   public static final String AUTOSTOPPING_STARTSTOP = "AUTOSTOPPING_STARTSTOP";
+  public static final String SETTING = "SETTING";
 }

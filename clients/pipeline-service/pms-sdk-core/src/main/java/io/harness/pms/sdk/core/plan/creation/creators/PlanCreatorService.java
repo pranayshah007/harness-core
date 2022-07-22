@@ -23,7 +23,9 @@ import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ErrorMetadata;
 import io.harness.pms.contracts.plan.ErrorResponse;
+import io.harness.pms.contracts.plan.ErrorResponseV2;
 import io.harness.pms.contracts.plan.FilterCreationBlobRequest;
 import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
 import io.harness.pms.contracts.plan.FilterCreationResponse;
@@ -194,8 +196,13 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
       WingsException processedException = exceptionManager.processException(ex);
       filterCreationResponse =
           FilterCreationResponse.newBuilder()
-              .setErrorResponse(
-                  ErrorResponse.newBuilder().addMessages(ExceptionUtils.getMessage(processedException)).build())
+              .setErrorResponseV2(
+                  ErrorResponseV2.newBuilder()
+                      .addErrors(ErrorMetadata.newBuilder()
+                                     .setWingsExceptionErrorCode(String.valueOf(processedException.getCode()))
+                                     .setErrorMessage(ExceptionUtils.getMessage(processedException))
+                                     .build())
+                      .build())
               .build();
     }
 

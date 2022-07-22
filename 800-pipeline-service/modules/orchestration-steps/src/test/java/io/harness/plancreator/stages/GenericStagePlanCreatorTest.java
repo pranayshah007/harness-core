@@ -17,8 +17,7 @@ import io.harness.OrchestrationStepsTestBase;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.plancreator.approval.ApprovalStagePlanCreator;
-import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.plancreator.approval.ApprovalStagePlanCreatorV2;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -31,6 +30,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.approval.stage.ApprovalStageNode;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
@@ -51,9 +51,9 @@ import org.mockito.MockitoAnnotations;
 public class GenericStagePlanCreatorTest extends OrchestrationStepsTestBase {
   YamlField approvalStageYamlField;
   PlanCreationContext approvalStageContext;
-  StageElementConfig approvalStageConfig;
+  ApprovalStageNode approvalStageConfig;
 
-  @InjectMocks ApprovalStagePlanCreator approvalStagePlanCreator;
+  @InjectMocks ApprovalStagePlanCreatorV2 approvalStagePlanCreator;
   @Mock KryoSerializer kryoSerializer;
   @Inject KryoSerializer kryoSerializerUnMocked;
 
@@ -74,7 +74,7 @@ public class GenericStagePlanCreatorTest extends OrchestrationStepsTestBase {
 
     approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
     approvalStageContext = PlanCreationContext.builder().currentField(approvalStageYamlField).build();
-    approvalStageConfig = YamlUtils.read(approvalStageYamlField.getNode().toString(), StageElementConfig.class);
+    approvalStageConfig = YamlUtils.read(approvalStageYamlField.getNode().toString(), ApprovalStageNode.class);
   }
 
   @Test

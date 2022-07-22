@@ -12,10 +12,13 @@ import static io.harness.eraro.ErrorCode.FILTER_CREATION_ERROR;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.Level;
+import io.harness.exception.bean.FilterCreatorErrorResponse;
 
 @OwnedBy(PIPELINE)
 public class FilterCreatorException extends WingsException {
   private static final String MESSAGE_ARG = "message";
+
+  FilterCreatorErrorResponse errorResponse;
 
   public FilterCreatorException(String message) {
     super(message, null, FILTER_CREATION_ERROR, Level.ERROR, null, null);
@@ -24,6 +27,11 @@ public class FilterCreatorException extends WingsException {
 
   public FilterCreatorException(String message, Throwable cause) {
     super(message, cause, FILTER_CREATION_ERROR, Level.ERROR, null, null);
+    super.param(MESSAGE_ARG, message);
+  }
+
+  public FilterCreatorException(String message, FilterCreatorErrorResponse errorResponse) {
+    super(message, null, FILTER_CREATION_ERROR, Level.ERROR, null, null, errorResponse);
     super.param(MESSAGE_ARG, message);
   }
 }

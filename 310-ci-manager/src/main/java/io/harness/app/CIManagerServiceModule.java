@@ -298,5 +298,6 @@ public class CIManagerServiceModule extends AbstractModule {
         return ciManagerConfiguration.getSegmentConfiguration();
       }
     });
+    install(new CICacheRegistrar());
   }
 }

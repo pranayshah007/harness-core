@@ -86,9 +86,6 @@ public class MSTeamsServiceImpl implements ChannelService {
   private static final String UNDERSCORE = "_";
   private static final String URL = "_URL";
   private static final Pattern placeHolderPattern = Pattern.compile("\\$\\{.+?}");
-  private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
-  private static final String ORG_IDENTIFIER = "orgIdentifier";
-  private static final String PROJECT_IDENTIFIER = "projectIdentifier";
 
   private final NotificationSettingsService notificationSettingsService;
   private final NotificationTemplateService notificationTemplateService;
@@ -119,10 +116,8 @@ public class MSTeamsServiceImpl implements ChannelService {
 
     int expressionFunctorToken = Math.toIntExact(msTeamDetails.getExpressionFunctorToken());
 
-    Map<String, String> abstractionMap = new HashMap<>();
-    abstractionMap.put(ACCOUNT_IDENTIFIER, notificationRequest.getAccountId());
-    abstractionMap.put(ORG_IDENTIFIER, msTeamDetails.getOrgIdentifier());
-    abstractionMap.put(PROJECT_IDENTIFIER, msTeamDetails.getProjectIdentifier());
+    Map<String, String> abstractionMap = notificationSettingsService.buildTaskAbstractions(
+        notificationRequest.getAccountId(), msTeamDetails.getOrgIdentifier(), msTeamDetails.getProjectIdentifier());
 
     return send(microsoftTeamsWebhookUrls, templateId, templateData, notificationId, notificationRequest.getTeam(),
         notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap);

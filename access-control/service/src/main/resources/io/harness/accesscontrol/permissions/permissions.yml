@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 30
+version: 31
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -316,6 +316,14 @@ permissions:
       - project
   - identifier: core_environmentgroup_delete
     name: Delete Environment Group
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_environmentgroup_access
+    name: Access Environment Group
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:

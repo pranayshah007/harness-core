@@ -237,6 +237,7 @@ import io.harness.delegate.task.k8s.exception.KubernetesApiClientRuntimeExceptio
 import io.harness.delegate.task.k8s.exception.KubernetesApiExceptionHandler;
 import io.harness.delegate.task.k8s.exception.KubernetesCliRuntimeExceptionHandler;
 import io.harness.delegate.task.ldap.NGLdapGroupSearchTask;
+import io.harness.delegate.task.ldap.NGLdapGroupSyncTask;
 import io.harness.delegate.task.ldap.NGLdapValidateConnectionSettingTask;
 import io.harness.delegate.task.ldap.NGLdapValidateGroupQuerySettingTask;
 import io.harness.delegate.task.ldap.NGLdapValidateUserQuerySettingTask;
@@ -1500,6 +1501,8 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.NG_LDAP_TEST_CONN_SETTINGS).toInstance(NGLdapValidateConnectionSettingTask.class);
     mapBinder.addBinding(TaskType.NG_LDAP_TEST_USER_SETTINGS).toInstance(NGLdapValidateUserQuerySettingTask.class);
     mapBinder.addBinding(TaskType.NG_LDAP_TEST_GROUP_SETTINGS).toInstance(NGLdapValidateGroupQuerySettingTask.class);
+    mapBinder.addBinding(TaskType.NG_LDAP_SEARCH_GROUPS).toInstance(NGLdapGroupSearchTask.class);
+    mapBinder.addBinding(TaskType.NG_LDAP_GROUPS_SYNC).toInstance(NGLdapGroupSyncTask.class);
     mapBinder.addBinding(TaskType.APM_VALIDATE_CONNECTOR_TASK).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.CUSTOM_LOG_VALIDATE_CONNECTOR_TASK).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.APM_GET_TASK).toInstance(ServiceImplDelegateTask.class);
@@ -1597,7 +1600,6 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.NG_VAULT_RENEW_TOKEN).toInstance(NGVaultRenewalTask.class);
     mapBinder.addBinding(TaskType.NG_VAULT_RENEW_APP_ROLE_TOKEN).toInstance(NGVaultRenewalAppRoleTask.class);
     mapBinder.addBinding(TaskType.NG_VAULT_FETCHING_TASK).toInstance(NGVaultFetchEngineTask.class);
-    mapBinder.addBinding(TaskType.NG_LDAP_SEARCH_GROUPS).toInstance(NGLdapGroupSearchTask.class);
     mapBinder.addBinding(TaskType.NG_AZURE_VAULT_FETCH_ENGINES).toInstance(NGAzureKeyVaultFetchEngineTask.class);
     mapBinder.addBinding(TaskType.VALIDATE_SECRET_MANAGER_CONFIGURATION)
         .toInstance(ValidateSecretManagerConfigurationTask.class);

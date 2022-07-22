@@ -119,6 +119,8 @@ public interface PipelineResource {
           hidden = true) @QueryParam(NGCommonEntityConstants.NAME_KEY) String pipelineName,
       @Parameter(description = PipelineResourceConstants.PIPELINE_DESCRIPTION_PARAM_MESSAGE, required = false,
           hidden = true) @QueryParam(NGCommonEntityConstants.DESCRIPTION_KEY) String pipelineDescription,
+      @Parameter(description = PipelineResourceConstants.PIPELINE_DRAFT_PARAM_MESSAGE, required = false,
+          hidden = true) @QueryParam(NGCommonEntityConstants.DRAFT_KEY) Boolean isDraft,
       @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo,
       @RequestBody(required = true, description = "Pipeline YAML") @NotNull String yaml);
 
@@ -145,6 +147,8 @@ public interface PipelineResource {
           hidden = true) @QueryParam(NGCommonEntityConstants.NAME_KEY) String pipelineName,
       @Parameter(description = PipelineResourceConstants.PIPELINE_DESCRIPTION_PARAM_MESSAGE, required = false,
           hidden = true) @QueryParam(NGCommonEntityConstants.DESCRIPTION_KEY) String pipelineDescription,
+      @Parameter(description = PipelineResourceConstants.PIPELINE_DRAFT_PARAM_MESSAGE, required = false,
+          hidden = true) @QueryParam(NGCommonEntityConstants.DRAFT_KEY) Boolean isDraft,
       @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo,
       @RequestBody(required = true, description = "Pipeline YAML", content = {
         @Content(mediaType = "application/yaml",
@@ -265,7 +269,8 @@ public interface PipelineResource {
           hidden = true) @QueryParam(NGCommonEntityConstants.NAME_KEY) String pipelineName,
       @Parameter(description = PipelineResourceConstants.PIPELINE_DESCRIPTION_PARAM_MESSAGE, required = false,
           hidden = true) @QueryParam(NGCommonEntityConstants.DESCRIPTION_KEY) String pipelineDescription,
-      @BeanParam GitEntityUpdateInfoDTO gitEntityInfo,
+      @Parameter(description = PipelineResourceConstants.PIPELINE_DRAFT_PARAM_MESSAGE, required = false, hidden = true)
+      @QueryParam(NGCommonEntityConstants.DRAFT_KEY) Boolean isDraft, @BeanParam GitEntityUpdateInfoDTO gitEntityInfo,
       @RequestBody(required = true, description = "Pipeline YAML to be updated") @NotNull String yaml);
 
   @PUT
@@ -294,7 +299,8 @@ public interface PipelineResource {
           hidden = true) @QueryParam(NGCommonEntityConstants.NAME_KEY) String pipelineName,
       @Parameter(description = PipelineResourceConstants.PIPELINE_DESCRIPTION_PARAM_MESSAGE, required = false,
           hidden = true) @QueryParam(NGCommonEntityConstants.DESCRIPTION_KEY) String pipelineDescription,
-      @BeanParam GitEntityUpdateInfoDTO gitEntityInfo,
+      @Parameter(description = PipelineResourceConstants.PIPELINE_DRAFT_PARAM_MESSAGE, required = false, hidden = true)
+      @QueryParam(NGCommonEntityConstants.DRAFT_KEY) Boolean isDraft, @BeanParam GitEntityUpdateInfoDTO gitEntityInfo,
       @RequestBody(required = true, description = "Pipeline YAML to be updated", content = {
         @Content(mediaType = "application/yaml",
             examples = @ExampleObject(name = "Update", summary = "Sample Update Pipeline YAML",

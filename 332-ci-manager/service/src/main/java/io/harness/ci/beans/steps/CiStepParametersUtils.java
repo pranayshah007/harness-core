@@ -15,12 +15,9 @@ import io.harness.plancreator.steps.common.StepElementParameters.StepElementPara
 import io.harness.pms.yaml.ParameterField;
 import io.harness.utils.TimeoutUtils;
 
-import lombok.experimental.UtilityClass;
-
-@UtilityClass
 @OwnedBy(HarnessTeam.CI)
 public class CiStepParametersUtils {
-  public StepElementParametersBuilder getStepParameters(CIAbstractStepNode stepNode) {
+  public static StepElementParametersBuilder getStepParameters(CIAbstractStepNode stepNode) {
     StepElementParametersBuilder stepBuilder = StepElementParameters.builder();
     stepBuilder.name(stepNode.getName());
     stepBuilder.identifier(stepNode.getIdentifier());
@@ -34,7 +31,7 @@ public class CiStepParametersUtils {
 
     return stepBuilder;
   }
-  public StepElementParametersBuilder getStepParameters(
+  public static StepElementParametersBuilder getStepParameters(
       CIAbstractStepNode stepNode, OnFailRollbackParameters failRollbackParameters) {
     StepElementParametersBuilder stepBuilder = getStepParameters(stepNode);
     stepBuilder.rollbackParameters(failRollbackParameters);

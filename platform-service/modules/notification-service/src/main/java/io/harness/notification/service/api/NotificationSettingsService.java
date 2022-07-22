@@ -17,6 +17,7 @@ import io.harness.notification.entities.NotificationSetting;
 import io.harness.notification.remote.SmtpConfigResponse;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @OwnedBy(PL)
@@ -34,4 +35,6 @@ public interface NotificationSettingsService {
   SmtpConfigResponse getSmtpConfigResponse(String accountId);
 
   boolean checkIfWebhookIsSecret(List<String> webhooks);
+
+  Map<String, String> buildTaskAbstractions(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

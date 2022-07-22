@@ -337,8 +337,11 @@ import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceType;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskResponse;
+import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
+import io.harness.delegate.task.azure.appservice.settings.EncryptedAppSettingsFile;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType;
+import io.harness.delegate.task.azure.appservice.webapp.ng.exception.AzureWebAppSlotDeploymentExceptionData;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppFetchPreDeploymentDataRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppRollbackRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSlotDeploymentRequest;
@@ -1624,5 +1627,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(LocalFileStoreDelegateConfig.class, 55404);
     kryo.register(LocalStoreFetchFilesResult.class, 55405);
     kryo.register(ManifestFiles.class, 55406);
+    kryo.register(AppSettingsFile.class, 55407);
+    kryo.register(EncryptedAppSettingsFile.class, 55408);
+    kryo.register(AzureWebAppSlotDeploymentExceptionData.class, 55409);
   }
 }

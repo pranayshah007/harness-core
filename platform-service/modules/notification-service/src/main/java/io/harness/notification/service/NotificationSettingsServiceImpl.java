@@ -13,8 +13,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.EngineExpressionEvaluator.EXPR_END;
 import static io.harness.expression.EngineExpressionEvaluator.EXPR_START;
 import static io.harness.remote.client.NGRestUtils.getResponse;
+import static io.harness.utils.DelegateOwner.NG_DELEGATE_OWNER_CONSTANT;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
@@ -40,8 +42,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -62,6 +66,11 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
   private static final String INVALID_EXPRESSION_EXCEPTION = "Expression provided is not valid";
   private static final Pattern SECRET_EXPRESSION =
       Pattern.compile("\\$\\{ngSecretManager\\.obtain\\(\\\"\\w*[\\.]?\\w*\\\"\\, ([+-]?\\d*|0)\\)\\}");
+  private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
+  private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
+  private static final String ORG_IDENTIFIER = "orgIdentifier";
+  private static final String PROJECT_IDENTIFIER = "projectIdentifier";
+  private static final int INITIAL_MAP_SIZE = 4;
 
   private List<UserGroupDTO> getUserGroups(List<String> userGroupIds) {
     if (isEmpty(userGroupIds)) {
@@ -240,5 +249,21 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
     notificationSetting.setSmtpConfig(smtpConfig);
     notificationSettingRepository.save(notificationSetting);
     return notificationSetting;
+  }
+
+  @Override
+  public Map<String, String> buildTaskAbstractions(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Map<String, String> abstractions = new HashMap<>(INITIAL_MAP_SIZE);
+    String owner = taskSetupAbstractionHelper.getOwner(accountIdentifier, orgIdentifier, projectIdentifier);
+    if (isNotEmpty(owner)) {
+      abstractions.put(NG_DELEGATE_OWNER_CONSTANT, owner);
+    }
+
+    abstractions.put(ACCOUNT_IDENTIFIER, accountIdentifier);
+    abstractions.put(ORG_IDENTIFIER, orgIdentifier);
+    abstractions.put(PROJECT_IDENTIFIER, projectIdentifier);
+
+    return abstractions;
   }
 }

@@ -6,8 +6,8 @@
  */
 
 package io.harness.cvng;
-
 import static io.harness.cvng.CVConstants.SERVICE_BASE_URL;
+import static io.harness.swagger.SwaggerBundleConfigurationFactory.buildSwaggerBundleConfiguration;
 
 import io.harness.AccessControlClientConfiguration;
 import io.harness.annotations.dev.HarnessTeam;
@@ -23,6 +23,7 @@ import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
 import io.harness.notification.NotificationClientConfiguration;
+import io.harness.reflection.HarnessReflections;
 import io.harness.remote.ManagerAuthConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
@@ -43,15 +44,18 @@ import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.ws.rs.Path;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.model.Resource;
-import org.reflections.Reflections;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
 @OwnedBy(HarnessTeam.CV)
+@Slf4j
 public class VerificationConfiguration extends Configuration {
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
   @JsonProperty("mongo") private MongoConfig mongoConnectionFactory = MongoConfig.builder().build();
@@ -107,9 +111,15 @@ public class VerificationConfiguration extends Configuration {
    * @return the swagger bundle configuration
    */
   public SwaggerBundleConfiguration getSwaggerBundleConfiguration() {
-    Reflections reflections = new Reflections(this.getClass().getPackage().getName());
     Set<String> resourcePackages = new HashSet<>();
-    reflections.getTypesAnnotatedWith(Path.class).forEach(resource -> {
+    Set<Class<?>> reflections =
+        HarnessReflections.get()
+            .getTypesAnnotatedWith(Path.class)
+            .stream()
+            .filter(klazz
+                -> StringUtils.startsWithAny(klazz.getPackage().getName(), this.getClass().getPackage().getName()))
+            .collect(Collectors.toSet());
+    reflections.forEach(resource -> {
       if (!resource.getPackage().getName().endsWith("resources")) {
         throw new IllegalStateException("Resource classes should be in resources package." + resource);
       }
@@ -117,7 +127,7 @@ public class VerificationConfiguration extends Configuration {
         resourcePackages.add(resource.getPackage().getName());
       }
     });
-    SwaggerBundleConfiguration defaultSwaggerBundleConfiguration = new SwaggerBundleConfiguration();
+    SwaggerBundleConfiguration defaultSwaggerBundleConfiguration = buildSwaggerBundleConfiguration(reflections);
     defaultSwaggerBundleConfiguration.setResourcePackage(String.join(",", resourcePackages));
     defaultSwaggerBundleConfiguration.setSchemes(new String[] {"https", "http"});
     defaultSwaggerBundleConfiguration.setHost("{{host}}");
