@@ -17,4 +17,5 @@ COPY --from=0 /bin/grpc_health_probe ./grpc_health_probe
 COPY scm_/scm /usr/local/bin/scm
 RUN chown -R 65534:65534 /usr/local/bin ./grpc_health_probe
 USER 65534:65534
+WORKDIR /usr/local/bin
 CMD ["/usr/local/bin/scm"]
