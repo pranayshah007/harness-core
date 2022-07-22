@@ -38,7 +38,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import org.jaxen.util.SingletonList;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
