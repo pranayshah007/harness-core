@@ -163,7 +163,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   }
 
   @Override
-  public PartialSchemaDTOWrapperValue testCache() {
+  public Boolean testCache() {
     return schemaFetcher.testCache();
   }
 

@@ -25,7 +25,7 @@ public interface PMSYamlSchemaService {
 
   void invalidateAllCache();
 
-  PartialSchemaDTOWrapperValue testCache();
+  Boolean testCache();
 
   JsonNode getIndividualYamlSchema(String accountId, String orgIdentifier, String projectIdentifier, Scope scope,
       EntityType entityType, String yamlGroup);

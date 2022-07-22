@@ -59,8 +59,8 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
   }
 
   @Override
-  public ResponseDTO<PartialSchemaDTOWrapperValue> testCache() {
-    PartialSchemaDTOWrapperValue value = pmsYamlSchemaService.testCache();
+  public ResponseDTO<Boolean> testCache() {
+    Boolean value = pmsYamlSchemaService.testCache();
 
     return ResponseDTO.newResponse(value);
   }

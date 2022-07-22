@@ -21,7 +21,6 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.plancreator.pipeline.PipelineConfig;
-import io.harness.pms.pipeline.service.yamlschema.cache.PartialSchemaDTOWrapperValue;
 import io.harness.pms.yaml.YamlSchemaResponse;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -63,7 +62,7 @@ public interface PmsYamlSchemaResource {
   @GET
   @ApiOperation(value = "dummy api for testing enterprise cache", nickname = "testCache")
   @Path("/test-cache")
-  ResponseDTO<PartialSchemaDTOWrapperValue> testCache();
+  ResponseDTO<Boolean> testCache();
 
   @GET
   @Path("/get")
