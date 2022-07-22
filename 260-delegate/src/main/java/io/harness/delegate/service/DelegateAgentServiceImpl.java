@@ -470,8 +470,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     try {
       accountId = delegateConfiguration.getAccountId();
       if (perpetualTaskWorker != null) {
-        log.info("Starting perpetual task workers");
         perpetualTaskWorker.setAccountId(accountId);
+        log.info("Starting perpetual task workers for account id {}", accountId);
         perpetualTaskWorker.start();
       }
       log.info("Delegate will start running on JRE {}", System.getProperty(JAVA_VERSION));

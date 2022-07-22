@@ -13,6 +13,7 @@ import io.harness.grpc.utils.HTimestamps;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.rest.CallbackWithRetry;
 
+
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -37,8 +38,9 @@ public class PerpetualTaskServiceAgentClient {
 
     } catch (Exception e) {
       log.error("Error while getting perpetualTaskList ", e);
+      return null;
     }
-    return null;
+
   }
 
   public PerpetualTaskExecutionContext perpetualTaskContext(PerpetualTaskId taskId, String accountId) {
@@ -46,14 +48,20 @@ public class PerpetualTaskServiceAgentClient {
     try {
       Call<PerpetualTaskContextResponse> perpetualTaskContextResponseCall =
           delegateAgentManagerClient.perpetualTaskContext(taskId.getId(), accountId);
+      if (isEmpty(taskId.getId())){
+        log.error("On context call, Perpetual task id is null");
+      }else{
+        log.info("Getting perpetual task context for {}", taskId.getId());
+      }
+
       executeAsyncCallWithRetry(perpetualTaskContextResponseCall, result);
       PerpetualTaskExecutionContext perpetualTaskExecutionContext = result.get().getPerpetualTaskContext();
       log.info("PT Context params: {}", perpetualTaskExecutionContext);
       return perpetualTaskExecutionContext;
     } catch (InterruptedException | ExecutionException | IOException e) {
       log.error("Error while getting perpetualTaskContext ", e);
+      return null;
     }
-    return null;
   }
 
   public void heartbeat(

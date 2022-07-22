@@ -7,6 +7,7 @@
 
 package io.harness.perpetualtask;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.service.DelegateAgentServiceImpl.getDelegateId;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
@@ -121,9 +122,11 @@ public class PerpetualTaskWorker {
       }
 
       for (PerpetualTaskAssignDetails task : startTasks) {
+        log.info("handleTask start PT {} ", task.getTaskId().getId());
         if (!firstFillUp.get()) {
           logPullDelay(task, "first poll from this delegate for task");
         }
+        log.info("Calling StartTask PT with id {} ", task.getTaskId().getId());
         startTask(task);
       }
       firstFillUp.set(false);
@@ -166,15 +169,22 @@ public class PerpetualTaskWorker {
     stopTasks.addAll(runningTaskMap.keySet());
 
     for (PerpetualTaskAssignDetails assignDetails : assignedTasks) {
+      if (isEmpty(assignDetails.getTaskId().getId())) {
+        log.error("splitTasks: Task id empty");
+      }
+      log.info("splitTasks: PT with id {}", assignDetails.getTaskId().getId());
       if (!stopTasks.remove(assignDetails.getTaskId())) {
+        log.info("SplitTask::Adding to startTask {}", assignDetails.getTaskId().getId());
         startTasks.add(assignDetails);
       } else {
+        log.info("SplitTask: Task already running so update PT {}", assignDetails.getTaskId().getId());
         PerpetualTaskAssignRecord runningTask = runningTaskMap.get(assignDetails.getTaskId());
         long runningTaskLastContextUpdated =
             Timestamps.toMillis(runningTask.getPerpetualTaskAssignDetails().getLastContextUpdated());
         long assignDetailsLastContextUpdated = Timestamps.toMillis(assignDetails.getLastContextUpdated());
         if (runningTaskLastContextUpdated < assignDetailsLastContextUpdated) {
           updatedTasks.add(assignDetails);
+          log.info("SplitTask: Adding Updating task list {}", assignDetails.getTaskId().getId());
         }
       }
     }
@@ -194,12 +204,21 @@ public class PerpetualTaskWorker {
 
   @VisibleForTesting
   void startTask(PerpetualTaskAssignDetails task) {
+    if (accountId == null) {
+      log.error("Unable to start PT Task as account id null");
+    }
+    if (isEmpty(task.getTaskId().getId())) {
+      log.error("StartTask: start task task id empty {}", task.getTaskId().getId());
+    }
+    log.info("Starting PT task {}", task.getTaskId().getId());
     try (AutoLogContext ignore1 = new PerpetualTaskLogContext(task.getTaskId().getId(), OVERRIDE_ERROR)) {
+      log.info("StartTask: Getting context {}", task.getTaskId().getId());
       PerpetualTaskExecutionContext context =
           perpetualTaskServiceAgentClient.perpetualTaskContext(task.getTaskId(), accountId);
       PerpetualTaskSchedule schedule = context.getTaskSchedule();
-      long intervalSeconds = Durations.toSeconds(schedule.getInterval());
 
+      long intervalSeconds = Durations.toSeconds(schedule.getInterval());
+    log.info("StartTask: PT {} Schedule {}",task.getTaskId().getId(), intervalSeconds);
       PerpetualTaskLifecycleManager perpetualTaskLifecycleManager =
           new PerpetualTaskLifecycleManager(task.getTaskId(), context, factoryMap, perpetualTaskServiceAgentClient,
               perpetualTaskTimeLimiter, currentlyExecutingPerpetualTasksCount, accountId);
