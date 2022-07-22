@@ -8,6 +8,7 @@
 package io.harness.delegate.task.serverless;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.BLANK_ARTIFACT_PATH;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.BLANK_ARTIFACT_PATH_EXPLANATION;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.BLANK_ARTIFACT_PATH_HINT;
@@ -373,8 +374,12 @@ public class ServerlessTaskHelperBase {
                   s3ArtifactConfig.getIdentifier()),
             White, Bold));
     executionLogCallback.saveExecutionLog("S3 Object Path: " + artifactPath);
-    for (DecryptableEntity entity : s3ArtifactConfig.getConnectorDTO().getConnectorConfig().getDecryptableEntities()) {
-      secretDecryptionService.decrypt(entity, s3ArtifactConfig.getEncryptedDataDetails());
+    List<DecryptableEntity> decryptableEntities =
+        s3ArtifactConfig.getConnectorDTO().getConnectorConfig().getDecryptableEntities();
+    if (isNotEmpty(decryptableEntities)) {
+      for (DecryptableEntity entity : decryptableEntities) {
+        secretDecryptionService.decrypt(entity, s3ArtifactConfig.getEncryptedDataDetails());
+      }
     }
     ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
         s3ArtifactConfig.getConnectorDTO().getConnectorConfig(), s3ArtifactConfig.getEncryptedDataDetails());
