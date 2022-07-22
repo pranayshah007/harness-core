@@ -974,6 +974,6 @@ public class ScmServiceClientImpl implements ScmServiceClient {
 
   private boolean isBitbucketOnPrem(ScmConnector scmConnector) {
     return ConnectorType.BITBUCKET.equals(scmConnector.getConnectorType())
-        && !GitClientHelper.isBitBucketSAAS(scmConnector.getGitConnectionUrl());
+        && !GitClientHelper.isBitBucketSAAS(scmConnector.getUrl());
   }
 }
