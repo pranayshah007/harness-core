@@ -26,9 +26,13 @@ import io.harness.encryptors.CustomEncryptorsRegistry;
 import io.harness.encryptors.KmsEncryptor;
 import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.encryptors.VaultEncryptorsRegistry;
+import io.harness.engine.expressions.ShellScriptBaseDTO;
+import io.harness.engine.expressions.ShellScriptYamlDTO;
+import io.harness.engine.expressions.ShellScriptYamlExpressionEvaluator;
 import io.harness.exception.WingsException;
 import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.api.NGSecretManagerService;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.secretmanagerclient.dto.*;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
 import io.harness.security.encryption.EncryptionConfig;
@@ -121,6 +125,7 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
             validationResult = kmsEncryptor.validateKmsConfiguration(encryptionConfig.getAccountId(), encryptionConfig);
             break;
           case CUSTOM:
+            log.info("Secret manager type is custom");
             CustomSecretManagerConfigDTO customNGSecretManagerConfigDTO =
                 (CustomSecretManagerConfigDTO) secretManagerConfigDTO;
             Optional<TemplateEntity> template =
@@ -129,8 +134,17 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
                     customNGSecretManagerConfigDTO.getProjectIdentifier(),
                     customNGSecretManagerConfigDTO.getTemplateId(), customNGSecretManagerConfigDTO.getVersion(), false);
             String yaml = template.get().getYaml();
+            log.info("Yaml received from template service is " + yaml);
             // resolve the yaml
+            ShellScriptYamlExpressionEvaluator shellScriptYamlExpressionEvaluator =
+                new ShellScriptYamlExpressionEvaluator(yaml);
+            ShellScriptBaseDTO shellScriptBaseDTO =
+                YamlUtils.read(yaml, ShellScriptYamlDTO.class).getShellScriptBaseDTO();
+            shellScriptBaseDTO =
+                (ShellScriptBaseDTO) shellScriptYamlExpressionEvaluator.resolve(shellScriptBaseDTO, false);
             // get the script out of resolved yaml
+            String script = shellScriptBaseDTO.getShellScriptSpec().getSource().getSpec().getScript().getValue();
+            log.info("Resolved script is " + script);
             // pass the script to encryptor
 
             // Get template id , version , name all will be in secManagerConfigDTO-> template service (id, ver) ->

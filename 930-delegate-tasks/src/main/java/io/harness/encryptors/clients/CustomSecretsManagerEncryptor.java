@@ -80,7 +80,7 @@ public class CustomSecretsManagerEncryptor implements CustomEncryptor {
       } catch (Exception e) {
         failedAttempts++;
         if (failedAttempts == NUM_OF_RETRIES) {
-          String message = "Faild to decrypt " + encryptedRecord.getName() + " after " + NUM_OF_RETRIES + " retries";
+          String message = "Failed to decrypt " + encryptedRecord.getName() + " after " + NUM_OF_RETRIES + " retries";
           throw new SecretManagementDelegateException(SECRET_MANAGEMENT_ERROR, message, e, USER);
         }
         sleep(ofMillis(1000));
