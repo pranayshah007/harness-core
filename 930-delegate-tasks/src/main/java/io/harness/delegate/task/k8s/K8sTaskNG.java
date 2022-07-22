@@ -109,17 +109,10 @@ public class K8sTaskNG extends AbstractDelegateRunnableTask {
             ? ((HelmChartManifestDelegateConfig) k8sDeployRequest.getManifestDelegateConfig()).getHelmVersion()
             : null;
 
-        K8sDelegateTaskParams k8SDelegateTaskParams =
-            K8sDelegateTaskParams.builder()
-                .kubectlPath(k8sGlobalConfigService.getKubectlPath(k8sDeployRequest.isUseNewKubectlVersion()))
-                .kubeconfigPath(KUBECONFIG_FILENAME)
-                .workingDirectory(workingDirectory)
-                .goTemplateClientPath(k8sGlobalConfigService.getGoTemplateClientPath())
-                .helmPath(k8sGlobalConfigService.getHelmPath(helmVersion))
-                .ocPath(k8sGlobalConfigService.getOcPath())
-                .kustomizeBinaryPath(
-                    k8sGlobalConfigService.getKustomizePath(k8sDeployRequest.isUseLatestKustomizeVersion()))
-                .build();
+        K8sDelegateTaskParams k8SDelegateTaskParams = getK8sDelegateTaskParamsBasedOnManifestType(workingDirectory,
+            helmVersion, k8sDeployRequest.isUseNewKubectlVersion(), k8sDeployRequest.isUseLatestKustomizeVersion(),
+            k8sDeployRequest.getManifestDelegateConfig().getManifestType());
+
         // TODO: @anshul/vaibhav , fix this
         //        logK8sVersion(k8sDeployRequest, k8SDelegateTaskParams, commandUnitsProgress);
 
@@ -184,5 +177,39 @@ public class K8sTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public boolean isSupportingErrorFramework() {
     return true;
+  }
+
+  private K8sDelegateTaskParams getK8sDelegateTaskParamsBasedOnManifestType(String workingDirectory,
+      HelmVersion helmVersion, boolean isUseNewKubectlVersion, boolean isUseLatestKustomizeVersion,
+      ManifestType manifestType) {
+    K8sDelegateTaskParams.K8sDelegateTaskParamsBuilder k8sDelegateTaskParamsBuilder =
+        K8sDelegateTaskParams.builder()
+            .kubectlPath(k8sGlobalConfigService.getKubectlPath(isUseNewKubectlVersion))
+            .ocPath(k8sGlobalConfigService.getOcPath())
+            .kubeconfigPath(KUBECONFIG_FILENAME)
+            .workingDirectory(workingDirectory);
+
+    switch (manifestType) {
+      case K8S_MANIFEST:
+        k8sDelegateTaskParamsBuilder.goTemplateClientPath(k8sGlobalConfigService.getGoTemplateClientPath());
+        break;
+
+      case HELM_CHART:
+        k8sDelegateTaskParamsBuilder.helmPath(k8sGlobalConfigService.getHelmPath(helmVersion));
+        break;
+
+      case OPENSHIFT_TEMPLATE:
+        break;
+
+      case KUSTOMIZE:
+        k8sDelegateTaskParamsBuilder.kustomizeBinaryPath(
+            k8sGlobalConfigService.getKustomizePath(isUseLatestKustomizeVersion));
+        break;
+
+      default:
+        throw new UnsupportedOperationException(
+            String.format("Manifest delegate config type: [%s]", manifestType.name()));
+    }
+    return k8sDelegateTaskParamsBuilder.build();
   }
 }
