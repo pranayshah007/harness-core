@@ -11,11 +11,10 @@ RUN GRPC_HEALTH_PROBE_VERSION=v0.3.3 && \
     chmod +x /bin/grpc_health_probe
 
 # Second stage
-FROM alpine:3.12
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.6-751
 COPY --from=0 /bin/grpc_health_probe ./grpc_health_probe
 # Copy ci-scm binary
 COPY scm_/scm /usr/local/bin/scm
-RUN addgroup -S 65534 && adduser -S 65534 -G 65534
 RUN chown -R 65534:65534 /usr/local/bin ./grpc_health_probe
-USER 65534
+USER 65534:65534
 CMD ["/usr/local/bin/scm"]
