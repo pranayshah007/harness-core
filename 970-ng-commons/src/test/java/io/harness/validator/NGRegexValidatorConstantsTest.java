@@ -7,6 +7,7 @@
 
 package io.harness.validator;
 
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.SAMARTH;
 
 import static junit.framework.TestCase.assertFalse;
@@ -24,35 +25,52 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NGRegexValidatorConstantsTest extends CategoryTest {
+  private final Pattern timeoutPattern = Pattern.compile(NGRegexValidatorConstants.TIMEOUT_PATTERN);
+
   @Test
   @Owner(developers = SAMARTH)
   @Category(UnitTests.class)
   public void testTimeoutPattern() {
-    Pattern pattern = Pattern.compile(NGRegexValidatorConstants.TIMEOUT_PATTERN);
-
     // Valid cases
-    assertTrue(pattern.matcher("1m").matches());
-    assertTrue(pattern.matcher("1m20s").matches());
-    assertTrue(pattern.matcher("1m 20s").matches());
+    assertTrue(timeoutPattern.matcher("1m").matches());
+    assertTrue(timeoutPattern.matcher("1m20s").matches());
+    assertTrue(timeoutPattern.matcher("1m 20s").matches());
 
     // Runtime
-    assertTrue(pattern.matcher("<+input>").matches());
-    assertTrue(pattern.matcher("<+input>.allowedValues()").matches());
-    assertTrue(pattern.matcher("<+input>.regex()").matches());
-    assertTrue(pattern.matcher("<+2+8>s").matches());
-    assertTrue(pattern.matcher("<+random>").matches());
+    assertTrue(timeoutPattern.matcher("<+input>").matches());
+    assertTrue(timeoutPattern.matcher("<+input>.allowedValues()").matches());
+    assertTrue(timeoutPattern.matcher("<+input>.regex()").matches());
+    assertTrue(timeoutPattern.matcher("<+2+8>s").matches());
+    assertTrue(timeoutPattern.matcher("<+random>").matches());
 
     // Invalid cases
-    assertFalse(pattern.matcher("1m  20s").matches());
-    assertFalse(pattern.matcher("1m 8").matches());
-    assertFalse(pattern.matcher("18").matches());
-    assertFalse(pattern.matcher("m").matches());
-    assertFalse(pattern.matcher("20mm").matches());
-    assertFalse(pattern.matcher("m20m").matches());
-    assertFalse(pattern.matcher(" 1m").matches());
-    assertFalse(pattern.matcher("1m ").matches());
-    assertFalse(pattern.matcher("1 m").matches());
-    assertFalse(pattern.matcher("1a").matches());
-    assertFalse(pattern.matcher("random").matches());
+    assertFalse(timeoutPattern.matcher("1m  20s").matches());
+    assertFalse(timeoutPattern.matcher("1m 8").matches());
+    assertFalse(timeoutPattern.matcher("18").matches());
+    assertFalse(timeoutPattern.matcher("m").matches());
+    assertFalse(timeoutPattern.matcher("20mm").matches());
+    assertFalse(timeoutPattern.matcher("m20m").matches());
+    assertFalse(timeoutPattern.matcher(" 1m").matches());
+    assertFalse(timeoutPattern.matcher("1m ").matches());
+    assertFalse(timeoutPattern.matcher("1 m").matches());
+    assertFalse(timeoutPattern.matcher("1a").matches());
+    assertFalse(timeoutPattern.matcher("random").matches());
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void timeoutEmptyAllowed() {
+    assertTrue(timeoutPattern.matcher("").matches());
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void timeoutWhitespaceNotAllowed() {
+    assertFalse(timeoutPattern.matcher("   ").matches());
+    assertFalse(timeoutPattern.matcher(" ABC ").matches());
+    assertFalse(timeoutPattern.matcher(" ABC").matches());
+    assertFalse(timeoutPattern.matcher("ABC ").matches());
   }
 }

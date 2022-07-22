@@ -38,6 +38,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(CDP)
+@Schema(name = "FilesFilterPropertiesDTO", description = "Properties of the Files Filter defined in Harness")
 public class FilesFilterPropertiesDTO extends FilterPropertiesDTO {
   @Schema(description = "This specifies the file usage") FileUsage fileUsage;
   @Schema(description = "File created by user") EmbeddedUserDetailsDTO createdBy;

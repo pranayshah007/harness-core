@@ -61,7 +61,6 @@ BAZEL_MODULES="\
   //295-cdng-contracts:module \
   //300-cv-nextgen:module \
   //310-ci-manager:module \
-  //320-ci-execution:module \
   //323-sto-utilities:module \
   //325-sto-beans:module \
   //332-ci-manager/service:module \
@@ -297,7 +296,6 @@ build_protocol_info(){
 }
 
 build_bazel_module 100-migrator
-build_bazel_module 320-ci-execution
 build_bazel_module 323-sto-utilities
 build_bazel_module 325-sto-beans
 build_bazel_module 380-cg-graphql

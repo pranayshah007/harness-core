@@ -101,6 +101,6 @@ public class AzureWebAppTaskNG extends AbstractDelegateRunnableTask {
 
   private void decryptRequest(AzureWebAppTaskRequest webAppTaskRequest) {
     webAppTaskRequest.fetchDecryptionDetails().forEach(
-        (decryptable, encryptedDataDetails) -> decryptionService.decrypt(decryptable, encryptedDataDetails));
+        decryptableEntity -> decryptionService.decrypt(decryptableEntity.getKey(), decryptableEntity.getValue()));
   }
 }

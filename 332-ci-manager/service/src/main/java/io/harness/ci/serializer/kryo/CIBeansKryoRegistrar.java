@@ -89,6 +89,7 @@ import io.harness.beans.yaml.extended.volumes.HostPathYaml;
 import io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml;
 import io.harness.ci.beans.entities.BuildNumberDetails;
 import io.harness.ci.beans.entities.CITelemetrySentStatus;
+import io.harness.ci.beans.entities.EncryptedDataDetails;
 import io.harness.ci.stdvars.BuildStandardVariables;
 import io.harness.ci.stdvars.GitVariables;
 import io.harness.serializer.KryoRegistrar;
@@ -187,6 +188,7 @@ public class CIBeansKryoRegistrar implements KryoRegistrar {
 
     kryo.register(DliteVmStageInfraDetails.class, 110109);
     kryo.register(RunsOnInfra.class, 110110);
+    kryo.register(EncryptedDataDetails.class, 110111);
 
     kryo.register(BuildUpdateType.class, 390003);
     kryo.register(BuildStatusUpdateParameter.class, 390004);

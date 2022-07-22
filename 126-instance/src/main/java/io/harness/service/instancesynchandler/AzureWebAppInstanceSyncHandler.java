@@ -55,8 +55,6 @@ public class AzureWebAppInstanceSyncHandler extends AbstractInstanceSyncHandler 
       return AzureWebAppInfrastructureDetails.builder()
           .subscriptionId(azureWebAppInstanceInfoDTO.getSubscriptionId())
           .resourceGroup(azureWebAppInstanceInfoDTO.getResourceGroup())
-          .webApp(azureWebAppInstanceInfoDTO.getAppName())
-          .deploymentSlot(azureWebAppInstanceInfoDTO.getDeploySlot())
           .build();
     }
     throw new InvalidArgumentsException(Pair.of("instanceInfoDTO", "Must be instance of AzureWebAppInstanceInfoDTO"));

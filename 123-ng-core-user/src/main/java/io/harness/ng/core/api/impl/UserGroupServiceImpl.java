@@ -215,14 +215,21 @@ public class UserGroupServiceImpl implements UserGroupService {
   public UserGroup update(UserGroupDTO userGroupDTO) {
     UserGroup savedUserGroup = getOrThrow(userGroupDTO.getAccountIdentifier(), userGroupDTO.getOrgIdentifier(),
         userGroupDTO.getProjectIdentifier(), userGroupDTO.getIdentifier());
-    checkIfUsersAreNotUpdatedInExternallyManagedGroup(userGroupDTO, savedUserGroup);
     UserGroup userGroup = toEntity(userGroupDTO);
     userGroup.setId(savedUserGroup.getId());
     userGroup.setVersion(savedUserGroup.getVersion());
     return updateInternal(userGroup, toDTO(savedUserGroup));
   }
 
-  private void checkIfUsersAreNotUpdatedInExternallyManagedGroup(
+  @Override
+  public UserGroup updateWithCheckThatSCIMFieldsAreNotModified(UserGroupDTO userGroupDTO) {
+    UserGroup savedUserGroup = getOrThrow(userGroupDTO.getAccountIdentifier(), userGroupDTO.getOrgIdentifier(),
+        userGroupDTO.getProjectIdentifier(), userGroupDTO.getIdentifier());
+    checkIfSCIMFieldsAreNotUpdatedInExternallyManagedGroup(userGroupDTO, savedUserGroup);
+    return update(userGroupDTO);
+  }
+
+  private void checkIfSCIMFieldsAreNotUpdatedInExternallyManagedGroup(
       UserGroupDTO toBeSavedUserGroup, UserGroup savedUserGroup) {
     if (!isExternallyManaged(toBeSavedUserGroup.getAccountIdentifier(), toBeSavedUserGroup.getOrgIdentifier(),
             toBeSavedUserGroup.getProjectIdentifier(), toBeSavedUserGroup.getIdentifier())) {
@@ -233,6 +240,10 @@ public class UserGroupServiceImpl implements UserGroupService {
     if (!CollectionUtils.isEqualCollection(newUsersToBeAdded, savedUsers)) {
       throw new InvalidRequestException(
           "Update is not supported for externally managed group " + toBeSavedUserGroup.getIdentifier());
+    }
+
+    if (!savedUserGroup.getName().equals(toBeSavedUserGroup.getName())) {
+      throw new InvalidRequestException("The name cannot be updated for externally managed group");
     }
   }
 

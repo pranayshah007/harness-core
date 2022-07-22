@@ -39,6 +39,7 @@ import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSl
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppRequestResponse;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSlotDeploymentResponse;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData;
+import io.harness.delegate.task.azure.artifact.AzureRegistrySettingsAdapter;
 import io.harness.delegate.task.azure.common.AzureAppServiceService;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.rule.Owner;
@@ -60,6 +61,7 @@ public class AzureWebAppSlotDeploymentRequestHandlerTest extends CategoryTest {
   @Mock private AzureAppServiceService azureAppServiceService;
   @Mock private AzureAppServiceResourceUtilities azureAppServiceResourceUtilities;
   @Mock private AzureLogCallbackProvider logCallbackProvider;
+  @Mock private AzureRegistrySettingsAdapter azureRegistrySettingsAdapter;
 
   @InjectMocks AzureWebAppSlotDeploymentRequestHandler requestHandler;
 

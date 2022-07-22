@@ -29,6 +29,10 @@ import lombok.extern.slf4j.Slf4j;
 public class BitbucketCreateFileScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String CREATE_FILE_REQUEST_FAILURE =
       "The requested file<FILEPATH> couldn't be created in Bitbucket. ";
+  public static final String CREATE_FILE_BAD_REQUEST_EXPLANATION =
+      "The requested branch<BRANCH> does not have push permission.";
+  public static final String CREATE_FILE_BAD_REQUEST_HINT =
+      "Please use a pull request to create file<FILEPATH> in this branch<BRANCH>.";
 
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
@@ -39,6 +43,12 @@ public class BitbucketCreateFileScmApiErrorHandler implements ScmApiErrorHandler
             ErrorMessageFormatter.formatMessage(INVALID_CREDENTIALS, errorMetadata),
             ErrorMessageFormatter.formatMessage(CREATE_FILE_REQUEST_FAILURE + INVALID_CONNECTOR_CREDS, errorMetadata),
             new ScmUnauthorizedException(errorMessage));
+      case 400:
+        throw NestedExceptionUtils.hintWithExplanationException(
+            ErrorMessageFormatter.formatMessage(CREATE_FILE_BAD_REQUEST_HINT, errorMetadata),
+            ErrorMessageFormatter.formatMessage(
+                CREATE_FILE_REQUEST_FAILURE + CREATE_FILE_BAD_REQUEST_EXPLANATION, errorMetadata),
+            new ScmBadRequestException(errorMessage));
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(
             ErrorMessageFormatter.formatMessage(REPO_NOT_FOUND, errorMetadata),

@@ -11,11 +11,13 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.spy;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -23,6 +25,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.steps.approval.stage.ApprovalStageNode;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
@@ -39,7 +42,8 @@ import org.mockito.MockitoAnnotations;
 public class ApprovalStagePlanCreatorTest extends CategoryTest {
   YamlField approvalStageYamlField;
   PlanCreationContext approvalStageContext;
-  StageElementConfig approvalStageConfig;
+  ApprovalStageNode approvalStageConfig;
+  ApprovalStagePlanCreatorV2 approvalStagePlanCreator = spy(ApprovalStagePlanCreatorV2.class);
 
   @Before
   public void setUp() throws IOException {
@@ -58,7 +62,7 @@ public class ApprovalStagePlanCreatorTest extends CategoryTest {
 
     approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
     approvalStageContext = PlanCreationContext.builder().currentField(approvalStageYamlField).build();
-    approvalStageConfig = YamlUtils.read(approvalStageYamlField.getNode().toString(), StageElementConfig.class);
+    approvalStageConfig = YamlUtils.read(approvalStageYamlField.getNode().toString(), ApprovalStageNode.class);
   }
 
   @Test
@@ -72,7 +76,7 @@ public class ApprovalStagePlanCreatorTest extends CategoryTest {
     assertThat(executionField).isNotNull();
     String executionUuid = executionField.getNode().getUuid();
 
-    ApprovalStagePlanCreator approvalStagePlanCreator = new ApprovalStagePlanCreator();
+    doNothing().when(approvalStagePlanCreator).addStrategyFieldDependencyIfPresent(any(), any(), any(), any());
     LinkedHashMap<String, PlanCreationResponse> planForChildrenNodes =
         approvalStagePlanCreator.createPlanForChildrenNodes(approvalStageContext, approvalStageConfig);
     assertThat(planForChildrenNodes).isNotEmpty();

@@ -7,6 +7,7 @@
 
 package io.harness.data.structure;
 
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,5 +44,27 @@ public class HarnessStringUtilsTest extends CategoryTest {
             "hello"
                 + "-world"));
     assertThat(joinedString).isEqualTo("foobarhello-world");
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testRemoveLeadingAndTrailingQuotesBothOrNone() {
+    // No quotes. So no change.
+    assertThat(HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone("foo")).isEqualTo("foo");
+    // ony leading quote. Will not be removed.
+    assertThat(HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone("\"foo")).isEqualTo("\"foo");
+    // ony trailing quote. Will not be removed.
+    assertThat(HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone("foo\"")).isEqualTo("foo\"");
+    // Leading and trailing quotes, will be removed.
+    assertThat(HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone("\"foo\"")).isEqualTo("foo");
+    assertThat(HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone("\"\"foo\"")).isEqualTo("\"foo");
+
+    // quotes are not at start or end. No change.
+    assertThat(HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone("f\"o\"o")).isEqualTo("f\"o\"o");
+    assertThat(HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone("fo\"o")).isEqualTo("fo\"o");
+
+    // Leading and trailing quotes 2 times, only one will be removed.
+    assertThat(HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone("\"\"foo\"\"")).isEqualTo("\"foo\"");
   }
 }

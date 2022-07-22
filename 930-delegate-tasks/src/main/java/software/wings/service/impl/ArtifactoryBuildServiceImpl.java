@@ -61,6 +61,18 @@ public class ArtifactoryBuildServiceImpl implements ArtifactoryBuildService {
   @Inject private EncryptionService encryptionService;
 
   @Override
+  public List<Map<String, String>> getLabels(ArtifactStreamAttributes artifactStreamAttributes, List<String> buildNos,
+      ArtifactoryConfig artifactoryConfig, List<EncryptedDataDetail> encryptionDetails) {
+    if (artifactStreamAttributes.getArtifactType() != DOCKER) {
+      return List.of();
+    }
+    ArtifactoryConfigRequest artifactoryRequest = ArtifactoryConfigToArtifactoryRequestMapper.toArtifactoryRequest(
+        artifactoryConfig, encryptionService, encryptionDetails);
+    return artifactoryClient.getLabels(artifactoryRequest, artifactStreamAttributes.getImageName(),
+        artifactStreamAttributes.getJobName(), buildNos.get(0));
+  }
+
+  @Override
   public List<BuildDetails> getBuilds(String appId, ArtifactStreamAttributes artifactStreamAttributes,
       ArtifactoryConfig artifactoryConfig, List<EncryptedDataDetail> encryptionDetails) {
     equalCheck(artifactStreamAttributes.getArtifactStreamType(), ArtifactStreamType.ARTIFACTORY.name());
