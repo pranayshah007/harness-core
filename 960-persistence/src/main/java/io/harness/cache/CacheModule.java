@@ -58,6 +58,7 @@ import org.jsr107.ri.annotations.guice.CacheRemoveAllInterceptor;
 import org.jsr107.ri.annotations.guice.CacheRemoveEntryInterceptor;
 import org.jsr107.ri.annotations.guice.CacheResultInterceptor;
 import org.redisson.config.Config;
+import org.redisson.config.SingleServerConfig;
 
 /**
  * Created by peeyushaggarwal on 1/11/17.
@@ -140,6 +141,8 @@ public class CacheModule extends AbstractModule implements ServersModule {
       config.setCodec(new RedissonKryoCodec());
       Files.write(config.toYAML().getBytes(StandardCharsets.UTF_8), file);
       log.info("Found the redisson config in the working directory {}", uri);
+    } else {
+      log.info("Not Found the redisson config in the working directory {}", uri);
     }
     return provider.getCacheManager(uri, provider.getDefaultClassLoader(), new Properties());
   }

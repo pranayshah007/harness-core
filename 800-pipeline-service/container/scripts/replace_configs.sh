@@ -317,7 +317,7 @@ if [[ "" != "$ENTERPRISE_REDIS_URL" ]]; then
 fi
 
 if [[ "" != "$ENTERPRISE_REDIS_USERNAME" ]]; then
-  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.userName "$ENTERPRISE_REDIS_USERNAME"
+  yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.username "$ENTERPRISE_REDIS_USERNAME"
 fi
 
 if [[ "" != "$ENTERPRISE_REDIS_PASSWORD" ]]; then
