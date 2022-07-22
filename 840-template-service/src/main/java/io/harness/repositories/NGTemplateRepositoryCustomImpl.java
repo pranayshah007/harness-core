@@ -258,20 +258,77 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
-  public TemplateEntity updateTemplateYaml(TemplateEntity templateToUpdate, TemplateEntity oldTemplateEntity,
-      ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
+  public TemplateEntity updateTemplateYamlForOldGitSync(TemplateEntity templateToUpdate,
+      TemplateEntity oldTemplateEntity, ChangeType changeType, String comments,
+      TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
     Supplier<OutboxEvent> supplier = null;
-    if (shouldLogAudits(templateToUpdate.getAccountId(), templateToUpdate.getOrgIdentifier(),
-            templateToUpdate.getProjectIdentifier())
-        && !skipAudits) {
-      supplier = ()
-          -> outboxService.save(
-              new TemplateUpdateEvent(templateToUpdate.getAccountIdentifier(), templateToUpdate.getOrgIdentifier(),
-                  templateToUpdate.getProjectIdentifier(), templateToUpdate, oldTemplateEntity, comments,
-                  templateUpdateEventType != null ? templateUpdateEventType : TemplateUpdateEventType.OTHERS_EVENT));
+    if (isAuditEnabled(templateToUpdate, skipAudits)) {
+      supplier = () -> generateOutbox(templateToUpdate, oldTemplateEntity, comments, templateUpdateEventType);
     }
     return gitAwarePersistence.save(
         templateToUpdate, templateToUpdate.getYaml(), changeType, TemplateEntity.class, supplier);
+  }
+
+  @Override
+  public TemplateEntity updateTemplateYaml(TemplateEntity templateToUpdate, TemplateEntity oldTemplateEntity,
+      ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
+    //    TODO: update template entity in db and update yaml in git
+    //    in monogo db replace old to new
+
+    Criteria criteria =
+        buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
+            templateToUpdate.getAccountId(), templateToUpdate.getOrgIdentifier(),
+            templateToUpdate.getProjectIdentifier(), templateToUpdate.getIdentifier(),
+            templateToUpdate.getVersionLabel(), true);
+
+    Query query = new Query(criteria);
+    long timeOfUpdate = System.currentTimeMillis();
+    Update updateOperations = TemplateUtils.getUpdateOperations(templateToUpdate, timeOfUpdate);
+
+    TemplateEntity updatedTemplateEntity =
+        updateTemplateEntityInDB(query, updateOperations, templateToUpdate, timeOfUpdate, templateUpdateEventType);
+
+    if (updatedTemplateEntity == null) {
+      return null;
+    }
+    // this method is only called for inline and new git exp pipelines, not old git exp ones. And if store type is null,
+    // that means it is supposed to be inline, but isn’t because this template was created before storeType was
+    // introduced. Hence we are setting it to inline
+    updatedTemplateEntity = onboardToInlineIfNullStoreType(updatedTemplateEntity, query);
+    if (updatedTemplateEntity == null) {
+      return null;
+    }
+
+    GitAwareContextHelper.initDefaultScmGitMetaData();
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    if (gitEntityInfo != null && isNewGitXEnabled(templateToUpdate, gitEntityInfo)) {
+      Scope scope = TemplateUtils.buildScope(templateToUpdate);
+      gitAwareEntityHelper.updateEntityOnGit(updatedTemplateEntity, templateToUpdate.getYaml(), scope);
+    }
+
+    if (isAuditEnabled(templateToUpdate, skipAudits)) {
+      generateOutbox(templateToUpdate, oldTemplateEntity, comments, templateUpdateEventType);
+    }
+    return templateToUpdate;
+  }
+
+  TemplateEntity updateTemplateEntityInDB(Query query, Update updateOperations, TemplateEntity templateToUpdate,
+      long timeOfUpdate, TemplateUpdateEventType templateUpdateEventType) {
+    TemplateEntity oldEntityFromDB = mongoTemplate.findAndModify(
+        query, updateOperations, new FindAndModifyOptions().returnNew(false), TemplateEntity.class);
+    if (oldEntityFromDB == null) {
+      return null;
+    }
+    return TemplateUtils.updateFieldsInDBEntry(oldEntityFromDB, templateToUpdate, timeOfUpdate);
+  }
+
+  TemplateEntity onboardToInlineIfNullStoreType(TemplateEntity updatedTemplateEntity, Query query) {
+    if (updatedTemplateEntity.getStoreType() == null) {
+      Update updateOperationsForOnboardingToInline = TemplateUtils.getUpdateOperationsForOnboardingToInline();
+      updatedTemplateEntity = mongoTemplate.findAndModify(query, updateOperationsForOnboardingToInline,
+          new FindAndModifyOptions().returnNew(true), TemplateEntity.class);
+    }
+    return updatedTemplateEntity;
   }
 
   @Override
@@ -397,5 +454,19 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     return gitSyncSdkService.isGitSimplificationEnabled(templateToSave.getAccountIdentifier(),
                templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier())
         && TemplateUtils.isRemoteEntity(gitEntityInfo);
+  }
+
+  private boolean isAuditEnabled(TemplateEntity templateToUpdate, boolean skipAudits) {
+    return shouldLogAudits(templateToUpdate.getAccountId(), templateToUpdate.getOrgIdentifier(),
+               templateToUpdate.getProjectIdentifier())
+        && !skipAudits;
+  }
+
+  private OutboxEvent generateOutbox(TemplateEntity templateToUpdate, TemplateEntity oldTemplateEntity, String comments,
+      TemplateUpdateEventType templateUpdateEventType) {
+    return outboxService.save(
+        new TemplateUpdateEvent(templateToUpdate.getAccountIdentifier(), templateToUpdate.getOrgIdentifier(),
+            templateToUpdate.getProjectIdentifier(), templateToUpdate, oldTemplateEntity, comments,
+            templateUpdateEventType != null ? templateUpdateEventType : TemplateUpdateEventType.OTHERS_EVENT));
   }
 }

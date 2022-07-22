@@ -13,6 +13,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.template.entity.TemplateEntity;
 
 import lombok.experimental.UtilityClass;
+import org.springframework.data.mongodb.core.query.Update;
 
 @UtilityClass
 public class TemplateUtils {
@@ -27,5 +28,31 @@ public class TemplateUtils {
 
   public boolean isRemoteEntity(GitEntityInfo gitEntityInfo) {
     return StoreType.REMOTE.equals(gitEntityInfo.getStoreType());
+  }
+
+  public Update getUpdateOperations(TemplateEntity templateEntity, long timestamp) {
+    Update update = new Update();
+    update.set(TemplateEntity.TemplateEntityKeys.yaml, templateEntity.getYaml());
+    update.set(TemplateEntity.TemplateEntityKeys.lastUpdatedAt, timestamp);
+    update.set(TemplateEntity.TemplateEntityKeys.deleted, false);
+    update.set(TemplateEntity.TemplateEntityKeys.name, templateEntity.getName());
+    update.set(TemplateEntity.TemplateEntityKeys.description, templateEntity.getDescription());
+    update.set(TemplateEntity.TemplateEntityKeys.tags, templateEntity.getTags());
+    return update;
+  }
+
+  public TemplateEntity updateFieldsInDBEntry(
+      TemplateEntity entityFromDB, TemplateEntity fieldsToUpdate, long timeOfUpdate) {
+    return entityFromDB.withYaml(fieldsToUpdate.getYaml())
+        .withName(fieldsToUpdate.getName())
+        .withLastUpdatedAt(timeOfUpdate)
+        .withDescription(fieldsToUpdate.getDescription())
+        .withTags(fieldsToUpdate.getTags());
+  }
+
+  public Update getUpdateOperationsForOnboardingToInline() {
+    Update update = new Update();
+    update.set(TemplateEntity.TemplateEntityKeys.storeType, StoreType.INLINE);
+    return update;
   }
 }

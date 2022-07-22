@@ -93,7 +93,7 @@ public class TemplateEntity
 
   @Wither @Version Long version; // version for mongo operations
   @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate long createdAt;
-  @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
+  @Wither @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
 
   @Setter @NonFinal Set<String> modules;
 
