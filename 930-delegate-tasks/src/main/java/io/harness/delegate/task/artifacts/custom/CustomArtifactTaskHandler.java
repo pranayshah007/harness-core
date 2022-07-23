@@ -11,6 +11,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.deleteFileIfExists;
 
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.mappers.CustomRequestResponseMapper;
@@ -63,10 +64,16 @@ public class CustomArtifactTaskHandler extends DelegateArtifactTaskHandler<Custo
     String script = attributesRequest.getScript();
     List<BuildDetails> buildDetails = new ArrayList<>();
     buildDetails = getBuildDetails(attributesRequest, logStreamingTaskClient);
-    CustomArtifactDelegateResponse customArtifactDelegateResponse =
-        CustomRequestResponseMapper.toCustomArtifactDelegateResponse(buildDetails.get(0), attributesRequest);
-    return getSuccessTaskExecutionResponse(
-        Collections.singletonList(customArtifactDelegateResponse), filterVersion(buildDetails, attributesRequest));
+    if(filterVersion(buildDetails, attributesRequest) != null && EmptyPredicate.isNotEmpty(filterVersion(buildDetails, attributesRequest))){
+      CustomArtifactDelegateResponse customArtifactDelegateResponse =
+              CustomRequestResponseMapper.toCustomArtifactDelegateResponse(filterVersion(buildDetails, attributesRequest).get(0), attributesRequest);
+      return getSuccessTaskExecutionResponse(
+              Collections.singletonList(customArtifactDelegateResponse), filterVersion(buildDetails, attributesRequest));
+    }
+    else {
+      log.error("Artifact Version Not found");
+      throw new InvalidArtifactServerException("Artifact version not found", Level.INFO, USER);
+    }
   }
 
   private List<BuildDetails> getBuildDetails(
