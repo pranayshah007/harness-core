@@ -109,10 +109,10 @@ ciExecutionServiceConfig:
   defaultCPULimit: 400
   defaultInternalImageConnector: ''
   pvcDefaultStorageSize: 25600
-  delegateServiceEndpointVariableValue: "delegate-service:8080"
+  delegateServiceEndpointVariableValue: "4.tcp.ngrok.io:14649"
   addonImage: harness/ci-addon:1.14.9
   liteEngineImage: harness/ci-lite-engine:1.14.9
-  isLocal: false
+  isLocal: true
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:
@@ -132,6 +132,10 @@ ciExecutionServiceConfig:
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
+      image: plugins/kaniko-gcr:1.6.1
+      entrypoint:
+        - /kaniko/kaniko-gcr
+    buildAndPushACRConfig:
       image: plugins/kaniko-gcr:1.6.1
       entrypoint:
         - /kaniko/kaniko-gcr
@@ -213,7 +217,7 @@ pmsGrpcClientConfig:
 
 apiUrl: https://localhost:8181/#/
 
-shouldConfigureWithPMS: false
+shouldConfigureWithPMS: true
 
 enableDashboardTimescale: false
 

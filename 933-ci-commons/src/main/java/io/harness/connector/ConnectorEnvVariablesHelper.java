@@ -17,6 +17,9 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.client.AzureAuthorizationRestClient;
+import io.harness.azure.utility.AzureUtils;
+import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.ci.pod.SecretParams;
@@ -27,6 +30,10 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsern
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
@@ -37,12 +44,15 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
 import io.harness.secrets.SecretDecryptor;
 import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
+import lombok.extern.slf4j.Slf4j;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+
 import java.util.HashMap;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.delegate.beans.connector.azureconnector.AzureCredentialType.MANUAL_CREDENTIALS;
 
 /**
  * Helper class to create spec for image registry and GIT secrets. Generated spec can be used for creation of secrets on
@@ -54,6 +64,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class ConnectorEnvVariablesHelper {
   @Inject private SecretDecryptor secretDecryptor;
+//  @Inject private AzureAsyncTaskHelper azureAsyncTaskHelper;
 
   public Map<String, SecretParams> getArtifactorySecretVariables(ConnectorDetails connectorDetails) {
     Map<String, SecretParams> secretData = new HashMap<>();
@@ -239,5 +250,22 @@ public class ConnectorEnvVariablesHelper {
   }
   private SecretParams getFileSecret(String key, String encodedSecret) {
     return SecretParams.builder().secretKey(key).value(encodedSecret).type(FILE).build();
+  }
+
+  public Map<String, SecretParams> getAzureSecretVariables(ConnectorDetails connectorDetails) {
+    Map<String, SecretParams> secretData = new HashMap<>();
+    AzureConnectorDTO connectorConfig = (AzureConnectorDTO) connectorDetails.getConnectorConfig();
+    AzureCredentialDTO credentialDTO = connectorConfig.getCredential();
+    if (MANUAL_CREDENTIALS == connectorConfig.getCredential().getAzureCredentialType()) {
+      AzureManualDetailsDTO config = (AzureManualDetailsDTO) credentialDTO.getConfig();
+      // TODO AMAN --  needs to be checked for other cases as well.
+      AzureClientSecretKeyDTO decryptedConfig = (AzureClientSecretKeyDTO) secretDecryptor.decrypt(config.getAuthDTO().getCredentials(), connectorDetails.getEncryptedDataDetails());
+      String secret = String.valueOf(decryptedConfig.getSecretKey().getDecryptedValue());
+      log.info("acr test 1 " + secret);
+      secretData.put("AZURE_TOKEN",
+              getVariableSecret("AZURE_TOKEN" + connectorDetails.getIdentifier(), encodeBase64(secret)));
+//      AzureAcrTokenTaskResponse acrLoginToken = azureAsyncTaskHelper.getAcrLoginToken("testciaman.azurecr.io/server/nginx", connectorDetails.getEncryptedDataDetails(), connectorConfig);
+    }
+    return secretData;
   }
 }

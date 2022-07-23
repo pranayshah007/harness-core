@@ -37,7 +37,8 @@ public class CiBeansComponentTest extends CiBeansTestBase {
   public void componentCiBeansTests() {
     for (Entry<String, TestExecution> test : tests.entrySet()) {
       assertThatCode(() -> test.getValue().run()).as(test.getKey()).doesNotThrowAnyException();
-      log.info("{} passed", test.getKey());
+      log.info("{} pas" +
+              "sed", test.getKey());
     }
   }
 }

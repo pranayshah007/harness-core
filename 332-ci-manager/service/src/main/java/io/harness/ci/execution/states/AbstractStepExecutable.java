@@ -541,6 +541,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
       case GCR:
       case DOCKER:
       case ECR:
+      case ACR:
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_GCS:
       case UPLOAD_S3:

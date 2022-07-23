@@ -18,7 +18,7 @@ import java.util.Set;
 public class CIStepVariableCreator extends GenericStepVariableCreator {
   @Override
   public Set<String> getSupportedStepTypes() {
-    return Sets.newHashSet("SaveCacheS3", "BuildAndPushGCR", "BuildAndPushECR", "BuildAndPushDockerRegistry", "Plugin",
+    return Sets.newHashSet("SaveCacheS3", "BuildAndPushGCR", "BuildAndPushACR", "BuildAndPushECR", "BuildAndPushDockerRegistry", "Plugin",
         "Security", "RestoreCacheGCS", "RestoreCacheS3", "SaveCacheGCS", "S3Upload", "GCSUpload", "ArtifactoryUpload");
   }
 }

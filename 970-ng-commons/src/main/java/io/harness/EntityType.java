@@ -231,6 +231,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_ECR)
   BUILD_AND_PUSH_ECR(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_ECR, IdentifierRef.class,
       EntityYamlRootNames.BUILD_AND_PUSH_ECR),
+  @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_ACR)
+  BUILD_AND_PUSH_ACR(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_ACR, IdentifierRef.class,
+          EntityYamlRootNames.BUILD_AND_PUSH_ACR),
   @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_DOCKER_REGISTRY)
   BUILD_AND_PUSH_DOCKER_REGISTRY(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_DOCKER_REGISTRY, IdentifierRef.class,
       EntityYamlRootNames.BUILD_AND_PUSH_DOCKER_REGISTRY),

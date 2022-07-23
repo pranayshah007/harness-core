@@ -409,6 +409,11 @@ public class CIExecutionConfigService {
           image = ciExecutionConfig.getBuildAndPushECRImage();
         }
         break;
+      case ACR:
+        if (Strings.isNotBlank(ciExecutionConfig.getBuildAndPushACRImage())) {
+          image = ciExecutionConfig.getBuildAndPushACRImage();
+        }
+        break;
       case RESTORE_CACHE_S3:
       case SAVE_CACHE_S3:
         if (Strings.isNotBlank(ciExecutionConfig.getCacheS3Tag())) {
@@ -465,6 +470,8 @@ public class CIExecutionConfigService {
         return ciExecutionServiceConfig.getStepConfig().getBuildAndPushGCRConfig();
       case ECR:
         return ciExecutionServiceConfig.getStepConfig().getBuildAndPushECRConfig();
+      case ACR:
+        return ciExecutionServiceConfig.getStepConfig().getBuildAndPushACRConfig();
       case RESTORE_CACHE_S3:
       case SAVE_CACHE_S3:
         return ciExecutionServiceConfig.getStepConfig().getCacheS3Config();
@@ -513,6 +520,11 @@ public class CIExecutionConfigService {
       case ECR:
         if (Strings.isNotBlank(vmImageConfig.getBuildAndPushECR())) {
           image = vmImageConfig.getBuildAndPushECR();
+        }
+        break;
+      case ACR:
+        if (Strings.isNotBlank(vmImageConfig.getBuildAndPushACR())) {
+          image = vmImageConfig.getBuildAndPushACR();
         }
         break;
       case RESTORE_CACHE_S3:
@@ -568,6 +580,8 @@ public class CIExecutionConfigService {
         return vmImageConfig.getBuildAndPushGCR();
       case ECR:
         return vmImageConfig.getBuildAndPushECR();
+      case ACR:
+        return vmImageConfig.getBuildAndPushACR();
       case RESTORE_CACHE_S3:
       case SAVE_CACHE_S3:
         return vmImageConfig.getCacheS3();

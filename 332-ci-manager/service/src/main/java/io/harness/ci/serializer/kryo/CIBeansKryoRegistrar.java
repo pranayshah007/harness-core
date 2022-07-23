@@ -41,6 +41,7 @@ import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.steps.outcome.CIStepOutcome;
 import io.harness.beans.steps.outcome.StepArtifacts;
+import io.harness.beans.steps.stepinfo.ACRStepInfo;
 import io.harness.beans.steps.stepinfo.BuildEnvSetupStepInfo;
 import io.harness.beans.steps.stepinfo.CleanupStepInfo;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
@@ -195,5 +196,7 @@ public class CIBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(EmptyDirYaml.class, 390006);
     kryo.register(HostPathYaml.class, 390007);
     kryo.register(PersistentVolumeClaimYaml.class, 390008);
+
+    kryo.register(ACRStepInfo.class, 390009);
   }
 }

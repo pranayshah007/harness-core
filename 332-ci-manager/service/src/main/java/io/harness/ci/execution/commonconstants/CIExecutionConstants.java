@@ -127,6 +127,11 @@ public class CIExecutionConstants {
   public static final String PLUGIN_REGISTRY = "PLUGIN_REGISTRY";
   public static final String PLUGIN_ACCESS_KEY = "PLUGIN_ACCESS_KEY";
   public static final String PLUGIN_SECRET_KEY = "PLUGIN_SECRET_KEY";
+
+  // TODO(aman) review these
+  public static final String APP_SECRET = "APP_SECRET";
+  public static final String TENANT_ID = "TENANT_ID";
+  public static final String APPLICATION_ID = "APPLICATION_ID";
   public static final String PLUGIN_ASSUME_ROLE = "PLUGIN_ASSUME_ROLE";
   public static final String PLUGIN_EXTERNAL_ID = "PLUGIN_EXTERNAL_ID";
 
