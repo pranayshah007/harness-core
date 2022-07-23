@@ -627,7 +627,8 @@ public enum ErrorCode {
   TOO_MANY_REQUESTS,
   INVALID_IDENTIFIER_REF,
 
-  SPOTINST_NULL_ERROR;
+  SPOTINST_NULL_ERROR,
+  SCM_UNEXPECTED_ERROR;
 
   private Status status = BAD_REQUEST;
   private String description;

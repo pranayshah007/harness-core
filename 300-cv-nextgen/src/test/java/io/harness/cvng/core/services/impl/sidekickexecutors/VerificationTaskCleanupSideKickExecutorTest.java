@@ -33,6 +33,7 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.Serv
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
+import io.harness.reflection.HarnessReflections;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -40,10 +41,11 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.reflections.Reflections;
 
 public class VerificationTaskCleanupSideKickExecutorTest extends CvNextGenTestBase {
   @Inject private HPersistence hPersistence;
@@ -154,9 +156,16 @@ public class VerificationTaskCleanupSideKickExecutorTest extends CvNextGenTestBa
         VerificationTaskCleanupSideKickExecutor.ENTITIES_TO_DELETE_BY_VERIFICATION_ID);
     entitiesWithVerificationTaskId.addAll(
         VerificationTaskCleanupSideKickExecutor.ENTITIES_DELETE_BLACKLIST_BY_VERIFICATION_ID);
-    Reflections reflections = new Reflections(VerificationApplication.class.getPackage().getName());
+    Set<Class<? extends PersistentEntity>> reflections =
+        HarnessReflections.get()
+            .getSubTypesOf(PersistentEntity.class)
+            .stream()
+            .filter(klazz
+                -> StringUtils.startsWithAny(
+                    klazz.getPackage().getName(), VerificationApplication.class.getPackage().getName()))
+            .collect(Collectors.toSet());
     Set<Class<? extends PersistentEntity>> withVerificationTaskId = new HashSet<>();
-    reflections.getSubTypesOf(PersistentEntity.class).forEach(entity -> {
+    reflections.forEach(entity -> {
       if (doesClassContainField(entity, VerificationTask.VERIFICATION_TASK_ID_KEY)) {
         withVerificationTaskId.add(entity);
       }

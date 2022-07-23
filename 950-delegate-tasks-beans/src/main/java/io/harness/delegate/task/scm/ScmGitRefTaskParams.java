@@ -38,6 +38,7 @@ public class ScmGitRefTaskParams implements TaskParameters, ExecutionCapabilityD
   List<EncryptedDataDetail> encryptedDataDetails;
   String baseBranch;
   PageRequestDTO pageRequest;
+  String filePath;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

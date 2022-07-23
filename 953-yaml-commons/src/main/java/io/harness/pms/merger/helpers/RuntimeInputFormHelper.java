@@ -13,6 +13,7 @@ import static io.harness.expression.EngineExpressionEvaluator.EXPR_START;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
+import io.harness.data.structure.HarnessStringUtils;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
@@ -45,7 +46,7 @@ public class RuntimeInputFormHelper {
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
     Map<FQN, Object> templateMap = new LinkedHashMap<>();
     fullMap.keySet().forEach(key -> {
-      String value = fullMap.get(key).toString().replace("\"", "");
+      String value = HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(fullMap.get(key).toString());
       if ((keepInput && NGExpressionUtils.matchesInputSetPattern(value))
           || (!keepInput && !NGExpressionUtils.matchesInputSetPattern(value) && !key.isIdentifierOrVariableName()
               && !key.isType())) {

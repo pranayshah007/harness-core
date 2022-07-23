@@ -379,9 +379,15 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
           ? emptyList()
           : Splitter.on(',').omitEmptyStrings().trimResults().splitToList(featureNames);
       for (String name : definedNames) {
+        boolean isEnabled = enabled.contains(name);
+        UpdateOperations<FeatureFlag> updateQuery =
+            persistence.createUpdateOperations(FeatureFlag.class).set(FeatureFlagKeys.enabled, isEnabled);
+        if (!isEnabled) {
+          updateQuery.unset(FeatureFlagKeys.accountIds);
+        }
         persistence.update(
             persistence.createQuery(FeatureFlag.class, excludeAuthority).filter(FeatureFlagKeys.name, name),
-            persistence.createUpdateOperations(FeatureFlag.class).set(FeatureFlagKeys.enabled, enabled.contains(name)));
+            updateQuery);
       }
     }
     /**

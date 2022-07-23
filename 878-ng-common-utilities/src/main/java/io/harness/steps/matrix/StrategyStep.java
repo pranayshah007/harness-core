@@ -88,10 +88,10 @@ public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<Strategy
       }
       return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
     }
-    if (stepParameters.getStrategyConfig().getForConfig() != null) {
+    if (stepParameters.getStrategyConfig().getRepeat() != null) {
       int maxConcurrency = 0;
-      if (!ParameterField.isBlank(stepParameters.getStrategyConfig().getForConfig().getMaxConcurrency())) {
-        maxConcurrency = stepParameters.getStrategyConfig().getForConfig().getMaxConcurrency().getValue();
+      if (!ParameterField.isBlank(stepParameters.getStrategyConfig().getRepeat().getMaxConcurrency())) {
+        maxConcurrency = stepParameters.getStrategyConfig().getRepeat().getMaxConcurrency().getValue();
       }
       List<Child> children = forLoopStrategyConfigService.fetchChildren(
           stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());

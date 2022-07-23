@@ -51,6 +51,8 @@ public interface UserGroupService {
 
   UserGroup update(UserGroupDTO userGroupDTO);
 
+  UserGroup updateWithCheckThatSCIMFieldsAreNotModified(UserGroupDTO userGroupDTO);
+
   Page<UserGroup> list(String accountIdentifier, String orgIdentifier, String projectIdentifier, String searchTerm,
       UserGroupFilterType filterType, Pageable pageable);
 

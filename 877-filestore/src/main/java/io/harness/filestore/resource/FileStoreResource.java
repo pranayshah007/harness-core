@@ -43,6 +43,7 @@ import io.harness.beans.SearchPageParams;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.NoResultFoundException;
+import io.harness.filestore.dto.filter.FileStoreNodesFilterQueryPropertiesDTO;
 import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.service.FileStoreService;
@@ -175,7 +176,7 @@ public class FileStoreResource {
 
     validate(file);
 
-    return ResponseDTO.newResponse(fileStoreService.update(file, content, identifier));
+    return ResponseDTO.newResponse(fileStoreService.update(file, content));
   }
 
   @GET
@@ -291,12 +292,12 @@ public class FileStoreResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
       @RequestBody(required = true, description = "Folder node for which to return the list of nodes") @Valid
-      @NotNull FolderNodeDTO folderNodeDTO) {
+      @NotNull FolderNodeDTO folderNodeDTO, @BeanParam FileStoreNodesFilterQueryPropertiesDTO filterQueryParams) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, null), FILE_VIEW_PERMISSION);
 
-    return ResponseDTO.newResponse(
-        fileStoreService.listFolderNodes(accountIdentifier, orgIdentifier, projectIdentifier, folderNodeDTO));
+    return ResponseDTO.newResponse(fileStoreService.listFolderNodes(
+        accountIdentifier, orgIdentifier, projectIdentifier, folderNodeDTO, filterQueryParams));
   }
 
   @POST
@@ -348,7 +349,7 @@ public class FileStoreResource {
     file.setIdentifier(identifier);
     file.setDraft(true);
 
-    return ResponseDTO.newResponse(fileStoreService.update(file, null, identifier));
+    return ResponseDTO.newResponse(fileStoreService.update(file, null));
   }
 
   @GET

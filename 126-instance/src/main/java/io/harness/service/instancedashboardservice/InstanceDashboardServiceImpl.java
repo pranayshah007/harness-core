@@ -132,10 +132,9 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
 
   @Override
   public List<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     AggregationResults<ActiveServiceInstanceInfo> activeServiceInstanceInfoAggregationResults =
-        instanceService.getActiveServiceInstanceInfo(
-            accountIdentifier, orgIdentifier, projectIdentifier, serviceId, timestampInMs);
+        instanceService.getActiveServiceInstanceInfo(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
     List<ActiveServiceInstanceInfo> activeServiceInstanceInfoList = new ArrayList<>();
 
     activeServiceInstanceInfoAggregationResults.getMappedResults().forEach(activeServiceInstanceInfo -> {

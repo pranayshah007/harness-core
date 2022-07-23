@@ -142,6 +142,8 @@ public class PlanCreatorMergeService {
       PlanCreationBlobResponse finalResponse = createPlanForDependenciesRecursive(accountId, orgIdentifier,
           projectIdentifier, services, dependencies, metadata, planExecutionMetadata.getTriggerPayload());
       planCreationValidator.validate(accountId, finalResponse);
+      planExecutionMetadata.setExecutionInputConfigured(finalResponse.getNodesMap().values().stream().anyMatch(
+          o -> !EmptyPredicate.isEmpty(o.getExecutionInputTemplate())));
       return finalResponse;
     }
   }

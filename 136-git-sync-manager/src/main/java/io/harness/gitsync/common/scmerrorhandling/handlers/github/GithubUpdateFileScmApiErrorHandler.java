@@ -28,11 +28,13 @@ public class GithubUpdateFileScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String UPDATE_FILE_FAILED = "The requested file<FILEPATH> couldn't be updated. ";
   public static final String UPDATE_FILE_NOT_FOUND_ERROR_HINT = "Please check the following:\n"
       + "1. If requested Github repository<REPO> exists or not.\n"
-      + "2. If requested branch<BRANCH> exists or not.";
+      + "2. If requested branch<BRANCH> exists or not."
+      + "3. If requested branch<BRANCH> has permissions to push.";
   public static final String UPDATE_FILE_NOT_FOUND_ERROR_EXPLANATION =
       "There was issue while updating file in git. Possible reasons can be:\n"
       + "1. The requested Github repository<REPO> doesn't exist\n"
-      + "2. The requested branch<BRANCH> doesn't exist in given Github repository.";
+      + "2. The requested branch<BRANCH> doesn't exist in given Github repository."
+      + "3. The requested branch<BRANCH> does not have permissions to push.";
   public static final String UPDATE_FILE_CONFLICT_ERROR_HINT =
       "Please check the input blob id of the requested file. It should match with current blob id of the file<FILEPATH> at head of the branch<BRANCH> in Github repository<REPO>";
   public static final String UPDATE_FILE_CONFLICT_ERROR_EXPLANATION =

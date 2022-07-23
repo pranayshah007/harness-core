@@ -99,9 +99,30 @@ public class PMSPipelineDtoMapper {
     }
   }
 
+  public PipelineEntity toPipelineEntity(
+      String accountId, String orgId, String projectId, String yaml, Boolean isDraft) {
+    PipelineEntity pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml);
+    if (isDraft == null) {
+      isDraft = false;
+    }
+    pipelineEntity.setIsDraft(isDraft);
+    return pipelineEntity;
+  }
+
   public PipelineEntity toPipelineEntityWithVersion(
       String accountId, String orgId, String projectId, String pipelineId, String yaml, String ifMatch) {
     PipelineEntity pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml);
+    PipelineEntity withVersion = pipelineEntity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
+    if (!withVersion.getIdentifier().equals(pipelineId)) {
+      throw new InvalidRequestException(String.format(
+          "Expected Pipeline identifier in YAML to be [%s], but was [%s]", pipelineId, pipelineEntity.getIdentifier()));
+    }
+    return withVersion;
+  }
+
+  public PipelineEntity toPipelineEntityWithVersion(String accountId, String orgId, String projectId, String pipelineId,
+      String yaml, String ifMatch, Boolean isDraft) {
+    PipelineEntity pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml, isDraft);
     PipelineEntity withVersion = pipelineEntity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     if (!withVersion.getIdentifier().equals(pipelineId)) {
       throw new InvalidRequestException(String.format(
