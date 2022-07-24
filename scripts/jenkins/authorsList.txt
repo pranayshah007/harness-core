@@ -145,6 +145,7 @@ Pratyush Goel goel.pratyush@harness.io
 Praveen Kambam Sugavanam praveen.sugavanam@harness.io
 Praveen Sugavanam praveen.sugavanam@harness.io
 Puneet Saraswat puneet.saraswat@harness.io
+Rafael Martins rafael.martins@harness.io
 Raghvendra Singh raghu@harness.io
 Raghvendra Singh raghvendra.singh@harness.io
 Raj Patel raj.patel@harness.io
@@ -289,4 +290,5 @@ Jimit Gandhi jimit.gandhi@harness.io
 Tarun Uba tarun.uba@harness.io
 Sourabh Awashti sourabh.awashti@harness.io
 Vikyath Harekal vikyath.harekal@harness.io
+Vinícius Calasans vinicius.calasans@harness.io
 

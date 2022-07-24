@@ -50,8 +50,8 @@ public class ChangeIntelReplicaSetHandler extends BaseChangeHandler<V1ReplicaSet
       String newYaml = k8sHandlerUtils.yamlDump(v1ReplicaSet);
       ((KubernetesChangeEventMetadata) eventDTO.getMetadata()).setNewYaml(newYaml);
       ((KubernetesChangeEventMetadata) eventDTO.getMetadata())
-          .setTimestamp(Instant.ofEpochMilli(
-              v1ReplicaSet.getMetadata().getCreationTimestamp().toDateTime().toInstant().getMillis()));
+          .setTimestamp(
+              Instant.ofEpochMilli(v1ReplicaSet.getMetadata().getCreationTimestamp().toInstant().toEpochMilli()));
       ((KubernetesChangeEventMetadata) eventDTO.getMetadata()).setAction(KubernetesChangeEventMetadata.Action.Add);
       sendEvent(accountId, eventDTO);
     }

@@ -24,7 +24,7 @@ import com.google.common.collect.Maps;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapBuilder;
 import io.kubernetes.client.openapi.models.V1OwnerReferenceBuilder;
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -149,7 +149,7 @@ public class ChangeIntelConfigMapHandlerTest extends ChangeIntelHandlerTestBase 
         .withAnnotations(annotationMap)
         .withName("test-name")
         .withNamespace("test-namespace")
-        .withNewCreationTimestamp(Instant.now().toEpochMilli())
+        .withCreationTimestamp(OffsetDateTime.now())
         .withUid("test-uid")
         .endMetadata()
         .withData(Maps.newHashMap(ImmutableMap.of("key1", "value1")))

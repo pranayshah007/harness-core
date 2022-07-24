@@ -27,15 +27,19 @@ import io.harness.expression.ExpressionEvaluator;
 
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @Value
+@Getter
 @OwnedBy(CDP)
 public class WinrmTaskParameters extends CommandTaskParameters implements ExecutionCapabilityDemander {
   String host;
   WinRmInfraDelegateConfig winRmInfraDelegateConfig;
+  boolean disableWinRMCommandEncodingFFSet;
+  boolean useWinRMKerberosUniqueCacheFile;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

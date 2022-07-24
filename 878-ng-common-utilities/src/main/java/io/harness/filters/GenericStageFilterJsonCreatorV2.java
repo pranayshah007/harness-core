@@ -15,7 +15,6 @@ import io.harness.encryption.SecretRefData;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
-import io.harness.plancreator.strategy.StageStrategyUtils;
 import io.harness.pms.exception.runtime.InvalidYamlRuntimeException;
 import io.harness.pms.filter.creation.FilterCreationResponse;
 import io.harness.pms.filter.creation.FilterCreationResponse.FilterCreationResponseBuilder;
@@ -27,6 +26,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.strategy.StrategyValidationUtils;
 import io.harness.walktree.visitor.SimpleVisitorFactory;
 import io.harness.walktree.visitor.entityreference.EntityReferenceExtractorVisitor;
 
@@ -65,7 +65,7 @@ public abstract class GenericStageFilterJsonCreatorV2<T extends AbstractStageNod
   public FilterCreationResponse handleNode(FilterCreationContext filterCreationContext, T stageNode) {
     FilterCreationResponseBuilder creationResponse = FilterCreationResponse.builder();
     if (stageNode.getStrategy() != null) {
-      StageStrategyUtils.validateStrategyNode(stageNode.getStrategy());
+      StrategyValidationUtils.validateStrategyNode(stageNode.getStrategy());
     }
 
     YamlField variablesField =

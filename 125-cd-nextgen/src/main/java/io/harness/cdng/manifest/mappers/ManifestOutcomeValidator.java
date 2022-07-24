@@ -24,6 +24,7 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.exception.InvalidArgumentsException;
@@ -56,12 +57,19 @@ public class ManifestOutcomeValidator {
       validateGcsStore((GcsStoreConfig) store, manifestId, allowExpression);
     } else if (ManifestStoreType.ARTIFACTORY.equals(store.getKind())) {
       validateArtifactoryStore((ArtifactoryStoreConfig) store, manifestId, allowExpression);
+    } else if (ManifestStoreType.HARNESS.equals(store.getKind())) {
+      validateHarnessStore((HarnessStore) store, manifestId, allowExpression);
     }
   }
 
   private void validateHelmChartManifest(HelmChartManifestOutcome helmChartManifest, boolean allowExpression) {
     String manifestStoreKind = helmChartManifest.getStore().getKind();
-    if (!ManifestStoreType.isInGitSubset(manifestStoreKind)) {
+    if (ManifestStoreType.HARNESS.equals(manifestStoreKind)) {
+      HarnessStore harnessStore = (HarnessStore) helmChartManifest.getStore();
+      if (!hasValue(harnessStore.getFiles())) {
+        throw new InvalidArgumentsException(Pair.of("files", format("required for %s store type", manifestStoreKind)));
+      }
+    } else if (!ManifestStoreType.isInGitSubset(manifestStoreKind)) {
       if (!hasValue(helmChartManifest.getChartName(), allowExpression)) {
         throw new InvalidArgumentsException(
             Pair.of("chartName", format("required for %s store type", manifestStoreKind)));
@@ -160,6 +168,17 @@ public class ManifestOutcomeValidator {
 
     if (!hasValue(store.getBucketName(), allowExpression)) {
       throw new InvalidArgumentsException(Pair.of("bucketName", "Cannot be empty or null for Gcs store"));
+    }
+  }
+
+  private void validateHarnessStore(HarnessStore store, String manifestId, boolean allowExpression) {
+    if (hasValue(store.getConnectorReference(), allowExpression)) {
+      throw new InvalidArgumentsException(
+          format("Non empty connectorRef in Harness store spec for manifest with identifier: %s", manifestId));
+    }
+
+    if (!hasValue(store.getFiles())) {
+      throw new InvalidArgumentsException(Pair.of("files", "Cannot be empty or null for Harness store"));
     }
   }
 

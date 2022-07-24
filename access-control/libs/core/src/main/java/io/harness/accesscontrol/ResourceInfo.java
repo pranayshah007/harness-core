@@ -11,6 +11,7 @@ import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 
@@ -21,4 +22,5 @@ public class ResourceInfo {
   Scope resourceScope;
   String resourceType;
   String resourceIdentifier;
+  Map<String, String> resourceAttributes;
 }

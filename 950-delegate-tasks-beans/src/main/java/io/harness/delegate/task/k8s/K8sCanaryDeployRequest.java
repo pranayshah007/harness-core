@@ -44,4 +44,5 @@ public class K8sCanaryDeployRequest implements K8sDeployRequest {
   boolean useLatestKustomizeVersion;
   boolean useNewKubectlVersion;
   boolean cleanUpIncompleteCanaryDeployRelease;
+  boolean useK8sApiForSteadyStateCheck;
 }

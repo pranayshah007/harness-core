@@ -10,6 +10,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//945-account-mgmt:module",
         "//956-feature-flag-beans:module",
         "//960-continuous-features:module",
         "//960-persistence:module",

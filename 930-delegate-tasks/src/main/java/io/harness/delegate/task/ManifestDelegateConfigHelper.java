@@ -37,6 +37,11 @@ public class ManifestDelegateConfigHelper {
 
     StoreDelegateConfig storeDelegateConfig = manifestDelegateConfig.getStoreDelegateConfig();
     switch (storeDelegateConfig.getType()) {
+      case HARNESS:
+        break;
+      case CUSTOM_REMOTE:
+        // TODO: do we need to decrypt anything here?
+        break;
       case GIT:
         GitStoreDelegateConfig gitStoreDelegateConfig = (GitStoreDelegateConfig) storeDelegateConfig;
         GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());

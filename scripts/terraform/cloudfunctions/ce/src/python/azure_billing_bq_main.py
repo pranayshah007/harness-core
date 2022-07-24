@@ -9,9 +9,11 @@ CF2 for Azure data pipeline
 import json
 import base64
 import os
+import sys
 import re
 from google.cloud import bigquery
 from google.cloud import storage
+from google.cloud import pubsub_v1
 import datetime
 import util
 from util import create_dataset, if_tbl_exists, createTable, print_, run_batch_query, COSTAGGREGATED, UNIFIED, \
@@ -30,10 +32,12 @@ Event format:
 PROJECTID = os.environ.get('GCP_PROJECT', 'ccm-play')
 client = bigquery.Client(PROJECTID)
 storage_client = storage.Client(PROJECTID)
+publisher = pubsub_v1.PublisherClient()
 STATIC_MARKUP_LIST = {
     "UVxMDMhNQxOCvroqqImWdQ": 5.04,  # AXA XL %age markup to costs
 }
-
+AZURESCHEMATOPIC = os.environ.get('AZURESCHEMATOPIC', f'projects/{PROJECTID}/topics/nikunjtesttopic')
+TOPIC_PATH = publisher.topic_path(PROJECTID, AZURESCHEMATOPIC)
 
 def main(event, context):
     """Triggered from a message on a Cloud Pub/Sub topic.
@@ -93,24 +97,23 @@ def main(event, context):
         print_("%s table does not exists, creating table..." % unifiedTableRef)
         createTable(client, unifiedTableRef)
     else:
-        # Disable this call when the pipeline has executed once for each customer
-        alter_unified_table(jsonData)
+        # Enable these only when needed.
+        # alter_unified_table(jsonData)
         print_("%s table exists" % unifiedTableTableName)
 
     if not if_tbl_exists(client, preAggragatedTableRef):
         print_("%s table does not exists, creating table..." % preAggragatedTableRef)
         createTable(client, preAggragatedTableRef)
     else:
-        alter_preagg_table(jsonData)
+        # Enable these only when needed.
+        # alter_preagg_table(jsonData)
         print_("%s table exists" % preAggregatedTableTableName)
 
     # start streaming the data from the gcs
     print_("%s table exists. Starting to write data from gcs into it..." % jsonData["tableName"])
-    try:
-        ingest_data_from_csv(jsonData)
-    except Exception as e:
-        print_(e)
-        raise
+
+    if not ingest_data_from_csv(jsonData):
+        return
     azure_column_mapping = setAvailableColumns(jsonData)
     get_unique_subs_id(jsonData, azure_column_mapping)
     ingest_data_into_preagg(jsonData, azure_column_mapping)
@@ -120,6 +123,8 @@ def main(event, context):
     print_("Completed")
 
 def is_valid_month_folder(folderstr):
+    folderstr = folderstr.split('/')[-1]
+    print_(folderstr)
     try:
         report_month = folderstr.split("-")
         startstr = report_month[0]
@@ -164,6 +169,8 @@ def ingest_data_from_csv(jsonData):
                 if unique_subfolder_size_map[folder] > subfolder_maxsize:
                     subfolder_maxsize = unique_subfolder_size_map[folder]
                     partitioned_csvtoingest = folder + "/*.csv"
+        print_("blob_maxsize: %s, single_csvtoingest: %s, subfolder_maxsize: %s, partitioned_csvtoingest: %s" %
+               (blob_maxsize, single_csvtoingest, subfolder_maxsize, partitioned_csvtoingest))
     # We can have both partitioned and non partitioned in the same folder
     if blob_maxsize > subfolder_maxsize:
         csvtoingest = single_csvtoingest
@@ -172,7 +179,7 @@ def ingest_data_from_csv(jsonData):
 
     if not csvtoingest:
         print_("No CSV to insert. GCS bucket might be empty", "WARN")
-        return
+        return True
     print_("csvtoingest: %s" % csvtoingest)
 
     job_config = bigquery.LoadJobConfig(
@@ -186,19 +193,41 @@ def ingest_data_from_csv(jsonData):
         allow_jagged_rows=True,
         write_disposition='WRITE_TRUNCATE'  # If the table already exists, BigQuery overwrites the table data
     )
-    uri = "gs://" + jsonData["bucket"] + "/" + csvtoingest
-    print_("Ingesting CSV from %s" % uri)
+    jsonData["uri"] = "gs://" + jsonData["bucket"] + "/" + csvtoingest
+    jsonData["csvtoingest"] = csvtoingest
+    print_("Ingesting CSV from %s" % jsonData["uri"])
     print_("Loading into %s table..." % jsonData["tableId"])
     load_job = client.load_table_from_uri(
-        [uri],
+        [jsonData["uri"]],
         jsonData["tableId"],
         job_config=job_config
     )
+    print_(load_job.job_id)
+    try:
+        load_job.result()  # Wait for the job to complete.
+    except Exception as e:
+        print_(e, "WARN")
+        print_("Ingesting in existing table if exists")
+        job_config.autodetect = False
+        load_job = client.load_table_from_uri(
+            [jsonData["uri"]],
+            jsonData["tableId"],
+            job_config=job_config
+        )
+        print_(load_job.job_id)
+        try:
+            load_job.result()  # Wait for the job to complete.
+        except Exception as e:
+            print_(e, "WARN")
+            print_("Ingesting in existing table failed. Sending event to generate dynamic schema.\n"
+                   "Ingestion with new schema will be automatically retried in next 1 hr", "WARN")
+            send_event(jsonData)
+            # Cleanly exit from CF at this point
+            print_("Exiting..")
+            return False
 
-    load_job.result()  # Wait for the job to complete.
     table = client.get_table(jsonData["tableId"])
     print_("Total {} rows in table {}".format(table.num_rows, jsonData["tableId"]))
-    jsonData["uri"] = uri
 
     # cleanup the processed blobs
     blobs = storage_client.list_blobs(
@@ -207,7 +236,17 @@ def ingest_data_from_csv(jsonData):
     for blob in blobs:
         blob.delete()
         print_("Cleaned up {}.".format(blob.name))
+    return True
 
+def send_event(jsonData):
+    message_json = json.dumps(jsonData)
+    message_bytes = message_json.encode('utf-8')
+    try:
+        publish_future = publisher.publish(TOPIC_PATH, data=message_bytes)
+        publish_future.result()  # Verify the publish succeeded
+        print('Message published: %s.' % jsonData)
+    except Exception as e:
+        print(e)
 
 def get_unique_subs_id(jsonData, azure_column_mapping):
     # Get unique subsids from main azureBilling table
@@ -324,13 +363,19 @@ def ingest_data_into_preagg(jsonData, azure_column_mapping):
            INSERT INTO `%s.preAggregated` (startTime, azureResourceRate, cost,
                                            azureServiceName, region, azureSubscriptionGuid,
                                             cloudProvider, azureTenantId)
-           SELECT TIMESTAMP(%s) as startTime, min(%s) AS azureResourceRate, sum(%s) AS cost,
+           SELECT IF(REGEXP_CONTAINS(CAST(%s AS STRING), r'^(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01])/\d{4}$'), 
+                     PARSE_TIMESTAMP("%%m/%%d/%%Y", CAST(%s AS STRING)), 
+                     TIMESTAMP(%s)) as startTime, 
+                min(%s) AS azureResourceRate, sum(%s) AS cost,
                 MeterCategory AS azureServiceName, ResourceLocation as region, %s as azureSubscriptionGuid,
                 "AZURE" AS cloudProvider, '%s' as azureTenantId
            FROM `%s`
            WHERE %s IN (%s)
            GROUP BY azureServiceName, region, azureSubscriptionGuid, startTime;
-    """ % (ds, date_start, date_end, jsonData["subsId"], ds, azure_column_mapping["startTime"],
+    """ % (ds, date_start, date_end,
+           jsonData["subsId"],
+           ds,
+           azure_column_mapping["startTime"], azure_column_mapping["startTime"], azure_column_mapping["startTime"],
            azure_column_mapping["azureResourceRate"],
            azure_column_mapping["cost"], azure_column_mapping["azureSubscriptionGuid"], jsonData["tenant_id"],
            jsonData["tableId"],
@@ -368,7 +413,11 @@ def ingest_data_into_unified(jsonData, azure_column_mapping):
                         cloudProvider, labels, azureResource, azureVMProviderId, azureTenantId,
                         azureResourceRate
                     """
-    select_columns = """MeterCategory AS product, TIMESTAMP(%s) as startTime, %s*%s AS cost,
+    select_columns = """MeterCategory AS product, 
+                        IF(REGEXP_CONTAINS(CAST(%s AS STRING), r'^(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01])/\d{4}$'), 
+                            PARSE_TIMESTAMP("%%m/%%d/%%Y", CAST(%s AS STRING)), 
+                            TIMESTAMP(%s)) as startTime,
+                        %s*%s AS cost,
                         MeterCategory as azureMeterCategory,MeterSubcategory as azureMeterSubcategory,MeterId as azureMeterId,
                         MeterName as azureMeterName,
                         %s as azureInstanceId, ResourceLocation as region,  %s as azureResourceGroup,
@@ -383,7 +432,7 @@ def ingest_data_into_unified(jsonData, azure_column_mapping):
                                 null)),
                         '%s' as azureTenantId,
                         %s AS azureResourceRate
-                     """ % (azure_column_mapping["startTime"],
+                     """ % (azure_column_mapping["startTime"], azure_column_mapping["startTime"], azure_column_mapping["startTime"],
                             azure_column_mapping["cost"], get_cost_markup_factor(jsonData),
                             azure_column_mapping["azureInstanceId"],
                             azure_column_mapping["azureResourceGroup"],
@@ -548,4 +597,4 @@ def ingest_data_to_costagg(jsonData):
     job_config = bigquery.QueryJobConfig(
         priority=bigquery.QueryPriority.BATCH
     )
-    run_batch_query(client, query, job_config, timeout=120)
+    run_batch_query(client, query, job_config, timeout=180)

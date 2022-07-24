@@ -8,6 +8,7 @@
 package io.harness.cvng.servicelevelobjective.services.impl;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveErrorBudgetResetEvent;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset.SLOErrorBudgetResetKeys;
@@ -15,6 +16,7 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 
 import com.google.common.base.Preconditions;
@@ -34,6 +36,7 @@ public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetServic
   @Inject private ServiceLevelObjectiveService serviceLevelObjectiveService;
   @Inject private SLOHealthIndicatorService sloHealthIndicatorService;
   @Inject private Clock clock;
+  @Inject private OutboxService outboxService;
 
   @Override
   public SLOErrorBudgetResetDTO resetErrorBudget(
@@ -49,6 +52,13 @@ public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetServic
             .toInstant(ZoneOffset.UTC));
     hPersistence.save(sloErrorBudgetReset);
     sloHealthIndicatorService.upsert(serviceLevelObjective);
+    outboxService.save(ServiceLevelObjectiveErrorBudgetResetEvent.builder()
+                           .resourceName(serviceLevelObjective.getName())
+                           .accountIdentifier(projectParams.getAccountIdentifier())
+                           .serviceLevelObjectiveIdentifier(serviceLevelObjective.getIdentifier())
+                           .orgIdentifier(projectParams.getOrgIdentifier())
+                           .projectIdentifier(projectParams.getProjectIdentifier())
+                           .build());
     return dtoFromEntity(sloErrorBudgetReset);
   }
 

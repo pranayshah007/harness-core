@@ -10,10 +10,11 @@ package io.harness.cvng.core.services.impl.monitoredService;
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
 import static io.harness.cvng.core.constant.MonitoredServiceConstants.REGULAR_EXPRESSION;
 import static io.harness.cvng.notification.beans.MonitoredServiceChangeEventType.getMonitoredServiceChangeEventTypeFromActivityType;
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.CHANGE_EVENT_TYPE;
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.COOL_OFF_DURATION;
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.CURRENT_HEALTH_SCORE;
+import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getDurationInSeconds;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.CHANGE_EVENT_TYPE;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.COOL_OFF_DURATION;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.CURRENT_HEALTH_SCORE;
 import static io.harness.data.structure.CollectionUtils.distinctByKey;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -83,6 +84,7 @@ import io.harness.cvng.events.monitoredservice.MonitoredServiceCreateEvent;
 import io.harness.cvng.events.monitoredservice.MonitoredServiceDeleteEvent;
 import io.harness.cvng.events.monitoredservice.MonitoredServiceToggleEvent;
 import io.harness.cvng.events.monitoredservice.MonitoredServiceUpdateEvent;
+import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
@@ -95,8 +97,8 @@ import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.Mo
 import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.entities.NotificationRule.CVNGNotificationChannel;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
-import io.harness.cvng.notification.utils.NotificationRuleCommonUtils;
-import io.harness.cvng.notification.utils.NotificationRuleCommonUtils.NotificationMessage;
+import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
+import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator.NotificationData;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
@@ -202,12 +204,12 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Inject private NotificationClient notificationClient;
   @Inject private ActivityService activityService;
   @Inject private OutboxService outboxService;
-  @Inject private NotificationRuleCommonUtils notificationRuleCommonUtils;
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject private EnforcementClientService enforcementClientService;
   @Inject private FeatureFlagService featureFlagService;
-
-  private static final String templateIdentifierName = "monitoredServiceName";
+  @Inject
+  private Map<NotificationRuleConditionType, NotificationRuleTemplateDataGenerator>
+      notificationRuleConditionTypeTemplateDataGeneratorMap;
 
   @Override
   public MonitoredServiceResponse create(String accountId, MonitoredServiceDTO monitoredServiceDTO) {
@@ -1589,7 +1591,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   @Override
-  public void sendNotification(MonitoredService monitoredService) {
+  public void handleNotification(MonitoredService monitoredService) {
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(monitoredService.getAccountId())
                                       .orgIdentifier(monitoredService.getOrgIdentifier())
@@ -1602,12 +1604,14 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       List<MonitoredServiceNotificationRuleCondition> conditions =
           ((MonitoredServiceNotificationRule) notificationRule).getConditions();
       for (MonitoredServiceNotificationRuleCondition condition : conditions) {
-        NotificationMessage notificationMessage = getNotificationMessage(monitoredService, condition);
-        if (notificationMessage.isShouldSendNotification()) {
+        NotificationData notificationData = getNotificationData(monitoredService, condition);
+        if (notificationData.shouldSendNotification()) {
           CVNGNotificationChannel notificationChannel = notificationRule.getNotificationMethod();
           String templateId = getNotificationTemplateId(notificationRule.getType(), notificationChannel.getType());
-          Map<String, String> templateData = notificationRuleCommonUtils.getNotificationTemplateDataForMonitoredService(
-              monitoredService, condition, notificationMessage, clock.instant());
+          Map<String, String> templateData =
+              notificationRuleConditionTypeTemplateDataGeneratorMap.get(condition.getType())
+                  .getTemplateData(projectParams, monitoredService.getName(), monitoredService.getIdentifier(),
+                      monitoredService.getServiceIdentifier(), condition, notificationData.getTemplateDataMap());
           try {
             NotificationResult notificationResult =
                 notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(
@@ -1745,7 +1749,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   @VisibleForTesting
-  NotificationMessage getNotificationMessage(
+  NotificationData getNotificationData(
       MonitoredService monitoredService, MonitoredServiceNotificationRuleCondition condition) {
     MonitoredServiceParams monitoredServiceParams = MonitoredServiceParams.builder()
                                                         .accountIdentifier(monitoredService.getAccountId())
@@ -1755,13 +1759,15 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                                         .build();
     Map<String, String> templateDataMap = new HashMap<>();
     boolean isEveryHeatMapBelowThreshold = false;
+    long riskTimeBufferMins = 0;
 
     switch (condition.getType()) {
       case HEALTH_SCORE:
         MonitoredServiceHealthScoreCondition healthScoreCondition = (MonitoredServiceHealthScoreCondition) condition;
-        isEveryHeatMapBelowThreshold = heatMapService.isEveryHeatMapBelowThresholdForRiskTimeBuffer(
-            monitoredServiceParams, monitoredService.getIdentifier(), healthScoreCondition.getThreshold(),
-            healthScoreCondition.getPeriod());
+        riskTimeBufferMins = getDurationInSeconds(healthScoreCondition.getPeriod());
+        isEveryHeatMapBelowThreshold =
+            heatMapService.isEveryHeatMapBelowThresholdForRiskTimeBuffer(monitoredServiceParams,
+                monitoredService.getIdentifier(), healthScoreCondition.getThreshold(), riskTimeBufferMins);
         if (isEveryHeatMapBelowThreshold) {
           List<RiskData> allServiceRiskScoreList =
               heatMapService.getLatestRiskScoreForAllServicesList(monitoredServiceParams.getAccountIdentifier(),
@@ -1769,7 +1775,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                   Collections.singletonList(monitoredServiceParams.getMonitoredServiceIdentifier()));
           templateDataMap.put(CURRENT_HEALTH_SCORE, allServiceRiskScoreList.get(0).getHealthScore().toString());
         }
-        return NotificationMessage.builder()
+        return NotificationData.builder()
             .shouldSendNotification(isEveryHeatMapBelowThreshold)
             .templateDataMap(templateDataMap)
             .build();
@@ -1784,7 +1790,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         activity.ifPresent(value
             -> templateDataMap.put(CHANGE_EVENT_TYPE,
                 getMonitoredServiceChangeEventTypeFromActivityType(value.getType()).getDisplayName()));
-        return NotificationMessage.builder()
+        return NotificationData.builder()
             .shouldSendNotification(activity.isPresent())
             .templateDataMap(templateDataMap)
             .build();
@@ -1800,7 +1806,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
           templateDataMap.put(CHANGE_EVENT_TYPE,
               getMonitoredServiceChangeEventTypeFromActivityType(optionalActivity.get().getType()).getDisplayName());
           Instant activityStartTime = optionalActivity.get().getActivityStartTime();
-          long riskTimeBufferMins = Duration.between(activityStartTime, clock.instant()).toMinutes();
+          riskTimeBufferMins = Duration.between(activityStartTime, clock.instant()).toMinutes();
           isEveryHeatMapBelowThreshold =
               heatMapService.isEveryHeatMapBelowThresholdForRiskTimeBuffer(monitoredServiceParams,
                   monitoredService.getIdentifier(), changeImpactCondition.getThreshold(), riskTimeBufferMins);
@@ -1811,15 +1817,15 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                     Collections.singletonList(monitoredServiceParams.getMonitoredServiceIdentifier()));
             templateDataMap.put(CURRENT_HEALTH_SCORE, allServiceRiskScoreList.get(0).getHealthScore().toString());
           }
-          return NotificationMessage.builder()
+          return NotificationData.builder()
               .shouldSendNotification(isEveryHeatMapBelowThreshold)
               .templateDataMap(templateDataMap)
               .build();
         } else {
-          return NotificationMessage.builder().shouldSendNotification(false).build();
+          return NotificationData.builder().shouldSendNotification(false).build();
         }
       default:
-        return NotificationMessage.builder().shouldSendNotification(false).build();
+        return NotificationData.builder().shouldSendNotification(false).build();
     }
   }
 

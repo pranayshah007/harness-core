@@ -39,16 +39,18 @@ import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sScaleRequest;
 import io.harness.delegate.task.k8s.K8sScaleResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionExplanation;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionHints;
+import io.harness.delegate.task.k8s.client.K8sClient;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.k8s.exception.KubernetesExceptionExplanation;
+import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.CommandExecutionStatus;
@@ -56,6 +58,7 @@ import io.harness.logging.LogCallback;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -106,9 +109,20 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
         client, k8SDelegateTaskParams, resourceIdToScale, targetReplicaCount, scaleLogCallback, true);
 
     if (!k8sScaleRequest.isSkipSteadyStateCheck()) {
-      k8sTaskHelperBase.doStatusCheck(client, resourceIdToScale, k8SDelegateTaskParams,
-          k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress),
-          true);
+      K8sSteadyStateDTO k8sSteadyStateDTO =
+          K8sSteadyStateDTO.builder()
+              .request(k8sDeployRequest)
+              .resourceIds(Collections.singletonList(resourceIdToScale))
+              .executionLogCallback(k8sTaskHelperBase.getLogCallback(
+                  logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress))
+              .k8sDelegateTaskParams(k8SDelegateTaskParams)
+              .namespace(resourceIdToScale.getNamespace())
+              .denoteOverallSuccess(true)
+              .isErrorFrameworkEnabled(true)
+              .build();
+
+      K8sClient k8sClient = k8sTaskHelperBase.getKubernetesClient(k8sScaleRequest.isUseK8sApiForSteadyStateCheck());
+      k8sClient.performSteadyStateCheck(k8sSteadyStateDTO);
     }
 
     LogCallback wrapUpLogCallback =

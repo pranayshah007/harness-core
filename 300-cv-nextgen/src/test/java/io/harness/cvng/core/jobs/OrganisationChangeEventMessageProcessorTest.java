@@ -20,16 +20,18 @@ import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.eventsframework.entity_crud.organization.OrganizationEntityChangeDTO;
 import io.harness.persistence.PersistentEntity;
+import io.harness.reflection.HarnessReflections;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.reflections.Reflections;
 
 public class OrganisationChangeEventMessageProcessorTest extends CvNextGenTestBase {
   @Inject private OrganizationChangeEventMessageProcessor organizationChangeEventMessageProcessor;
@@ -93,10 +95,18 @@ public class OrganisationChangeEventMessageProcessorTest extends CvNextGenTestBa
   public void testProcessDeleteAction_entitiesList() {
     Set<Class<? extends PersistentEntity>> entitiesWithVerificationTaskId = new HashSet<>();
     entitiesWithVerificationTaskId.addAll(OrganizationChangeEventMessageProcessor.ENTITIES_MAP.keySet());
-    Reflections reflections = new Reflections(VerificationApplication.class.getPackage().getName());
+    Set<Class<? extends PersistentEntity>> reflections =
+        HarnessReflections.get()
+            .getSubTypesOf(PersistentEntity.class)
+            .stream()
+            .filter(klazz
+                -> StringUtils.startsWithAny(
+                    klazz.getPackage().getName(), VerificationApplication.class.getPackage().getName()))
+            .collect(Collectors.toSet());
     Set<Class<? extends PersistentEntity>> withOrganisationIdentifier = new HashSet<>();
-    reflections.getSubTypesOf(PersistentEntity.class).forEach(entity -> {
-      if (doesClassContainField(entity, "accountId") && doesClassContainField(entity, "orgIdentifier")) {
+    reflections.forEach(entity -> {
+      if (doesClassContainField(entity, "accountId") && doesClassContainField(entity, "orgIdentifier")
+          && !OrganizationChangeEventMessageProcessor.EXCEPTIONS.contains(entity)) {
         withOrganisationIdentifier.add(entity);
       }
     });

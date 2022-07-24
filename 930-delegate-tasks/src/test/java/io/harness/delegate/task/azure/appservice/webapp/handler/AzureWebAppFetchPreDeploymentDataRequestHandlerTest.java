@@ -12,7 +12,10 @@ import static io.harness.rule.OwnerRule.ABOSII;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -26,11 +29,13 @@ import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProg
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppFetchPreDeploymentDataRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppFetchPreDeploymentDataResponse;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppRequestResponse;
+import io.harness.delegate.task.azure.artifact.AzureRegistrySettingsAdapter;
 import io.harness.delegate.task.azure.common.AzureAppServiceService;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.rule.Owner;
 
-import java.util.Collections;
+import software.wings.delegatetasks.azure.AzureSecretHelper;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,9 +49,10 @@ public class AzureWebAppFetchPreDeploymentDataRequestHandlerTest extends Categor
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock private AzureLogCallbackProvider logCallbackProvider;
-
+  @Mock protected AzureSecretHelper azureSecretHelper;
   @Mock private AzureAppServiceResourceUtilities azureResourceUtilities;
   @Mock private AzureAppServiceService azureAppServiceService;
+  @Mock private AzureRegistrySettingsAdapter azureRegistrySettingsAdapter;
 
   @InjectMocks private AzureWebAppFetchPreDeploymentDataRequestHandler requestHandler;
 
@@ -56,8 +62,7 @@ public class AzureWebAppFetchPreDeploymentDataRequestHandlerTest extends Categor
   public void testExecuteContainer() {
     final AzureWebAppFetchPreDeploymentDataRequest request =
         AzureWebAppFetchPreDeploymentDataRequest.builder()
-            .applicationSettings(Collections.emptyList())
-            .connectionStrings(Collections.emptyList())
+            .accountId("accountId")
             .artifact(AzureTestUtils.createTestContainerArtifactConfig())
             .infraDelegateConfig(AzureTestUtils.createTestWebAppInfraDelegateConfig())
             .build();
@@ -71,6 +76,9 @@ public class AzureWebAppFetchPreDeploymentDataRequestHandlerTest extends Categor
         .getDockerDeploymentPreDeploymentData(any(AzureAppServiceDockerDeploymentContext.class));
 
     AzureWebAppRequestResponse response = requestHandler.execute(request, azureConfig, logCallbackProvider);
+    verify(azureSecretHelper, times(1))
+        .encryptAzureAppServicePreDeploymentData(any(AzureAppServicePreDeploymentData.class), eq("accountId"));
+
     assertThat(response).isInstanceOf(AzureWebAppFetchPreDeploymentDataResponse.class);
     AzureWebAppFetchPreDeploymentDataResponse preDeploymentDataResponse =
         (AzureWebAppFetchPreDeploymentDataResponse) response;

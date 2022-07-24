@@ -24,4 +24,5 @@ public class ShellExecutorConfig implements ScriptExecutionContext {
   private String kubeConfigContent;
   private ScriptType scriptType;
   private char[] gcpKeyFileContent;
+  private boolean closeLogStream;
 }

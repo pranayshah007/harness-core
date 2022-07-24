@@ -53,7 +53,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class ScopeDBO implements PersistentRegularIterable, AccessControlEntity {
   @Setter @Id @org.mongodb.morphia.annotations.Id String id;
   @FdUniqueIndex @NotEmpty final String identifier;
-
+  @Setter String name;
   @Setter @CreatedDate Long createdAt;
   @Setter @LastModifiedDate Long lastModifiedAt;
   @Setter @CreatedBy EmbeddedUser createdBy;

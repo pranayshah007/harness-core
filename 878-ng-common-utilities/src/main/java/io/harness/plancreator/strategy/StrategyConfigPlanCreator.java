@@ -26,6 +26,7 @@ import io.harness.steps.matrix.StrategyConstants;
 import io.harness.steps.matrix.StrategyMetadata;
 import io.harness.steps.matrix.StrategyStep;
 import io.harness.steps.matrix.StrategyStepParameters;
+import io.harness.strategy.StrategyValidationUtils;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -63,17 +64,17 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
       MatrixConfig matrixConfig = (MatrixConfig) config.getMatrixConfig();
       maxConcurrency = matrixConfig.getMaxConcurrency();
     }
-    if (config.getForConfig() != null) {
-      maxConcurrency = config.getForConfig().getMaxConcurrency();
+    if (config.getRepeat() != null) {
+      maxConcurrency = config.getRepeat().getMaxConcurrency();
     }
-    StrategyType strategyType = StrategyType.FOR;
+    StrategyType strategyType = StrategyType.LOOP;
     if (ctx.getCurrentField().getNode().getField(io.harness.plancreator.strategy.StrategyConstants.MATRIX) != null) {
       strategyType = StrategyType.MATRIX;
     } else if (ctx.getCurrentField().getNode().getField(io.harness.plancreator.strategy.StrategyConstants.PARALLELISM)
         != null) {
       strategyType = StrategyType.PARALLELISM;
     }
-    StageStrategyUtils.validateStrategyNode(config);
+    StrategyValidationUtils.validateStrategyNode(config);
     StepParameters stepParameters = StrategyStepParameters.builder()
                                         .childNodeId(childNodeId)
                                         .strategyConfig(config)

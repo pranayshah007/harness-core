@@ -1,15 +1,24 @@
+// Copyright 2022 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	arg "github.com/alexflint/go-arg"
+	"github.com/harness/harness-core/product/ci/split_tests/ti"
+	"github.com/harness/harness-core/product/ci/ti-service/types"
+	"go.uber.org/zap"
 	"io"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/alexflint/go-arg"
 	"github.com/bmatcuk/doublestar"
 
 	junit "github.com/harness/harness-core/product/ci/split_tests/junit"
@@ -19,6 +28,12 @@ const (
 	applicationName = "split-tests"
 	numSplitsEnv    = "HARNESS_NODE_TOTAL" // Environment variable for total number of splits
 	currentIndexEnv = "HARNESS_NODE_INDEX" // Environment variable for the current index
+
+	splitByFileTimeStr      = "file_timing"
+	splitByClassTimeStr     = "class_timing"
+	splitByTestcaseTimeStr  = "testcase_timing"
+	splitByTestSuiteTimeStr = "testsuite_timing"
+	splitByFileSizeStr      = "file_size"
 )
 
 // CLI Arguments
@@ -31,6 +46,7 @@ var args struct {
 	UseJunitXml        bool   `arg:"--use-junit" help:"Use junit XML for test times"`
 	JunitXmlPath       string `arg:"--junit-path" help:"Path to Junit XML file to read test times"`
 	Verbose            bool   `arg:"--verbose" help:"Enable verbose logging mode"`
+	SplitBy            string `arg:"--split-by" help:"Split by"`
 }
 
 /*
@@ -62,6 +78,10 @@ func parseArgs() {
 
 	if args.SplitTotal == 0 || args.SplitIndex < 0 || args.SplitIndex > args.SplitTotal {
 		fatalMsg("-split-index and -split-total (and environment variables) are missing or invalid\n")
+	}
+
+	if args.SplitBy == "" {
+		args.SplitBy = splitByFileSizeStr
 	}
 }
 
@@ -270,13 +290,7 @@ func main() {
 	}
 
 	// Construct a map of file times {fileName: Duration}
-	fileTimesMap := make(map[string]float64)
-	// TODO: Add support for SplitByTiming
-	if args.SplitByLineCount {
-		estimateFileTimesByLineCount(currentFileSet, fileTimesMap)
-	} else if args.UseJunitXml {
-		junit.GetFileTimesFromJUnitXML(args.JunitXmlPath, fileTimesMap)
-	}
+	fileTimesMap := getFileTimes(currentFileSet)
 
 	processFiles(fileTimesMap, currentFileSet)
 	buckets, bucketTimes := splitFiles(fileTimesMap, args.SplitTotal)
@@ -285,4 +299,58 @@ func main() {
 	}
 
 	fmt.Println(strings.Join(buckets[args.SplitIndex], " "))
+}
+
+func getFileTimes(currentFileSet map[string]bool) map[string]float64 {
+	fileTimesMap := make(map[string]float64)
+
+	if args.UseJunitXml {
+		junit.GetFileTimesFromJUnitXML(args.JunitXmlPath, fileTimesMap)
+	} else if args.SplitBy != "" {
+		config := zap.NewProductionConfig()
+		config.OutputPaths = []string{"stdout"}
+		zapLogger, err := config.Build()
+		if err != nil {
+			fmt.Println("logger initialization failed, falling back on split by file size", err)
+			args.SplitBy = splitByFileSizeStr
+		}
+
+		req := types.GetTestTimesReq{}
+		var res types.GetTestTimesResp
+		switch args.SplitBy {
+		case splitByFileTimeStr:
+			req.IncludeFilename = true
+			res, err = ti.GetTestTimes(context.Background(), zapLogger.Sugar(), req)
+			fileTimesMap = convertMap(res.FileTimeMap)
+		case splitByClassTimeStr:
+			req.IncludeClassname = true
+			res, err = ti.GetTestTimes(context.Background(), zapLogger.Sugar(), req)
+			fileTimesMap = convertMap(res.ClassTimeMap)
+		case splitByTestcaseTimeStr:
+			req.IncludeTestCase = true
+			res, err = ti.GetTestTimes(context.Background(), zapLogger.Sugar(), req)
+			fileTimesMap = convertMap(res.TestTimeMap)
+		case splitByTestSuiteTimeStr:
+			req.IncludeTestSuite = true
+			res, err = ti.GetTestTimes(context.Background(), zapLogger.Sugar(), req)
+			fileTimesMap = convertMap(res.SuiteTimeMap)
+		case splitByFileSizeStr:
+			estimateFileTimesByLineCount(currentFileSet, fileTimesMap)
+			return fileTimesMap
+		}
+		if err != nil {
+			fmt.Println("error getting file size by given arguments, falling back on split by file size")
+			fileTimesMap := make(map[string]float64)
+			estimateFileTimesByLineCount(currentFileSet, fileTimesMap)
+		}
+	}
+	return fileTimesMap
+}
+
+func convertMap(intMap map[string]int) map[string]float64 {
+	fileTimesMap := make(map[string]float64)
+	for k, v := range intMap {
+		fileTimesMap[k] = float64(v)
+	}
+	return fileTimesMap
 }

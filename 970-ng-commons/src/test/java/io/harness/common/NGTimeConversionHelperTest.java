@@ -28,6 +28,11 @@ public class NGTimeConversionHelperTest extends CategoryTest {
     String time = "10w2d3h2m5ms";
     long result = io.harness.common.NGTimeConversionHelper.convertTimeStringToMilliseconds(time);
     assertThat(result).isEqualTo(6231720005L);
+
+    // testing with spaces
+    time = "10w 2d 3h 2m 5ms";
+    result = io.harness.common.NGTimeConversionHelper.convertTimeStringToMilliseconds(time);
+    assertThat(result).isEqualTo(6231720005L);
   }
 
   @Test
@@ -37,6 +42,11 @@ public class NGTimeConversionHelperTest extends CategoryTest {
     String time = "10w0d2h";
     long result = io.harness.common.NGTimeConversionHelper.convertTimeStringToMilliseconds(time);
     assertThat(result).isEqualTo(6055200000L);
+
+    // testing with spaces
+    time = "10w 0d 2h";
+    result = io.harness.common.NGTimeConversionHelper.convertTimeStringToMilliseconds(time);
+    assertThat(result).isEqualTo(6055200000L);
   }
 
   @Test
@@ -45,6 +55,11 @@ public class NGTimeConversionHelperTest extends CategoryTest {
   public void testTimeInMillisecondsWithOrderMismatch() {
     String time = "2d10w2m5ms3h";
     long result = io.harness.common.NGTimeConversionHelper.convertTimeStringToMilliseconds(time);
+    assertThat(result).isEqualTo(6231720005L);
+
+    // testing with spaces
+    time = "2d 10w 2m 5ms 3h";
+    result = io.harness.common.NGTimeConversionHelper.convertTimeStringToMilliseconds(time);
     assertThat(result).isEqualTo(6231720005L);
   }
 

@@ -78,7 +78,7 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
    * @param dependenciesNodeMap
    * @param metadataMap
    */
-  protected void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, AbstractStageNode field,
+  public void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, AbstractStageNode field,
       Map<String, YamlField> dependenciesNodeMap, Map<String, ByteString> metadataMap) {
     StageStrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getIdentifier(),
         field.getName(), dependenciesNodeMap, metadataMap,

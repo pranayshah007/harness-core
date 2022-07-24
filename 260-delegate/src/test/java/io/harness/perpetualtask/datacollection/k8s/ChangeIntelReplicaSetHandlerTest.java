@@ -34,8 +34,8 @@ import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1OwnerReferenceBuilder;
 import io.kubernetes.client.openapi.models.V1ReplicaSet;
 import io.kubernetes.client.openapi.models.V1ReplicaSetBuilder;
+import java.time.OffsetDateTime;
 import org.apache.commons.lang3.reflect.FieldUtils;
-import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -177,7 +177,7 @@ public class ChangeIntelReplicaSetHandlerTest extends DelegateTestBase {
         .withName("test-name")
         .withNamespace("test-namespace")
         .withUid("test-uid")
-        .withCreationTimestamp(new DateTime())
+        .withCreationTimestamp(OffsetDateTime.now())
         .endMetadata()
         .withNewSpec()
         .withReplicas(5)

@@ -7,15 +7,9 @@
 
 package io.harness.delegate.service;
 
-import static io.harness.rule.OwnerRule.MARKO;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.CALLS_REAL_METHODS;
-import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,8 +21,6 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.clienttools.InstallUtils;
-import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.DelegateDecryptionService;
@@ -118,59 +110,5 @@ public class DelegateAgentServiceImplTest extends CategoryTest {
 
     delegateService.applyDelegateSecretFunctor(delegateTaskPackage);
     verify(delegateDecryptionService, times(1)).decrypt(any());
-  }
-
-  @Test
-  @Owner(developers = MARKO)
-  @Category(UnitTests.class)
-  public void whenClientToolsDisabledThenTrue() {
-    final DelegateConfiguration delegateConfig = mock(DelegateConfiguration.class);
-    final DelegateAgentServiceImpl underTest = mock(DelegateAgentServiceImpl.class);
-
-    when(underTest.getDelegateConfiguration()).thenReturn(delegateConfig);
-    when(delegateConfig.isClientToolsDownloadDisabled()).thenReturn(true);
-
-    doCallRealMethod().when(underTest).isClientToolsInstallationFinished();
-
-    final boolean actual = underTest.isClientToolsInstallationFinished();
-    assertThat(actual).isTrue();
-  }
-
-  @Test
-  @Owner(developers = MARKO)
-  @Category(UnitTests.class)
-  public void whenClientToolsEnabledAndInstalledThenTrue() throws Exception {
-    mockStatic(InstallUtils.class, CALLS_REAL_METHODS);
-    when(InstallUtils.areClientToolsInstalled()).thenAnswer(invocationOnMock -> true);
-
-    final DelegateConfiguration delegateConfig = mock(DelegateConfiguration.class);
-    final DelegateAgentServiceImpl underTest = mock(DelegateAgentServiceImpl.class);
-
-    when(underTest.getDelegateConfiguration()).thenReturn(delegateConfig);
-    when(delegateConfig.isClientToolsDownloadDisabled()).thenReturn(false);
-
-    doCallRealMethod().when(underTest).isClientToolsInstallationFinished();
-
-    final boolean actual = underTest.isClientToolsInstallationFinished();
-    assertThat(actual).isTrue();
-  }
-
-  @Test
-  @Owner(developers = MARKO)
-  @Category(UnitTests.class)
-  public void whenClientToolsEnabledAndNotInstalledThenFalse() throws Exception {
-    mockStatic(InstallUtils.class, CALLS_REAL_METHODS);
-    when(InstallUtils.areClientToolsInstalled()).thenAnswer(invocationOnMock -> false);
-
-    final DelegateConfiguration delegateConfig = mock(DelegateConfiguration.class);
-    final DelegateAgentServiceImpl underTest = mock(DelegateAgentServiceImpl.class);
-
-    when(underTest.getDelegateConfiguration()).thenReturn(delegateConfig);
-    when(delegateConfig.isClientToolsDownloadDisabled()).thenReturn(false);
-
-    doCallRealMethod().when(underTest).isClientToolsInstallationFinished();
-
-    final boolean actual = underTest.isClientToolsInstallationFinished();
-    assertThat(actual).isFalse();
   }
 }

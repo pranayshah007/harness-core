@@ -47,6 +47,7 @@ import io.harness.accesscontrol.AccessControlAdminClientModule;
 import io.harness.account.AbstractAccountModule;
 import io.harness.account.AccountClientModule;
 import io.harness.account.AccountConfig;
+import io.harness.agent.AgentMtlsModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
@@ -114,6 +115,7 @@ import io.harness.ng.accesscontrol.migrations.AccessControlMigrationModule;
 import io.harness.ng.accesscontrol.user.AggregateUserService;
 import io.harness.ng.accesscontrol.user.AggregateUserServiceImpl;
 import io.harness.ng.authenticationsettings.AuthenticationSettingsModule;
+import io.harness.ng.chaos.AbstractChaosModule;
 import io.harness.ng.core.AccountOrgProjectHelper;
 import io.harness.ng.core.AccountOrgProjectHelperImpl;
 import io.harness.ng.core.CoreModule;
@@ -124,6 +126,7 @@ import io.harness.ng.core.NGAggregateModule;
 import io.harness.ng.core.SecretManagementModule;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingServiceImpl;
+import io.harness.ng.core.agent.client.AgentNgManagerCgManagerClientModule;
 import io.harness.ng.core.api.ApiKeyService;
 import io.harness.ng.core.api.NGModulesService;
 import io.harness.ng.core.api.NGSecretServiceV2;
@@ -449,6 +452,7 @@ public class NextGenModule extends AbstractModule {
   protected void configure() {
     install(VersionModule.getInstance());
     install(PrimaryVersionManagerModule.getInstance());
+    install(new NGSettingModule(appConfig));
     install(new AbstractPersistenceTracerModule() {
       @Override
       protected RedisConfig redisConfigProvider() {
@@ -546,7 +550,8 @@ public class NextGenModule extends AbstractModule {
     install(new io.harness.service.DelegateServiceModule());
     install(NGModule.getInstance());
     install(ExceptionModule.getInstance());
-    install(new EventsFrameworkModule(this.appConfig.getEventsFrameworkConfiguration()));
+    install(new EventsFrameworkModule(
+        this.appConfig.getEventsFrameworkConfiguration(), this.appConfig.getDebeziumConsumerConfigs()));
     install(new SecretManagementModule());
     install(new AccountClientModule(appConfig.getManagerClientConfig(),
         appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.toString()));
@@ -573,10 +578,11 @@ public class NextGenModule extends AbstractModule {
         this.appConfig.isEnableAudit()));
     install(new NotificationClientModule(appConfig.getNotificationClientConfiguration()));
     install(new InstanceModule());
+    install(new AgentMtlsModule());
     install(new TokenClientModule(this.appConfig.getNgManagerClientConfig(),
         this.appConfig.getNextGenConfig().getNgManagerServiceSecret(), NG_MANAGER.getServiceId()));
-    install(
-        new OpaClientModule(appConfig.getOpaServerConfig().getBaseUrl(), appConfig.getOpaServerConfig().getSecret()));
+    install(new OpaClientModule(
+        appConfig.getOpaClientConfig(), appConfig.getPolicyManagerSecret(), NG_MANAGER.getServiceId()));
     install(EnforcementModule.getInstance());
 
     install(EnforcementClientModule.getInstance(appConfig.getNgManagerClientConfig(),
@@ -588,6 +594,8 @@ public class NextGenModule extends AbstractModule {
     install(new NgConnectorManagerClientModule(
         appConfig.getManagerClientConfig(), appConfig.getNextGenConfig().getManagerServiceSecret()));
     install(new DelegateNgManagerCgManagerClientModule(appConfig.getManagerClientConfig(),
+        appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId()));
+    install(new AgentNgManagerCgManagerClientModule(appConfig.getManagerClientConfig(),
         appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId()));
     bind(NgGlobalKmsService.class).to(NgGlobalKmsServiceImpl.class);
     install(new ProviderModule() {
@@ -670,6 +678,23 @@ public class NextGenModule extends AbstractModule {
       @Override
       public AccountConfig accountConfiguration() {
         return appConfig.getAccountConfig();
+      }
+    });
+    install(new AbstractChaosModule() {
+      // todo: implement this
+      @Override
+      public ServiceHttpClientConfig chaosClientConfig() {
+        return null;
+      }
+
+      @Override
+      public String serviceSecret() {
+        return null;
+      }
+
+      @Override
+      public String clientId() {
+        return null;
       }
     });
 

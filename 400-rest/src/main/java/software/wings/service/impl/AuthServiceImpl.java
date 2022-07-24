@@ -17,6 +17,7 @@ import static io.harness.eraro.ErrorCode.TOKEN_ALREADY_REFRESHED_ONCE;
 import static io.harness.eraro.ErrorCode.USER_DOES_NOT_EXIST;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_ADMIN;
+import static io.harness.expression.ExpressionEvaluator.matchesVariablePattern;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -33,6 +34,7 @@ import static software.wings.security.PermissionAttribute.Action.READ;
 import static software.wings.security.PermissionAttribute.Action.UPDATE;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_APPLICATIONS;
 
+import static java.util.Base64.getUrlDecoder;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -117,6 +119,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.io.UnsupportedEncodingException;
+import java.util.Base64.Decoder;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -396,14 +399,15 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public void validateDelegateToken(String accountId, String tokenString, String delegateId, String delegateTokenName,
-      boolean shouldSetTokenNameInGlobalContext) {
-    delegateTokenAuthenticator.validateDelegateToken(
-        accountId, tokenString, delegateId, delegateTokenName, shouldSetTokenNameInGlobalContext);
-  }
-
-  @Override
-  public void validateDelegateToken(String accountId, String tokenString) {
-    delegateTokenAuthenticator.validateDelegateAuth2Token(accountId, tokenString);
+      String agentMtlAuthority, boolean shouldSetTokenNameInGlobalContext) {
+    Decoder decoder = getUrlDecoder();
+    final String authHeader = new String(decoder.decode(tokenString.split("\\.")[0]));
+    if (authHeader.contains("HS256")) {
+      delegateTokenAuthenticator.validateDelegateAuth2Token(accountId, tokenString, agentMtlAuthority);
+    } else {
+      delegateTokenAuthenticator.validateDelegateToken(
+          accountId, tokenString, delegateId, delegateTokenName, agentMtlAuthority, shouldSetTokenNameInGlobalContext);
+    }
   }
 
   @Override
@@ -1323,7 +1327,11 @@ public class AuthServiceImpl implements AuthService {
           USER);
     }
     final Set<String> envDeployPerms = envPipelineDeployPermissions.get(executableElementInfo);
+
     envIds.forEach(envId -> {
+      if (matchesVariablePattern(envId)) {
+        return;
+      }
       if (!envDeployPerms.contains(envId)) {
         log.error("User not authorized for envId {}", envId);
         throw new InvalidRequestException(String.format("User not authorized to deploy %s to given environment",

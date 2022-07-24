@@ -18,6 +18,7 @@ import static io.harness.azure.model.AzureConstants.HARNESS_AUTOSCALING_GROUP_TA
 import static io.harness.azure.model.AzureConstants.NAME_TAG;
 import static io.harness.azure.model.AzureConstants.NEW_VIRTUAL_MACHINE_SCALE_SET_NAME_IS_NULL_VALIDATION_MSG;
 import static io.harness.azure.model.AzureConstants.NUMBER_OF_VM_INSTANCES_VALIDATION_MSG;
+import static io.harness.azure.model.AzureConstants.OS_TYPE_NULL_VALIDATION_MSG;
 import static io.harness.azure.model.AzureConstants.PRIMARY_INTERNET_FACING_LOAD_BALANCER_NULL_VALIDATION_MSG;
 import static io.harness.azure.model.AzureConstants.RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG;
 import static io.harness.azure.model.AzureConstants.VIRTUAL_MACHINE_SCALE_SET_ID_NULL_VALIDATION_MSG;
@@ -31,6 +32,7 @@ import static io.harness.azure.model.AzureConstants.VM_INSTANCE_IDS_LIST_EMPTY_V
 import static io.harness.azure.model.AzureConstants.VM_INSTANCE_IDS_NOT_NUMBERS_VALIDATION_MSG;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static com.microsoft.azure.management.compute.PowerState.RUNNING;
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toMap;
@@ -40,8 +42,10 @@ import io.harness.azure.AzureClient;
 import io.harness.azure.client.AzureComputeClient;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.AzureMachineImageArtifact;
+import io.harness.azure.model.AzureOSType;
 import io.harness.azure.model.AzureUserAuthVMInstanceData;
 import io.harness.azure.model.AzureVMSSTagsData;
+import io.harness.azure.model.VirtualMachineData;
 import io.harness.azure.model.image.AzureMachineImage;
 import io.harness.azure.model.image.AzureMachineImageFactory;
 import io.harness.azure.utility.AzureResourceUtility;
@@ -58,6 +62,7 @@ import com.microsoft.azure.management.compute.GalleryImage;
 import com.microsoft.azure.management.compute.SshConfiguration;
 import com.microsoft.azure.management.compute.SshPublicKey;
 import com.microsoft.azure.management.compute.UpgradeMode;
+import com.microsoft.azure.management.compute.VirtualMachine;
 import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
 import com.microsoft.azure.management.compute.VirtualMachineScaleSetOSProfile;
 import com.microsoft.azure.management.compute.VirtualMachineScaleSetVM;
@@ -602,5 +607,59 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
           resourceGroupName, npe);
       return Optional.empty();
     }
+  }
+
+  @Override
+  public List<VirtualMachineData> listHosts(AzureConfig azureConfig, String subscriptionId, String resourceGroup,
+      AzureOSType osType, Map<String, String> tags) {
+    if (isBlank(resourceGroup)) {
+      throw new IllegalArgumentException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
+    }
+    if (isNull(osType)) {
+      throw new IllegalArgumentException(OS_TYPE_NULL_VALIDATION_MSG);
+    }
+
+    List<VirtualMachine> virtualMachines =
+        getAzureClient(azureConfig, subscriptionId).virtualMachines().listByResourceGroup(resourceGroup);
+
+    if (isEmpty(virtualMachines)) {
+      log.info("List VMs did not find any matching VMs in Azure for subscription :  {}", subscriptionId);
+      return Collections.emptyList();
+    }
+
+    return virtualMachines.stream()
+        .filter(this::isVmRunning)
+        .filter(virtualMachine -> filterOsType(virtualMachine, osType))
+        .filter(virtualMachine -> filterTags(virtualMachine, tags))
+        .map(this::toVirtualMachineData)
+        .collect(Collectors.toList());
+  }
+
+  private boolean filterOsType(VirtualMachine virtualMachine, AzureOSType osType) {
+    if (virtualMachine.osProfile() == null) {
+      // unknown OS, remove vm from stream
+      return false;
+    }
+
+    return AzureOSType.WINDOWS.equals(osType) && virtualMachine.osProfile().windowsConfiguration() != null
+        || AzureOSType.LINUX.equals(osType) && virtualMachine.osProfile().linuxConfiguration() != null;
+  }
+
+  private boolean isVmRunning(VirtualMachine virtualMachine) {
+    return virtualMachine.powerState().equals(RUNNING);
+  }
+
+  private boolean filterTags(VirtualMachine virtualMachine, Map<String, String> tags) {
+    if (isEmpty(tags)) {
+      // tags are optional
+      return true;
+    }
+
+    return virtualMachine.tags().keySet().containsAll(tags.keySet())
+        && virtualMachine.tags().values().containsAll(tags.values());
+  }
+
+  private VirtualMachineData toVirtualMachineData(VirtualMachine virtualMachine) {
+    return VirtualMachineData.builder().hostName(virtualMachine.name()).build();
   }
 }

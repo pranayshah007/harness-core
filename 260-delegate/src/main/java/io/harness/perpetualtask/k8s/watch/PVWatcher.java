@@ -39,13 +39,13 @@ import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.util.CallGeneratorParams;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
 
 @OwnedBy(HarnessTeam.CE)
 @Slf4j
@@ -111,8 +111,9 @@ public class PVWatcher implements ResourceEventHandler<V1PersistentVolume> {
     try {
       log.debug(EVENT_LOG_MSG, persistentVolume.getMetadata().getUid(), EventType.ADDED);
 
-      DateTime creationTimestamp = persistentVolume.getMetadata().getCreationTimestamp();
-      if (!isClusterSeen || creationTimestamp == null || creationTimestamp.isAfter(DateTime.now().minusHours(2))) {
+      OffsetDateTime creationTimestamp = persistentVolume.getMetadata().getCreationTimestamp();
+      if (!isClusterSeen || creationTimestamp == null
+          || creationTimestamp.isAfter(OffsetDateTime.now().minusHours(2))) {
         publishPVInfo(persistentVolume);
       } else {
         publishedPVs.add(persistentVolume.getMetadata().getUid());
@@ -138,7 +139,8 @@ public class PVWatcher implements ResourceEventHandler<V1PersistentVolume> {
 
       if (oldVolSize != newVolSize) {
         log.debug("Volume change observed from {} to {}", oldVolSize, newVolSize);
-        publishPVEvent(persistentVolume, HTimestamps.fromMillis(DateTime.now().getMillis()), EVENT_TYPE_EXPANSION);
+        publishPVEvent(persistentVolume, HTimestamps.fromMillis(OffsetDateTime.now().toInstant().toEpochMilli()),
+            EVENT_TYPE_EXPANSION);
       }
     } catch (Exception ex) {
       log.error(ERROR_PUBLISH_LOG_MSG, EventType.MODIFIED, ex);
@@ -151,8 +153,10 @@ public class PVWatcher implements ResourceEventHandler<V1PersistentVolume> {
       log.debug(EVENT_LOG_MSG, persistentVolume.getMetadata().getUid(), EventType.DELETED);
 
       publishPVEvent(persistentVolume,
-          HTimestamps.fromMillis(
-              ofNullable(persistentVolume.getMetadata().getDeletionTimestamp()).orElse(DateTime.now()).getMillis()),
+          HTimestamps.fromMillis(ofNullable(persistentVolume.getMetadata().getDeletionTimestamp())
+                                     .orElse(OffsetDateTime.now())
+                                     .toInstant()
+                                     .toEpochMilli()),
           EVENT_TYPE_STOP);
 
       publishedPVs.remove(persistentVolume.getMetadata().getUid());
@@ -162,7 +166,8 @@ public class PVWatcher implements ResourceEventHandler<V1PersistentVolume> {
   }
 
   private void publishPVInfo(V1PersistentVolume persistentVolume) {
-    Timestamp timestamp = HTimestamps.fromMillis(persistentVolume.getMetadata().getCreationTimestamp().getMillis());
+    Timestamp timestamp =
+        HTimestamps.fromMillis(persistentVolume.getMetadata().getCreationTimestamp().toInstant().toEpochMilli());
 
     PVInfo pvInfo =
         PVInfo.newBuilder(pvInfoPrototype)

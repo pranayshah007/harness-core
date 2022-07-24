@@ -36,7 +36,7 @@ public class NGCommonUtilKryoRegistrar implements KryoRegistrar {
     // Moved from CD
     kryo.register(EnvironmentOutcome.class, 8107);
 
-    // Moved from 860-orchestration-steps
+    // Moved from orchestration-steps
     kryo.register(ForkStepParameters.class, 3211);
     kryo.register(SectionChainStepParameters.class, 3214);
     kryo.register(SectionChainPassThroughData.class, 3217);

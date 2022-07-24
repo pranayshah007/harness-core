@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.structure.HarnessStringUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.YamlException;
 import io.harness.pms.merger.YamlConfig;
@@ -49,6 +50,12 @@ public class MergeHelper {
     return mergedYamlConfig.getYaml();
   }
 
+  public YamlConfig mergeRuntimeInputValuesIntoOriginalYaml(
+      YamlConfig originalYamlConfig, YamlConfig inputSetConfig, boolean appendInputSetValidator) {
+    return mergeRuntimeInputValuesIntoOriginalYamlInternal(
+        originalYamlConfig, inputSetConfig, appendInputSetValidator, false);
+  }
+
   public JsonNode mergeExecutionInputIntoOriginalYamlJsonNode(
       String originalYaml, String inputSetPipelineCompYaml, boolean appendInputSetValidator) {
     YamlConfig mergedYamlConfig = mergeRuntimeInputValuesIntoOriginalYamlInternal(
@@ -59,10 +66,15 @@ public class MergeHelper {
 
   private YamlConfig mergeRuntimeInputValuesIntoOriginalYamlInternal(String originalYaml,
       String inputSetPipelineCompYaml, boolean appendInputSetValidator, boolean isAtExecutionTime) {
-    YamlConfig inputSetConfig = new YamlConfig(inputSetPipelineCompYaml);
-    Map<FQN, Object> inputSetFQNMap = inputSetConfig.getFqnToValueMap();
-
     YamlConfig originalYamlConfig = new YamlConfig(originalYaml);
+    YamlConfig inputSetConfig = new YamlConfig(inputSetPipelineCompYaml);
+    return mergeRuntimeInputValuesIntoOriginalYamlInternal(
+        originalYamlConfig, inputSetConfig, appendInputSetValidator, isAtExecutionTime);
+  }
+
+  private YamlConfig mergeRuntimeInputValuesIntoOriginalYamlInternal(YamlConfig originalYamlConfig,
+      YamlConfig inputSetConfig, boolean appendInputSetValidator, boolean isAtExecutionTime) {
+    Map<FQN, Object> inputSetFQNMap = inputSetConfig.getFqnToValueMap();
 
     Map<FQN, Object> mergedYamlFQNMap = new LinkedHashMap<>(originalYamlConfig.getFqnToValueMap());
     originalYamlConfig.getFqnToValueMap().keySet().forEach(key -> {
@@ -75,8 +87,8 @@ public class MergeHelper {
           }
         }
         if (isAtExecutionTime) {
-          String valueText = ((JsonNode) value).asText();
-          if (NGExpressionUtils.matchesExecutionInputPattern(valueText)) {
+          String templateValueText = ((JsonNode) templateValue).asText();
+          if (NGExpressionUtils.matchesExecutionInputPattern(templateValueText)) {
             ParameterField<?> inputSetParameterField =
                 RuntimeInputValuesValidator.getInputSetParameterField(((JsonNode) value).asText());
             if (inputSetParameterField != null) {
@@ -132,7 +144,9 @@ public class MergeHelper {
       if (inputSetParameterField != null && inputSetParameterField.isExecutionInput()) {
         return inputSetValue;
       }
-      return ParameterField.createExpressionField(true, ((JsonNode) inputSetValue).asText(),
+
+      return ParameterField.createExpressionField(true,
+          HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(((JsonNode) inputSetValue).asText()),
           parameterField.getInputSetValidator(), ((JsonNode) inputSetValue).getNodeType() != JsonNodeType.STRING);
     } catch (IOException e) {
       log.error("", e);

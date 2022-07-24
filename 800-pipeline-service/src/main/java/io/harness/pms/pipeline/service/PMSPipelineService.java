@@ -30,6 +30,8 @@ import org.springframework.data.mongodb.core.query.Update;
 public interface PMSPipelineService {
   PipelineCRUDResult create(PipelineEntity pipelineEntity);
 
+  PipelineCRUDResult createWithoutValidations(PipelineEntity pipelineEntity);
+
   PipelineSaveResponse clone(ClonePipelineDTO clonePipelineDTO, String accountId);
 
   Optional<PipelineEntity> get(

@@ -95,12 +95,13 @@ public class K8sApplyBaseHandler {
       K8sDelegateTaskParams k8sDelegateTaskParams, long timeoutInMillis, LogCallback executionLogCallback,
       K8sApplyHandlerConfig k8sApplyHandlerConfig) throws Exception {
     return steadyStateCheck(skipSteadyStateCheck, namespace, k8sDelegateTaskParams, timeoutInMillis,
-        executionLogCallback, k8sApplyHandlerConfig, false);
+        executionLogCallback, k8sApplyHandlerConfig, false, false);
   }
 
   public boolean steadyStateCheck(boolean skipSteadyStateCheck, String namespace,
       K8sDelegateTaskParams k8sDelegateTaskParams, long timeoutInMillis, LogCallback executionLogCallback,
-      K8sApplyHandlerConfig k8sApplyHandlerConfig, boolean isErrorFrameworkEnabled) throws Exception {
+      K8sApplyHandlerConfig k8sApplyHandlerConfig, boolean isErrorFrameworkEnabled, boolean skipSteadyStateForWorkloads)
+      throws Exception {
     if (isEmpty(k8sApplyHandlerConfig.getWorkloads()) && isEmpty(k8sApplyHandlerConfig.getCustomWorkloads())) {
       executionLogCallback.saveExecutionLog("Skipping Status Check since there is no Workload.", INFO, SUCCESS);
       return true;
@@ -110,14 +111,17 @@ public class K8sApplyBaseHandler {
       return true;
     }
 
-    List<KubernetesResourceId> kubernetesResourceIds = k8sApplyHandlerConfig.getWorkloads()
-                                                           .stream()
-                                                           .map(KubernetesResource::getResourceId)
-                                                           .collect(Collectors.toList());
+    boolean success = true;
+    if (!skipSteadyStateForWorkloads) {
+      List<KubernetesResourceId> kubernetesResourceIds = k8sApplyHandlerConfig.getWorkloads()
+                                                             .stream()
+                                                             .map(KubernetesResource::getResourceId)
+                                                             .collect(Collectors.toList());
 
-    boolean success = k8sTaskHelperBase.doStatusCheckForAllResources(k8sApplyHandlerConfig.getClient(),
-        kubernetesResourceIds, k8sDelegateTaskParams, namespace, executionLogCallback,
-        k8sApplyHandlerConfig.getCustomWorkloads().isEmpty(), isErrorFrameworkEnabled);
+      success = k8sTaskHelperBase.doStatusCheckForAllResources(k8sApplyHandlerConfig.getClient(), kubernetesResourceIds,
+          k8sDelegateTaskParams, namespace, executionLogCallback, k8sApplyHandlerConfig.getCustomWorkloads().isEmpty(),
+          isErrorFrameworkEnabled);
+    }
 
     boolean customResourcesStatusSuccess = k8sTaskHelperBase.doStatusCheckForAllCustomResources(
         k8sApplyHandlerConfig.getClient(), k8sApplyHandlerConfig.getCustomWorkloads(), k8sDelegateTaskParams,

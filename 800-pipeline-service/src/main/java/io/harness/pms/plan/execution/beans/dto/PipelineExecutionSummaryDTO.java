@@ -13,9 +13,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.dto.FailureInfoDTO;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.contracts.execution.ExecutionErrorInfo;
-import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.execution.ExecutionStatus;
 
@@ -74,6 +74,7 @@ public class PipelineExecutionSummaryDTO {
   StoreType storeType;
   String connectorRef;
 
+  boolean executionInputConfigured;
   boolean isStagesExecution;
   List<String> stagesExecuted;
   Map<String, String> stagesExecutedNames;

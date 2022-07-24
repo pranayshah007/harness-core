@@ -55,6 +55,7 @@ import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
@@ -103,6 +104,8 @@ import java.util.List;
 })
 @OwnedBy(DX)
 @Schema(name = "ConnectorConfig", description = "This is the view of the ConnectorConfig entity defined in Harness")
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME, property = "connectorType", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
 public abstract class ConnectorConfigDTO implements DecryptableEntity {
   @JsonIgnore public abstract List<DecryptableEntity> getDecryptableEntities();
 

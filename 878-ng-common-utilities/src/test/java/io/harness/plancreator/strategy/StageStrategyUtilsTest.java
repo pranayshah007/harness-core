@@ -22,6 +22,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
+import io.harness.strategy.StrategyValidationUtils;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
@@ -153,7 +154,7 @@ public class StageStrategyUtilsTest extends NGCommonUtilitiesTestBase {
     YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
     StrategyConfig strategyConfig = YamlUtils.read(
         approvalStageYamlField.getNode().getField("strategy").getNode().toString(), StrategyConfig.class);
-    assertThatThrownBy(() -> StageStrategyUtils.validateStrategyNode(strategyConfig))
+    assertThatThrownBy(() -> StrategyValidationUtils.validateStrategyNode(strategyConfig))
         .isInstanceOf(InvalidYamlException.class)
         .hasMessage("No Axes defined in matrix. Please define at least one axis");
   }
@@ -178,10 +179,10 @@ public class StageStrategyUtilsTest extends NGCommonUtilitiesTestBase {
     YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
     StrategyConfig strategyConfig = YamlUtils.read(
         approvalStageYamlField.getNode().getField("strategy").getNode().toString(), StrategyConfig.class);
-    assertThatThrownBy(() -> StageStrategyUtils.validateStrategyNode(strategyConfig))
+    assertThatThrownBy(() -> StrategyValidationUtils.validateStrategyNode(strategyConfig))
         .isInstanceOf(InvalidYamlException.class)
         .hasMessage(
-            "Values defined in the exclude are not correct. Please make sure exclude contains all the axis values and no extra value.");
+            "Values defined in the exclude are not correct. Please make sure exclude contains all the valid keys defined as axes.");
   }
 
   @Test
@@ -204,7 +205,7 @@ public class StageStrategyUtilsTest extends NGCommonUtilitiesTestBase {
     YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
     StrategyConfig strategyConfig = YamlUtils.read(
         approvalStageYamlField.getNode().getField("strategy").getNode().toString(), StrategyConfig.class);
-    assertThatThrownBy(() -> StageStrategyUtils.validateStrategyNode(strategyConfig))
+    assertThatThrownBy(() -> StrategyValidationUtils.validateStrategyNode(strategyConfig))
         .isInstanceOf(InvalidYamlException.class)
         .hasMessage("Iteration can not be [zero]. Please provide some positive Integer for Iteration count");
   }
@@ -229,7 +230,7 @@ public class StageStrategyUtilsTest extends NGCommonUtilitiesTestBase {
     YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
     StrategyConfig strategyConfig = YamlUtils.read(
         approvalStageYamlField.getNode().getField("strategy").getNode().toString(), StrategyConfig.class);
-    assertThatThrownBy(() -> StageStrategyUtils.validateStrategyNode(strategyConfig))
+    assertThatThrownBy(() -> StrategyValidationUtils.validateStrategyNode(strategyConfig))
         .isInstanceOf(InvalidYamlException.class)
         .hasMessage("Parallelism can not be [zero]. Please provide some positive Integer for Parallelism");
   }

@@ -322,6 +322,7 @@ public class RetryExecutionHelper {
     return currentRootJsonNode.toString();
   }
 
+  // Todo: Change here
   private JsonNode replaceStagesInParallelGroup(JsonNode parallelStage, List<String> retryStages,
       JsonNode currentParallelStageNode, List<String> identifierOfSkipStages, boolean isStrategyNodeProcessed) {
     int stageCounter = 0;
@@ -335,6 +336,13 @@ public class RetryExecutionHelper {
         JsonNode currentResumableStagejsonNode =
             currentParallelStageNode.get("parallel").get(stageCounter).get("stage");
         ((ObjectNode) currentResumableStagejsonNode).set("__uuid", stageNode.get("stage").get("__uuid"));
+        JsonNode currentResumableStrategyJsonNode = currentResumableStagejsonNode.get("strategy");
+        // If strategy id defined then copy the strategyNode uuid
+        if (currentResumableStrategyJsonNode != null) {
+          ((ObjectNode) currentResumableStrategyJsonNode)
+              .set("__uuid", stageNode.get("stage").get("strategy").get("__uuid"));
+          isStrategyNodeProcessed = true;
+        }
       }
       stageCounter++;
     }

@@ -20,6 +20,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -31,21 +32,25 @@ public class SlackTaskParams implements TaskParameters, ExecutionCapabilityDeman
   @Expression(ALLOW_SECRETS) List<String> slackWebhookUrls;
   String message;
   String notificationId;
+  private static final Pattern SECRET_EXPRESSION =
+      Pattern.compile("\\$\\{ngSecretManager\\.obtain\\(\\\"\\w*[\\.]?\\w*\\\"\\, ([+-]?\\d*|0)\\)\\}");
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> compatibility = new ArrayList<>();
     if (!slackWebhookUrls.isEmpty()) {
-      URI uri = null;
-      try {
-        uri = new URI(slackWebhookUrls.get(0));
-        compatibility.add(HttpConnectionExecutionCapability.builder()
-                              .host(uri.getHost())
-                              .scheme(uri.getScheme())
-                              .port(uri.getPort())
-                              .build());
-      } catch (URISyntaxException e) {
-        log.error("Can't parse webhookurl as URI {}", notificationId);
+      if (!SECRET_EXPRESSION.matcher(slackWebhookUrls.get(0)).matches()) {
+        URI uri = null;
+        try {
+          uri = new URI(slackWebhookUrls.get(0));
+          compatibility.add(HttpConnectionExecutionCapability.builder()
+                                .host(uri.getHost())
+                                .scheme(uri.getScheme())
+                                .port(uri.getPort())
+                                .build());
+        } catch (URISyntaxException e) {
+          log.error("Can't parse webhookurl as URI {}: {}", notificationId, e);
+        }
       }
     }
     return compatibility;

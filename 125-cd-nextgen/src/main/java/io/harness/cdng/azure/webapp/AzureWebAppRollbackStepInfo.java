@@ -50,8 +50,9 @@ public class AzureWebAppRollbackStepInfo extends AzureWebAppRollbackBaseStepInfo
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public AzureWebAppRollbackStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public AzureWebAppRollbackStepInfo(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String slotDeploymentStepFqn, String swapSlotStepFqn) {
+    super(delegateSelectors, slotDeploymentStepFqn, swapSlotStepFqn);
   }
 
   @Override
@@ -61,7 +62,7 @@ public class AzureWebAppRollbackStepInfo extends AzureWebAppRollbackBaseStepInfo
 
   @Override
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
+    return OrchestrationFacilitatorType.TASK;
   }
 
   @Override

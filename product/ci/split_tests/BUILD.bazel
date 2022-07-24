@@ -12,6 +12,8 @@ go_library(
         "//product/ci/engine/consts",
         "//product/ci/engine/grpc",
         "//product/ci/split_tests/junit",
+        "//product/ci/split_tests/ti",
+        "//product/ci/ti-service/types",
         "@com_github_alexflint_go_arg//:go-arg",
         "@com_github_bmatcuk_doublestar//:doublestar",
         "@org_uber_go_zap//:zap",

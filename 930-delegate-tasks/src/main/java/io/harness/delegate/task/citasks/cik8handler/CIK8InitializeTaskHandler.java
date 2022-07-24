@@ -12,12 +12,12 @@ package io.harness.delegate.task.citasks.cik8handler;
  * git secrets.
  */
 
+import static io.harness.connector.SecretSpecBuilder.OPAQUE_SECRET_TYPE;
+import static io.harness.connector.SecretSpecBuilder.getSecretName;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.ci.k8s.PodStatus.Status.RUNNING;
 import static io.harness.delegate.beans.ci.pod.CIContainerType.LITE_ENGINE;
-import static io.harness.delegate.task.citasks.cik8handler.SecretSpecBuilder.OPAQUE_SECRET_TYPE;
-import static io.harness.delegate.task.citasks.cik8handler.SecretSpecBuilder.getSecretName;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
@@ -25,6 +25,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.SecretSpecBuilder;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.k8s.CIK8InitializeTaskParams;

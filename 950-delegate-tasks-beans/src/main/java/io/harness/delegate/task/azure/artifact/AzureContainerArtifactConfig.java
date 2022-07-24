@@ -12,7 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.azure.registry.AzureRegistryType;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.security.encryption.EncryptedDataDetail;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
@@ -24,6 +26,9 @@ public class AzureContainerArtifactConfig implements AzureArtifactConfig {
   private AzureRegistryType registryType;
   private String image;
   private String tag;
+  private List<EncryptedDataDetail> encryptedDataDetails;
+  private String registryHostname;
+  private String region;
 
   @Override
   public AzureArtifactType getArtifactType() {

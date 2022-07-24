@@ -77,6 +77,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
@@ -92,7 +93,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @Api("/setup/delegates")
 @Path("/setup/delegates")
@@ -432,7 +432,7 @@ public class DelegateSetupResource {
         Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
 
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
-      return new RestResponse<>(delegateService.validateKubernetesYaml(accountId, delegateSetupDetails));
+      return new RestResponse<>(delegateService.validateKubernetesSetupDetails(accountId, delegateSetupDetails));
     }
   }
 
@@ -628,15 +628,19 @@ public class DelegateSetupResource {
     }
   }
 
+  // TODO: ARPIT remove this api once UI starts using delegateSetupResourceV3 api
+
   @GET
   @Path(DOWNLOAD_URL)
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = ACCOUNT_MANAGEMENT)
   @AuthRule(permissionType = MANAGE_DELEGATES)
+  @Deprecated
   public RestResponse<Map<String, String>> downloadUrl(
       @Context HttpServletRequest request, @QueryParam("accountId") @NotEmpty String accountId) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      log.warn("Using a deprecated api to download cg delegates.");
       String url = subdomainUrlHelper.getManagerUrl(request, accountId);
 
       ImmutableMap.Builder<String, String> mapBuilder =

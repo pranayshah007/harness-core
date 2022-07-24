@@ -35,7 +35,6 @@ public class CustomHealthLogDataCollectionInfoMapper
                                      .build())
             .build();
     logDataCollectionInfo.setDataCollectionDsl(cvConfig.getDataCollectionDsl());
-    logDataCollectionInfo.setHostCollectionDSL(cvConfig.getHostCollectionDSL());
     return logDataCollectionInfo;
   }
 }

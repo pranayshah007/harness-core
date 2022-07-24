@@ -7,15 +7,20 @@
 
 package io.harness.accesscontrol.acl.api;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.IllegalArgumentException;
+import io.harness.exception.WingsException;
 
+import java.util.Map;
 import javax.annotation.Nullable;
+import javax.validation.constraints.NotEmpty;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @Data
 @Builder
@@ -24,8 +29,22 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class Resource {
   String resourceType;
   String resourceIdentifier;
+  Map<String, String> resourceAttributes;
 
   public static Resource of(@NotEmpty String resourceType, @Nullable String resourceIdentifier) {
-    return Resource.builder().resourceType(resourceType).resourceIdentifier(resourceIdentifier).build();
+    return of(resourceType, resourceIdentifier, null);
+  }
+
+  public static Resource of(@NotEmpty String resourceType, @Nullable String resourceIdentifier,
+      @Nullable Map<String, String> resourceAttributes) {
+    if (isNotEmpty(resourceIdentifier) && isNotEmpty(resourceAttributes)) {
+      throw new IllegalArgumentException(
+          "Both resource identifier and attributes cannot be provided for access control check", WingsException.USER);
+    }
+    return Resource.builder()
+        .resourceType(resourceType)
+        .resourceIdentifier(resourceIdentifier)
+        .resourceAttributes(resourceAttributes)
+        .build();
   }
 }

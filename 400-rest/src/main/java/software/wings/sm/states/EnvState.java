@@ -41,6 +41,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.exception.DeploymentFreezeException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.ExceptionLogger;
 import io.harness.logging.Misc;
@@ -210,7 +211,24 @@ public class EnvState extends State implements WorkflowState {
 
     envStateExecutionData.setOrchestrationWorkflowType(
         workflow.getOrchestrationWorkflow().getOrchestrationWorkflowType());
+
     try {
+      if (executionArgs.getWorkflowVariables() != null) {
+        List<String> workflowVariablesWithExpressionValue =
+            executionArgs.getWorkflowVariables()
+                .entrySet()
+                .stream()
+                .filter(variable -> hasExpressionValue(variable.getValue()))
+                .map(Entry::getKey)
+                .collect(toList());
+        if (isNotEmpty(workflowVariablesWithExpressionValue)) {
+          workflowVariablesWithExpressionValue.forEach(variable -> {
+            String value = context.renderExpression(executionArgs.getWorkflowVariables().get(variable));
+            executionArgs.getWorkflowVariables().put(variable,
+                value == null || "null".equals(value) ? executionArgs.getWorkflowVariables().get(variable) : value);
+          });
+        }
+      }
       WorkflowExecution execution = executionService.triggerOrchestrationExecution(
           appId, null, workflowId, context.getWorkflowExecutionId(), executionArgs, null);
       envStateExecutionData.setWorkflowExecutionId(execution.getUuid());
@@ -552,6 +570,10 @@ public class EnvState extends State implements WorkflowState {
             .name(ServiceArtifactVariableElements.SWEEPING_OUTPUT_NAME + context.getStateExecutionInstanceId())
             .value(ServiceArtifactVariableElements.builder().artifactVariableElements(artifactVariableElements).build())
             .build());
+  }
+
+  private static boolean hasExpressionValue(String workflowVariableValue) {
+    return ExpressionEvaluator.matchesVariablePattern(workflowVariableValue) && workflowVariableValue.contains(".");
   }
 
   @Deprecated

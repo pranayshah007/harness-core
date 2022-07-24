@@ -57,7 +57,7 @@ public class AzureWebAppSlotDeploymentRequestHandler
         buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig);
     AzureWebAppInfraDelegateConfig infrastructure = taskRequest.getInfrastructure();
     AzureAppServiceDockerDeploymentContext dockerDeploymentContext =
-        toAzureAppServiceDockerDeploymentContext(taskRequest, azureConfig, azureWebClientContext, logCallbackProvider);
+        toAzureAppServiceDockerDeploymentContext(taskRequest, azureWebClientContext, logCallbackProvider);
     AzureAppServicePreDeploymentData preDeploymentData = taskRequest.getPreDeploymentData();
 
     try {

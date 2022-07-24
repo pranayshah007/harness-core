@@ -113,18 +113,18 @@ public class ArtifactoryArtifactResource {
       ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
           (ArtifactoryRegistryArtifactConfig) artifactSpecFromService;
       if (isEmpty(repository)) {
-        repository = artifactoryRegistryArtifactConfig.getRepository().getValue();
+        repository = (String) artifactoryRegistryArtifactConfig.getRepository().fetchFinalValue();
       }
       if (isEmpty(artifactPath)) {
-        artifactPath = artifactoryRegistryArtifactConfig.getArtifactPath().getValue();
+        artifactPath = (String) artifactoryRegistryArtifactConfig.getArtifactPath().fetchFinalValue();
       }
 
       if (isEmpty(repositoryFormat)) {
-        repositoryFormat = artifactoryRegistryArtifactConfig.getRepositoryFormat().getValue();
+        repositoryFormat = (String) artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue();
       }
 
       if (isEmpty(artifactRepositoryUrl)) {
-        artifactRepositoryUrl = artifactoryRegistryArtifactConfig.getRepositoryUrl().getValue();
+        artifactRepositoryUrl = (String) artifactoryRegistryArtifactConfig.getRepositoryUrl().fetchFinalValue();
       }
 
       if (isEmpty(artifactoryConnectorIdentifier)) {
@@ -134,6 +134,7 @@ public class ArtifactoryArtifactResource {
 
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    // todo(hinger): resolve other expressions here
     artifactPath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo, serviceRef);
     ArtifactoryResponseDTO buildDetails = artifactoryResourceService.getBuildDetails(connectorRef, repository,

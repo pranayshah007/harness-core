@@ -90,7 +90,7 @@ public class CustomManifestFetchTask extends AbstractDelegateRunnableTask {
     if (customManifestSource != null) {
       try {
         defaultSourceWorkingDirectory = customManifestService.executeCustomSourceScript(
-            fetchParams.getActivityId(), logCallback, customManifestSource);
+            fetchParams.getActivityId(), logCallback, customManifestSource, true);
 
         logCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
         logCallback.saveExecutionLog(k8sTaskHelperBase.getManifestFileNamesInLogFormat(defaultSourceWorkingDirectory));
@@ -144,7 +144,7 @@ public class CustomManifestFetchTask extends AbstractDelegateRunnableTask {
 
     try {
       valuesFetchResponse =
-          customManifestFetchTaskHelper.fetchValuesTask(fetchParams, logCallback, defaultSourceWorkingDirectory);
+          customManifestFetchTaskHelper.fetchValuesTask(fetchParams, logCallback, defaultSourceWorkingDirectory, true);
       if (valuesFetchResponse.getCommandExecutionStatus() == FAILURE) {
         return valuesFetchResponse;
       }

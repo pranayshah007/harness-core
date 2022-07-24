@@ -20,4 +20,5 @@ public interface InfrastructureKind {
   String SSH_WINRM_AZURE = "SshWinRmAzure";
   String SSH_WINRM_AWS = "SshWinRmAws";
   String AZURE_WEB_APP = "AzureWebApp";
+  String GITOPS = "GitOps";
 }

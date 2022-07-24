@@ -101,7 +101,8 @@ public class GitCommandTaskHandler {
   }
 
   private void handleGitValidation(GitConfigDTO gitConfig, String accountId, SshSessionConfig sshSessionConfig) {
-    if (gitConfig.getGitConnectionType() == GitConnectionType.ACCOUNT) {
+    if (gitConfig.getGitConnectionType() == GitConnectionType.ACCOUNT
+        || gitConfig.getGitConnectionType() == GitConnectionType.PROJECT) {
       if (isNotEmpty(gitConfig.getValidationRepo())) {
         String url = format("%s/%s", stripEnd(gitConfig.getUrl(), "/"), stripStart(gitConfig.getValidationRepo(), "/"));
         gitConfig.setUrl(url);

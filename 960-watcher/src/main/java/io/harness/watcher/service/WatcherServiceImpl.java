@@ -1345,7 +1345,7 @@ public class WatcherServiceImpl implements WatcherService {
       boolean upgrade = false;
       String latestVersion = "";
       if (!watcherConfiguration.getDelegateCheckLocation().startsWith("file://")) {
-        String watcherMetadata = getResponseStringFromUrl();
+        String watcherMetadata = fetchLatestWatcherVersion();
         latestVersion = substringBefore(watcherMetadata, " ").trim();
         if (Pattern.matches("\\d\\.\\d\\.\\d{5,7}(-\\d{3})?", latestVersion)) {
           upgrade = !StringUtils.equals(getVersion(), latestVersion);
@@ -1371,7 +1371,19 @@ public class WatcherServiceImpl implements WatcherService {
   }
 
   @VisibleForTesting
-  String getResponseStringFromUrl() throws IOException {
+  String fetchLatestWatcherVersion() throws IOException {
+    if (multiVersion) {
+      // Fetch watcher verion from manager only for Saas delegates. We can enable it for onprem once ring is enabled.
+      try {
+        RestResponse<String> restResponse = callInterruptible21(timeLimiter, ofMinutes(1),
+            () -> SafeHttpCall.execute(managerClient.getWatcherVersion(watcherConfiguration.getAccountId())));
+        if (restResponse != null) {
+          return restResponse.getResource();
+        }
+      } catch (Exception e) {
+        log.warn("Failed to fetch watcher version from Manager ", e);
+      }
+    }
     return Http.getResponseStringFromUrl(watcherConfiguration.getUpgradeCheckLocation(), 10, 10);
   }
 

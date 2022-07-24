@@ -478,16 +478,19 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
                 .get(ngAccess.getAccountIdentifier(), getOrgIdentifier(ngAccess.getOrgIdentifier(), secretScope),
                     getProjectIdentifier(ngAccess.getProjectIdentifier(), secretScope), secretRefData.getIdentifier())
                 .orElse(null);
-        if (!GLOBAL_ACCOUNT_ID.equals(ngAccess.getAccountIdentifier())
-            || !SERVICE.equals(SecurityContextBuilder.getPrincipal().getType())) {
-          secretPermissionValidator.checkForAccessOrThrow(
-              ResourceScope.of(ngAccess.getAccountIdentifier(),
-                  getOrgIdentifier(ngAccess.getOrgIdentifier(), secretScope),
-                  getProjectIdentifier(ngAccess.getProjectIdentifier(), secretScope)),
-              Resource.of(SECRET_RESOURCE_TYPE, secretRefData.getIdentifier()), SECRET_ACCESS_PERMISSION,
-              secret != null ? secret.getSecret().getOwner() : null);
+        if (SecurityContextBuilder.getPrincipal() == null) {
+          log.info("Principal is not defined in this thread for accessing encrypted field with scope {}", secretScope);
+        } else {
+          if (!GLOBAL_ACCOUNT_ID.equals(ngAccess.getAccountIdentifier())
+              && !SERVICE.equals(SecurityContextBuilder.getPrincipal().getType())) {
+            secretPermissionValidator.checkForAccessOrThrow(
+                ResourceScope.of(ngAccess.getAccountIdentifier(),
+                    getOrgIdentifier(ngAccess.getOrgIdentifier(), secretScope),
+                    getProjectIdentifier(ngAccess.getProjectIdentifier(), secretScope)),
+                Resource.of(SECRET_RESOURCE_TYPE, secretRefData.getIdentifier()), SECRET_ACCESS_PERMISSION,
+                secret != null ? secret.getSecret().getOwner() : null);
+          }
         }
-
       } catch (IllegalAccessException illegalAccessException) {
         log.error("Error while checking access permission for secret: {}", field, illegalAccessException);
       }

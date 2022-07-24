@@ -161,6 +161,9 @@ import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactTaskNG;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactTaskNG;
+import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.s3.S3ArtifactTaskHandler;
+import io.harness.delegate.task.artifacts.s3.S3ArtifactTaskNG;
 import io.harness.delegate.task.aws.AwsCodeCommitApiDelegateTask;
 import io.harness.delegate.task.aws.AwsCodeCommitDelegateTask;
 import io.harness.delegate.task.aws.AwsDelegateTask;
@@ -231,8 +234,12 @@ import io.harness.delegate.task.k8s.exception.KubernetesApiClientRuntimeExceptio
 import io.harness.delegate.task.k8s.exception.KubernetesApiExceptionHandler;
 import io.harness.delegate.task.k8s.exception.KubernetesCliRuntimeExceptionHandler;
 import io.harness.delegate.task.ldap.NGLdapGroupSearchTask;
+import io.harness.delegate.task.ldap.NGLdapGroupSyncTask;
 import io.harness.delegate.task.ldap.NGLdapValidateConnectionSettingTask;
+import io.harness.delegate.task.ldap.NGLdapValidateGroupQuerySettingTask;
+import io.harness.delegate.task.ldap.NGLdapValidateUserQuerySettingTask;
 import io.harness.delegate.task.manifests.CustomManifestFetchTask;
+import io.harness.delegate.task.manifests.CustomManifestFetchTaskNG;
 import io.harness.delegate.task.manifests.CustomManifestValuesFetchTask;
 import io.harness.delegate.task.nexus.NexusDelegateTask;
 import io.harness.delegate.task.nexus.NexusValidationHandler;
@@ -260,6 +267,10 @@ import io.harness.delegate.task.shell.ssh.SshCleanupCommandHandler;
 import io.harness.delegate.task.shell.ssh.SshCopyCommandHandler;
 import io.harness.delegate.task.shell.ssh.SshInitCommandHandler;
 import io.harness.delegate.task.shell.ssh.SshScriptCommandHandler;
+import io.harness.delegate.task.shell.winrm.WinRmCleanupCommandHandler;
+import io.harness.delegate.task.shell.winrm.WinRmCopyCommandHandler;
+import io.harness.delegate.task.shell.winrm.WinRmInitCommandHandler;
+import io.harness.delegate.task.shell.winrm.WinRmScriptCommandHandler;
 import io.harness.delegate.task.ssh.NGCommandUnitType;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
 import io.harness.delegate.task.stepstatus.StepStatusTask;
@@ -339,6 +350,7 @@ import io.harness.security.X509TrustManagerBuilder;
 import io.harness.security.encryption.DelegateDecryptionService;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.service.ScmServiceClient;
+import io.harness.shell.ScriptType;
 import io.harness.shell.ShellExecutionService;
 import io.harness.shell.ShellExecutionServiceImpl;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
@@ -682,6 +694,7 @@ import javax.net.ssl.TrustManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
@@ -816,6 +829,14 @@ public class DelegateModule extends AbstractModule {
   public ExecutorService taskProgressExecutor() {
     return Executors.newFixedThreadPool(
         10, new ThreadFactoryBuilder().setNameFormat("taskProgress-%d").setPriority(Thread.MAX_PRIORITY).build());
+  }
+
+  @Provides
+  @Singleton
+  @Named("k8sSteadyStateExecutor")
+  public ExecutorService k8sSteadyStateExecutor() {
+    return Executors.newCachedThreadPool(
+        new ThreadFactoryBuilder().setNameFormat("k8sSteadyState-%d").setPriority(Thread.MAX_PRIORITY).build());
   }
 
   @Provides
@@ -1211,10 +1232,16 @@ public class DelegateModule extends AbstractModule {
         .toInstance(DockerArtifactTaskHandler.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
+        s3ArtifactServiceMapBinder =
+            MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
+                new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
+    s3ArtifactServiceMapBinder.addBinding(S3ArtifactDelegateRequest.class).toInstance(S3ArtifactTaskHandler.class);
+
+    MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
         jenkinsArtifactServiceMapBinder =
             MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
                 new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
-    artifactServiceMapBinder.addBinding(JenkinsArtifactDelegateRequest.class)
+    jenkinsArtifactServiceMapBinder.addBinding(JenkinsArtifactDelegateRequest.class)
         .toInstance(JenkinsArtifactTaskHandler.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
@@ -1323,13 +1350,25 @@ public class DelegateModule extends AbstractModule {
     azureWebAppRequestTypeToRequestHandlerMap.addBinding(AzureWebAppRequestType.SWAP_SLOTS.name())
         .to(AzureWebAppSlotSwapRequestHandler.class);
 
-    // Ssh and WinRM task handlers
-    MapBinder<String, CommandHandler> commandUnitHandlers =
-        MapBinder.newMapBinder(binder(), String.class, CommandHandler.class);
-    commandUnitHandlers.addBinding(NGCommandUnitType.INIT).to(SshInitCommandHandler.class);
-    commandUnitHandlers.addBinding(NGCommandUnitType.SCRIPT).to(SshScriptCommandHandler.class);
-    commandUnitHandlers.addBinding(NGCommandUnitType.COPY).to(SshCopyCommandHandler.class);
-    commandUnitHandlers.addBinding(NGCommandUnitType.CLEANUP).to(SshCleanupCommandHandler.class);
+    // Ssh and WinRm task handlers
+    MapBinder<Pair, CommandHandler> commandUnitHandlers =
+        MapBinder.newMapBinder(binder(), Pair.class, CommandHandler.class);
+    commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.INIT, ScriptType.BASH.name()))
+        .to(SshInitCommandHandler.class);
+    commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.SCRIPT, ScriptType.BASH.name()))
+        .to(SshScriptCommandHandler.class);
+    commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.COPY, ScriptType.BASH.name()))
+        .to(SshCopyCommandHandler.class);
+    commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.CLEANUP, ScriptType.BASH.name()))
+        .to(SshCleanupCommandHandler.class);
+    commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.INIT, ScriptType.POWERSHELL.name()))
+        .to(WinRmInitCommandHandler.class);
+    commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.SCRIPT, ScriptType.POWERSHELL.name()))
+        .to(WinRmScriptCommandHandler.class);
+    commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.COPY, ScriptType.POWERSHELL.name()))
+        .to(WinRmCopyCommandHandler.class);
+    commandUnitHandlers.addBinding(Pair.of(NGCommandUnitType.CLEANUP, ScriptType.POWERSHELL.name()))
+        .to(WinRmCleanupCommandHandler.class);
 
     MapBinder<String, ArtifactCommandUnitHandler> artifactCommandHandlers =
         MapBinder.newMapBinder(binder(), String.class, ArtifactCommandUnitHandler.class);
@@ -1442,6 +1481,10 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.LDAP_SEARCH_GROUPS).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.LDAP_FETCH_GROUP).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.NG_LDAP_TEST_CONN_SETTINGS).toInstance(NGLdapValidateConnectionSettingTask.class);
+    mapBinder.addBinding(TaskType.NG_LDAP_TEST_USER_SETTINGS).toInstance(NGLdapValidateUserQuerySettingTask.class);
+    mapBinder.addBinding(TaskType.NG_LDAP_TEST_GROUP_SETTINGS).toInstance(NGLdapValidateGroupQuerySettingTask.class);
+    mapBinder.addBinding(TaskType.NG_LDAP_SEARCH_GROUPS).toInstance(NGLdapGroupSearchTask.class);
+    mapBinder.addBinding(TaskType.NG_LDAP_GROUPS_SYNC).toInstance(NGLdapGroupSyncTask.class);
     mapBinder.addBinding(TaskType.APM_VALIDATE_CONNECTOR_TASK).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.CUSTOM_LOG_VALIDATE_CONNECTOR_TASK).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.APM_GET_TASK).toInstance(ServiceImplDelegateTask.class);
@@ -1539,7 +1582,6 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.NG_VAULT_RENEW_TOKEN).toInstance(NGVaultRenewalTask.class);
     mapBinder.addBinding(TaskType.NG_VAULT_RENEW_APP_ROLE_TOKEN).toInstance(NGVaultRenewalAppRoleTask.class);
     mapBinder.addBinding(TaskType.NG_VAULT_FETCHING_TASK).toInstance(NGVaultFetchEngineTask.class);
-    mapBinder.addBinding(TaskType.NG_LDAP_SEARCH_GROUPS).toInstance(NGLdapGroupSearchTask.class);
     mapBinder.addBinding(TaskType.NG_AZURE_VAULT_FETCH_ENGINES).toInstance(NGAzureKeyVaultFetchEngineTask.class);
     mapBinder.addBinding(TaskType.VALIDATE_SECRET_MANAGER_CONFIGURATION)
         .toInstance(ValidateSecretManagerConfigurationTask.class);
@@ -1612,6 +1654,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.GIT_FETCH_NEXT_GEN_TASK).toInstance(GitFetchTaskNG.class);
     mapBinder.addBinding(TaskType.BUILD_SOURCE_TASK).toInstance(BuildSourceTask.class);
     mapBinder.addBinding(TaskType.DOCKER_ARTIFACT_TASK_NG).toInstance(DockerArtifactTaskNG.class);
+    mapBinder.addBinding(TaskType.AMAZON_S3_ARTIFACT_TASK_NG).toInstance(S3ArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.JENKINS_ARTIFACT_TASK_NG).toInstance(JenkinsArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.GCR_ARTIFACT_TASK_NG).toInstance(GcrArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.ECR_ARTIFACT_TASK_NG).toInstance(EcrArtifactTaskNG.class);
@@ -1643,6 +1686,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.RANCHER_RESOLVE_CLUSTERS).toInstance(RancherResolveClustersTask.class);
 
     // Add all NG tasks below this.
+    mapBinder.addBinding(TaskType.CUSTOM_MANIFEST_VALUES_FETCH_TASK_NG).toInstance(CustomManifestFetchTaskNG.class);
     mapBinder.addBinding(TaskType.GITOPS_TASK_NG).toInstance(NGGitOpsCommandTask.class);
     mapBinder.addBinding(TaskType.GCP_TASK).toInstance(GcpTask.class);
     mapBinder.addBinding(TaskType.VALIDATE_KUBERNETES_CONFIG).toInstance(KubernetesTestConnectionDelegateTask.class);

@@ -273,6 +273,7 @@ public class OwnerRule implements TestRule {
   public static final String SAHILDEEP = "sahildeep.singh";
   public static final String LUCAS_SALES = "lucas.sales";
   public static final String FERNANDOD = "fernando.dourado";
+  public static final String RAFAEL = "rafael.martins";
   public static final String SERGEY = "sergey.bobrov";
   public static final String RAGHAV_GUPTA = "raghav.gupta";
   public static final String SOUMYAJIT = "soumyajit.das";
@@ -491,6 +492,7 @@ public class OwnerRule implements TestRule {
           .put(HEN, defaultUserInfo(HEN).slack("U02MD3UMWUA").team(CI).build())
           .put(SAHILDEEP, defaultUserInfo(SAHILDEEP).slack("U036DV63D1V").team(CE).build())
           .put(LUCAS_SALES, defaultUserInfo(LUCAS_SALES).slack("U038PURJS69").team(SPG).build())
+          .put(RAFAEL, defaultUserInfo(RAFAEL).slack("U03MRUNB8AD").team(SPG).build())
           .put(FERNANDOD, defaultUserInfo(FERNANDOD).slack("U039ESJUMFA").team(SPG).build())
           .put(SERGEY, defaultUserInfo(SERGEY).slack("U02N2AF83FA").team(STO).build())
           .put(RAGHAV_GUPTA, defaultUserInfo(RAGHAV_GUPTA).slack("U039P8DQPL5").team(CI).build())

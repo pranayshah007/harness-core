@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 30
+version: 32
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -322,6 +322,14 @@ permissions:
       - account
       - organization
       - project
+  - identifier: core_environmentgroup_access
+    name: Access Environment Group
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
   - identifier: core_audit_view
     name: View Audits
     status: ACTIVE
@@ -420,6 +428,12 @@ permissions:
       - project
   - identifier: core_license_view
     name: View Licenses
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: core_license_edit
+    name: Edit Licenses
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:
@@ -1057,6 +1071,22 @@ permissions:
     name: Delete a Chaos Workflow
     status: ACTIVE
     includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_setting_view
+    name: View Settings
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_setting_edit
+    name: Edit a Setting
+    status: ACTIVE
+    includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization

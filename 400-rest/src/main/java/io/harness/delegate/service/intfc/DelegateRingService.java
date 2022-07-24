@@ -18,5 +18,5 @@ public interface DelegateRingService {
 
   List<String> getDelegateVersionsForRing(String ringName);
 
-  List<String> getWatcherVersions(String accountId);
+  String getWatcherVersions(String accountId);
 }

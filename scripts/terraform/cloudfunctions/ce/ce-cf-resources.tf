@@ -131,6 +131,12 @@ resource "google_pubsub_topic" "ce-gcp-disk-inventory-data-load-topic" {
   project = "${var.projectId}"
 }
 
+# PubSub topic for generating dynamic schema for Azure billing data. CF pushes into this
+resource "google_pubsub_topic" "ce-azure-billing-schema-topic" {
+  name = "ce-azure-billing-schema"
+  project = "${var.projectId}"
+}
+
 # Archive files keep the CF files and dependencies
 data "archive_file" "ce-clusterdata" {
   type        = "zip"
@@ -295,6 +301,27 @@ data "archive_file" "ce-azure-billing-bq" {
   source {
     content  = "${file("${path.module}/src/python/util.py")}"
     filename = "util.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/requirements.txt")}"
+    filename = "requirements.txt"
+  }
+}
+
+data "archive_file" "ce-azure-billing-schema" {
+  type        = "zip"
+  output_path = "${path.module}/files/ce-azure-billing-schema.zip"
+  source {
+    content  = "${file("${path.module}/src/python/azure_billing_schema_main.py")}"
+    filename = "main.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/util.py")}"
+    filename = "util.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/bq_schema.py")}"
+    filename = "bq_schema.py"
   }
   source {
     content  = "${file("${path.module}/src/python/requirements.txt")}"
@@ -624,6 +651,13 @@ resource "google_storage_bucket_object" "ce-azure-billing-bq-archive" {
   depends_on = ["data.archive_file.ce-azure-billing-bq"]
 }
 
+resource "google_storage_bucket_object" "ce-azure-billing-schema-archive" {
+  name = "ce-azure-billing.${data.archive_file.ce-azure-billing-schema.output_md5}.zip"
+  bucket = "${google_storage_bucket.bucket1.name}"
+  source = "${path.module}/files/ce-azure-billing-schema.zip"
+  depends_on = ["data.archive_file.ce-azure-billing-schema"]
+}
+
 resource "google_storage_bucket_object" "ce-awsdata-ec2-archive" {
   name = "ce-awsdata.${data.archive_file.ce-awsdata-ec2.output_md5}.zip"
   bucket = "${google_storage_bucket.bucket1.name}"
@@ -854,6 +888,7 @@ resource "google_cloudfunctions_function" "ce-azure-billing-bq-function" {
     disabled = "false"
     enable_for_accounts = ""
     GCP_PROJECT = "${var.projectId}"
+    AZURESCHEMATOPIC = "${google_pubsub_topic.ce-azure-billing-schema-topic.name}"
   }
   event_trigger {
     event_type = "google.pubsub.topic.publish"
@@ -892,11 +927,37 @@ resource "google_cloudfunctions_function" "ce-azure-billing-gcs-function" {
   }
 }
 
+resource "google_cloudfunctions_function" "ce-azure-billing-schema-function" {
+  name                      = "ce-azure-billing-schema-terraform"
+  description               = "This cloudfunction gets triggered when ce-azure-billing-bq sends an event in pubsub topic"
+  entry_point               = "main"
+  available_memory_mb       = 2048
+  timeout                   = 540
+  runtime                   = "python38"
+  project                   = "${var.projectId}"
+  region                    = "${var.region}"
+  source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
+  source_archive_object     = "${google_storage_bucket_object.ce-azure-billing-schema-archive.name}"
+
+  environment_variables = {
+    disabled = "false"
+    enable_for_accounts = ""
+    GCP_PROJECT = "${var.projectId}"
+  }
+  event_trigger {
+    event_type = "google.pubsub.topic.publish"
+    resource   = "${google_pubsub_topic.ce-azure-billing-schema-topic.name}"
+    failure_policy {
+      retry = false
+    }
+  }
+}
+
 resource "google_cloudfunctions_function" "ce-awsdata-ec2-function" {
   name                      = "ce-awsdata-ec2-terraform"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
-  available_memory_mb       = 256
+  available_memory_mb       = 1024
   timeout                   = 540
   runtime                   = "python38"
   project                   = "${var.projectId}"
@@ -977,7 +1038,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ebs-function" {
   name                      = "ce-awsdata-ebs-terraform"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
-  available_memory_mb       = 256
+  available_memory_mb       = 1024
   timeout                   = 540
   runtime                   = "python38"
   project                   = "${var.projectId}"
@@ -1193,7 +1254,7 @@ resource "google_cloudfunctions_function" "ce-gcp-instance-inventory-data-functi
   name                      = "ce-gcp-instance-inventory-data-terraform"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
-  available_memory_mb       = 256
+  available_memory_mb       = 1024
   timeout                   = 540
   runtime                   = "python38"
   project                   = "${var.projectId}"
@@ -1247,7 +1308,7 @@ resource "google_cloudfunctions_function" "ce-gcp-disk-inventory-data-function" 
   name                      = "ce-gcp-disk-inventory-data-terraform"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
-  available_memory_mb       = 256
+  available_memory_mb       = 1024
   timeout                   = 540
   runtime                   = "python38"
   project                   = "${var.projectId}"

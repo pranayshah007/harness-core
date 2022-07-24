@@ -35,6 +35,7 @@ import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.beans.gitsync.GitWebhookDetails;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
@@ -49,6 +50,7 @@ import io.harness.product.ci.scm.proto.CreateWebhookResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
+import io.harness.product.ci.scm.proto.ListBranchesResponse;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultRequest;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.PageResponse;
@@ -59,7 +61,9 @@ import io.harness.product.ci.scm.proto.UpdateFileResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -154,6 +158,23 @@ public class ScmServiceClientImplTest extends CategoryTest {
     ListBranchesWithDefaultRequest listBranchRequest = listBranchesRequestCaptor.getValue();
     assertThat(listBranchRequest.getSlug()).isEqualTo("slug");
     assertThat(listBranchRequest.getPagination().getPage()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void listMoreBranchesTest() {
+    when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
+    when(scmGitProviderMapper.mapToSCMGitProvider(any())).thenReturn(gitProvider);
+    when(scmBlockingStub.listBranches(any())).thenReturn(getDefaultListBranchesResponse(50));
+    ListBranchesWithDefaultResponse listBranchesWithDefaultResponse = getDefaultListBranchesWithDefaultResponse(100, 1);
+    int pageSize = 130;
+
+    ListBranchesWithDefaultResponse listMoreBranchesResponse =
+        scmServiceClient.listMoreBranches(scmConnector, listBranchesWithDefaultResponse, pageSize, scmBlockingStub);
+
+    assertThat(listMoreBranchesResponse).isNotNull();
+    assertThat(listMoreBranchesResponse.getBranchesCount()).isEqualTo(pageSize);
   }
 
   @Test
@@ -343,5 +364,32 @@ public class ScmServiceClientImplTest extends CategoryTest {
 
   private Provider getGitProviderDefault() {
     return Provider.newBuilder().build();
+  }
+
+  private ListBranchesWithDefaultResponse getDefaultListBranchesWithDefaultResponse(int numOfBranches, int pageNum) {
+    List<String> branchList = new ArrayList<>();
+    branchList.add("main");
+    for (int i = 0; i < numOfBranches - 1; i++) {
+      branchList.add(UUIDGenerator.generateUuid());
+    }
+    return ListBranchesWithDefaultResponse.newBuilder()
+        .addAllBranches(branchList)
+        .setDefaultBranch("main")
+        .setPagination(PageResponse.newBuilder().setNext(pageNum).build())
+        .setStatus(200)
+        .build();
+  }
+
+  private ListBranchesResponse getDefaultListBranchesResponse(int numOfBranches) {
+    List<String> branchList = new ArrayList<>();
+    branchList.add("main");
+    for (int i = 0; i < numOfBranches - 1; i++) {
+      branchList.add(UUIDGenerator.generateUuid());
+    }
+    return ListBranchesResponse.newBuilder()
+        .addAllBranches(branchList)
+        .setPagination(PageResponse.newBuilder().setNext(0).build())
+        .setStatus(200)
+        .build();
   }
 }

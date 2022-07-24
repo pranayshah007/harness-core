@@ -14,9 +14,9 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.IDENTIFIER;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.NAME;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
+import static io.harness.strategy.StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX_ESCAPED;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
-import io.harness.exception.InvalidYamlException;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -28,12 +28,12 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.DependenciesUtils;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.matrix.StrategyConstants;
 import io.harness.steps.matrix.StrategyMetadata;
+import io.harness.strategy.StrategyValidationUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -63,6 +63,17 @@ public class StageStrategyUtils {
       planNodeId = strategyField.getNode().getUuid();
     }
     return planNodeId;
+  }
+
+  public String getIdentifierWithExpression(PlanCreationContext ctx, String originalIdentifier) {
+    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
+    // Since strategy is a child of stage but in execution we want to wrap stage around strategy,
+    // we are appending an expression that will be resolved during execution
+    String identifier = originalIdentifier;
+    if (strategyField != null) {
+      identifier = originalIdentifier + StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX;
+    }
+    return identifier;
   }
 
   public List<AdviserObtainment> getAdviserObtainments(
@@ -105,7 +116,7 @@ public class StageStrategyUtils {
                            .build();
     }
 
-    StrategyType strategyType = StrategyType.FOR;
+    StrategyType strategyType = StrategyType.LOOP;
     if (yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY).getNode().getField("matrix") != null) {
       strategyType = StrategyType.MATRIX;
     } else if (yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY).getNode().getField("parallelism")
@@ -131,42 +142,6 @@ public class StageStrategyUtils {
             .setEdgeLayoutList(EdgeLayoutList.newBuilder().build())
             .build());
     return stageYamlFieldMap;
-  }
-
-  public void validateStrategyNode(StrategyConfig config) {
-    if (config.getMatrixConfig() != null) {
-      Map<String, AxisConfig> axisConfig = ((MatrixConfig) config.getMatrixConfig()).getAxes();
-      if (axisConfig == null || axisConfig.size() == 0) {
-        throw new InvalidYamlException("No Axes defined in matrix. Please define at least one axis");
-      }
-      for (Map.Entry<String, AxisConfig> entry : axisConfig.entrySet()) {
-        if (!entry.getValue().getAxisValue().isExpression() && entry.getValue().getAxisValue().getValue().isEmpty()) {
-          throw new InvalidYamlException(String.format(
-              "Axis is empty for key [%s]. Please provide at least one value in the axis.", entry.getKey()));
-        }
-      }
-      if (!ParameterField.isBlank(((MatrixConfig) config.getMatrixConfig()).getExclude())
-          && ((MatrixConfig) config.getMatrixConfig()).getExclude().getValue() != null) {
-        List<ExcludeConfig> excludeConfigs = ((MatrixConfig) config.getMatrixConfig()).getExclude().getValue();
-        for (ExcludeConfig excludeConfig : excludeConfigs) {
-          if (!excludeConfig.getExclude().keySet().equals(axisConfig.keySet())) {
-            throw new InvalidYamlException(
-                "Values defined in the exclude are not correct. Please make sure exclude contains all the axis values and no extra value.");
-          }
-        }
-      }
-    } else if (config.getForConfig() != null) {
-      if (!ParameterField.isBlank(config.getForConfig().getIteration())
-          && config.getForConfig().getIteration().getValue() != null
-          && config.getForConfig().getIteration().getValue() == 0) {
-        throw new InvalidYamlException(
-            "Iteration can not be [zero]. Please provide some positive Integer for Iteration count");
-      }
-    } else if (!ParameterField.isBlank(config.getParallelism()) && config.getParallelism().getValue() != null
-        && config.getParallelism().getValue() == 0) {
-      throw new InvalidYamlException(
-          "Parallelism can not be [zero]. Please provide some positive Integer for Parallelism");
-    }
   }
 
   public List<AdviserObtainment> getAdviserObtainmentFromMetaDataForStep(
@@ -204,8 +179,8 @@ public class StageStrategyUtils {
                                                                  .strategyNodeId(uuid)
                                                                  .adviserObtainments(adviserObtainments)
                                                                  .childNodeId(strategyField.getNode().getUuid())
-                                                                 .strategyNodeName(name)
-                                                                 .strategyNodeIdentifier(identifier)
+                                                                 .strategyNodeName(refineIdentifier(name))
+                                                                 .strategyNodeIdentifier(refineIdentifier(identifier))
                                                                  .build())));
       planCreationResponseMap.put(uuid,
           PlanCreationResponse.builder()
@@ -227,13 +202,14 @@ public class StageStrategyUtils {
       // This is mandatory because it is the parent's responsibility to pass the nodeId and the childNodeId to the
       // strategy node
       metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyField.getNode().getUuid(),
-          ByteString.copyFrom(kryoSerializer.asDeflatedBytes(StrategyMetadata.builder()
-                                                                 .strategyNodeId(fieldUuid)
-                                                                 .adviserObtainments(adviserObtainments)
-                                                                 .childNodeId(strategyField.getNode().getUuid())
-                                                                 .strategyNodeIdentifier(fieldIdentifier)
-                                                                 .strategyNodeName(fieldName)
-                                                                 .build())));
+          ByteString.copyFrom(
+              kryoSerializer.asDeflatedBytes(StrategyMetadata.builder()
+                                                 .strategyNodeId(fieldUuid)
+                                                 .adviserObtainments(adviserObtainments)
+                                                 .childNodeId(strategyField.getNode().getUuid())
+                                                 .strategyNodeIdentifier(refineIdentifier(fieldIdentifier))
+                                                 .strategyNodeName(refineIdentifier(fieldName))
+                                                 .build())));
     }
   }
 
@@ -247,8 +223,8 @@ public class StageStrategyUtils {
   }
 
   public String replaceExpressions(
-      String jsonString, Map<String, String> combinations, int currentIteration, int totalIteration) {
-    Map<String, String> expressions = createExpressions(combinations, currentIteration, totalIteration);
+      String jsonString, Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
+    Map<String, String> expressions = createExpressions(combinations, currentIteration, totalIteration, itemValue);
     String result = jsonString;
     for (Map.Entry<String, String> expression : expressions.entrySet()) {
       result = result.replaceAll(expression.getKey(), expression.getValue());
@@ -256,10 +232,11 @@ public class StageStrategyUtils {
     return result;
   }
   public Map<String, String> createExpressions(
-      Map<String, String> combinations, int currentIteration, int totalIteration) {
+      Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
     Map<String, String> expressionsMap = new HashMap<>();
     String matrixExpression = EXPR_START_ESC + "matrix.%s" + EXPR_END_ESC;
     String strategyMatrixExpression = EXPR_START_ESC + "strategy.matrix.%s" + EXPR_END_ESC;
+    String repeatExpression = EXPR_START_ESC + "repeat.item" + EXPR_END_ESC;
 
     for (Map.Entry<String, String> entry : combinations.entrySet()) {
       expressionsMap.put(String.format(matrixExpression, entry.getKey()), entry.getValue());
@@ -267,6 +244,14 @@ public class StageStrategyUtils {
     }
     expressionsMap.put(EXPR_START_ESC + "strategy.iteration" + EXPR_END_ESC, String.valueOf(currentIteration));
     expressionsMap.put(EXPR_START_ESC + "strategy.iterations" + EXPR_END, String.valueOf(totalIteration));
+    expressionsMap.put(repeatExpression, itemValue == null ? "" : itemValue);
     return expressionsMap;
+  }
+
+  /**
+   * This function remove <+strategy.identifierPostFix> if present on the passed string
+   */
+  private String refineIdentifier(String identifier) {
+    return identifier.replaceAll(STRATEGY_IDENTIFIER_POSTFIX_ESCAPED, "");
   }
 }

@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static java.util.Objects.requireNonNull;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DecryptableEntity;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -23,7 +22,6 @@ import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppRequestHandler;
-import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppTaskRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppRequestResponse;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppTaskResponse;
@@ -32,12 +30,10 @@ import io.harness.delegate.task.azure.common.AzureLogCallbackProviderFactory;
 import io.harness.delegate.utils.TaskExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.secret.SecretSanitizerThreadLocal;
-import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import com.google.inject.Inject;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -104,13 +100,7 @@ public class AzureWebAppTaskNG extends AbstractDelegateRunnableTask {
   }
 
   private void decryptRequest(AzureWebAppTaskRequest webAppTaskRequest) {
-    if (webAppTaskRequest.getInfrastructure() != null) {
-      AzureWebAppInfraDelegateConfig infrastructure = webAppTaskRequest.getInfrastructure();
-      List<EncryptedDataDetail> encryptedDataDetails = infrastructure.getEncryptionDataDetails();
-      List<DecryptableEntity> decryptableEntities = infrastructure.getDecryptableEntities();
-      for (DecryptableEntity decryptable : decryptableEntities) {
-        decryptionService.decrypt(decryptable, encryptedDataDetails);
-      }
-    }
+    webAppTaskRequest.fetchDecryptionDetails().forEach(
+        decryptableEntity -> decryptionService.decrypt(decryptableEntity.getKey(), decryptableEntity.getValue()));
   }
 }

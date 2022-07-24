@@ -257,7 +257,7 @@ public class StepUtils {
             .setType(TaskType.newBuilder().setType(taskData.getTaskType()).build());
 
     ObjectMapper objectMapper = new ObjectMapper();
-    if (taskData.getSerializationFormat().equals(SerializationFormat.JSON)) {
+    if (SerializationFormat.JSON.equals(taskData.getSerializationFormat())) {
       try {
         taskDetailsBuilder.setJsonParameters(ByteString.copyFrom(objectMapper.writeValueAsBytes(taskParameters)));
       } catch (JsonProcessingException e) {
@@ -476,25 +476,25 @@ public class StepUtils {
         // Delegate Selector Precedence: 1)Step -> 2)stepGroup -> 3)Stage ->  4)Pipeline
 
         ParameterField<List<TaskSelectorYaml>> delegateSelectors = withDelegateSelector.fetchDelegateSelectors();
-        if (hasDelegateSelectors(delegateSelectors, withDelegateSelector)) {
+        if (hasDelegateSelectors(delegateSelectors)) {
           setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STEP);
           return;
         }
 
         delegateSelectors = delegateSelectorsFromFqn(ctx, STEP_GROUP);
-        if (hasDelegateSelectors(delegateSelectors, withDelegateSelector)) {
+        if (hasDelegateSelectors(delegateSelectors)) {
           setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STEP_GROUP);
           return;
         }
 
         delegateSelectors = delegateSelectorsFromFqn(ctx, STAGE);
-        if (hasDelegateSelectors(delegateSelectors, withDelegateSelector)) {
+        if (hasDelegateSelectors(delegateSelectors)) {
           setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STAGE);
           return;
         }
 
         delegateSelectors = delegateSelectorsFromFqn(ctx, YAMLFieldNameConstants.PIPELINE);
-        if (hasDelegateSelectors(delegateSelectors, withDelegateSelector)) {
+        if (hasDelegateSelectors(delegateSelectors)) {
           setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, YAMLFieldNameConstants.PIPELINE);
         }
       }
@@ -509,9 +509,8 @@ public class StepUtils {
     withDelegateSelector.setDelegateSelectors(delegateSelectors);
   }
 
-  private static boolean hasDelegateSelectors(
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, WithDelegateSelector withDelegateSelector) {
-    if (delegateSelectors == null || ParameterField.isNull(withDelegateSelector.fetchDelegateSelectors())
+  private static boolean hasDelegateSelectors(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+    if (delegateSelectors == null || ParameterField.isNull(delegateSelectors)
         || isEmpty(delegateSelectors.getValue())) {
       return false;
     }

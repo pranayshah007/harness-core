@@ -19,11 +19,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.ci.vm.CIVmExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
+import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest;
+import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest.ExecuteStepRequestBuilder;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
 import io.harness.delegate.task.citasks.vm.helper.HttpHelper;
 import io.harness.delegate.task.citasks.vm.helper.StepExecutionHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
+import io.harness.vm.VmExecuteStepUtils;
 
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +42,7 @@ import org.mockito.MockitoAnnotations;
 public class CIVMExecuteStepTaskHandlerTest extends CategoryTest {
   @Mock private HttpHelper httpHelper;
   @Mock private StepExecutionHelper stepExecutionHelper;
+  @Mock private VmExecuteStepUtils vmExecuteStepUtils;
   @InjectMocks private io.harness.delegate.task.citasks.vm.CIVMExecuteStepTaskHandler CIVMExecuteStepTaskHandler;
 
   @Before
@@ -55,6 +59,9 @@ public class CIVMExecuteStepTaskHandlerTest extends CategoryTest {
                                            .stepRuntimeId("step")
                                            .stepInfo(VmRunStep.builder().build())
                                            .build();
+    ExecuteStepRequestBuilder builder = ExecuteStepRequest.builder();
+    when(vmExecuteStepUtils.convertStep(any())).thenReturn(builder);
+
     when(stepExecutionHelper.callRunnerForStepExecution(any()))
         .thenReturn(VmTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build());
     VmTaskExecutionResponse response = CIVMExecuteStepTaskHandler.executeTaskInternal(params, "");
@@ -70,6 +77,8 @@ public class CIVMExecuteStepTaskHandlerTest extends CategoryTest {
                                            .stepRuntimeId("test")
                                            .stepInfo(VmRunStep.builder().build())
                                            .build();
+    ExecuteStepRequestBuilder builder = ExecuteStepRequest.builder();
+    when(vmExecuteStepUtils.convertStep(any())).thenReturn(builder);
     when(stepExecutionHelper.callRunnerForStepExecution(any()))
         .thenReturn(VmTaskExecutionResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.FAILURE)

@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.expression.ExpressionEvaluator;
 
 import software.wings.beans.EntityType;
 import software.wings.beans.Pipeline;
@@ -84,6 +85,16 @@ public class PipelineServiceHelper {
       List<String> infraIdsInLoop = Arrays.asList(infraValueInPipelineStage.trim().split("\\s*,\\s*"));
       infraIdsInLoop.stream().filter(infraId -> !infraDefinitionIds.contains(infraId)).forEach(infraDefinitionIds::add);
     }
+
+    if (hasExpressionValue(infraValueInPipelineStage)) {
+      pipelineStage.setLooped(true);
+      pipelineStage.setLoopedVarName(infraVarNameInPipelineStage);
+    }
+  }
+
+  private static boolean hasExpressionValue(String infraValueInPipelineStage) {
+    return ExpressionEvaluator.matchesVariablePattern(infraValueInPipelineStage)
+        && infraValueInPipelineStage.contains(".");
   }
 
   public static void updatePipelineWithLoopedState(Pipeline pipeline) {
@@ -113,7 +124,8 @@ public class PipelineServiceHelper {
           } else {
             if (EmptyPredicate.isEmpty(pipelineStageVariableValues)
                 || !pipelineStageVariableValues.containsKey(varLooped)
-                || !pipelineStageVariableValues.get(varLooped).contains(",")) {
+                || (!pipelineStageVariableValues.get(varLooped).contains(",")
+                    && !hasExpressionValue(pipelineStageVariableValues.get(varLooped)))) {
               throw new InvalidRequestException("Pipeline stage marked as loop, but doesnt have looping config");
             }
             loopedValues = Arrays.asList(pipelineStageVariableValues.get(varLooped).trim().split("\\s*,\\s*"));

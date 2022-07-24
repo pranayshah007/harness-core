@@ -21,6 +21,7 @@ import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.validation.OneOfField;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.VariableExpression;
@@ -48,6 +49,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(AMAZON_S3_NAME)
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("amazonS3ArtifactConfig")
+@OneOfField(fields = {"filePath", "filePathRegex"})
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig")
 public class AmazonS3ArtifactConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**

@@ -22,6 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.TemplateServiceTestBase;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -81,7 +82,7 @@ import retrofit2.Response;
 public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock EnforcementClientService enforcementClientService;
   @InjectMocks private NGTemplateServiceHelper templateServiceHelper;
-  @Inject private GitSyncSdkService gitSyncSdkService;
+  @Mock private GitSyncSdkService gitSyncSdkService;
   @Inject private NGTemplateRepository templateRepository;
   @Inject private TransactionHelper transactionHelper;
   @Mock private ProjectClient projectClient;
@@ -92,6 +93,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @InjectMocks NGTemplateServiceImpl templateService;
 
   @Mock NGTemplateSchemaServiceImpl templateSchemaService;
+  @Mock AccessControlClient accessControlClient;
 
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
@@ -104,11 +106,19 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
   TemplateEntity entity;
 
+  private String readFile(String filename) {
+    ClassLoader classLoader = getClass().getClassLoader();
+    try {
+      return Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Could not read resource file: " + filename);
+    }
+  }
+
   @Before
   public void setUp() throws IOException {
-    ClassLoader classLoader = this.getClass().getClassLoader();
     String filename = "template.yaml";
-    yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    yaml = readFile(filename);
     on(templateServiceHelper).set("templateRepository", templateRepository);
     on(templateService).set("templateRepository", templateRepository);
     on(templateService).set("gitSyncSdkService", gitSyncSdkService);

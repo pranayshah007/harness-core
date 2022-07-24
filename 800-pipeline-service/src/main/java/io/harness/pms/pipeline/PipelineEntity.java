@@ -92,6 +92,12 @@ public class PipelineEntity
                  .field(PipelineEntityKeys.projectIdentifier)
                  .build())
         .add(CompoundMongoIndex.builder().name("lastUpdatedAt_idx").field(PipelineEntityKeys.lastUpdatedAt).build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_repoURL_filePath")
+                 .field(PipelineEntityKeys.accountId)
+                 .field(PipelineEntityKeys.repoURL)
+                 .field(PipelineEntityKeys.filePath)
+                 .build())
         .build();
   }
   @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;
@@ -100,6 +106,7 @@ public class PipelineEntity
   @NotEmpty String orgIdentifier;
   @Trimmed @NotEmpty String projectIdentifier;
   @NotEmpty String identifier;
+  @Wither @Setter @NonFinal Boolean isDraft;
 
   @Wither @NotEmpty @NonFinal @Setter String yaml;
 
@@ -136,6 +143,7 @@ public class PipelineEntity
   @Wither @Setter @NonFinal StoreType storeType;
   @Wither @Setter @NonFinal String repo;
   @Wither @Setter @NonFinal String connectorRef;
+  @Wither @Setter @NonFinal String repoURL;
 
   public String getData() {
     return yaml;

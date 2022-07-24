@@ -3,19 +3,11 @@ java_language_level: 8
 
 directories:
   800-pipeline-service
-  810-ng-triggers
-  860-orchestration-steps
-  860-orchestration-visualization
   867-polling-contracts
-  870-orchestration
   874-orchestration-delay
-  876-orchestration-beans
   878-ng-common-utilities
-  879-pms-sdk
   880-pipeline-cd-commons
-  882-pms-sdk-core
   884-pms-commons
-  888-pms-client
   890-sm-core
   900-git-sync-sdk
   910-delegate-service-driver
@@ -43,7 +35,6 @@ directories:
   953-git-sync-commons
   953-yaml-commons
   954-connector-beans
-  954-pms-contracts
   955-alert-beans
   955-cg-yaml
   955-delegate-beans
@@ -81,20 +72,12 @@ derive_targets_from_directories: false
 
 targets:
   800-pipeline-service:module
-  860-orchestration-steps:module
-  860-orchestration-visualization:module
-  870-orchestration:module
   874-orchestration-delay:module
-  876-orchestration-beans:module
   878-ng-common-utilities:module
-  879-pms-sdk:module
-  882-pms-sdk-core:module
   884-pms-commons:module
-  888-pms-client:module
   953-yaml-commons:module
   937-persistence-tracer:module
   950-wait-engine:module
-  954-pms-contracts:module
   959-timeout-engine:module
   960-persistence:module
   979-recaster:module

@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USERGROUP_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.REETIKA;
@@ -259,6 +260,151 @@ public class UserGroupServiceImplTest extends CategoryTest {
       verify(userGroupService, times(i % 2))
           .addMember(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, userGroupId, userId);
     }
+  }
+
+  @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void testThatCantbeUpdatedInExternallyManagedGroup_1() {
+    // Case when users are removed
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    String userGroupIdentifier = randomAlphabetic(10);
+    UserGroup userGroup = UserGroup.builder()
+                              .accountIdentifier(scope.getAccountIdentifier())
+                              .orgIdentifier(scope.getOrgIdentifier())
+                              .projectIdentifier(scope.getProjectIdentifier())
+                              .identifier(userGroupIdentifier)
+                              .externallyManaged(true)
+                              .isSsoLinked(true)
+                              .users(Lists.newArrayList("abc", "def", "ok"))
+                              .build();
+    doReturn(Optional.of(userGroup))
+        .when(userGroupService)
+        .get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
+    when(ngUserService.listUserIds(scope)).thenReturn(Lists.newArrayList("abc", "def", "ok"));
+    UserGroupDTO updatedUserGroupDTO = UserGroupDTO.builder()
+                                           .accountIdentifier(scope.getAccountIdentifier())
+                                           .orgIdentifier(scope.getOrgIdentifier())
+                                           .projectIdentifier(scope.getProjectIdentifier())
+                                           .identifier(userGroupIdentifier)
+                                           .externallyManaged(true)
+                                           .isSsoLinked(true)
+                                           .users(Lists.newArrayList("abc", "def"))
+                                           .build();
+    when(userGroupRepository.save(userGroup)).thenReturn(userGroup);
+    assertThatThrownBy(() -> userGroupService.updateWithCheckThatSCIMFieldsAreNotModified(updatedUserGroupDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Update is not supported for externally managed group " + userGroupIdentifier);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void testThatGroupCantbeUpdatedInExternallyManagedGroup_2() {
+    // Case when users are added
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    String userGroupIdentifier = randomAlphabetic(10);
+    UserGroup userGroup = UserGroup.builder()
+                              .accountIdentifier(scope.getAccountIdentifier())
+                              .orgIdentifier(scope.getOrgIdentifier())
+                              .projectIdentifier(scope.getProjectIdentifier())
+                              .identifier(userGroupIdentifier)
+                              .externallyManaged(true)
+                              .isSsoLinked(true)
+                              .users(Lists.newArrayList("abc", "def", "ok"))
+                              .build();
+    doReturn(Optional.of(userGroup))
+        .when(userGroupService)
+        .get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
+    when(ngUserService.listUserIds(scope)).thenReturn(Lists.newArrayList("abc", "def", "ok"));
+    UserGroupDTO updatedUserGroupDTO = UserGroupDTO.builder()
+                                           .accountIdentifier(scope.getAccountIdentifier())
+                                           .orgIdentifier(scope.getOrgIdentifier())
+                                           .projectIdentifier(scope.getProjectIdentifier())
+                                           .identifier(userGroupIdentifier)
+                                           .externallyManaged(true)
+                                           .isSsoLinked(true)
+                                           .users(Lists.newArrayList("abc", "def", "ok", "kk"))
+                                           .build();
+    when(userGroupRepository.save(userGroup)).thenReturn(userGroup);
+    assertThatThrownBy(() -> userGroupService.updateWithCheckThatSCIMFieldsAreNotModified(updatedUserGroupDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Update is not supported for externally managed group " + userGroupIdentifier);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void testThatUserGroupsCanUpdatedInExternallyManagedGroup_3() {
+    // Case when users are added
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    String userGroupIdentifier = randomAlphabetic(10);
+    UserGroup userGroup = UserGroup.builder()
+                              .accountIdentifier(scope.getAccountIdentifier())
+                              .orgIdentifier(scope.getOrgIdentifier())
+                              .projectIdentifier(scope.getProjectIdentifier())
+                              .identifier(userGroupIdentifier)
+                              .name("name")
+                              .externallyManaged(true)
+                              .isSsoLinked(true)
+                              .users(Lists.newArrayList("abc", "def", "ok"))
+                              .build();
+    doReturn(userGroup).when(transactionTemplate).execute(any());
+    doReturn(Optional.of(userGroup))
+        .when(userGroupService)
+        .get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
+    when(ngUserService.listUserIds(scope)).thenReturn(Lists.newArrayList("abc", "def", "ok"));
+    UserGroupDTO updatedUserGroupDTO = UserGroupDTO.builder()
+                                           .accountIdentifier(scope.getAccountIdentifier())
+                                           .orgIdentifier(scope.getOrgIdentifier())
+                                           .projectIdentifier(scope.getProjectIdentifier())
+                                           .identifier(userGroupIdentifier)
+                                           .externallyManaged(true)
+                                           .name("name")
+                                           .isSsoLinked(true)
+                                           .users(Lists.newArrayList("abc", "def", "ok"))
+                                           .build();
+    when(userGroupRepository.save(userGroup)).thenReturn(userGroup);
+    UserGroup updatedUserGroup = userGroupService.updateWithCheckThatSCIMFieldsAreNotModified(updatedUserGroupDTO);
+    assertThat(updatedUserGroup).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void testThatUserGroupsCanUpdatedInExternallyManagedGroup_4() {
+    // Case when users are added
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    String userGroupIdentifier = randomAlphabetic(10);
+    UserGroup userGroup = UserGroup.builder()
+                              .accountIdentifier(scope.getAccountIdentifier())
+                              .orgIdentifier(scope.getOrgIdentifier())
+                              .projectIdentifier(scope.getProjectIdentifier())
+                              .identifier(userGroupIdentifier)
+                              .externallyManaged(true)
+                              .isSsoLinked(true)
+                              .name("name")
+                              .users(Lists.newArrayList("abc", "def", "ok"))
+                              .build();
+    doReturn(userGroup).when(transactionTemplate).execute(any());
+    doReturn(Optional.of(userGroup))
+        .when(userGroupService)
+        .get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
+    when(ngUserService.listUserIds(scope)).thenReturn(Lists.newArrayList("abc", "def", "ok"));
+    UserGroupDTO updatedUserGroupDTO = UserGroupDTO.builder()
+                                           .accountIdentifier(scope.getAccountIdentifier())
+                                           .orgIdentifier(scope.getOrgIdentifier())
+                                           .projectIdentifier(scope.getProjectIdentifier())
+                                           .identifier(userGroupIdentifier)
+                                           .externallyManaged(true)
+                                           .isSsoLinked(true)
+                                           .name("updated-name")
+                                           .users(Lists.newArrayList("abc", "def", "ok"))
+                                           .build();
+    when(userGroupRepository.save(userGroup)).thenReturn(userGroup);
+    assertThatThrownBy(() -> userGroupService.updateWithCheckThatSCIMFieldsAreNotModified(updatedUserGroupDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("The name cannot be updated for externally managed group");
   }
 
   @Test
