@@ -32,7 +32,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
-@PipelineServiceAuth
+//@PipelineServiceAuth
 @Slf4j
 @OwnedBy(PIPELINE)
 public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSchemaResource {
