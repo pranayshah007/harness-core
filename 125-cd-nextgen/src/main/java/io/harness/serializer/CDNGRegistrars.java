@@ -16,6 +16,7 @@ import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepNode;
 import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepNode;
 import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepNode;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
+import io.harness.cdng.ecs.EcsRollingDeployStepNode;
 import io.harness.cdng.gitops.CreatePRStepNode;
 import io.harness.cdng.gitops.MergePRStepNode;
 import io.harness.cdng.helm.HelmDeployStepNode;
@@ -451,5 +452,17 @@ public class CDNGRegistrars {
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
+          .add(YamlSchemaRootClass.builder()
+                  .entityType(EntityType.ECS_ROLLING_DEPLOY_STEP)
+                  .availableAtProjectLevel(true)
+                  .availableAtOrgLevel(false)
+                  .availableAtAccountLevel(false)
+                  .clazz(EcsRollingDeployStepNode.class)
+                  .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                          .namespace(SchemaNamespaceConstants.CD)
+                          .modulesSupported(Collections.singletonList(ModuleType.CD))
+                          .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                          .build())
+                  .build())
           .build();
 }

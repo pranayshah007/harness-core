@@ -1,10 +1,3 @@
-/*
- * Copyright 2021 Harness Inc. All rights reserved.
- * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
- * that can be found in the licenses directory at the root of this repository, also available at
- * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
- */
-
 package io.harness.serializer.kryo;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
@@ -210,6 +203,7 @@ import io.harness.delegate.beans.connector.servicenow.connection.ServiceNowTestC
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskParams;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskResponse;
 import io.harness.delegate.beans.connector.vaultconnector.VaultValidationParams;
+import io.harness.delegate.beans.ecs.EcsDeployResult;
 import io.harness.delegate.beans.executioncapability.AlwaysFalseValidationCapability;
 import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
 import io.harness.delegate.beans.executioncapability.AwsRegionCapability;
@@ -286,6 +280,7 @@ import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.command.CommandExecutionResult;
 import io.harness.delegate.exception.DelegateRetryableException;
+import io.harness.delegate.exception.EcsNGException;
 import io.harness.delegate.exception.HelmNGException;
 import io.harness.delegate.exception.ServerlessNGException;
 import io.harness.delegate.exception.TaskNGDataException;
@@ -423,6 +418,14 @@ import io.harness.delegate.task.cloudformation.CloudformationCommandUnit;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGParameters;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGResponse;
 import io.harness.delegate.task.cloudformation.CloudformationTaskType;
+import io.harness.delegate.task.ecs.EcsCommandTypeNG;
+import io.harness.delegate.task.ecs.EcsGitFetchFileConfig;
+import io.harness.delegate.task.ecs.EcsInfraConfig;
+import io.harness.delegate.task.ecs.EcsInfraType;
+import io.harness.delegate.task.ecs.request.EcsGitFetchRequest;
+import io.harness.delegate.task.ecs.request.EcsRollingDeployRequest;
+import io.harness.delegate.task.ecs.response.EcsGitFetchResponse;
+import io.harness.delegate.task.ecs.response.EcsRollingDeployResponse;
 import io.harness.delegate.task.gcp.GcpTaskType;
 import io.harness.delegate.task.gcp.request.GcpListBucketsRequest;
 import io.harness.delegate.task.gcp.request.GcpListClustersRequest;
@@ -1608,5 +1611,17 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GitApiMergePRTaskResponse.class, 55403);
     kryo.register(PdcWinRmInfraDelegateConfig.class, 55335);
     kryo.register(WinrmTaskParameters.class, 55336);
+
+    // ECS
+    kryo.register(EcsGitFetchRequest.class, 573501);
+    kryo.register(EcsGitFetchResponse.class, 573502);
+    kryo.register(EcsGitFetchFileConfig.class, 573503);
+    kryo.register(EcsRollingDeployRequest.class, 573504);
+    kryo.register(EcsRollingDeployResponse.class, 573505);
+    kryo.register(EcsCommandTypeNG.class, 573506);
+    kryo.register(EcsInfraConfig.class, 573507);
+    kryo.register(EcsInfraType.class, 573508);
+    kryo.register(EcsDeployResult.class, 573509);
+    kryo.register(EcsNGException.class, 573510);
   }
 }

@@ -1,4 +1,4 @@
-package io.harness.aws.awsv2;
+package io.harness.aws.v2.ecs;
 
 import software.amazon.awssdk.services.applicationautoscaling.model.DeleteScalingPolicyRequest;
 import software.amazon.awssdk.services.applicationautoscaling.model.DeleteScalingPolicyResponse;
@@ -27,7 +27,7 @@ import software.amazon.awssdk.services.ecs.model.UpdateServiceResponse;
 
 import java.util.Optional;
 
-public interface AwsApiV2Client {
+public interface EcsV2Client {
 
      CreateServiceResponse createService(AwsInternalConfig awsConfig, CreateServiceRequest createServiceRequest,
                                          String region);

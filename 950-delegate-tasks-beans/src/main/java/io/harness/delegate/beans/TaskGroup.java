@@ -97,5 +97,6 @@ public enum TaskGroup {
   CLOUDFORMATION_NG,
   AZURE,
   SERVERLESS_NG,
-  COMMAND_TASK_NG
+  COMMAND_TASK_NG,
+  ECS
 }
