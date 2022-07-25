@@ -9,6 +9,7 @@ java_library(
     deps = [
         "//:lombok",
         "//800-pipeline-service/modules/pms-contracts:module",
+        "//800-pipeline-service/modules/orchestration-beans/contracts:module",
         "//959-timeout-engine:module",
         "//960-ng-license-beans:module",
         "//960-persistence:module",
@@ -36,7 +37,7 @@ java_library(
     name = "tests",
     testonly = True,
     srcs = glob(["src/test/**/*.java"]),
-    visibility = ["//visibility:public"],
+    visibility = ["//800-pipeline-service:__subpackages__"],
     deps = [
         ":module",
         "//:lombok",
