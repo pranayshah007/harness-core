@@ -18,6 +18,7 @@ import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -35,4 +36,9 @@ public class OptimizeManifestFetch {
   @SkipAutoEvaluation
   @Wither
   private ParameterField<String> kustomizeYamlPath;
+
+  @Builder
+  public OptimizeManifestFetch(ParameterField<String> kustomizeYamlPath) {
+    this.kustomizeYamlPath = kustomizeYamlPath;
+  }
 }
