@@ -178,6 +178,8 @@ public interface DelegateAgentManagerClient {
       @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId,
       @Body List<DelegateConnectionResultDetail> results);
 
+  @GET("version/watcher") Call<RestResponse<String>> getWatcherVersion(@Query("accountId") String accountId);
+
   @Consumes({"application/x-protobuf"})
   @GET("agent/delegates/perpetual-task/list")
   Call<PerpetualTaskListResponse> perpetualTaskList(

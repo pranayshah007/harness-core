@@ -24,6 +24,10 @@ import lombok.extern.slf4j.Slf4j;
 public class AdoUpdateFileScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String UPDATE_FILE_REQUEST_FAILURE =
       "The requested file<FILEPATH> couldn't be updated in Azure. ";
+  public static final String UPDATE_FILE_FORBIDDEN_REQUEST_EXPLANATION =
+      "The requested branch<BRANCH> does not have push permission.";
+  public static final String UPDATE_FILE_FORBIDDEN_REQUEST_HINT =
+      "Please use a pull request to update file<FILEPATH> in this branch<BRANCH>.";
   public static final String UPDATE_FILE_BAD_REQUEST_ERROR_EXPLANATION =
       "There was issue while updating file in Azure. The requested branch<BRANCH> doesn't exist in given Azure repository.";
   public static final String UPDATE_FILE_BAD_REQUEST_ERROR_HINT =
@@ -46,6 +50,18 @@ public class AdoUpdateFileScmApiErrorHandler implements ScmApiErrorHandler {
         throw NestedExceptionUtils.hintWithExplanationException(
             ErrorMessageFormatter.formatMessage(UPDATE_FILE_BAD_REQUEST_ERROR_HINT, errorMetadata),
             ErrorMessageFormatter.formatMessage(UPDATE_FILE_BAD_REQUEST_ERROR_EXPLANATION, errorMetadata),
+            new ScmBadRequestException(errorMessage));
+      case 401:
+        throw NestedExceptionUtils.hintWithExplanationException(
+            ErrorMessageFormatter.formatMessage(ScmErrorHints.MISSING_PERMISSION_CREDS_HINTS, errorMetadata),
+            ErrorMessageFormatter.formatMessage(
+                ScmErrorExplanations.MISSING_PERMISSION_CREDS_EXPLANATION, errorMetadata),
+            new ScmBadRequestException(errorMessage));
+      case 403:
+        throw NestedExceptionUtils.hintWithExplanationException(
+            ErrorMessageFormatter.formatMessage(UPDATE_FILE_FORBIDDEN_REQUEST_HINT, errorMetadata),
+            ErrorMessageFormatter.formatMessage(
+                UPDATE_FILE_REQUEST_FAILURE + UPDATE_FILE_FORBIDDEN_REQUEST_EXPLANATION, errorMetadata),
             new ScmBadRequestException(errorMessage));
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(

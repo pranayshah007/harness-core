@@ -13,6 +13,9 @@ public interface PipelineResourceConstants {
   String PROJECT_PARAM_MESSAGE = "Project Identifier for the Entity.";
   String PIPELINE_ID_PARAM_MESSAGE = "Pipeline Identifier";
   String PIPELINE_NAME_PARAM_MESSAGE = "Pipeline Name";
+
+  String PIPELINE_DRAFT_PARAM_MESSAGE = "Save the pipeline as Draft";
+
   String PIPELINE_DESCRIPTION_PARAM_MESSAGE = "Pipeline Description";
   String STAGE_NODE_ID_PARAM_MESSAGE = "Stage Node Identifier for which Stage Graph needs to be Rendered";
   String STAGE_NODE_EXECUTION_PARAM_MESSAGE =

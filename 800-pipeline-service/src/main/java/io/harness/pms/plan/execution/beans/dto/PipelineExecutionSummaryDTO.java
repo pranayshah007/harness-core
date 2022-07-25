@@ -74,6 +74,7 @@ public class PipelineExecutionSummaryDTO {
   StoreType storeType;
   String connectorRef;
 
+  Boolean executionInputConfigured;
   boolean isStagesExecution;
   List<String> stagesExecuted;
   Map<String, String> stagesExecutedNames;

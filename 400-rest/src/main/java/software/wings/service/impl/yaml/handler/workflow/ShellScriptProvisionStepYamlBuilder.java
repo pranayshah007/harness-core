@@ -28,7 +28,11 @@ public class ShellScriptProvisionStepYamlBuilder extends InfraProvisionStepYamlB
     if (ShellScriptProvisionStateKeys.variables.equals(name)) {
       convertPropertyIdsToNames(name, appId, objectValue);
     } else if (ShellScriptProvisionStateKeys.provisionerId.equals(name)) {
-      objectValue = convertProvisionerIdToName(appId, objectValue);
+      String value = String.valueOf(objectValue);
+      if (!(value.startsWith("${") && value.endsWith("}"))) {
+        objectValue = convertProvisionerIdToName(appId, objectValue);
+      }
+
       name = PROVISIONER_NAME;
     }
 
@@ -41,7 +45,11 @@ public class ShellScriptProvisionStepYamlBuilder extends InfraProvisionStepYamlB
     if (ShellScriptProvisionStateKeys.variables.equals(name)) {
       convertPropertyNamesToIds(name, accountId, objectValue);
     } else if (PROVISIONER_NAME.equals(name)) {
-      objectValue = convertProvisionerNameToId(appId, objectValue);
+      String value = String.valueOf(objectValue);
+      if (!(value.startsWith("${") && value.endsWith("}"))) {
+        objectValue = convertProvisionerNameToId(appId, objectValue);
+      }
+
       name = ShellScriptProvisionStateKeys.provisionerId;
     }
 

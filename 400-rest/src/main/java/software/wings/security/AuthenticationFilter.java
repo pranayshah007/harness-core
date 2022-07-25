@@ -396,9 +396,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     try (AccountLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       String header = containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
       if (header != null && header.contains("Delegate")) {
-        String delegateId = containerRequestContext.getHeaderString("delegateId");
-        String delegateTokeName = containerRequestContext.getHeaderString("delegateTokenName");
-        String agentMtlsAuthority = containerRequestContext.getHeaderString(HEADER_AGENT_MTLS_AUTHORITY);
+        final String delegateId = containerRequestContext.getHeaderString("delegateId");
+        final String delegateTokeName = containerRequestContext.getHeaderString("delegateTokenName");
+        final String agentMtlsAuthority = containerRequestContext.getHeaderString(HEADER_AGENT_MTLS_AUTHORITY);
 
         authService.validateDelegateToken(accountId,
             substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate "), delegateId,
@@ -417,10 +417,13 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     try (AccountLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       String authHeader = containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
       if (authHeader != null && authHeader.contains("Delegate")) {
-        String agentMtlsAuthority = containerRequestContext.getHeaderString(HEADER_AGENT_MTLS_AUTHORITY);
-        authService.validateDelegateToken(accountId,
-            substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate "),
-            agentMtlsAuthority);
+        final String jwtToken =
+            substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate ");
+        final String delegateId = containerRequestContext.getHeaderString("delegateId");
+        final String delegateTokeName = containerRequestContext.getHeaderString("delegateTokenName");
+        final String agentMtlsAuthority = containerRequestContext.getHeaderString(HEADER_AGENT_MTLS_AUTHORITY);
+
+        authService.validateDelegateToken(accountId, jwtToken, delegateId, delegateTokeName, agentMtlsAuthority, true);
       } else {
         throw new IllegalStateException("Invalid authentication header:" + authHeader);
       }

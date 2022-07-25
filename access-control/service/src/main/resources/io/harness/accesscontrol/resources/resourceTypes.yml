@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 15
+version: 16
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -92,3 +92,5 @@ resourceTypes:
     permissionKey: chaosworkflow
   - identifier: SMTP
     permissionKey: smtp
+  - identifier: SETTING
+    permissionKey: setting

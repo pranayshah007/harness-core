@@ -42,7 +42,7 @@ public class DelegateRingServiceTest extends WingsBaseTest {
   private static final String LATEST_DELEGATE_IMAGE_TAG = "harness/delegate:latest";
   private static final String LATEST_UPGRADER_IMAGE_TAG = "harness/upgrader:latest";
   private static final List<String> DELEGATE_VERSION = Arrays.asList("1.0.74410");
-  private static final List<String> WATCHER_VERSION = Arrays.asList("1.0.74310");
+  private static final String WATCHER_VERSION = "1.0.74310";
 
   @InjectMocks @Inject private DelegateRingServiceImpl delegateRingService;
   @Inject private HPersistence persistence;
@@ -82,7 +82,7 @@ public class DelegateRingServiceTest extends WingsBaseTest {
   @Owner(developers = GAURAV)
   @Category(UnitTests.class)
   public void shouldGetWatcherVersion() {
-    List<String> watcherVersion = delegateRingService.getWatcherVersions(TEST_ACCOUNT_ID);
+    String watcherVersion = delegateRingService.getWatcherVersions(TEST_ACCOUNT_ID);
     assertThat(watcherVersion).isEqualTo(WATCHER_VERSION);
   }
 

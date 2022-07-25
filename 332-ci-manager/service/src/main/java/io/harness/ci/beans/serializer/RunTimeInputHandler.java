@@ -34,15 +34,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
-@UtilityClass
 @Slf4j
 @OwnedBy(CI)
 public class RunTimeInputHandler {
   public static String UNRESOLVED_PARAMETER = "UNRESOLVED_PARAMETER";
-  public boolean resolveGitClone(ParameterField<Boolean> cloneRepository) {
+  public static boolean resolveGitClone(ParameterField<Boolean> cloneRepository) {
     if (cloneRepository == null || cloneRepository.isExpression() || cloneRepository.getValue() == null) {
       return true;
     } else {
@@ -50,7 +48,7 @@ public class RunTimeInputHandler {
     }
   }
 
-  public Build resolveBuild(ParameterField<Build> buildDetails) {
+  public static Build resolveBuild(ParameterField<Build> buildDetails) {
     if (buildDetails == null || buildDetails.isExpression() || buildDetails.getValue() == null) {
       return null;
     } else {
@@ -58,7 +56,7 @@ public class RunTimeInputHandler {
     }
   }
 
-  public List<Toleration> resolveTolerations(ParameterField<List<Toleration>> tolerations) {
+  public static List<Toleration> resolveTolerations(ParameterField<List<Toleration>> tolerations) {
     if (tolerations == null || tolerations.isExpression() || tolerations.getValue() == null) {
       return null;
     } else {
@@ -66,7 +64,7 @@ public class RunTimeInputHandler {
     }
   }
 
-  public ArchiveFormat resolveArchiveFormat(ParameterField<ArchiveFormat> archiveFormat) {
+  public static ArchiveFormat resolveArchiveFormat(ParameterField<ArchiveFormat> archiveFormat) {
     if (archiveFormat == null || archiveFormat.isExpression() || archiveFormat.getValue() == null) {
       return ArchiveFormat.TAR;
     } else {
@@ -74,7 +72,7 @@ public class RunTimeInputHandler {
     }
   }
 
-  public CIShellType resolveShellType(ParameterField<CIShellType> shellType) {
+  public static CIShellType resolveShellType(ParameterField<CIShellType> shellType) {
     if (shellType == null || shellType.isExpression() || shellType.getValue() == null) {
       return CIShellType.SH;
     } else {
@@ -82,7 +80,7 @@ public class RunTimeInputHandler {
     }
   }
 
-  public OSType resolveOSType(ParameterField<OSType> osType) {
+  public static OSType resolveOSType(ParameterField<OSType> osType) {
     if (osType == null || osType.isExpression() || osType.getValue() == null) {
       return OSType.Linux;
     } else {
@@ -90,7 +88,7 @@ public class RunTimeInputHandler {
     }
   }
 
-  public String resolveImagePullPolicy(ParameterField<ImagePullPolicy> pullPolicy) {
+  public static String resolveImagePullPolicy(ParameterField<ImagePullPolicy> pullPolicy) {
     if (pullPolicy == null || pullPolicy.isExpression() || pullPolicy.getValue() == null) {
       return null;
     } else {
@@ -98,7 +96,7 @@ public class RunTimeInputHandler {
     }
   }
 
-  public String resolveBuildTool(ParameterField<TIBuildTool> buildTool) {
+  public static String resolveBuildTool(ParameterField<TIBuildTool> buildTool) {
     if (buildTool == null || buildTool.isExpression() || buildTool.getValue() == null) {
       return null;
     } else {
@@ -106,7 +104,7 @@ public class RunTimeInputHandler {
     }
   }
 
-  public String resolveLanguage(ParameterField<TILanguage> language) {
+  public static String resolveLanguage(ParameterField<TILanguage> language) {
     if (language == null || language.isExpression() || language.getValue() == null) {
       return null;
     } else {
@@ -114,7 +112,7 @@ public class RunTimeInputHandler {
     }
   }
 
-  public String resolveDotNetBuildEnvName(ParameterField<TIDotNetBuildEnvName> buildEnv) {
+  public static String resolveDotNetBuildEnvName(ParameterField<TIDotNetBuildEnvName> buildEnv) {
     if (buildEnv == null || buildEnv.isExpression() || buildEnv.getValue() == null) {
       return null;
     } else {
@@ -122,7 +120,7 @@ public class RunTimeInputHandler {
     }
   }
 
-  public String resolveDotNetVersion(ParameterField<TIDotNetVersion> version) {
+  public static String resolveDotNetVersion(ParameterField<TIDotNetVersion> version) {
     if (version == null || version.isExpression() || version.getValue() == null) {
       return null;
     } else {
@@ -130,7 +128,7 @@ public class RunTimeInputHandler {
     }
   }
 
-  public boolean resolveBooleanParameter(ParameterField<Boolean> booleanParameterField, Boolean defaultValue) {
+  public static boolean resolveBooleanParameter(ParameterField<Boolean> booleanParameterField, Boolean defaultValue) {
     if (booleanParameterField == null || booleanParameterField.isExpression()
         || booleanParameterField.getValue() == null) {
       if (defaultValue != null) {
@@ -143,7 +141,7 @@ public class RunTimeInputHandler {
     }
   }
 
-  public Integer resolveIntegerParameter(ParameterField<Integer> parameterField, Integer defaultValue) {
+  public static Integer resolveIntegerParameter(ParameterField<Integer> parameterField, Integer defaultValue) {
     if (parameterField == null || parameterField.isExpression() || parameterField.getValue() == null) {
       return defaultValue;
     } else {
@@ -156,7 +154,7 @@ public class RunTimeInputHandler {
     }
   }
 
-  public String resolveStringParameter(String fieldName, String stepType, String stepIdentifier,
+  public static String resolveStringParameter(String fieldName, String stepType, String stepIdentifier,
       ParameterField<String> parameterField, boolean isMandatory) {
     if (parameterField == null) {
       if (isMandatory) {
@@ -184,7 +182,7 @@ public class RunTimeInputHandler {
     return (String) parameterField.fetchFinalValue();
   }
 
-  public SecretRefData resolveSecretRefWithDefaultValue(String fieldName, String stepType, String stepIdentifier,
+  public static SecretRefData resolveSecretRefWithDefaultValue(String fieldName, String stepType, String stepIdentifier,
       ParameterField<SecretRefData> parameterField, boolean isMandatory) {
     if (parameterField == null || parameterField.getValue() == null) {
       if (isMandatory) {
@@ -199,7 +197,7 @@ public class RunTimeInputHandler {
     return parameterField.getValue();
   }
 
-  public String resolveStringParameterWithDefaultValue(String fieldName, String stepType, String stepIdentifier,
+  public static String resolveStringParameterWithDefaultValue(String fieldName, String stepType, String stepIdentifier,
       ParameterField<String> parameterField, boolean isMandatory, String defaultValue) {
     if (parameterField == null) {
       if (isMandatory && isEmpty(defaultValue)) {
@@ -230,7 +228,7 @@ public class RunTimeInputHandler {
     return (String) parameterField.fetchFinalValue();
   }
 
-  public Map<String, String> resolveMapParameter(String fieldName, String stepType, String stepIdentifier,
+  public static Map<String, String> resolveMapParameter(String fieldName, String stepType, String stepIdentifier,
       ParameterField<Map<String, String>> parameterField, boolean isMandatory) {
     if (parameterField == null || parameterField.getValue() == null) {
       if (isMandatory) {
@@ -261,8 +259,8 @@ public class RunTimeInputHandler {
     return m;
   }
 
-  public Map<String, JsonNode> resolveJsonNodeMapParameter(String fieldName, String stepType, String stepIdentifier,
-      ParameterField<Map<String, JsonNode>> parameterField, boolean isMandatory) {
+  public static Map<String, JsonNode> resolveJsonNodeMapParameter(String fieldName, String stepType,
+      String stepIdentifier, ParameterField<Map<String, JsonNode>> parameterField, boolean isMandatory) {
     if (parameterField == null || parameterField.getValue() == null) {
       if (isMandatory) {
         throw new CIStageExecutionUserException(
@@ -292,7 +290,7 @@ public class RunTimeInputHandler {
     return m;
   }
 
-  public List<String> resolveListParameter(String fieldName, String stepType, String stepIdentifier,
+  public static List<String> resolveListParameter(String fieldName, String stepType, String stepIdentifier,
       ParameterField<List<String>> parameterField, boolean isMandatory) {
     if (parameterField == null || parameterField.getValue() == null) {
       if (isMandatory) {
@@ -318,7 +316,7 @@ public class RunTimeInputHandler {
     return parameterField.getValue();
   }
 
-  public <T> List<T> resolveGenericListParameter(String fieldName, String stepType, String stepIdentifier,
+  public static <T> List<T> resolveGenericListParameter(String fieldName, String stepType, String stepIdentifier,
       ParameterField<List<T>> parameterField, boolean isMandatory) {
     if (parameterField == null || parameterField.getValue() == null) {
       if (isMandatory) {

@@ -116,7 +116,7 @@ public class StageStrategyUtils {
                            .build();
     }
 
-    StrategyType strategyType = StrategyType.FOR;
+    StrategyType strategyType = StrategyType.LOOP;
     if (yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY).getNode().getField("matrix") != null) {
       strategyType = StrategyType.MATRIX;
     } else if (yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY).getNode().getField("parallelism")
@@ -223,8 +223,8 @@ public class StageStrategyUtils {
   }
 
   public String replaceExpressions(
-      String jsonString, Map<String, String> combinations, int currentIteration, int totalIteration) {
-    Map<String, String> expressions = createExpressions(combinations, currentIteration, totalIteration);
+      String jsonString, Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
+    Map<String, String> expressions = createExpressions(combinations, currentIteration, totalIteration, itemValue);
     String result = jsonString;
     for (Map.Entry<String, String> expression : expressions.entrySet()) {
       result = result.replaceAll(expression.getKey(), expression.getValue());
@@ -232,10 +232,11 @@ public class StageStrategyUtils {
     return result;
   }
   public Map<String, String> createExpressions(
-      Map<String, String> combinations, int currentIteration, int totalIteration) {
+      Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
     Map<String, String> expressionsMap = new HashMap<>();
     String matrixExpression = EXPR_START_ESC + "matrix.%s" + EXPR_END_ESC;
     String strategyMatrixExpression = EXPR_START_ESC + "strategy.matrix.%s" + EXPR_END_ESC;
+    String repeatExpression = EXPR_START_ESC + "repeat.item" + EXPR_END_ESC;
 
     for (Map.Entry<String, String> entry : combinations.entrySet()) {
       expressionsMap.put(String.format(matrixExpression, entry.getKey()), entry.getValue());
@@ -243,6 +244,7 @@ public class StageStrategyUtils {
     }
     expressionsMap.put(EXPR_START_ESC + "strategy.iteration" + EXPR_END_ESC, String.valueOf(currentIteration));
     expressionsMap.put(EXPR_START_ESC + "strategy.iterations" + EXPR_END, String.valueOf(totalIteration));
+    expressionsMap.put(repeatExpression, itemValue == null ? "" : itemValue);
     return expressionsMap;
   }
 

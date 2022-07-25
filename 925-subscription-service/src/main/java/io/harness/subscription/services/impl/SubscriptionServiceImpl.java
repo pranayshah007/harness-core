@@ -42,7 +42,6 @@ import com.google.inject.Singleton;
 import com.stripe.model.Event;
 import com.stripe.net.ApiResource;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -75,23 +74,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   public PriceCollectionDTO listPrices(String accountIdentifier, ModuleType module) {
     isSelfServiceEnable(accountIdentifier);
 
-    List<String> prices;
-
-    switch (module.toString()) {
-      case "CI":
-        prices = Arrays.asList(Prices.CI_PRICES);
-        break;
-      case "CD":
-        prices = Arrays.asList(Prices.CD_PRICES);
-        break;
-      case "CF":
-        prices = Arrays.asList(Prices.FF_PRICES);
-        break;
-      default:
-        throw new InvalidRequestException("Valid Module Type Required");
-    }
-
-    return stripeHelper.listPrices(prices);
+    return stripeHelper.getPrices(module);
   }
 
   @Override

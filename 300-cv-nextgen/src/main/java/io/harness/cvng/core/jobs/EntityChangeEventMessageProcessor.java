@@ -56,10 +56,10 @@ public abstract class EntityChangeEventMessageProcessor implements ConsumerMessa
     deleteEntitiesWithDefaultHandler.forEach(entity -> ENTITIES_MAP.put(entity, DeleteEntityByHandler.class));
 
     // Add the service for project level custom deletion
-    ENTITIES_MAP.put(CVConfig.class, CVConfigService.class);
     ENTITIES_MAP.put(MonitoringSourcePerpetualTask.class, MonitoringSourcePerpetualTaskService.class);
     ENTITIES_MAP.put(ServiceLevelObjective.class, ServiceLevelObjectiveService.class);
     ENTITIES_MAP.put(MonitoredService.class, MonitoredServiceService.class);
+    ENTITIES_MAP.put(CVConfig.class, CVConfigService.class);
     ENTITIES_MAP.put(ChangeSource.class, ChangeSourceService.class);
 
     EXCEPTIONS = new HashSet<>();

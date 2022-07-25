@@ -313,7 +313,7 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
 
   private void populateK8sFilters(Criteria criteria, CcmConnectorFilter ccmConnectorFilter) {
     if (ccmConnectorFilter.getK8sConnectorRef() != null) {
-      populateInFilter(criteria, CEK8sDetailsKeys.connectorRef, Arrays.asList(ccmConnectorFilter.getK8sConnectorRef()));
+      populateInFilter(criteria, CEK8sDetailsKeys.connectorRef, ccmConnectorFilter.getK8sConnectorRef());
     }
   }
 

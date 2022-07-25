@@ -169,7 +169,7 @@ public class UserGroupResource {
     userGroupDTO.setAccountIdentifier(accountIdentifier);
     userGroupDTO.setOrgIdentifier(orgIdentifier);
     userGroupDTO.setProjectIdentifier(projectIdentifier);
-    UserGroup userGroup = userGroupService.update(userGroupDTO);
+    UserGroup userGroup = userGroupService.updateWithCheckThatSCIMFieldsAreNotModified(userGroupDTO);
     return ResponseDTO.newResponse(Long.toString(userGroup.getVersion()), toDTO(userGroup));
   }
 

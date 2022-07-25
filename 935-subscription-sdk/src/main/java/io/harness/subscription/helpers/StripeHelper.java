@@ -7,6 +7,7 @@
 
 package io.harness.subscription.helpers;
 
+import io.harness.ModuleType;
 import io.harness.subscription.dto.CustomerDetailDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
 import io.harness.subscription.dto.PaymentMethodCollectionDTO;
@@ -27,6 +28,7 @@ public interface StripeHelper {
 
   CustomerDetailDTO getCustomer(String customerId);
 
+  PriceCollectionDTO getPrices(ModuleType moduleType);
   Price getPrice(String lookupKey);
   PriceCollectionDTO listPrices(List<String> lookupKeys);
   SubscriptionDetailDTO createSubscription(SubscriptionParams subscriptionParams);

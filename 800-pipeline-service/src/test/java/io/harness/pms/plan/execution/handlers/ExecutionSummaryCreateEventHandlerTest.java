@@ -97,6 +97,7 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
             .inputSetYaml("some-yaml")
             .yaml("pipeline :\n  identifier: pipelineId")
             .stagesExecutionMetadata(StagesExecutionMetadata.builder().isStagesExecution(true).build())
+            .executionInputConfigured(true)
             .allowStagesExecution(true)
             .build();
     PlanExecution planExecution =
@@ -166,6 +167,8 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
     assertThat(capturedEntity.getLayoutNodeMap()).containsKeys("startId");
     assertThat(capturedEntity.getStagesExecutionMetadata().isStagesExecution()).isTrue();
     assertThat(capturedEntity.isStagesExecutionAllowed()).isTrue();
+    assertThat(capturedEntity.getExecutionInputConfigured())
+        .isEqualTo(planExecutionMetadata.getExecutionInputConfigured());
     assertThat(capturedEntity.getStoreType()).isNull();
     assertThat(capturedEntity.getConnectorRef()).isNull();
 

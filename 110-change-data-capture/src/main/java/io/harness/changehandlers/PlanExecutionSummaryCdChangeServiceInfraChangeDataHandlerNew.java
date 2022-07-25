@@ -182,6 +182,12 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
             // projectIdentifier
             columnValueMapping.put("projectIdentifier", projectIdentifier);
 
+            // gitOpsEnabled
+            if (serviceInfoObject.get("gitOpsEnabled") != null) {
+              String gitOpsEnabled = serviceInfoObject.get("gitOpsEnabled").toString();
+              columnValueMapping.put("gitOpsEnabled", gitOpsEnabled);
+            }
+
             // deploymentType
             String deploymentType = serviceInfoObject.get("deploymentType").toString();
             columnValueMapping.put("deployment_type", deploymentType);
@@ -221,6 +227,13 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
                   && infraExecutionSummaryObject.get("identifier").toString().length() != 0) {
                 String envIdentifier = infraExecutionSummaryObject.get("identifier").toString();
                 columnValueMapping.put("env_id", envIdentifier);
+              }
+
+              if (infraExecutionSummaryObject.get("infrastructureIdentifier") != null
+                  && infraExecutionSummaryObject.get("infrastructureIdentifier").toString().length() != 0) {
+                String infrastructureIdentifier =
+                    infraExecutionSummaryObject.get("infrastructureIdentifier").toString();
+                columnValueMapping.put("infrastructureIdentifier", infrastructureIdentifier);
               }
 
               if (infraExecutionSummaryObject.get("type") != null

@@ -112,7 +112,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -545,10 +544,10 @@ public class HelmTaskHelperBase {
     } finally {
       if (manifest.isUseRepoFlags() && manifest.isDeleteRepoCacheDir()) {
         try {
-          FileUtils.forceDelete(new File(cacheDir));
+          deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
         } catch (IOException ie) {
-          log.error("Deletion of charts folder failed due to : {}",
-              ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
+          log.error(
+              "Deletion of folder failed due to : {}", ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
         }
       }
     }
@@ -577,10 +576,10 @@ public class HelmTaskHelperBase {
     } finally {
       if (manifest.isUseRepoFlags() && manifest.isDeleteRepoCacheDir()) {
         try {
-          FileUtils.forceDelete(new File(cacheDir));
+          deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
         } catch (IOException ie) {
-          log.error("Deletion of charts folder failed due to : {}",
-              ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
+          log.error(
+              "Deletion of folder failed due to : {}", ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
         }
       }
     }
@@ -652,10 +651,10 @@ public class HelmTaskHelperBase {
 
       if (manifest.isUseRepoFlags() && manifest.isDeleteRepoCacheDir()) {
         try {
-          FileUtils.forceDelete(new File(cacheDir));
+          deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
         } catch (IOException ie) {
-          log.error("Deletion of charts folder failed due to : {}",
-              ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
+          log.error(
+              "Deletion of folder failed due to : {}", ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
         }
       }
     }

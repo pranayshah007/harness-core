@@ -54,6 +54,7 @@ public class StrategyFunctorTest extends PipelineServiceTestBase {
     Map<String, String> matrix = new HashMap<>();
     matrix.put("a", "1");
     expected.put("matrix", matrix);
+    expected.put("repeat", new HashMap<>());
     assertThat(new StrategyFunctor(ambiance).bind()).isEqualTo(expected);
   }
 

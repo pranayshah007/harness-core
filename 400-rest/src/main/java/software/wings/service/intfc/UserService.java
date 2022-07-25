@@ -647,5 +647,6 @@ public interface UserService extends OwnedByAccount {
 
   RestrictedSwitchAccountInfo getSwitchAccountInfo(String accountId, String userId);
 
-  List<Account> getUserAccountsAndSupportAccounts(String userId, int pageIndex, int pageSize, String searchTerm);
+  io.harness.ng.beans.PageResponse<Account> getUserAccountsAndSupportAccounts(
+      String userId, int pageIndex, int pageSize, String searchTerm);
 }
