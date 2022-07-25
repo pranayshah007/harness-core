@@ -236,6 +236,14 @@ if [ ! -z "$KUBECTL_PATH" ] && ! `grep kubectlPath config-delegate.yml > /dev/nu
   echo "kubectlPath: $KUBECTL_PATH" >> config-delegate.yml
 fi
 
+if [ ! -z "$HELM3_PATH" ] && ! `grep helm3Path config-delegate.yml > /dev/null` ; then
+  echo "helm3Path: $HELM3_PATH" >> config-delegate.yml
+fi
+
+if [ ! -z "$HELM_PATH" ] && ! `grep helmPath config-delegate.yml > /dev/null` ; then
+  echo "helmPath: $HELM_PATH" >> config-delegate.yml
+fi
+
 if [ ! -z "$CF_CLI6_PATH" ] && ! `grep cfCli6Path config-delegate.yml > /dev/null` ; then
   echo "cfCli6Path: $CF_CLI6_PATH" >> config-delegate.yml
 fi
