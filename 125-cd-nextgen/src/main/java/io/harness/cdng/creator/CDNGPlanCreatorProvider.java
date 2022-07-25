@@ -416,6 +416,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                     .setStepMetaData(
                             StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
                     .setFeatureFlag(FeatureName.ECS_NG.name())
+                    .setFeatureRestrictionName(FeatureRestrictionName.ECS_ROLLING_DEPLOY.name())
                     .build();
 
     StepInfo createStack = StepInfo.newBuilder()
