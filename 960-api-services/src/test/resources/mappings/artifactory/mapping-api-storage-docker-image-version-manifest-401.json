@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/artifactory/api/storage/docker/image/version401/manifest.json?properties"
+  },
+  "response": {
+    "status": 401,
+    "body" : "{\n  \"errors\" : [ {\n    \"status\" : 401,\n    \"message\" : \"Bad credentials\"\n  } ]\n}",
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

@@ -135,8 +135,8 @@ pipeline:
         identifier: a11
         description: ""
         strategy:
-          for:
-            iteration: 10
+          repeat:
+            times: 10
         type: Approval
         spec:
           execution:

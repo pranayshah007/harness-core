@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 git fetch origin $1:$1
 git checkout $1
 echo $2
@@ -266,6 +271,7 @@ exit_code=0
 issues=""
 comp=""
 other=""
+success=""
 echo "=============API BACKWARD COMPATIBILITY CHECKS================"
 rc=0
 echo 120-NG-MANAGER
@@ -281,6 +287,8 @@ then
         else
             other+="120-NG-MANAGER "
         fi
+    else
+        success+="120-NG-MANAGER "
     fi
 else
     comp+="120-NG-MANAGER "
@@ -300,6 +308,8 @@ then
         else
             other+="290-DASHBOARD-SERVICE "
         fi
+    else
+        success+="290-DASHBOARD-SERVICE "    
     fi
 else
     comp+="290-DASHBOARD-SERVICE "
@@ -319,6 +329,8 @@ then
         else
             other+="310-CI-MANAGER "
         fi
+    else
+        success+="310-CI-MANAGER "
     fi
 else
     comp+="310-CI-MANAGER "
@@ -338,6 +350,8 @@ then
         else
             other+="340-CE-NEXTGEN "
         fi
+    else
+        success+="340-CE-NEXTGEN "
     fi
 else
     comp+="340-CE-NEXTGEN "
@@ -357,6 +371,8 @@ then
         else
             other+="800-PIPELINE-SERVICE "
         fi
+    else
+        success+="800-PIPELINE-SERVICE "    
     fi
 else
     comp+="800-PIPELINE-SERVICE "
@@ -376,6 +392,8 @@ then
         else
             other+="840-TEMPLATE-SERVICE "
         fi
+    else
+        success+="840-TEMPLATE-SERVICE "    
     fi
 else
     comp+="840-TEMPLATE-SERVICE "
@@ -395,6 +413,8 @@ then
         else
             other+="PLATFORM-SERVICE "
         fi
+    else
+        success+="PLATFORM-SERVICE " 
     fi
 else
     comp+="PLATFORM-SERVICE "
@@ -414,6 +434,8 @@ then
         else
             other+="ACCESS-CONTROL "
         fi
+    else
+        success+="ACCESS-CONTROL "
     fi
 else
     comp+="ACCESS-CONTROL "
@@ -433,14 +455,15 @@ then
         else
             other+="315-STO-MANAGER "
         fi
+    else
+        success+="315-STO-MANAGER "    
     fi
 else
     comp+="315-STO-MANAGER "
 fi
 
+echo "API Backward Compatible Services : "$success >> success.txt
+echo "API Backward Incompatibility issues in services : "$issues >> issues.txt
+echo "Compilation Failures : "$comp $other >> otherissues.txt
 
-echo "API Backward Incompatibility issues in services : "$issues
-echo "Compilation Failure : "$comp
-echo "OpenApiDiff Failure : "$other
 exit $exit_code
-

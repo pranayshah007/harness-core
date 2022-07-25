@@ -83,7 +83,7 @@ public class StrategyStepTest extends NGCommonUtilitiesTestBase {
 
     verify(forLoopStrategyConfigService).fetchChildren(strategyConfig, "childNodeId");
 
-    strategyConfig.getForConfig().setMaxConcurrency(ParameterField.ofNull());
+    strategyConfig.getRepeat().setMaxConcurrency(ParameterField.ofNull());
 
     when(forLoopStrategyConfigService.fetchChildren(strategyConfig, "childNodeId")).thenReturn(new ArrayList<>());
 

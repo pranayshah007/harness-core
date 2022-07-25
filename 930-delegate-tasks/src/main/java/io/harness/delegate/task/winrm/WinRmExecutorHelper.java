@@ -16,6 +16,7 @@ import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.data.structure.EmptyPredicate;
 
 import software.wings.beans.WinRmCommandParameter;
 
@@ -84,11 +85,13 @@ public class WinRmExecutorHelper {
       return parametersStringBuilder.toString();
     }
     for (WinRmCommandParameter parameter : commandParameters) {
-      parametersStringBuilder.append('-').append(parameter.getParameter());
-      if (parameter.getValue() != null) {
-        parametersStringBuilder.append(' ').append(parameter.getValue());
+      if (EmptyPredicate.isNotEmpty(parameter.getParameter())) {
+        parametersStringBuilder.append('-').append(parameter.getParameter());
+        if (parameter.getValue() != null) {
+          parametersStringBuilder.append(' ').append(parameter.getValue());
+        }
+        parametersStringBuilder.append(' ');
       }
-      parametersStringBuilder.append(' ');
     }
     String parametersString = parametersStringBuilder.toString();
     log.debug(format("WinRM additional command parameters: %s", parametersString));

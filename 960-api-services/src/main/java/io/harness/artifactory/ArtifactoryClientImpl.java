@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.net.ssl.SSLException;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -89,6 +90,46 @@ public class ArtifactoryClientImpl {
   private static final String DOWNLOAD_FILE_FOR_GENERIC_REPO = "Downloading the file for generic repo";
   private static final String ERROR_OCCURRED_WHILE_RETRIEVING_REPOSITORIES =
       "Error occurred while retrieving repositories";
+  private static final String ERROR_OCCURED_WHILE_RETRIEVING_STORAGIES = "Error occured while retrieving storages";
+
+  public List<Map<String, String>> getLabels(
+      ArtifactoryConfigRequest artifactoryConfig, String imageName, String repositoryName, String buildNos) {
+    log.info("Retrieving label docker in artifactory");
+    Artifactory artifactory = getArtifactoryClient(artifactoryConfig);
+    ArtifactoryRequest repositoryRequest =
+        new ArtifactoryRequestImpl()
+            .apiUrl(format("api/storage/%s/%s/%s/manifest.json?properties", repositoryName, imageName, buildNos))
+            .method(GET)
+            .responseType(JSON);
+    List<Map<String, String>> labels = new ArrayList<>();
+
+    try {
+      ArtifactoryResponse response = artifactory.restCall(repositoryRequest);
+      handleErrorResponse(response);
+      Map<String, Map<String, List<String>>> responseList = response.parseBody(Map.class);
+      Map<String, List<String>> properties = responseList.get("properties");
+
+      Map<String, String> filteredAndParsedLabels =
+          properties.entrySet()
+              .stream()
+              .filter(e -> e.getKey().startsWith("docker.label"))
+              .collect(Collectors.toMap(e -> e.getKey().replaceFirst("docker.label.", ""), e -> e.getValue().get(0)));
+      labels.add(filteredAndParsedLabels);
+
+      if (EmptyPredicate.isEmpty(filteredAndParsedLabels)) {
+        log.warn("Docker image doesn't have labels. Properties: {}", properties);
+      } else {
+        log.info("Retrieving labels {} for image {} for repository {} for version {} was success",
+            filteredAndParsedLabels, imageName, repositoryName, buildNos);
+      }
+
+    } catch (Exception e) {
+      log.error("Failed to retrieve docker label in artifactory. Image name: {}, Repository Name: {}, Version: {}",
+          imageName, repositoryName, buildNos);
+      handleAndRethrow(e, USER);
+    }
+    return labels;
+  }
 
   public boolean validateArtifactServer(ArtifactoryConfigRequest config) {
     if (!connectableHttpUrl(getBaseUrl(config))) {

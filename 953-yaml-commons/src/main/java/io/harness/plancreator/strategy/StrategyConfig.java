@@ -31,7 +31,7 @@ import lombok.experimental.FieldDefaults;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@OneOfField(fields = {"matrixConfig", "forConfig", "parallelism"})
+@OneOfField(fields = {"matrixConfig", "repeat", "parallelism"})
 @RecasterAlias("io.harness.plancreator.strategy.StrategyConfig")
 public class StrategyConfig {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
@@ -39,7 +39,7 @@ public class StrategyConfig {
   @ApiModelProperty(hidden = true)
   String uuid;
   @JsonProperty("matrix") MatrixConfigInterface matrixConfig;
-  @JsonProperty("for") HarnessForConfig forConfig;
+  @JsonProperty("repeat") HarnessForConfig repeat;
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
   @YamlSchemaTypes(value = {expression})
   @JsonProperty("parallelism")

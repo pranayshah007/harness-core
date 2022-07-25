@@ -6667,4 +6667,29 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         .order(Sort.descending(WorkflowExecutionKeys.createdAt))
         .get();
   }
+
+  @Override
+  public WorkflowExecutionInfo getWorkflowExecutionInfo(String appId, String workflowExecutionId) {
+    WorkflowExecution workflowExecution =
+        wingsPersistence.getWithAppId(WorkflowExecution.class, appId, workflowExecutionId);
+    if (workflowExecution == null) {
+      throw new InvalidRequestException("Couldn't find a workflow Execution with Id: " + workflowExecutionId, USER);
+    }
+
+    return WorkflowExecutionInfo.builder()
+        .accountId(workflowExecution.getAccountId())
+        .name(workflowExecution.getName())
+        .appId(workflowExecution.getAppId())
+        .executionId(workflowExecutionId)
+        .workflowId(workflowExecution.getWorkflowId())
+        .startTs(workflowExecution.getStartTs())
+        .build();
+  }
+
+  @Override
+  public WorkflowExecution getWorkflowExecutionWithFailureDetails(String appId, String workflowExecutionId) {
+    WorkflowExecution workflowExecution = getWorkflowExecution(appId, workflowExecutionId);
+    workflowExecutionServiceHelper.populateFailureDetailsWithStepInfo(workflowExecution);
+    return workflowExecution;
+  }
 }

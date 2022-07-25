@@ -98,6 +98,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
   @Override
   public PipelineCRUDResult create(PipelineEntity pipelineEntity) {
+    if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
+      log.info("Creating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
+      return createWithoutValidations(pipelineEntity);
+    }
     PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
         pipelineEntity.getIdentifier());
@@ -106,16 +110,29 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       if (governanceMetadata.getDeny()) {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
       }
-
       PipelineEntity entityWithUpdatedInfo = pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity);
       PipelineEntity createdEntity;
+      PipelineCRUDResult pipelineCRUDResult = createWithoutValidations(entityWithUpdatedInfo);
+      createdEntity = pipelineCRUDResult.getPipelineEntity();
+      return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(createdEntity).build();
+    } catch (IOException ex) {
+      log.error(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
+      throw new InvalidYamlException(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
+    }
+  }
+
+  @Override
+  public PipelineCRUDResult createWithoutValidations(PipelineEntity pipelineEntity) {
+    PipelineEntity createdEntity;
+    try {
       if (gitSyncSdkService.isGitSyncEnabled(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
               pipelineEntity.getProjectIdentifier())) {
-        createdEntity = pmsPipelineRepository.saveForOldGitSync(entityWithUpdatedInfo);
+        createdEntity = pmsPipelineRepository.saveForOldGitSync(pipelineEntity);
       } else {
-        createdEntity = pmsPipelineRepository.save(entityWithUpdatedInfo);
+        createdEntity = pmsPipelineRepository.save(pipelineEntity);
       }
       pmsPipelineServiceHelper.sendPipelineSaveTelemetryEvent(createdEntity, CREATING_PIPELINE);
+      GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
       return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(createdEntity).build();
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(format(DUP_KEY_EXP_FORMAT_STRING, pipelineEntity.getIdentifier(),
@@ -124,10 +141,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     } catch (EventsFrameworkDownException ex) {
       log.error("Events framework is down for Pipeline Service.", ex);
       throw new InvalidRequestException("Error connecting to systems upstream", ex);
-
-    } catch (IOException ex) {
-      log.error(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
-      throw new InvalidYamlException(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
 
     } catch (ExplanationException | HintException | ScmException e) {
       log.error("Error while creating pipeline " + pipelineEntity.getIdentifier(), e);
@@ -138,7 +151,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
           "Error while saving pipeline [%s]: %s", pipelineEntity.getIdentifier(), ExceptionUtils.getMessage(e)));
     }
   }
-
   @Override
   public PipelineSaveResponse clone(ClonePipelineDTO clonePipelineDTO, String accountId) {
     PipelineEntity sourcePipelineEntity = getSourcePipelineEntity(clonePipelineDTO, accountId);

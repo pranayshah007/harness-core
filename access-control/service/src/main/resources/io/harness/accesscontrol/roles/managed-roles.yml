@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 30
+version: 32
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -39,6 +39,7 @@ roles:
         - core_environmentgroup_view
         - core_environmentgroup_edit
         - core_environmentgroup_delete
+        - core_environmentgroup_access
         - core_audit_view
         - core_usergroup_view
         - core_usergroup_manage
@@ -123,6 +124,8 @@ roles:
         - chaos_chaosworkflow_view
         - chaos_chaosworkflow_edit
         - chaos_chaosworkflow_delete
+        - core_setting_view
+        - core_setting_edit
       allowedScopeLevels:
         - project
       managed: true
@@ -167,6 +170,7 @@ roles:
         - chaos_chaosagent_view
         - chaos_chaosgitops_view
         - chaos_chaosworkflow_view
+        - core_setting_view
       allowedScopeLevels:
         - project
       managed: true
@@ -207,6 +211,7 @@ roles:
         - core_environmentgroup_view
         - core_environmentgroup_edit
         - core_environmentgroup_delete
+        - core_environmentgroup_access
         - core_audit_view
         - core_usergroup_view
         - core_usergroup_manage
@@ -297,6 +302,8 @@ roles:
         - chaos_chaosworkflow_view
         - chaos_chaosworkflow_edit
         - chaos_chaosworkflow_delete
+        - core_setting_view
+        - core_setting_edit
       allowedScopeLevels:
         - organization
       managed: true
@@ -343,6 +350,7 @@ roles:
         - chaos_chaosagent_view
         - chaos_chaosgitops_view
         - chaos_chaosworkflow_view
+        - core_setting_view
       allowedScopeLevels:
         - organization
       managed: true
@@ -383,6 +391,7 @@ roles:
         - core_environmentgroup_view
         - core_environmentgroup_edit
         - core_environmentgroup_delete
+        - core_environmentgroup_access
         - core_audit_view
         - core_usergroup_view
         - core_usergroup_manage
@@ -491,6 +500,8 @@ roles:
         - chaos_chaosworkflow_view
         - chaos_chaosworkflow_edit
         - chaos_chaosworkflow_delete
+        - core_setting_view
+        - core_setting_edit
       allowedScopeLevels:
         - account
       managed: true
@@ -545,6 +556,7 @@ roles:
         - chaos_chaosagent_view
         - chaos_chaosgitops_view
         - chaos_chaosworkflow_view
+        - core_setting_view
       allowedScopeLevels:
         - account
       managed: true
@@ -564,6 +576,7 @@ roles:
         - core_environment_view
         - core_environment_access
         - core_environmentgroup_view
+        - core_environmentgroup_access
         - core_audit_view
         - core_usergroup_view
         - core_user_view
@@ -574,6 +587,7 @@ roles:
         - core_variable_view
         - core_template_view
         - core_template_access
+        - core_setting_view
       allowedScopeLevels:
         - project
       managed: true

@@ -29,11 +29,13 @@ public class GithubCreateFileScmApiErrorHandler implements ScmApiErrorHandler {
       "The requested file<FILEPATH> couldn't be created in Github. " + ScmErrorExplanations.INVALID_CONNECTOR_CREDS;
   public static final String CREATE_FILE_NOT_FOUND_ERROR_HINT = "Please check the following:\n"
       + "1. If requested Github repository<REPO> exists or not.\n"
-      + "2. If requested branch<BRANCH> exists or not.";
+      + "2. If requested branch<BRANCH> exists or not.\n"
+      + "3. If requested branch<BRANCH> has permissions to push.";
   public static final String CREATE_FILE_NOT_FOUND_ERROR_EXPLANATION =
       "There was issue while creating file<FILEPATH> in Github. Possible reasons can be:\n"
       + "1. The requested Github repository<REPO> doesn't exist\n"
-      + "2. The requested branch<BRANCH> doesn't exist in given Github repository<REPO>.";
+      + "2. The requested branch<BRANCH> doesn't exist in given Github repository<REPO>."
+      + "3. The requested branch<BRANCH> does not have permissions to push.";
   public static final String CREATE_FILE_CONFLICT_ERROR_HINT =
       "Please check if there's already a file<FILEPATH> in Github repository<REPO> for the given filepath and branch<BRANCH>.";
   public static final String CREATE_FILE_CONFLICT_ERROR_EXPLANATION =

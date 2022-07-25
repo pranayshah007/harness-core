@@ -42,6 +42,10 @@ public class PipelineReferredEntityPermissionHelperTest extends CategoryTest {
     entityType = EntityType.ENVIRONMENT;
     permission = PipelineReferredEntityPermissionHelper.getPermissionForGivenType(entityType, false);
     assertThat(permission).isEqualTo("core_environment_access");
+
+    entityType = EntityType.ENVIRONMENT_GROUP;
+    permission = PipelineReferredEntityPermissionHelper.getPermissionForGivenType(entityType, false);
+    assertThat(permission).isEqualTo("core_environmentgroup_access");
   }
 
   @Test
@@ -63,5 +67,9 @@ public class PipelineReferredEntityPermissionHelperTest extends CategoryTest {
     entityType = EntityType.ENVIRONMENT;
     permission = PipelineReferredEntityPermissionHelper.getPermissionForGivenType(entityType, true);
     assertThat(permission).isEqualTo("core_environment_edit");
+
+    entityType = EntityType.ENVIRONMENT_GROUP;
+    permission = PipelineReferredEntityPermissionHelper.getPermissionForGivenType(entityType, true);
+    assertThat(permission).isEqualTo("core_environmentgroup_edit");
   }
 }

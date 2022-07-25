@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.structure.HarnessStringUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.YamlException;
 import io.harness.pms.merger.YamlConfig;
@@ -86,8 +87,8 @@ public class MergeHelper {
           }
         }
         if (isAtExecutionTime) {
-          String valueText = ((JsonNode) value).asText();
-          if (NGExpressionUtils.matchesExecutionInputPattern(valueText)) {
+          String templateValueText = ((JsonNode) templateValue).asText();
+          if (NGExpressionUtils.matchesExecutionInputPattern(templateValueText)) {
             ParameterField<?> inputSetParameterField =
                 RuntimeInputValuesValidator.getInputSetParameterField(((JsonNode) value).asText());
             if (inputSetParameterField != null) {
@@ -143,7 +144,9 @@ public class MergeHelper {
       if (inputSetParameterField != null && inputSetParameterField.isExecutionInput()) {
         return inputSetValue;
       }
-      return ParameterField.createExpressionField(true, ((JsonNode) inputSetValue).asText(),
+
+      return ParameterField.createExpressionField(true,
+          HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(((JsonNode) inputSetValue).asText()),
           parameterField.getInputSetValidator(), ((JsonNode) inputSetValue).getNodeType() != JsonNodeType.STRING);
     } catch (IOException e) {
       log.error("", e);

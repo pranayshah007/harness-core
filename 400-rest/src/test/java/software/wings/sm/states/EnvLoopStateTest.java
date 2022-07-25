@@ -149,6 +149,7 @@ public class EnvLoopStateTest extends WingsBaseTest {
     ExecutionResponse executionResponse = envLoopState.execute(context);
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
     assertThat(executionResponse.getErrorMessage())
-        .isEqualTo("The expression ${context.infra} provided for the variable doesn't resolve to a valid value");
+        .isEqualTo(
+            "The expression ${context.infra} provided for the infra variable doesn't resolve to a valid value. Value should not be null or empty");
   }
 }

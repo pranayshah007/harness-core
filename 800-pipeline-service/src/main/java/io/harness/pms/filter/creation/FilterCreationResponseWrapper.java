@@ -8,6 +8,7 @@
 package io.harness.pms.filter.creation;
 
 import io.harness.pms.contracts.plan.ErrorResponse;
+import io.harness.pms.contracts.plan.ErrorResponseV2;
 import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
 
 import lombok.Builder;
@@ -19,4 +20,5 @@ public class FilterCreationResponseWrapper {
   String serviceName;
   FilterCreationBlobResponse response;
   ErrorResponse errorResponse;
+  ErrorResponseV2 errorResponseV2;
 }

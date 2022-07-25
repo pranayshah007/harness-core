@@ -9,6 +9,7 @@ package io.harness.notification.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ADITHYA;
+import static io.harness.utils.DelegateOwner.NG_DELEGATE_OWNER_CONSTANT;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
@@ -21,6 +22,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.data.algorithm.HashGenerator;
+import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.notification.EmailConfigDTO;
@@ -37,6 +39,7 @@ import io.harness.usergroups.UserGroupClient;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -55,6 +58,7 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
   @Mock private UserClient userClient;
   @Mock private NotificationSettingRepository notificationSettingRepository;
   @Mock private SmtpConfigClient smtpConfigClient;
+  private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   private NotificationSettingsServiceImpl notificationSettingsService;
   private static final String SLACK_WEBHOOK_URL = "https://hooks.slack.com/services/TL81600E8/B027JT97D5X/";
   private static final String SLACK_SECRET_1 = "<+secrets.getValue('SlackWebhookUrlSecret1')>";
@@ -85,13 +89,19 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
   private static final String USER_ID_1 = "kIbAmAVeQIaUPntB2jDBKA";
   private static final String USER_ID_2 = "imsuYBJ1TKG4j1ycwZEqOA";
   private static final String USER_ID_3 = "EiTE4Ij2RXqazZlvlvHpMQ";
+  private static final String ORG_ID = "default";
+  private static final String PROJECT_ID = "testProject";
+  private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
+  private static final String ORG_IDENTIFIER = "orgIdentifier";
+  private static final String PROJECT_IDENTIFIER = "projectIdentifier";
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     PowerMockito.mockStatic(RestClientUtils.class);
+    taskSetupAbstractionHelper = new TaskSetupAbstractionHelper();
     notificationSettingsService = new NotificationSettingsServiceImpl(
-        userGroupClient, userClient, notificationSettingRepository, smtpConfigClient);
+        userGroupClient, userClient, notificationSettingRepository, smtpConfigClient, taskSetupAbstractionHelper);
   }
 
   @Test
@@ -277,5 +287,17 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
     List<String> slackWebhooks = notificationSettingsService.getNotificationSettings(
         NotificationChannelType.SLACK, userGroupDTOList, ACCOUNT_ID);
     assertEquals(Arrays.asList(SLACK_WEBHOOK_URL), slackWebhooks);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testBuildAbstractions() {
+    Map<String, String> abstractionMap =
+        notificationSettingsService.buildTaskAbstractions(ACCOUNT_ID, ORG_ID, PROJECT_ID);
+    assertEquals(String.format("%s/%s", ORG_ID, PROJECT_ID), abstractionMap.get(NG_DELEGATE_OWNER_CONSTANT));
+    assertEquals(ACCOUNT_ID, abstractionMap.get(ACCOUNT_IDENTIFIER));
+    assertEquals(ORG_ID, abstractionMap.get(ORG_IDENTIFIER));
+    assertEquals(PROJECT_ID, abstractionMap.get(PROJECT_IDENTIFIER));
   }
 }

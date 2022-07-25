@@ -106,6 +106,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   String inputSetYaml;
   String pipelineTemplate; // saving the template here because after an execution, the pipeline can be updated
+  boolean executionInputConfigured;
 
   @Singular @Size(max = 128) List<NGTag> tags;
 

@@ -9,6 +9,13 @@ package io.harness.pms.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CONNECTORS;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT_GROUP;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.FILES;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SECRETS;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SERVICE;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
 import static io.harness.remote.client.NGRestUtils.getResponseWithRetry;
 
 import io.harness.EntityType;
@@ -40,6 +47,7 @@ import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -48,6 +56,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -60,6 +69,9 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
   @Inject private InternalReferredEntityExtractor internalReferredEntityExtractor;
   private static final int PAGE = 0;
   private static final int SIZE = 100;
+
+  final Set<EntityTypeProtoEnum> entityTypesSupportedByNGCore =
+      Sets.newHashSet(SECRETS, CONNECTORS, SERVICE, ENVIRONMENT, ENVIRONMENT_GROUP, TEMPLATE, FILES);
 
   /**
    * Performs the following:
@@ -158,6 +170,31 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
                   EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
               .setData(entityReferenceDTO.toByteString())
               .build());
+    }
+
+    // This is being added to handle the case for entities which were earlier present but have been removed in updated
+    // pipeline.Example: envGroup was initially used in pipeline but later environment is being used
+    for (EntityTypeProtoEnum key : entityTypesSupportedByNGCore) {
+      if (!referredEntityTypeToReferredEntities.containsKey(key.name())) {
+        EntitySetupUsageCreateV2DTO entityReferenceDTO =
+            EntitySetupUsageCreateV2DTO.newBuilder()
+                .setAccountIdentifier(pipelineEntity.getAccountIdentifier())
+                .setReferredByEntity(pipelineDetails)
+                .setDeleteOldReferredByRecords(true)
+                .build();
+        try {
+          eventProducer.send(
+              Message.newBuilder()
+                  .putAllMetadata(ImmutableMap.of("accountId", pipelineEntity.getAccountIdentifier(),
+                      EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, key.name(),
+                      EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+                  .setData(entityReferenceDTO.toByteString())
+                  .build());
+        } catch (Exception ex) {
+          log.error("Error deleting the setup usages for the connector with the identifier {} in project {} in org {}",
+              pipelineEntity.getIdentifier(), pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier());
+        }
+      }
     }
   }
 

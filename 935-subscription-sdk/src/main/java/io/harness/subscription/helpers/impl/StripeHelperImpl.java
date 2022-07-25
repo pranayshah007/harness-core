@@ -48,6 +48,7 @@ import com.stripe.param.CustomerRetrieveParams;
 import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.InvoiceUpcomingParams;
 import com.stripe.param.PriceListParams;
+import com.stripe.param.PriceSearchParams;
 import com.stripe.param.SubscriptionCreateParams;
 import com.stripe.param.SubscriptionUpdateParams;
 import java.util.ArrayList;
@@ -141,6 +142,19 @@ public class StripeHelperImpl implements StripeHelper {
     CustomerRetrieveParams params =
         CustomerRetrieveParams.builder().addAllExpand(Lists.newArrayList("sources")).build();
     return toCustomerDetailDTO(stripeHandler.retrieveCustomer(customerId, params));
+  }
+
+  @Override
+  public PriceCollectionDTO getPrices(ModuleType moduleType) {
+    PriceSearchParams params = PriceSearchParams.builder()
+                                   .setQuery(String.format("metadata['module']:'%s'", moduleType.toString()))
+                                   .addAllExpand(Lists.newArrayList("data.tiers"))
+                                   .setLimit(100L)
+                                   .build();
+
+    List<Price> priceResults = stripeHandler.searchPrices(params).getData();
+
+    return toPriceCollectionDTO(priceResults);
   }
 
   @Override
@@ -401,6 +415,16 @@ public class StripeHelperImpl implements StripeHelper {
       cardDTO.setAddressZip(paymentMethod.getBillingDetails().getAddress().getPostalCode());
     }
     return cardDTO;
+  }
+
+  private PriceCollectionDTO toPriceCollectionDTO(List<Price> priceList) {
+    PriceCollectionDTO priceCollectionDTO = PriceCollectionDTO.builder().prices(new ArrayList<>()).build();
+
+    List<Price> data = priceList;
+    for (Price price : data) {
+      priceCollectionDTO.getPrices().add(toPriceDTO(price));
+    }
+    return priceCollectionDTO;
   }
 
   private PriceCollectionDTO toPriceCollectionDTO(PriceCollection priceCollection) {

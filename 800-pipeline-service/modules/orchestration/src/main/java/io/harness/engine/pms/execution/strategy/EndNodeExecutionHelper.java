@@ -25,6 +25,7 @@ import io.harness.pms.contracts.steps.io.StepOutcomeProto;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -48,7 +49,8 @@ public class EndNodeExecutionHelper {
     executionStrategy.endNodeExecution(updatedNodeExecution.getAmbiance());
   }
 
-  private NodeExecution processStepResponseWithNoAdvisers(Ambiance ambiance, StepResponseProto stepResponse) {
+  @VisibleForTesting
+  NodeExecution processStepResponseWithNoAdvisers(Ambiance ambiance, StepResponseProto stepResponse) {
     // Start a transaction here
     List<StepOutcomeRef> outcomeRefs =
         handleOutcomes(ambiance, stepResponse.getStepOutcomesList(), stepResponse.getGraphOutcomesList());
@@ -61,7 +63,8 @@ public class EndNodeExecutionHelper {
         }, EnumSet.noneOf(Status.class));
   }
 
-  private List<StepOutcomeRef> handleOutcomes(
+  @VisibleForTesting
+  List<StepOutcomeRef> handleOutcomes(
       Ambiance ambiance, List<StepOutcomeProto> stepOutcomeProtos, List<StepOutcomeProto> graphOutcomesList) {
     List<StepOutcomeRef> outcomeRefs = new ArrayList<>();
     if (isEmpty(stepOutcomeProtos)) {
@@ -88,7 +91,8 @@ public class EndNodeExecutionHelper {
     return processStepResponsePreAdvisers(ambiance, stepResponse);
   }
 
-  private NodeExecution processStepResponsePreAdvisers(Ambiance ambiance, StepResponseProto stepResponse) {
+  @VisibleForTesting
+  NodeExecution processStepResponsePreAdvisers(Ambiance ambiance, StepResponseProto stepResponse) {
     handleOutcomes(ambiance, stepResponse.getStepOutcomesList(), stepResponse.getGraphOutcomesList());
 
     return nodeExecutionService.updateStatusWithOps(

@@ -55,7 +55,12 @@ message StrategyMetadata {
   int32 totalIterations = 2;
   oneof metadata {
     MatrixMetadata matrixMetadata = 3;
+    ForMetadata forMetadata = 4;
   }
+}
+
+message ForMetadata {
+  string value = 1;
 }
 
 message MatrixMetadata {

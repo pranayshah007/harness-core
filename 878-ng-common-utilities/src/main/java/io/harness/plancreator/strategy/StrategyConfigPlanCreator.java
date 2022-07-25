@@ -64,10 +64,10 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
       MatrixConfig matrixConfig = (MatrixConfig) config.getMatrixConfig();
       maxConcurrency = matrixConfig.getMaxConcurrency();
     }
-    if (config.getForConfig() != null) {
-      maxConcurrency = config.getForConfig().getMaxConcurrency();
+    if (config.getRepeat() != null) {
+      maxConcurrency = config.getRepeat().getMaxConcurrency();
     }
-    StrategyType strategyType = StrategyType.FOR;
+    StrategyType strategyType = StrategyType.LOOP;
     if (ctx.getCurrentField().getNode().getField(io.harness.plancreator.strategy.StrategyConstants.MATRIX) != null) {
       strategyType = StrategyType.MATRIX;
     } else if (ctx.getCurrentField().getNode().getField(io.harness.plancreator.strategy.StrategyConstants.PARALLELISM)

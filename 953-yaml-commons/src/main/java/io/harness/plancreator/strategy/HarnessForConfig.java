@@ -9,15 +9,18 @@ package io.harness.plancreator.strategy;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.validation.OneOfField;
 import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import javax.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -33,15 +36,36 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RecasterAlias("io.harness.plancreator.strategy.HarnessForConfig")
+@OneOfField(fields = {"items", "times"})
 public class HarnessForConfig {
   @YamlSchemaTypes(value = {expression})
-  @JsonProperty("iteration")
+  @JsonProperty("times")
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
   @Min(value = 0)
-  ParameterField<Integer> iteration;
+  ParameterField<Integer> times;
+
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
   @YamlSchemaTypes(value = {expression})
   @JsonProperty("maxConcurrency")
   @Min(value = 0)
   ParameterField<Integer> maxConcurrency;
+
+  @YamlSchemaTypes(value = {expression})
+  @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
+  @JsonProperty("items")
+  ParameterField<List<String>> items;
+
+  @ApiModelProperty(dataType = INTEGER_CLASSPATH)
+  @YamlSchemaTypes(value = {expression})
+  @JsonProperty("start")
+  @Min(value = 0)
+  ParameterField<Integer> start;
+
+  @ApiModelProperty(dataType = INTEGER_CLASSPATH)
+  @YamlSchemaTypes(value = {expression})
+  @JsonProperty("end")
+  @Min(value = 0)
+  ParameterField<Integer> end;
+
+  RepeatUnit unit;
 }

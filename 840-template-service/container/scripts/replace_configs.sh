@@ -23,6 +23,12 @@ if [[ "" != "$LOGGING_LEVEL" ]]; then
     yq write -i $CONFIG_FILE logging.level "$LOGGING_LEVEL"
 fi
 
+if [[ "" != "$SERVER_PORT" ]]; then
+  yq write -i $CONFIG_FILE server.applicationConnectors[0].port "$SERVER_PORT"
+else
+  yq write -i $CONFIG_FILE server.applicationConnectors[0].port "15001"
+fi
+
 if [[ "" != "$LOGGERS" ]]; then
   IFS=',' read -ra LOGGER_ITEMS <<< "$LOGGERS"
   for ITEM in "${LOGGER_ITEMS[@]}"; do
