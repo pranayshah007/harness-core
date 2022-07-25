@@ -214,6 +214,9 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
             .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getParams().getType()));
 
     if (manifestIdTypeMap.values().size() > 1) {
+      if (deploymentType == "ECS") {
+        return;
+      }
       String manifestIdType = manifestIdTypeMap.entrySet()
                                   .stream()
                                   .map(entry -> String.format("%s : %s", entry.getKey(), entry.getValue()))

@@ -1,13 +1,12 @@
-package io.harness.aws.awsv2;
+package io.harness.aws.v2.ecs;
 
 
-import com.amazonaws.retry.PredefinedBackoffStrategies;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.v2.ecs.AwsApiV2HelperService;
 import io.harness.data.structure.UUIDGenerator;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.ContainerCredentialsProvider;
@@ -19,7 +18,6 @@ import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsPr
 import com.google.inject.Singleton;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.retry.RetryPolicy;
-import software.amazon.awssdk.core.retry.backoff.BackoffStrategy;
 import software.amazon.awssdk.core.retry.backoff.EqualJitterBackoffStrategy;
 import software.amazon.awssdk.core.retry.backoff.FullJitterBackoffStrategy;
 import software.amazon.awssdk.regions.Region;

@@ -397,7 +397,9 @@ public enum FeatureName {
       "Used to enable rollback workflow strategy on step failure", HarnessTeam.SPG),
   REMOVE_USERGROUP_CHECK(
       "Customers started facing NPE due to migration of usergroup reference, removed null check behind FF - ticket ID - CDS-39770, CG",
-      HarnessTeam.SPG);
+      HarnessTeam.SPG),
+  ECS_NG;
+
 
   @Deprecated
   FeatureName() {

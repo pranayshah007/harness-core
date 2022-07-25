@@ -1,4 +1,4 @@
-package io.harness.aws.awsv2;
+package io.harness.aws.v2.ecs;
 
 
 import com.google.inject.Inject;
@@ -43,7 +43,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 
-public class AwsApiV2ClientImpl implements AwsApiV2Client {
+public class EcsV2ClientImpl implements EcsV2Client {
 
     @Inject private AwsApiV2HelperService awsApiV2HelperService;
     @Inject private AwsApiV2ExceptionHandler awsApiV2ExceptionHandler;
@@ -238,6 +238,7 @@ public class AwsApiV2ClientImpl implements AwsApiV2Client {
     public Optional<Service> getService(AwsInternalConfig awsConfig, String clusterName, String serviceName, String region) {
         DescribeServicesRequest describeServicesRequest = DescribeServicesRequest.builder()
                 .services(Collections.singletonList(serviceName))
+                .cluster(clusterName)
                 .build();
         try(EcsClient ecsClient = getEcsClient(awsConfig, region)) {
             List<Service> services =  ecsClient.describeServices(describeServicesRequest).services();

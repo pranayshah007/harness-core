@@ -380,7 +380,9 @@ public enum TaskType {
   DLITE_CI_VM_INITIALIZE_TASK(TaskGroup.CI, DliteVmInitializeTaskParams.class, VmTaskExecutionResponse.class, true),
   DLITE_CI_VM_EXECUTE_TASK(TaskGroup.CI, DliteVmExecuteStepTaskParams.class, VmTaskExecutionResponse.class, true),
   DLITE_CI_VM_CLEANUP_TASK(TaskGroup.CI, DliteVmCleanupTaskParams.class, VmTaskExecutionResponse.class, true),
-  NG_LDAP_GROUPS_SYNC(TaskGroup.LDAP);
+  NG_LDAP_GROUPS_SYNC(TaskGroup.LDAP),
+  ECS_GIT_FETCH_TASK_NG(TaskGroup.ECS),
+  ECS_COMMAND_TASK_NG(TaskGroup.ECS);
 
   private final TaskGroup taskGroup;
   private final String displayName;

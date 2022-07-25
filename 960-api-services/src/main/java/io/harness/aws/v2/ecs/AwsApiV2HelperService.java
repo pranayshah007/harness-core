@@ -1,4 +1,4 @@
-package io.harness.aws.awsv2;
+package io.harness.aws.v2.ecs;
 
 import io.harness.aws.beans.AwsInternalConfig;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;

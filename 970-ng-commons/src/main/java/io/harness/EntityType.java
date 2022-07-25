@@ -272,7 +272,10 @@ public enum EntityType {
       EntityYamlRootNames.AZURE_WEBAPP_ROLLBACK_STEP),
   @JsonProperty(EntityTypeConstants.JENKINS_BUILD)
   JENKINS_BUILD(
-      ModuleType.CD, EntityTypeConstants.JENKINS_BUILD, IdentifierRef.class, EntityYamlRootNames.JENKINS_BUILD);
+      ModuleType.CD, EntityTypeConstants.JENKINS_BUILD, IdentifierRef.class, EntityYamlRootNames.JENKINS_BUILD),
+  @JsonProperty(EntityTypeConstants.ECS_ROLLING_DEPLOY)
+  ECS_ROLLING_DEPLOY_STEP(ModuleType.CD, EntityTypeConstants.ECS_ROLLING_DEPLOY,
+          IdentifierRef.class, EntityYamlRootNames.ECS_ROLLING_DEPLOY);
 
   private final ModuleType moduleType;
   String yamlName;
