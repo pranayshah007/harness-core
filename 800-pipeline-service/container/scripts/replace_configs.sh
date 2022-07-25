@@ -312,23 +312,23 @@ if [[ "" != "$EVENTS_FRAMEWORK_NETTY_THREADS" ]]; then
   yq write -i $ENTERPRISE_REDISSON_CACHE_FILE nettyThreads "$EVENTS_FRAMEWORK_NETTY_THREADS"
 fi
 
-if [[ "" != "$ENTERPRISE_REDIS_URL" ]]; then
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_URL" ]]; then
   yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.address "$EVENTS_FRAMEWORK_REDIS_URL"
 fi
 
-if [[ "" != "$ENTERPRISE_REDIS_USERNAME" ]]; then
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_USERNAME" ]]; then
   yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.username "$EVENTS_FRAMEWORK_REDIS_USERNAME"
 fi
 
-if [[ "" != "$ENTERPRISE_REDIS_PASSWORD" ]]; then
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_PASSWORD" ]]; then
   yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.password "$EVENTS_FRAMEWORK_REDIS_PASSWORD"
 fi
 
-if [[ "" != "$ENTERPRISE_REDIS_SSL_CA_TRUST_STORE_PATH" ]]; then
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH" ]]; then
   yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.sslTruststore file:"$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH"
 fi
 
-if [[ "" != "$ENTERPRISE_REDIS_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
+if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD" ]]; then
   yq write -i $ENTERPRISE_REDISSON_CACHE_FILE singleServerConfig.sslTruststorePassword "$EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD"
 fi
 

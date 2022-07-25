@@ -20,8 +20,8 @@ pkg_tar(
     name = "files",
     srcs = [
         "//400-rest/src/main/resources:redisson-jcache.yaml",
-        "//800-pipeline-service/src/main/resources:enterprise-redisson-jcache.yaml",
         "//800-pipeline-service:config.yml",
+        "//800-pipeline-service/src/main/resources:enterprise-redisson-jcache.yaml",
     ],
     files = {
         "@alpn_boot_8.1.13.v20181017//file": "alpn-boot-8.1.13.v20181017.jar",
