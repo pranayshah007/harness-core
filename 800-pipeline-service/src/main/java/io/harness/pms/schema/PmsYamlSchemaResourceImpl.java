@@ -57,6 +57,11 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
     return ResponseDTO.newResponse(true);
   }
 
+  @Override
+  public ResponseDTO<Boolean> testCache() {
+    return ResponseDTO.newResponse(pmsYamlSchemaService.testCache());
+  }
+
   public ResponseDTO<io.harness.pms.yaml.YamlSchemaResponse> getIndividualYamlSchema(@NotNull String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String yamlGroup, EntityType stepEntityType, Scope scope) {
     // TODO(Brijesh): write logic to handle empty schema when ff or feature restriction is off.

@@ -59,6 +59,11 @@ public interface PmsYamlSchemaResource {
   @ApiOperation(value = "Invalidate yaml schema cache", nickname = "invalidateYamlSchemaCache")
   ResponseDTO<Boolean> invalidateYamlSchemaCache();
 
+  @POST
+  @Path("/test-cache")
+  @ApiOperation(value = "test enterprise cache", nickname = "testCache")
+  ResponseDTO<Boolean> testCache();
+
   @GET
   @Path("/get")
   @ApiOperation(value = "Get step YAML schema", nickname = "getStepYamlSchema")

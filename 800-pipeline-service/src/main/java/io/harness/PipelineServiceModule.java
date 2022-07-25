@@ -672,7 +672,8 @@ public class PipelineServiceModule extends AbstractModule {
   public Cache<String, Integer> sdkEventsCache(
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
     return harnessCacheManager.getCache("pmsEventsCache", String.class, Integer.class,
-        AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES), versionInfoManager.getVersionInfo().getBuildNo());
+        AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES), versionInfoManager.getVersionInfo().getBuildNo(),
+        true);
   }
 
   @Provides
@@ -703,7 +704,7 @@ public class PipelineServiceModule extends AbstractModule {
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
     return harnessCacheManager.getCache("partialSchemaCache", SchemaCacheKey.class, PartialSchemaDTOWrapperValue.class,
         CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 1)),
-        versionInfoManager.getVersionInfo().getBuildNo());
+        versionInfoManager.getVersionInfo().getBuildNo(), true);
   }
 
   @Provides

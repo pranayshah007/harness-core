@@ -161,6 +161,11 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     schemaFetcher.invalidateAllCache();
   }
 
+  @Override
+  public boolean testCache() {
+    return schemaFetcher.testCache();
+  }
+
   private JsonNode getPipelineYamlSchemaInternal(
       String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope) {
     JsonNode pipelineSchema =
