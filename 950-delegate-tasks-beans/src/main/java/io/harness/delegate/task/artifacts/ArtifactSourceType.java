@@ -12,8 +12,8 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
-import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GAR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.JENKINS_NAME;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -33,7 +33,7 @@ public enum ArtifactSourceType {
   @JsonProperty(ACR_NAME) ACR(ACR_NAME),
   @JsonProperty(JENKINS_NAME) JENKINS(JENKINS_NAME),
   @JsonProperty(AMAZON_S3_NAME) AMAZONS3(AMAZON_S3_NAME),
-  @JsonProperty(GAR_NAME) GAR(GAR_NAME);
+  @JsonProperty(GOOGLE_ARTIFACT_REGISTRY_NAME) GAR(GOOGLE_ARTIFACT_REGISTRY_NAME);
   private final String displayName;
 
   ArtifactSourceType(String displayName) {

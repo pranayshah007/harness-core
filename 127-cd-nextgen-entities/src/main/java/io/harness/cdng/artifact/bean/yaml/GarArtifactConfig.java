@@ -1,7 +1,7 @@
 package io.harness.cdng.artifact.bean.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GAR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -38,7 +38,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-@JsonTypeName(GAR_NAME)
+@JsonTypeName(GOOGLE_ARTIFACT_REGISTRY_NAME)
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("garArtifactConfig")
 @OneOfField(fields = {"tag", "tagRegex"})
