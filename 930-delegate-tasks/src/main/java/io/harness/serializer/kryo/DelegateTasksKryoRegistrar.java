@@ -17,6 +17,7 @@ import io.harness.delegate.beans.ldap.NGLdapDelegateTaskParameters;
 import io.harness.delegate.beans.ldap.NGLdapDelegateTaskResponse;
 import io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskParameters;
 import io.harness.delegate.beans.ldap.NGLdapGroupSearchTaskResponse;
+import io.harness.delegate.beans.ldap.NGLdapGroupSyncTaskResponse;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTaskParameters;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTaskResponse;
 import io.harness.delegate.task.winrm.AuthenticationScheme;
@@ -284,6 +285,7 @@ import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsMan
 import software.wings.service.impl.ContainerServiceParams;
 import software.wings.service.impl.MasterUrlFetchTaskParameter;
 import software.wings.service.impl.PerpetualTaskCapabilityCheckResponse;
+import software.wings.service.impl.SlackMessageSenderImpl;
 import software.wings.service.impl.analysis.AnalysisComparisonStrategy;
 import software.wings.service.impl.analysis.CustomLogDataCollectionInfo;
 import software.wings.service.impl.analysis.DataCollectionTaskResult;
@@ -591,6 +593,7 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(NGLdapGroupSearchTaskParameters.class, 5290);
     kryo.register(NGLdapGroupSearchTaskResponse.class, 5291);
     kryo.register(PcfInstanceElement.class, 5293);
+    kryo.register(NGLdapGroupSyncTaskResponse.class, 5294);
     kryo.register(PcfConfig.class, 5296);
     kryo.register(NGLdapDelegateTaskResponse.class, 5297);
     kryo.register(NGLdapDelegateTaskParameters.class, 5298);
@@ -813,6 +816,7 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(AwsLambdaDetailsResponse.class, 7256);
     kryo.register(JiraIssueData.class, 7259);
     kryo.register(SlackMessage.class, 7261);
+    kryo.register(SlackMessageSenderImpl.class, 7262);
     kryo.register(SlackMessageJSON.class, 7263);
     kryo.register(AwsS3Request.class, 7266);
     kryo.register(AwsS3RequestType.class, 7267);

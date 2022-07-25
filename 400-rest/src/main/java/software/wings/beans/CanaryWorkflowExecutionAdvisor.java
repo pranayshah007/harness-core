@@ -19,6 +19,7 @@ import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.STARTING;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.CONSIDER_ORIGINAL_STATE_VERSION;
+import static io.harness.beans.FeatureName.ENABLE_EXPERIMENTAL_STEP_FAILURE_STRATEGIES;
 import static io.harness.beans.FeatureName.LOG_APP_DEFAULTS;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.beans.OrchestrationWorkflowType.ROLLING;
@@ -670,6 +671,20 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
 
       case ROLLBACK_WORKFLOW: {
         if (phaseSubWorkflow == null) {
+          log.info(
+              "Customer setup rollback workflow on step failure strategy: " + stateExecutionInstance.getAccountId());
+
+          if (featureFlagService.isEnabled(
+                  ENABLE_EXPERIMENTAL_STEP_FAILURE_STRATEGIES, stateExecutionInstance.getAccountId())) {
+            ExecutionInterrupt executionInterrupt =
+                anExecutionInterrupt()
+                    .executionInterruptType(ROLLBACK)
+                    .executionUuid(executionEvent.getContext().getWorkflowExecutionId())
+                    .appId(executionEvent.getContext().getAppId())
+                    .build();
+            workflowExecutionService.triggerExecutionInterrupt(executionInterrupt);
+            return anExecutionEventAdvice().withExecutionInterruptType(ROLLBACK).build();
+          }
           return null;
         }
 

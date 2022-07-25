@@ -78,6 +78,8 @@ then
     echo ${PURPOSE} > purpose.txt
 fi
 
+java -jar cv-nextgen-capsule.jar scan-classpath-metadata
+
 cd ../..
 
 mkdir -p dist/verification-service ;

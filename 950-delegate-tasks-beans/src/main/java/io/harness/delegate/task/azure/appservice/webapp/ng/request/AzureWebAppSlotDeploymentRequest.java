@@ -10,25 +10,21 @@ package io.harness.delegate.task.azure.appservice.webapp.ng.request;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.model.AzureAppServiceApplicationSetting;
-import io.harness.azure.model.AzureAppServiceConnectionString;
-import io.harness.beans.DecryptableEntity;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryCapabilityHelper;
 import io.harness.delegate.beans.connector.azureconnector.AzureCapabilityHelper;
 import io.harness.delegate.beans.connector.docker.DockerCapabilityHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
+import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureArtifactType;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
-import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -40,13 +36,12 @@ public class AzureWebAppSlotDeploymentRequest extends AbstractSlotDataRequest {
   private AzureAppServicePreDeploymentData preDeploymentData;
 
   @Builder
-  public AzureWebAppSlotDeploymentRequest(AzureAppServicePreDeploymentData preDeploymentData,
-      CommandUnitsProgress commandUnitsProgress, AzureWebAppInfraDelegateConfig infrastructure, String startupCommand,
-      List<AzureAppServiceApplicationSetting> applicationSettings,
-      List<AzureAppServiceConnectionString> connectionStrings, AzureArtifactConfig artifact,
-      Integer timeoutIntervalInMin) {
-    super(commandUnitsProgress, infrastructure, startupCommand, applicationSettings, connectionStrings, artifact,
-        timeoutIntervalInMin);
+  public AzureWebAppSlotDeploymentRequest(String accountId, AzureAppServicePreDeploymentData preDeploymentData,
+      CommandUnitsProgress commandUnitsProgress, AzureWebAppInfraDelegateConfig infrastructure,
+      AppSettingsFile startupCommand, AppSettingsFile applicationSettings, AppSettingsFile connectionStrings,
+      AzureArtifactConfig artifact, Integer timeoutIntervalInMin) {
+    super(accountId, commandUnitsProgress, infrastructure, startupCommand, applicationSettings, connectionStrings,
+        artifact, timeoutIntervalInMin);
     this.preDeploymentData = preDeploymentData;
   }
 
@@ -56,16 +51,9 @@ public class AzureWebAppSlotDeploymentRequest extends AbstractSlotDataRequest {
   }
 
   @Override
-  protected void populateDecryptionDetails(Map<DecryptableEntity, List<EncryptedDataDetail>> decryptionDetails) {
-    AzureArtifactConfig artifactConfig = getArtifact();
-    if (artifactConfig != null && artifactConfig.getConnectorConfig() != null) {
-      decryptionDetails.put(artifactConfig.getConnectorConfig(), artifactConfig.getEncryptedDataDetails());
-    }
-  }
-
-  @Override
   protected void populateRequestCapabilities(
       List<ExecutionCapability> capabilities, ExpressionEvaluator maskingEvaluator) {
+    super.populateRequestCapabilities(capabilities, maskingEvaluator);
     AzureArtifactConfig artifactConfig = getArtifact();
     if (artifactConfig != null) {
       if (artifactConfig.getArtifactType() == AzureArtifactType.CONTAINER) {

@@ -21,9 +21,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.plan.Dependencies;
-import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
 import io.harness.pms.contracts.plan.SetupMetadata;
 import io.harness.pms.contracts.service.EntityReferenceRequest;
+import io.harness.pms.contracts.service.EntityReferenceResponse;
 import io.harness.pms.filter.creation.FilterCreatorMergeService;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.pipeline.PipelineSetupUsageHelper;
@@ -82,8 +82,8 @@ public class EntityReferenceServiceTest extends PipelineServiceTestBase {
                                                         .setProjectIdentifier(PROJECT_ID)
                                                         .build();
 
-    FilterCreationBlobResponse response = entityReferenceService.getReferences(entityReferenceRequest);
-    assertThat(response.getDeps().getDependenciesMap()).isEmpty();
+    EntityReferenceResponse response = entityReferenceService.getReferences(entityReferenceRequest);
+    assertThat(!response.getReferredEntitiesList().isEmpty());
 
     ArgumentCaptor<Map> servicesCaptor = ArgumentCaptor.forClass(Map.class);
     ArgumentCaptor<Dependencies> dependenciesCaptor = ArgumentCaptor.forClass(Dependencies.class);

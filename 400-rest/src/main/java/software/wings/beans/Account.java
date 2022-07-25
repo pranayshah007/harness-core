@@ -34,6 +34,7 @@ import io.harness.security.EncryptionInterface;
 import io.harness.security.SimpleEncryption;
 import io.harness.validation.Create;
 
+import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.yaml.BaseEntityYaml;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -67,7 +68,7 @@ import org.mongodb.morphia.annotations.Transient;
 @Entity(value = "accounts", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @ChangeDataCapture(table = "accounts", fields = {}, handler = "Account")
-public class Account extends Base implements PersistentRegularIterable {
+public class Account extends Base implements PersistentRegularIterable, NGMigrationEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -208,6 +209,12 @@ public class Account extends Base implements PersistentRegularIterable {
 
   public void setLocalEncryptionEnabled(boolean localEncryptionEnabled) {
     this.localEncryptionEnabled = localEncryptionEnabled;
+  }
+
+  @JsonIgnore
+  @Override
+  public String getMigrationEntityName() {
+    return getCompanyName() + " " + getAccountName();
   }
 
   public boolean isNextGenEnabled() {

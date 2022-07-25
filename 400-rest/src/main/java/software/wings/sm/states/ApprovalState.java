@@ -220,6 +220,8 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
   private String SCRIPT_APPROVAL_JOB_GROUP = "SHELL_SCRIPT_APPROVAL_JOB";
   public static final String APPROVAL_STATE_TYPE_VARIABLE = "approvalStateType";
   public static final String USER_GROUPS_VARIABLE = "userGroups";
+  private static final Integer MAXIMUM_TIMEOUT = 2147400049;
+  private static final String TIMEOUT_PROPERTY_KEY = "timeoutMillis";
 
   @Getter @Setter ApprovalStateParams approvalStateParams;
   @Getter @Setter ApprovalStateType approvalStateType = USER_GROUP;
@@ -434,7 +436,15 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
     if (isDisabled && properties.get(EnvStateKeys.disableAssertion) == null) {
       properties.put(EnvStateKeys.disableAssertion, "true");
     }
+    validateProperties(properties);
     mapApprovalObject(properties, this);
+  }
+
+  private void validateProperties(Map<String, Object> properties) {
+    Number timeoutMillis = (Number) properties.get(TIMEOUT_PROPERTY_KEY);
+    if (timeoutMillis != null && timeoutMillis.longValue() > MAXIMUM_TIMEOUT) {
+      throw new InvalidRequestException("Value exceeded maximum timeout of 3w 3d 20h 30m.");
+    }
   }
 
   /*

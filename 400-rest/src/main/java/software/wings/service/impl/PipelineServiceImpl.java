@@ -702,7 +702,14 @@ public class PipelineServiceImpl implements PipelineService {
           resolveServices(services, serviceIds, resolvedWorkflowStepVariables, workflow);
           resolveInfraMappings(infraMappingIds, resolvedWorkflowStepVariables, workflow);
           if (!pipelineStage.isLooped()) {
-            resolveInfraDefinitions(infraDefinitionIds, resolvedWorkflowStepVariables, workflow);
+            if (pipelineStageElement.checkDisableAssertion()) {
+              try {
+                resolveInfraDefinitions(infraDefinitionIds, resolvedWorkflowStepVariables, workflow);
+              } catch (Exception ignored) {
+              }
+            } else {
+              resolveInfraDefinitions(infraDefinitionIds, resolvedWorkflowStepVariables, workflow);
+            }
           }
           if (pipelineStageElement.checkDisableAssertion()) {
             try {
@@ -781,7 +788,7 @@ public class PipelineServiceImpl implements PipelineService {
   private void resolveInfraDefinitions(
       List<String> infraDefinitionIds, Map<String, String> pseWorkflowVariables, Workflow workflow) {
     List<String> resolvedInfraDefinitionIds =
-        workflowService.getResolvedInfraDefinitionIds(workflow, pseWorkflowVariables);
+        workflowService.getResolvedInfraDefinitionIds(workflow, pseWorkflowVariables, null);
     if (resolvedInfraDefinitionIds != null) {
       resolvedInfraDefinitionIds.stream()
           .filter(resolvedInfraId -> !infraDefinitionIds.contains(resolvedInfraId))
@@ -1141,7 +1148,7 @@ public class PipelineServiceImpl implements PipelineService {
       boolean isRuntime) {
     String value = pseWorkflowVariables.get(variable.getName());
     if (isNotEmpty(value)) {
-      String variableName = matchesVariablePattern(value) ? getName(value) : null;
+      String variableName = matchesVariablePattern(value) && !value.contains(".") ? getName(value) : null;
       if (variableName != null) {
         // Variable is an expression - templatized pipeline.
         Variable pipelineVariable = variable.cloneInternal();

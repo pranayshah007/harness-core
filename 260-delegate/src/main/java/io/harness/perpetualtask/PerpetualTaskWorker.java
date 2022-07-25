@@ -48,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Marker;
@@ -181,23 +182,27 @@ public class PerpetualTaskWorker {
 
   List<PerpetualTaskAssignDetails> fetchAssignedTask() {
     String delegateId = getDelegateId().orElse("UNREGISTERED");
-    List<PerpetualTaskAssignDetails> assignedTasks = perpetualTaskServiceAgentClient.perpetualTaskList(delegateId);
-    if (log.isDebugEnabled()) {
-      log.debug("Refreshed list of assigned perpetual tasks {}", assignedTasks);
+    if (accountId == null || delegateId.equals("UNREGISTERED")) {
+      log.warn("While fetching Assigned PT tasks, Account id is {} and delegateId is {}", accountId, delegateId);
     }
+    List<PerpetualTaskAssignDetails> assignedTasks =
+        perpetualTaskServiceAgentClient.perpetualTaskList(delegateId, accountId);
+    List<String> taskIdList = assignedTasks.stream().map(at -> at.getTaskId().getId()).collect(Collectors.toList());
+    log.info("Refreshed list of assigned perpetual tasks for accountId {}, {} ", accountId, taskIdList);
     return assignedTasks;
   }
 
   @VisibleForTesting
   void startTask(PerpetualTaskAssignDetails task) {
     try (AutoLogContext ignore1 = new PerpetualTaskLogContext(task.getTaskId().getId(), OVERRIDE_ERROR)) {
-      PerpetualTaskExecutionContext context = perpetualTaskServiceAgentClient.perpetualTaskContext(task.getTaskId());
+      PerpetualTaskExecutionContext context =
+          perpetualTaskServiceAgentClient.perpetualTaskContext(task.getTaskId(), accountId);
       PerpetualTaskSchedule schedule = context.getTaskSchedule();
       long intervalSeconds = Durations.toSeconds(schedule.getInterval());
 
       PerpetualTaskLifecycleManager perpetualTaskLifecycleManager =
           new PerpetualTaskLifecycleManager(task.getTaskId(), context, factoryMap, perpetualTaskServiceAgentClient,
-              perpetualTaskTimeLimiter, currentlyExecutingPerpetualTasksCount);
+              perpetualTaskTimeLimiter, currentlyExecutingPerpetualTasksCount, accountId);
 
       synchronized (runningTaskMap) {
         runningTaskMap.computeIfAbsent(task.getTaskId(), k -> {

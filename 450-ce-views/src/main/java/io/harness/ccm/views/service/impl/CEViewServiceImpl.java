@@ -263,6 +263,9 @@ public class CEViewServiceImpl implements CEViewService {
             }
             viewFieldIdentifierSet.add(ViewFieldIdentifier.CUSTOM);
           }
+          if (viewIdCondition.getViewField().getIdentifier() == ViewFieldIdentifier.BUSINESS_MAPPING) {
+            viewFieldIdentifierSet.add(ViewFieldIdentifier.BUSINESS_MAPPING);
+          }
         }
       }
     }

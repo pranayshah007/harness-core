@@ -8,6 +8,7 @@
 package io.harness.pms.outbox;
 
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.NAMAN;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
@@ -154,6 +155,43 @@ public class PipelineOutboxEventHandlerTest extends CategoryTest {
     assertEquals(Action.UPDATE, auditEntry.getAction());
     assertEquals(newYaml, auditEntry.getNewYaml());
     assertEquals(oldYaml, auditEntry.getOldYaml());
+  }
+
+  // a bug was introduced where accidentally some events have old pipeline as null. Handing it here to ensure that those
+  // events are not audited and don't throw a Null Pointer Exception.
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testUpdateWithOldPipelineAsNull() throws JsonProcessingException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    PipelineEntity newPipeline =
+        PipelineEntity.builder().name(randomAlphabetic(10)).identifier(identifier).yaml(newYaml).build();
+    PipelineUpdateEvent pipelineUpdateEvent =
+        new PipelineUpdateEvent(accountIdentifier, orgIdentifier, projectIdentifier, newPipeline, null);
+    String eventData = objectMapper.writeValueAsString(pipelineUpdateEvent);
+    GlobalContext globalContext = new GlobalContext();
+    Principal principal =
+        new UserPrincipal(randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10));
+    SourcePrincipalContextData sourcePrincipalContextData =
+        SourcePrincipalContextData.builder().principal(principal).build();
+    globalContext.upsertGlobalContextRecord(sourcePrincipalContextData);
+
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .resource(pipelineUpdateEvent.getResource())
+                                  .resourceScope(pipelineUpdateEvent.getResourceScope())
+                                  .eventType(PipelineOutboxEvents.PIPELINE_UPDATED)
+                                  .blocked(false)
+                                  .globalContext(globalContext)
+                                  .createdAt(Long.valueOf(randomNumeric(6)))
+                                  .eventData(eventData)
+                                  .id(randomAlphabetic(10))
+                                  .build();
+    when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
+    eventHandler.handle(outboxEvent);
+    verify(auditClientService, times(0)).publishAudit(any(), any(), any());
   }
 
   @Test

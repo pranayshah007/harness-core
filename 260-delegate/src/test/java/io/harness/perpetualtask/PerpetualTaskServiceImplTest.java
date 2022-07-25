@@ -40,6 +40,7 @@ import com.google.protobuf.util.Durations;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -570,6 +571,25 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     assertThat(result).isEqualTo(true);
     assertThat(resultPerpetualTaskRecord.getFailedExecutionCount()).isEqualTo(0);
     assertThat(resultPerpetualTaskRecord.getState()).isEqualTo(PerpetualTaskState.TASK_ASSIGNED);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testPerpetualTaskAssignedList() {
+    String taskId = UUIDGenerator.generateUuid();
+
+    PerpetualTaskClientContext clientContext = clientContext();
+    PerpetualTaskRecord perpetualTaskRecord = perpetualTaskRecord();
+    perpetualTaskRecord.setClientContext(clientContext);
+    perpetualTaskRecord.setAccountId(ACCOUNT_ID);
+    perpetualTaskRecord.setDelegateId(DELEGATE_ID);
+    perpetualTaskRecord.setUuid(taskId);
+    perpetualTaskRecordDao.save(perpetualTaskRecord);
+    List<PerpetualTaskAssignDetails> perpetualTaskAssignDetailsList =
+        perpetualTaskService.listAssignedTasks(DELEGATE_ID, ACCOUNT_ID);
+    assertThat(perpetualTaskAssignDetailsList).hasSize(1);
+    assertThat(perpetualTaskAssignDetailsList.get(0).getTaskId().getId()).isEqualTo(taskId);
   }
 
   private PerpetualTaskResponse perpetualTaskFailedResponse() {

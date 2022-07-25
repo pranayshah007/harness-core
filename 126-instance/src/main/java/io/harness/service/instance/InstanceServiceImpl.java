@@ -96,7 +96,6 @@ public class InstanceServiceImpl implements InstanceService {
     checkArgument(isNotEmpty(accountIdentifier), "accountIdentifier must be present");
     checkArgument(isNotEmpty(orgIdentifier), "orgIdentifier must be present");
     checkArgument(isNotEmpty(projectIdentifier), "projectIdentifier must be present");
-    checkArgument(isNotEmpty(infrastructureMappingId), "infrastructureMappingId must be present");
 
     Criteria criteria = Criteria.where(InstanceKeys.instanceKey)
                             .is(instanceKey)
@@ -181,6 +180,13 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   @Override
+  public List<InstanceDTO> getActiveInstancesByServiceId(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+    return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByServiceId(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
+  }
+
+  @Override
   public List<InstanceDTO> getActiveInstancesByInfrastructureMappingId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String infrastructureMappingId) {
     return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByInfrastructureMappingId(
@@ -206,9 +212,9 @@ public class InstanceServiceImpl implements InstanceService {
 
   @Override
   public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     return instanceRepository.getActiveServiceInstanceInfo(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, timestampInMs);
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
   }
 
   /*
@@ -231,11 +237,6 @@ public class InstanceServiceImpl implements InstanceService {
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs) {
     return instanceRepository.getActiveServiceInstanceCountBreakdown(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, timestampInMs);
-  }
-
-  @Override
-  public InstanceDTO findFirstInstance(Criteria criteria) {
-    return InstanceMapper.toDTO(instanceRepository.findFirstInstance(criteria));
   }
 
   // ----------------------------------- PRIVATE METHODS -------------------------------------

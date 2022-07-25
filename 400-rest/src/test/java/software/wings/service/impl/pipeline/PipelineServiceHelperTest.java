@@ -484,4 +484,26 @@ public class PipelineServiceHelperTest extends WingsBaseTest {
     List<String> envIds = PipelineServiceHelper.getEnvironmentIdsForParallelIndex(pipeline, 1);
     assertThat(envIds).isEmpty();
   }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void testUpdateLoopingInfoWhenInfraAsExpression() {
+    List<Variable> userVariables = new ArrayList<>();
+    Variable infraVar1 = aVariable().entityType(INFRASTRUCTURE_DEFINITION).name("infra1").build();
+    userVariables.add(infraVar1);
+    OrchestrationWorkflow orchestrationWorkflow =
+        aCanaryOrchestrationWorkflow().withUserVariables(userVariables).build();
+    Workflow workflow = aWorkflow().orchestrationWorkflow(orchestrationWorkflow).build();
+    Map<String, String> workflowVariable = ImmutableMap.of("infra1", "${context.var1}");
+    PipelineStageElement pipelineStageElement =
+        PipelineStageElement.builder().workflowVariables(workflowVariable).name("test step").type("ENV_STATE").build();
+
+    PipelineStage pipelineStage = PipelineStage.builder().pipelineStageElements(asList(pipelineStageElement)).build();
+    List<String> infraDefIds = new ArrayList<>();
+    PipelineServiceHelper.updateLoopingInfo(pipelineStage, workflow, infraDefIds);
+    assertThat(pipelineStage.isLooped()).isEqualTo(true);
+    assertThat(pipelineStage.getLoopedVarName()).isEqualTo("infra1");
+    assertThat(infraDefIds).isEmpty();
+  }
 }

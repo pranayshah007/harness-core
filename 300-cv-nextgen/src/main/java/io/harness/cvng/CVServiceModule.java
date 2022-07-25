@@ -252,13 +252,21 @@ import io.harness.cvng.dashboard.services.impl.ServiceDependencyGraphServiceImpl
 import io.harness.cvng.dashboard.services.impl.TimeSeriesDashboardServiceImpl;
 import io.harness.cvng.migration.impl.CVNGMigrationServiceImpl;
 import io.harness.cvng.migration.service.CVNGMigrationService;
+import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceNotificationRuleUpdatableEntity;
 import io.harness.cvng.notification.entities.NotificationRule.NotificationRuleUpdatableEntity;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLONotificationRuleUpdatableEntity;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
+import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
+import io.harness.cvng.notification.services.impl.BurnRateTemplateDataGenerator;
+import io.harness.cvng.notification.services.impl.ChangeImpactTemplateDataGenerator;
+import io.harness.cvng.notification.services.impl.ChangeObservedTemplateDataGenerator;
+import io.harness.cvng.notification.services.impl.HealthScoreTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.NotificationRuleServiceImpl;
+import io.harness.cvng.notification.services.impl.RemainingMinutesTemplateDataGenerator;
+import io.harness.cvng.notification.services.impl.RemainingPercentageTemplateDataGenerator;
 import io.harness.cvng.notification.transformer.EmailNotificationMethodTransformer;
 import io.harness.cvng.notification.transformer.MSTeamsNotificationMethodTransformer;
 import io.harness.cvng.notification.transformer.MonitoredServiceNotificationRuleConditionTransformer;
@@ -332,10 +340,10 @@ import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxDaoImpl;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
-import io.harness.packages.HarnessPackages;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.redis.RedisConfig;
+import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.CvNextGenRegistrars;
 import io.harness.template.TemplateResourceClientModule;
@@ -372,7 +380,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.reflections.Reflections;
 
 /**
  * Guice Module for initializing all beans.
@@ -861,6 +868,33 @@ public class CVServiceModule extends AbstractModule {
     channelTypeNotificationMethodTransformerMapBinder.addBinding(CVNGNotificationChannelType.MSTEAMS)
         .to(MSTeamsNotificationMethodTransformer.class)
         .in(Scopes.SINGLETON);
+
+    MapBinder<NotificationRuleConditionType, NotificationRuleTemplateDataGenerator>
+        notificationRuleConditionTypeTemplateDataGeneratorMapBinder = MapBinder.newMapBinder(
+            binder(), NotificationRuleConditionType.class, NotificationRuleTemplateDataGenerator.class);
+    notificationRuleConditionTypeTemplateDataGeneratorMapBinder
+        .addBinding(NotificationRuleConditionType.CHANGE_OBSERVED)
+        .to(ChangeObservedTemplateDataGenerator.class)
+        .in(Scopes.SINGLETON);
+    notificationRuleConditionTypeTemplateDataGeneratorMapBinder.addBinding(NotificationRuleConditionType.CHANGE_IMPACT)
+        .to(ChangeImpactTemplateDataGenerator.class)
+        .in(Scopes.SINGLETON);
+    notificationRuleConditionTypeTemplateDataGeneratorMapBinder.addBinding(NotificationRuleConditionType.HEALTH_SCORE)
+        .to(HealthScoreTemplateDataGenerator.class)
+        .in(Scopes.SINGLETON);
+    notificationRuleConditionTypeTemplateDataGeneratorMapBinder
+        .addBinding(NotificationRuleConditionType.ERROR_BUDGET_REMAINING_PERCENTAGE)
+        .to(RemainingPercentageTemplateDataGenerator.class)
+        .in(Scopes.SINGLETON);
+    notificationRuleConditionTypeTemplateDataGeneratorMapBinder
+        .addBinding(NotificationRuleConditionType.ERROR_BUDGET_REMAINING_MINUTES)
+        .to(RemainingMinutesTemplateDataGenerator.class)
+        .in(Scopes.SINGLETON);
+    notificationRuleConditionTypeTemplateDataGeneratorMapBinder
+        .addBinding(NotificationRuleConditionType.ERROR_BUDGET_BURN_RATE)
+        .to(BurnRateTemplateDataGenerator.class)
+        .in(Scopes.SINGLETON);
+
     ServiceHttpClientConfig serviceHttpClientConfig = this.verificationConfiguration.getAuditClientConfig();
     String secret = this.verificationConfiguration.getTemplateServiceSecret();
     String serviceId = CV_NEXT_GEN.getServiceId();
@@ -1003,11 +1037,9 @@ public class CVServiceModule extends AbstractModule {
   @Named("yaml-schema-subtypes")
   @Singleton
   public Map<Class<?>, Set<Class<?>>> yamlSchemaSubtypes() {
-    Reflections reflections = new Reflections(HarnessPackages.IO_HARNESS);
-
-    Set<Class<? extends StepSpecType>> subTypesOfStepSpecType = reflections.getSubTypesOf(StepSpecType.class);
+    Set<Class<? extends StepSpecType>> subTypesOfStepSpecType =
+        HarnessReflections.get().getSubTypesOf(StepSpecType.class);
     Set<Class<?>> set = new HashSet<>(subTypesOfStepSpecType);
-
     return ImmutableMap.of(StepSpecType.class, set);
   }
 

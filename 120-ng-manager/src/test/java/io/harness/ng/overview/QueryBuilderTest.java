@@ -125,7 +125,7 @@ public class QueryBuilderTest extends CategoryTest {
         Arrays.asList(ExecutionStatus.INTERVENTIONWAITING.name(), ExecutionStatus.APPROVALWAITING.name());
 
     String expectedQueryResult =
-        "select service_name,tag,pipeline_execution_summary_cd_id from service_infra_info where pipeline_execution_summary_cd_id in (abc) and service_name is not null;";
+        "select service_name,tag,env_id,env_name,env_type,artifact_image,pipeline_execution_summary_cd_id, infrastructureidentifier from service_infra_info where pipeline_execution_summary_cd_id in (abc) and service_name is not null;";
     String queryResult = new CDOverviewDashboardServiceImpl().queryBuilderServiceTag("abc");
     assertThat(queryResult).isEqualTo(expectedQueryResult);
   }

@@ -113,7 +113,7 @@ public class AzureWebAppRequestHandlerTest extends CategoryTest {
 
   private class Test1AzureWebAppRequest extends AbstractWebAppTaskRequest {
     Test1AzureWebAppRequest() {
-      super(null, null);
+      super("accountId", null, null);
     }
 
     @Override
@@ -129,7 +129,7 @@ public class AzureWebAppRequestHandlerTest extends CategoryTest {
 
   private class Test2AzureWebAppRequest extends AbstractWebAppTaskRequest {
     Test2AzureWebAppRequest() {
-      super(null, null);
+      super("accountId", null, null);
     }
 
     @Override

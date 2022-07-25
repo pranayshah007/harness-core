@@ -174,7 +174,8 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   List<InfrastructureMapping> getResolvedInfraMappings(Workflow workflow, WorkflowExecution workflowExecution);
 
-  List<InfrastructureDefinition> getResolvedInfraDefinitions(Workflow workflow, WorkflowExecution workflowExecution);
+  List<InfrastructureDefinition> getResolvedInfraDefinitions(
+      Workflow workflow, WorkflowExecution workflowExecution, String envId);
 
   List<ElementExecutionSummary> getElementsSummary(
       String appId, String executionUuid, String parentStateExecutionInstanceId);
@@ -348,4 +349,8 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   WorkflowExecution getLastSuccessfulWorkflowExecution(
       String accountId, String appId, String workflowId, String envId, String serviceId, String infraMappingId);
+
+  WorkflowExecutionInfo getWorkflowExecutionInfo(String appId, String workflowExecutionId);
+
+  WorkflowExecution getWorkflowExecutionWithFailureDetails(@NotNull String appId, @NotNull String workflowExecutionId);
 }

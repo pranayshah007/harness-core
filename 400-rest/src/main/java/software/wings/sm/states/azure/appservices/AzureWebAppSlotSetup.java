@@ -313,11 +313,15 @@ public class AzureWebAppSlotSetup extends AbstractAzureAppServiceState {
     AzureWebAppSlotSetupParametersBuilder slotSetupParametersBuilder = AzureWebAppSlotSetupParameters.builder();
     provideAppServiceSettings(context, slotSetupParametersBuilder);
 
+    boolean isBasicWorkflowOrchestrationType = isBasicWorkflowOrchestrationType(context);
     String appServiceName = context.renderExpression(appService);
     String deploySlotName =
         AzureResourceUtility.fixDeploymentSlotName(context.renderExpression(deploymentSlot), appServiceName);
-    String targetSlotName =
-        AzureResourceUtility.fixDeploymentSlotName(context.renderExpression(targetSlot), appServiceName);
+
+    String targetSlotName = null;
+    if (!isBasicWorkflowOrchestrationType) {
+      targetSlotName = AzureResourceUtility.fixDeploymentSlotName(context.renderExpression(targetSlot), appServiceName);
+    }
 
     return slotSetupParametersBuilder.accountId(azureAppServiceStateData.getApplication().getAccountId())
         .appId(azureAppServiceStateData.getApplication().getAppId())
@@ -330,6 +334,7 @@ public class AzureWebAppSlotSetup extends AbstractAzureAppServiceState {
         .webAppName(appServiceName)
         .timeoutIntervalInMin(getUserDefinedTimeOut(context))
         .startupCommand(fetchStartupCommand(context))
+        .isBasicDeployment(isBasicWorkflowOrchestrationType)
         .build();
   }
 
@@ -424,10 +429,6 @@ public class AzureWebAppSlotSetup extends AbstractAzureAppServiceState {
 
     if (deploymentSlot != null && deploymentSlot.equals(targetSlot)) {
       invalidFields.put("targetSlot", "Target slot cannot be the same as deployment slot");
-    }
-
-    if (deploymentSlot != null && deploymentSlot.equals(appService)) {
-      invalidFields.put("deploymentSlot", "Deployment slot cannot be production slot");
     }
 
     return invalidFields;

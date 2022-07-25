@@ -43,7 +43,7 @@ public class K8sCanaryStepNode extends CdAbstractStepNode {
   K8sCanaryStepInfo k8sCanaryStepInfo;
   @Override
   public String getType() {
-    return StepSpecTypeConstants.K8S_ROLLING_DEPLOY;
+    return StepSpecTypeConstants.K8S_CANARY_DEPLOY;
   }
 
   @Override

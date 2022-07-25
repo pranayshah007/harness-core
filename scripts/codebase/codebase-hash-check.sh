@@ -3,54 +3,37 @@
 # Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
-set -x
-
 bold=$(tput bold)
 normal=$(tput sgr0)
 
 errors=()
-ALL_MODULES=`ls -a`
-for MODULE in $@
-do
-      echo -e "${bold}\n##################################################\nChecking dependency hash for module: $MODULE\n${normal}"
+TEMP_DIR=`mktemp -d`
+touch $TEMP_DIR/codehash-out.text
+bazel run "//001-microservice-intfc-tool:delegate" | tee $TEMP_DIR/codehash-out.text
+CODEBASE_HASH_STRING=`cat $TEMP_DIR/codehash-out.text | grep "Codebase Hash:"`
 
-      if [[ ! $ALL_MODULES[*] =~ $MODULE ]]; then
-          echo "Module not found in the project root."
-          exit 1
-      fi
+HASH=${CODEBASE_HASH_STRING:14:64}
+echo "New hash: " $HASH
 
+touch $TEMP_DIR/codehash-out-develop.text
+git fetch origin develop
+git checkout develop
+DEVELOP_COMMIT=$(git merge-base $ghprbSourceBranch develop)
+git checkout "$DEVELOP_COMMIT"
+bazel run "//001-microservice-intfc-tool:delegate" | tee $TEMP_DIR/codehash-out-develop.text
+CODEBASE_HASH_STRING=`cat $TEMP_DIR/codehash-out-develop.text | grep "Codebase Hash:"`
+EXISTING_HASH=${CODEBASE_HASH_STRING:14:64}
+echo "Existing hash: " $EXISTING_HASH
 
-      TEMP_DIR=`mktemp -d`
-      touch $TEMP_DIR/KryoDeps-$MODULE.text
-      touch $TEMP_DIR/ProtoDeps-$MODULE.text
-
-      KRYO_DEPENDENCIES_FILE=$TEMP_DIR/KryoDeps-$MODULE.text
-      PROTO_DEPENDENCIES_FILE=$TEMP_DIR/ProtoDeps-$MODULE.text
-
-      echo "Kryo dependencies file: " $KRYO_DEPENDENCIES_FILE
-      echo "Proto dependencies file: " $PROTO_DEPENDENCIES_FILE
-
-      bazel query "deps(//$MODULE:module)" | grep -Ei "KryoRegistrar|KryoRegister" | rev | cut -f 1 -d "/" | rev | cut -f 1 -d "." > $KRYO_DEPENDENCIES_FILE
-      sh scripts/interface-hash/module-deps.sh $MODULE:module > $PROTO_DEPENDENCIES_FILE
-
-      CODEBASE_HASH_STRING=`bazel run "//001-microservice-intfc-tool:module" -- kryo-file=$KRYO_DEPENDENCIES_FILE proto-file=$PROTO_DEPENDENCIES_FILE ignore-json | grep "Codebase Hash:"`
-
-      HASH=${CODEBASE_HASH_STRING:14:64}
-      echo "New hash: " $HASH
-
-      EXISTING_HASH=$(cat $MODULE/module-dependency.hash)
-      echo "Existing hash: " $EXISTING_HASH
-
-      if [[ $HASH != $EXISTING_HASH ]];
-      then
-        message="$HASH in file $MODULE/module-dependency.hash"
-        echo -e "\n${bold}$MODULE check failed.\n${normal}"
-        errors+=("$message")
-      else
-        echo "There are no changes in dependencies for module: $MODULE"
-        echo -e "\n${bold}$MODULE check is successful${normal}"
-      fi
-done
+if [[ $HASH != $EXISTING_HASH ]];
+then
+  message="$HASH is not same sas what is generated from develop branch"
+  echo -e "\n${bold}260-delegate check failed.\n${normal}"
+  errors+=("$message")
+else
+  echo "There are no changes in dependencies for module: $MODULE"
+  echo -e "\n${bold}260-delegate check is successful${normal}"
+fi
 
 if [ ${#errors[@]} -eq 0 ]; then
    echo -e "\n${bold}All checks are successful.${normal}"
@@ -65,7 +48,7 @@ else
     source $DIR/diff-with-target-branch.sh
 
     echo -e "${bold}\n----------------------------------------------------------------------------\n"
-    echo "If the change is backward compatible replace the new hash:"
+    echo "If the change is backward compatible then retrigger the PR check after delegate team approval"
 
     for i in "${!errors[@]}"
     do

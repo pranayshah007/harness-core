@@ -83,7 +83,7 @@ public class StrategyStepTest extends NGCommonUtilitiesTestBase {
 
     verify(forLoopStrategyConfigService).fetchChildren(strategyConfig, "childNodeId");
 
-    strategyConfig.getForConfig().setMaxConcurrency(ParameterField.ofNull());
+    strategyConfig.getRepeat().setMaxConcurrency(ParameterField.ofNull());
 
     when(forLoopStrategyConfigService.fetchChildren(strategyConfig, "childNodeId")).thenReturn(new ArrayList<>());
 
@@ -170,8 +170,8 @@ public class StrategyStepTest extends NGCommonUtilitiesTestBase {
         ImmutableMap.<String, ResponseData>builder()
             .put(CHILD_ID, StepResponseNotifyData.builder().nodeUuid(CHILD_ID).status(Status.FAILED).build())
             .build();
-    StepResponse stepResponse =
-        strategyStep.handleChildrenResponse(ambiance, StrategyStepParameters.builder().build(), responseDataMap);
+    StepResponse stepResponse = strategyStep.handleChildrenResponseInternal(
+        ambiance, StrategyStepParameters.builder().build(), responseDataMap);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
   }
 }

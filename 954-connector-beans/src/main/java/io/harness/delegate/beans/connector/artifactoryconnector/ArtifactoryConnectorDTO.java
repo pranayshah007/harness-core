@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
@@ -44,6 +45,9 @@ public class ArtifactoryConnectorDTO extends ConnectorConfigDTO implements Deleg
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
+    if (auth == null) {
+      throw new InvalidRequestException("Auth Field is Null");
+    }
     if (auth.getAuthType() == ArtifactoryAuthType.ANONYMOUS) {
       return null;
     }

@@ -142,7 +142,6 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
       return GitFetchResponse.builder()
           .taskStatus(TaskStatus.SUCCESS)
           .filesFromMultipleRepo(filesFromMultipleRepo)
-
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .build();
     } catch (Exception exception) {

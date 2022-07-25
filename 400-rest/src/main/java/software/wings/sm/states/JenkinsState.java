@@ -106,6 +106,8 @@ public class JenkinsState extends State implements SweepingOutputStateMixin {
 
   private boolean unstableSuccess;
 
+  @Getter @Setter private List<String> delegateSelectors;
+
   private boolean injectEnvVars;
 
   private List<FilePathAssertionEntry> filePathsForAssertion = Lists.newArrayList();
@@ -356,6 +358,7 @@ public class JenkinsState extends State implements SweepingOutputStateMixin {
     return DelegateTask.builder()
         .accountId(((ExecutionContextImpl) context).fetchRequiredApp().getAccountId())
         .waitId(activityId)
+        .tags(delegateSelectors)
         .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, ((ExecutionContextImpl) context).fetchRequiredApp().getAppId())
         .description("Trigger Jenkins job")
         .data(TaskData.builder()

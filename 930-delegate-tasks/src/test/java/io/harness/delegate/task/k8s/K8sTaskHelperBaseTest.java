@@ -47,6 +47,7 @@ import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.BOGDAN;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SATYAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
@@ -65,6 +66,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -115,6 +117,7 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.k8s.K8sTestHelper;
@@ -124,9 +127,9 @@ import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionExplanation;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionHints;
-import io.harness.delegate.task.k8s.exception.KubernetesExceptionMessages;
+import io.harness.delegate.task.k8s.client.K8sApiClient;
+import io.harness.delegate.task.k8s.client.K8sCliClient;
+import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.encryption.SecretRefData;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.ExceptionUtils;
@@ -143,6 +146,9 @@ import io.harness.filesystem.FileIo;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.ProcessResponse;
+import io.harness.k8s.exception.KubernetesExceptionExplanation;
+import io.harness.k8s.exception.KubernetesExceptionHints;
+import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.k8s.kubectl.AbstractExecutable;
 import io.harness.k8s.kubectl.ApplyCommand;
 import io.harness.k8s.kubectl.DeleteCommand;
@@ -296,6 +302,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Mock private KubernetesHelperService kubernetesHelperService;
   @Mock private ScmFetchFilesHelperNG scmFetchFilesHelper;
   @Mock private NGErrorHelper ngErrorHelper;
+  @Mock private K8sApiClient k8sApiClient;
+  @Mock private K8sCliClient k8sCliClient;
 
   @Inject @InjectMocks private K8sTaskHelperBase k8sTaskHelperBase;
   @Spy @InjectMocks private K8sTaskHelperBase spyK8sTaskHelperBase;
@@ -2729,6 +2737,28 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testFetchManifestFilesAndWriteToDirectoryLocalStore() throws Exception {
+    K8sTaskHelperBase spyHelperBase = spy(k8sTaskHelperBase);
+    LocalFileStoreDelegateConfig localFileStoreDelegateConfig =
+        LocalFileStoreDelegateConfig.builder()
+            .filePaths(asList("path/to/k8s/template/deploy.yaml"))
+            .manifestIdentifier("identifier")
+            .manifestType("K8sManifest")
+            .manifestFiles(getManifestFiles())
+            .build();
+
+    K8sManifestDelegateConfig manifestDelegateConfig =
+        K8sManifestDelegateConfig.builder().storeDelegateConfig(localFileStoreDelegateConfig).build();
+
+    assertThatCode(()
+                       -> spyHelperBase.fetchManifestFilesAndWriteToDirectory(
+                           manifestDelegateConfig, "manifest", executionLogCallback, 9000L, "accountId"))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testFetchManifestFilesAndWriteToDirectoryOptimizedFileFetch() throws Exception {
@@ -3440,5 +3470,21 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         .isInstanceOf(ExplanationException.class)
         .getCause()
         .hasMessageContaining("KUBERNETES_YAML_ERROR");
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testKubernetesClientInstance() {
+    assertThat(k8sTaskHelperBase.getKubernetesClient(true)).isInstanceOf(K8sApiClient.class);
+    assertThat(k8sTaskHelperBase.getKubernetesClient(false)).isInstanceOf(K8sCliClient.class);
+  }
+
+  private List<ManifestFiles> getManifestFiles() {
+    return asList(ManifestFiles.builder()
+                      .fileName("chart.yaml")
+                      .filePath("path/to/helm/chart/chart.yaml")
+                      .fileContent("Test content")
+                      .build());
   }
 }

@@ -8,8 +8,9 @@
 package io.harness.cdng.azure.webapp;
 
 import static io.harness.azure.model.AzureConstants.SLOT_SWAP;
-import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.AZURE_WEBAPP_SWAP_SLOTS_OUTCOME;
+import static io.harness.cdng.azure.webapp.beans.AzureWebAppSwapSlotsDataOutput.OUTPUT_NAME;
 import static io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType.SWAP_SLOTS;
+import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VLICA;
 
 import static java.util.Collections.singletonList;
@@ -23,22 +24,18 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.AzureEnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
-import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
-import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
-import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSwapSlotsRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSwapSlotsResponseNG;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppTaskResponse;
 import io.harness.logging.UnitProgress;
-import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -58,7 +55,6 @@ import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
@@ -72,35 +68,26 @@ public class AzureWebAppSwapSlotStepTest extends CDNGTestBase {
 
   private AzureWebAppSwapSlotStepParameters parameters =
       AzureWebAppSwapSlotStepParameters.infoBuilder()
+          .targetSlot(ParameterField.createValueField("dummy-production"))
           .delegateSelectors(ParameterField.createValueField(List.of(new TaskSelectorYaml("selector-1"))))
           .build();
   private final StepElementParameters stepElementParameters = StepElementParameters.builder().spec(parameters).build();
 
   private final StepInputPackage stepInputPackage = StepInputPackage.builder().build();
   private final Ambiance ambiance = getAmbiance();
-  private AzureWebAppInfrastructureOutcome azureInfraOutcome = AzureWebAppInfrastructureOutcome.builder()
-                                                                   .connectorRef("connectorRef")
-                                                                   .webApp("webAppName")
-                                                                   .deploymentSlot("deploymentSlotName")
-                                                                   .targetSlot("dummy-production")
-                                                                   .build();
-
-  AzureConnectorDTO azureConnectorDTO = AzureConnectorDTO.builder()
-                                            .azureEnvironmentType(AzureEnvironmentType.AZURE)
-                                            .credential(AzureCredentialDTO.builder().build())
-                                            .build();
-
-  @Captor ArgumentCaptor<List<EntityDetail>> captor;
 
   @Test
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
   public void testSwapSlotObtainTaskAfterRbac() {
-    doReturn(azureInfraOutcome).when(cdStepHelper).getInfrastructureOutcome(any());
-    doReturn(
-        AzureWebAppInfraDelegateConfig.builder().appName("webAppName").deploymentSlot("deploymentSlotName").build())
+    String webAppName = "webAppName";
+    String deploymentSlotName = "deploymentSlotName";
+    doReturn(AzureWebAppInfraDelegateConfig.builder().appName(webAppName).deploymentSlot(deploymentSlotName).build())
         .when(stepHelper)
-        .getInfraDelegateConfig(ambiance, azureInfraOutcome);
+        .getInfraDelegateConfig(eq(ambiance), any(), any());
+    doReturn(AzureAppServicePreDeploymentData.builder().build())
+        .when(stepHelper)
+        .getPreDeploymentData(eq(ambiance), any());
 
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
     doReturn(TaskRequest.newBuilder().build())
@@ -121,15 +108,27 @@ public class AzureWebAppSwapSlotStepTest extends CDNGTestBase {
 
     assertThat(requestParameters.getRequestType()).isEqualTo(SWAP_SLOTS);
     assertThat(requestParameters.getTargetSlot()).isEqualTo("dummy-production");
-    assertThat(requestParameters.getInfrastructure().getDeploymentSlot()).isEqualTo("deploymentSlotName");
-    assertThat(requestParameters.getInfrastructure().getAppName()).isEqualTo("webAppName");
+    assertThat(requestParameters.getInfrastructure().getDeploymentSlot()).isEqualTo(deploymentSlotName);
+    assertThat(requestParameters.getInfrastructure().getAppName()).isEqualTo(webAppName);
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testObtainTaskAfterRbacNoPreDeploymentDataFound() {
+    doReturn(null).when(stepHelper).getPreDeploymentData(eq(ambiance), any());
+
+    TaskRequest taskRequest =
+        azureWebAppSwapSlotStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
+
+    assertThat(taskRequest.getSkipTaskRequest().getMessage())
+        .isEqualTo("No successful Slot deployment step found, swap slots can't be done");
   }
 
   @Test
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
   public void testHandleResponseWithSecurityContext() throws Exception {
-    doReturn(azureInfraOutcome).when(cdStepHelper).getInfrastructureOutcome(any());
     List<UnitProgress> unitProgresses = singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
 
@@ -144,8 +143,7 @@ public class AzureWebAppSwapSlotStepTest extends CDNGTestBase {
 
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
-    verify(executionSweepingOutputService, times(1))
-        .consume(eq(ambiance), eq(AZURE_WEBAPP_SWAP_SLOTS_OUTCOME), any(), any());
+    verify(executionSweepingOutputService, times(1)).consume(eq(ambiance), eq(OUTPUT_NAME), any(), any());
   }
 
   @Test

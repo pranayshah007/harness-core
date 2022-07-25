@@ -17,7 +17,7 @@ import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.StepParameterCommonUtils;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
-import io.harness.plancreator.strategy.StageStrategyUtils;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
@@ -75,12 +75,16 @@ public abstract class GenericStagePlanCreator extends ChildrenPlanCreator<StageE
   @Override
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, StageElementConfig stageElementConfig, List<String> childrenNodeIds) {
+    stageElementConfig.setIdentifier(
+        StrategyUtils.getIdentifierWithExpression(ctx, stageElementConfig.getIdentifier()));
+    stageElementConfig.setName(StrategyUtils.getIdentifierWithExpression(ctx, stageElementConfig.getName()));
+
     StageElementParametersBuilder stageParameters = StepParameterCommonUtils.getStageParameters(stageElementConfig);
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageElementConfig));
     return PlanNode.builder()
-        .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stageElementConfig.getUuid()))
+        .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stageElementConfig.getUuid()))
         .name(stageElementConfig.getName())
         .identifier(stageElementConfig.getIdentifier())
         .group(StepOutcomeGroup.STAGE.name())
@@ -92,7 +96,7 @@ public abstract class GenericStagePlanCreator extends ChildrenPlanCreator<StageE
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                 .build())
-        .adviserObtainments(StageStrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, true))
+        .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, true))
         .build();
   }
 
@@ -107,17 +111,17 @@ public abstract class GenericStagePlanCreator extends ChildrenPlanCreator<StageE
    */
   protected void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, StageElementConfig field,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, Map<String, ByteString> metadataMap) {
-    StageStrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getIdentifier(),
+    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getIdentifier(),
         field.getName(), planCreationResponseMap, metadataMap,
-        StageStrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false));
+        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false));
   }
 
   @Override
   public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext context, StageElementConfig config) {
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     YamlField stageYamlField = context.getCurrentField();
-    if (StageStrategyUtils.isWrappedUnderStrategy(context.getCurrentField())) {
-      stageYamlFieldMap = StageStrategyUtils.modifyStageLayoutNodeGraph(stageYamlField);
+    if (StrategyUtils.isWrappedUnderStrategy(context.getCurrentField())) {
+      stageYamlFieldMap = StrategyUtils.modifyStageLayoutNodeGraph(stageYamlField);
     }
     return GraphLayoutResponse.builder().layoutNodes(stageYamlFieldMap).build();
   }

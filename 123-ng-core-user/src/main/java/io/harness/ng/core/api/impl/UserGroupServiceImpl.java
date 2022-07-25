@@ -42,6 +42,7 @@ import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.eraro.ErrorCode;
@@ -218,6 +219,32 @@ public class UserGroupServiceImpl implements UserGroupService {
     userGroup.setId(savedUserGroup.getId());
     userGroup.setVersion(savedUserGroup.getVersion());
     return updateInternal(userGroup, toDTO(savedUserGroup));
+  }
+
+  @Override
+  public UserGroup updateWithCheckThatSCIMFieldsAreNotModified(UserGroupDTO userGroupDTO) {
+    UserGroup savedUserGroup = getOrThrow(userGroupDTO.getAccountIdentifier(), userGroupDTO.getOrgIdentifier(),
+        userGroupDTO.getProjectIdentifier(), userGroupDTO.getIdentifier());
+    checkIfSCIMFieldsAreNotUpdatedInExternallyManagedGroup(userGroupDTO, savedUserGroup);
+    return update(userGroupDTO);
+  }
+
+  private void checkIfSCIMFieldsAreNotUpdatedInExternallyManagedGroup(
+      UserGroupDTO toBeSavedUserGroup, UserGroup savedUserGroup) {
+    if (!isExternallyManaged(toBeSavedUserGroup.getAccountIdentifier(), toBeSavedUserGroup.getOrgIdentifier(),
+            toBeSavedUserGroup.getProjectIdentifier(), toBeSavedUserGroup.getIdentifier())) {
+      return;
+    }
+    List<String> newUsersToBeAdded = toBeSavedUserGroup.getUsers();
+    List<String> savedUsers = savedUserGroup.getUsers();
+    if (!CollectionUtils.isEqualCollection(newUsersToBeAdded, savedUsers)) {
+      throw new InvalidRequestException(
+          "Update is not supported for externally managed group " + toBeSavedUserGroup.getIdentifier());
+    }
+
+    if (!savedUserGroup.getName().equals(toBeSavedUserGroup.getName())) {
+      throw new InvalidRequestException("The name cannot be updated for externally managed group");
+    }
   }
 
   @Override

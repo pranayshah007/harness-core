@@ -106,11 +106,11 @@ def create_dataset_and_tables(jsonData):
             print_("%s table does not exists, creating table..." % table_ref)
             createTable(client, table_ref)
         else:
-            # Remove these after some time.
-            if table_ref == aws_cur_table_ref:
-                alter_awscur_table(jsonData)
-            elif table_ref == unified_table_ref:
-                alter_unified_table(jsonData)
+            # Enable these only when needed.
+            # if table_ref == aws_cur_table_ref:
+            #     alter_awscur_table(jsonData)
+            # elif table_ref == unified_table_ref:
+            #     alter_unified_table(jsonData)
             print_("%s table exists" % table_ref)
 
     return True
@@ -407,7 +407,7 @@ def ingest_data_to_preagg(jsonData):
 
     select_columns = """TIMESTAMP_TRUNC(usagestartdate, DAY) as startTime, min(blendedrate) AS awsBlendedRate, sum(blendedcost) AS awsBlendedCost,
                     min(unblendedrate) AS awsUnblendedRate, sum(unblendedcost) AS awsUnblendedCost, sum(unblendedcost) AS cost,
-                    productname AS awsServicecode, region, availabilityzone AS awsAvailabilityzone, usageaccountid AS awsUsageaccountid,
+                    servicename AS awsServicecode, region, availabilityzone AS awsAvailabilityzone, usageaccountid AS awsUsageaccountid,
                     usagetype AS awsUsagetype, "AWS" AS cloudProvider"""
 
     group_by = """awsServicecode, region, awsAvailabilityzone, awsUsageaccountid, awsUsagetype, startTime"""
@@ -466,7 +466,7 @@ def ingest_data_to_unified(jsonData):
 
     select_columns = """productname AS product, TIMESTAMP_TRUNC(usagestartdate, DAY) as startTime, 
                     blendedrate AS awsBlendedRate, blendedcost AS awsBlendedCost, unblendedrate AS awsUnblendedRate, 
-                    unblendedcost AS awsUnblendedCost, unblendedcost AS cost, productname AS awsServicecode, region, 
+                    unblendedcost AS awsUnblendedCost, unblendedcost AS cost, servicename AS awsServicecode, region, 
                     availabilityzone AS awsAvailabilityzone, usageaccountid AS awsUsageaccountid, 
                     "AWS" AS cloudProvider, billingentity as awsBillingEntity, tags AS labels"""
 
@@ -531,7 +531,7 @@ def ingest_data_to_costagg(jsonData):
     job_config = bigquery.QueryJobConfig(
         priority=bigquery.QueryPriority.BATCH
     )
-    run_batch_query(client, query, job_config, timeout=120)
+    run_batch_query(client, query, job_config, timeout=180)
 
 
 def alter_unified_table(jsonData):

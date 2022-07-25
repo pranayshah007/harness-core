@@ -33,6 +33,10 @@ public class AdoCreateFileScmApiErrorHandler implements ScmApiErrorHandler {
       "The requested file<FILEPATH> couldn't be created in Azure repo<REPO> as the given repo is not found.";
   public static final String CREATE_FILE_RESOURCE_NOT_FOUND_ERROR_HINT =
       "Please check if Azure repo<REPO> exists or not.";
+  public static final String CREATE_FILE_FORBIDDEN_REQUEST_EXPLANATION =
+      "The requested branch<BRANCH> does not have push permission.";
+  public static final String CREATE_FILE_FORBIDDEN_REQUEST_HINT =
+      "Please use a pull request to create file<FILEPATH> in this branch<BRANCH>.";
 
   @Override
   public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
@@ -46,6 +50,17 @@ public class AdoCreateFileScmApiErrorHandler implements ScmApiErrorHandler {
         throw NestedExceptionUtils.hintWithExplanationException(
             ErrorMessageFormatter.formatMessage(CREATE_FILE_BAD_REQUEST_ERROR_HINT, errorMetadata),
             ErrorMessageFormatter.formatMessage(CREATE_FILE_BAD_REQUEST_ERROR_EXPLANATION, errorMetadata),
+            new ScmBadRequestException(errorMessage));
+      case 401:
+        throw NestedExceptionUtils.hintWithExplanationException(
+            ErrorMessageFormatter.formatMessage(ScmErrorHints.MISSING_PERMISSION_CREDS_HINTS, errorMetadata),
+            ErrorMessageFormatter.formatMessage(
+                ScmErrorExplanations.MISSING_PERMISSION_CREDS_EXPLANATION, errorMetadata),
+            new ScmBadRequestException(errorMessage));
+      case 403:
+        throw NestedExceptionUtils.hintWithExplanationException(
+            ErrorMessageFormatter.formatMessage(CREATE_FILE_FORBIDDEN_REQUEST_HINT, errorMetadata),
+            ErrorMessageFormatter.formatMessage(CREATE_FILE_FORBIDDEN_REQUEST_EXPLANATION, errorMetadata),
             new ScmBadRequestException(errorMessage));
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(

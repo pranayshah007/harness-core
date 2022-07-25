@@ -9,14 +9,18 @@ package io.harness.cdng.azure.webapp;
 
 import static io.harness.azure.model.AzureConstants.SLOT_SWAP;
 import static io.harness.azure.model.AzureConstants.TARGET_SLOT_NAME_BLANK_ERROR_MSG;
-import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.AZURE_WEBAPP_SWAP_SLOTS_OUTCOME;
-
-import static org.apache.commons.lang3.StringUtils.isBlank;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.cdng.CDStepHelper;
-import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
+import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
+import io.harness.cdng.azure.webapp.beans.AzureWebAppSwapSlotsDataOutput;
+import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
+import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress;
+import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSwapSlotsRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppTaskResponse;
 import io.harness.exception.ExceptionUtils;
@@ -26,9 +30,11 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -60,22 +66,38 @@ public class AzureWebAppSwapSlotStep extends TaskExecutableWithRollbackAndRbac<A
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    AzureWebAppInfrastructureOutcome azureWebAppInfraOutcome =
-        (AzureWebAppInfrastructureOutcome) cdStepHelper.getInfrastructureOutcome(ambiance);
+    AzureAppServicePreDeploymentData azureAppServicePreDeploymentData = stepHelper.getPreDeploymentData(ambiance,
+        ((AzureWebAppSwapSlotStepParameters) stepParameters.getSpec()).slotDeploymentStepFqn + "."
+            + AzureWebAppPreDeploymentDataOutput.OUTPUT_NAME);
+    if (azureAppServicePreDeploymentData == null) {
+      return TaskRequest.newBuilder()
+          .setSkipTaskRequest(SkipTaskRequest.newBuilder()
+                                  .setMessage("No successful Slot deployment step found, swap slots can't be done")
+                                  .build())
+          .build();
+    } else {
+      AzureWebAppInfraDelegateConfig azureWebAppInfraDelegateConfig = stepHelper.getInfraDelegateConfig(
+          ambiance, azureAppServicePreDeploymentData.getAppName(), azureAppServicePreDeploymentData.getSlotName());
+      AzureWebAppSwapSlotStepParameters azureWebAppSwapSlotStepParameters =
+          (AzureWebAppSwapSlotStepParameters) stepParameters.getSpec();
 
-    if (isBlank(azureWebAppInfraOutcome.getTargetSlot())) {
-      throw new InvalidArgumentsException(TARGET_SLOT_NAME_BLANK_ERROR_MSG);
+      if (isEmpty(getParameterFieldValue(azureWebAppSwapSlotStepParameters.getTargetSlot()))) {
+        throw new InvalidArgumentsException(TARGET_SLOT_NAME_BLANK_ERROR_MSG);
+      }
+
+      AzureWebAppSwapSlotsRequest azureWebAppSwapSlotsRequest =
+          AzureWebAppSwapSlotsRequest.builder()
+              .accountId(AmbianceUtils.getAccountId(ambiance))
+              .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+              .infrastructure(azureWebAppInfraDelegateConfig)
+              .targetSlot(AzureResourceUtility.fixDeploymentSlotName(
+                  getParameterFieldValue(azureWebAppSwapSlotStepParameters.getTargetSlot()),
+                  azureAppServicePreDeploymentData.getAppName()))
+              .build();
+
+      return stepHelper.prepareTaskRequest(stepParameters, ambiance, azureWebAppSwapSlotsRequest,
+          TaskType.AZURE_WEB_APP_TASK_NG, Collections.singletonList(SLOT_SWAP));
     }
-
-    AzureWebAppSwapSlotsRequest azureWebAppSwapSlotsRequest =
-        AzureWebAppSwapSlotsRequest.builder()
-            .targetSlot(azureWebAppInfraOutcome.getTargetSlot())
-            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-            .infrastructure(stepHelper.getInfraDelegateConfig(ambiance, azureWebAppInfraOutcome))
-            .build();
-
-    return stepHelper.prepareTaskRequest(stepParameters, ambiance, azureWebAppSwapSlotsRequest,
-        TaskType.AZURE_WEB_APP_TASK_NG, Collections.singletonList(SLOT_SWAP));
   }
 
   @Override
@@ -89,9 +111,15 @@ public class AzureWebAppSwapSlotStep extends TaskExecutableWithRollbackAndRbac<A
       log.error("Error while processing Azure WebApp Swap Slot response: {}", ExceptionUtils.getMessage(ex), ex);
       throw ex;
     }
+    AzureWebAppSwapSlotStepParameters azureWebAppSwapSlotStepParameters =
+        (AzureWebAppSwapSlotStepParameters) stepParameters.getSpec();
+    executionSweepingOutputService.consume(ambiance, AzureWebAppSwapSlotsDataOutput.OUTPUT_NAME,
+        AzureWebAppSwapSlotsDataOutput.builder()
+            .deploymentProgressMarker(AppServiceDeploymentProgress.SWAP_SLOT.name())
+            .targetSlot(getParameterFieldValue(azureWebAppSwapSlotStepParameters.getTargetSlot()))
+            .build(),
+        StepCategory.STEP.name());
     builder.unitProgressList(response.getCommandUnitsProgress().getUnitProgresses());
-    executionSweepingOutputService.consume(ambiance, AZURE_WEBAPP_SWAP_SLOTS_OUTCOME,
-        AzureWebAppSwapSlotsOutcome.builder().build(), StepCategory.STEP.name());
     builder.status(Status.SUCCEEDED);
     return builder.build();
   }

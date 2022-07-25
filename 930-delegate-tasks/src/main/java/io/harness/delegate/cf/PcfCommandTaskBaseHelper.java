@@ -268,7 +268,8 @@ public class PcfCommandTaskBaseHelper {
 
     cfServiceDataUpdated.add(cfServiceData);
 
-    if (updateCount >= applicationDetail.getInstances()) {
+    // We want to downsize the app if the update count is equal to zero(in case web process is zero)
+    if (updateCount >= applicationDetail.getInstances() && updateCount != 0) {
       executionLogCallback.saveExecutionLog("# No Downsize was required.\n");
       return;
     }

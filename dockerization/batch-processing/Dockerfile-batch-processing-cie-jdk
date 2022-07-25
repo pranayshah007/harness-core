@@ -5,6 +5,9 @@
 
 FROM us.gcr.io/platform-205701/ubi/ubi-java:latest as base
 USER root
+
+RUN microdnf install yum
+
 RUN yum install -y hostname tar gzip python3
 
 # Add the capsule JAR and config.yml

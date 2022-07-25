@@ -383,9 +383,16 @@ public class DelegateServiceTest extends WingsBaseTest {
 
     when(broadcasterFactory.lookup(anyString(), anyBoolean())).thenReturn(broadcaster);
     when(versionInfoManager.getVersionInfo()).thenReturn(VersionInfo.builder().version(VERSION).build());
+    when(delegateVersionService.getWatcherJarVersions(ACCOUNT_ID)).thenReturn(VERSION);
 
     when(delegateNgTokenService.getDelegateTokenValue(ACCOUNT_ID, TOKEN_NAME)).thenReturn("ACCOUNT_KEY");
     when(delegateTokenService.getTokenValue(ACCOUNT_ID, TOKEN_NAME)).thenReturn("ACCOUNT_KEY");
+    when(delegateNgTokenService.getDelegateToken(ACCOUNT_ID, TOKEN_NAME))
+        .thenReturn(DelegateTokenDetails.builder()
+                        .name(TOKEN_NAME)
+                        .accountId(ACCOUNT_ID)
+                        .status(DelegateTokenStatus.ACTIVE)
+                        .build());
 
     FieldUtils.writeField(delegateService, "delegateProfileSubject", delegateProfileSubject, true);
     FieldUtils.writeField(delegateService, "subject", subject, true);
@@ -2228,7 +2235,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     String accountId = generateUuid();
     DelegateSetupDetails setupDetails = DelegateSetupDetails.builder().build();
 
-    assertThatThrownBy(() -> delegateService.validateKubernetesYaml(accountId, setupDetails))
+    assertThatThrownBy(() -> delegateService.validateKubernetesSetupDetails(accountId, setupDetails))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Delegate Name must be provided.");
   }
@@ -2241,7 +2248,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     DelegateSetupDetails setupDetails = DelegateSetupDetails.builder().name(DELEGATE_GROUP_NAME).build();
     persistence.save(DelegateGroup.builder().accountId(accountId).name(DELEGATE_GROUP_NAME).ng(true).build());
 
-    assertThatThrownBy(() -> delegateService.validateKubernetesYaml(accountId, setupDetails))
+    assertThatThrownBy(() -> delegateService.validateKubernetesSetupDetails(accountId, setupDetails))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(UNIQUE_DELEGATE_NAME_ERROR_MESSAGE);
   }
@@ -2255,7 +2262,7 @@ public class DelegateServiceTest extends WingsBaseTest {
         DelegateSetupDetails.builder().delegateConfigurationId("delConfigId").name("name").build();
     when(delegateProfileService.get(accountId, "delConfigId")).thenReturn(DelegateProfile.builder().build());
 
-    assertThatThrownBy(() -> delegateService.validateKubernetesYaml(accountId, setupDetails))
+    assertThatThrownBy(() -> delegateService.validateKubernetesSetupDetails(accountId, setupDetails))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Delegate Size must be provided.");
   }
@@ -2275,7 +2282,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                                             .build();
     when(delegateProfileService.get(accountId, "delConfigId")).thenReturn(DelegateProfile.builder().build());
 
-    assertThatThrownBy(() -> delegateService.validateKubernetesYaml(accountId, setupDetails))
+    assertThatThrownBy(() -> delegateService.validateKubernetesSetupDetails(accountId, setupDetails))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("K8s permission type must be provided.");
 
@@ -2288,7 +2295,7 @@ public class DelegateServiceTest extends WingsBaseTest {
                                              .k8sConfigDetails(K8sConfigDetails.builder().build())
                                              .build();
 
-    assertThatThrownBy(() -> delegateService.validateKubernetesYaml(accountId, setupDetails2))
+    assertThatThrownBy(() -> delegateService.validateKubernetesSetupDetails(accountId, setupDetails2))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("K8s permission type must be provided.");
 
@@ -2302,7 +2309,7 @@ public class DelegateServiceTest extends WingsBaseTest {
             .k8sConfigDetails(K8sConfigDetails.builder().k8sPermissionType(K8sPermissionType.NAMESPACE_ADMIN).build())
             .build();
 
-    assertThatThrownBy(() -> delegateService.validateKubernetesYaml(accountId, setupDetails3))
+    assertThatThrownBy(() -> delegateService.validateKubernetesSetupDetails(accountId, setupDetails3))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("K8s namespace must be provided for this type of permission.");
   }
@@ -3571,19 +3578,6 @@ public class DelegateServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = BOJAN)
   @Category(UnitTests.class)
-  public void testDownloadNgDockerDelegateShouldThrowException_wrongType() {
-    String accountId = generateUuid();
-    DelegateSetupDetails setupDetails = DelegateSetupDetails.builder().delegateType(DelegateType.KUBERNETES).build();
-    assertThatThrownBy(()
-                           -> delegateService.downloadNgDocker(
-                               "https://localhost:9090", "https://localhost:7070", accountId, setupDetails))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Delegate type must be DOCKER.");
-  }
-
-  @Test
-  @Owner(developers = BOJAN)
-  @Category(UnitTests.class)
   public void testDownloadNgDockerDelegateShouldThrowException_missingDetails() {
     String accountId = generateUuid();
     assertThatThrownBy(
@@ -3648,18 +3642,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     DelegateSetupDetails setupDetails =
         DelegateSetupDetails.builder().name("test").delegateType(DelegateType.DOCKER).tokenName(TOKEN_NAME).build();
 
-    assertDoesNotThrow(() -> delegateService.validateDelegateSetupDetails(accountId, setupDetails, DOCKER));
-  }
-
-  @Test
-  @Owner(developers = BOJAN)
-  @Category(UnitTests.class)
-  public void testValidateDockerDelegateDetailsShouldThrowException_wrongType() {
-    String accountId = generateUuid();
-    DelegateSetupDetails setupDetails = DelegateSetupDetails.builder().delegateType(DelegateType.KUBERNETES).build();
-    assertThatThrownBy(() -> delegateService.validateDelegateSetupDetails(accountId, setupDetails, DOCKER))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Delegate type must be DOCKER.");
+    assertDoesNotThrow(() -> delegateService.validateDockerDelegateSetupDetails(accountId, setupDetails, DOCKER));
   }
 
   @Test
@@ -3667,7 +3650,7 @@ public class DelegateServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testValidateDockerDelegateDetailsShouldThrowException_missingDetails() {
     String accountId = generateUuid();
-    assertThatThrownBy(() -> delegateService.validateDelegateSetupDetails(accountId, null, DOCKER))
+    assertThatThrownBy(() -> delegateService.validateDockerDelegateSetupDetails(accountId, null, DOCKER))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Delegate Setup Details must be provided.");
   }
@@ -3678,7 +3661,7 @@ public class DelegateServiceTest extends WingsBaseTest {
   public void testValidateDockerDelegateDetailsShouldThrowException_missingName() {
     String accountId = generateUuid();
     DelegateSetupDetails setupDetails = DelegateSetupDetails.builder().delegateType(DelegateType.DOCKER).build();
-    assertThatThrownBy(() -> delegateService.validateDelegateSetupDetails(accountId, setupDetails, DOCKER))
+    assertThatThrownBy(() -> delegateService.validateDockerDelegateSetupDetails(accountId, setupDetails, DOCKER))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Delegate Name must be provided.");
   }
@@ -3692,7 +3675,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     persistence.save(Delegate.builder().accountId(ACCOUNT_ID).ng(true).delegateName(UNIQUE_DELEGATE_NAME).build());
     DelegateSetupDetails setupDetails =
         DelegateSetupDetails.builder().name(UNIQUE_DELEGATE_NAME).delegateType(DelegateType.DOCKER).build();
-    assertThatThrownBy(() -> delegateService.validateDelegateSetupDetails(ACCOUNT_ID, setupDetails, DOCKER))
+    assertThatThrownBy(() -> delegateService.validateDockerDelegateSetupDetails(ACCOUNT_ID, setupDetails, DOCKER))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(UNIQUE_DELEGATE_NAME_ERROR_MESSAGE);
   }
@@ -3918,7 +3901,7 @@ public class DelegateServiceTest extends WingsBaseTest {
             .k8sConfigDetails(K8sConfigDetails.builder().k8sPermissionType(K8sPermissionType.CLUSTER_VIEWER).build())
             .build();
 
-    assertThatThrownBy(() -> delegateService.validateKubernetesYaml(accountId, setupDetails))
+    assertThatThrownBy(() -> delegateService.validateKubernetesSetupDetails(accountId, setupDetails))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(DELEGATE_TOKEN_ERROR_MESSAGE);
   }
@@ -3930,7 +3913,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     String accountId = generateUuid();
     DelegateSetupDetails setupDetails =
         DelegateSetupDetails.builder().name(DELEGATE_GROUP_NAME).delegateType(DelegateType.DOCKER).build();
-    assertThatThrownBy(() -> delegateService.validateDelegateSetupDetails(accountId, setupDetails, DOCKER))
+    assertThatThrownBy(() -> delegateService.validateDockerDelegateSetupDetails(accountId, setupDetails, DOCKER))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(DELEGATE_TOKEN_ERROR_MESSAGE);
   }
@@ -3957,7 +3940,7 @@ public class DelegateServiceTest extends WingsBaseTest {
 
     assertThat(delegateFromDB).isNotNull();
     assertThat(delegateFromDB.getDelegateId()).isEqualTo("delegateId1");
-    assertThat(delegateFromDB.getTags()).containsExactly("tag123", "tag456");
+    assertThat(delegateFromDB.getTags()).containsExactly("tag123", "tag456", "kube-0", "delegate1");
   }
 
   @Test

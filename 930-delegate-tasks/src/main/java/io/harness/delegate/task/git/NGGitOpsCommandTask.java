@@ -29,6 +29,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse;
@@ -147,7 +148,9 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
           responseData = (GitApiTaskResponse) githubApiClient.mergePR(gitOpsTaskParams.getGitApiTaskParams());
           break;
         default:
-          logCallback.saveExecutionLog("Connector not supported", INFO, CommandExecutionStatus.FAILURE);
+          String errorMsg = "Failed to execute MergePR step. Connector not supported";
+          logCallback.saveExecutionLog(errorMsg, INFO, CommandExecutionStatus.FAILURE);
+          throw new InvalidRequestException(errorMsg);
       }
 
       if (responseData.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
@@ -283,6 +286,9 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
             + "/" + githubConnectorDTO.getGitRepositoryDetails().getOrg() + "/"
             + githubConnectorDTO.getGitRepositoryDetails().getName() + "/pull"
             + "/" + prNumber;
+      case AZURE_REPO:
+        AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) scmConnector;
+        return azureRepoConnectorDTO.getUrl() + "/pullrequest/" + prNumber;
       default:
         return "";
     }

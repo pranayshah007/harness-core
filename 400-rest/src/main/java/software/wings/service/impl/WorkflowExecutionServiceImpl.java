@@ -924,6 +924,11 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     if (workflowExecution == null || workflowExecution.getPipelineExecution() == null) {
       return;
     }
+
+    if (workflowExecution.getPipelineExecution().getPipelineStageExecutions() == null) {
+      workflowExecution.getPipelineExecution().setPipelineStageExecutions(new ArrayList<>());
+    }
+
     if (ExecutionStatus.isFinalStatus(workflowExecution.getPipelineExecution().getStatus())
         && workflowExecution.getPipelineExecution()
                .getPipelineStageExecutions()
@@ -1124,6 +1129,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             stageExecution.setTriggeredBy(workflowExecution2.getTriggeredBy());
           }
           stageExecution.setMessage(envStateExecutionDataLooped.getErrorMsg());
+        }
+        if (stateExecutionDataLooped instanceof ForkStateExecutionData) {
+          stageExecution.setMessage(stateExecutionDataLooped.getErrorMsg());
         }
         appendSkipCondition(pipelineStageElement, stageExecution, stateExecutionInstanceId);
         stageExecutionDataList.add(stageExecution);
@@ -4652,9 +4660,12 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     Workflow workflow = workflowService.readWorkflow(workflowExecution.getAppId(), workflowExecution.getWorkflowId());
     if (workflow != null && workflow.getOrchestrationWorkflow() != null) {
       List<Service> services = getResolvedServices(workflow, workflowExecution);
+      String envId = workflowService.resolveEnvironmentId(workflow,
+          workflowExecution.getExecutionArgs() != null ? workflowExecution.getExecutionArgs().getWorkflowVariables()
+                                                       : null);
       List<InfrastructureMapping> infrastructureMappings = null;
       List<InfrastructureDefinition> infrastructureDefinitions = null;
-      infrastructureDefinitions = getResolvedInfraDefinitions(workflow, workflowExecution);
+      infrastructureDefinitions = getResolvedInfraDefinitions(workflow, workflowExecution, envId);
 
       if (services != null) {
         List<InfrastructureDefinition> finalInfrastructureDefinitions = infrastructureDefinitions;
@@ -4714,11 +4725,11 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   @Override
   public List<InfrastructureDefinition> getResolvedInfraDefinitions(
-      Workflow workflow, WorkflowExecution workflowExecution) {
+      Workflow workflow, WorkflowExecution workflowExecution, String envId) {
     Map<String, String> workflowVariables = workflowExecution.getExecutionArgs() != null
         ? workflowExecution.getExecutionArgs().getWorkflowVariables()
         : null;
-    return workflowService.getResolvedInfraDefinitions(workflow, workflowVariables);
+    return workflowService.getResolvedInfraDefinitions(workflow, workflowVariables, envId);
   }
 
   private void populateServiceSummary(
@@ -6655,5 +6666,30 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         .filter(WorkflowExecutionKeys.status, SUCCESS)
         .order(Sort.descending(WorkflowExecutionKeys.createdAt))
         .get();
+  }
+
+  @Override
+  public WorkflowExecutionInfo getWorkflowExecutionInfo(String appId, String workflowExecutionId) {
+    WorkflowExecution workflowExecution =
+        wingsPersistence.getWithAppId(WorkflowExecution.class, appId, workflowExecutionId);
+    if (workflowExecution == null) {
+      throw new InvalidRequestException("Couldn't find a workflow Execution with Id: " + workflowExecutionId, USER);
+    }
+
+    return WorkflowExecutionInfo.builder()
+        .accountId(workflowExecution.getAccountId())
+        .name(workflowExecution.getName())
+        .appId(workflowExecution.getAppId())
+        .executionId(workflowExecutionId)
+        .workflowId(workflowExecution.getWorkflowId())
+        .startTs(workflowExecution.getStartTs())
+        .build();
+  }
+
+  @Override
+  public WorkflowExecution getWorkflowExecutionWithFailureDetails(String appId, String workflowExecutionId) {
+    WorkflowExecution workflowExecution = getWorkflowExecution(appId, workflowExecutionId);
+    workflowExecutionServiceHelper.populateFailureDetailsWithStepInfo(workflowExecution);
+    return workflowExecution;
   }
 }

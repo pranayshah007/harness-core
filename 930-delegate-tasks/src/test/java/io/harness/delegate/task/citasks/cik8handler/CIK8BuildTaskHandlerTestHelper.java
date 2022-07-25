@@ -7,10 +7,10 @@
 
 package io.harness.delegate.task.citasks.cik8handler;
 
+import static io.harness.connector.SecretSpecBuilder.SECRET_KEY;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.delegate.beans.ci.pod.SecretParams.Type.FILE;
 import static io.harness.delegate.beans.ci.pod.SecretParams.Type.TEXT;
-import static io.harness.delegate.task.citasks.cik8handler.SecretSpecBuilder.SECRET_KEY;
 
 import static org.mockito.Mockito.mock;
 

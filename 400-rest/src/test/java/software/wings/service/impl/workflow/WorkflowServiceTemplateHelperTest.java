@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static software.wings.api.DeploymentType.SSH;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -68,6 +70,26 @@ import org.mockito.stubbing.Answer;
 public class WorkflowServiceTemplateHelperTest extends WingsBaseTest {
   @Inject @InjectMocks private WorkflowServiceTemplateHelper workflowServiceTemplateHelper;
   @Mock private TemplateService templateService;
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void testSaveWorkflowWithInvalidProperties() {
+    Map<String, Object> properties = new HashMap<>();
+    Integer timeout = WorkflowServiceTemplateHelper.MAXIMUM_TIMEOUT + 20;
+    properties.put("timeoutMillis", timeout);
+
+    PhaseStep newPhaseStep = PhaseStepBuilder.aPhaseStep(PhaseStepType.HELM_DEPLOY, "Helm Deploy")
+                                 .addStep(GraphNode.builder()
+                                              .id("id")
+                                              .name("test-helm")
+                                              .type(StepType.APPROVAL.toString())
+                                              .properties(properties)
+                                              .build())
+                                 .build();
+
+    workflowServiceTemplateHelper.validatePhaseStepsProperties(newPhaseStep);
+  }
 
   @Test
   @Owner(developers = YOGESH)

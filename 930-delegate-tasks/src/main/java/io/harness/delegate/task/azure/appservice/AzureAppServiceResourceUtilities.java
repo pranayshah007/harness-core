@@ -17,15 +17,13 @@ import static io.harness.azure.model.AzureConstants.WEB_APP_NAME_BLANK_ERROR_MSG
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.context.AzureWebClientContext;
 import io.harness.azure.model.AzureAppServiceApplicationSetting;
 import io.harness.azure.model.AzureAppServiceConnectionString;
-import io.harness.azure.model.AzureConfig;
-import io.harness.delegate.beans.azure.registry.AzureRegistry;
-import io.harness.delegate.beans.azure.registry.AzureRegistryFactory;
-import io.harness.delegate.beans.azure.registry.AzureRegistryType;
-import io.harness.delegate.beans.connector.ConnectorConfigDTO;
-import io.harness.delegate.beans.connector.azureconnector.AzureContainerRegistryConnectorDTO;
+import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
+import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDeploymentContext;
 import io.harness.delegate.task.azure.common.AzureContainerRegistryService;
+import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.exception.InvalidArgumentsException;
 
 import com.google.inject.Inject;
@@ -41,7 +39,21 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class AzureAppServiceResourceUtilities {
   @Inject private AzureContainerRegistryService azureContainerRegistryService;
+  @Inject protected AzureAppServiceDeploymentService azureAppServiceDeploymentService;
+
   private static final int defaultTimeoutInterval = 10;
+
+  public void swapSlots(AzureWebClientContext webClientContext, AzureLogCallbackProvider logCallbackProvider,
+      String deploymentSlot, String targetSlot, Integer timeoutIntervalInMin) {
+    AzureAppServiceDeploymentContext azureAppServiceDeploymentContext = new AzureAppServiceDeploymentContext();
+    azureAppServiceDeploymentContext.setAzureWebClientContext(webClientContext);
+    azureAppServiceDeploymentContext.setLogCallbackProvider(logCallbackProvider);
+    azureAppServiceDeploymentContext.setSlotName(deploymentSlot);
+    azureAppServiceDeploymentContext.setSteadyStateTimeoutInMin(timeoutIntervalInMin);
+
+    azureAppServiceDeploymentService.swapSlotsUsingCallback(
+        azureAppServiceDeploymentContext, targetSlot, logCallbackProvider);
+  }
 
   public Map<String, AzureAppServiceApplicationSetting> getAppSettingsToAdd(
       List<AzureAppServiceApplicationSetting> applicationSettings) {
@@ -53,20 +65,6 @@ public class AzureAppServiceResourceUtilities {
       List<AzureAppServiceConnectionString> connectionStrings) {
     return connectionStrings.stream().collect(
         Collectors.toMap(AzureAppServiceConnectionString::getName, Function.identity()));
-  }
-
-  public Map<String, AzureAppServiceApplicationSetting> getDockerSettings(
-      ConnectorConfigDTO connectorConfigDTO, AzureRegistryType azureRegistryType, AzureConfig azureConfig) {
-    AzureRegistry azureRegistry = AzureRegistryFactory.getAzureRegistry(azureRegistryType);
-    Map<String, AzureAppServiceApplicationSetting> dockerSettings =
-        azureRegistry.getContainerSettings(connectorConfigDTO);
-
-    if (AzureRegistryType.ACR == azureRegistryType) {
-      azureContainerRegistryService.updateACRDockerSettingByCredentials(
-          (AzureContainerRegistryConnectorDTO) connectorConfigDTO, azureConfig, dockerSettings);
-    }
-
-    return dockerSettings;
   }
 
   public void validateSlotShiftTrafficParameters(String webAppName, String deploymentSlot, double trafficPercent) {

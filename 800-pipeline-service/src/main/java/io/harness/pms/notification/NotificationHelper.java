@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanExecutionService;
+import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
@@ -30,7 +31,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
-import io.harness.pms.expression.PmsEngineExpressionService;
 import io.harness.pms.helpers.PipelineExpressionHelper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
@@ -116,15 +116,21 @@ public class NotificationHelper {
       boolean shouldSendNotification = shouldSendNotification(pipelineEvents, pipelineEventType, identifier);
       if (shouldSendNotification) {
         NotificationChannelWrapper wrapper = notificationRules.getNotificationChannelWrapper().getValue();
-        String templateId = getNotificationTemplate(pipelineEventType.getLevel(), wrapper.getType());
-        NotificationChannel channel = wrapper.getNotificationChannel().toNotificationChannel(
-            accountIdentifier, orgIdentifier, projectIdentifier, templateId, notificationContent, ambiance);
-        log.info(
-            "Sending notification via notification-client for plan execution id: {} ", ambiance.getPlanExecutionId());
-        try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
-          notificationClient.sendNotificationAsync(channel);
-        } catch (Exception ex) {
-          log.error("Unable to send notification because of following exception", ex);
+        if (wrapper.getType() != null) {
+          String templateId = getNotificationTemplate(pipelineEventType.getLevel(), wrapper.getType());
+          NotificationChannel channel = wrapper.getNotificationChannel().toNotificationChannel(
+              accountIdentifier, orgIdentifier, projectIdentifier, templateId, notificationContent, ambiance);
+          log.info(
+              "Sending notification via notification-client for plan execution id: {} ", ambiance.getPlanExecutionId());
+          try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
+            notificationClient.sendNotificationAsync(channel);
+          } catch (Exception ex) {
+            log.error("Unable to send notification because of following exception", ex);
+          }
+        } else {
+          log.error(
+              "Unable to send notification for plan execution id: {} for pipeline : {} because notification type is null",
+              ambiance.getPlanExecutionId(), ambiance.getMetadata().getPipelineIdentifier());
         }
       }
     }

@@ -275,4 +275,55 @@ public class ChangeSourceServiceImpl implements ChangeSourceService {
       }
     }
   }
+
+  @Override
+  public void deleteByProjectIdentifier(
+      Class<ChangeSource> clazz, String accountId, String orgIdentifier, String projectIdentifier) {
+    List<ChangeSource> changeSources = hPersistence.createQuery(ChangeSource.class)
+                                           .filter(ChangeSourceKeys.accountId, accountId)
+                                           .filter(ChangeSourceKeys.orgIdentifier, orgIdentifier)
+                                           .filter(ChangeSourceKeys.projectIdentifier, projectIdentifier)
+                                           .asList();
+
+    changeSources.forEach(changeSource
+        -> delete(MonitoredServiceParams.builder()
+                      .accountIdentifier(accountId)
+                      .orgIdentifier(orgIdentifier)
+                      .projectIdentifier(projectIdentifier)
+                      .monitoredServiceIdentifier(changeSource.getMonitoredServiceIdentifier())
+                      .build(),
+            Collections.singletonList(changeSource.getIdentifier())));
+  }
+
+  @Override
+  public void deleteByOrgIdentifier(Class<ChangeSource> clazz, String accountId, String orgIdentifier) {
+    List<ChangeSource> changeSources = hPersistence.createQuery(ChangeSource.class)
+                                           .filter(ChangeSourceKeys.accountId, accountId)
+                                           .filter(ChangeSourceKeys.orgIdentifier, orgIdentifier)
+                                           .asList();
+
+    changeSources.forEach(changeSource
+        -> delete(MonitoredServiceParams.builder()
+                      .accountIdentifier(accountId)
+                      .orgIdentifier(orgIdentifier)
+                      .projectIdentifier(changeSource.getProjectIdentifier())
+                      .monitoredServiceIdentifier(changeSource.getMonitoredServiceIdentifier())
+                      .build(),
+            Collections.singletonList(changeSource.getIdentifier())));
+  }
+
+  @Override
+  public void deleteByAccountIdentifier(Class<ChangeSource> clazz, String accountId) {
+    List<ChangeSource> changeSources =
+        hPersistence.createQuery(ChangeSource.class).filter(ChangeSourceKeys.accountId, accountId).asList();
+
+    changeSources.forEach(changeSource
+        -> delete(MonitoredServiceParams.builder()
+                      .accountIdentifier(accountId)
+                      .orgIdentifier(changeSource.getOrgIdentifier())
+                      .projectIdentifier(changeSource.getProjectIdentifier())
+                      .monitoredServiceIdentifier(changeSource.getMonitoredServiceIdentifier())
+                      .build(),
+            Collections.singletonList(changeSource.getIdentifier())));
+  }
 }

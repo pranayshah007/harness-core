@@ -69,6 +69,9 @@ import static io.harness.network.SafeHttpCall.execute;
 import static io.harness.threading.Morpheus.sleep;
 import static io.harness.utils.MemoryPerformanceUtils.memoryUsage;
 
+import static software.wings.beans.TaskType.SCRIPT;
+import static software.wings.beans.TaskType.SHELL_SCRIPT_TASK_NG;
+
 import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
 import static java.time.Duration.ofMinutes;
@@ -290,7 +293,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private static final long DELEGATE_JRE_VERSION_TIMEOUT = TimeUnit.MINUTES.toMillis(10);
   private static final String DELEGATE_SEQUENCE_CONFIG_FILE = "./delegate_sequence_config";
   private static final int KEEP_ALIVE_INTERVAL = 23000;
-  private static final int CLIENT_TOOL_RETRIES = 10;
+  private static final int CLIENT_TOOL_RETRIES = 5;
   private static final int LOCAL_HEARTBEAT_INTERVAL = 10;
   private static final String TOKEN = "[TOKEN]";
   private static final String SEQ = "[SEQ]";
@@ -319,9 +322,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private final boolean delegateNg = isNotBlank(System.getenv().get("DELEGATE_SESSION_IDENTIFIER"))
       || (isNotBlank(System.getenv().get("NEXT_GEN")) && Boolean.parseBoolean(System.getenv().get("NEXT_GEN")));
   public static final String JAVA_VERSION = "java.version";
-  private final double RESOURCE_USAGE_THRESHOLD = 0.75;
+  private final double RESOURCE_USAGE_THRESHOLD = 0.90;
   private String MANAGER_PROXY_CURL = System.getenv().get("MANAGER_PROXY_CURL");
   private String MANAGER_HOST_AND_PORT = System.getenv().get("MANAGER_HOST_AND_PORT");
+
+  private final boolean BLOCK_SHELL_TASK = Boolean.parseBoolean(System.getenv().get("BLOCK_SHELL_TASK"));
 
   private static volatile String delegateId;
   private static final String delegateInstanceId = generateUuid();
@@ -514,11 +519,19 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         }
       }
 
-      if (!delegateConfiguration.isInstallClientToolsInBackground()) {
+      if (delegateConfiguration.isInstallClientToolsInBackground()) {
+        log.info("Client tools will be setup in the background, while delegate registers");
+        backgroundExecutor.submit(() -> {
+          int retries = CLIENT_TOOL_RETRIES;
+          while (!areClientToolsInstalled() && retries > 0) {
+            setupClientTools(delegateConfiguration);
+            sleep(ofSeconds(15L));
+            retries--;
+          }
+        });
+      } else {
         log.info("Client tools will be setup synchronously, before delegate registers");
         setupClientTools(delegateConfiguration);
-      } else {
-        log.info("Client tools will be setup in the background, while delegate registers");
       }
 
       long start = clock.millis();
@@ -543,6 +556,13 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       // Remove tasks which are in TaskTypeV2 and only specified with onlyV2 as true
       final List<String> unsupportedTasks =
           Arrays.stream(TaskType.values()).filter(element -> element.isUnsupported()).map(Enum::name).collect(toList());
+
+      if (BLOCK_SHELL_TASK) {
+        log.info("Delegate is blocked from executing shell script tasks.");
+        unsupportedTasks.add(SCRIPT.name());
+        unsupportedTasks.add(SHELL_SCRIPT_TASK_NG.name());
+      }
+
       supportedTasks.removeAll(unsupportedTasks);
 
       if (isNotBlank(DELEGATE_TYPE)) {
@@ -667,17 +687,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         startProfileCheck();
       }
 
-      if (!isClientToolsInstallationFinished()) {
-        backgroundExecutor.submit(() -> {
-          int retries = CLIENT_TOOL_RETRIES;
-          while (!isClientToolsInstallationFinished() && retries > 0) {
-            setupClientTools(delegateConfiguration);
-            sleep(ofSeconds(15L));
-            retries--;
-          }
-        });
-      }
-
       if (delegateLocalConfigService.isLocalConfigPresent()) {
         Map<String, String> localSecrets = delegateLocalConfigService.getLocalDelegateSecrets();
         if (isNotEmpty(localSecrets)) {
@@ -732,10 +741,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       removeDelegateVersionFromCapsule();
       cleanupOldDelegateVersionFromBackup();
     }
-  }
-
-  public boolean isClientToolsInstallationFinished() {
-    return getDelegateConfiguration().isClientToolsDownloadDisabled() || areClientToolsInstalled();
   }
 
   private RequestBuilder prepareRequestBuilder() {
@@ -1023,6 +1028,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     } finally {
       if (response != null && !response.isSuccessful()) {
         String errorResponse = response.errorBody().string();
+
+        log.warn("Received Error Response: {}", errorResponse);
+
         if (errorResponse.contains(INVALID_TOKEN.name())) {
           log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
           initiateSelfDestruct();
@@ -1035,6 +1043,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           log.warn("Delegate used revoked token. It will be frozen and drained.");
           freeze();
         }
+
         response.errorBody().close();
       }
     }
@@ -1068,7 +1077,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
       if (restResponse == null || restResponse.getResource() == null) {
         log.error(
-            "Error occurred while registering delegate with manager for account {}. Please see the manager log for more information",
+            "Error occurred while registering delegate with manager for account '{}' - Please see the manager log for more information.",
             accountId);
         sleep(ofMinutes(1));
         continue;
@@ -1627,7 +1636,16 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private String findExpectedWatcherVersion() {
     try {
-      // TODO - if multiVersion, get versions from manager endpoint
+      RestResponse<String> restResponse =
+          executeRestCall(delegateAgentManagerClient.getWatcherVersion(delegateConfiguration.getAccountId()));
+      if (restResponse != null) {
+        return restResponse.getResource();
+      }
+    } catch (Exception e) {
+      log.warn("Encountered error while fetching watcher version from manager ", e);
+    }
+    try {
+      // Try fetching watcher version from gcp
       String watcherMetadata = Http.getResponseStringFromUrl(delegateConfiguration.getWatcherCheckLocation(), 10, 10);
       return substringBefore(watcherMetadata, " ").trim();
     } catch (IOException e) {

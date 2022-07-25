@@ -352,8 +352,10 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
       if (releases.stream().anyMatch(release -> release.getName().equals(newReleaseName))) {
         String cfRequestConfigAppName = cfRequestConfig.getApplicationName();
         cfRequestConfig.setApplicationName(newReleaseName);
-        logCallback.saveExecutionLog(
-            new StringBuilder().append("\n\n Deleting the newly created App").append(newReleaseName).toString());
+        logCallback.saveExecutionLog(new StringBuilder()
+                                         .append("\n\n Deleting the newly created App: ")
+                                         .append(encodeColor(newReleaseName))
+                                         .toString());
         pcfDeploymentManager.deleteApplication(cfRequestConfig);
         logCallback.saveExecutionLog("App deleted successfully");
         cfRequestConfig.setApplicationName(cfRequestConfigAppName);

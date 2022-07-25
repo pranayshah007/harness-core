@@ -28,6 +28,9 @@ public interface ManifestStoreType {
   String S3URL = "S3Url";
   String InheritFromManifest = "InheritFromManifest";
   String OCI = "OciHelmChart";
+  String AZURE_REPO = "AzureRepo";
+  String CUSTOM_REMOTE = "CustomRemote";
+  String HARNESS = "Harness";
 
   static boolean isInGitSubset(String manifestType) {
     switch (manifestType) {
@@ -35,6 +38,7 @@ public interface ManifestStoreType {
       case BITBUCKET:
       case GITLAB:
       case GITHUB:
+      case AZURE_REPO:
         return true;
 
       default:

@@ -19,12 +19,13 @@ import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestTyp
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
-import java.util.Map;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(CDP)
 public interface AzureWebAppTaskRequest extends TaskParameters, ExecutionCapabilityDemander {
+  String getAccountId();
   AzureWebAppRequestType getRequestType();
   AzureWebAppInfraDelegateConfig getInfrastructure();
   CommandUnitsProgress getCommandUnitsProgress();
-  Map<DecryptableEntity, List<EncryptedDataDetail>> fetchDecryptionDetails();
+  List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> fetchDecryptionDetails();
 }

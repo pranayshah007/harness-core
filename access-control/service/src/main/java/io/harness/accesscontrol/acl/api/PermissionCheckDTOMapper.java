@@ -30,6 +30,7 @@ public class PermissionCheckDTOMapper {
         .resourceIdentifier(permissionCheckDTO.getResourceIdentifier())
         .resourceType(permissionCheckDTO.getResourceType())
         .resourceScope(getScope(permissionCheckDTO.getResourceScope()).orElse(null))
+        .resourceAttributes(permissionCheckDTO.getResourceAttributes())
         .build();
   }
 
@@ -39,6 +40,7 @@ public class PermissionCheckDTOMapper {
         .resourceIdentifier(permissionCheckResult.getResourceIdentifier())
         .resourceType(permissionCheckResult.getResourceType())
         .resourceScope(getResourceScope(permissionCheckResult.getResourceScope()).orElse(null))
+        .resourceAttributes(permissionCheckResult.getResourceAttributes())
         .permitted(permissionCheckResult.isPermitted())
         .build();
   }

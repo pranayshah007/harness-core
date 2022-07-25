@@ -361,7 +361,7 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
     log.info("NGSCIM: Creating group in account {} where name {} with call: {}", accountId, groupQuery.getDisplayName(),
         groupQuery);
     String userGroupIdentifier = isNotEmpty(groupQuery.getDisplayName())
-        ? groupQuery.getDisplayName().replaceAll("\\.", "_")
+        ? groupQuery.getDisplayName().replaceAll("\\.", "_").replaceAll("-", "_")
         : groupQuery.getDisplayName();
     UserGroupDTOBuilder userGroupDTOBuilder = UserGroupDTO.builder()
                                                   .name(groupQuery.getDisplayName())

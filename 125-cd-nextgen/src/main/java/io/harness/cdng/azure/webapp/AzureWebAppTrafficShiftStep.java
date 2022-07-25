@@ -14,6 +14,8 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
+import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppTrafficShiftRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppTaskResponse;
 import io.harness.exception.ExceptionUtils;
@@ -23,10 +25,12 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
@@ -46,6 +50,7 @@ public class AzureWebAppTrafficShiftStep extends TaskExecutableWithRollbackAndRb
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
   @Inject private AzureWebAppStepHelper azureWebAppStepHelper;
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -57,22 +62,35 @@ public class AzureWebAppTrafficShiftStep extends TaskExecutableWithRollbackAndRb
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     AzureWebAppTrafficShiftStepParameters azureWebAppTrafficShiftStepParameters =
         (AzureWebAppTrafficShiftStepParameters) stepParameters.getSpec();
+    AzureAppServicePreDeploymentData azureAppServicePreDeploymentData =
+        azureWebAppStepHelper.getPreDeploymentData(ambiance,
+            ((AzureWebAppTrafficShiftStepParameters) stepParameters.getSpec()).slotDeploymentStepFqn + "."
+                + AzureWebAppPreDeploymentDataOutput.OUTPUT_NAME);
+    if (azureAppServicePreDeploymentData == null) {
+      return TaskRequest.newBuilder()
+          .setSkipTaskRequest(SkipTaskRequest.newBuilder()
+                                  .setMessage("No successful Slot deployment step found, traffic shift can't be done")
+                                  .build())
+          .build();
+    } else {
+      double trafficPercent =
+          getTrafficPercentage(azureWebAppTrafficShiftStepParameters.getTraffic().getValue(), ambiance);
 
-    double trafficPercent =
-        getTrafficPercentage(azureWebAppTrafficShiftStepParameters.getTraffic().getValue(), ambiance);
+      if (trafficPercent > 100.0 || trafficPercent < 0) {
+        throw new InvalidArgumentsException(TRAFFIC_WEIGHT_IN_PERCENTAGE_INVALID_ERROR_MSG);
+      }
 
-    if (trafficPercent > 100.0 || trafficPercent < 0) {
-      throw new InvalidArgumentsException(TRAFFIC_WEIGHT_IN_PERCENTAGE_INVALID_ERROR_MSG);
+      AzureWebAppTrafficShiftRequest azureWebAppTrafficShiftRequest =
+          AzureWebAppTrafficShiftRequest.builder()
+              .accountId(AmbianceUtils.getAccountId(ambiance))
+              .trafficPercentage(trafficPercent)
+              .infrastructure(azureWebAppStepHelper.getInfraDelegateConfig(ambiance,
+                  azureAppServicePreDeploymentData.getAppName(), azureAppServicePreDeploymentData.getSlotName()))
+              .build();
+
+      return azureWebAppStepHelper.prepareTaskRequest(stepParameters, ambiance, azureWebAppTrafficShiftRequest,
+          TaskType.AZURE_WEB_APP_TASK_NG, Collections.singletonList(SLOT_TRAFFIC_PERCENTAGE));
     }
-
-    AzureWebAppTrafficShiftRequest azureWebAppTrafficShiftRequest =
-        AzureWebAppTrafficShiftRequest.builder()
-            .trafficPercentage(trafficPercent)
-            .infrastructure(azureWebAppStepHelper.getInfraDelegateConfig(ambiance))
-            .build();
-
-    return azureWebAppStepHelper.prepareTaskRequest(stepParameters, ambiance, azureWebAppTrafficShiftRequest,
-        TaskType.AZURE_WEB_APP_TASK_NG, Collections.singletonList(SLOT_TRAFFIC_PERCENTAGE));
   }
 
   @Override

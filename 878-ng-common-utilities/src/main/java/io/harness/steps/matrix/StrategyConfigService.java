@@ -16,5 +16,5 @@ import java.util.List;
 public interface StrategyConfigService {
   List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfig strategyConfig, String childNodeId);
 
-  List<JsonNode> expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode);
+  StrategyInfo expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode);
 }

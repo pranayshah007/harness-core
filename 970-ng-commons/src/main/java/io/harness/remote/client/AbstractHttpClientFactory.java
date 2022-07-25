@@ -25,6 +25,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.manage.GlobalContextManager;
 import io.harness.network.Http;
+import io.harness.security.PmsAuthInterceptor;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.security.SourcePrincipalContextBuilder;
@@ -43,9 +44,22 @@ import com.hubspot.jackson.datatype.protobuf.ProtobufModule;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.retrofit.CircuitBreakerCallAdapter;
 import io.serializer.HObjectMapper;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import javax.validation.constraints.NotNull;
 import okhttp3.ConnectionPool;
 import okhttp3.HttpUrl;
@@ -93,6 +107,26 @@ public abstract class AbstractHttpClientFactory {
     this.clientMode = clientMode;
   }
 
+  private Retrofit getRetrofit(boolean isSafeOk) {
+    String baseUrl = serviceHttpClientConfig.getBaseUrl();
+    Retrofit.Builder retrofitBuilder = new Retrofit.Builder().baseUrl(baseUrl);
+    if (this.kryoConverterFactory != null) {
+      retrofitBuilder.addConverterFactory(kryoConverterFactory);
+    }
+    if (isSafeOk) {
+      retrofitBuilder.client(getSafeOkHttpClient());
+    } else {
+      retrofitBuilder.client(getUnsafeOkHttpClient(
+          baseUrl, this.clientMode, Boolean.TRUE.equals(this.serviceHttpClientConfig.getEnableHttpLogging())));
+    }
+    if (this.enableCircuitBreaker) {
+      retrofitBuilder.addCallAdapterFactory(CircuitBreakerCallAdapter.of(getCircuitBreaker()));
+    }
+    retrofitBuilder.addConverterFactory(JacksonConverterFactory.create(objectMapper));
+
+    return retrofitBuilder.build();
+  }
+
   protected Retrofit getRetrofit() {
     /*
     .baseUrl(baseUrl)
@@ -104,19 +138,11 @@ public abstract class AbstractHttpClientFactory {
 
      Order of factories of a particular type is important while creating the builder, please do not change the order
      */
-    String baseUrl = serviceHttpClientConfig.getBaseUrl();
-    Retrofit.Builder retrofitBuilder = new Retrofit.Builder().baseUrl(baseUrl);
-    if (this.kryoConverterFactory != null) {
-      retrofitBuilder.addConverterFactory(kryoConverterFactory);
-    }
-    retrofitBuilder.client(getUnsafeOkHttpClient(
-        baseUrl, this.clientMode, Boolean.TRUE.equals(this.serviceHttpClientConfig.getEnableHttpLogging())));
-    if (this.enableCircuitBreaker) {
-      retrofitBuilder.addCallAdapterFactory(CircuitBreakerCallAdapter.of(getCircuitBreaker()));
-    }
-    retrofitBuilder.addConverterFactory(JacksonConverterFactory.create(objectMapper));
+    return getRetrofit(false);
+  }
 
-    return retrofitBuilder.build();
+  protected Retrofit getSafeOkRetrofit() {
+    return getRetrofit(true);
   }
 
   protected CircuitBreaker getCircuitBreaker() {
@@ -135,6 +161,56 @@ public abstract class AbstractHttpClientFactory {
     objMapper.registerModule(new GuavaModule());
     objMapper.registerModule(new JavaTimeModule());
     return objMapper;
+  }
+
+  protected OkHttpClient getSafeOkHttpClient() {
+    try {
+      KeyStore keyStore = getKeyStore();
+
+      TrustManagerFactory trustManagerFactory =
+          TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      trustManagerFactory.init(keyStore);
+      TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
+
+      SSLContext sslContext = SSLContext.getInstance("TLS");
+      sslContext.init(null, trustManagers, null);
+
+      return Http.getOkHttpClientWithProxyAuthSetup()
+          .connectionPool(new ConnectionPool())
+          .connectTimeout(5, TimeUnit.SECONDS)
+          .readTimeout(10, TimeUnit.SECONDS)
+          .retryOnConnectionFailure(true)
+          .addInterceptor(new PmsAuthInterceptor(serviceSecret))
+          .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustManagers[0])
+          .build();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private KeyStore getKeyStore() throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException {
+    KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+    keyStore.load(null, null);
+
+    // Load self-signed certificate created only for the purpose of local development
+    try (InputStream certInputStream = getClass().getClassLoader().getResourceAsStream("localhost.pem")) {
+      keyStore.setCertificateEntry(
+          "localhost", CertificateFactory.getInstance("X509").generateCertificate(certInputStream));
+    }
+
+    // Load all trusted issuers from default java trust store
+    TrustManagerFactory defaultTrustManagerFactory =
+        TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    defaultTrustManagerFactory.init((KeyStore) null);
+    for (TrustManager trustManager : defaultTrustManagerFactory.getTrustManagers()) {
+      if (trustManager instanceof X509TrustManager) {
+        for (X509Certificate acceptedIssuer : ((X509TrustManager) trustManager).getAcceptedIssuers()) {
+          keyStore.setCertificateEntry(acceptedIssuer.getSubjectDN().getName(), acceptedIssuer);
+        }
+      }
+    }
+
+    return keyStore;
   }
 
   protected OkHttpClient getUnsafeOkHttpClient(String baseUrl, ClientMode clientMode, boolean addHttpLogging) {
@@ -225,5 +301,9 @@ public abstract class AbstractHttpClientFactory {
       return managerServiceSecret.trim();
     }
     throw new InvalidRequestException("No secret key for client for " + clientId);
+  }
+
+  protected ServiceHttpClientConfig getServiceHttpClientConfig() {
+    return serviceHttpClientConfig;
   }
 }

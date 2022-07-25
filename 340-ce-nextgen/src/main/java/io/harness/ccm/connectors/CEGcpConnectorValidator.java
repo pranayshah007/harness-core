@@ -107,7 +107,7 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
       errorList.add(ErrorDetail.builder()
                         .reason("Failed to test required permissions for service account " + impersonatedServiceAccount)
                         .message("") // UI adds "Contact Harness Support or Harness Community Forum." in this case
-                        .code(500)
+                        .code(400)
                         .build());
       return ConnectorValidationResult.builder()
           .errorSummary("Failed to test required permissions for service account " + impersonatedServiceAccount)
@@ -145,7 +145,7 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
               log.error("Error with processing data"); // Used for log based metrics
               errorList.add(
                   ErrorDetail.builder()
-                      .reason("Error with processing data")
+                      .reason("Internal error with data processing")
                       .message("") // UI adds "Contact Harness Support or Harness Community Forum." in this case
                       .code(500)
                       .build());
@@ -193,6 +193,9 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
 
   public ConnectorValidationResult validatePermissionsList(
       CloudResourceManager service, String projectId, List<String> permissionsList, String impersonatedServiceAccount) {
+    if (permissionsList.isEmpty()) {
+      return null;
+    }
     final List<ErrorDetail> errorList = new ArrayList<>();
     TestIamPermissionsRequest requestBody = new TestIamPermissionsRequest().setPermissions(permissionsList);
     try {

@@ -14,6 +14,7 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.util.Arrays.asList;
@@ -67,6 +68,7 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.exception.HelmNGException;
 import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
@@ -75,6 +77,7 @@ import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig.HelmChartManifestDelegateConfigBuilder;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.GeneralException;
 import io.harness.exception.GitOperationException;
@@ -90,6 +93,7 @@ import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
+import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
@@ -184,6 +188,14 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
           .chartVersion("V3")
           .helmCommandFlag(HelmCommandFlag.builder().valueMap(new HashMap<>()).build())
           .storeDelegateConfig(httpHelmStoreDelegateConfig);
+
+  private LocalFileStoreDelegateConfig localFileStoreDelegateConfig = LocalFileStoreDelegateConfig.builder()
+                                                                          .filePaths(asList("path/to/helm/chart"))
+                                                                          .folder("chart")
+                                                                          .manifestIdentifier("identifier")
+                                                                          .manifestType("HelmChart")
+                                                                          .manifestFiles(getManifestFiles())
+                                                                          .build();
 
   HelmDeployServiceImplNG spyHelmDeployService;
 
@@ -283,6 +295,18 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
                            -> spyHelmDeployService.prepareRepoAndCharts(
                                helmInstallCommandRequestNG, helmInstallCommandRequestNG.getTimeoutInMillis()))
         .isInstanceOf(GitOperationException.class);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testFetchLocalChartRepo() throws Exception {
+    helmChartManifestDelegateConfig.storeDelegateConfig(localFileStoreDelegateConfig);
+    helmInstallCommandRequestNG.setManifestDelegateConfig(helmChartManifestDelegateConfig.build());
+    assertThatCode(()
+                       -> spyHelmDeployService.prepareRepoAndCharts(
+                           helmInstallCommandRequestNG, helmInstallCommandRequestNG.getTimeoutInMillis()))
+        .doesNotThrowAnyException();
   }
 
   @Test
@@ -409,6 +433,12 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     helmInstallCommandRequestNG.setK8SteadyStateCheckEnabled(true);
     doReturn("1.16").when(kubernetesContainerService).getVersionAsString(eq(kubernetesConfig));
     assertThat(spyHelmDeployService.deploy(helmInstallCommandRequestNG)).isEqualTo(helmCommandResponseNG);
+
+    // Check if revokeReadPermission function called when Helm Version is V380
+    helmInstallCommandRequestNG.setHelmVersion(HelmVersion.V380);
+    doNothing().when(helmTaskHelperBase).revokeReadPermission(helmInstallCommandRequestNG.getKubeConfigLocation());
+    spyHelmDeployService.deploy(helmInstallCommandRequestNG);
+    verify(helmTaskHelperBase, times(1)).revokeReadPermission(helmInstallCommandRequestNG.getKubeConfigLocation());
   }
 
   @Test
@@ -981,5 +1011,13 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
                                                .build();
 
     return request;
+  }
+
+  private List<ManifestFiles> getManifestFiles() {
+    return asList(ManifestFiles.builder()
+                      .fileName("chart.yaml")
+                      .filePath("path/to/helm/chart/chart.yaml")
+                      .fileContent("Test content")
+                      .build());
   }
 }

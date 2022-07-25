@@ -200,7 +200,7 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
         viewsBillingService.getTimeSeriesStatsNg(bigQuery, filters, groupBy, aggregationFunction, sortCriteria,
             cloudProviderTableName, false, DEFAULT_LIMIT,
             viewsQueryHelper.buildQueryParams(accountId, true, false, false, false)),
-        accountId);
+        accountId, groupBy);
     if (chartData == null) {
       throw new InvalidRequestException("Exception while generating report. No data to for chart");
     }

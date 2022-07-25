@@ -16,6 +16,7 @@ import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -26,11 +27,26 @@ import static org.mockito.Mockito.when;
 import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.context.GlobalContext;
+import io.harness.eraro.ErrorCode;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.InputSetReferenceProtoDTO;
+import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ScmException;
+import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
+import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.manage.GlobalContextManager;
+import io.harness.pms.inputset.gitsync.InputSetYamlDTO;
+import io.harness.pms.inputset.gitsync.InputSetYamlDTOMapper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
@@ -46,6 +62,7 @@ import io.harness.yaml.validator.InvalidYamlException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import com.google.protobuf.StringValue;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -59,6 +76,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -372,7 +390,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     InputSetEntity inBetweenEntity = PMSInputSetElementMapper.toInputSetEntity(ACCOUNT_ID, YAML);
     InputSetImportRequestDTO inputSetImportRequest =
         InputSetImportRequestDTO.builder().inputSetName(name).inputSetDescription(description).build();
-    doReturn(inputSetEntity).when(inputSetRepository).saveForImportedYAML(inBetweenEntity, false);
+    doReturn(inputSetEntity).when(inputSetRepository).saveForImportedYAML(inBetweenEntity);
     InputSetEntity savedEntity = pmsInputSetServiceMock.importInputSetFromRemote(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, pipelineIdentifier, identifier, inputSetImportRequest);
     assertThat(savedEntity).isEqualTo(inputSetEntity);
@@ -381,26 +399,307 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
-  public void testUpdateFieldsInImportedInputSet() {
-    assertThatThrownBy(() -> pmsInputSetServiceMock.updateFieldsInImportedInputSet(null, null, null, null, null, ""))
-        .isInstanceOf(InvalidYamlException.class);
+  public void testCreateForOldGitSync() {
+    MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
+    doReturn(true).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    pmsInputSetServiceMock.create(inputSetEntity, "branch", "repo");
+    verify(inputSetRepository, times(1)).saveForOldGitSync(inputSetEntity, InputSetYamlDTOMapper.toDTO(inputSetEntity));
+    verify(inputSetRepository, times(0)).save(any());
+    mockSettings.close();
+  }
 
-    assertThatThrownBy(
-        () -> pmsInputSetServiceMock.updateFieldsInImportedInputSet(null, null, null, null, null, "this : "))
-        .isInstanceOf(InvalidYamlException.class);
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testCreateWithExceptions() {
+    MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
+    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    doThrow(new DuplicateKeyException("msg")).when(inputSetRepository).save(inputSetEntity);
+    assertThatThrownBy(() -> pmsInputSetServiceMock.create(inputSetEntity, null, null))
+        .isInstanceOf(DuplicateFieldException.class);
 
+    doThrow(new ExplanationException("msg", null)).when(inputSetRepository).save(inputSetEntity);
+    assertThatThrownBy(() -> pmsInputSetServiceMock.create(inputSetEntity, null, null))
+        .isInstanceOf(ExplanationException.class);
+    doThrow(new HintException("msg", null)).when(inputSetRepository).save(inputSetEntity);
+    assertThatThrownBy(() -> pmsInputSetServiceMock.create(inputSetEntity, null, null))
+        .isInstanceOf(HintException.class);
+    doThrow(new ScmException(ErrorCode.DEFAULT_ERROR_CODE)).when(inputSetRepository).save(inputSetEntity);
+    assertThatThrownBy(() -> pmsInputSetServiceMock.create(inputSetEntity, null, null))
+        .isInstanceOf(ScmException.class);
+
+    doThrow(new NullPointerException()).when(inputSetRepository).save(inputSetEntity);
+    assertThatThrownBy(() -> pmsInputSetServiceMock.create(inputSetEntity, null, null))
+        .isInstanceOf(InvalidRequestException.class);
+
+    mockSettings.close();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetForOldGitSync() {
+    doReturn(true).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    doReturn(Optional.of(inputSetEntity))
+        .when(inputSetRepository)
+        .findForOldGitSync(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true);
+    pmsInputSetServiceMock.get(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false);
+    verify(inputSetRepository, times(1))
+        .findForOldGitSync(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true);
+    verify(inputSetRepository, times(0)).find(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetWithExceptions() {
+    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+
+    doThrow(new ExplanationException("msg", null))
+        .when(inputSetRepository)
+        .find(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false);
     assertThatThrownBy(()
-                           -> pmsInputSetServiceMock.updateFieldsInImportedInputSet(
-                               null, null, null, null, null, "this: notAnInputSet"))
-        .isInstanceOf(InvalidYamlException.class);
+                           -> pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false))
+        .isInstanceOf(ExplanationException.class);
+    doThrow(new HintException("msg", null))
+        .when(inputSetRepository)
+        .find(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false);
+    assertThatThrownBy(()
+                           -> pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false))
+        .isInstanceOf(HintException.class);
+    doThrow(new ScmException(ErrorCode.DEFAULT_ERROR_CODE))
+        .when(inputSetRepository)
+        .find(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false);
+    assertThatThrownBy(()
+                           -> pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false))
+        .isInstanceOf(ScmException.class);
 
-    String importedInputSet = pmsInputSetServiceMock.updateFieldsInImportedInputSet(ORG_IDENTIFIER, PROJ_IDENTIFIER,
-        PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, InputSetImportRequestDTO.builder().inputSetName(NAME).build(), YAML);
-    InputSetEntity inputSetEntity = PMSInputSetElementMapper.toInputSetEntity(ACCOUNT_ID, importedInputSet);
-    assertThat(inputSetEntity.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
-    assertThat(inputSetEntity.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
-    assertThat(inputSetEntity.getPipelineIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
-    assertThat(inputSetEntity.getIdentifier()).isEqualTo(INPUT_SET_IDENTIFIER);
-    assertThat(inputSetEntity.getName()).isEqualTo(NAME);
+    doThrow(new NullPointerException())
+        .when(inputSetRepository)
+        .find(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false);
+    assertThatThrownBy(()
+                           -> pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false))
+        .isInstanceOf(InvalidRequestException.class);
+
+    doReturn(Optional.of(inputSetEntity.withStoreType(StoreType.REMOTE)))
+        .when(inputSetRepository)
+        .find(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true, false);
+    // without mocks this will throw an exception
+    assertThatThrownBy(()
+                           -> pmsInputSetServiceMock.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false));
+    MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
+    // no exception with the mock
+    pmsInputSetServiceMock.get(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, false);
+    mockSettings.close();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testUpdateForOldGitSync() {
+    InputSetYamlDTO inputSetYamlDTO = InputSetYamlDTOMapper.toDTO(inputSetEntity);
+    ChangeType c = ChangeType.MODIFY;
+    MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
+    doReturn(true).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+
+    setupGitContext(GitEntityInfo.builder().isNewBranch(true).branch("newBranch").yamlGitConfigId("repo").build());
+    doReturn(inputSetEntity).when(inputSetRepository).updateForOldGitSync(inputSetEntity, inputSetYamlDTO, c);
+    InputSetEntity updateIntoNewBranch = pmsInputSetServiceMock.update(inputSetEntity, c, "branch", "repo");
+    assertThat(updateIntoNewBranch).isEqualTo(inputSetEntity);
+    verify(inputSetRepository, times(0)).findForOldGitSync(any(), any(), any(), any(), any(), anyBoolean());
+
+    setupGitContext(GitEntityInfo.builder().isNewBranch(false).branch("branch").yamlGitConfigId("repo").build());
+
+    doReturn(Optional.empty())
+        .when(inputSetRepository)
+        .findForOldGitSync(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true);
+    assertThatThrownBy(() -> pmsInputSetServiceMock.update(inputSetEntity, c, "branch", "repo"))
+        .isInstanceOf(InvalidRequestException.class);
+
+    doReturn(Optional.of(inputSetEntity.withVersion(3L)))
+        .when(inputSetRepository)
+        .findForOldGitSync(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true);
+    assertThatThrownBy(() -> pmsInputSetServiceMock.update(inputSetEntity.withVersion(10L), c, "branch", "repo"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("is not on the correct version.");
+
+    doReturn(Optional.of(inputSetEntity))
+        .when(inputSetRepository)
+        .findForOldGitSync(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true);
+    doReturn(inputSetEntity)
+        .when(inputSetRepository)
+        .updateForOldGitSync(inputSetEntity.withIsEntityInvalid(false).withIsInvalid(false), inputSetYamlDTO, c);
+    InputSetEntity simpleUpdatedEntity = pmsInputSetServiceMock.update(inputSetEntity, c, "branch", "repo");
+    assertThat(simpleUpdatedEntity).isEqualTo(inputSetEntity);
+
+    verify(inputSetRepository, times(0)).update(any());
+    mockSettings.close();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testUpdateForOldGitSyncWithErrors() {
+    InputSetYamlDTO inputSetYamlDTO = InputSetYamlDTOMapper.toDTO(inputSetEntity);
+    ChangeType c = ChangeType.MODIFY;
+    MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
+    doReturn(true).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    setupGitContext(GitEntityInfo.builder().isNewBranch(true).branch("newBranch").yamlGitConfigId("repo").build());
+
+    doReturn(null).when(inputSetRepository).updateForOldGitSync(inputSetEntity, inputSetYamlDTO, c);
+    assertThatThrownBy(() -> pmsInputSetServiceMock.update(inputSetEntity, c, "branch", "repo"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("could not be updated.");
+
+    doThrow(new ExplanationException("e", null))
+        .when(inputSetRepository)
+        .updateForOldGitSync(inputSetEntity, inputSetYamlDTO, c);
+    assertThatThrownBy(() -> pmsInputSetServiceMock.update(inputSetEntity, c, "branch", "repo"))
+        .isInstanceOf(ExplanationException.class);
+    doThrow(new HintException("e")).when(inputSetRepository).updateForOldGitSync(inputSetEntity, inputSetYamlDTO, c);
+    assertThatThrownBy(() -> pmsInputSetServiceMock.update(inputSetEntity, c, "branch", "repo"))
+        .isInstanceOf(HintException.class);
+    doThrow(new ScmException("e", null))
+        .when(inputSetRepository)
+        .updateForOldGitSync(inputSetEntity, inputSetYamlDTO, c);
+    assertThatThrownBy(() -> pmsInputSetServiceMock.update(inputSetEntity, c, "branch", "repo"))
+        .isInstanceOf(ScmException.class);
+
+    doThrow(new NullPointerException())
+        .when(inputSetRepository)
+        .updateForOldGitSync(inputSetEntity, inputSetYamlDTO, c);
+    assertThatThrownBy(() -> pmsInputSetServiceMock.update(inputSetEntity, c, "branch", "repo"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Error while updating input set");
+
+    mockSettings.close();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testDeleteWithError() {
+    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    doThrow(new NullPointerException())
+        .when(inputSetRepository)
+        .delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER);
+    assertThatThrownBy(()
+                           -> pmsInputSetServiceMock.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("could not be deleted.");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testDeleteForOldGitSync() {
+    doReturn(true).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+
+    doReturn(Optional.empty())
+        .when(inputSetRepository)
+        .findForOldGitSync(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true);
+    assertThatThrownBy(()
+                           -> pmsInputSetServiceMock.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("doesn't exist.");
+
+    doReturn(Optional.of(inputSetEntity.withVersion(2L)))
+        .when(inputSetRepository)
+        .findForOldGitSync(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true);
+    assertThatThrownBy(()
+                           -> pmsInputSetServiceMock.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, 9L))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(" is not on the correct version.");
+
+    doReturn(Optional.of(inputSetEntity))
+        .when(inputSetRepository)
+        .findForOldGitSync(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true);
+
+    InputSetEntity withDeleted = inputSetEntity.withDeleted(true);
+    InputSetYamlDTO inputSetYamlDTO = InputSetYamlDTOMapper.toDTO(withDeleted);
+    boolean delete = pmsInputSetServiceMock.delete(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, null);
+    assertThat(delete).isTrue();
+
+    doThrow(new NullPointerException()).when(inputSetRepository).deleteForOldGitSync(withDeleted, inputSetYamlDTO);
+    assertThatThrownBy(()
+                           -> pmsInputSetServiceMock.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("couldn't be deleted");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testSyncInputSetWithGit() {
+    InputSetReferenceProtoDTO inputSetReferenceProtoDTO =
+        InputSetReferenceProtoDTO.newBuilder()
+            .setAccountIdentifier(StringValue.of(ACCOUNT_ID))
+            .setOrgIdentifier(StringValue.of(ORG_IDENTIFIER))
+            .setProjectIdentifier(StringValue.of(PROJ_IDENTIFIER))
+            .setPipelineIdentifier(StringValue.of(PIPELINE_IDENTIFIER))
+            .setIdentifier(StringValue.of(INPUT_SET_IDENTIFIER))
+            .build();
+    EntityDetailProtoDTO entityDetailProtoDTO =
+        EntityDetailProtoDTO.newBuilder().setInputSetRef(inputSetReferenceProtoDTO).build();
+    doReturn(Optional.empty())
+        .when(inputSetRepository)
+        .findForOldGitSync(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, true);
+    assertThatThrownBy(() -> pmsInputSetServiceMock.syncInputSetWithGit(entityDetailProtoDTO))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testUpdateGitFilePath() {
+    String newFilePath = "folder/.harness/file.yaml";
+    doReturn(inputSetEntity.withDescription("after update dummy description"))
+        .when(inputSetRepository)
+        .update(any(), any(), any(), any(), any());
+    InputSetEntity inputSetEntityUpdated = pmsInputSetServiceMock.updateGitFilePath(inputSetEntity, newFilePath);
+    assertThat(inputSetEntityUpdated.getDescription()).isEqualTo("after update dummy description");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testBuildInvalidYamlException() {
+    InvalidYamlException invalidYamlException =
+        pmsInputSetService.buildInvalidYamlException("error msg from test", "yaml: this");
+    assertThat(invalidYamlException.getYaml()).isEqualTo("yaml: this");
+    YamlSchemaErrorWrapperDTO metadata = (YamlSchemaErrorWrapperDTO) invalidYamlException.getMetadata();
+    List<YamlSchemaErrorDTO> schemaErrors = metadata.getSchemaErrors();
+    assertThat(schemaErrors).hasSize(1);
+    YamlSchemaErrorDTO yamlSchemaErrorDTO = schemaErrors.get(0);
+    assertThat(yamlSchemaErrorDTO.getMessage()).isEqualTo("error msg from test");
+    assertThat(yamlSchemaErrorDTO.getFqn()).isEqualTo("$.inputSet");
+  }
+
+  private void setupGitContext(GitEntityInfo branchInfo) {
+    if (!GlobalContextManager.isAvailable()) {
+      GlobalContextManager.set(new GlobalContext());
+    }
+    GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(branchInfo).build());
   }
 }

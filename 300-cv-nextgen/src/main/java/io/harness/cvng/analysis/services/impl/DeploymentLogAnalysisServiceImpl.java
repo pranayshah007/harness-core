@@ -69,6 +69,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.mongodb.morphia.query.Sort;
 
 @Slf4j
@@ -591,6 +592,13 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
     resultSummary.getControlClusterSummaries().forEach(
         controlClusterSummary -> controlClusters.put(controlClusterSummary.getLabel(), controlClusterSummary));
 
+    Map<Integer, DeploymentLogAnalysisDTO.ClusterHostFrequencyData> controlClusterFrequencyDataMap =
+        CollectionUtils.emptyIfNull(resultSummary.getControlClusterHostFrequencies())
+            .stream()
+            .collect(Collectors.toMap(clusterHostFrequencyData
+                -> clusterHostFrequencyData.getLabel(),
+                clusterHostFrequencyData -> clusterHostFrequencyData));
+
     for (ClusterSummary testClusterSummary : resultSummary.getTestClusterSummaries()) {
       if (!deploymentLogAnalysisFilter.filterByClusterType()
           || deploymentLogAnalysisFilter.getClusterTypes().contains(testClusterSummary.getClusterType())) {
@@ -605,6 +613,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
                 .clusterType(testClusterSummary.getClusterType())
                 .risk(testClusterSummary.getRiskLevel())
                 .frequencyData(testClusterSummary.getTestFrequencyData())
+                .hostFrequencyData(testClusterSummary.getFrequencyData())
                 .count(testClusterSummary.getCount());
         if (testClusterSummary.getClusterType().equals(ClusterType.KNOWN_EVENT)
             || testClusterSummary.getClusterType().equals(ClusterType.UNEXPECTED_FREQUENCY)) {
@@ -622,6 +631,10 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
           } else {
             log.warn("control data is not present for verificationTaskId: %s",
                 deploymentLogAnalysis.getVerificationTaskId());
+          }
+          if (controlClusterFrequencyDataMap.containsKey(testClusterSummary.getLabel())) {
+            controlLogAnalysisChartListDTOBuilder.hostFrequencyData(
+                controlClusterFrequencyDataMap.get(testClusterSummary.getLabel()).getFrequencyData());
           }
           logAnalysisRadarChartListDTOBuilder.baseline(controlLogAnalysisChartListDTOBuilder.build());
         }

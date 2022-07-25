@@ -7,6 +7,8 @@
 
 package io.harness.plancreator.flowcontrol.barriers;
 
+import io.harness.annotation.RecasterAlias;
+
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
@@ -15,6 +17,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Value
 @Builder
 @TypeAlias("barrierInfoConfig")
+@RecasterAlias("io.harness.plancreator.flowcontrol.barriers.BarrierInfoConfig")
 public class BarrierInfoConfig {
   @NotNull String identifier;
   @NotNull String name;

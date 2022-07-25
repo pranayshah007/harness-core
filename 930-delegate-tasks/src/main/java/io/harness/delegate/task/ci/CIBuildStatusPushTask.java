@@ -39,7 +39,7 @@ public class CIBuildStatusPushTask extends AbstractDelegateRunnableTask {
     if (((CIBuildPushParameters) parameters).commandType == CIBuildPushTaskType.STATUS) {
       CIBuildStatusPushParameters ciBuildStatusPushParameters = (CIBuildStatusPushParameters) parameters;
       GitStatusCheckParams gitStatusCheckParams = convertParams(ciBuildStatusPushParameters);
-      boolean statusSent = gitStatusCheckHelper.sendStatus(gitStatusCheckParams, null);
+      boolean statusSent = gitStatusCheckHelper.sendStatus(gitStatusCheckParams);
       if (statusSent) {
         return BuildStatusPushResponse.builder().status(Status.SUCCESS).build();
       } else {

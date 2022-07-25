@@ -51,6 +51,17 @@ public class PageResponse<T> {
         .build();
   }
 
+  public PageResponseBuilder<T> but() {
+    return new PageResponseBuilder<T>()
+        .totalPages(this.getTotalPages())
+        .totalItems(this.getTotalItems())
+        .pageItemCount(this.getPageItemCount())
+        .pageSize(this.getPageSize())
+        .content(this.content != null ? List.copyOf(this.getContent()) : null)
+        .pageIndex(this.getPageIndex())
+        .empty(this.isEmpty());
+  }
+
   /**
    * Creates empty {@link PageResponse} with pageSize and pageIndex from the {@link PageRequest}. This is a method and
    * not a static field in {@link PageRequest} because it should return type parameter in the returned object which

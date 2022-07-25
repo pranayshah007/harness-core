@@ -27,10 +27,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.pms.PmsFeatureFlagService;
-import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.governance.PipelineSaveResponse;
@@ -363,5 +363,14 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     assertThat(pipelineSaveResponse).isNotEqualTo(null);
     assertThat(pipelineSaveResponse.getGovernanceMetadata()).isNotEqualTo(null);
     assertThat(pipelineSaveResponse.getGovernanceMetadata().getDeny()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SOUMYAJIT)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineYamlDraftException() {
+    pipelineEntity.setIsDraft(true);
+    assertThatThrownBy(() -> pmsPipelineService.updatePipelineYaml(pipelineEntity, ChangeType.ADD))
+        .isInstanceOf(InvalidRequestException.class);
   }
 }

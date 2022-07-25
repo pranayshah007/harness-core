@@ -192,7 +192,7 @@ def createTable(client, table_ref):
     return True
 
 
-def run_batch_query(client, query, job_config, timeout=120):
+def run_batch_query(client, query, job_config, timeout=180):
     """
     Util method which runs a BQ query in batch mode.
     :param client:
@@ -219,7 +219,7 @@ def run_batch_query(client, query, job_config, timeout=120):
                 query_job.job_id, location=query_job.location
             )
             print_("Job {} is currently in state {}".format(query_job.job_id, query_job.state))
-            if query_job.state in ["DONE", "SUCCESS"] or count >= timeout/5: # 2 minutes
+            if query_job.state in ["DONE", "SUCCESS"] or count >= timeout/5:  # 2 minutes
                 err = query_job.error_result
                 if err:
                     print_(err, "ERROR")
@@ -227,8 +227,8 @@ def run_batch_query(client, query, job_config, timeout=120):
             else:
                 time.sleep(5)
                 count += 1
-        if query_job.state not in ["DONE", "SUCCESS"]:
-            raise Exception("Timeout waiting for job in pending state")
+        if query_job.state not in ["DONE", "SUCCESS", "RUNNING"]:
+            raise Exception(f"Timed-out while waiting for Job [{query_job.job_id}] to begin execution. Job might be incomplete.")
     except Exception as e:
         print_(query, "ERROR")
         print_(e)

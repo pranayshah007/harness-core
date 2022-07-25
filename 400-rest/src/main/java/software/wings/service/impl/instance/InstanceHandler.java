@@ -259,7 +259,7 @@ public abstract class InstanceHandler {
   }
 
   protected InstanceBuilder buildInstanceBase(
-      String instanceId, InfrastructureMapping infraMapping, DeploymentSummary deploymentSummary) {
+      String instanceId, InfrastructureMapping infraMapping, DeploymentSummary deploymentSummary, Artifact artifact) {
     InstanceBuilder builder = this.buildInstanceBase(instanceId, infraMapping);
     if (deploymentSummary != null) {
       builder.lastDeployedAt(deploymentSummary.getDeployedAt())
@@ -267,16 +267,30 @@ public abstract class InstanceHandler {
           .lastDeployedByName(deploymentSummary.getDeployedByName())
           .lastWorkflowExecutionId(deploymentSummary.getWorkflowExecutionId())
           .lastWorkflowExecutionName(deploymentSummary.getWorkflowExecutionName())
-          .lastArtifactId(deploymentSummary.getArtifactId())
-          .lastArtifactName(deploymentSummary.getArtifactName())
-          .lastArtifactStreamId(deploymentSummary.getArtifactStreamId())
-          .lastArtifactSourceName(deploymentSummary.getArtifactSourceName())
-          .lastArtifactBuildNum(deploymentSummary.getArtifactBuildNum())
           .lastPipelineExecutionId(deploymentSummary.getPipelineExecutionId())
           .lastPipelineExecutionName(deploymentSummary.getPipelineExecutionName());
+
+      if (artifact != null) {
+        builder.lastArtifactId(artifact.getUuid())
+            .lastArtifactName(artifact.getDisplayName())
+            .lastArtifactStreamId(artifact.getArtifactStreamId())
+            .lastArtifactSourceName(artifact.getArtifactSourceName())
+            .lastArtifactBuildNum(artifact.getBuildNo());
+      } else {
+        builder.lastArtifactId(deploymentSummary.getArtifactId())
+            .lastArtifactName(deploymentSummary.getArtifactName())
+            .lastArtifactStreamId(deploymentSummary.getArtifactStreamId())
+            .lastArtifactSourceName(deploymentSummary.getArtifactSourceName())
+            .lastArtifactBuildNum(deploymentSummary.getArtifactBuildNum());
+      }
     }
 
     return builder;
+  }
+
+  protected InstanceBuilder buildInstanceBase(
+      String instanceId, InfrastructureMapping infraMapping, DeploymentSummary deploymentSummary) {
+    return buildInstanceBase(instanceId, infraMapping, deploymentSummary, null);
   }
 
   protected InstanceBuilder buildInstanceBase(String instanceUuid, InfrastructureMapping infraMapping) {

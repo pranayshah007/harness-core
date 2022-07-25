@@ -218,6 +218,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
 
     doReturn(APP_ID).when(executionContext).getAppId();
     doReturn(null).when(executionContext).getContextElement(ContextElementType.SHELL_SCRIPT_PROVISION);
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
     ExecutionResponse response = state.handleAsyncResponse(executionContext, responseData);
     verify(activityService, times(1)).updateStatus(ACTIVITY_ID, APP_ID, ExecutionStatus.ERROR);
     assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.ERROR);
@@ -254,6 +255,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
     doReturn(APP_ID).when(executionContext).getAppId();
     doReturn("rendered-expression").when(executionContext).renderExpression("${expression}");
     doReturn(SweepingOutputInstance.builder()).when(executionContext).prepareSweepingOutputBuilder(Scope.PHASE);
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
 
     ExecutionResponse response = state.handleAsyncResponse(executionContext, responseData);
 
@@ -354,6 +356,8 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
         + "    \"com.datadoghq.tags.version\": \"755626d45887ba25426c58972686b63d438c4239\"\n"
         + "  }}";
 
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
+
     Map<String, ResponseData> responseData =
         prepareTestWithResponseDataMap(provisionerOutput, Collections.emptyMap(), null);
 
@@ -382,6 +386,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testSaveProvisionerOutputsOnResponseWithExistingOutputs() {
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
     String provisionerOutput = "{\"key\": \"value\"}";
     Map<String, Object> outputVariablesFromContextElement = new HashMap<>();
     outputVariablesFromContextElement.put("outputVariableFromContext", "value");
@@ -417,6 +422,7 @@ public class ShellScriptProvisionStateTest extends WingsBaseTest {
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testSaveProvisionerOutputsWithNameShellScriptProvisioner() {
+    when(executionContext.renderExpression(PROVISIONER_ID)).thenReturn(PROVISIONER_ID);
     String provisionerOutput = "{\"key\": \"value\"}";
     Map<String, ResponseData> responseData =
         prepareTestWithResponseDataMap(provisionerOutput, Collections.emptyMap(), null);

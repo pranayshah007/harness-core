@@ -54,7 +54,9 @@ public class EnvironmentYamlV2 implements Visitable {
   /*
   Deploy to all underlying infrastructures (or gitops clusters)
    */
-  boolean deployToAll;
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @YamlSchemaTypes({runtime})
+  ParameterField<Boolean> deployToAll;
 
   @ApiModelProperty(dataType = SwaggerConstants.INFRASTRUCTURE_DEFINITION_YAML_NODE_LIST_CLASSPATH)
   @YamlSchemaTypes({runtime})
@@ -75,4 +77,13 @@ public class EnvironmentYamlV2 implements Visitable {
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
+
+  public ParameterField<Boolean> getDeployToAll() {
+    // default to false
+    if (deployToAll == null) {
+      return ParameterField.createValueField(false);
+    }
+    return !deployToAll.isExpression() && deployToAll.getValue() == null ? ParameterField.createValueField(false)
+                                                                         : deployToAll;
+  }
 }

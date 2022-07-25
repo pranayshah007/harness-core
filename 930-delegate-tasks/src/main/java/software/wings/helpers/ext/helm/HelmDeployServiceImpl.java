@@ -35,6 +35,7 @@ import io.harness.container.ContainerInfo;
 import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandResponse;
+import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.ExceptionUtils;
@@ -135,6 +136,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
   @Inject private ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
   @Inject private ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
   @Inject private TimeLimiter timeLimiter;
+  @Inject private HelmTaskHelperBase helmTaskHelperBase;
   @Inject private GitService gitService;
   @Inject private EncryptionService encryptionService;
   @Inject private HelmCommandHelper helmCommandHelper;
@@ -152,7 +154,6 @@ public class HelmDeployServiceImpl implements HelmDeployService {
   protected static final String WORKING_DIR = "./repository/helm/source/${" + ACTIVITY_ID + "}";
   public static final String FROM = " from ";
   public static final String TIMED_OUT_IN_STEADY_STATE = "Timed out waiting for controller to reach in steady state";
-
   @Override
   public HelmCommandResponse deploy(HelmInstallCommandRequest commandRequest) throws IOException {
     LogCallback executionLogCallback = commandRequest.getExecutionLogCallback();
@@ -162,6 +163,10 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       HelmInstallCommandResponse commandResponse;
       executionLogCallback.saveExecutionLog(
           "List all existing deployed releases for release name: " + commandRequest.getReleaseName());
+
+      if (HelmVersion.V380.equals(commandRequest.getHelmVersion())) {
+        helmTaskHelperBase.revokeReadPermission(commandRequest.getKubeConfigLocation());
+      }
 
       HelmCliResponse helmCliResponse =
           helmClient.releaseHistory(HelmCommandDataMapper.getHelmCommandData(commandRequest), false);

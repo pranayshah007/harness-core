@@ -40,6 +40,8 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ArtifactDelegateRequestUtils {
+  private static final String DEFAULT_REGION_AWS = "us-east-1";
+
   public GcrArtifactDelegateRequest getGcrDelegateRequest(String imagePath, String tag, String tagRegex,
       List<String> tagsList, String registryHostname, String connectorRef, GcpConnectorDTO gcpConnectorDTO,
       List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
@@ -202,6 +204,7 @@ public class ArtifactDelegateRequestUtils {
         .filePath(trim(filePath))
         .filePathRegex(trim(filePathRegex))
         .connectorRef(connectorRef)
+        .region(DEFAULT_REGION_AWS)
         .awsConnectorDTO(connectorDTO)
         .encryptedDataDetails(encryptedDataDetails)
         .sourceType(sourceType)

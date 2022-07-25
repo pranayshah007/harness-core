@@ -12,12 +12,14 @@ import io.harness.annotations.dev.OwnedBy;
 
 import lombok.AccessLevel;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.DX)
 @Value
+@Getter
 @Builder
 public class ServicePipelineInfo {
   String pipelineExecutionId;

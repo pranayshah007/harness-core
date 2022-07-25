@@ -22,7 +22,7 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmException;
-import io.harness.exception.UnexpectedException;
+import io.harness.exception.ngexception.InvalidFieldsDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
@@ -55,6 +55,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
@@ -110,6 +112,30 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Override
   public Optional<InputSetEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, boolean deleted) {
+    Optional<InputSetEntity> optionalInputSetEntity =
+        getWithoutValidations(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, deleted);
+    if (!optionalInputSetEntity.isPresent()) {
+      throw new InvalidRequestException(
+          String.format("InputSet with the given ID: %s does not exist or has been deleted", identifier));
+    }
+    InputSetEntity inputSetEntity = optionalInputSetEntity.get();
+    if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
+      ScmGitMetaData inputSetScmGitMetaData = GitAwareContextHelper.getScmGitMetaData();
+      try {
+        InputSetValidationHelper.validateInputSet(this, pmsPipelineService, inputSetEntity, false);
+      } finally {
+        // input set validation involves fetching the pipeline, which can change the global scm metadata to that of the
+        // pipeline. Hence, it needs to be changed back to that of the input set once validation is complete,
+        // irrespective of whether the validation throws an exception or not
+        GitAwareContextHelper.updateScmGitMetaData(inputSetScmGitMetaData);
+      }
+    }
+    return optionalInputSetEntity;
+  }
+
+  @Override
+  public Optional<InputSetEntity> getWithoutValidations(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, String identifier, boolean deleted) {
     Optional<InputSetEntity> optionalInputSetEntity;
     try {
       if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
@@ -126,22 +152,6 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       log.error(String.format("Error while retrieving input set [%s]", identifier), e);
       throw new InvalidRequestException(
           String.format("Error while retrieving input set [%s]: %s", identifier, e.getMessage()));
-    }
-    if (!optionalInputSetEntity.isPresent()) {
-      throw new InvalidRequestException(
-          String.format("InputSet with the given ID: %s does not exist or has been deleted", identifier));
-    }
-    InputSetEntity inputSetEntity = optionalInputSetEntity.get();
-    if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
-      ScmGitMetaData inputSetScmGitMetaData = GitAwareContextHelper.getScmGitMetaData();
-      try {
-        InputSetValidationHelper.validateInputSet(this, pmsPipelineService, inputSetEntity, false);
-      } finally {
-        // input set validation involves fetching the pipeline, which can change the global scm metadata to that of the
-        // pipeline. Hence, it needs to be changed back to that of the input set once validation is complete,
-        // irrespective of whether the validation throws an exception or not
-        GitAwareContextHelper.updateScmGitMetaData(inputSetScmGitMetaData);
-      }
     }
     return optionalInputSetEntity;
   }
@@ -167,9 +177,9 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     if (GitContextHelper.getGitEntityInfo() != null && GitContextHelper.getGitEntityInfo().isNewBranch()) {
       return makeInputSetUpdateCall(inputSetEntity, changeType, true);
     }
-    Optional<InputSetEntity> optionalOriginalEntity =
-        get(inputSetEntity.getAccountId(), inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier(),
-            inputSetEntity.getPipelineIdentifier(), inputSetEntity.getIdentifier(), false);
+    Optional<InputSetEntity> optionalOriginalEntity = getWithoutValidations(inputSetEntity.getAccountId(),
+        inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier(),
+        inputSetEntity.getPipelineIdentifier(), inputSetEntity.getIdentifier(), false);
     if (!optionalOriginalEntity.isPresent()) {
       throw new InvalidRequestException(
           format("Input Set [%s], for pipeline [%s], under Project[%s], Organization [%s] doesn't exist.",
@@ -205,7 +215,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     String inputSetId = StringValueUtils.getStringFromStringValue(inputSetRef.getIdentifier());
     Optional<InputSetEntity> optionalInputSetEntity;
     try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(null, false)) {
-      optionalInputSetEntity = get(accountId, orgId, projectId, pipelineId, inputSetId, false);
+      optionalInputSetEntity = getWithoutValidations(accountId, orgId, projectId, pipelineId, inputSetId, false);
     }
     if (!optionalInputSetEntity.isPresent()) {
       throw new InvalidRequestException(
@@ -244,8 +254,8 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Override
   public boolean markGitSyncedInputSetInvalid(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, String invalidYaml) {
-    Optional<InputSetEntity> optionalInputSetEntity =
-        get(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false);
+    Optional<InputSetEntity> optionalInputSetEntity = getWithoutValidations(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false);
     if (!optionalInputSetEntity.isPresent()) {
       log.warn(String.format(
           "Marking input set [%s] as invalid failed as it does not exist or has been deleted", identifier));
@@ -303,7 +313,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   private boolean deleteForOldGitSync(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, Long version) {
     Optional<InputSetEntity> optionalOriginalEntity =
-        get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false);
+        getWithoutValidations(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false);
     if (!optionalOriginalEntity.isPresent()) {
       throw new InvalidRequestException(
           format("Input Set [%s], for pipeline [%s], under Project[%s], Organization [%s] doesn't exist.", identifier,
@@ -387,12 +397,12 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   public InputSetEntity importInputSetFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequestDTO) {
     String importedInputSetYAML = gitAwareEntityHelper.fetchYAMLFromRemote(accountId, orgIdentifier, projectIdentifier);
-    String updatedImportedInputSetYAML = updateFieldsInImportedInputSet(orgIdentifier, projectIdentifier,
-        pipelineIdentifier, inputSetIdentifier, inputSetImportRequestDTO, importedInputSetYAML);
-    InputSetEntity inputSetEntity = PMSInputSetElementMapper.toInputSetEntity(accountId, updatedImportedInputSetYAML);
+    checkAndThrowMismatchInImportedInputSetMetadata(orgIdentifier, projectIdentifier, pipelineIdentifier,
+        inputSetIdentifier, inputSetImportRequestDTO, importedInputSetYAML);
+    InputSetEntity inputSetEntity = PMSInputSetElementMapper.toInputSetEntity(accountId, importedInputSetYAML);
+
     try {
-      return inputSetRepository.saveForImportedYAML(
-          inputSetEntity, !updatedImportedInputSetYAML.equals(importedInputSetYAML));
+      return inputSetRepository.saveForImportedYAML(inputSetEntity);
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
           format(DUP_KEY_EXP_FORMAT_STRING, inputSetEntity.getIdentifier(), inputSetEntity.getProjectIdentifier(),
@@ -409,8 +419,9 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   }
 
   // todo: move to helper class when created during refactoring
-  String updateFieldsInImportedInputSet(String orgIdentifier, String projectIdentifier, String pipelineIdentifier,
-      String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequest, String importedInputSet) {
+  void checkAndThrowMismatchInImportedInputSetMetadata(String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequest,
+      String importedInputSet) {
     if (EmptyPredicate.isEmpty(importedInputSet)) {
       String errorMessage = format(
           "Empty YAML found on Git in branch [%s] for Input Set [%s] of Pipeline [%s] under Project[%s], Organization [%s].",
@@ -437,63 +448,53 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
         throw buildInvalidYamlException(errorMessage, importedInputSet);
       }
     }
-    return updateCommonFieldsInImportedInputSet(orgIdentifier, projectIdentifier, pipelineIdentifier,
+    checkAndThrowMismatchInImportedInputSetMetadataHelper(orgIdentifier, projectIdentifier, pipelineIdentifier,
         inputSetIdentifier, inputSetImportRequest, importedInputSet, inputSetYAMLField, isOverlay);
   }
 
-  // todo: move to helper class when created during refactoring
-  String updateCommonFieldsInImportedInputSet(String orgIdentifier, String projectIdentifier, String pipelineIdentifier,
-      String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequest, String importedInputSet,
-      YamlField inputSetField, boolean isOverlay) {
+  void checkAndThrowMismatchInImportedInputSetMetadataHelper(String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequest,
+      String importedInputSet, YamlField inputSetField, boolean isOverlay) {
     YamlField inputSetInnerField;
     if (isOverlay) {
       inputSetInnerField = inputSetField.getNode().getField(EntityYamlRootNames.OVERLAY_INPUT_SET);
     } else {
       inputSetInnerField = inputSetField.getNode().getField(EntityYamlRootNames.INPUT_SET);
     }
-    boolean hasMetadataChanged = false;
+    Map<String, String> changedFields = new HashMap<>();
 
     String identifierFromGit = inputSetInnerField.getNode().getIdentifier();
     if (!inputSetIdentifier.equals(identifierFromGit)) {
-      YamlUtils.setStringValueForField(YAMLFieldNameConstants.IDENTIFIER, inputSetIdentifier, inputSetInnerField);
-      hasMetadataChanged = true;
+      changedFields.put(YAMLFieldNameConstants.IDENTIFIER, identifierFromGit);
     }
 
     String nameFromGit = inputSetInnerField.getNode().getName();
     if (!inputSetImportRequest.getInputSetName().equals(nameFromGit)) {
-      YamlUtils.setStringValueForField(
-          YAMLFieldNameConstants.NAME, inputSetImportRequest.getInputSetName(), inputSetInnerField);
-      hasMetadataChanged = true;
+      changedFields.put(YAMLFieldNameConstants.NAME, nameFromGit);
     }
 
     String orgIdentifierFromGit = inputSetInnerField.getNode().getStringValue(YAMLFieldNameConstants.ORG_IDENTIFIER);
     if (!orgIdentifier.equals(orgIdentifierFromGit)) {
-      YamlUtils.setStringValueForField(YAMLFieldNameConstants.ORG_IDENTIFIER, orgIdentifier, inputSetInnerField);
-      hasMetadataChanged = true;
+      changedFields.put(YAMLFieldNameConstants.ORG_IDENTIFIER, orgIdentifierFromGit);
     }
 
     String projectIdentifierFromGit =
         inputSetInnerField.getNode().getStringValue(YAMLFieldNameConstants.PROJECT_IDENTIFIER);
     if (!projectIdentifier.equals(projectIdentifierFromGit)) {
-      YamlUtils.setStringValueForField(
-          YAMLFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifier, inputSetInnerField);
-      hasMetadataChanged = true;
+      changedFields.put(YAMLFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifierFromGit);
     }
 
     String descriptionFromGit = inputSetInnerField.getNode().getStringValue(YAMLFieldNameConstants.DESCRIPTION);
-    if (inputSetImportRequest.getInputSetDescription() != null
+    if (!(EmptyPredicate.isEmpty(inputSetImportRequest.getInputSetDescription())
+            && EmptyPredicate.isEmpty(descriptionFromGit))
         && !inputSetImportRequest.getInputSetDescription().equals(descriptionFromGit)) {
-      YamlUtils.setStringValueForField(
-          YAMLFieldNameConstants.DESCRIPTION, inputSetImportRequest.getInputSetDescription(), inputSetInnerField);
-      hasMetadataChanged = true;
+      changedFields.put(YAMLFieldNameConstants.DESCRIPTION, descriptionFromGit);
     }
     if (isOverlay) {
       String pipelineIdentifierFromGit =
           inputSetInnerField.getNode().getStringValue(YAMLFieldNameConstants.PIPELINE_IDENTIFIER);
       if (!pipelineIdentifier.equals(pipelineIdentifierFromGit)) {
-        YamlUtils.setStringValueForField(
-            YAMLFieldNameConstants.PIPELINE_IDENTIFIER, pipelineIdentifier, inputSetInnerField);
-        hasMetadataChanged = true;
+        changedFields.put(YAMLFieldNameConstants.PIPELINE_IDENTIFIER, pipelineIdentifierFromGit);
       }
     } else {
       String pipelineIdentifierFromGit = inputSetInnerField.getNode()
@@ -501,21 +502,17 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
                                              .getNode()
                                              .getStringValue(YAMLFieldNameConstants.IDENTIFIER);
       if (!pipelineIdentifier.equals(pipelineIdentifierFromGit)) {
-        YamlUtils.setStringValueForField(YAMLFieldNameConstants.IDENTIFIER, pipelineIdentifier,
-            inputSetInnerField.getNode().getField(YAMLFieldNameConstants.PIPELINE));
-        hasMetadataChanged = true;
+        changedFields.put(YAMLFieldNameConstants.PIPELINE_IDENTIFIER, pipelineIdentifierFromGit);
       }
     }
 
-    if (hasMetadataChanged) {
-      try {
-        importedInputSet = YamlUtils.writeYamlString(inputSetField).replace("---\n", "");
-      } catch (IOException e) {
-        log.error("Unexpected error when trying to set description", e);
-        throw new UnexpectedException("Unexpected error when trying to set Pipeline Metadata. Please try again.", e);
-      }
+    if (!changedFields.isEmpty()) {
+      InvalidFieldsDTO invalidFields = InvalidFieldsDTO.builder().expectedValues(changedFields).build();
+      throw new InvalidRequestException(
+          "Requested metadata params do not match the values found in the YAML on Git for these fields: "
+              + changedFields.keySet(),
+          invalidFields);
     }
-    return importedInputSet;
   }
 
   // todo: move to helper class when created during refactoring

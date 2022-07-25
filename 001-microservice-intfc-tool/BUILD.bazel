@@ -15,3 +15,25 @@ java_binary(
         "//999-annotations:module",
     ],
 )
+
+java_binary(
+    name = "delegate",
+    srcs = glob(["src/main/java/**/*.java"]),
+    main_class = "io.harness.MicroserviceDelegateInterfaceTool",
+    resources = [
+        "//260-delegate/src/test/resources:resource",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//420-delegate-service:module",
+        "//920-delegate-agent-beans:module",
+        "//930-delegate-tasks:module",
+        "//950-delegate-tasks-beans:module",
+        "//959-file-service-commons:module",
+        "//970-ng-commons:module",
+        "//970-watcher-beans:module",
+        "//980-commons:module",
+        "//999-annotations:module",
+        "//platform-service/modules/notification-service/contracts:module",
+    ],
+)

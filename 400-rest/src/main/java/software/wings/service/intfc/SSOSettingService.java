@@ -19,6 +19,8 @@ import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.OauthSettings;
 import software.wings.beans.sso.SSOSettings;
 import software.wings.beans.sso.SamlSettings;
+import software.wings.features.api.GetAccountId;
+import software.wings.features.extractors.SamlSettingsAccountIdExtractor;
 import software.wings.service.intfc.ownership.OwnedByAccount;
 
 import java.util.Iterator;
@@ -40,6 +42,10 @@ public interface SSOSettingService extends OwnedByAccount {
   OauthSettings getOauthSettingsByAccountId(String accountId);
 
   @ValidationGroups(Create.class) SamlSettings saveSamlSettings(@Valid SamlSettings settings);
+
+  // This function is meant to be called for ng sso settings, as the license check is already done in NG Service
+  SamlSettings saveSamlSettingsWithoutCGLicenseCheck(
+      @GetAccountId(SamlSettingsAccountIdExtractor.class) SamlSettings settings);
 
   OauthSettings saveOauthSettings(OauthSettings settings);
 

@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service;
 
+import io.harness.ngmigration.service.entity.AccountMigrationService;
 import io.harness.ngmigration.service.entity.AppMigrationService;
 import io.harness.ngmigration.service.entity.ArtifactStreamMigrationService;
 import io.harness.ngmigration.service.entity.ConnectorMigrationService;
@@ -37,11 +38,14 @@ public class NgMigrationFactory {
   @Inject ManifestMigrationService manifestMigrationService;
   @Inject DummyMigrationService dummyMigrationService;
   @Inject AppMigrationService appMigrationService;
+  @Inject AccountMigrationService accountMigrationService;
 
   public NgMigrationService getMethod(NGMigrationEntityType type) {
     switch (type) {
       case DUMMY_HEAD:
         return dummyMigrationService;
+      case ACCOUNT:
+        return accountMigrationService;
       case APPLICATION:
         return appMigrationService;
       case PIPELINE:

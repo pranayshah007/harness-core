@@ -15,7 +15,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.plancreator.strategy.StageStrategyUtils;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.steps.StepType;
@@ -65,7 +65,7 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
    * Adds the nextStageAdviser to the given node if it is not the end stage
    */
   protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField stageField) {
-    return StageStrategyUtils.getAdviserObtainments(stageField, kryoSerializer, true);
+    return StrategyUtils.getAdviserObtainments(stageField, kryoSerializer, true);
   }
 
   /**
@@ -78,19 +78,19 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
    * @param dependenciesNodeMap
    * @param metadataMap
    */
-  protected void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, AbstractStageNode field,
+  public void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, AbstractStageNode field,
       Map<String, YamlField> dependenciesNodeMap, Map<String, ByteString> metadataMap) {
-    StageStrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getIdentifier(),
+    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getIdentifier(),
         field.getName(), dependenciesNodeMap, metadataMap,
-        StageStrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false));
+        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false));
   }
 
   @Override
   public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext context, T config) {
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     YamlField stageYamlField = context.getCurrentField();
-    if (StageStrategyUtils.isWrappedUnderStrategy(context.getCurrentField())) {
-      stageYamlFieldMap = StageStrategyUtils.modifyStageLayoutNodeGraph(stageYamlField);
+    if (StrategyUtils.isWrappedUnderStrategy(context.getCurrentField())) {
+      stageYamlFieldMap = StrategyUtils.modifyStageLayoutNodeGraph(stageYamlField);
     }
     return GraphLayoutResponse.builder().layoutNodes(stageYamlFieldMap).build();
   }
@@ -106,8 +106,8 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
    */
   protected void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, AbstractStageNode field,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, Map<String, ByteString> metadataMap) {
-    StageStrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getName(),
+    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getName(),
         field.getIdentifier(), planCreationResponseMap, metadataMap,
-        StageStrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false));
+        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false));
   }
 }

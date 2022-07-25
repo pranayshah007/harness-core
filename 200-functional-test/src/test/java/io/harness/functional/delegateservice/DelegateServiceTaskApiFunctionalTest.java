@@ -385,7 +385,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
 
     DelegateServiceGrpcClient delegateServiceGrpcClient = new DelegateServiceGrpcClient(
         delegateServiceBlockingStub, delegateAsyncService, kryoSerializer, delegateSyncService, () -> false);
-    DelegateServiceAgentClient delegateServiceAgentClient = new DelegateServiceAgentClient(delegateServiceBlockingStub);
+    DelegateServiceAgentClient delegateServiceAgentClient = new DelegateServiceAgentClient();
 
     DelegateCallbackToken callbackToken = delegateServiceGrpcClient.registerCallback(
         DelegateCallback.newBuilder()

@@ -7,7 +7,6 @@
 
 package io.harness.cdng.envGroup.resource;
 
-import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static java.lang.Long.parseLong;
@@ -174,14 +173,15 @@ public class EnvironmentGroupResource {
             description =
                 "If the YAML is valid, returns created Environment Group. If not, it sends what is wrong with the YAML")
       })
-  @NGAccessControlCheck(resourceType = NGResourceType.ENVIRONMENT_GROUP,
-      permission = CDNGRbacPermissions.ENVIRONMENT_GROUP_CREATE_PERMISSION)
   public ResponseDTO<EnvironmentGroupResponse>
   create(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Parameter(
              description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) String accountId,
       @Parameter(description = "Details of the Environment Group to be created")
       @Valid EnvironmentGroupRequestDTO environmentGroupRequestDTO,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentGroupRequestDTO.getOrgIdentifier(),
+                                                  environmentGroupRequestDTO.getProjectIdentifier()),
+        Resource.of(NGResourceType.ENVIRONMENT_GROUP, null), CDNGRbacPermissions.ENVIRONMENT_GROUP_CREATE_PERMISSION);
     EnvironmentGroupEntity entity =
         EnvironmentGroupMapper.toEnvironmentGroupEntity(accountId, environmentGroupRequestDTO);
 
@@ -281,8 +281,6 @@ public class EnvironmentGroupResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the updated Environment Group")
       })
-  @NGAccessControlCheck(resourceType = NGResourceType.ENVIRONMENT_GROUP,
-      permission = CDNGRbacPermissions.ENVIRONMENT_GROUP_UPDATE_PERMISSION)
   public ResponseDTO<EnvironmentGroupResponse>
   update(@HeaderParam(IF_MATCH) String ifMatch,
       @Parameter(description = ENVIRONMENT_GROUP_PARAM_MESSAGE) @NotNull @PathParam(
@@ -294,6 +292,11 @@ public class EnvironmentGroupResource {
     log.info(String.format("Updating Environment Group with identifier %s in project %s, org %s, account %s",
         envGroupId, environmentGroupRequestDTO.getProjectIdentifier(), environmentGroupRequestDTO.getOrgIdentifier(),
         accountId));
+
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentGroupRequestDTO.getOrgIdentifier(),
+                                                  environmentGroupRequestDTO.getProjectIdentifier()),
+        Resource.of(NGResourceType.ENVIRONMENT_GROUP, envGroupId),
+        CDNGRbacPermissions.ENVIRONMENT_GROUP_UPDATE_PERMISSION);
     EnvironmentGroupEntity requestedEntity =
         EnvironmentGroupMapper.toEnvironmentGroupEntity(accountId, environmentGroupRequestDTO);
 
@@ -338,6 +341,6 @@ public class EnvironmentGroupResource {
     List<String> envIdentifiers = envGroup.getEnvIdentifiers();
     envIdentifiers.forEach(envId
         -> accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
-            Resource.of(ENVIRONMENT, envId), CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION));
+            Resource.of(NGResourceType.ENVIRONMENT, envId), CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION));
   }
 }

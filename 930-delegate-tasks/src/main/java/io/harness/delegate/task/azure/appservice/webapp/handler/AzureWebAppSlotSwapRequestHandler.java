@@ -13,7 +13,6 @@ import static io.harness.azure.model.AzureConstants.SLOT_SWAP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.azure.model.AzureConfig;
-import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDeploymentContext;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSwapSlotsRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppRequestResponse;
@@ -35,23 +34,11 @@ public class AzureWebAppSlotSwapRequestHandler extends AzureWebAppRequestHandler
     String targetSlot = taskRequest.getTargetSlot();
     azureAppServiceResourceUtilities.validateSlotSwapParameters(webAppName, sourceSlot, targetSlot);
 
-    swapSlots(azureConfig, logCallbackProvider, infrastructure, targetSlot, timeoutIntervalInMin);
+    AzureWebClientContext webClientContext = buildAzureWebClientContext(infrastructure, azureConfig);
+    azureAppServiceResourceUtilities.swapSlots(
+        webClientContext, logCallbackProvider, infrastructure.getDeploymentSlot(), targetSlot, timeoutIntervalInMin);
 
     return AzureWebAppSwapSlotsResponseNG.builder().deploymentProgressMarker(SLOT_SWAP).build();
-  }
-
-  private void swapSlots(AzureConfig azureConfig, AzureLogCallbackProvider logCallbackProvider,
-      AzureWebAppInfraDelegateConfig infrastructure, String targetSlot, Integer timeoutIntervalInMin) {
-    AzureWebClientContext webClientContext = buildAzureWebClientContext(infrastructure, azureConfig);
-
-    AzureAppServiceDeploymentContext azureAppServiceDeploymentContext = new AzureAppServiceDeploymentContext();
-    azureAppServiceDeploymentContext.setAzureWebClientContext(webClientContext);
-    azureAppServiceDeploymentContext.setLogCallbackProvider(logCallbackProvider);
-    azureAppServiceDeploymentContext.setSlotName(infrastructure.getDeploymentSlot());
-    azureAppServiceDeploymentContext.setSteadyStateTimeoutInMin(timeoutIntervalInMin);
-
-    azureAppServiceDeploymentService.swapSlotsUsingCallback(
-        azureAppServiceDeploymentContext, targetSlot, logCallbackProvider);
   }
 
   @Override

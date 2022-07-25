@@ -38,7 +38,6 @@ import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -59,9 +58,6 @@ public class SlackServiceImpl implements ChannelService {
   private final NotificationTemplateService notificationTemplateService;
   private final SlackSenderImpl slackSender;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-  private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
-  private static final String ORG_IDENTIFIER = "orgIdentifier";
-  private static final String PROJECT_IDENTIFIER = "projectIdentifier";
 
   @Override
   public NotificationProcessingResponse send(NotificationRequest notificationRequest) {
@@ -88,10 +84,8 @@ public class SlackServiceImpl implements ChannelService {
 
     int expressionFunctorToken = Math.toIntExact(slackDetails.getExpressionFunctorToken());
 
-    Map<String, String> abstractionMap = new HashMap<>();
-    abstractionMap.put(ACCOUNT_IDENTIFIER, notificationRequest.getAccountId());
-    abstractionMap.put(ORG_IDENTIFIER, slackDetails.getOrgIdentifier());
-    abstractionMap.put(PROJECT_IDENTIFIER, slackDetails.getProjectIdentifier());
+    Map<String, String> abstractionMap = notificationSettingsService.buildTaskAbstractions(
+        notificationRequest.getAccountId(), slackDetails.getOrgIdentifier(), slackDetails.getProjectIdentifier());
 
     return send(slackWebhookUrls, templateId, templateData, notificationRequest.getId(), notificationRequest.getTeam(),
         notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap);

@@ -41,13 +41,20 @@ public enum ResourceType {
   MONITORED_SERVICE(ResourceTypeConstants.MONITORED_SERVICE),
   CHAOS_AGENT(ResourceTypeConstants.CHAOS_AGENT),
   CHAOS_WORKFLOW(ResourceTypeConstants.CHAOS_WORKFLOW),
+  STO_TARGET(ResourceTypeConstants.STO_TARGET),
+  STO_EXEMPTION(ResourceTypeConstants.STO_EXEMPTION),
   CHAOS_GITOPS(ResourceTypeConstants.CHAOS_GITOPS),
   SERVICE_LEVEL_OBJECTIVE(ResourceTypeConstants.SERVICE_LEVEL_OBJECTIVE),
   PERSPECTIVE(ResourceTypeConstants.PERSPECTIVE),
   PERSPECTIVE_BUDGET(ResourceTypeConstants.PERSPECTIVE_BUDGET),
   PERSPECTIVE_REPORT(ResourceTypeConstants.PERSPECTIVE_REPORT),
   COST_CATEGORY(ResourceTypeConstants.COST_CATEGORY),
-  SMTP(ResourceTypeConstants.SMTP);
+  SMTP(ResourceTypeConstants.SMTP),
+  PERSPECTIVE_FOLDER(ResourceTypeConstants.PERSPECTIVE_FOLDER),
+  AUTOSTOPPING_RULE(ResourceTypeConstants.AUTOSTOPPING_RULE),
+  AUTOSTOPPING_LB(ResourceTypeConstants.AUTOSTOPPING_LB),
+  AUTOSTOPPING_STARTSTOP(ResourceTypeConstants.AUTOSTOPPING_STARTSTOP),
+  SETTING(ResourceTypeConstants.SETTING);
 
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {

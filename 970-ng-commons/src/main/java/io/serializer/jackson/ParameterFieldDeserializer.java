@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
@@ -95,15 +96,24 @@ public class ParameterFieldDeserializer extends StdDeserializer<ParameterField<?
       // pre-filled default values. So user will always provide value.
       return ParameterField.createFieldWithDefaultValue(defaultValue == null, isExecutionInput,
           NGExpressionUtils.DEFAULT_INPUT_SET_EXPRESSION,
-          defaultValue == null ? null : JsonUtils.asObject(defaultValue, this.referenceType.getRawClass()),
+          defaultValue == null ? null
+                               : JsonUtils.asObject("\"" + defaultValue + "\"", this.referenceType.getRawClass()),
           inputSetValidator, isTypeString);
     }
-    if (inputSetValidator != null) {
+    if (inputSetValidator != null && isTypeString) {
       String value = getLeftSideOfExpression(text);
       if (EngineExpressionEvaluator.hasExpressions(value)) {
-        return ParameterField.createExpressionField(true, value, inputSetValidator, isTypeString);
+        return ParameterField.createExpressionField(true, value, inputSetValidator, true);
       }
-      return ParameterField.createValueFieldWithInputSetValidator(value, inputSetValidator, isTypeString);
+      return ParameterField.createValueFieldWithInputSetValidator(value, inputSetValidator, true);
+    } else if (inputSetValidator != null) {
+      String value = getLeftSideOfExpression(text);
+      if (EngineExpressionEvaluator.hasExpressions(value)) {
+        return ParameterField.createExpressionField(true, value, inputSetValidator, false);
+      }
+      ObjectMapper mapper = (ObjectMapper) p.getCodec();
+      Object trueValue = mapper.readValue(value, referenceType.getRawClass());
+      return ParameterField.createValueFieldWithInputSetValidator(trueValue, inputSetValidator, false);
     }
     if (EngineExpressionEvaluator.hasExpressions(text)) {
       return ParameterField.createExpressionField(true, text, null, isTypeString);

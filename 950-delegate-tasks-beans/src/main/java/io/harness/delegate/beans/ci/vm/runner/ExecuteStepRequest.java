@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Singular;
 import lombok.Value;
 
 @Value
@@ -23,6 +22,7 @@ public class ExecuteStepRequest {
   @JsonProperty("correlation_id") String correlationID;
   @JsonProperty("ip_address") String ipAddress;
   @JsonProperty("pool_id") String poolId;
+  @JsonProperty("stage_runtime_id") String stageRuntimeID;
   @JsonProperty("start_step_request") Config config;
 
   @Data
@@ -34,7 +34,7 @@ public class ExecuteStepRequest {
     @JsonProperty("environment") Map<String, String> envs;
     @JsonProperty("name") String name;
     @JsonProperty("log_key") String logKey;
-    @JsonProperty("secrets") @Singular List<String> secrets;
+    @JsonProperty("secrets") List<String> secrets;
     @JsonProperty("working_dir") String workingDir;
     @JsonProperty("kind") String kind;
     @JsonProperty("run") RunConfig runConfig;

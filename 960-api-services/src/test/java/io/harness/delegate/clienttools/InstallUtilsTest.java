@@ -52,7 +52,7 @@ public class InstallUtilsTest extends CategoryTest {
 
   private static final String DEFAULT_KUSTOMIZE_3_PATH = PWD + "/client-tools/kustomize/v3.5.4/kustomize";
   private static final String DEFAULT_KUSTOMIZE_4_PATH = PWD + "/client-tools/kustomize/v4.0.0/kustomize";
-  private static final String DEFAULT_SCM_PATH = PWD + "/client-tools/scm/386387fc/scm";
+  private static final String DEFAULT_SCM_PATH = PWD + "/client-tools/scm/36d92fd8/scm";
   private static final String DEFAULT_OC_PATH = PWD + "/client-tools/oc/v4.2.16/oc";
   private static final String DEFAULT_TFCONFIG_INSPECT_1_0_PATH =
       PWD + "/client-tools/tf-config-inspect/v1.0/terraform-config-inspect";
@@ -72,6 +72,8 @@ public class InstallUtilsTest extends CategoryTest {
   public void setUp() throws Exception {
     mockStatic(InstallUtils.class, CALLS_REAL_METHODS);
     doReturn(true).when(InstallUtils.class, "validateToolExists", any(), any());
+    // None of the tools are on the $PATH
+    doReturn(false).when(InstallUtils.class, "runToolCommand", any(), any());
     doNothing().when(InstallUtils.class, "initTool", any(), any());
   }
 
@@ -172,6 +174,39 @@ public class InstallUtilsTest extends CategoryTest {
 
     assertThat(getPath(HELM, HelmVersion.V3)).isEqualTo(customHelm3Path);
     assertThat(getPath(HELM, HelmVersion.V2)).isEqualTo(DEFAULT_HELM_2_PATH);
+  }
+
+  @Test
+  @Owner(developers = MARKO)
+  @Category(UnitTests.class)
+  public void whenToolsOnPathThenReturnBinaryName() throws Exception {
+    final DelegateConfiguration customConfig =
+        DelegateConfiguration.builder().managerUrl("localhost").clientToolsDownloadDisabled(true).build();
+
+    doReturn(true).when(InstallUtils.class, "runToolCommand", any(), any());
+
+    setupClientTools(customConfig);
+
+    assertThat(getPath(KUBECTL, KubectlVersion.V1_13)).isEqualTo(KUBECTL.getBinaryName());
+    assertThat(getPath(KUBECTL, KubectlVersion.V1_19)).isEqualTo(KUBECTL.getBinaryName());
+    assertThat(getPath(GO_TEMPLATE, GoTemplateVersion.V0_4)).isEqualTo(GO_TEMPLATE.getBinaryName());
+    assertThat(getPath(HARNESS_PYWINRM, HarnessPywinrmVersion.V0_4)).isEqualTo(HARNESS_PYWINRM.getBinaryName());
+    assertThat(getPath(HELM, HelmVersion.V2)).isEqualTo(HELM.getBinaryName());
+    assertThat(getPath(HELM, HelmVersion.V3)).isEqualTo(HELM.getBinaryName());
+    assertThat(getPath(HELM, HelmVersion.V3_8)).isEqualTo(HELM.getBinaryName());
+    assertThat(getLatestVersionPath(CHARTMUSEUM)).isEqualTo(CHARTMUSEUM.getBinaryName());
+    assertThat(getPath(CHARTMUSEUM, ChartmuseumVersion.V0_8)).isEqualTo(CHARTMUSEUM.getBinaryName());
+    assertThat(getPath(CHARTMUSEUM, ChartmuseumVersion.V0_12)).isEqualTo(CHARTMUSEUM.getBinaryName());
+    assertThat(getLatestVersionPath(TERRAFORM_CONFIG_INSPECT)).isEqualTo(TERRAFORM_CONFIG_INSPECT.getBinaryName());
+    assertThat(getPath(TERRAFORM_CONFIG_INSPECT, TerraformConfigInspectVersion.V1_0))
+        .isEqualTo(TERRAFORM_CONFIG_INSPECT.getBinaryName());
+    assertThat(getPath(TERRAFORM_CONFIG_INSPECT, TerraformConfigInspectVersion.V1_1))
+        .isEqualTo(TERRAFORM_CONFIG_INSPECT.getBinaryName());
+    assertThat(getPath(OC, OcVersion.V4_2)).isEqualTo(OC.getBinaryName());
+    assertThat(getLatestVersionPath(KUSTOMIZE)).isEqualTo(KUSTOMIZE.getBinaryName());
+    assertThat(getPath(KUSTOMIZE, KustomizeVersion.V3)).isEqualTo(KUSTOMIZE.getBinaryName());
+    assertThat(getPath(KUSTOMIZE, KustomizeVersion.V4)).isEqualTo(KUSTOMIZE.getBinaryName());
+    assertThat(getPath(SCM, ScmVersion.DEFAULT)).isEqualTo(SCM.getBinaryName());
   }
 
   @Test

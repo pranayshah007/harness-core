@@ -96,7 +96,7 @@ public class DockerArtifactResource {
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
       DockerHubArtifactConfig dockerHubArtifactConfig = (DockerHubArtifactConfig) artifactSpecFromService;
       if (isEmpty(imagePath)) {
-        imagePath = dockerHubArtifactConfig.getImagePath().getValue();
+        imagePath = (String) dockerHubArtifactConfig.getImagePath().fetchFinalValue();
       }
       if (isEmpty(dockerConnectorIdentifier)) {
         dockerConnectorIdentifier = dockerHubArtifactConfig.getConnectorRef().getValue();

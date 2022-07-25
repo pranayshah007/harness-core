@@ -25,6 +25,7 @@ import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
+import io.harness.shell.ScriptType;
 import io.harness.shell.SshSessionManager;
 
 import com.google.inject.Inject;
@@ -33,11 +34,12 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 @OwnedBy(CDP)
 public class CommandTaskNG extends AbstractDelegateRunnableTask {
-  @Inject private Map<String, CommandHandler> commandUnitHandlers;
+  @Inject private Map<Pair, CommandHandler> commandUnitHandlers;
 
   public CommandTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -55,8 +57,7 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
     if (parameters instanceof SshCommandTaskParameters) {
       return runSsh((SshCommandTaskParameters) parameters);
     } else if (parameters instanceof WinrmTaskParameters) {
-      // TODO winrm logic
-      return CommandTaskResponse.builder().status(CommandExecutionStatus.SUCCESS).build();
+      return runWinRm((WinrmTaskParameters) parameters);
     } else {
       throw new IllegalArgumentException(String.format("Invalid parameters type provide %s", parameters.getClass()));
     }
@@ -66,21 +67,7 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
 
     try {
-      CommandExecutionStatus status = CommandExecutionStatus.FAILURE;
-      for (NgCommandUnit commandUnit : parameters.getCommandUnits()) {
-        CommandHandler handler = commandUnitHandlers.get(commandUnit.getCommandUnitType());
-        status = handler.handle(parameters, commandUnit, this.getLogStreamingTaskClient(), commandUnitsProgress);
-        if (CommandExecutionStatus.FAILURE.equals(status)) {
-          break;
-        }
-      }
-
-      return CommandTaskResponse.builder()
-          .status(status)
-          .errorMessage(getErrorMessage(status))
-          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-          .build();
-
+      return getTaskResponse(parameters, commandUnitsProgress, ScriptType.BASH);
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception in processing command task", sanitizedException);
@@ -91,6 +78,37 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
         SshSessionManager.evictAndDisconnectCachedSession(parameters.getExecutionId(), parameters.getHost());
       }
     }
+  }
+
+  private DelegateResponseData runWinRm(WinrmTaskParameters parameters) {
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+
+    try {
+      return getTaskResponse(parameters, commandUnitsProgress, ScriptType.POWERSHELL);
+    } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception in processing command task", sanitizedException);
+      throw new TaskNGDataException(
+          UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
+    }
+  }
+
+  private CommandTaskResponse getTaskResponse(
+      CommandTaskParameters parameters, CommandUnitsProgress commandUnitsProgress, ScriptType scriptType) {
+    CommandExecutionStatus status = CommandExecutionStatus.FAILURE;
+    for (NgCommandUnit commandUnit : parameters.getCommandUnits()) {
+      CommandHandler handler = commandUnitHandlers.get(Pair.of(commandUnit.getCommandUnitType(), scriptType.name()));
+      status = handler.handle(parameters, commandUnit, this.getLogStreamingTaskClient(), commandUnitsProgress);
+      if (CommandExecutionStatus.FAILURE.equals(status)) {
+        break;
+      }
+    }
+
+    return CommandTaskResponse.builder()
+        .status(status)
+        .errorMessage(getErrorMessage(status))
+        .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+        .build();
   }
 
   private String getErrorMessage(CommandExecutionStatus status) {

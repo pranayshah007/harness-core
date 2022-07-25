@@ -31,3 +31,6 @@ grpcServiceConnectorPort: 8080
 logStreamingServiceBaseUrl: http://localhost:8079
 clientToolsDownloadDisabled: true
 installClientToolsInBackground: true
+
+# Required for local development as manger uses self-signed cert
+trustAllCertificates: true

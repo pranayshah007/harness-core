@@ -18,6 +18,6 @@ public class SLONotificationHandler implements Handler<ServiceLevelObjective> {
 
   @Override
   public void handle(ServiceLevelObjective serviceLevelObjective) {
-    serviceLevelObjectiveService.sendNotification(serviceLevelObjective);
+    serviceLevelObjectiveService.handleNotification(serviceLevelObjective);
   }
 }

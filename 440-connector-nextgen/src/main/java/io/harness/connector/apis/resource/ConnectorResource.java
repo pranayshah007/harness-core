@@ -28,10 +28,12 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
 import io.harness.connector.ConnectorCatalogueResponseDTO;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
+import io.harness.connector.ConnectorRegistryFactory;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.accesscontrol.ResourceTypes;
@@ -73,6 +75,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -278,6 +281,50 @@ public class ConnectorResource {
   }
 
   @POST
+  @Path("/ccmK8sList")
+  @ApiOperation(value = "Gets CCMK8S Connector list", nickname = "getCCMK8SConnectorList")
+  @Operation(operationId = "getCCMK8SConnectorList",
+      summary = "Fetches the list of CMC K8S Connectors corresponding to the request's filter criteria.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the list of Connectors")
+      })
+  public ResponseDTO<PageResponse<CombineCcmK8sConnectorResponseDTO>>
+  ccmK8sList(@Parameter(description = "Page number of navigation. The default value is 0") @QueryParam(
+                 NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
+      @Parameter(description = "Number of entries per page. The default value is 100") @QueryParam(
+          NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") int size,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(
+          description =
+              "This would be used to filter Connectors. Any Connector having the specified string in its Name, ID and Tag would be filtered.")
+      @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @QueryParam(NGResourceFilterConstants.FILTER_KEY) String filterIdentifier,
+      @Parameter(description = "Specify whether or not to include all the Connectors"
+              + " accessible at the scope. For eg if set as true, at the Project scope we will get"
+              + " org and account Connector also in the response") @QueryParam(INCLUDE_ALL_CONNECTORS_ACCESSIBLE)
+      Boolean includeAllConnectorsAccessibleAtScope,
+      @RequestBody(required = true, description = "Details of the filters applied")
+      @Body ConnectorFilterPropertiesDTO connectorListFilter, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @Parameter(
+          description =
+              "This when set to true along with GitSync enabled for the Connector, you can get one connector entity from each identifier. "
+              + "The connector entity can belong to any branch") @QueryParam("getDistinctFromBranches")
+      Boolean getDistinctFromBranches) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
+    return ResponseDTO.newResponse(getNGPageResponse(connectorService.listCcmK8S(page, size, accountIdentifier,
+        connectorListFilter, orgIdentifier, projectIdentifier, filterIdentifier, searchTerm,
+        includeAllConnectorsAccessibleAtScope, getDistinctFromBranches)));
+  }
+
+  @POST
   @ApiOperation(value = "Creates a Connector", nickname = "createConnector")
   @Operation(operationId = "createConnector", summary = "Create a Connector",
       description = "Creates a new Harness Connector.",
@@ -292,18 +339,23 @@ public class ConnectorResource {
       @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo) {
-    accessControlClient.checkForAccessOrThrow(
-        ResourceScope.of(accountIdentifier, connector.getConnectorInfo().getOrgIdentifier(),
-            connector.getConnectorInfo().getProjectIdentifier()),
-        Resource.of(ResourceTypes.CONNECTOR, null), EDIT_CONNECTOR_PERMISSION);
-
     if (HARNESS_SECRET_MANAGER_IDENTIFIER.equals(connector.getConnectorInfo().getIdentifier())) {
       throw new InvalidRequestException(
           String.format("%s cannot be used as connector identifier", HARNESS_SECRET_MANAGER_IDENTIFIER), USER);
     }
+    if (connector.getConnectorInfo().getConnectorType() == null) {
+      throw new InvalidRequestException("Connector type cannot be null");
+    }
     if (connector.getConnectorInfo().getConnectorType() == ConnectorType.LOCAL) {
       throw new InvalidRequestException("Local Secret Manager creation not supported", USER);
     }
+    Map<String, String> connectorAttributes = new HashMap<>();
+    connectorAttributes.put("category",
+        ConnectorRegistryFactory.getConnectorCategory(connector.getConnectorInfo().getConnectorType()).toString());
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountIdentifier, connector.getConnectorInfo().getOrgIdentifier(),
+            connector.getConnectorInfo().getProjectIdentifier()),
+        Resource.of(ResourceTypes.CONNECTOR, null, connectorAttributes), EDIT_CONNECTOR_PERMISSION);
     return ResponseDTO.newResponse(connectorService.create(connector, accountIdentifier));
   }
 

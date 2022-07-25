@@ -104,9 +104,30 @@ public class PmsSdkInstanceTest extends CategoryTest {
 
     // dummy lock
     AcquiredLock<?> acquiredLock = mock(AcquiredLock.class);
-    doReturn(acquiredLock).when(persistentLocker).tryToAcquireLock(any(), any());
+    doReturn(acquiredLock).when(persistentLocker).waitToAcquireLock(any(), any(), any());
     pmsSdkInstanceService.initializeSdk(requestWithName, responseObserver);
     verify(schemaFetcher, times(1)).invalidateAllCache();
     verify(ephemeralCacheService, times(1)).getDistributedSet("sdkStepsVisibleInUI");
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testInitializeSdkLockIssue() {
+    InitializeSdkRequest.Builder requestBuilder = InitializeSdkRequest.newBuilder().putStaticAliases("alias", "value");
+
+    // passing request without name
+    InitializeSdkRequest requestWithoutName = requestBuilder.build();
+    assertThatThrownBy(() -> pmsSdkInstanceService.initializeSdk(requestWithoutName, responseObserver))
+        .isInstanceOf(InvalidRequestException.class);
+
+    // passing request with name
+    InitializeSdkRequest requestWithName = InitializeSdkRequest.newBuilder().setName("name").build();
+    assertThatThrownBy(() -> pmsSdkInstanceService.initializeSdk(requestWithName, responseObserver))
+        .isInstanceOf(InitializeSdkException.class);
+
+    doReturn(null).when(persistentLocker).waitToAcquireLock(any(), any(), any());
+    assertThatThrownBy(() -> pmsSdkInstanceService.initializeSdk(requestWithName, responseObserver))
+        .isInstanceOf(InitializeSdkException.class);
   }
 }

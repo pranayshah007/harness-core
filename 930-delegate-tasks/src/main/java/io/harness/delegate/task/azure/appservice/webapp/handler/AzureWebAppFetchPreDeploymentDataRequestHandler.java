@@ -49,9 +49,10 @@ public class AzureWebAppFetchPreDeploymentDataRequestHandler
     AzureWebClientContext azureWebClientContext =
         buildAzureWebClientContext(taskRequest.getInfrastructure(), azureConfig);
     AzureAppServiceDockerDeploymentContext dockerDeploymentContext =
-        toAzureAppServiceDockerDeploymentContext(taskRequest, azureConfig, azureWebClientContext, logCallbackProvider);
+        toAzureAppServiceDockerDeploymentContext(taskRequest, azureWebClientContext, logCallbackProvider);
     AzureAppServicePreDeploymentData preDeploymentData =
         azureAppServiceService.getDockerDeploymentPreDeploymentData(dockerDeploymentContext);
+    azureSecretHelper.encryptAzureAppServicePreDeploymentData(preDeploymentData, taskRequest.getAccountId());
     return AzureWebAppFetchPreDeploymentDataResponse.builder().preDeploymentData(preDeploymentData).build();
   }
 }

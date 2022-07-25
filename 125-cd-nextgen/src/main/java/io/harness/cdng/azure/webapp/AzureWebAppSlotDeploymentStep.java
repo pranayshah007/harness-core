@@ -14,6 +14,7 @@ import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNES
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.APPLICATION_SETTINGS;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.CONNECTION_STRINGS;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_SCRIPT;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
 
@@ -23,21 +24,23 @@ import static java.util.Collections.emptyMap;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.model.AzureAppServiceConfiguration;
 import io.harness.cdng.CDStepHelper;
-import io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentDataOutput;
 import io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentPassThroughData;
 import io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentPassThroughData.AzureSlotDeploymentPassThroughDataBuilder;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
+import io.harness.cdng.azure.webapp.beans.AzureWebAppSlotDeploymentDataOutput;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.delegate.beans.instancesync.mapper.AzureWebAppToServerInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppFetchPreDeploymentDataRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSlotDeploymentRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppFetchPreDeploymentDataResponse;
@@ -53,6 +56,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
@@ -82,6 +86,7 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
   @Inject private AzureWebAppStepHelper azureWebAppStepHelper;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private InstanceInfoService instanceInfoService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
@@ -124,9 +129,9 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
 
     if (responseData instanceof GitFetchResponse) {
       GitFetchResponse gitFetchResponse = (GitFetchResponse) responseData;
-      Map<String, String> resultConfigs =
+      Map<String, AppSettingsFile> resultConfigs =
           azureWebAppStepHelper.getConfigValuesFromGitFetchResponse(ambiance, gitFetchResponse);
-      newPassThroughDataBuilder.configs(ImmutableMap.<String, String>builder()
+      newPassThroughDataBuilder.configs(ImmutableMap.<String, AppSettingsFile>builder()
                                             .putAll(azureSlotDeploymentPassThroughData.getConfigs())
                                             .putAll(resultConfigs)
                                             .build());
@@ -170,13 +175,17 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
     stepResponseBuilder.status(Status.SUCCEEDED);
     stepResponseBuilder.unitProgressList(webAppTaskResponse.getCommandUnitsProgress().getUnitProgresses());
 
-    executionSweepingOutputService.consume(ambiance, AzureSlotDeploymentDataOutput.OUTPUT_NAME,
-        AzureSlotDeploymentDataOutput.builder()
+    executionSweepingOutputService.consume(ambiance, AzureWebAppSlotDeploymentDataOutput.OUTPUT_NAME,
+        AzureWebAppSlotDeploymentDataOutput.builder()
             .deploymentProgressMarker(slotDeploymentResponse.getDeploymentProgressMarker())
             .build(),
         StepCategory.STEP.name());
 
-    return stepResponseBuilder.build();
+    StepResponse.StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
+        AzureWebAppToServerInstanceInfoMapper.toServerInstanceInfoList(
+            slotDeploymentResponse.getAzureAppDeploymentData()));
+
+    return stepResponseBuilder.stepOutcome(stepOutcome).build();
   }
 
   @Override
@@ -206,12 +215,12 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
     Map<String, HarnessStore> harnessStoreConfigs =
         AzureWebAppStepHelper.filterAndMapConfigs(unprocessedConfigs, HARNESS_STORE_TYPE::equals);
     if (isNotEmpty(harnessStoreConfigs)) {
-      Map<String, String> configs =
+      Map<String, AppSettingsFile> configs =
           azureWebAppStepHelper.fetchWebAppConfigsFromHarnessStore(ambiance, harnessStoreConfigs);
       newPassThroughDataBuilder.unprocessedConfigs(
           AzureWebAppStepHelper.getConfigDifference(unprocessedConfigs, harnessStoreConfigs));
       newPassThroughDataBuilder.configs(
-          ImmutableMap.<String, String>builder().putAll(passThroughData.getConfigs()).putAll(configs).build());
+          ImmutableMap.<String, AppSettingsFile>builder().putAll(passThroughData.getConfigs()).putAll(configs).build());
     }
 
     if (passThroughData.getPreDeploymentData() == null) {
@@ -232,19 +241,18 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
       log.warn("Unexpected unprocessed configuration: [{}]", unprocessedConfigsRepr);
     }
 
-    AzureAppServiceConfiguration appServiceConfiguration =
-        AzureAppServiceConfiguration.builder()
-            .appSettingsJSON(passThroughData.getConfigs().get(APPLICATION_SETTINGS))
-            .connStringsJSON(passThroughData.getConfigs().get(CONNECTION_STRINGS))
-            .build();
-
+    AzureWebAppSlotDeploymentStepParameters azureWebAppSlotDeploymentStepParameters =
+        (AzureWebAppSlotDeploymentStepParameters) stepElementParameters.getSpec();
     AzureWebAppFetchPreDeploymentDataRequest fetchPreDeploymentDataRequest =
         AzureWebAppFetchPreDeploymentDataRequest.builder()
+            .accountId(AmbianceUtils.getAccountId(ambiance))
             .infraDelegateConfig(
-                azureWebAppStepHelper.getInfraDelegateConfig(ambiance, passThroughData.getInfrastructure()))
-            .applicationSettings(appServiceConfiguration.getAppSettings())
-            .connectionStrings(appServiceConfiguration.getConnStrings())
-            .startupCommand(passThroughData.getConfigs().getOrDefault(STARTUP_SCRIPT, ""))
+                azureWebAppStepHelper.getInfraDelegateConfig(ambiance, passThroughData.getInfrastructure(),
+                    getParameterFieldValue(azureWebAppSlotDeploymentStepParameters.getWebApp()),
+                    getParameterFieldValue(azureWebAppSlotDeploymentStepParameters.getDeploymentSlot())))
+            .applicationSettings(passThroughData.getConfigs().get(APPLICATION_SETTINGS))
+            .connectionStrings(passThroughData.getConfigs().get(CONNECTION_STRINGS))
+            .startupCommand(passThroughData.getConfigs().get(STARTUP_SCRIPT))
             .artifact(azureWebAppStepHelper.getPrimaryArtifactConfig(ambiance))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .commandUnitsProgress(passThroughData.getCommandUnitsProgress())
@@ -261,19 +269,18 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
 
   private TaskChainResponse queueSlotDeploymentTask(StepElementParameters stepElementParameters, Ambiance ambiance,
       AzureSlotDeploymentPassThroughData passThroughData) {
-    AzureAppServiceConfiguration appServiceConfiguration =
-        AzureAppServiceConfiguration.builder()
-            .appSettingsJSON(passThroughData.getConfigs().get(APPLICATION_SETTINGS))
-            .connStringsJSON(passThroughData.getConfigs().get(CONNECTION_STRINGS))
-            .build();
-
+    AzureWebAppSlotDeploymentStepParameters azureWebAppSlotDeploymentStepParameters =
+        (AzureWebAppSlotDeploymentStepParameters) stepElementParameters.getSpec();
     AzureWebAppSlotDeploymentRequest slotDeploymentRequest =
         AzureWebAppSlotDeploymentRequest.builder()
+            .accountId(AmbianceUtils.getAccountId(ambiance))
             .preDeploymentData(passThroughData.getPreDeploymentData())
-            .applicationSettings(appServiceConfiguration.getAppSettings())
-            .connectionStrings(appServiceConfiguration.getConnStrings())
+            .applicationSettings(passThroughData.getConfigs().get(APPLICATION_SETTINGS))
+            .connectionStrings(passThroughData.getConfigs().get(CONNECTION_STRINGS))
             .startupCommand(passThroughData.getConfigs().get(STARTUP_SCRIPT))
-            .infrastructure(azureWebAppStepHelper.getInfraDelegateConfig(ambiance, passThroughData.getInfrastructure()))
+            .infrastructure(azureWebAppStepHelper.getInfraDelegateConfig(ambiance, passThroughData.getInfrastructure(),
+                getParameterFieldValue(azureWebAppSlotDeploymentStepParameters.getWebApp()),
+                getParameterFieldValue(azureWebAppSlotDeploymentStepParameters.getDeploymentSlot())))
             .artifact(azureWebAppStepHelper.getPrimaryArtifactConfig(ambiance))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .commandUnitsProgress(passThroughData.getCommandUnitsProgress())

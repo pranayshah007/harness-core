@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.DeleteReleaseNameSpec.DeleteReleaseNameSpecKeys;
+import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
@@ -61,6 +62,7 @@ public class K8sDeleteStep extends TaskChainExecutableWithRollbackAndRbac implem
 
   @Inject private OutcomeService outcomeService;
   @Inject private K8sStepHelper k8sStepHelper;
+  @Inject private CDStepHelper cdStepHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -113,7 +115,7 @@ public class K8sDeleteStep extends TaskChainExecutableWithRollbackAndRbac implem
     boolean isManifestFiles = DeleteResourcesType.ManifestPath == deleteStepParameters.getDeleteResources().getType();
 
     InfrastructureOutcome infrastructure = executionPassThroughData.getInfrastructure();
-    String releaseName = k8sStepHelper.getReleaseName(ambiance, infrastructure);
+    String releaseName = cdStepHelper.getReleaseName(ambiance, infrastructure);
     final String accountId = AmbianceUtils.getAccountId(ambiance);
 
     K8sDeleteRequest request =
@@ -135,14 +137,15 @@ public class K8sDeleteStep extends TaskChainExecutableWithRollbackAndRbac implem
             .kustomizePatchesList(k8sStepHelper.renderPatches(k8sManifestOutcome, ambiance, manifestOverrideContents))
             .taskType(K8sTaskType.DELETE)
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-            .k8sInfraDelegateConfig(k8sStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
+            .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
             .manifestDelegateConfig(k8sManifestOutcome != null
-                    ? k8sStepHelper.getManifestDelegateConfig(k8sManifestOutcome, ambiance)
+                    ? k8sStepHelper.getManifestDelegateConfigWrapper(executionPassThroughData.getZippedManifestId(),
+                        k8sManifestOutcome, ambiance, executionPassThroughData.getManifestFiles())
                     : null)
             .shouldOpenFetchFilesLogStream(shouldOpenFetchFilesLogStream)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-            .useLatestKustomizeVersion(k8sStepHelper.isUseLatestKustomizeVersion(accountId))
-            .useNewKubectlVersion(k8sStepHelper.isUseNewKubectlVersion(accountId))
+            .useLatestKustomizeVersion(cdStepHelper.isUseLatestKustomizeVersion(accountId))
+            .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
@@ -159,8 +162,12 @@ public class K8sDeleteStep extends TaskChainExecutableWithRollbackAndRbac implem
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+    if (passThroughData instanceof CustomFetchResponsePassThroughData) {
+      return k8sStepHelper.handleCustomTaskFailure((CustomFetchResponsePassThroughData) passThroughData);
+    }
+
     if (passThroughData instanceof GitFetchResponsePassThroughData) {
-      return k8sStepHelper.handleGitTaskFailure((GitFetchResponsePassThroughData) passThroughData);
+      return cdStepHelper.handleGitTaskFailure((GitFetchResponsePassThroughData) passThroughData);
     }
 
     if (passThroughData instanceof HelmValuesFetchResponsePassThroughData) {
@@ -168,7 +175,7 @@ public class K8sDeleteStep extends TaskChainExecutableWithRollbackAndRbac implem
     }
 
     if (passThroughData instanceof StepExceptionPassThroughData) {
-      return k8sStepHelper.handleStepExceptionFailure((StepExceptionPassThroughData) passThroughData);
+      return cdStepHelper.handleStepExceptionFailure((StepExceptionPassThroughData) passThroughData);
     }
 
     K8sDeployResponse k8sTaskExecutionResponse;

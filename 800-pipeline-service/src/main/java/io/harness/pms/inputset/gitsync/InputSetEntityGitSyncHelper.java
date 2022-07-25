@@ -163,14 +163,14 @@ public class InputSetEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Inp
     final Optional<InputSetEntity> inputSetEntity;
     if (inputSetYamlDTO.getInputSetInfo() != null) {
       final InputSetYamlInfoDTO inputSetInfo = inputSetYamlDTO.getInputSetInfo();
-      inputSetEntity = pmsInputSetService.get(accountIdentifier, inputSetInfo.getOrgIdentifier(),
+      inputSetEntity = pmsInputSetService.getWithoutValidations(accountIdentifier, inputSetInfo.getOrgIdentifier(),
           inputSetInfo.getProjectIdentifier(), inputSetInfo.getPipelineInfoConfig().getIdentifier(),
           inputSetInfo.getIdentifier(), false);
     } else {
       final OverlayInputSetYamlInfoDTO overlayInputSetInfo = inputSetYamlDTO.getOverlayInputSetInfo();
-      inputSetEntity = pmsInputSetService.get(accountIdentifier, overlayInputSetInfo.getOrgIdentifier(),
-          overlayInputSetInfo.getProjectIdentifier(), overlayInputSetInfo.getPipelineIdentifier(),
-          overlayInputSetInfo.getIdentifier(), false);
+      inputSetEntity = pmsInputSetService.getWithoutValidations(accountIdentifier,
+          overlayInputSetInfo.getOrgIdentifier(), overlayInputSetInfo.getProjectIdentifier(),
+          overlayInputSetInfo.getPipelineIdentifier(), overlayInputSetInfo.getIdentifier(), false);
     }
     return inputSetEntity.map(EntityGitDetailsMapper::mapEntityGitDetails);
   }
@@ -183,12 +183,12 @@ public class InputSetEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Inp
   @Override
   public String getYamlFromEntityRef(EntityDetailProtoDTO entityReference) {
     final InputSetReferenceProtoDTO inputSetRef = entityReference.getInputSetRef();
-    final Optional<InputSetEntity> inputSetEntity =
-        pmsInputSetService.get(StringValueUtils.getStringFromStringValue(inputSetRef.getAccountIdentifier()),
-            StringValueUtils.getStringFromStringValue(inputSetRef.getOrgIdentifier()),
-            StringValueUtils.getStringFromStringValue(inputSetRef.getProjectIdentifier()),
-            StringValueUtils.getStringFromStringValue(inputSetRef.getPipelineIdentifier()),
-            StringValueUtils.getStringFromStringValue(inputSetRef.getIdentifier()), false);
+    final Optional<InputSetEntity> inputSetEntity = pmsInputSetService.getWithoutValidations(
+        StringValueUtils.getStringFromStringValue(inputSetRef.getAccountIdentifier()),
+        StringValueUtils.getStringFromStringValue(inputSetRef.getOrgIdentifier()),
+        StringValueUtils.getStringFromStringValue(inputSetRef.getProjectIdentifier()),
+        StringValueUtils.getStringFromStringValue(inputSetRef.getPipelineIdentifier()),
+        StringValueUtils.getStringFromStringValue(inputSetRef.getIdentifier()), false);
     if (!inputSetEntity.isPresent()) {
       throw new InvalidRequestException(
           format("Input Set [%s], for pipeline [%s], under Project[%s], Organization [%s] doesn't exist.",

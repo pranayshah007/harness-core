@@ -24,7 +24,6 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
-import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.S3UrlStoreConfig;
@@ -92,6 +91,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -104,7 +104,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 public class CloudformationStepHelperTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private EngineExpressionService engineExpressionService;
-  @Mock private K8sStepHelper k8sStepHelper;
   @Mock private SecretManagerClientService secretManagerClientService;
   @Mock private CDStepHelper cdStepHelper;
   @Mock private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
@@ -159,19 +158,17 @@ public class CloudformationStepHelperTest extends CategoryTest {
     StepElementParameters stepElementParameters = createStepParametersWithGit(false);
     ConnectorInfoDTO awsConnectorDTO =
         ConnectorInfoDTO.builder().connectorConfig(AwsConnectorDTO.builder().build()).build();
-    doReturn(awsConnectorDTO).when(cdStepHelper).getConnector(any(), any());
     ConnectorInfoDTO gitConnectorInfoDTO =
         ConnectorInfoDTO.builder()
             .connectorConfig(GitConfigDTO.builder().gitConnectionType(GitConnectionType.REPO).build())
             .build();
-    doReturn(gitConnectorInfoDTO).when(k8sStepHelper).getConnector(any(), any());
+    doReturn(awsConnectorDTO).doReturn(gitConnectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
     SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
 
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
-
-    Mockito.mockStatic(StepUtils.class);
+    MockedStatic mockedStatic = Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
@@ -180,6 +177,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
 
     PowerMockito.verifyStatic(StepUtils.class, times(1));
     StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    mockedStatic.close();
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     GitFetchRequest gitFetchRequest = (GitFetchRequest) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(gitFetchRequest).isExactlyInstanceOf(GitFetchRequest.class);
@@ -199,19 +197,17 @@ public class CloudformationStepHelperTest extends CategoryTest {
     StepElementParameters stepElementParameters = createStepParametersWithGit(true);
     ConnectorInfoDTO awsConnectorDTO =
         ConnectorInfoDTO.builder().connectorConfig(AwsConnectorDTO.builder().build()).build();
-    doReturn(awsConnectorDTO).when(cdStepHelper).getConnector(any(), any());
     ConnectorInfoDTO gitConnectorInfoDTO =
         ConnectorInfoDTO.builder()
             .connectorConfig(GitConfigDTO.builder().gitConnectionType(GitConnectionType.REPO).build())
             .build();
-    doReturn(gitConnectorInfoDTO).when(k8sStepHelper).getConnector(any(), any());
+    doReturn(awsConnectorDTO).doReturn(gitConnectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
     SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
 
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
-
-    Mockito.mockStatic(StepUtils.class);
+    MockedStatic mockedStatic = Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
@@ -220,6 +216,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
 
     PowerMockito.verifyStatic(StepUtils.class, times(1));
     StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    mockedStatic.close();
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     GitFetchRequest gitFetchRequest = (GitFetchRequest) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(gitFetchRequest).isExactlyInstanceOf(GitFetchRequest.class);
@@ -249,7 +246,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
     doReturn(new ArrayList<>()).when(secretManagerClientService).getEncryptionDetails(any(), any());
     AmazonS3URI s3URI = new AmazonS3URI("s3://bucket/key");
     doReturn(s3URI).when(s3UriParser).parseUrl(anyString());
-    Mockito.mockStatic(StepUtils.class);
+    MockedStatic mockedStatic = Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
@@ -258,6 +255,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
 
     PowerMockito.verifyStatic(StepUtils.class, times(1));
     StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    mockedStatic.close();
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     AwsS3FetchFilesTaskParams awsS3FetchFilesTaskParams =
         (AwsS3FetchFilesTaskParams) taskDataArgumentCaptor.getValue().getParameters()[0];
@@ -288,7 +286,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
     doReturn(new ArrayList<>()).when(secretManagerClientService).getEncryptionDetails(any(), any());
     AmazonS3URI s3URI = new AmazonS3URI("s3://bucket/key");
     doReturn(s3URI).when(s3UriParser).parseUrl(anyString());
-    Mockito.mockStatic(StepUtils.class);
+    MockedStatic mockedStatic = Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
@@ -297,6 +295,7 @@ public class CloudformationStepHelperTest extends CategoryTest {
 
     PowerMockito.verifyStatic(StepUtils.class, times(1));
     StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    mockedStatic.close();
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     AwsS3FetchFilesTaskParams awsS3FetchFilesTaskParams =
         (AwsS3FetchFilesTaskParams) taskDataArgumentCaptor.getValue().getParameters()[0];
