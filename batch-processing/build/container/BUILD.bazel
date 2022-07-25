@@ -19,10 +19,10 @@ container_image(
 pkg_tar(
     name = "files",
     srcs = [
-        "//280-batch-processing:batch-processing-config.yml",
+        "//batch-processing/config:batch-processing-config.yml",
     ],
     files = {
-        "//280-batch-processing:module_deploy.jar": "batch-processing-capsule.jar",
+        "//batch-processing/service:module_deploy.jar": "batch-processing-capsule.jar",
     },
     mode = "0600",
     owner = "65534.65534",
