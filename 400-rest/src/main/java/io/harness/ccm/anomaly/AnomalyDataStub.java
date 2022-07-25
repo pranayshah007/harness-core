@@ -91,6 +91,48 @@ public class AnomalyDataStub {
         .build();
   }
 
+  public static AnomalyData getAnomalyData() {
+    return AnomalyData.builder()
+            .id("_id_")
+            .time(1657800397000L)
+            .anomalyRelativeTime("3hrs back")
+            .actualAmount(1.1)
+            .expectedAmount(2.2)
+            .anomalousSpend(4.4)
+            .anomalousSpendPercentage(4.0)
+            .resourceInfo("resourceInfo")
+            .resourceName("resourceName")
+            .entity(EntityInfo.builder()
+                    .field("field")
+                    .clusterName("clusterName")
+                    .clusterId("cid")
+                    .namespace("namespace")
+                    .workloadName("workloadName")
+                    .workloadType("workloadType")
+                    .gcpProjectId("gcpProjectId")
+                    .gcpProduct("gcpProduct")
+                    .gcpSKUId("gcpSkuId")
+                    .gcpSKUDescription("gcpSKUDescription")
+                    .awsUsageAccountId("awsUsageAccountId")
+                    .awsServiceCode("awsServiceCode")
+                    .awsInstancetype("awsInstanceType")
+                    .awsUsageType("awsUsageType")
+                    .azureSubscriptionGuid("azureSubscriptionGuid")
+                    .azureResourceGroup("azureResourceGroup")
+                    .azureMeterCategory("azureMeterCategory")
+                    .azureServiceName("azureServiceName")
+                    .azureInstanceId("azureInstanceId")
+                    .build())
+            .details("details")
+            .status("status")
+            .statusRelativeTime("statusRelativeTime")
+            .comment("comment")
+            .cloudProvider("cloudProvider")
+            .anomalyScore(1.1)
+            .userFeedback(AnomalyFeedback.TRUE_ANOMALY)
+            .build();
+  }
+
   public static QLBillingDataFilter getBeforeTimeFilter() {
     return QLBillingDataFilter.builder()
         .startTime(QLTimeFilter.builder().operator(QLTimeOperator.BEFORE).value(anomalyTime.toEpochMilli()).build())

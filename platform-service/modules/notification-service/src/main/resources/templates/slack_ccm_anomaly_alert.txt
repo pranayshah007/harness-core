@@ -28,8 +28,7 @@
                     "type": "button",
                     "text": {
                         "type": "plain_text",
-                        "text": "View Perspective",
-                        "emoji": true
+                        "text": "View Perspective"
                     },
                     "value": "click_me_123",
                     "url": "${perspective_url}"

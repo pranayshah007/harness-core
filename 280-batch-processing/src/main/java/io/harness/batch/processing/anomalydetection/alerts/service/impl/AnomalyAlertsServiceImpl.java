@@ -35,8 +35,6 @@ import io.harness.ccm.views.service.PerspectiveAnomalyService;
 import io.harness.eraro.ResponseMessage;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.Team;
-import io.harness.notification.channeldetails.EmailChannel;
-import io.harness.notification.channeldetails.SlackChannel;
 import io.harness.notification.dtos.NotificationChannelDTO;
 import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.notifications.NotificationResourceClient;
@@ -190,22 +188,19 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     log.info("Slack webhooks: {}", slackWebHookUrls);
     List<String> msTeamKeys = getChannelUrls(channels, MSTEAMS);
 
-//    NotificationChannelDTOBuilder emailChannelBuilder = NotificationChannelDTO.builder()
-//                                                  .accountId(accountId)
-//                                                  .emailRecipients(eMails)
-//                                                  .team(Team.OTHER)
-//                                                  .templateId("email_ccm_anomaly_alert")
-//                                                  .userGroups(Collections.emptyList());
-    EmailChannel.EmailChannelBuilder emailChannelBuilder = EmailChannel.builder().accountId(accountId).recipients(eMails).team(Team.OTHER).templateId("email_ccm_anomaly_alert").userGroups(Collections.emptyList());
+    NotificationChannelDTOBuilder emailChannelBuilder = NotificationChannelDTO.builder()
+                                                  .accountId(accountId)
+                                                  .emailRecipients(eMails)
+                                                  .team(Team.OTHER)
+                                                  .templateId("email_ccm_anomaly_alert")
+                                                  .userGroups(Collections.emptyList());
 
-//    NotificationChannelDTOBuilder slackChannelBuilder = NotificationChannelDTO.builder()
-//                                                  .accountId(accountId)
-//                                                  .webhookUrls(slackWebHookUrls)
-//                                                  .team(Team.OTHER)
-//                                                  .templateId("slack_ccm_anomaly_alert")
-//                                                  .userGroups(Collections.emptyList());
-
-    SlackChannel.SlackChannelBuilder slackChannelBuilder = SlackChannel.builder().accountId(accountId).webhookUrls(slackWebHookUrls).team(Team.OTHER).templateId("slack_ccm_anomaly_alert").userGroups(Collections.emptyList());
+    NotificationChannelDTOBuilder slackChannelBuilder = NotificationChannelDTO.builder()
+                                                  .accountId(accountId)
+                                                  .webhookUrls(slackWebHookUrls)
+                                                  .team(Team.OTHER)
+                                                  .templateId("slack_ccm_anomaly_alert")
+                                                  .userGroups(Collections.emptyList());
 
 //    MSTeamChannelBuilder msTeamChannelBuilder = MSTeamChannel.builder()
 //                                                    .accountId(accountId)
