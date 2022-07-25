@@ -94,6 +94,7 @@ import io.harness.migration.NGMigrationSdkInitHelper;
 import io.harness.migration.NGMigrationSdkModule;
 import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.migrations.InstanceMigrationProvider;
+import io.harness.ng.core.filter.BadRequestResponseFilter;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.EtagFilter;
 import io.harness.ng.core.event.NGEventConsumerService;
@@ -384,6 +385,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerJerseyProviders(environment, injector);
     registerJerseyFeatures(environment);
     registerCharsetResponseFilter(environment, injector);
+    registerBadRequestResponseFilter(environment, injector);
     registerCorrelationFilter(environment, injector);
     registerEtagFilter(environment, injector);
     registerScheduleJobs(injector);
@@ -741,6 +743,10 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
   private void registerCharsetResponseFilter(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(CharsetResponseFilter.class));
+  }
+
+  private void registerBadRequestResponseFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(BadRequestResponseFilter.class));
   }
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
