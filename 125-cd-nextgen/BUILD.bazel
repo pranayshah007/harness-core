@@ -1,81 +1,81 @@
-load("@rules_java//java:defs.bzl",
-     "java_binary") load("//:tools/bazel/GenTestRules.bzl", "run_tests")
-    load("//:tools/bazel/macros.bzl", "run_analysis")
+load("@rules_java//java:defs.bzl", "java_binary")
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
+load("//:tools/bazel/macros.bzl", "run_analysis")
 
-        java_library(
-            name = "module", srcs = glob(["src/main/java/**/*.java"]),
-            resources =
-                [
-                  "//125-cd-nextgen/src/main/resources:resource",
-                ],
-            visibility = ["//visibility:public"],
-            deps =
-                [
-                  "//:lombok",
-                  "//126-instance:module",
-                  "//127-cd-nextgen-entities:module",
-                  "//400-rest:module",
-                  "//440-connector-nextgen:module",
-                  "//445-gitops:module",
-                  "//867-polling-contracts:module",
-                  "//878-ng-common-utilities:module",
-                  "//880-pipeline-cd-commons:module",
-                  "//884-pms-commons:module",
-                  "//890-sm-core:module",
-                  "//910-delegate-service-driver:module",
-                  "//940-feature-flag:module",
-                  "//942-enforcement-sdk:module",
-                  "//945-account-mgmt:module",
-                  "//945-license-usage-sdk:module",
-                  "//950-delegate-tasks-beans:module",
-                  "//954-connector-beans:module",
-                  "//955-delegate-beans:module",
-                  "//958-migration-sdk:module",
-                  "//960-ng-license-usage-beans:module",
-                  "//970-ng-commons:module",
-                  "//970-telemetry-beans:module",
-                  "//980-commons:module",
-                  "//clients/access-control/sdk:module",
-                  "//clients/pipeline-service/pms-client:module",
-                  "//clients/pipeline-service/pms-sdk:module",
-                  "//clients/pipeline-service/pms-sdk-core:module",
-                  "@maven//:com_fasterxml_jackson_core_jackson_annotations",
-                  "@maven//:io_swagger_swagger_annotations",
-                  "@maven//:javax_validation_validation_api",
-                  "@maven//:org_jooq_jooq",
-                  "@maven//:org_springframework_data_spring_data_commons",
-                ], )
+java_library(
+    name = "module",
+    srcs = glob(["src/main/java/**/*.java"]),
+    resources = [
+        "//125-cd-nextgen/src/main/resources:resource",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//126-instance:module",
+        "//127-cd-nextgen-entities:module",
+        "//400-rest:module",
+        "//440-connector-nextgen:module",
+        "//445-gitops:module",
+        "//867-polling-contracts:module",
+        "//878-ng-common-utilities:module",
+        "//880-pipeline-cd-commons:module",
+        "//884-pms-commons:module",
+        "//890-sm-core:module",
+        "//910-delegate-service-driver:module",
+        "//940-feature-flag:module",
+        "//942-enforcement-sdk:module",
+        "//945-account-mgmt:module",
+        "//945-license-usage-sdk:module",
+        "//950-delegate-tasks-beans:module",
+        "//954-connector-beans:module",
+        "//955-delegate-beans:module",
+        "//958-migration-sdk:module",
+        "//960-ng-license-usage-beans:module",
+        "//970-ng-commons:module",
+        "//970-telemetry-beans:module",
+        "//980-commons:module",
+        "//clients/access-control/sdk:module",
+        "//clients/pipeline-service/pms-client:module",
+        "//clients/pipeline-service/pms-sdk:module",
+        "//clients/pipeline-service/pms-sdk-core:module",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:javax_validation_validation_api",
+        "@maven//:org_jooq_jooq",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)
 
-            java_library(name = "tests", testonly = True,
-                         srcs = glob(["src/test/**/*.java"]),
-                         data =
-                             [
-                               "//125-cd-nextgen/src/test/resources:resource",
-                             ],
-                         resources =
-                             [
-                               "//125-cd-nextgen/src/test/resources:resource",
-                             ],
-                         visibility = ["//visibility:public"],
-                         deps =
-                             [
-                               ":module",
-                               "//:lombok",
-                               "//884-pms-commons:module",
-                               "//942-enforcement-sdk:module",
-                               "//950-ng-core:tests",
-                               "//955-delegate-beans:module",
-                               "//960-persistence:supporter-test",
-                               "//990-commons-test:module",
-                               "@maven//:junit_junit",
-                               "@maven//:org_assertj_assertj_core",
-                               "@maven//:org_mockito_mockito_core",
-                               "@maven//:org_mockito_mockito_inline",
-                               "@maven//:org_powermock_powermock_api_mockito2",
-                               "@maven//:org_powermock_powermock_module_junit4",
-                               "@maven//:pl_pragmatists_JUnitParams",
-                             ], )
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/**/*.java"]),
+    data = [
+        "//125-cd-nextgen/src/test/resources:resource",
+    ],
+    resources = [
+        "//125-cd-nextgen/src/test/resources:resource",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":module",
+        "//:lombok",
+        "//884-pms-commons:module",
+        "//942-enforcement-sdk:module",
+        "//950-ng-core:tests",
+        "//955-delegate-beans:module",
+        "//960-persistence:supporter-test",
+        "//990-commons-test:module",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_mockito_mockito_inline",
+        "@maven//:org_powermock_powermock_api_mockito2",
+        "@maven//:org_powermock_powermock_module_junit4",
+        "@maven//:pl_pragmatists_JUnitParams",
+    ],
+)
 
-                run_tests()
+run_tests()
 
-                    run_analysis()
+run_analysis()
