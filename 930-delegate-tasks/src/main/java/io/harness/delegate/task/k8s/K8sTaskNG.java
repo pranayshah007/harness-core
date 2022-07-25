@@ -14,6 +14,8 @@ import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -179,7 +181,7 @@ public class K8sTaskNG extends AbstractDelegateRunnableTask {
     return true;
   }
 
-  private K8sDelegateTaskParams getK8sDelegateTaskParamsBasedOnManifestType(String workingDirectory,
+  public K8sDelegateTaskParams getK8sDelegateTaskParamsBasedOnManifestType(String workingDirectory,
       HelmVersion helmVersion, boolean isUseNewKubectlVersion, boolean isUseLatestKustomizeVersion,
       ManifestType manifestType) {
     K8sDelegateTaskParams.K8sDelegateTaskParamsBuilder k8sDelegateTaskParamsBuilder =
@@ -189,26 +191,28 @@ public class K8sTaskNG extends AbstractDelegateRunnableTask {
             .kubeconfigPath(KUBECONFIG_FILENAME)
             .workingDirectory(workingDirectory);
 
-    switch (manifestType) {
-      case K8S_MANIFEST:
-        k8sDelegateTaskParamsBuilder.goTemplateClientPath(k8sGlobalConfigService.getGoTemplateClientPath());
-        break;
+    if (!isNull(manifestType)) {
+      switch (manifestType) {
+        case K8S_MANIFEST:
+          k8sDelegateTaskParamsBuilder.goTemplateClientPath(k8sGlobalConfigService.getGoTemplateClientPath());
+          break;
 
-      case HELM_CHART:
-        k8sDelegateTaskParamsBuilder.helmPath(k8sGlobalConfigService.getHelmPath(helmVersion));
-        break;
+        case HELM_CHART:
+          k8sDelegateTaskParamsBuilder.helmPath(k8sGlobalConfigService.getHelmPath(helmVersion));
+          break;
 
-      case OPENSHIFT_TEMPLATE:
-        break;
+        case OPENSHIFT_TEMPLATE:
+          break;
 
-      case KUSTOMIZE:
-        k8sDelegateTaskParamsBuilder.kustomizeBinaryPath(
-            k8sGlobalConfigService.getKustomizePath(isUseLatestKustomizeVersion));
-        break;
+        case KUSTOMIZE:
+          k8sDelegateTaskParamsBuilder.kustomizeBinaryPath(
+              k8sGlobalConfigService.getKustomizePath(isUseLatestKustomizeVersion));
+          break;
 
-      default:
-        throw new UnsupportedOperationException(
-            String.format("Manifest delegate config type: [%s]", manifestType.name()));
+        default:
+          throw new UnsupportedOperationException(
+              String.format("Manifest delegate config type: [%s]", manifestType.name()));
+      }
     }
     return k8sDelegateTaskParamsBuilder.build();
   }

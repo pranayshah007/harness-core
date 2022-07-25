@@ -13,6 +13,9 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
+import static io.harness.govern.Switch.unhandled;
+
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -154,27 +157,30 @@ public class K8sTask extends AbstractDelegateRunnableTask {
             .kubeconfigPath(K8sConstants.KUBECONFIG_FILENAME)
             .workingDirectory(workingDirectory);
 
-    switch (storeType) {
-      case Local:
-      case Remote:
-      case CUSTOM:
-        k8sDelegateTaskParamsBuilder.goTemplateClientPath(k8sGlobalConfigService.getGoTemplateClientPath());
-        break;
+    if (!isNull(storeType)) {
+      switch (storeType) {
+        case Local:
+        case Remote:
+        case CUSTOM:
+          k8sDelegateTaskParamsBuilder.goTemplateClientPath(k8sGlobalConfigService.getGoTemplateClientPath());
+          break;
 
-      case HelmChartRepo:
-      case HelmSourceRepo:
-        k8sDelegateTaskParamsBuilder.helmPath(k8sGlobalConfigService.getHelmPath(helmVersion));
-        break;
-      case KustomizeSourceRepo:
-        k8sDelegateTaskParamsBuilder
-            .kustomizeBinaryPath(k8sGlobalConfigService.getKustomizePath(isUseLatestKustomizeVersion))
-            .useLatestKustomizeVersion(isUseLatestKustomizeVersion);
-        break;
-      case OC_TEMPLATES:
-      case CUSTOM_OPENSHIFT_TEMPLATE:
-      case VALUES_YAML_FROM_HELM_REPO:
-      default:
-        break;
+        case HelmChartRepo:
+        case HelmSourceRepo:
+          k8sDelegateTaskParamsBuilder.helmPath(k8sGlobalConfigService.getHelmPath(helmVersion));
+          break;
+        case KustomizeSourceRepo:
+          k8sDelegateTaskParamsBuilder
+              .kustomizeBinaryPath(k8sGlobalConfigService.getKustomizePath(isUseLatestKustomizeVersion))
+              .useLatestKustomizeVersion(isUseLatestKustomizeVersion);
+          break;
+        case OC_TEMPLATES:
+        case CUSTOM_OPENSHIFT_TEMPLATE:
+        case VALUES_YAML_FROM_HELM_REPO:
+          break;
+        default:
+          unhandled(storeType);
+      }
     }
     return k8sDelegateTaskParamsBuilder.build();
   }
