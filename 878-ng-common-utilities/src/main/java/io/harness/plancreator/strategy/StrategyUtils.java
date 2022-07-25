@@ -10,6 +10,11 @@ package io.harness.plancreator.strategy;
 import static io.harness.expression.EngineExpressionEvaluator.EXPR_END;
 import static io.harness.expression.EngineExpressionEvaluator.EXPR_END_ESC;
 import static io.harness.expression.EngineExpressionEvaluator.EXPR_START_ESC;
+import static io.harness.plancreator.strategy.StrategyConstants.ITEM;
+import static io.harness.plancreator.strategy.StrategyConstants.ITERATION;
+import static io.harness.plancreator.strategy.StrategyConstants.ITERATIONS;
+import static io.harness.plancreator.strategy.StrategyConstants.MATRIX;
+import static io.harness.plancreator.strategy.StrategyConstants.REPEAT;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.IDENTIFIER;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.NAME;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
@@ -20,9 +25,11 @@ import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -38,6 +45,7 @@ import io.harness.strategy.StrategyValidationUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,7 +56,7 @@ import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
-public class StageStrategyUtils {
+public class StrategyUtils {
   public boolean isWrappedUnderStrategy(YamlField yamlField) {
     YamlField strategyField = yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY);
     return strategyField != null;
@@ -253,5 +261,46 @@ public class StageStrategyUtils {
    */
   private String refineIdentifier(String identifier) {
     return identifier.replaceAll(STRATEGY_IDENTIFIER_POSTFIX_ESCAPED, "");
+  }
+
+  /**
+   * This is used to fetch strategy object map at a given level
+   * @param level
+   * @return
+   */
+  public Map<String, Object> fetchStrategyObjectMap(Level level) {
+    Map<String, Object> strategyObjectMap = new HashMap<>();
+    if (level.hasStrategyMetadata()) {
+      return fetchStrategyObjectMap(Lists.newArrayList(level));
+    }
+    return strategyObjectMap;
+  }
+
+  /**
+   * This is used to fetch the strategy object map from different values. It combines the axis of all it's parent
+   *
+   * @param levelsWithStrategyMetadata
+   * @return
+   */
+  public Map<String, Object> fetchStrategyObjectMap(List<Level> levelsWithStrategyMetadata) {
+    Map<String, Object> strategyObjectMap = new HashMap<>();
+    Map<String, String> matrixValuesMap = new HashMap<>();
+    Map<String, String> repeatValuesMap = new HashMap<>();
+
+    for (Level level : levelsWithStrategyMetadata) {
+      if (level.getStrategyMetadata().hasMatrixMetadata()) {
+        matrixValuesMap.putAll(level.getStrategyMetadata().getMatrixMetadata().getMatrixValuesMap());
+      }
+      if (level.getStrategyMetadata().hasForMetadata()) {
+        repeatValuesMap.put(ITEM, level.getStrategyMetadata().getForMetadata().getValue());
+      }
+      strategyObjectMap.put(ITERATION, level.getStrategyMetadata().getCurrentIteration());
+      strategyObjectMap.put(ITERATIONS, level.getStrategyMetadata().getTotalIterations());
+      strategyObjectMap.put("identifierPostFix", AmbianceUtils.getStrategyPostfix(level));
+    }
+    strategyObjectMap.put(MATRIX, matrixValuesMap);
+    strategyObjectMap.put(REPEAT, repeatValuesMap);
+
+    return strategyObjectMap;
   }
 }

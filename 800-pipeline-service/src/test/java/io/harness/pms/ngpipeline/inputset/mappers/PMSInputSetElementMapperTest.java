@@ -328,6 +328,6 @@ public class PMSInputSetElementMapperTest extends CategoryTest {
     PMSInputSetElementMapper.toInputSetSummaryResponseDTOPMSList(inputSetService, pipelineService, gitSyncSdkService,
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, inputSetEntities);
     verify(pipelineService, times(0)).get(any(), any(), any(), any(), anyBoolean());
-    verify(inputSetService, times(0)).get(any(), any(), any(), any(), any(), anyBoolean());
+    verify(inputSetService, times(0)).getWithoutValidations(any(), any(), any(), any(), any(), anyBoolean());
   }
 }

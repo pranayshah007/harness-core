@@ -61,6 +61,7 @@ public class ACLServiceImpl implements ACLService {
     return PermissionCheckResult.builder()
         .permission(permissionCheck.getPermission())
         .resourceIdentifier(permissionCheck.getResourceIdentifier())
+        .resourceAttributes(permissionCheck.getResourceAttributes())
         .resourceScope(permissionCheck.getResourceScope())
         .resourceType(permissionCheck.getResourceType())
         .permitted(permitted)

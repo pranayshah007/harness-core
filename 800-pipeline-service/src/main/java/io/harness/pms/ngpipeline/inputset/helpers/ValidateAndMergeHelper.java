@@ -201,8 +201,8 @@ public class ValidateAndMergeHelper {
     }
     List<String> inputSetYamlList = new ArrayList<>();
     inputSetReferences.forEach(identifier -> {
-      Optional<InputSetEntity> entity =
-          pmsInputSetService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false);
+      Optional<InputSetEntity> entity = pmsInputSetService.getWithoutValidations(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false);
       if (!entity.isPresent()) {
         throw new InvalidRequestException(identifier + " does not exist");
       }
@@ -215,8 +215,8 @@ public class ValidateAndMergeHelper {
       } else {
         List<String> overlayReferences = inputSet.getInputSetReferences();
         overlayReferences.forEach(id -> {
-          Optional<InputSetEntity> entity2 =
-              pmsInputSetService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, id, false);
+          Optional<InputSetEntity> entity2 = pmsInputSetService.getWithoutValidations(
+              accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, id, false);
           if (!entity2.isPresent()) {
             throw new InvalidRequestException(id + " does not exist");
           }

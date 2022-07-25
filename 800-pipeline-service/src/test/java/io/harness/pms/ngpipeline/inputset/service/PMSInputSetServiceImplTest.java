@@ -616,7 +616,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                            -> pmsInputSetServiceMock.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                                PIPELINE_IDENTIFIER, INPUT_SET_IDENTIFIER, null))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("does not exist or has been deleted");
+        .hasMessageContaining("doesn't exist.");
 
     doReturn(Optional.of(inputSetEntity.withVersion(2L)))
         .when(inputSetRepository)

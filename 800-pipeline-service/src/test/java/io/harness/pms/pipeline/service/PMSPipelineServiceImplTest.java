@@ -364,4 +364,13 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     assertThat(pipelineSaveResponse.getGovernanceMetadata()).isNotEqualTo(null);
     assertThat(pipelineSaveResponse.getGovernanceMetadata().getDeny()).isTrue();
   }
+
+  @Test
+  @Owner(developers = SOUMYAJIT)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineYamlDraftException() {
+    pipelineEntity.setIsDraft(true);
+    assertThatThrownBy(() -> pmsPipelineService.updatePipelineYaml(pipelineEntity, ChangeType.ADD))
+        .isInstanceOf(InvalidRequestException.class);
+  }
 }
