@@ -68,8 +68,11 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -79,6 +82,7 @@ import retrofit2.Call;
 import retrofit2.Response;
 
 @OwnedBy(CDC)
+@RunWith(MockitoJUnitRunner.class)
 public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock EnforcementClientService enforcementClientService;
   @InjectMocks private NGTemplateServiceHelper templateServiceHelper;
@@ -117,6 +121,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
   @Before
   public void setUp() throws IOException {
+    MockitoAnnotations.initMocks(this);
     String filename = "template.yaml";
     yaml = readFile(filename);
     on(templateServiceHelper).set("templateRepository", templateRepository);
@@ -186,6 +191,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
     String description = "Updated Description";
     TemplateEntity updateTemplate = entity.withDescription(description);
+    when(templateServiceHelper.isOldGitSync(updateTemplate)).thenReturn(true);
     TemplateEntity updatedTemplateEntity =
         templateService.updateTemplateEntity(updateTemplate, ChangeType.MODIFY, false, "");
     assertThat(updatedTemplateEntity).isNotNull();
@@ -363,6 +369,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(templateEntities.getContent().get(0).isStableTemplate()).isFalse();
 
     // Check update stable template
+    when(templateServiceHelper.isOldGitSync(entityVersion2)).thenReturn(true);
     TemplateEntity updatedEntity =
         templateService.updateTemplateEntity(entityVersion2.withDescription("Updated"), ChangeType.MODIFY, true, "");
     templateEntities = templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
@@ -405,6 +412,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
     String description = "Updated Description";
     TemplateEntity updateTemplate = entity.withDescription(description);
+    when(templateServiceHelper.isOldGitSync(updateTemplate)).thenReturn(true);
     TemplateEntity updatedTemplateEntity =
         templateService.updateTemplateEntity(updateTemplate, ChangeType.MODIFY, false, "");
     assertThat(updatedTemplateEntity).isNotNull();
@@ -538,6 +546,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
     // Update version2 to check lastUpdatedBy
     version2 = version2.withDescription("Updated desciption");
+    when(templateServiceHelper.isOldGitSync(version2)).thenReturn(true);
     templateService.updateTemplateEntity(version2, ChangeType.MODIFY, false, "");
     templateEntities = templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
     assertThat(templateEntities.getContent().get(1).isLastUpdatedTemplate()).isTrue();

@@ -11,6 +11,7 @@ import io.harness.beans.Scope;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 
 import lombok.experimental.UtilityClass;
 import org.springframework.data.mongodb.core.query.Update;
@@ -32,14 +33,14 @@ public class TemplateUtils {
 
   public Update getUpdateOperations(TemplateEntity templateEntity, long timestamp) {
     Update update = new Update();
-    update.set(TemplateEntity.TemplateEntityKeys.yaml, templateEntity.getYaml());
-    update.set(TemplateEntity.TemplateEntityKeys.lastUpdatedAt, timestamp);
-    update.set(TemplateEntity.TemplateEntityKeys.deleted, false);
-    update.set(TemplateEntity.TemplateEntityKeys.name, templateEntity.getName());
-    update.set(TemplateEntity.TemplateEntityKeys.description, templateEntity.getDescription());
-    update.set(TemplateEntity.TemplateEntityKeys.tags, templateEntity.getTags());
-    update.set(TemplateEntity.TemplateEntityKeys.isStableTemplate, templateEntity.isStableTemplate());
-    update.set(TemplateEntity.TemplateEntityKeys.isLastUpdatedTemplate, templateEntity.isLastUpdatedTemplate());
+    update.set(TemplateEntityKeys.yaml, templateEntity.getYaml());
+    update.set(TemplateEntityKeys.lastUpdatedAt, timestamp);
+    update.set(TemplateEntityKeys.deleted, false);
+    update.set(TemplateEntityKeys.name, templateEntity.getName());
+    update.set(TemplateEntityKeys.description, templateEntity.getDescription());
+    update.set(TemplateEntityKeys.tags, templateEntity.getTags());
+    update.set(TemplateEntityKeys.isStableTemplate, templateEntity.isStableTemplate());
+    update.set(TemplateEntityKeys.isLastUpdatedTemplate, templateEntity.isLastUpdatedTemplate());
     return update;
   }
 
