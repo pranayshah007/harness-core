@@ -255,11 +255,8 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     slackTemplateData.put("date", AnomalyUtility.convertInstantToDate2(date));
     slackTemplateData.put("perspective_url", perspectiveUrl);
     StringBuilder anomaliesDetails = new StringBuilder();
-    for(int i=0;  i < perspectiveAnomalies.size(); i++) {
-      anomaliesDetails.append(slackMessageGenerator.getAnomalyDetailsTemplateString(perspectiveAnomalies.get(i)));
-      if (i < perspectiveAnomalies.size() - 1) {
-        anomaliesDetails.append(" \n\n");
-      }
+    for (AnomalyData perspectiveAnomaly : perspectiveAnomalies) {
+      anomaliesDetails.append(slackMessageGenerator.getAnomalyDetailsTemplateString(perspectiveAnomaly));
     }
     slackTemplateData.put("anomalies_details", anomaliesDetails.toString());
 

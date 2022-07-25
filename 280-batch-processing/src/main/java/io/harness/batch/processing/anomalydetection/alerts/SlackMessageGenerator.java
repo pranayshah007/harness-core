@@ -119,9 +119,9 @@ public class SlackMessageGenerator {
   public String addClusterInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getClusterId())) {
       if (anomaly.getEntityType() == EntityType.CLUSTER) {
-        templateString = templateString + "*Cluster* : <${CLUSTER_URL}|${" + AnomalyEntityKeys.clusterName + "}> ";
+        templateString = templateString + " *Cluster* : <${CLUSTER_URL}|${" + AnomalyEntityKeys.clusterName + "}> ";
       } else {
-        templateString = templateString + "*Cluster* : ${" + AnomalyEntityKeys.clusterName + "}";
+        templateString = templateString + " *Cluster* : ${" + AnomalyEntityKeys.clusterName + "}";
       }
     }
     return templateString;
@@ -154,9 +154,9 @@ public class SlackMessageGenerator {
   public String addGcpProjectInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getGcpProject())) {
       if (anomaly.getEntityType().equals(EntityType.GCP_PROJECT)) {
-        templateString = templateString + "*Project* : <${GCP_PROJECT_URL}|${" + AnomalyEntityKeys.gcpProject + "}>";
+        templateString = templateString + "\n> *Project* : <${GCP_PROJECT_URL}|${" + AnomalyEntityKeys.gcpProject + "}>";
       } else {
-        templateString = templateString + "*Project* : ${" + AnomalyEntityKeys.gcpProject + "}";
+        templateString = templateString + "\n> *Project* : ${" + AnomalyEntityKeys.gcpProject + "}";
       }
     }
     return templateString;
@@ -189,9 +189,9 @@ public class SlackMessageGenerator {
   public String addAwsAccountInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getAwsAccount())) {
       if (anomaly.getEntityType().equals(EntityType.AWS_ACCOUNT)) {
-        templateString = templateString + "*Account* : <${AWS_ACCOUNT_URL}|${" + AnomalyEntityKeys.awsAccount + "}>";
+        templateString = templateString + "\n> *Account* : <${AWS_ACCOUNT_URL}|${" + AnomalyEntityKeys.awsAccount + "}>";
       } else {
-        templateString = templateString + "*Account* : ${" + AnomalyEntityKeys.awsAccount + "}";
+        templateString = templateString + "\n> *Account* : ${" + AnomalyEntityKeys.awsAccount + "}";
       }
     }
     return templateString;
@@ -240,7 +240,7 @@ public class SlackMessageGenerator {
     templateString = addAwsAccountInfo(templateString, anomalyEntity);
     templateString = addAwsServiceInfo(templateString, anomalyEntity);
     templateString = templateString + "\n Total spend of *$ ${" + AnomalyEntityKeys.actualCost
-        + "}* detected. Would be typically at *$ ${" + AnomalyEntityKeys.expectedCost + "}*";
+        + "}* detected. Would be typically at *$ ${" + AnomalyEntityKeys.expectedCost + "}*\n\n";
 
     templateString = " *`$" + replace(templateString, AnomalyUtility.getEntityMap(anomalyEntity));
     // Todo: NG Urls here
