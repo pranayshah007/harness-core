@@ -93,6 +93,7 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.FailsafeException;
+import org.apache.commons.lang3.StringUtils;
 import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 
 @Slf4j
@@ -458,7 +459,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
   private Map<String, String> getAndUpdateConnectorSecretData(
       Map<String, ConnectorDetails> pluginConnectors, CIK8ContainerParams containerParams, String secretName) {
     Map<String, SecretParams> secretData = secretSpecBuilder.decryptConnectorSecretVariables(pluginConnectors);
-    updateSecretForAzure(secretData, pluginConnectors);
+    updateEnvSecretForAzure(secretData, pluginConnectors, containerParams.getEnvVars());
     if (isNotEmpty(secretData)) {
       updateContainer(containerParams, secretName, secretData);
       return secretData.values().stream().collect(Collectors.toMap(SecretParams::getSecretKey, SecretParams::getValue));
@@ -467,16 +468,18 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
     }
   }
 
-  private void updateSecretForAzure(Map<String, SecretParams> secretData, Map<String, ConnectorDetails> pluginConnectors) {
-    for (Map.Entry<String, ConnectorDetails> entry: pluginConnectors.entrySet()) {
-      ConnectorDetails connectorDetails = entry.getValue();
-      if(connectorDetails.getConnectorType() != ConnectorType.AZURE) {
-        return;
+  private void updateEnvSecretForAzure(Map<String, SecretParams> secretData, Map<String, ConnectorDetails> pluginConnectors, Map<String, String> envVars) {
+    for (Map.Entry<String, ConnectorDetails> connectorDetailsEntry : pluginConnectors.entrySet()) {
+      ConnectorDetails connectorDetails = connectorDetailsEntry.getValue();
+      if (connectorDetails.getConnectorType() == ConnectorType.AZURE){
+        String pluginRepo = StringUtils.substringBefore(envVars.get("PLUGIN_REPO").replace("https://", ""), "/");
+        AzureAcrTokenTaskResponse acrLoginToken = azureAsyncTaskHelper.getAcrLoginToken(pluginRepo,
+                connectorDetails.getEncryptedDataDetails(), (AzureConnectorDTO) connectorDetails.getConnectorConfig());
+        Map<String, SecretParams> azureSecret = secretSpecBuilder.getAzureSecretVariablesAsDockerVariable(connectorDetails, acrLoginToken.getToken());
+        secretData.putAll(azureSecret);
       }
-
-      AzureAcrTokenTaskResponse acrLoginToken = azureAsyncTaskHelper.getAcrLoginToken("testciaman.azurecr.io",
-              connectorDetails.getEncryptedDataDetails(), (AzureConnectorDTO) connectorDetails.getConnectorConfig());
     }
+    log.info("added secret for azure connector");
   }
 
   private Map<String, String> getAndUpdateCustomVariableSecretData(

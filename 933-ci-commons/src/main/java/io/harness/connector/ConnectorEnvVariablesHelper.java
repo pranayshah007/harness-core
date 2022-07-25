@@ -245,6 +245,18 @@ public class ConnectorEnvVariablesHelper {
     return secretData;
   }
 
+  public Map<String, SecretParams> getAzureSecretVariablesAsDockerVariable(ConnectorDetails connectorDetails, String token) {
+    Map<String, SecretParams> secretData = new HashMap<>();
+    AzureConnectorDTO dockerConnectorConfig = (AzureConnectorDTO) connectorDetails.getConnectorConfig();
+    String registryEnvVarName = connectorDetails.getEnvToSecretsMap().get(EnvVariableEnum.DOCKER_REGISTRY);
+    secretData.put("PLUGIN_USERNAME",
+            getVariableSecret("PLUGIN_USERNAME" + connectorDetails.getIdentifier(), encodeBase64("00000000-0000-0000-0000-000000000000")));
+    secretData.put("PLUGIN_PASSWORD",
+            getVariableSecret("PLUGIN_PASSWORD" + connectorDetails.getIdentifier(),
+                    encodeBase64(token)));
+    return secretData;
+  }
+
   private SecretParams getVariableSecret(String key, String encodedSecret) {
     return SecretParams.builder().secretKey(key).value(encodedSecret).type(TEXT).build();
   }

@@ -56,6 +56,8 @@ import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.exception.InvalidArgumentsException;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -257,9 +259,13 @@ public class PluginSettingUtils {
   private static Map<String, String> getACRStepInfoEnvVariables(ACRStepInfo stepInfo, String identifier, Type infraType) {
     Map<String, String> map = new HashMap<>();
     String repository = resolveStringParameter(REPOSITORY, "BuildAndPushACR", identifier, stepInfo.getRepository(), true);
-    setMandatoryEnvironmentVariable(map, REPOSITORY, repository);
+    StringUtils.substringBefore(repository, "/");
+    setMandatoryEnvironmentVariable(map, PLUGIN_REGISTRY, "https://" + StringUtils.substringBefore(repository, "/"));
+
+    setMandatoryEnvironmentVariable(map, PLUGIN_REPO, repository);
+
     setMandatoryEnvironmentVariable(map, PLUGIN_TAGS,
-            listToStringSlice(resolveListParameter("tags", "BuildAndPushECR", identifier, stepInfo.getTags(), true)));
+            listToStringSlice(resolveListParameter("tags", "BuildAndPushACR", identifier, stepInfo.getTags(), true)));
 
     String dockerfile =
             resolveStringParameter("dockerfile", "BuildAndPushACR", identifier, stepInfo.getDockerfile(), false);

@@ -18,15 +18,21 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.ImageCredentials;
 import io.harness.connector.ImageSecretBuilder;
 import io.harness.connector.SecretSpecBuilder;
+import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.ci.k8s.CIContainerStatus;
 import io.harness.delegate.beans.ci.k8s.PodStatus;
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.PodNotFoundException;
 import io.harness.k8s.apiclient.ApiClientFactory;
+import io.harness.k8s.model.ImageDetails;
 import io.harness.threading.Sleeper;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -63,7 +69,9 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
+import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 
 @Singleton
 @Slf4j
@@ -78,6 +86,7 @@ public class CIK8JavaClientHandler {
   @Inject private SecretSpecBuilder secretSpecBuilder;
   @Inject private Sleeper sleeper;
   @Inject private ApiClientFactory apiClientFactory;
+  @Inject private AzureAsyncTaskHelper azureAsyncTaskHelper;
 
   private final int DELETION_MAX_ATTEMPTS = 15;
 
@@ -89,7 +98,20 @@ public class CIK8JavaClientHandler {
 
   public V1Secret createRegistrySecret(
       CoreV1Api coreV1Api, String namespace, String secretName, ImageDetailsWithConnector imageDetails) {
-    String credentialData = imageSecretBuilder.getJSONEncodedImageCredentials(imageDetails);
+    String credentialData = null;
+    if (imageDetails.getImageConnectorDetails() != null && imageDetails.getImageConnectorDetails().getConnectorType() == ConnectorType.AZURE) {
+      ConnectorDetails connectorDetails = imageDetails.getImageConnectorDetails();
+      String regName = StringUtils.substringBefore(imageDetails.getImageDetails().getName(), "/");
+      AzureAcrTokenTaskResponse acrLoginToken = azureAsyncTaskHelper.getAcrLoginToken(regName,
+              connectorDetails.getEncryptedDataDetails(), (AzureConnectorDTO) connectorDetails.getConnectorConfig());
+      credentialData = imageSecretBuilder.getJSONEncodedAzureCredentials(
+              ImageCredentials.builder()
+                              .registryUrl(regName)
+                              .userName("00000000-0000-0000-0000-000000000000")
+                              .password(acrLoginToken.getToken()).build());
+    } else {
+      credentialData = imageSecretBuilder.getJSONEncodedImageCredentials(imageDetails);
+    }
     if (credentialData == null) {
       return null;
     }
