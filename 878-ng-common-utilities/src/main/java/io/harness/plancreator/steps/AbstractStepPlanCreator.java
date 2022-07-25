@@ -13,6 +13,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.strategy.StageStrategyUtils;
+import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
@@ -32,6 +33,12 @@ public abstract class AbstractStepPlanCreator<T extends AbstractStepNode> implem
   public abstract Set<String> getSupportedStepTypes();
 
   @Override public abstract Class<T> getFieldClass();
+
+  @Override
+  public String getExecutionInputTemplateAndModifyYamlField(YamlField yamlField) {
+    return RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlField(
+        yamlField.getNode().getParentNode().getCurrJsonNode());
+  }
 
   @Override
   public Map<String, Set<String>> getSupportedTypes() {

@@ -6,6 +6,8 @@
  */
 package io.harness.app;
 
+import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
+
 import static javax.ws.rs.Priorities.AUTHENTICATION;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 
@@ -41,8 +43,9 @@ public class VerificationAuthFilter extends VerificationServiceAuthenticationFil
       if (header.contains("Delegate")) {
         String delegateId = containerRequestContext.getHeaderString("delegateId");
         String delegateTokenName = containerRequestContext.getHeaderString("delegateTokenName");
+        String agentMtlsAuthority = containerRequestContext.getHeaderString(HEADER_AGENT_MTLS_AUTHORITY);
         String token = substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate ");
-        validateDelegateToken(accountId, token, delegateId, delegateTokenName);
+        validateDelegateToken(accountId, token, delegateId, delegateTokenName, agentMtlsAuthority);
       } else {
         throw new IllegalStateException("Invalid header:" + header);
       }
@@ -54,7 +57,9 @@ public class VerificationAuthFilter extends VerificationServiceAuthenticationFil
   }
 
   @Override
-  public void validateDelegateToken(String accountId, String tokenString, String delegateId, String delegateTokenName) {
-    delegateTokenAuthenticator.validateDelegateToken(accountId, tokenString, delegateId, delegateTokenName, false);
+  public void validateDelegateToken(
+      String accountId, String tokenString, String delegateId, String delegateTokenName, String agentMtlsAuthority) {
+    delegateTokenAuthenticator.validateDelegateToken(
+        accountId, tokenString, delegateId, delegateTokenName, agentMtlsAuthority, false);
   }
 }

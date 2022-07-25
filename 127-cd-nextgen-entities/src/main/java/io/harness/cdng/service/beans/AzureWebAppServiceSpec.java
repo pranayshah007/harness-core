@@ -36,7 +36,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@JsonTypeName(ServiceSpecType.AZURE_WEBAPPS)
+@JsonTypeName(ServiceSpecType.AZURE_WEBAPP)
 @SimpleVisitorHelper(helperClass = AzureWebAppServiceSpecVisitorHelper.class)
 @TypeAlias("azureWebAppServiceSpec")
 @RecasterAlias("io.harness.cdng.service.beans.AzureWebAppServiceSpec")

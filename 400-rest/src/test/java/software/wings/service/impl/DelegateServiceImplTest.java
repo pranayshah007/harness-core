@@ -53,6 +53,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.agent.beans.AgentMtlsEndpoint;
 import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -73,7 +74,6 @@ import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateInitializationDetails;
 import io.harness.delegate.beans.DelegateInstanceStatus;
-import io.harness.delegate.beans.DelegateMtlsEndpoint;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateSetupDetails;
@@ -1479,7 +1479,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
 
     final String accountId = "abc21";
     this.persistence.save(
-        DelegateMtlsEndpoint.builder().accountId(accountId).fqdn("customer.delegate.ut.harness.io").build());
+        AgentMtlsEndpoint.builder().accountId(accountId).fqdn("customer.agent.ut.harness.io").build());
 
     // test some arbitrary values that shouldn't get modified by the function
     String delegateType = KUBERNETES;
@@ -1498,9 +1498,9 @@ public class DelegateServiceImplTest extends WingsBaseTest {
 
     // ensure returned parameters are updated correctly
     assertThat(updatedParameters.isMtlsEnabled()).isTrue();
-    assertThat(updatedParameters.getManagerHost()).isEqualTo("https://customer.delegate.ut.harness.io");
+    assertThat(updatedParameters.getManagerHost()).isEqualTo("https://customer.agent.ut.harness.io");
     assertThat(updatedParameters.getLogStreamingServiceBaseUrl())
-        .isEqualTo("https://customer.delegate.ut.harness.io/log-service");
+        .isEqualTo("https://customer.agent.ut.harness.io/log-service");
 
     // ensure returned parameters contain mtls unrelated fields
     assertThat(updatedParameters.getAccountId()).isEqualTo(accountId);
@@ -1522,7 +1522,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   public void testFinalizeTemplateParametersWithMtlsIfRequiredForNonImmutable() {
     final String accountId = "abc21";
     this.persistence.save(
-        DelegateMtlsEndpoint.builder().accountId(accountId).fqdn("customer.delegate.ut.harness.io").build());
+        AgentMtlsEndpoint.builder().accountId(accountId).fqdn("customer.agent.ut.harness.io").build());
 
     TemplateParameters templateParameters =
         delegateService.finalizeTemplateParametersWithMtlsIfRequired(TemplateParameters.builder().accountId(accountId));
@@ -1549,14 +1549,14 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testUpdateUriToTargetMtlsEndpointForProd() {
     String managerUri = this.delegateService.updateUriToTargetMtlsEndpoint(
-        "https://app.harness.io", "https://app.harness.io", "customer.delegate.harness.io");
+        "https://app.harness.io", "https://app.harness.io", "customer.agent.harness.io");
 
-    assertThat(managerUri).isEqualTo("https://customer.delegate.harness.io");
+    assertThat(managerUri).isEqualTo("https://customer.agent.harness.io");
 
     String logServiceUri = this.delegateService.updateUriToTargetMtlsEndpoint(
-        "https://app.harness.io/log-service", "https://app.harness.io", "customer.delegate.harness.io");
+        "https://app.harness.io/log-service", "https://app.harness.io", "customer.agent.harness.io");
 
-    assertThat(logServiceUri).isEqualTo("https://customer.delegate.harness.io/log-service");
+    assertThat(logServiceUri).isEqualTo("https://customer.agent.harness.io/log-service");
   }
 
   @Test
@@ -1564,14 +1564,14 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testUpdateUriToTargetMtlsEndpointForGratis() {
     String managerUri = this.delegateService.updateUriToTargetMtlsEndpoint(
-        "https://app.harness.io/gratis", "https://app.harness.io/gratis", "customer.delegate.harness.io");
+        "https://app.harness.io/gratis", "https://app.harness.io/gratis", "customer.agent.harness.io");
 
-    assertThat(managerUri).isEqualTo("https://customer.delegate.harness.io");
+    assertThat(managerUri).isEqualTo("https://customer.agent.harness.io");
 
     String logServiceUri = this.delegateService.updateUriToTargetMtlsEndpoint(
-        "https://app.harness.io/gratis/log-service", "https://app.harness.io/gratis", "customer.delegate.harness.io");
+        "https://app.harness.io/gratis/log-service", "https://app.harness.io/gratis", "customer.agent.harness.io");
 
-    assertThat(logServiceUri).isEqualTo("https://customer.delegate.harness.io/log-service");
+    assertThat(logServiceUri).isEqualTo("https://customer.agent.harness.io/log-service");
   }
 
   @Test
@@ -1579,14 +1579,14 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testUpdateUriToTargetMtlsEndpointForCompliance() {
     String managerUri = this.delegateService.updateUriToTargetMtlsEndpoint(
-        "https://app3.harness.io", "https://app3.harness.io", "customer.delegate.harness.io");
+        "https://app3.harness.io", "https://app3.harness.io", "customer.agent.harness.io");
 
-    assertThat(managerUri).isEqualTo("https://customer.delegate.harness.io");
+    assertThat(managerUri).isEqualTo("https://customer.agent.harness.io");
 
     String logServiceUri = this.delegateService.updateUriToTargetMtlsEndpoint(
-        "https://app3.harness.io/log-service", "https://app3.harness.io", "customer.delegate.harness.io");
+        "https://app3.harness.io/log-service", "https://app3.harness.io", "customer.agent.harness.io");
 
-    assertThat(logServiceUri).isEqualTo("https://customer.delegate.harness.io/log-service");
+    assertThat(logServiceUri).isEqualTo("https://customer.agent.harness.io/log-service");
   }
 
   @Test
@@ -1594,14 +1594,14 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testUpdateUriToTargetMtlsEndpointForVanity() {
     String managerUri = this.delegateService.updateUriToTargetMtlsEndpoint(
-        "https://vanityapp.harness.io", "https://vanityapp.harness.io", "customer.delegate.harness.io");
+        "https://vanityapp.harness.io", "https://vanityapp.harness.io", "customer.agent.harness.io");
 
-    assertThat(managerUri).isEqualTo("https://customer.delegate.harness.io");
+    assertThat(managerUri).isEqualTo("https://customer.agent.harness.io");
 
     String logServiceUri = this.delegateService.updateUriToTargetMtlsEndpoint(
-        "https://vanityapp.harness.io/log-service", "https://vanityapp.harness.io", "customer.delegate.harness.io");
+        "https://vanityapp.harness.io/log-service", "https://vanityapp.harness.io", "customer.agent.harness.io");
 
-    assertThat(logServiceUri).isEqualTo("https://customer.delegate.harness.io/log-service");
+    assertThat(logServiceUri).isEqualTo("https://customer.agent.harness.io/log-service");
   }
 
   @Test
@@ -1609,14 +1609,14 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testUpdateUriToTargetMtlsEndpointForQa() {
     String managerUri = this.delegateService.updateUriToTargetMtlsEndpoint(
-        "https://qa.harness.io", "https://qa.harness.io", "customer.delegate.qa.harness.io");
+        "https://qa.harness.io", "https://qa.harness.io", "customer.agent.qa.harness.io");
 
-    assertThat(managerUri).isEqualTo("https://customer.delegate.qa.harness.io");
+    assertThat(managerUri).isEqualTo("https://customer.agent.qa.harness.io");
 
     String logServiceUri = this.delegateService.updateUriToTargetMtlsEndpoint(
-        "https://qa.harness.io/log-service", "https://qa.harness.io", "customer.delegate.qa.harness.io");
+        "https://qa.harness.io/log-service", "https://qa.harness.io", "customer.agent.qa.harness.io");
 
-    assertThat(logServiceUri).isEqualTo("https://customer.delegate.qa.harness.io/log-service");
+    assertThat(logServiceUri).isEqualTo("https://customer.agent.qa.harness.io/log-service");
   }
 
   @Test
@@ -1624,14 +1624,14 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testUpdateUriToTargetMtlsEndpointForPr() {
     String managerUri = this.delegateService.updateUriToTargetMtlsEndpoint(
-        "https://pr.harness.io/del-42", "https://pr.harness.io/del-42", "customer.delegate.pr.harness.io");
+        "https://pr.harness.io/del-42", "https://pr.harness.io/del-42", "customer.agent.pr.harness.io");
 
-    assertThat(managerUri).isEqualTo("https://customer.delegate.pr.harness.io");
+    assertThat(managerUri).isEqualTo("https://customer.agent.pr.harness.io");
 
     String logServiceUri = this.delegateService.updateUriToTargetMtlsEndpoint(
-        "https://pr.harness.io/del-42/log-service", "https://pr.harness.io/del-42", "customer.delegate.pr.harness.io");
+        "https://pr.harness.io/del-42/log-service", "https://pr.harness.io/del-42", "customer.agent.pr.harness.io");
 
-    assertThat(logServiceUri).isEqualTo("https://customer.delegate.pr.harness.io/log-service");
+    assertThat(logServiceUri).isEqualTo("https://customer.agent.pr.harness.io/log-service");
   }
 
   @Test
@@ -1639,9 +1639,9 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testUpdateUriToTargetMtlsEndpointIgnoresProtocol() {
     String output = this.delegateService.updateUriToTargetMtlsEndpoint(
-        "sftp://app.harness.io", "http://app.harness.io", "customer.delegate.harness.io");
+        "sftp://app.harness.io", "http://app.harness.io", "customer.agent.harness.io");
 
-    assertThat(output).isEqualTo("https://customer.delegate.harness.io");
+    assertThat(output).isEqualTo("https://customer.agent.harness.io");
   }
 
   @Test
@@ -1649,9 +1649,9 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testUpdateUriToTargetMtlsEndpointIgnoresPort() {
     String output = this.delegateService.updateUriToTargetMtlsEndpoint(
-        "http://app.harness.io:9876", "https://app.harness.io:9090", "customer.delegate.harness.io");
+        "http://app.harness.io:9876", "https://app.harness.io:9090", "customer.agent.harness.io");
 
-    assertThat(output).isEqualTo("https://customer.delegate.harness.io");
+    assertThat(output).isEqualTo("https://customer.agent.harness.io");
   }
 
   private List<String> setUpDelegatesForInitializationTest() {

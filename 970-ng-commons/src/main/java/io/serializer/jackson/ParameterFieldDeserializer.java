@@ -96,7 +96,8 @@ public class ParameterFieldDeserializer extends StdDeserializer<ParameterField<?
       // pre-filled default values. So user will always provide value.
       return ParameterField.createFieldWithDefaultValue(defaultValue == null, isExecutionInput,
           NGExpressionUtils.DEFAULT_INPUT_SET_EXPRESSION,
-          defaultValue == null ? null : JsonUtils.asObject(defaultValue, this.referenceType.getRawClass()),
+          defaultValue == null ? null
+                               : JsonUtils.asObject("\"" + defaultValue + "\"", this.referenceType.getRawClass()),
           inputSetValidator, isTypeString);
     }
     if (inputSetValidator != null && isTypeString) {

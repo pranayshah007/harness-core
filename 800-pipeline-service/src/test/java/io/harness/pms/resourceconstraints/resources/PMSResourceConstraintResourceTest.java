@@ -29,7 +29,7 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PIPELINE)
 public class PMSResourceConstraintResourceTest {
-  @InjectMocks PMSResourceConstraintResource resourceConstraintResource;
+  @InjectMocks PMSResourceConstraintResourceImpl resourceConstraintResource;
   @Mock PMSResourceConstraintService resourceConstraintService;
 
   @Before

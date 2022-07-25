@@ -103,17 +103,8 @@ public class AzureWebAppRollbackStepTest extends CDNGTestBase {
         .resolveOptional(any(),
             eq(RefObjectUtils.getSweepingOutputRefObject(
                 SWAP_SLOT_STEP_FQN + "." + AzureWebAppSwapSlotsDataOutput.OUTPUT_NAME)));
-    doReturn(OptionalSweepingOutput.builder()
-                 .found(true)
-                 .output(AzureWebAppPreDeploymentDataOutput.builder()
-                             .preDeploymentData(azureAppServicePreDeploymentData)
-                             .build())
-                 .build())
-        .when(executionSweepingOutputService)
-        .resolveOptional(any(),
-            eq(RefObjectUtils.getSweepingOutputRefObject(
-                SLOT_DEPLOYMENT_STEP_FQN + "." + AzureWebAppPreDeploymentDataOutput.OUTPUT_NAME)));
-    doReturn(azureWebAppInfraDelegateConfig).when(stepHelper).getInfraDelegateConfig(any());
+    doReturn(azureAppServicePreDeploymentData).when(stepHelper).getPreDeploymentData(eq(ambiance), any());
+    doReturn(azureWebAppInfraDelegateConfig).when(stepHelper).getInfraDelegateConfig(any(), any(), any());
 
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
     doReturn(TaskRequest.newBuilder().build())
@@ -162,17 +153,8 @@ public class AzureWebAppRollbackStepTest extends CDNGTestBase {
         .resolveOptional(any(),
             eq(RefObjectUtils.getSweepingOutputRefObject(
                 SLOT_DEPLOYMENT_STEP_FQN + "." + AzureWebAppSlotDeploymentDataOutput.OUTPUT_NAME)));
-    doReturn(OptionalSweepingOutput.builder()
-                 .found(true)
-                 .output(AzureWebAppPreDeploymentDataOutput.builder()
-                             .preDeploymentData(azureAppServicePreDeploymentData)
-                             .build())
-                 .build())
-        .when(executionSweepingOutputService)
-        .resolveOptional(any(),
-            eq(RefObjectUtils.getSweepingOutputRefObject(
-                SLOT_DEPLOYMENT_STEP_FQN + "." + AzureWebAppPreDeploymentDataOutput.OUTPUT_NAME)));
-    doReturn(azureWebAppInfraDelegateConfig).when(stepHelper).getInfraDelegateConfig(any());
+    doReturn(azureAppServicePreDeploymentData).when(stepHelper).getPreDeploymentData(eq(ambiance), any());
+    doReturn(azureWebAppInfraDelegateConfig).when(stepHelper).getInfraDelegateConfig(any(), any(), any());
 
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
     doReturn(TaskRequest.newBuilder().build())
@@ -216,17 +198,8 @@ public class AzureWebAppRollbackStepTest extends CDNGTestBase {
         .resolveOptional(any(),
             eq(RefObjectUtils.getSweepingOutputRefObject(
                 SLOT_DEPLOYMENT_STEP_FQN + "." + AzureWebAppSlotDeploymentDataOutput.OUTPUT_NAME)));
-    doReturn(OptionalSweepingOutput.builder()
-                 .found(true)
-                 .output(AzureWebAppPreDeploymentDataOutput.builder()
-                             .preDeploymentData(azureAppServicePreDeploymentData)
-                             .build())
-                 .build())
-        .when(executionSweepingOutputService)
-        .resolveOptional(any(),
-            eq(RefObjectUtils.getSweepingOutputRefObject(
-                SLOT_DEPLOYMENT_STEP_FQN + "." + AzureWebAppPreDeploymentDataOutput.OUTPUT_NAME)));
-    doReturn(azureWebAppInfraDelegateConfig).when(stepHelper).getInfraDelegateConfig(any());
+    doReturn(azureAppServicePreDeploymentData).when(stepHelper).getPreDeploymentData(eq(ambiance), any());
+    doReturn(azureWebAppInfraDelegateConfig).when(stepHelper).getInfraDelegateConfig(any(), any(), any());
 
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
     doReturn(TaskRequest.newBuilder().build())

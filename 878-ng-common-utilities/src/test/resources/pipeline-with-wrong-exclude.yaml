@@ -14,7 +14,7 @@ pipeline:
             a: [ "1","2","3" ]
             b: ["2","3","4"]
             exclude:
-              - b: 2
+              - c: 2
         type: Approval
         spec:
           execution:

@@ -2528,7 +2528,7 @@ public class StateMachineExecutor implements StateInspectionListener {
           MapperUtils.mapObject(stateExecutionInstance.getStateParams(), state);
         }
         ExecutionResponse executionResponse = state.handleAsyncResponse(context, response);
-        stateMachineExecutor.handleExecuteResponse(context, executionResponse);
+        stateMachineExecutor.handleResponse(context, executionResponse);
       } catch (WingsException ex) {
         stateMachineExecutor.handleExecuteResponseException(context, ex);
       } catch (Exception ex) {

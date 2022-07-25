@@ -1696,8 +1696,9 @@ public class UserServiceTest extends WingsBaseTest {
   public void getUserAccountsAndSupportAccountsTest() {
     User user = initAccountsAndSupportAcccountsForUser();
     when(wingsPersistence.get(User.class, user.getUuid())).thenReturn(user);
-    List<Account> accountList = userService.getUserAccountsAndSupportAccounts(user.getUuid(), 0, 20, "");
-    assertThat(accountList.size() == 6);
+    io.harness.ng.beans.PageResponse<Account> accountList =
+        userService.getUserAccountsAndSupportAccounts(user.getUuid(), 0, 20, "");
+    assertThat(accountList.getContent().size() == 6);
   }
 
   @Test
@@ -1706,9 +1707,10 @@ public class UserServiceTest extends WingsBaseTest {
   public void getUserAccountsPageSizeTest() {
     User user = initAccountsAndSupportAcccountsForUser();
     when(wingsPersistence.get(User.class, user.getUuid())).thenReturn(user);
-    List<Account> accountList = userService.getUserAccountsAndSupportAccounts(user.getUuid(), 0, 3, "");
-    assertThat(accountList.size() == 3);
-    assertThat(accountList.containsAll(getAccounts()));
+    io.harness.ng.beans.PageResponse<Account> accountList =
+        userService.getUserAccountsAndSupportAccounts(user.getUuid(), 0, 3, "");
+    assertThat(accountList.getContent().size() == 3);
+    assertThat(accountList.getContent().containsAll(getAccounts()));
   }
 
   @Test
@@ -1717,9 +1719,10 @@ public class UserServiceTest extends WingsBaseTest {
   public void getUserAccountsPageIndexTest() {
     User user = initAccountsAndSupportAcccountsForUser();
     when(wingsPersistence.get(User.class, user.getUuid())).thenReturn(user);
-    List<Account> accountList = userService.getUserAccountsAndSupportAccounts(user.getUuid(), 3, 2, "");
-    assertThat(accountList.size() == 2);
-    assertThat(accountList.containsAll(getSupportAccounts()));
+    io.harness.ng.beans.PageResponse<Account> accountList =
+        userService.getUserAccountsAndSupportAccounts(user.getUuid(), 3, 2, "");
+    assertThat(accountList.getContent().size() == 2);
+    assertThat(accountList.getContent().containsAll(getSupportAccounts()));
   }
 
   @Test
@@ -1731,9 +1734,10 @@ public class UserServiceTest extends WingsBaseTest {
     when(accountService.getAccounts(any(PageRequest.class)))
         .thenReturn(aPageResponse().withResponse(accountTarget).build());
     when(wingsPersistence.get(User.class, user.getUuid())).thenReturn(user);
-    List<Account> accountListAfterFilter = userService.getUserAccountsAndSupportAccounts(user.getUuid(), 0, 10, "Test");
-    assertThat(accountListAfterFilter.size() == 1);
-    assertThat(accountListAfterFilter.get(0).getAccountName().equals("Test-Account"));
+    io.harness.ng.beans.PageResponse<Account> accountListAfterFilter =
+        userService.getUserAccountsAndSupportAccounts(user.getUuid(), 0, 10, "Test");
+    assertThat(accountListAfterFilter.getContent().size() == 1);
+    assertThat(accountListAfterFilter.getContent().get(0).getAccountName().equals("Test-Account"));
   }
 
   private List<Account> getAccounts() {

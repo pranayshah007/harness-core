@@ -55,11 +55,20 @@ public class SettingsCreationJob {
     try {
       byte[] bytes = Resources.toByteArray(url);
       this.settingsConfig = om.readValue(bytes, SettingsConfig.class);
+      populateDefaultConfigs(settingsConfig);
       validateConfig(settingsConfig);
     } catch (IOException e) {
       throw new InvalidRequestException("Settings file path is invalid or the syntax is incorrect", e);
     }
     this.settingsService = settingsService;
+  }
+
+  private void populateDefaultConfigs(SettingsConfig settingsConfig) {
+    settingsConfig.getSettings().forEach(settingConfiguration -> {
+      if (settingConfiguration.getAllowOverrides() == null) {
+        settingConfiguration.setAllowOverrides(true);
+      }
+    });
   }
 
   private void validateConfig(SettingsConfig settingsConfig) {

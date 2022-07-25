@@ -40,18 +40,18 @@ public class ParallelismStrategyConfigService implements StrategyConfigService {
   }
 
   @Override
-  public List<JsonNode> expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode) {
+  public StrategyInfo expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode) {
     Integer parallelism = 0;
     if (!ParameterField.isBlank(strategyConfig.getParallelism())) {
       parallelism = strategyConfig.getParallelism().getValue();
     }
     List<JsonNode> jsonNodes = new ArrayList<>();
     for (int i = 0; i < parallelism; i++) {
-      JsonNode clonedJsonNode = JsonPipelineUtils.asTree(JsonUtils.asMap(
-          StageStrategyUtils.replaceExpressions(jsonNode.deepCopy().toString(), new HashMap<>(), i, parallelism)));
+      JsonNode clonedJsonNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StageStrategyUtils.replaceExpressions(
+          jsonNode.deepCopy().toString(), new HashMap<>(), i, parallelism, null)));
       StageStrategyUtils.modifyJsonNode(clonedJsonNode, Lists.newArrayList(String.valueOf(i)));
       jsonNodes.add(clonedJsonNode);
     }
-    return jsonNodes;
+    return StrategyInfo.builder().expandedJsonNodes(jsonNodes).maxConcurrency(jsonNodes.size()).build();
   }
 }

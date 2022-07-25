@@ -30,6 +30,7 @@ public class LicenseObjectConverter {
     moduleLicenseDTO.setModuleType(moduleLicense.getModuleType());
     moduleLicenseDTO.setEdition(moduleLicense.getEdition());
     moduleLicenseDTO.setLicenseType(moduleLicense.getLicenseType());
+    moduleLicenseDTO.setSelfService(moduleLicense.isSelfService());
     moduleLicenseDTO.setStatus(moduleLicense.getStatus());
     moduleLicenseDTO.setStartTime(moduleLicense.getStartTime());
     moduleLicenseDTO.setExpiryTime(moduleLicense.getExpiryTime());
@@ -47,6 +48,7 @@ public class LicenseObjectConverter {
     moduleLicense.setModuleType(moduleLicenseDTO.getModuleType());
     moduleLicense.setEdition(moduleLicenseDTO.getEdition());
     moduleLicense.setLicenseType(moduleLicenseDTO.getLicenseType());
+    moduleLicense.setSelfService(moduleLicenseDTO.isSelfService());
     moduleLicense.setStatus(moduleLicenseDTO.getStatus());
     moduleLicense.setStartTime(moduleLicenseDTO.getStartTime());
     moduleLicense.setExpiryTime(moduleLicenseDTO.getExpiryTime());

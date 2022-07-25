@@ -33,6 +33,7 @@ import io.harness.pms.notification.NotificationHelper;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.mappers.GraphLayoutDtoMapper;
+import io.harness.pms.pipeline.metadata.RecentExecutionsInfoHelper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.creation.NodeTypeLookupService;
 import io.harness.pms.plan.execution.StoreTypeMapper;
@@ -71,12 +72,13 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
   private final PmsExecutionSummaryRespository pmsExecutionSummaryRespository;
   private final PmsGitSyncHelper pmsGitSyncHelper;
   private final NotificationHelper notificationHelper;
+  private final RecentExecutionsInfoHelper recentExecutionsInfoHelper;
 
   @Inject
   public ExecutionSummaryCreateEventHandler(PMSPipelineService pmsPipelineService, PlanService planService,
       PlanExecutionService planExecutionService, NodeTypeLookupService nodeTypeLookupService,
       PmsExecutionSummaryRespository pmsExecutionSummaryRespository, PmsGitSyncHelper pmsGitSyncHelper,
-      NotificationHelper notificationHelper) {
+      NotificationHelper notificationHelper, RecentExecutionsInfoHelper recentExecutionsInfoHelper) {
     this.pmsPipelineService = pmsPipelineService;
     this.planService = planService;
     this.planExecutionService = planExecutionService;
@@ -84,6 +86,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     this.pmsExecutionSummaryRespository = pmsExecutionSummaryRespository;
     this.pmsGitSyncHelper = pmsGitSyncHelper;
     this.notificationHelper = notificationHelper;
+    this.recentExecutionsInfoHelper = recentExecutionsInfoHelper;
   }
 
   @Override
@@ -115,6 +118,8 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
       Query query = new Query(Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(parentExecutionId));
       pmsExecutionSummaryRespository.update(query, update);
     }
+
+    recentExecutionsInfoHelper.onExecutionStart(accountId, orgId, projectId, pipelineId, planExecution);
 
     updateExecutionInfoInPipelineEntity(
         accountId, orgId, projectId, pipelineId, pipelineEntity.get().getExecutionSummaryInfo(), planExecutionId);
@@ -171,6 +176,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .governanceMetadata(planExecution.getGovernanceMetadata())
             .stagesExecutionMetadata(planExecutionMetadata.getStagesExecutionMetadata())
             .storeType(StoreTypeMapper.fromPipelineStoreType(metadata.getPipelineStoreType()))
+            .executionInputConfigured(orchestrationStartInfo.getPlanExecutionMetadata().isExecutionInputConfigured())
             .connectorRef(
                 EmptyPredicate.isEmpty(metadata.getPipelineConnectorRef()) ? null : metadata.getPipelineConnectorRef())
             .build();

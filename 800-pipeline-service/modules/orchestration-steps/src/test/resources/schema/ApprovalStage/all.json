@@ -658,11 +658,11 @@
             },
             "retryInterval": {
               "type": "string",
-              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*))$"
+              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*)|(^$))$"
             },
             "scriptTimeout": {
               "type": "string",
-              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*))$"
+              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*)|(^$))$"
             },
             "shell": {
               "type": "string",
@@ -969,7 +969,7 @@
     "HarnessForConfig": {
       "type": "object",
       "properties": {
-        "iteration": {
+        "end": {
           "oneOf": [
             {
               "type": "integer",
@@ -978,7 +978,22 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "minLength": 1
+            }
+          ]
+        },
+        "items": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -992,13 +1007,64 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
+        },
+        "start": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "minLength": 1
+            }
+          ]
+        },
+        "times": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "minLength": 1
+            }
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "Percentage",
+            "Count"
+          ]
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "times"
+              ]
+            },
+            {
+              "required": [
+                "items"
+              ]
+            }
+          ]
+        }
+      ]
     },
     "HttpHeaderConfig": {
       "type": "object",
@@ -1420,7 +1486,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -1494,7 +1560,8 @@
                   "format": "double"
                 },
                 {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*))"
                 }
               ]
             }
@@ -2653,7 +2720,7 @@
         },
         "timeout": {
           "type": "string",
-          "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*))$"
+          "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*)|(^$))$"
         },
         "type": {
           "type": "string"
@@ -2951,6 +3018,9 @@
           "maxItems": 2147483647,
           "minItems": 1
         },
+        "strategy": {
+          "$ref": "#/definitions/StrategyConfig"
+        },
         "when": {
           "$ref": "#/definitions/StepWhenCondition"
         }
@@ -3007,9 +3077,6 @@
     "StrategyConfig": {
       "type": "object",
       "properties": {
-        "for": {
-          "$ref": "#/definitions/HarnessForConfig"
-        },
         "matrix": {
           "oneOf": [
             {
@@ -3026,10 +3093,13 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
+        },
+        "repeat": {
+          "$ref": "#/definitions/HarnessForConfig"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -3038,12 +3108,12 @@
           "oneOf": [
             {
               "required": [
-                "parallelism"
+                "repeat"
               ]
             },
             {
               "required": [
-                "for"
+                "parallelism"
               ]
             },
             {

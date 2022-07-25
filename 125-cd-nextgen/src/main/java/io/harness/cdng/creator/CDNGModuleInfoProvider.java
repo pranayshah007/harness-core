@@ -42,7 +42,6 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.execution.beans.PipelineModuleInfo;
 import io.harness.pms.sdk.execution.beans.StageModuleInfo;
-import io.harness.steps.environment.EnvironmentOutcome;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -98,13 +97,13 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
     return Optional.ofNullable((ArtifactsOutcome) optionalOutcome.getOutcome());
   }
 
-  private Optional<EnvironmentOutcome> getEnvironmentOutcome(OrchestrationEvent event) {
+  private Optional<InfrastructureOutcome> getInfrastructureOutcome(OrchestrationEvent event) {
     OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
         event.getAmbiance(), RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.OUTPUT));
     if (!optionalOutcome.isFound()) {
       return Optional.empty();
     }
-    return Optional.ofNullable(((InfrastructureOutcome) optionalOutcome.getOutcome()).getEnvironment());
+    return Optional.ofNullable((InfrastructureOutcome) optionalOutcome.getOutcome());
   }
 
   private boolean isServiceNodeAndCompleted(StepType stepType, Status status) {
@@ -139,7 +138,8 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
         InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) infraOptionalOutcome.getOutcome();
         cdPipelineModuleInfoBuilder.envIdentifier(infrastructureOutcome.getEnvironment().getIdentifier())
             .environmentType(infrastructureOutcome.getEnvironment().getType())
-            .infrastructureType(infrastructureOutcome.getKind());
+            .infrastructureType(infrastructureOutcome.getKind())
+            .infrastructureIdentifier(infrastructureOutcome.getInfraIdentifier());
       }
     } else if (isGitopsNodeAndCompleted(stepType, event.getStatus())) {
       OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
@@ -176,16 +176,21 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
                                                       .identifier(outcome.getIdentifier())
                                                       .displayName(outcome.getName())
                                                       .deploymentType(outcome.getServiceDefinitionType())
+                                                      .gitOpsEnabled(outcome.isGitOpsEnabled())
                                                       .artifacts(mapArtifactsOutcomeToSummary(artifactsOutcome))
                                                       .build()));
     } else if (isInfrastructureNodeAndCompleted(stepType, event.getStatus())) {
-      Optional<EnvironmentOutcome> environmentOutcome = getEnvironmentOutcome(event);
-      environmentOutcome.ifPresent(outcome
-          -> cdStageModuleInfoBuilder.infraExecutionSummary(InfraExecutionSummary.builder()
-                                                                .identifier(outcome.getIdentifier())
-                                                                .name(outcome.getName())
-                                                                .type(outcome.getType().name())
-                                                                .build()));
+      Optional<InfrastructureOutcome> infrastructureOutcome = getInfrastructureOutcome(event);
+      infrastructureOutcome.ifPresent(outcome -> {
+        if (outcome.getEnvironment() != null) {
+          cdStageModuleInfoBuilder.infraExecutionSummary(InfraExecutionSummary.builder()
+                                                             .identifier(outcome.getEnvironment().getIdentifier())
+                                                             .name(outcome.getEnvironment().getName())
+                                                             .type(outcome.getEnvironment().getType().name())
+                                                             .infrastructureIdentifier(outcome.getInfraIdentifier())
+                                                             .build());
+        }
+      });
     } else if (isGitopsNodeAndCompleted(stepType, event.getStatus())) {
       OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
           event.getAmbiance(), RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));

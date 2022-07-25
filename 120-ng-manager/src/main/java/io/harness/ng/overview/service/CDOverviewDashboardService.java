@@ -74,6 +74,9 @@ public interface CDOverviewDashboardService {
   io.harness.ng.overview.dto.EnvironmentDeploymentInfo getEnvironmentDeploymentDetailsByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
+  InstanceGroupedByArtifactList getActiveServiceDeploymentsList(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
+
   InstancesByBuildIdList getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, List<String> buildIds);
 

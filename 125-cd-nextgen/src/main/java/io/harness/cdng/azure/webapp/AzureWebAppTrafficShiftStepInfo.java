@@ -58,8 +58,10 @@ public class AzureWebAppTrafficShiftStepInfo
   @NotNull @YamlSchemaTypes(value = {string, number}) ParameterField<String> traffic;
 
   @Builder(builderMethodName = "infoBuilder")
-  public AzureWebAppTrafficShiftStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public AzureWebAppTrafficShiftStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      String slotDeploymentStepFqn, ParameterField<String> traffic) {
+    super(delegateSelectors, slotDeploymentStepFqn);
+    this.traffic = traffic;
   }
 
   @Override

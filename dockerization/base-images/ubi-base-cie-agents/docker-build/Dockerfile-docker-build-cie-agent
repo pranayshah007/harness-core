@@ -17,5 +17,7 @@ FROM us.gcr.io/platform-205701/ubi/ubi-java:latest
 
 USER root
 
+RUN microdnf install yum
+
 RUN yum install -y yum-utils && yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo \
     && yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin

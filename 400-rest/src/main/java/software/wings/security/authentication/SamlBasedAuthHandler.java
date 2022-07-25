@@ -81,6 +81,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.opensaml.core.xml.XMLObject;
 import org.opensaml.core.xml.schema.XSString;
@@ -359,7 +360,7 @@ public class SamlBasedAuthHandler implements AuthHandler {
               return getUserGroups(attributeStatements, groupMembershipAttr);
           }
         } catch (Exception e) {
-          // try decoding again with the next saml settings.
+          log.error("SAML: Could not fetch userGroups for Account: {}", accountId, e);
         }
       }
     }
@@ -393,7 +394,7 @@ public class SamlBasedAuthHandler implements AuthHandler {
               return getUserId(attributeStatements, userIdAttr);
           }
         } catch (Exception e) {
-          // try decoding again with the next saml settings.
+          log.error("SAML: Could not fetch the userId for Account {}", accountId, e);
         }
       }
     }
@@ -486,8 +487,9 @@ public class SamlBasedAuthHandler implements AuthHandler {
         if (isNotEmpty(accessToken)) {
           try {
             userGroups.addAll(this.getUsersGroupResource(accessToken, tenantId, azureUserId));
-          } catch (IOException ioExc) {
-            log.error("Getting azure user groups failed in case of more than 150 groups", ioExc);
+          } catch (IOException | JSONException exc) {
+            log.error("SAML: Getting azure user groups failed in case of more than 150 groups for Account: {}",
+                accountId, exc);
           }
         }
       }
@@ -545,8 +547,9 @@ public class SamlBasedAuthHandler implements AuthHandler {
         if (isNotEmpty(accessToken)) {
           try {
             userIds.addAll(this.getUsersGroupResource(accessToken, tenantId, azureUserId));
-          } catch (IOException ioExc) {
-            log.error("Getting azure user groups failed in case of more than 150 groups", ioExc);
+          } catch (IOException | JSONException exc) {
+            log.error("SAML: Getting azure user groups failed in case of more than 150 groups for Account: {}",
+                accountId, exc);
           }
         }
       }

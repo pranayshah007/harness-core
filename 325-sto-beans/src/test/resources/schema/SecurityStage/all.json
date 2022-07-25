@@ -373,9 +373,6 @@
             "SourceBranch"
           ]
         },
-        "projectName": {
-          "type": "string"
-        },
         "repoName": {
           "type": "string"
         },
@@ -1124,7 +1121,7 @@
     "HarnessForConfig": {
       "type": "object",
       "properties": {
-        "iteration": {
+        "end": {
           "oneOf": [
             {
               "type": "integer",
@@ -1133,7 +1130,22 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "minLength": 1
+            }
+          ]
+        },
+        "items": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -1147,13 +1159,64 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
+        },
+        "start": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "minLength": 1
+            }
+          ]
+        },
+        "times": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "minLength": 1
+            }
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "Percentage",
+            "Count"
+          ]
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "times"
+              ]
+            },
+            {
+              "required": [
+                "items"
+              ]
+            }
+          ]
+        }
+      ]
     },
     "HostPathVolume": {
       "allOf": [
@@ -1379,6 +1442,9 @@
         },
         "infrastructure": {
           "$ref": "#/definitions/Infrastructure"
+        },
+        "runsOn": {
+          "$ref": "#/definitions/ParameterFieldString"
         },
         "serviceDependencies": {
           "$ref": "#/definitions/ParameterFieldListDependencyElement"
@@ -1809,7 +1875,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -1883,7 +1949,8 @@
                   "format": "double"
                 },
                 {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*))"
                 }
               ]
             }
@@ -2377,6 +2444,39 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ParameterFieldString": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "string"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "PersistentVolumeClaimYaml": {
       "allOf": [
         {
@@ -2849,6 +2949,18 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "RunOnInfraSpec": {
+      "type": "object",
+      "required": [
+        "runsOn"
+      ],
+      "properties": {
+        "runsOn": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "RunStepInfo": {
       "allOf": [
         {
@@ -3195,6 +3307,35 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "RunsOnInfra": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Infrastructure"
+        },
+        {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "spec": {
+              "$ref": "#/definitions/RunOnInfraSpec"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "KubernetesDirect",
+                "UseFromStage",
+                "VM",
+                "KubernetesHosted"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SaveCacheGCSStepInfo": {
       "allOf": [
         {
@@ -3525,12 +3666,18 @@
               "$ref": "#/definitions/K8sHostedInfraYaml"
             },
             {
+              "$ref": "#/definitions/RunsOnInfra"
+            },
+            {
               "$ref": "#/definitions/UseFromStageInfraYaml"
             },
             {
               "$ref": "#/definitions/VmInfraYaml"
             }
           ]
+        },
+        "runsOn": {
+          "type": "string"
         },
         "serviceDependencies": {
           "oneOf": [
@@ -3808,7 +3955,7 @@
         },
         "timeout": {
           "type": "string",
-          "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*))$"
+          "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*)|(^$))$"
         },
         "type": {
           "type": "string"
@@ -4090,6 +4237,9 @@
           "maxItems": 2147483647,
           "minItems": 1
         },
+        "strategy": {
+          "$ref": "#/definitions/StrategyConfig"
+        },
         "when": {
           "$ref": "#/definitions/StepWhenCondition"
         }
@@ -4146,9 +4296,6 @@
     "StrategyConfig": {
       "type": "object",
       "properties": {
-        "for": {
-          "$ref": "#/definitions/HarnessForConfig"
-        },
         "matrix": {
           "oneOf": [
             {
@@ -4165,10 +4312,13 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
+        },
+        "repeat": {
+          "$ref": "#/definitions/HarnessForConfig"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -4177,12 +4327,12 @@
           "oneOf": [
             {
               "required": [
-                "parallelism"
+                "repeat"
               ]
             },
             {
               "required": [
-                "for"
+                "parallelism"
               ]
             },
             {

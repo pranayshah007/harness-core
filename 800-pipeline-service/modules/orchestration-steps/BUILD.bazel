@@ -11,8 +11,8 @@ java_library(
     visibility = ["//800-pipeline-service:__subpackages__"],
     deps = [
         "//:lombok",
+        "//800-pipeline-service/modules/orchestration:module",
         "//800-pipeline-service/modules/orchestration-steps/contracts:module",
-        "//870-orchestration:module",
         "//878-ng-common-utilities:module",
         "//880-pipeline-cd-commons:module",
         "//950-telemetry:module",
@@ -49,7 +49,7 @@ java_library(
     testonly = True,
     srcs = glob(["src/test/**/*.java"]),
     resources = ["//800-pipeline-service/modules/orchestration-steps/src/test/resources:resource"],
-    visibility = ["//visibility:public"],
+    visibility = ["//800-pipeline-service:__subpackages__"],
     deps = [
         ":module",
         "//:lombok",

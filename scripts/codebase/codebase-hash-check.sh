@@ -15,12 +15,19 @@ CODEBASE_HASH_STRING=`cat $TEMP_DIR/codehash-out.text | grep "Codebase Hash:"`
 HASH=${CODEBASE_HASH_STRING:14:64}
 echo "New hash: " $HASH
 
-EXISTING_HASH=$(cat 260-delegate/module-dependency.hash)
+touch $TEMP_DIR/codehash-out-develop.text
+git fetch origin develop
+git checkout develop
+DEVELOP_COMMIT=$(git merge-base $ghprbSourceBranch develop)
+git checkout "$DEVELOP_COMMIT"
+bazel run "//001-microservice-intfc-tool:delegate" | tee $TEMP_DIR/codehash-out-develop.text
+CODEBASE_HASH_STRING=`cat $TEMP_DIR/codehash-out-develop.text | grep "Codebase Hash:"`
+EXISTING_HASH=${CODEBASE_HASH_STRING:14:64}
 echo "Existing hash: " $EXISTING_HASH
 
 if [[ $HASH != $EXISTING_HASH ]];
 then
-  message="$HASH in file 260-delegate/module-dependency.hash"
+  message="$HASH is not same sas what is generated from develop branch"
   echo -e "\n${bold}260-delegate check failed.\n${normal}"
   errors+=("$message")
 else
@@ -41,7 +48,7 @@ else
     source $DIR/diff-with-target-branch.sh
 
     echo -e "${bold}\n----------------------------------------------------------------------------\n"
-    echo "If the change is backward compatible replace the new hash:"
+    echo "If the change is backward compatible then retrigger the PR check after delegate team approval"
 
     for i in "${!errors[@]}"
     do

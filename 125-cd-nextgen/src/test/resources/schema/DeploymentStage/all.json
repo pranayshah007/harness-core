@@ -191,6 +191,20 @@
               "type": "string"
             }
           }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "filePath"
+              ]
+            },
+            {
+              "required": [
+                "filePathRegex"
+              ]
+            }
+          ]
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -435,17 +449,11 @@
           "type": "object",
           "required": [
             "connectorRef",
-            "deploymentSlot",
             "resourceGroup",
-            "subscriptionId",
-            "webApp"
+            "subscriptionId"
           ],
           "properties": {
             "connectorRef": {
-              "type": "string",
-              "minLength": 1
-            },
-            "deploymentSlot": {
               "type": "string",
               "minLength": 1
             },
@@ -454,13 +462,6 @@
               "minLength": 1
             },
             "subscriptionId": {
-              "type": "string",
-              "minLength": 1
-            },
-            "targetSlot": {
-              "type": "string"
-            },
-            "webApp": {
               "type": "string",
               "minLength": 1
             }
@@ -526,6 +527,10 @@
         },
         {
           "type": "object",
+          "required": [
+            "deploymentSlot",
+            "webApp"
+          ],
           "properties": {
             "delegateSelectors": {
               "oneOf": [
@@ -541,6 +546,12 @@
                   "minLength": 1
                 }
               ]
+            },
+            "deploymentSlot": {
+              "type": "string"
+            },
+            "webApp": {
+              "type": "string"
             }
           }
         }
@@ -554,6 +565,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "targetSlot"
+          ],
           "properties": {
             "delegateSelectors": {
               "oneOf": [
@@ -569,6 +583,9 @@
                   "minLength": 1
                 }
               ]
+            },
+            "targetSlot": {
+              "type": "string"
             }
           }
         }
@@ -1488,6 +1505,44 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CustomRemoteStoreConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StoreConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "extractionScript",
+            "filePath"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "extractionScript": {
+              "type": "string"
+            },
+            "filePath": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "DeleteManifestPathSpec": {
       "allOf": [
         {
@@ -1657,7 +1712,7 @@
             "Ssh",
             "WinRm",
             "ServerlessAwsLambda",
-            "AzureWebApps"
+            "AzureWebApp"
           ]
         },
         "environment": {
@@ -1878,8 +1933,20 @@
         "envGroupRef"
       ],
       "properties": {
+        "__uuid": {
+          "type": "string"
+        },
         "deployToAll": {
-          "type": "boolean"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "minLength": 1
+            }
+          ]
         },
         "envGroupRef": {
           "type": "string"
@@ -2413,7 +2480,7 @@
     "HarnessForConfig": {
       "type": "object",
       "properties": {
-        "iteration": {
+        "end": {
           "oneOf": [
             {
               "type": "integer",
@@ -2422,7 +2489,22 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "minLength": 1
+            }
+          ]
+        },
+        "items": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
@@ -2436,13 +2518,64 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
+        },
+        "start": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "minLength": 1
+            }
+          ]
+        },
+        "times": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
+              "minLength": 1
+            }
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "Percentage",
+            "Count"
+          ]
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "times"
+              ]
+            },
+            {
+              "required": [
+                "items"
+              ]
+            }
+          ]
+        }
+      ]
     },
     "HarnessStore": {
       "allOf": [
@@ -3793,6 +3926,9 @@
         {
           "type": "object",
           "properties": {
+            "manifestScope": {
+              "type": "string"
+            },
             "metadata": {
               "type": "string"
             },
@@ -4163,7 +4299,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+                  "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
                   "minLength": 1
                 }
               ]
@@ -4417,7 +4553,8 @@
                   "format": "double"
                 },
                 {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "(^[+-]?[0-9]+\\.?[0-9]*$|(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*))"
                 }
               ]
             }
@@ -5811,7 +5948,7 @@
             "Ssh",
             "WinRm",
             "ServerlessAwsLambda",
-            "AzureWebApps"
+            "AzureWebApp"
           ]
         }
       },
@@ -5821,7 +5958,7 @@
           "if": {
             "properties": {
               "type": {
-                "const": "AzureWebApps"
+                "const": "AzureWebApp"
               }
             }
           },
@@ -6451,9 +6588,7 @@
                   }
                 },
                 {
-                  "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
-                  "minLength": 1
+                  "type": "string"
                 }
               ]
             },
@@ -6633,7 +6768,7 @@
         },
         "timeout": {
           "type": "string",
-          "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*))$"
+          "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*)|(^$))$"
         },
         "type": {
           "type": "string"
@@ -7139,6 +7274,9 @@
           "maxItems": 2147483647,
           "minItems": 1
         },
+        "strategy": {
+          "$ref": "#/definitions/StrategyConfig"
+        },
         "when": {
           "$ref": "#/definitions/StepWhenCondition"
         }
@@ -7210,6 +7348,7 @@
         "type": {
           "type": "string",
           "enum": [
+            "CustomRemote",
             "Git",
             "Github",
             "Bitbucket",
@@ -7273,6 +7412,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/BitbucketStore"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CustomRemote"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CustomRemoteStoreConfig"
               }
             }
           }
@@ -7470,9 +7625,6 @@
     "StrategyConfig": {
       "type": "object",
       "properties": {
-        "for": {
-          "$ref": "#/definitions/HarnessForConfig"
-        },
         "matrix": {
           "oneOf": [
             {
@@ -7489,10 +7641,13 @@
             },
             {
               "type": "string",
-              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "pattern": "(^<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>$|^<\\+input>.*)",
               "minLength": 1
             }
           ]
+        },
+        "repeat": {
+          "$ref": "#/definitions/HarnessForConfig"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -7501,12 +7656,12 @@
           "oneOf": [
             {
               "required": [
-                "parallelism"
+                "repeat"
               ]
             },
             {
               "required": [
-                "for"
+                "parallelism"
               ]
             },
             {

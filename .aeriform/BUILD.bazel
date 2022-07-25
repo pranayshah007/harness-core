@@ -88,10 +88,6 @@ aeriform("//315-sto-manager:module")
 
 aeriform("//315-sto-manager:tests")
 
-aeriform("//320-ci-execution:module")
-
-aeriform("//320-ci-execution:tests")
-
 aeriform("//323-sto-utilities:module")
 
 aeriform("//323-sto-utilities:tests")
@@ -100,9 +96,9 @@ aeriform("//325-sto-beans:module")
 
 aeriform("//325-sto-beans:tests")
 
-aeriform("//330-ci-beans:module")
+aeriform("//332-ci-manager/service:module")
 
-aeriform("//330-ci-beans:tests")
+aeriform("//332-ci-manager/service:tests")
 
 aeriform("//340-ce-nextgen:module")
 
@@ -186,19 +182,11 @@ aeriform("//800-pipeline-service:module")
 
 aeriform("//800-pipeline-service:tests")
 
-aeriform("//810-ng-triggers:module")
-
-aeriform("//810-ng-triggers:tests")
-
 aeriform("//815-cg-triggers:module")
 
 aeriform("//840-template-service:module")
 
 aeriform("//840-template-service:tests")
-
-aeriform("//860-orchestration-visualization:module")
-
-aeriform("//860-orchestration-visualization:tests")
 
 aeriform("//865-cg-events:module")
 
@@ -210,39 +198,19 @@ aeriform("//870-cg-orchestration:module")
 
 aeriform("//870-cg-orchestration:tests")
 
-aeriform("//870-orchestration:module")
-
-aeriform("//870-orchestration:tests")
-
 aeriform("//874-orchestration-delay:module")
-
-aeriform("//876-orchestration-beans:module")
-
-aeriform("//876-orchestration-beans:tests")
 
 aeriform("//878-ng-common-utilities:module")
 
 aeriform("//878-ng-common-utilities:tests")
 
-aeriform("//879-pms-sdk:module")
-
-aeriform("//879-pms-sdk:tests")
-
 aeriform("//880-pipeline-cd-commons:module")
 
 aeriform("//880-pipeline-cd-commons:tests")
 
-aeriform("//882-pms-sdk-core:module")
-
-aeriform("//882-pms-sdk-core:supporter-test")
-
-aeriform("//882-pms-sdk-core:tests")
-
 aeriform("//884-pms-commons:module")
 
 aeriform("//884-pms-commons:tests")
-
-aeriform("//888-pms-client:module")
 
 aeriform("//890-sm-core:module")
 
@@ -288,7 +256,7 @@ aeriform("//930-ng-license-manager:tests")
 
 aeriform("//932-connector-task:module")
 
-aeriform("//933-scm-commons:module")
+aeriform("//933-ci-commons:module")
 
 aeriform("//935-analyser-service:module")
 
@@ -399,8 +367,6 @@ aeriform("//954-connector-beans:module")
 aeriform("//954-connector-beans:tests")
 
 aeriform("//954-feature-flag-sdk:module")
-
-aeriform("//954-pms-contracts:module")
 
 aeriform("//955-alert-beans:module")
 

@@ -61,5 +61,11 @@ public interface EventProcessor<T extends EventInfo> {
   String TAGS = "TAGS";
   String REPORTEDAT = "REPORTEDAT";
 
+  String PARENT_PIPELINE_ID = "PARENT_PIPELINE_ID";
+  String WORKFLOWS = "WORKFLOWS";
+  String FAILURE_DETAILS = "FAILURE_DETAILS";
+  String FAILED_STEP_NAMES = "FAILED_STEP_NAMES";
+  String FAILED_STEP_TYPES = "FAILED_STEP_TYPES";
+
   void processEvent(T eventInfo) throws Exception;
 }

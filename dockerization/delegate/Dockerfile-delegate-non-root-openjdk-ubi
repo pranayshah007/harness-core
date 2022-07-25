@@ -8,6 +8,7 @@ LABEL name="harness/delegate:ubi-minimal" \
 RUN microdnf update \
  && microdnf install --nodocs \
     unzip \
+    tar \
     procps \
     hostname \
     lsof \
@@ -28,6 +29,7 @@ RUN ./client_tools.sh $disable_client_tools \
     && chown -R 1001 /opt/harness-delegate
 
 ENV HOME=/opt/harness-delegate
+ENV CLIENT_TOOLS_DOWNLOAD_DISABLED=$disable_client_tools
 
 USER 1001
 COPY --chown=1001 --from=adoptopenjdk/openjdk11:x86_64-ubi-minimal-jre-11.0.14_9 /opt/java/openjdk/ ./jdk-11.0.14+9-jre/

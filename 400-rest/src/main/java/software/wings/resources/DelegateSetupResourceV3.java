@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.DelegateType.DOCKER;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_DELETE_PERMISSION;
+import static io.harness.delegate.utils.RbacConstants.DELEGATE_EDIT_PERMISSION;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_RESOURCE_TYPE;
 import static io.harness.delegate.utils.RbacConstants.DELEGATE_VIEW_PERMISSION;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -82,6 +83,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -95,7 +97,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @Api("/setup/delegates/v3")
 @Path("/setup/delegates/v3")
@@ -662,7 +663,7 @@ public class DelegateSetupResourceV3 {
     }
   }
 
-  @GET
+  @POST
   @Path(DOWNLOAD_URL)
   @Timed
   @ExceptionMetered
@@ -886,6 +887,8 @@ public class DelegateSetupResourceV3 {
     }
   }
 
+  // TODO: ARPIT remove this api once UI starts using the below newly created api
+
   @GET
   @Path("/ng/validate-docker-delegate-details")
   @Timed
@@ -896,13 +899,40 @@ public class DelegateSetupResourceV3 {
           + "If tokenName is specified in Delegate Setup details in the body, it will be validated as well.",
       responses =
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Validates docker delegate details.") })
+  @Deprecated
   public RestResponse<Void>
   validateDockerSetupDetails(@Parameter(description = "Account id") @QueryParam("accountId") @NotEmpty String accountId,
       @Parameter(description = "Delegate name") @QueryParam("delegateName") String delegateName,
       @Parameter(description = "Delegate token") @QueryParam("tokenName") String tokenName) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      log.warn("using a deprecated api to download ng docker delegate.");
       DelegateSetupDetails delegateSetupDetails =
           DelegateSetupDetails.builder().delegateType(DOCKER).name(delegateName).tokenName(tokenName).build();
+      delegateService.validateDockerDelegateSetupDetails(accountId, delegateSetupDetails, DOCKER);
+      return new RestResponse<>();
+    }
+  }
+
+  @GET
+  @Path("/ng/validate-docker-delegate-setup")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = LOGGED_IN)
+  @Operation(operationId = "validateNGDockerDelegateDetails",
+      summary = "Validates docker delegate details. "
+          + "If tokenName is specified in Delegate Setup details in the body, it will be validated as well.",
+      responses =
+      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Validates docker delegate details.") })
+  public RestResponse<Void>
+  validateDockerDelegateSetupDetails(
+      @Parameter(description = "Account id") @QueryParam("accountId") @NotEmpty String accountId,
+      @RequestBody(required = true, description = "Delegate setup details, containing data to populate file values.")
+      DelegateSetupDetails delegateSetupDetails) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, delegateSetupDetails.getOrgIdentifier(),
+                                                  delegateSetupDetails.getProjectIdentifier()),
+        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
+
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       delegateService.validateDockerDelegateSetupDetails(accountId, delegateSetupDetails, DOCKER);
       return new RestResponse<>();
     }
@@ -923,6 +953,10 @@ public class DelegateSetupResourceV3 {
       @Parameter(description = "Account id") @QueryParam("accountId") @NotEmpty String accountId,
       @RequestBody(required = true, description = "Delegate setup details, containing data to populate file values.")
       DelegateSetupDetails delegateSetupDetails) throws IOException {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, delegateSetupDetails.getOrgIdentifier(),
+                                                  delegateSetupDetails.getProjectIdentifier()),
+        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
+
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       String managerUrl = subdomainUrlHelper.getManagerUrl(request, accountId);
       File delegateFile =
@@ -951,7 +985,10 @@ public class DelegateSetupResourceV3 {
   createDelegateGroup(@Context HttpServletRequest request,
       @Parameter(description = "Account id") @QueryParam("accountId") @NotEmpty String accountId,
       @RequestBody(required = true, description = "Delegate setup details, containing data to store delegate group.")
-      DelegateSetupDetails delegateSetupDetails) throws IOException {
+      DelegateSetupDetails delegateSetupDetails) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, delegateSetupDetails.getOrgIdentifier(),
+                                                  delegateSetupDetails.getProjectIdentifier()),
+        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       delegateService.createDelegateGroup(accountId, delegateSetupDetails);
 

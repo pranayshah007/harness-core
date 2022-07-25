@@ -7,11 +7,6 @@
 
 package io.harness.subscription.helpers.impl;
 
-import static java.util.Calendar.DAY_OF_MONTH;
-import static java.util.Calendar.MONTH;
-import static java.util.Calendar.YEAR;
-import static java.util.Calendar.getInstance;
-
 import io.harness.ModuleType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.subscription.dto.CardDTO;
@@ -53,11 +48,11 @@ import com.stripe.param.CustomerRetrieveParams;
 import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.InvoiceUpcomingParams;
 import com.stripe.param.PriceListParams;
+import com.stripe.param.PriceSearchParams;
 import com.stripe.param.SubscriptionCreateParams;
 import com.stripe.param.SubscriptionUpdateParams;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -150,6 +145,19 @@ public class StripeHelperImpl implements StripeHelper {
   }
 
   @Override
+  public PriceCollectionDTO getPrices(ModuleType moduleType) {
+    PriceSearchParams params = PriceSearchParams.builder()
+                                   .setQuery(String.format("metadata['module']:'%s'", moduleType.toString()))
+                                   .addAllExpand(Lists.newArrayList("data.tiers"))
+                                   .setLimit(100L)
+                                   .build();
+
+    List<Price> priceResults = stripeHandler.searchPrices(params).getData();
+
+    return toPriceCollectionDTO(priceResults);
+  }
+
+  @Override
   public Price getPrice(String lookupKey) {
     List<String> lookupKeyList = new ArrayList<>();
     lookupKeyList.add(lookupKey);
@@ -176,28 +184,11 @@ public class StripeHelperImpl implements StripeHelper {
 
   @Override
   public SubscriptionDetailDTO createSubscription(SubscriptionParams subscriptionParams) {
-    Calendar next = getInstance();
-
-    next.set(DAY_OF_MONTH, 1);
-    if (subscriptionParams.getPaymentFrequency().equals("MONTHLY")) {
-      next.set(YEAR, next.get(YEAR));
-      if (next.get(MONTH) == 11) {
-        next.set(YEAR, next.get(YEAR) + 1);
-        next.set(MONTH, 0);
-      } else {
-        next.set(MONTH, next.get(MONTH) + 1);
-      }
-    } else {
-      next.set(YEAR, next.get(YEAR) + 1);
-      next.set(MONTH, 0);
-    }
-
     SubscriptionCreateParams.Builder creationParamsBuilder = SubscriptionCreateParams.builder();
     creationParamsBuilder.setCustomer(subscriptionParams.getCustomerId())
         .setPaymentBehavior(SubscriptionCreateParams.PaymentBehavior.DEFAULT_INCOMPLETE)
         .addAllExpand(subscriptionExpandList)
-        .setProrationBehavior(SubscriptionCreateParams.ProrationBehavior.ALWAYS_INVOICE)
-        .setBillingCycleAnchor(next.getTimeInMillis() / 1000L);
+        .setProrationBehavior(SubscriptionCreateParams.ProrationBehavior.ALWAYS_INVOICE);
 
     // Register subscription items
     subscriptionParams.getItems().forEach(item
@@ -424,6 +415,16 @@ public class StripeHelperImpl implements StripeHelper {
       cardDTO.setAddressZip(paymentMethod.getBillingDetails().getAddress().getPostalCode());
     }
     return cardDTO;
+  }
+
+  private PriceCollectionDTO toPriceCollectionDTO(List<Price> priceList) {
+    PriceCollectionDTO priceCollectionDTO = PriceCollectionDTO.builder().prices(new ArrayList<>()).build();
+
+    List<Price> data = priceList;
+    for (Price price : data) {
+      priceCollectionDTO.getPrices().add(toPriceDTO(price));
+    }
+    return priceCollectionDTO;
   }
 
   private PriceCollectionDTO toPriceCollectionDTO(PriceCollection priceCollection) {

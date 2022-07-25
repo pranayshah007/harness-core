@@ -11,6 +11,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"github.com/cenkalti/backoff"
 
 	"fmt"
 	"io"
@@ -18,7 +19,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	logger "github.com/harness/harness-core/commons/go/lib/logs"
 	"github.com/harness/harness-core/product/ci/ti-service/types"
 	"go.uber.org/zap"
@@ -27,10 +27,11 @@ import (
 var _ Client = (*HTTPClient)(nil)
 
 const (
-	dbEndpoint    = "/reports/write?accountId=%s&orgId=%s&projectId=%s&pipelineId=%s&buildId=%s&stageId=%s&stepId=%s&report=%s&repo=%s&sha=%s&commitLink=%s"
-	testEndpoint  = "/tests/select?accountId=%s&orgId=%s&projectId=%s&pipelineId=%s&buildId=%s&stageId=%s&stepId=%s&repo=%s&sha=%s&source=%s&target=%s"
-	cgEndpoint    = "/tests/uploadcg?accountId=%s&orgId=%s&projectId=%s&pipelineId=%s&buildId=%s&stageId=%s&stepId=%s&repo=%s&sha=%s&source=%s&target=%s&timeMs=%d"
-	agentEndpoint = "/agents/link?accountId=%s&language=%s&os=%s&arch=%s&framework=%s&version=%s&buildenv=%s"
+	dbEndpoint            = "/reports/write?accountId=%s&orgId=%s&projectId=%s&pipelineId=%s&buildId=%s&stageId=%s&stepId=%s&report=%s&repo=%s&sha=%s&commitLink=%s"
+	testEndpoint          = "/tests/select?accountId=%s&orgId=%s&projectId=%s&pipelineId=%s&buildId=%s&stageId=%s&stepId=%s&repo=%s&sha=%s&source=%s&target=%s"
+	cgEndpoint            = "/tests/uploadcg?accountId=%s&orgId=%s&projectId=%s&pipelineId=%s&buildId=%s&stageId=%s&stepId=%s&repo=%s&sha=%s&source=%s&target=%s&timeMs=%d"
+	getTestsTimesEndpoint = "/tests/timedata?accountId=%s&orgId=%s&projectId=%s&pipelineId=%s"
+	agentEndpoint         = "/agents/link?accountId=%s&language=%s&os=%s&arch=%s&framework=%s&version=%s&buildenv=%s"
 )
 
 // defaultClient is the default http.Client.
@@ -110,6 +111,22 @@ func (c *HTTPClient) UploadCg(ctx context.Context, org, project, pipeline, build
 	backoff := createBackoff(45 * 60 * time.Second)
 	_, err := c.retry(ctx, c.Endpoint+path, "POST", &cg, nil, false, backoff)
 	return err
+}
+
+// GetTestTimes gets test timing data
+func (c *HTTPClient) GetTestTimes(ctx context.Context, org, project, pipeline, reqBody string) (types.GetTestTimesResp, error) {
+	ctx = context.WithValue(ctx, "reqId", "")
+	path := fmt.Sprintf(getTestsTimesEndpoint, c.AccountID, org, project, pipeline)
+
+	var req types.GetTestTimesReq
+	err := json.Unmarshal([]byte(reqBody), &req)
+	if err != nil {
+		return types.GetTestTimesResp{}, err
+	}
+
+	var resp types.GetTestTimesResp
+	_, err = c.do(ctx, c.Endpoint+path, "POST", &req, &resp)
+	return resp, err
 }
 
 func (c *HTTPClient) retry(ctx context.Context, method, path string, in, out interface{}, isOpen bool, b backoff.BackOff) (*http.Response, error) {

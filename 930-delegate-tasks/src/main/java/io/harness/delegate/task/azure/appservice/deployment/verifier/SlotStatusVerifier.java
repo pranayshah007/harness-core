@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.azure.appservice.deployment.verifier;
 
+import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_NAME;
+
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
@@ -27,6 +29,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.logging.LogCallback;
 
 import com.microsoft.azure.management.appservice.DeploymentSlot;
+import com.microsoft.azure.management.appservice.WebApp;
 import java.util.Optional;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -56,6 +59,12 @@ public abstract class SlotStatusVerifier {
   }
 
   public boolean hasReachedSteadyState() {
+    if (DEPLOYMENT_SLOT_PRODUCTION_NAME.equals(slotName)) {
+      WebApp webapp = getWebApp();
+      String currentAppState = webapp.state();
+      logCallback.saveExecutionLog(color(format("%nCurrent state for WebApp is - [%s]", currentAppState), White, Bold));
+      return getSteadyState().equalsIgnoreCase(currentAppState);
+    }
     DeploymentSlot slot = getDeploymentSlot();
     String currentSlotState = slot.state();
     logCallback.saveExecutionLog(
@@ -77,6 +86,11 @@ public abstract class SlotStatusVerifier {
 
   public abstract String getSteadyState();
 
+  protected WebApp getWebApp() {
+    Optional<WebApp> webAppOptional = azureWebClient.getWebAppByName(azureWebClientContext);
+    return webAppOptional.orElseThrow(
+        () -> new InvalidRequestException(format("Unable to find WebApp with name: %s", slotName)));
+  }
   protected DeploymentSlot getDeploymentSlot() {
     Optional<DeploymentSlot> deploymentSlotOptional =
         azureWebClient.getDeploymentSlotByName(azureWebClientContext, slotName);

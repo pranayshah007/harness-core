@@ -29,15 +29,16 @@ import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventProcessingResult;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventProcessingResult.WebhookEventProcessingResultBuilder;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
+import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
+import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatus;
+import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
 import io.harness.ngtriggers.beans.response.TargetExecutionSummary;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.helpers.TriggerEventResponseHelper;
 import io.harness.ngtriggers.helpers.TriggerHelper;
 import io.harness.ngtriggers.helpers.WebhookEventMapperHelper;
-import io.harness.ngtriggers.utils.WebhookEventPayloadParser;
-import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.contracts.triggers.ArtifactData;
 import io.harness.pms.contracts.triggers.ManifestData;
 import io.harness.pms.contracts.triggers.ParsedPayload;
@@ -48,6 +49,7 @@ import io.harness.pms.contracts.triggers.Type;
 import io.harness.pms.triggers.TriggerExecutionHelper;
 import io.harness.polling.contracts.PollingResponse;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
+import io.harness.repositories.spring.NGTriggerRepository;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
@@ -58,6 +60,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -65,8 +68,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TriggerEventExecutionHelper {
   private final WebhookEventMapperHelper webhookEventMapperHelper;
   private final TriggerExecutionHelper triggerExecutionHelper;
-  private final WebhookEventPayloadParser webhookEventPayloadParser;
-  private final PipelineServiceClient pipelineServiceClient;
+  private final NGTriggerRepository ngTriggerRepository;
 
   public WebhookEventProcessingResult handleTriggerWebhookEvent(TriggerMappingRequestData mappingRequestData) {
     WebhookEventMappingResponse webhookEventMappingResponse =
@@ -87,6 +89,25 @@ public class TriggerEventExecutionHelper {
           long yamlVersion = triggerDetails.getNgTriggerEntity().getYmlVersion() == null
               ? 3
               : triggerDetails.getNgTriggerEntity().getYmlVersion();
+          NGTriggerEntity triggerEntity = triggerDetails.getNgTriggerEntity();
+          Criteria criteria = Criteria.where(NGTriggerEntityKeys.accountId)
+                                  .is(triggerEntity.getAccountId())
+                                  .and(NGTriggerEntityKeys.orgIdentifier)
+                                  .is(triggerEntity.getOrgIdentifier())
+                                  .and(NGTriggerEntityKeys.projectIdentifier)
+                                  .is(triggerEntity.getProjectIdentifier())
+                                  .and(NGTriggerEntityKeys.targetIdentifier)
+                                  .is(triggerEntity.getTargetIdentifier())
+                                  .and(NGTriggerEntityKeys.identifier)
+                                  .is(triggerEntity.getIdentifier())
+                                  .and(NGTriggerEntityKeys.deleted)
+                                  .is(false);
+          if (triggerEntity.getVersion() != null) {
+            criteria.and(NGTriggerEntityKeys.version).is(triggerEntity.getVersion());
+          }
+          TriggerHelper.stampWebhookRegistrationInfo(triggerEntity,
+              WebhookAutoRegistrationStatus.builder().registrationResult(WebhookRegistrationStatus.SUCCESS).build());
+          ngTriggerRepository.updateValidationStatus(criteria, triggerEntity);
           eventResponses.add(triggerPipelineExecution(triggerWebhookEvent, triggerDetails,
               getTriggerPayloadForWebhookTrigger(webhookEventMappingResponse, triggerWebhookEvent, yamlVersion),
               triggerWebhookEvent.getPayload()));

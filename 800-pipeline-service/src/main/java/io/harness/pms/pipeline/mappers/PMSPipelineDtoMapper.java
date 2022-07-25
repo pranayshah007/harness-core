@@ -13,11 +13,10 @@ import static java.lang.Long.parseLong;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
 import io.harness.EntityType;
-import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
-import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.NGExpressionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.ScopeHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -27,10 +26,16 @@ import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.pipeline.ExecutionSummaryInfoDTO;
+import io.harness.pms.pipeline.ExecutorInfoDTO;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.PipelineMetadataV2;
+import io.harness.pms.pipeline.RecentExecutionInfo;
+import io.harness.pms.pipeline.RecentExecutionInfoDTO;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
 import io.harness.pms.yaml.YamlUtils;
 
@@ -38,7 +43,10 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(PIPELINE)
@@ -89,9 +97,30 @@ public class PMSPipelineDtoMapper {
     }
   }
 
+  public PipelineEntity toPipelineEntity(
+      String accountId, String orgId, String projectId, String yaml, Boolean isDraft) {
+    PipelineEntity pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml);
+    if (isDraft == null) {
+      isDraft = false;
+    }
+    pipelineEntity.setIsDraft(isDraft);
+    return pipelineEntity;
+  }
+
   public PipelineEntity toPipelineEntityWithVersion(
       String accountId, String orgId, String projectId, String pipelineId, String yaml, String ifMatch) {
     PipelineEntity pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml);
+    PipelineEntity withVersion = pipelineEntity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
+    if (!withVersion.getIdentifier().equals(pipelineId)) {
+      throw new InvalidRequestException(String.format(
+          "Expected Pipeline identifier in YAML to be [%s], but was [%s]", pipelineId, pipelineEntity.getIdentifier()));
+    }
+    return withVersion;
+  }
+
+  public PipelineEntity toPipelineEntityWithVersion(String accountId, String orgId, String projectId, String pipelineId,
+      String yaml, String ifMatch, Boolean isDraft) {
+    PipelineEntity pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml, isDraft);
     PipelineEntity withVersion = pipelineEntity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     if (!withVersion.getIdentifier().equals(pipelineId)) {
       throw new InvalidRequestException(String.format(
@@ -104,7 +133,8 @@ public class PMSPipelineDtoMapper {
     return preparePipelineSummary(pipelineEntity, getEntityGitDetails(pipelineEntity));
   }
 
-  public PMSPipelineSummaryResponseDTO preparePipelineSummaryForListView(PipelineEntity pipelineEntity) {
+  public PMSPipelineSummaryResponseDTO preparePipelineSummaryForListView(
+      PipelineEntity pipelineEntity, Map<String, PipelineMetadataV2> pipelineMetadataMap) {
     // For List View, getEntityGitDetails(...) method cant be used because for REMOTE pipelines. That is because
     // GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata() cannot be used, because there won't be any
     // SCM Context set in the List call.
@@ -112,7 +142,12 @@ public class PMSPipelineDtoMapper {
         ? EntityGitDetailsMapper.mapEntityGitDetails(pipelineEntity)
         : pipelineEntity.getStoreType() == StoreType.REMOTE ? GitAwareContextHelper.getEntityGitDetails(pipelineEntity)
                                                             : null;
-    return preparePipelineSummary(pipelineEntity, entityGitDetails);
+    PMSPipelineSummaryResponseDTO pmsPipelineSummaryResponseDTO =
+        preparePipelineSummary(pipelineEntity, entityGitDetails);
+    List<RecentExecutionInfoDTO> recentExecutionsInfo =
+        prepareRecentExecutionsInfo(pipelineMetadataMap.get(pipelineEntity.getIdentifier()));
+    pmsPipelineSummaryResponseDTO.setRecentExecutionsInfo(recentExecutionsInfo);
+    return pmsPipelineSummaryResponseDTO;
   }
 
   private PMSPipelineSummaryResponseDTO preparePipelineSummary(
@@ -134,6 +169,35 @@ public class PMSPipelineDtoMapper {
         .connectorRef(pipelineEntity.getConnectorRef())
         .gitDetails(entityGitDetails)
         .entityValidityDetails(getEntityValidityDetails(pipelineEntity))
+        .build();
+  }
+
+  public List<RecentExecutionInfoDTO> prepareRecentExecutionsInfo(PipelineMetadataV2 pipelineMetadataV2) {
+    if (pipelineMetadataV2 == null) {
+      return Collections.emptyList();
+    }
+    List<RecentExecutionInfo> recentExecutionInfoFromMetadata = pipelineMetadataV2.getRecentExecutionInfoList();
+    if (EmptyPredicate.isEmpty(recentExecutionInfoFromMetadata)) {
+      return Collections.emptyList();
+    }
+    return recentExecutionInfoFromMetadata.stream()
+        .map(PMSPipelineDtoMapper::prepareRecentExecutionInfo)
+        .collect(Collectors.toList());
+  }
+
+  RecentExecutionInfoDTO prepareRecentExecutionInfo(RecentExecutionInfo recentExecutionInfo) {
+    ExecutionTriggerInfo triggerInfo = recentExecutionInfo.getExecutionTriggerInfo();
+    ExecutorInfoDTO executorInfo = ExecutorInfoDTO.builder()
+                                       .triggerType(triggerInfo.getTriggerType())
+                                       .username(triggerInfo.getTriggeredBy().getIdentifier())
+                                       .email(triggerInfo.getTriggeredBy().getExtraInfoOrDefault("email", null))
+                                       .build();
+    return RecentExecutionInfoDTO.builder()
+        .planExecutionId(recentExecutionInfo.getPlanExecutionId())
+        .status(ExecutionStatus.getExecutionStatus(recentExecutionInfo.getStatus()))
+        .startTs(recentExecutionInfo.getStartTs())
+        .endTs(recentExecutionInfo.getEndTs())
+        .executorInfo(executorInfo)
         .build();
   }
 
@@ -204,20 +268,6 @@ public class PMSPipelineDtoMapper {
           pipeline.getExecutionSummaryInfo().getDeployments().getOrDefault(sdf.format(cal.getTime()), 0));
     }
     return numberOfDeployments;
-  }
-
-  public PermissionCheckDTO toPermissionCheckDTO(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String pipelineIdentifier, String permission) {
-    return PermissionCheckDTO.builder()
-        .resourceScope(ResourceScope.builder()
-                           .accountIdentifier(accountIdentifier)
-                           .orgIdentifier(orgIdentifier)
-                           .projectIdentifier(projectIdentifier)
-                           .build())
-        .resourceType("PIPELINE")
-        .resourceIdentifier(pipelineIdentifier)
-        .permission(permission)
-        .build();
   }
 
   public EntityDetail toEntityDetail(PipelineEntity entity) {

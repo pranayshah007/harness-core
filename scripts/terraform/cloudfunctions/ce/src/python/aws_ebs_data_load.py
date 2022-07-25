@@ -51,7 +51,7 @@ def update_ebs_state(jsonData):
             " deleteTime = '%s' WHERE lastUpdatedAt < '%s' AND ( state != 'deleted' OR createTime IS NULL )" % (
                 jsonData["targetTableId"], lastUpdatedAt, lastUpdatedAt, lastUpdatedAt)
 
-    run_batch_query(client, query, None, timeout=120)
+    run_batch_query(client, query, None, timeout=180)
     print_("Finished updating awsEbsInventory table for any deleted volumes")
 
 
@@ -79,5 +79,5 @@ def load_into_main_table(jsonData):
             detachedAt, deleteTime, snapshotId, kmsKeyId, attachments, tags, snapshots, linkedAccountId, linkedAccountIdPartition) 
     """ % (jsonData["targetTableId"], jsonData["sourceTableId"], lastUpdatedAt, lastUpdatedAt)
 
-    run_batch_query(client, query, None, timeout=120)
+    run_batch_query(client, query, None, timeout=180)
     print_("Finished merging into main awsEbsInventory table")

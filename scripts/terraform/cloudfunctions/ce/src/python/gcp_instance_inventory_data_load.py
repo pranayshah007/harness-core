@@ -53,7 +53,7 @@ def update_instance_state(jsonData):
     query = "UPDATE `%s` set status='DELETED' WHERE status != 'DELETED' and lastUpdatedAt < '%s';" % (
         jsonData["targetTableId"], last_updated_at)
 
-    run_batch_query(client, query, None, timeout=120)
+    run_batch_query(client, query, None, timeout=180)
     print_("Finished updating gcpInstanceInventory table for any terminated instances")
 
 
@@ -76,5 +76,5 @@ def load_into_main_table(jsonData):
                       lastUpdatedAt) 
                 """ % (jsonData["targetTableId"], jsonData["sourceTableId"], last_updated_at)
 
-    run_batch_query(client, query, None, timeout=120)
+    run_batch_query(client, query, None, timeout=180)
     print_("Finished merging into main gcpInstanceInventory table")

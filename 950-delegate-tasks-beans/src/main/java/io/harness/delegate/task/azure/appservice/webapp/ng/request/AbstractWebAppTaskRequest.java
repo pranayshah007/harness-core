@@ -20,14 +20,13 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(CDP)
 @NoArgsConstructor
@@ -52,18 +51,18 @@ public abstract class AbstractWebAppTaskRequest implements AzureWebAppTaskReques
   }
 
   @Override
-  public Map<DecryptableEntity, List<EncryptedDataDetail>> fetchDecryptionDetails() {
-    Map<DecryptableEntity, List<EncryptedDataDetail>> decryptionDetails = new LinkedHashMap<>();
+  public List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> fetchDecryptionDetails() {
+    List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> decryptionDetails = new ArrayList<>();
     if (infrastructure != null) {
-      infrastructure.getDecryptableEntities().forEach(
-          decryptableEntity -> decryptionDetails.put(decryptableEntity, infrastructure.getEncryptionDataDetails()));
+      infrastructure.getDecryptableEntities().forEach(decryptableEntity
+          -> decryptionDetails.add(Pair.of(decryptableEntity, infrastructure.getEncryptionDataDetails())));
     }
 
     populateDecryptionDetails(decryptionDetails);
     return decryptionDetails;
   }
 
-  protected void populateDecryptionDetails(Map<DecryptableEntity, List<EncryptedDataDetail>> decryptionDetails) {
+  protected void populateDecryptionDetails(List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> decryptionDetails) {
     // used for request specific additional decryption details
   }
 

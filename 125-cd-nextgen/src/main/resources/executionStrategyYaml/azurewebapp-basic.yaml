@@ -1,0 +1,24 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - step:
+          name: "Slot Deployment"
+          identifier: slotDeployment
+          type: AzureSlotDeployment
+          timeout: 10m
+          spec:
+            webApp: ""
+            deploymentSlot: ""
+    rollbackSteps:
+      - step:
+          name: "WebApp rollback"
+          identifier: webAppRollback
+          type: AzureWebAppRollback
+          timeout: 10m
+          spec: {}

@@ -83,7 +83,7 @@ public class K8SSyncEventWriterTest extends CategoryTest {
 
   @Before
   public void setUpData() {
-    when(featureFlagService.isEnabled(eq(FeatureName.NODE_RECOMMENDATION_1), eq(ACCOUNT_ID))).thenReturn(false);
+    when(featureFlagService.isEnabled(eq(FeatureName.NODE_RECOMMENDATION_AGGREGATE), eq(ACCOUNT_ID))).thenReturn(false);
     when(config.getBatchQueryConfig())
         .thenReturn(BatchQueryConfig.builder().queryBatchSize(50).syncJobDisabled(false).build());
   }

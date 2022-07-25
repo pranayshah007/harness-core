@@ -11,9 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GIT;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HARNESS;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HTTP_HELM;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.getFilesUnderPath;
 import static io.harness.filesystem.FileIo.getFilesUnderPathMatchesFirstLine;
 import static io.harness.helm.HelmConstants.HELM_PATH_PLACEHOLDER;
@@ -46,6 +48,7 @@ import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 import static software.wings.beans.LogWeight.Normal;
+import static software.wings.delegatetasks.helm.HelmTaskHelper.copyManifestFilesToWorkingDir;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.lang.Boolean.FALSE;
@@ -83,19 +86,24 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.k8s.kustomize.KustomizeTaskHelper;
 import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
 import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
+import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.client.K8sApiClient;
 import io.harness.delegate.task.k8s.client.K8sCliClient;
 import io.harness.delegate.task.k8s.client.K8sClient;
+import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HelmClientException;
@@ -156,6 +164,8 @@ import io.harness.k8s.model.response.CEK8sDelegatePrerequisite;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+import io.harness.manifest.CustomManifestService;
+import io.harness.manifest.CustomManifestSource;
 import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -163,6 +173,8 @@ import io.harness.serializer.YamlUtils;
 import io.harness.shell.SshSessionConfig;
 import io.harness.yaml.BooleanPatchedRepresenter;
 
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
 import software.wings.beans.command.ExecutionLogCallback;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -273,6 +285,8 @@ public class K8sTaskHelperBase {
   @Inject private ScmFetchFilesHelperNG scmFetchFilesHelper;
   @Inject private K8sCliClient kubernetesCliClient;
   @Inject private K8sApiClient kubernetesApiClient;
+  @Inject private CustomManifestService customManifestService;
+  @Inject private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
 
   private DelegateExpressionEvaluator delegateExpressionEvaluator = new DelegateExpressionEvaluator();
 
@@ -2344,10 +2358,23 @@ public class K8sTaskHelperBase {
       case OPENSHIFT_TEMPLATE:
         OpenshiftManifestDelegateConfig openshiftManifestConfig =
             (OpenshiftManifestDelegateConfig) manifestDelegateConfig;
-        GitStoreDelegateConfig otGitStoreDelegateConfig =
-            (GitStoreDelegateConfig) openshiftManifestConfig.getStoreDelegateConfig();
-        return openShiftDelegateService.processTemplatization(manifestFilesDirectory, k8sDelegateTaskParams.getOcPath(),
-            otGitStoreDelegateConfig.getPaths().get(0), executionLogCallback, manifestOverrideFiles);
+        if (openshiftManifestConfig.getStoreDelegateConfig() instanceof GitStoreDelegateConfig) {
+          GitStoreDelegateConfig otGitStoreDelegateConfig =
+              (GitStoreDelegateConfig) openshiftManifestConfig.getStoreDelegateConfig();
+          return openShiftDelegateService.processTemplatization(manifestFilesDirectory,
+              k8sDelegateTaskParams.getOcPath(), otGitStoreDelegateConfig.getPaths().get(0), executionLogCallback,
+              manifestOverrideFiles);
+        } else if (openshiftManifestConfig.getStoreDelegateConfig() instanceof LocalFileStoreDelegateConfig) {
+          LocalFileStoreDelegateConfig localFileStoreDelegateConfig =
+              (LocalFileStoreDelegateConfig) openshiftManifestConfig.getStoreDelegateConfig();
+          return openShiftDelegateService.processTemplatization(manifestFilesDirectory,
+              k8sDelegateTaskParams.getOcPath(),
+              localFileStoreDelegateConfig.getManifestFiles().get(0).getFilePath().substring(1), executionLogCallback,
+              manifestOverrideFiles);
+        } else {
+          throw new UnsupportedOperationException(
+              String.format("Manifest delegate config type: [%s]", manifestType.name()));
+        }
 
       default:
         throw new UnsupportedOperationException(
@@ -2408,6 +2435,11 @@ public class K8sTaskHelperBase {
       throws Exception {
     StoreDelegateConfig storeDelegateConfig = manifestDelegateConfig.getStoreDelegateConfig();
     switch (storeDelegateConfig.getType()) {
+      case HARNESS:
+        return writeManifestFilesToDirectory(storeDelegateConfig, manifestFilesDirectory, executionLogCallback);
+      case CUSTOM_REMOTE:
+        return downloadZippedManifestFilesFormCustomSource(
+            storeDelegateConfig, manifestFilesDirectory, executionLogCallback);
       case GIT:
         return downloadManifestFilesFromGit(
             storeDelegateConfig, manifestFilesDirectory, executionLogCallback, accountId);
@@ -2422,6 +2454,45 @@ public class K8sTaskHelperBase {
       default:
         throw new UnsupportedOperationException(
             String.format("Manifest store config type: [%s]", storeDelegateConfig.getType().name()));
+    }
+  }
+
+  private boolean downloadZippedManifestFilesFormCustomSource(
+      StoreDelegateConfig delegateManifestConfig, String manifestFilesDirectory, LogCallback executionLogCallback) {
+    String tempWorkingDir = null;
+    try {
+      tempWorkingDir = customManifestService.getWorkingDirectory();
+
+      CustomRemoteStoreDelegateConfig customRemoteStoreDelegateConfig =
+          (CustomRemoteStoreDelegateConfig) delegateManifestConfig;
+
+      CustomManifestSource customManifestSource = customRemoteStoreDelegateConfig.getCustomManifestSource();
+      // handleIncorrectConfiguration(customRemoteStoreDelegateConfig);
+      customManifestFetchTaskHelper.downloadAndUnzipCustomSourceManifestFiles(
+          tempWorkingDir, customManifestSource.getZippedManifestFileId(), customManifestSource.getAccountId());
+      File file = new File(tempWorkingDir);
+      if (isEmpty(file.list())) {
+        throw new InvalidRequestException("No manifest files found under working directory", USER);
+      }
+      // preparing legacy directory structure for manifests and values yamls
+      File customManifestFolderPath = file.listFiles(pathname -> !file.isHidden())[0];
+      copyManifestFilesToWorkingDir(customManifestFolderPath, new File(manifestFilesDirectory));
+
+      executionLogCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
+      executionLogCallback.saveExecutionLog(getManifestFileNamesInLogFormat(manifestFilesDirectory));
+      executionLogCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
+      return true;
+    } catch (IOException e) {
+      log.error("Failed to get files from manifest directory", ExceptionMessageSanitizer.sanitizeException(e));
+      executionLogCallback.saveExecutionLog(
+          "Failed to get manifest files from custom source. " + ExceptionUtils.getMessage(e), ERROR,
+          CommandExecutionStatus.FAILURE);
+      return false;
+    } catch (Exception e) {
+      log.error("Failed to process custom manifest", ExceptionMessageSanitizer.sanitizeException(e));
+      executionLogCallback.saveExecutionLog(
+          "Failed to process custom manifest. " + ExceptionUtils.getMessage(e), ERROR, CommandExecutionStatus.FAILURE);
+      return false;
     }
   }
 
@@ -2850,6 +2921,11 @@ public class K8sTaskHelperBase {
 
   private String getManifestDirectoryForHelmChart(
       String baseManifestDirectory, HelmChartManifestDelegateConfig helmChartManifest) {
+    if (StoreDelegateConfigType.HARNESS.equals(helmChartManifest.getStoreDelegateConfig().getType())) {
+      LocalFileStoreDelegateConfig localFileStoreDelegateConfig =
+          (LocalFileStoreDelegateConfig) helmChartManifest.getStoreDelegateConfig();
+      return HelmTaskHelperBase.getChartDirectory(baseManifestDirectory, localFileStoreDelegateConfig.getFolder());
+    }
     if (GIT != helmChartManifest.getStoreDelegateConfig().getType()) {
       return HelmTaskHelperBase.getChartDirectory(baseManifestDirectory, helmChartManifest.getChartName());
     }
@@ -2914,5 +2990,56 @@ public class K8sTaskHelperBase {
       return kubernetesApiClient;
     }
     return kubernetesCliClient;
+  }
+
+  private boolean writeManifestFilesToDirectory(
+      StoreDelegateConfig storeDelegateConfig, String manifestFilesDirectory, LogCallback executionLogCallback) {
+    LocalFileStoreDelegateConfig localFileStoreDelegateConfig = (LocalFileStoreDelegateConfig) storeDelegateConfig;
+    if (isNotEmpty(localFileStoreDelegateConfig.getManifestType())
+        && isNotEmpty(localFileStoreDelegateConfig.getManifestIdentifier())) {
+      executionLogCallback.saveExecutionLog("\n"
+          + color(format("Fetching %s files with identifier: %s", localFileStoreDelegateConfig.getManifestType(),
+                      localFileStoreDelegateConfig.getManifestIdentifier()),
+              White, Bold));
+      executionLogCallback.saveExecutionLog(color(format("Fetching manifest files at path: "), LogColor.White));
+    } else {
+      executionLogCallback.saveExecutionLog("\n" + color("Fetching manifest files", White, Bold));
+    }
+    List<String> scopedFilePathList = localFileStoreDelegateConfig.getFilePaths();
+    printFilesFetchedFromHarnessStore(scopedFilePathList, executionLogCallback);
+    executionLogCallback.saveExecutionLog(
+        color(format("%nSuccessfully fetched following files: "), LogColor.White, LogWeight.Bold));
+    String directoryPath = Paths.get(manifestFilesDirectory).toString();
+    List<ManifestFiles> manifestFiles = localFileStoreDelegateConfig.getManifestFiles();
+    try {
+      for (int i = 0; i < manifestFiles.size(); i++) {
+        ManifestFiles manifestFile = manifestFiles.get(i);
+        if (StringUtils.equals(values_filename, manifestFile.getFileName())) {
+          continue;
+        }
+
+        Path filePath = Paths.get(directoryPath, manifestFile.getFilePath());
+        Path parent = filePath.getParent();
+        if (parent == null) {
+          throw new WingsException("Failed to create file at path " + filePath.toString());
+        }
+
+        createDirectoryIfDoesNotExist(parent.toString());
+        FileIo.writeUtf8StringToFile(filePath.toString(), manifestFile.getFileContent());
+        executionLogCallback.saveExecutionLog(color(format("- %s", manifestFile.getFilePath()), LogColor.White));
+      }
+      executionLogCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
+      return true;
+    } catch (Exception ex) {
+      executionLogCallback.saveExecutionLog(ExceptionUtils.getMessage(ExceptionMessageSanitizer.sanitizeException(ex)),
+          ERROR, CommandExecutionStatus.FAILURE);
+      return false;
+    }
+  }
+
+  public void printFilesFetchedFromHarnessStore(List<String> scopedFilePathList, LogCallback logCallback) {
+    for (String scopedFilePath : scopedFilePathList) {
+      logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
+    }
   }
 }

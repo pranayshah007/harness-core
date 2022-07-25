@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service;
 
 import io.harness.beans.MigratedEntityMapping;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ngmigration.beans.BaseEntityInput;
@@ -15,6 +16,7 @@ import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.persistence.NameAccess;
@@ -44,6 +46,13 @@ public abstract class NgMigrationService {
   public abstract MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile);
 
   public abstract DiscoveryNode discover(NGMigrationEntity entity);
+
+  public BaseSummary getSummary(List<CgEntityNode> entities) {
+    if (EmptyPredicate.isEmpty(entities)) {
+      return null;
+    }
+    return new BaseSummary(entities.size());
+  }
 
   public abstract DiscoveryNode discover(String accountId, String appId, String entityId);
 

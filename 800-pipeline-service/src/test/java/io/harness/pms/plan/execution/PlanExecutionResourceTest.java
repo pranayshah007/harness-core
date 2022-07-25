@@ -46,7 +46,7 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PIPELINE)
 public class PlanExecutionResourceTest extends CategoryTest {
-  @InjectMocks PlanExecutionResource planExecutionResource;
+  @InjectMocks PlanExecutionResourceImpl planExecutionResource;
   @Mock PMSPipelineService pmsPipelineService;
   @Mock PipelineExecutor pipelineExecutor;
   @Mock PMSExecutionService pmsExecutionService;

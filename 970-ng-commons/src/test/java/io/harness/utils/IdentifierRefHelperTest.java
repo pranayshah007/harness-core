@@ -18,7 +18,7 @@ import io.harness.CategoryTest;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
-import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.rule.Owner;
 
 import org.junit.Test;
@@ -196,15 +196,15 @@ public class IdentifierRefHelperTest extends CategoryTest {
     String identifier = "identifier";
 
     assertThatThrownBy(() -> IdentifierRefHelper.getIdentifierRef(identifier, accountIdentifier, orgIdentifier, ""))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(InvalidIdentifierRefException.class)
         .hasMessage("ProjectIdentifier cannot be empty for PROJECT scope");
 
     assertThatThrownBy(() -> IdentifierRefHelper.getIdentifierRef(identifier, accountIdentifier, "", projectIdentifier))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(InvalidIdentifierRefException.class)
         .hasMessage("OrgIdentifier cannot be empty for PROJECT scope");
 
     assertThatThrownBy(() -> IdentifierRefHelper.getIdentifierRef(identifier, "", orgIdentifier, projectIdentifier))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(InvalidIdentifierRefException.class)
         .hasMessage("AccountIdentifier cannot be empty for PROJECT scope");
   }
 
@@ -217,11 +217,11 @@ public class IdentifierRefHelperTest extends CategoryTest {
     String identifier = "identifier";
 
     assertThatThrownBy(() -> IdentifierRefHelper.getIdentifierRef("org." + identifier, accountIdentifier, "", null))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(InvalidIdentifierRefException.class)
         .hasMessage("OrgIdentifier cannot be empty for ORG scope");
 
     assertThatThrownBy(() -> IdentifierRefHelper.getIdentifierRef("org." + identifier, "", orgIdentifier, null))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(InvalidIdentifierRefException.class)
         .hasMessage("AccountIdentifier cannot be empty for ORG scope");
   }
 
@@ -232,7 +232,7 @@ public class IdentifierRefHelperTest extends CategoryTest {
     String identifier = "identifier";
 
     assertThatThrownBy(() -> IdentifierRefHelper.getIdentifierRef("account." + identifier, null, null, null))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(InvalidIdentifierRefException.class)
         .hasMessage("AccountIdentifier cannot be empty for ACCOUNT scope");
   }
 }

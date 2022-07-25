@@ -325,6 +325,11 @@ fi
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
 
+replace_key_value segmentConfiguration.enabled "$SEGMENT_ENABLED"
+replace_key_value segmentConfiguration.url "$SEGMENT_URL"
+replace_key_value segmentConfiguration.apiKey "$SEGMENT_APIKEY"
+replace_key_value segmentConfiguration.certValidationRequired "$SEGMENT_VERIFY_CERT"
+
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE
 replace_key_value eventsFramework.redis.redisUrl $EVENTS_FRAMEWORK_REDIS_URL

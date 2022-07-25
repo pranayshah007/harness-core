@@ -38,12 +38,13 @@ public class SettingsResourceImpl implements SettingsResource {
   }
 
   @Override
-  public ResponseDTO<List<SettingResponseDTO>> list(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category) {
+  public ResponseDTO<List<SettingResponseDTO>> list(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, SettingCategory category, String groupIdentifier) {
     if (!isSettingsFeatureEnabled(accountIdentifier)) {
       throw new InvalidRequestException(String.format(FEATURE_NOT_AVAILABLE, accountIdentifier));
     }
-    return ResponseDTO.newResponse(settingsService.list(accountIdentifier, orgIdentifier, projectIdentifier, category));
+    return ResponseDTO.newResponse(
+        settingsService.list(accountIdentifier, orgIdentifier, projectIdentifier, category, groupIdentifier));
   }
 
   @Override
