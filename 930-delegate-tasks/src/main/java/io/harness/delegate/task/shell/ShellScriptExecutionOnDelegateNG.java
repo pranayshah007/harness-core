@@ -31,6 +31,7 @@ import io.harness.shell.ShellExecutorConfig;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.CustomRepositoryResponse;
+import software.wings.helpers.ext.jenkins.CustomRepositoryResponse.CustomRepositoryResponseBuilder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
@@ -162,7 +163,7 @@ public class ShellScriptExecutionOnDelegateNG {
   public CustomRepositoryResponse mapToCustomRepositoryResponse(
       String json, String artifactRoot, String buildNoPath, Map<String, String> map) {
     DocumentContext ctx = JsonUtils.parseJson(json);
-    CustomRepositoryResponse.CustomRepositoryResponseBuilder customRepositoryResponse =
+    CustomRepositoryResponseBuilder customRepositoryResponse =
         CustomRepositoryResponse.builder();
     List<CustomRepositoryResponse.Result> result = new ArrayList<>();
 

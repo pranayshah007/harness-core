@@ -7,25 +7,23 @@
 
 package io.harness.cdng.artifact.bean.yaml.customartifact;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.map;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.variables.NGVariable;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
-import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Wither;
 import org.springframework.data.annotation.TypeAlias;
+
+import javax.validation.constraints.NotNull;
+import java.util.List;
+
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 @OwnedBy(HarnessTeam.CDC)
 @Data

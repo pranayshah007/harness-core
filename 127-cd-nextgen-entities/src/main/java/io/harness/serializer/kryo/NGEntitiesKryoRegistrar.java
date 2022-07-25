@@ -7,6 +7,7 @@
 
 package io.harness.serializer.kryo;
 
+import com.esotericsoftware.kryo.Kryo;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
@@ -108,9 +109,6 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.steps.shellscript.ShellType;
-
-import com.esotericsoftware.kryo.Kryo;
 
 public class NGEntitiesKryoRegistrar implements KryoRegistrar {
   @Override

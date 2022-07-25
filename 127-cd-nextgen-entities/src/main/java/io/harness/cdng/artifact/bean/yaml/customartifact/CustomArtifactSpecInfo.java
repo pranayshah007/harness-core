@@ -7,26 +7,24 @@
 
 package io.harness.cdng.artifact.bean.yaml.customartifact;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.map;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
-
 import io.swagger.annotations.ApiModelProperty;
-import java.util.List;
-import java.util.Map;
-import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Wither;
 import org.springframework.data.annotation.TypeAlias;
+
+import javax.validation.constraints.NotNull;
+import java.util.List;
+
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 @OwnedBy(HarnessTeam.CDC)
 @Data

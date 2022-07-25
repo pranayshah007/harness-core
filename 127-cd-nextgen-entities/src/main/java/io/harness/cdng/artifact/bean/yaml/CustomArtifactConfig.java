@@ -7,11 +7,7 @@
 
 package io.harness.cdng.artifact.bean.yaml;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
-
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
@@ -28,18 +24,21 @@ import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.variables.NGVariable;
-
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.Collections;
-import java.util.List;
-import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Wither;
 import org.springframework.data.annotation.TypeAlias;
+
+import javax.validation.constraints.NotNull;
+import java.util.Collections;
+import java.util.List;
+
+import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 @Data
 @Builder

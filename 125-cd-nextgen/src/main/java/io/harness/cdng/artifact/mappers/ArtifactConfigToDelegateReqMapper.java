@@ -7,8 +7,6 @@
 
 package io.harness.cdng.artifact.mappers;
 
-import static software.wings.utils.RepositoryFormat.generic;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
@@ -41,20 +39,17 @@ import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
-import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.yaml.utils.NGVariablesUtils;
+import lombok.experimental.UtilityClass;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import lombok.experimental.UtilityClass;
+
+import static software.wings.utils.RepositoryFormat.generic;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
