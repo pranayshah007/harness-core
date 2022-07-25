@@ -7,6 +7,11 @@
 
 package io.harness.ng.core.remote;
 
+import static io.harness.NGCommonEntityConstants.NEXT_REL;
+import static io.harness.NGCommonEntityConstants.PAGE;
+import static io.harness.NGCommonEntityConstants.PAGE_SIZE;
+import static io.harness.NGCommonEntityConstants.PREVIOUS_REL;
+import static io.harness.NGCommonEntityConstants.SELF_REL;
 import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.ng.accesscontrol.PlatformPermissions.CREATE_ORGANIZATION_PERMISSION;
@@ -17,6 +22,7 @@ import static io.harness.ng.accesscontrol.PlatformResourceTypes.ORGANIZATION;
 import static io.harness.ng.core.remote.OrganizationApiMapper.getOrganizationDto;
 import static io.harness.ng.core.remote.OrganizationApiMapper.getOrganizationResponse;
 import static io.harness.ng.core.remote.OrganizationApiMapper.getPageRequest;
+import static javax.ws.rs.core.UriBuilder.fromPath;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
@@ -32,10 +38,14 @@ import io.harness.spec.server.ng.model.OrganizationResponse;
 import io.harness.spec.server.ng.model.UpdateOrganizationRequest;
 
 import com.google.inject.Inject;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Link;
+import javax.ws.rs.core.Response;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -47,27 +57,31 @@ public class OrganizationApiImpl implements OrganizationApi {
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = CREATE_ORGANIZATION_PERMISSION)
   @Override
-  public OrganizationResponse createOrganization(CreateOrganizationRequest request, @AccountIdentifier String account) {
+  public Response createOrganization(CreateOrganizationRequest request, @AccountIdentifier String account) {
     if (DEFAULT_ORG_IDENTIFIER.equals(request.getSlug())) {
       throw new InvalidRequestException(
           String.format("%s cannot be used as org identifier", DEFAULT_ORG_IDENTIFIER), USER);
     }
     Organization createdOrganization = organizationService.create(account, getOrganizationDto(request));
-    return getOrganizationResponse(createdOrganization);
+    return Response.ok()
+            .entity(getOrganizationResponse(createdOrganization))
+            .build();
   }
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = VIEW_ORGANIZATION_PERMISSION)
   @Override
-  public OrganizationResponse getOrganization(@ResourceIdentifier String id, @AccountIdentifier String account) {
+  public Response getOrganization(@ResourceIdentifier String id, @AccountIdentifier String account) {
     Optional<Organization> organizationOptional = organizationService.get(account, id);
     if (!organizationOptional.isPresent()) {
       throw new NotFoundException(String.format("Organization with identifier [%s] not found", id));
     }
-    return getOrganizationResponse(organizationOptional.get());
+    return Response.ok()
+            .entity(getOrganizationResponse(organizationOptional.get()))
+            .build();
   }
 
   @Override
-  public List<OrganizationResponse> getOrganizations(
+  public Response getOrganizations(
       String account, List org, String searchTerm, Integer page, Integer limit) {
     OrganizationFilterDTO organizationFilterDTO =
         OrganizationFilterDTO.builder().searchTerm(searchTerm).identifiers(org).ignoreCase(true).build();
@@ -77,21 +91,47 @@ public class OrganizationApiImpl implements OrganizationApi {
 
     Page<OrganizationResponse> organizationResponsePage = orgPage.map(OrganizationApiMapper::getOrganizationResponse);
 
-    return new ArrayList<>(organizationResponsePage.getContent());
+    List<OrganizationResponse> organizations = organizationResponsePage.getContent();
+
+    Response.ResponseBuilder responseBuilder = Response.ok();
+
+    Response.ResponseBuilder responseBuilderWithLinks = addLinksHeader(responseBuilder, "/v1/orgs", organizations.size(), page, limit);
+
+    return responseBuilderWithLinks
+            .entity(organizations)
+            .build();
   }
+
+  private Response.ResponseBuilder addLinksHeader(Response.ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
+    ArrayList<Link> links = new ArrayList<>();
+
+    links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page).queryParam(PAGE_SIZE, limit).build()).rel(SELF_REL).build());
+
+    if (page >= 1) {
+      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page - 1).queryParam(PAGE_SIZE, limit).build()).rel(PREVIOUS_REL).build());
+    }
+    if (limit == currentResultCount) {
+      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page + 1).queryParam(PAGE_SIZE, limit).build()).rel(NEXT_REL).build());
+    }
+
+    return responseBuilder.links(links.toArray(new Link[links.size()]));
+  }
+
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = EDIT_ORGANIZATION_PERMISSION)
   @Override
-  public OrganizationResponse updateOrganization(
+  public Response updateOrganization(
       @ResourceIdentifier String id, UpdateOrganizationRequest request, @AccountIdentifier String account) {
     Organization updatedOrganization =
         organizationService.update(account, id, OrganizationApiMapper.getOrganizationDto(id, request));
-    return getOrganizationResponse(updatedOrganization);
+    return Response.ok()
+            .entity(getOrganizationResponse(updatedOrganization))
+            .build();
   }
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = DELETE_ORGANIZATION_PERMISSION)
   @Override
-  public OrganizationResponse deleteOrganization(@ResourceIdentifier String id, @AccountIdentifier String account) {
+  public Response deleteOrganization(@ResourceIdentifier String id, @AccountIdentifier String account) {
     if (DEFAULT_ORG_IDENTIFIER.equals(id)) {
       throw new InvalidRequestException(
           String.format(
@@ -108,6 +148,8 @@ public class OrganizationApiImpl implements OrganizationApi {
     if (!deleted) {
       throw new NotFoundException(String.format("Organization with identifier [%s] not found", id));
     }
-    return getOrganizationResponse(organizationOptional.get());
+    return Response.ok()
+            .entity(getOrganizationResponse(organizationOptional.get()))
+            .build();
   }
 }

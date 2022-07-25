@@ -7,17 +7,8 @@
 
 package io.harness.ng.core.remote;
 
-import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
-import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.ng.accesscontrol.PlatformPermissions.CREATE_PROJECT_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformPermissions.DELETE_PROJECT_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformPermissions.EDIT_PROJECT_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformResourceTypes.PROJECT;
-import static io.harness.ng.core.remote.ProjectApiMapper.getPageRequest;
-import static io.harness.ng.core.remote.ProjectApiMapper.getProjectDto;
-import static io.harness.ng.core.remote.ProjectApiMapper.getProjectResponse;
-
+import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import io.harness.ModuleType;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
@@ -32,17 +23,36 @@ import io.harness.spec.server.ng.ProjectApi;
 import io.harness.spec.server.ng.model.CreateProjectRequest;
 import io.harness.spec.server.ng.model.ProjectResponse;
 import io.harness.spec.server.ng.model.UpdateProjectRequest;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
 
-import com.google.common.collect.Sets;
-import com.google.inject.Inject;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Link;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import javax.ws.rs.NotFoundException;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Page;
+
+import static io.harness.NGCommonEntityConstants.NEXT_REL;
+import static io.harness.NGCommonEntityConstants.PAGE;
+import static io.harness.NGCommonEntityConstants.PAGE_SIZE;
+import static io.harness.NGCommonEntityConstants.PREVIOUS_REL;
+import static io.harness.NGCommonEntityConstants.SELF_REL;
+import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
+import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.ng.accesscontrol.PlatformPermissions.CREATE_PROJECT_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.DELETE_PROJECT_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.EDIT_PROJECT_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformResourceTypes.PROJECT;
+import static io.harness.ng.core.remote.ProjectApiMapper.getPageRequest;
+import static io.harness.ng.core.remote.ProjectApiMapper.getProjectDto;
+import static io.harness.ng.core.remote.ProjectApiMapper.getProjectResponse;
+import static java.lang.String.format;
+import static javax.ws.rs.core.UriBuilder.fromPath;
 
 @OwnedBy(PL)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
@@ -52,70 +62,118 @@ public class ProjectApiImpl implements ProjectApi {
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = CREATE_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse createAccountScopedProject(
+  public Response createAccountScopedProject(
       CreateProjectRequest createProjectRequest, @AccountIdentifier String account) {
-    return createProject(createProjectRequest, account, DEFAULT_ORG_IDENTIFIER);
+    return Response.ok()
+            .entity(createProject(createProjectRequest, account, DEFAULT_ORG_IDENTIFIER))
+            .build();
   }
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = CREATE_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse createOrgScopedProject(
+  public Response createOrgScopedProject(
       @OrgIdentifier String org, CreateProjectRequest createProjectRequest, @AccountIdentifier String account) {
-    return createProject(createProjectRequest, account, org);
+    return Response.ok()
+            .entity(createProject(createProjectRequest, account, org))
+            .build();
   }
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = DELETE_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse deleteAccountScopedProject(@ResourceIdentifier String id, @AccountIdentifier String account) {
-    return deleteProject(id, account, DEFAULT_ORG_IDENTIFIER);
+  public Response deleteAccountScopedProject(@ResourceIdentifier String id, @AccountIdentifier String account) {
+    return Response.ok()
+            .entity(deleteProject(id, account, DEFAULT_ORG_IDENTIFIER))
+            .build();
   }
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = DELETE_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse deleteOrgScopedProject(
+  public Response deleteOrgScopedProject(
       @OrgIdentifier String org, @ResourceIdentifier String id, @AccountIdentifier String account) {
-    return deleteProject(id, account, org);
+    return Response.ok()
+            .entity(deleteProject(id, account, org))
+            .build();
   }
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = VIEW_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse getAccountScopedProject(@ResourceIdentifier String id, @AccountIdentifier String account) {
-    return getProject(id, account, DEFAULT_ORG_IDENTIFIER);
+  public Response getAccountScopedProject(@ResourceIdentifier String id, @AccountIdentifier String account) {
+    return Response.ok()
+            .entity(getProject(id, account, DEFAULT_ORG_IDENTIFIER))
+            .build();
   }
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = VIEW_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse getOrgScopedProject(
+  public Response getOrgScopedProject(
       @OrgIdentifier String org, @ResourceIdentifier String id, @AccountIdentifier String account) {
-    return getProject(id, account, org);
+    return Response.ok()
+            .entity(getProject(id, account, org))
+            .build();
   }
 
   @Override
-  public List<ProjectResponse> getAccountScopedProjects(String account, List<String> org, List<String> project,
+  public Response getAccountScopedProjects(String account, List<String> org, List<String> project,
       Boolean hasModule, String moduleType, String searchTerm, Integer page, Integer limit) {
-    return getProjects(
-        account, org == null ? null : Sets.newHashSet(org), project, hasModule, moduleType == null ? null : io.harness.ModuleType.fromString(moduleType), searchTerm, page, limit);
+    List<ProjectResponse> projects = getProjects(
+            account, org == null ? null : Sets.newHashSet(org), project, hasModule, moduleType == null ? null : ModuleType.fromString(moduleType), searchTerm, page, limit);
+
+    ResponseBuilder responseBuilder = Response.ok();
+
+    ResponseBuilder responseBuilderWithLinks = addLinksHeader(responseBuilder, "/v1/projects", projects.size(), page, limit);
+
+    return responseBuilderWithLinks
+            .entity(projects)
+            .build();
+  }
+
+  private ResponseBuilder addLinksHeader(ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
+    ArrayList<Link> links = new ArrayList<>();
+
+    links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page).queryParam(PAGE_SIZE, limit).build()).rel(SELF_REL).build());
+
+    if (page >= 1) {
+      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page - 1).queryParam(PAGE_SIZE, limit).build()).rel(PREVIOUS_REL).build());
+    }
+    if (limit == currentResultCount) {
+      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page + 1).queryParam(PAGE_SIZE, limit).build()).rel(NEXT_REL).build());
+    }
+
+    return responseBuilder.links(links.toArray(new Link[links.size()]));
   }
 
   @Override
-  public List<ProjectResponse> getOrgScopedProjects(String org, String account, List<String> project, Boolean hasModule,
+  public Response getOrgScopedProjects(String org, String account, List<String> project, Boolean hasModule,
       String moduleType, String searchTerm, Integer page, Integer limit) {
-    return getProjects(account, org == null ? null : Sets.newHashSet(org), project, hasModule,
-        moduleType == null ? null : io.harness.ModuleType.fromString(moduleType), searchTerm, page, limit);
+
+    List<ProjectResponse> projects = getProjects(
+            account, org == null ? null : Sets.newHashSet(org), project, hasModule, moduleType == null ? null : ModuleType.fromString(moduleType), searchTerm, page, limit);
+
+    ResponseBuilder responseBuilder = Response.ok();
+
+    ResponseBuilder responseBuilderWithLinks = addLinksHeader(responseBuilder, format("/v1/orgs/%s/projects)", org), projects.size(), page, limit);
+
+    return responseBuilderWithLinks
+            .entity(projects)
+            .build();
   }
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = EDIT_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse updateAccountScopedProject(
+  public Response updateAccountScopedProject(
       @ResourceIdentifier String id, UpdateProjectRequest updateProjectRequest, @AccountIdentifier String account) {
-    return updateProject(id, updateProjectRequest, account, DEFAULT_ORG_IDENTIFIER);
+    return Response.ok()
+            .entity(updateProject(id, updateProjectRequest, account, DEFAULT_ORG_IDENTIFIER))
+            .build();
   }
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = EDIT_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse updateOrgScopedProject(@OrgIdentifier String org, @ResourceIdentifier String id,
+  public Response updateOrgScopedProject(@OrgIdentifier String org, @ResourceIdentifier String id,
       UpdateProjectRequest updateProjectRequest, @AccountIdentifier String account) {
-    return updateProject(id, updateProjectRequest, account, org);
+    return Response.ok()
+            .entity(updateProject(id, updateProjectRequest, account, org))
+            .build();
   }
 
   public ProjectResponse createProject(CreateProjectRequest project, String account, String org) {
@@ -133,7 +191,7 @@ public class ProjectApiImpl implements ProjectApi {
     Optional<Project> projectOptional = projectService.get(account, org, id);
     if (!projectOptional.isPresent()) {
       throw new NotFoundException(
-          String.format("Project with orgIdentifier [%s] and identifier [%s] not found", org, id));
+          format("Project with orgIdentifier [%s] and identifier [%s] not found", org, id));
     }
     return getProjectResponse(projectOptional.get());
   }
@@ -160,12 +218,12 @@ public class ProjectApiImpl implements ProjectApi {
     Optional<Project> projectOptional = projectService.get(account, org, id);
     if (!projectOptional.isPresent()) {
       throw new NotFoundException(
-          String.format("Project with orgIdentifier [%s] and identifier [%s] not found", org, id));
+          format("Project with orgIdentifier [%s] and identifier [%s] not found", org, id));
     }
     boolean deleted = projectService.delete(account, org, id, null);
     if (!deleted) {
       throw new NotFoundException(
-          String.format("Project with orgIdentifier [%s] and identifier [%s] not found", org, id));
+          format("Project with orgIdentifier [%s] and identifier [%s] not found", org, id));
     }
     return getProjectResponse(projectOptional.get());
   }
