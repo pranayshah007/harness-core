@@ -1,0 +1,48 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - stepGroup:
+          name: Canary Deployment
+          identifier: canaryDepoyment
+          steps:
+            - step:
+                name: "Canary Deployment"
+                identifier: canaryDeployment
+                type: EcsCanaryDeploy
+                timeout: 10m
+                spec: {}
+            - step:
+                name: "Canary Delete"
+                identifier: canaryDelete
+                type: EcsCanaryDelete
+                timeout: 10m
+                spec: {}
+      - stepGroup:
+          name: Primary Deployment
+          identifier: primaryDepoyment
+          steps:
+            - step:
+                name: "Rolling Deployment"
+                identifier: rollingDeployment
+                type: EcsRollingDeploy
+                timeout: 10m
+                spec: {}
+    rollbackSteps:
+      - step:
+          name: "Canary Delete"
+          identifier: rollbackCanaryDelete
+          type: EcsCanaryDelete
+          timeout: 10m
+          spec: {}
+      - step:
+          name: "Rolling Rollback"
+          identifier: rollingRollback
+          type: EcsRollback
+          timeout: 10m
+          spec: {}
