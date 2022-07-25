@@ -38,6 +38,8 @@ public class TemplateUtils {
     update.set(TemplateEntity.TemplateEntityKeys.name, templateEntity.getName());
     update.set(TemplateEntity.TemplateEntityKeys.description, templateEntity.getDescription());
     update.set(TemplateEntity.TemplateEntityKeys.tags, templateEntity.getTags());
+    update.set(TemplateEntity.TemplateEntityKeys.isStableTemplate, templateEntity.isStableTemplate());
+    update.set(TemplateEntity.TemplateEntityKeys.isLastUpdatedTemplate, templateEntity.isLastUpdatedTemplate());
     return update;
   }
 
@@ -47,6 +49,8 @@ public class TemplateUtils {
         .withName(fieldsToUpdate.getName())
         .withLastUpdatedAt(timeOfUpdate)
         .withDescription(fieldsToUpdate.getDescription())
+        .withLastUpdatedTemplate(fieldsToUpdate.isLastUpdatedTemplate())
+        .withStableTemplate(fieldsToUpdate.isStableTemplate())
         .withTags(fieldsToUpdate.getTags());
   }
 

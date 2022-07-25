@@ -275,11 +275,16 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     //    TODO: update template entity in db and update yaml in git
     //    in monogo db replace old to new
 
-    Criteria criteria =
-        buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-            templateToUpdate.getAccountId(), templateToUpdate.getOrgIdentifier(),
-            templateToUpdate.getProjectIdentifier(), templateToUpdate.getIdentifier(),
-            templateToUpdate.getVersionLabel(), true);
+    Criteria criteria = Criteria.where(TemplateEntityKeys.accountId)
+                            .is(templateToUpdate.getAccountId())
+                            .and(TemplateEntityKeys.orgIdentifier)
+                            .is(templateToUpdate.getOrgIdentifier())
+                            .and(TemplateEntityKeys.projectIdentifier)
+                            .is(templateToUpdate.getProjectIdentifier())
+                            .and(TemplateEntityKeys.identifier)
+                            .is(templateToUpdate.getIdentifier())
+                            .and(TemplateEntityKeys.versionLabel)
+                            .is(templateToUpdate.getVersionLabel());
 
     Query query = new Query(criteria);
     long timeOfUpdate = System.currentTimeMillis();
