@@ -187,7 +187,7 @@ deployMode: KUBERNETES
 envPath: ""
 
 kubectlVersion: v1.13.2
-scmVersion: aeda065c
+scmVersion: c5f94566
 
 portal:
   url: https://localhost:8000
