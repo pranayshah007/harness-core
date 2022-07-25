@@ -57,7 +57,7 @@ public class TemplateUtils {
 
   public Update getUpdateOperationsForOnboardingToInline() {
     Update update = new Update();
-    update.set(TemplateEntity.TemplateEntityKeys.storeType, StoreType.INLINE);
+    update.set(TemplateEntityKeys.storeType, StoreType.INLINE);
     return update;
   }
 }
