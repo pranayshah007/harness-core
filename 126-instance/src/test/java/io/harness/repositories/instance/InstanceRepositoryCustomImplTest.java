@@ -26,6 +26,7 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.bson.Document;
 import org.junit.Test;
@@ -86,16 +87,22 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void getActiveInstancesByAccountTest() {
-    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(ACCOUNT_ID);
-    Criteria filterCreatedAt = Criteria.where(InstanceKeys.createdAt).lte(TIMESTAMP);
-    Criteria filterDeletedAt = Criteria.where(InstanceKeys.deletedAt).gte(TIMESTAMP);
-    Criteria filterNotDeleted = Criteria.where(InstanceKeys.isDeleted).is(false);
-    criteria.andOperator(filterCreatedAt.orOperator(filterNotDeleted, filterDeletedAt));
-    Instance instance = Instance.builder().build();
-    Query query = new Query().addCriteria(criteria);
-    when(mongoTemplate.find(query, Instance.class)).thenReturn(Arrays.asList(instance));
+    Instance instance1 = Instance.builder().instanceKey("abc").build();
+    Criteria criteria1 = Criteria.where(InstanceKeys.accountIdentifier).is(ACCOUNT_ID);
+    criteria1.andOperator(Criteria.where(InstanceKeys.isDeleted).is(false));
+    criteria1.andOperator(Criteria.where(InstanceKeys.createdAt).lte(TIMESTAMP));
+    Query query1 = new Query().addCriteria(criteria1);
+    when(mongoTemplate.find(query1, Instance.class)).thenReturn(Collections.singletonList(instance1));
+
+    Instance instance2 = Instance.builder().instanceKey("def").build();
+    Criteria criteria2 = Criteria.where(InstanceKeys.accountIdentifier).is(ACCOUNT_ID);
+    criteria2.andOperator(Criteria.where(InstanceKeys.deletedAt).gte(TIMESTAMP));
+    criteria2.andOperator(Criteria.where(InstanceKeys.createdAt).lte(TIMESTAMP));
+    Query query2 = new Query().addCriteria(criteria2);
+    when(mongoTemplate.find(query2, Instance.class)).thenReturn(Collections.singletonList(instance2));
+
     assertThat(instanceRepositoryCustom.getActiveInstancesByAccount(ACCOUNT_ID, TIMESTAMP))
-        .isEqualTo(Arrays.asList(instance));
+        .containsExactlyInAnyOrderElementsOf(Arrays.asList(instance1, instance2));
   }
 
   @Test
