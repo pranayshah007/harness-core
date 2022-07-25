@@ -276,7 +276,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         logCallback.saveExecutionLog("Deployment failed.");
         deleteAndPurgeHelmRelease(commandRequest, logCallback);
       }
-      cleanUpWorkingDirectory(commandRequest.getWorkingDir());
+      cleanUpWorkingDirectory(Paths.get(commandRequest.getWorkingDir()).getParent().toString());
     }
   }
 

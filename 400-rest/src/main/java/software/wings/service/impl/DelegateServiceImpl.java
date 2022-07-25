@@ -1384,6 +1384,7 @@ public class DelegateServiceImpl implements DelegateService {
       }
       final String watcherStorageUrl = watcherMetadataUrl.substring(0, watcherMetadataUrl.lastIndexOf('/'));
       final String watcherCheckLocation = watcherMetadataUrl.substring(watcherMetadataUrl.lastIndexOf('/') + 1);
+
       final String hexkey = format("%040x",
           new BigInteger(1, templateParameters.getAccountId().substring(0, 6).getBytes(StandardCharsets.UTF_8)))
                                 .replaceFirst("^0+(?!$)", "");
@@ -1421,6 +1422,16 @@ public class DelegateServiceImpl implements DelegateService {
               .put("dynamicHandlingOfRequestEnabled",
                   String.valueOf(featureFlagService.isEnabled(
                       DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST, templateParameters.getAccountId())));
+
+      final boolean isOnPrem = DeployMode.isOnPrem(mainConfiguration.getDeployMode().name());
+      params.put("isOnPrem", String.valueOf(isOnPrem));
+      if (!isOnPrem) {
+        final String watcherVersion =
+            substringBefore(delegateVersionService.getWatcherJarVersions(templateParameters.getAccountId()), "-")
+                .trim()
+                .split("\\.")[2];
+        params.put("watcherJarVersion", watcherVersion);
+      }
 
       if (mainConfiguration.getDeployMode() == DeployMode.KUBERNETES_ONPREM) {
         params.put("managerTarget", mainConfiguration.getGrpcOnpremDelegateClientConfig().getTarget());

@@ -124,6 +124,7 @@ public class PipelineExecutionSummaryDtoMapperTest extends PipelineServiceTestBa
                                                                 .projectIdentifier(projId)
                                                                 .pipelineIdentifier(pipelineId)
                                                                 .runSequence(1)
+                                                                .executionInputConfigured(false)
                                                                 .planExecutionId(planId)
                                                                 .storeType(StoreType.INLINE)
                                                                 .build();
@@ -131,7 +132,7 @@ public class PipelineExecutionSummaryDtoMapperTest extends PipelineServiceTestBa
         PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
     assertThat(executionSummaryDTO.getStoreType()).isEqualTo(StoreType.INLINE);
     assertThat(executionSummaryDTO.getConnectorRef()).isNull();
-    assertThat(executionSummaryDTO.isExecutionInputConfigured()).isEqualTo(false);
+    assertThat(executionSummaryDTO.getExecutionInputConfigured()).isEqualTo(false);
 
     executionSummaryEntity = PipelineExecutionSummaryEntity.builder()
                                  .accountId(accountId)
@@ -145,7 +146,7 @@ public class PipelineExecutionSummaryDtoMapperTest extends PipelineServiceTestBa
                                  .build();
 
     executionSummaryDTO = PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
-    assertThat(executionSummaryDTO.isExecutionInputConfigured()).isEqualTo(true);
+    assertThat(executionSummaryDTO.getExecutionInputConfigured()).isEqualTo(true);
   }
 
   @Test
