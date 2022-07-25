@@ -155,6 +155,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsDelegateTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsIAMRolesResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListASGInstancesTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListClustersTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTaskResponse;
@@ -621,6 +622,7 @@ import io.harness.delegate.task.terraform.TerraformCommandUnit;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
+import io.harness.exception.AwsECSException;
 import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
 import io.harness.ng.core.dto.secrets.KerberosWinRmConfigDTO;
 import io.harness.ng.core.dto.secrets.NTLMConfigDTO;
@@ -1492,6 +1494,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsListTagsTaskResponse.class, 83077);
     kryo.register(AwsListLoadBalancersTaskResponse.class, 83078);
     kryo.register(AwsListASGNamesTaskResponse.class, 83079);
+    kryo.register(AwsListClustersTaskResponse.class, 83080);
 
     // WinRm
     kryo.register(WinRmCredentialsSpecDTO.class, 600001);

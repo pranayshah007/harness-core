@@ -13,6 +13,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.Arrays.asList;
 
+import com.amazonaws.services.ecs.AmazonECSClient;
+import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -122,4 +124,11 @@ public class AwsUtils {
     awsApiHelperService.attachCredentialsAndBackoffPolicy(builder, awsConfig);
     return (AmazonAutoScalingClient) builder.build();
   }
+
+  public AmazonECSClient getAmazonECSClient(Regions region, AwsInternalConfig awsConfig) {
+    AmazonECSClientBuilder builder = AmazonECSClientBuilder.standard().withRegion(region);
+    awsApiHelperService.attachCredentialsAndBackoffPolicy(builder, awsConfig);
+    return (AmazonECSClient) builder.build();
+  }
+
 }

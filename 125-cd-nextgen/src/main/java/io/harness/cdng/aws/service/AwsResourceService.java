@@ -138,4 +138,16 @@ public interface AwsResourceService {
    */
   List<String> getASGNames(
       IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region);
+
+  /**
+   * Get list of AWS clusters
+   *
+   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param orgIdentifier is the org id
+   * @param projectIdentifier is the project id
+   * @param region AWS region
+   * @return list of AWS clusters
+   */
+  List<String> getClusterNames(
+          IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region);
 }
