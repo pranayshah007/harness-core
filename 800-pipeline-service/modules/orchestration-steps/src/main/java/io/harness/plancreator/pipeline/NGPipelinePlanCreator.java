@@ -87,7 +87,7 @@ public class NGPipelinePlanCreator extends ChildrenPlanCreator<PipelineInfoConfi
                     .build())
             .skipExpressionChain(false);
 
-    if (!ParameterField.isNull(config.getTimeout())) {
+    if (ParameterField.isNotNull(config.getTimeout())) {
       planNodeBuilder.timeoutObtainment(
           SdkTimeoutObtainment.builder()
               .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)

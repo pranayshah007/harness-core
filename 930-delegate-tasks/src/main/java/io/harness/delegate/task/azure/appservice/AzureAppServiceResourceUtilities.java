@@ -20,12 +20,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.azure.model.AzureAppServiceApplicationSetting;
 import io.harness.azure.model.AzureAppServiceConnectionString;
-import io.harness.azure.model.AzureConfig;
-import io.harness.delegate.beans.azure.registry.AzureRegistry;
-import io.harness.delegate.beans.azure.registry.AzureRegistryFactory;
-import io.harness.delegate.beans.azure.registry.AzureRegistryType;
-import io.harness.delegate.beans.connector.ConnectorConfigDTO;
-import io.harness.delegate.beans.connector.azureconnector.AzureContainerRegistryConnectorDTO;
 import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDeploymentContext;
 import io.harness.delegate.task.azure.common.AzureContainerRegistryService;
@@ -71,20 +65,6 @@ public class AzureAppServiceResourceUtilities {
       List<AzureAppServiceConnectionString> connectionStrings) {
     return connectionStrings.stream().collect(
         Collectors.toMap(AzureAppServiceConnectionString::getName, Function.identity()));
-  }
-
-  public Map<String, AzureAppServiceApplicationSetting> getDockerSettings(
-      ConnectorConfigDTO connectorConfigDTO, AzureRegistryType azureRegistryType, AzureConfig azureConfig) {
-    AzureRegistry azureRegistry = AzureRegistryFactory.getAzureRegistry(azureRegistryType);
-    Map<String, AzureAppServiceApplicationSetting> dockerSettings =
-        azureRegistry.getContainerSettings(connectorConfigDTO);
-
-    if (AzureRegistryType.ACR == azureRegistryType) {
-      azureContainerRegistryService.updateACRDockerSettingByCredentials(
-          (AzureContainerRegistryConnectorDTO) connectorConfigDTO, azureConfig, dockerSettings);
-    }
-
-    return dockerSettings;
   }
 
   public void validateSlotShiftTrafficParameters(String webAppName, String deploymentSlot, double trafficPercent) {

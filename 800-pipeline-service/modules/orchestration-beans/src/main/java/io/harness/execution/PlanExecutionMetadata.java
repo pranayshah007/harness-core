@@ -56,7 +56,7 @@ public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNo
 
   private StagesExecutionMetadata stagesExecutionMetadata;
   private Boolean allowStagesExecution;
-
+  private boolean executionInputConfigured;
   @Wither private String triggerJsonPayload;
   @Wither private TriggerPayload triggerPayload;
 

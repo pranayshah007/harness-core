@@ -116,15 +116,21 @@ public class NotificationHelper {
       boolean shouldSendNotification = shouldSendNotification(pipelineEvents, pipelineEventType, identifier);
       if (shouldSendNotification) {
         NotificationChannelWrapper wrapper = notificationRules.getNotificationChannelWrapper().getValue();
-        String templateId = getNotificationTemplate(pipelineEventType.getLevel(), wrapper.getType());
-        NotificationChannel channel = wrapper.getNotificationChannel().toNotificationChannel(
-            accountIdentifier, orgIdentifier, projectIdentifier, templateId, notificationContent, ambiance);
-        log.info(
-            "Sending notification via notification-client for plan execution id: {} ", ambiance.getPlanExecutionId());
-        try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
-          notificationClient.sendNotificationAsync(channel);
-        } catch (Exception ex) {
-          log.error("Unable to send notification because of following exception", ex);
+        if (wrapper.getType() != null) {
+          String templateId = getNotificationTemplate(pipelineEventType.getLevel(), wrapper.getType());
+          NotificationChannel channel = wrapper.getNotificationChannel().toNotificationChannel(
+              accountIdentifier, orgIdentifier, projectIdentifier, templateId, notificationContent, ambiance);
+          log.info(
+              "Sending notification via notification-client for plan execution id: {} ", ambiance.getPlanExecutionId());
+          try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
+            notificationClient.sendNotificationAsync(channel);
+          } catch (Exception ex) {
+            log.error("Unable to send notification because of following exception", ex);
+          }
+        } else {
+          log.error(
+              "Unable to send notification for plan execution id: {} for pipeline : {} because notification type is null",
+              ambiance.getPlanExecutionId(), ambiance.getMetadata().getPipelineIdentifier());
         }
       }
     }

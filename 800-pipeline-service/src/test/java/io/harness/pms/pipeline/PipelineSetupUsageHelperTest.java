@@ -396,5 +396,53 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
                       EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
                   .setData(connectorEntityReferenceDTO.toByteString())
                   .build());
+
+    // Entities not present in pipeline
+    EntitySetupUsageCreateV2DTO entityReferenceDTO = EntitySetupUsageCreateV2DTO.newBuilder()
+                                                         .setAccountIdentifier(pipelineEntity.getAccountIdentifier())
+                                                         .setReferredByEntity(pipelineDetails)
+                                                         .setDeleteOldReferredByRecords(true)
+                                                         .build();
+
+    verify(eventProducer)
+        .send(Message.newBuilder()
+                  .putAllMetadata(ImmutableMap.of("accountId", pipelineEntity.getAccountIdentifier(),
+                      EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.SERVICE.name(),
+                      EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+                  .setData(entityReferenceDTO.toByteString())
+                  .build());
+
+    verify(eventProducer)
+        .send(Message.newBuilder()
+                  .putAllMetadata(ImmutableMap.of("accountId", pipelineEntity.getAccountIdentifier(),
+                      EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.ENVIRONMENT.name(),
+                      EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+                  .setData(entityReferenceDTO.toByteString())
+                  .build());
+
+    verify(eventProducer)
+        .send(
+            Message.newBuilder()
+                .putAllMetadata(ImmutableMap.of("accountId", pipelineEntity.getAccountIdentifier(),
+                    EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.ENVIRONMENT_GROUP.name(),
+                    EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+                .setData(entityReferenceDTO.toByteString())
+                .build());
+
+    verify(eventProducer)
+        .send(Message.newBuilder()
+                  .putAllMetadata(ImmutableMap.of("accountId", pipelineEntity.getAccountIdentifier(),
+                      EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.TEMPLATE.name(),
+                      EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+                  .setData(entityReferenceDTO.toByteString())
+                  .build());
+
+    verify(eventProducer)
+        .send(Message.newBuilder()
+                  .putAllMetadata(ImmutableMap.of("accountId", pipelineEntity.getAccountIdentifier(),
+                      EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.FILES.name(),
+                      EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+                  .setData(entityReferenceDTO.toByteString())
+                  .build());
   }
 }

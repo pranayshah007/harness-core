@@ -14,6 +14,6 @@ import io.harness.eraro.ErrorCode;
 @OwnedBy(HarnessTeam.PL)
 public class ScmUnexpectedException extends ScmException {
   public ScmUnexpectedException(String errorMessage) {
-    super(errorMessage, ErrorCode.SCM_INTERNAL_SERVER_ERROR);
+    super(errorMessage, ErrorCode.SCM_UNEXPECTED_ERROR);
   }
 }

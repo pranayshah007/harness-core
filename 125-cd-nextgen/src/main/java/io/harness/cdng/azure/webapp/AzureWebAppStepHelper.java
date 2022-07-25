@@ -19,11 +19,13 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ARTIFAC
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_REGISTRY_NAME;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.utility.AzureResourceUtility;
+import io.harness.beans.DecryptableEntity;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
@@ -31,6 +33,9 @@ import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
+import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.azure.config.ApplicationSettingsOutcome;
 import io.harness.cdng.azure.config.ConnectionStringsOutcome;
@@ -55,6 +60,7 @@ import io.harness.delegate.task.azure.appservice.settings.EncryptedAppSettingsFi
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
+import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig.AzureContainerArtifactConfigBuilder;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
@@ -233,6 +239,7 @@ public class AzureWebAppStepHelper {
       case ECR_NAME:
       case GCR_NAME:
       case ACR_NAME:
+      case NEXUS3_REGISTRY_NAME:
       case ARTIFACTORY_REGISTRY_NAME:
         return getAzureContainerArtifactConfig(ambiance, artifactOutcome);
 
@@ -271,31 +278,56 @@ public class AzureWebAppStepHelper {
 
   private AzureArtifactConfig getAzureContainerArtifactConfig(Ambiance ambiance, ArtifactOutcome artifactOutcome) {
     ConnectorInfoDTO connectorInfo;
-    AzureRegistryType azureRegistryType;
-    String image;
-    String tag;
+    AzureContainerArtifactConfigBuilder artifactConfigBuilder = AzureContainerArtifactConfig.builder();
 
     switch (artifactOutcome.getArtifactType()) {
       case DOCKER_REGISTRY_NAME:
         DockerArtifactOutcome dockerArtifactOutcome = (DockerArtifactOutcome) artifactOutcome;
         connectorInfo = cdStepHelper.getConnector(dockerArtifactOutcome.getConnectorRef(), ambiance);
-        azureRegistryType = getAzureRegistryType((DockerConnectorDTO) connectorInfo.getConnectorConfig());
-        image = dockerArtifactOutcome.getImage();
-        tag = dockerArtifactOutcome.getTag();
+        artifactConfigBuilder.registryType(
+            getAzureRegistryType((DockerConnectorDTO) connectorInfo.getConnectorConfig()));
+        artifactConfigBuilder.image(dockerArtifactOutcome.getImage());
+        artifactConfigBuilder.tag(dockerArtifactOutcome.getTag());
         break;
       case ACR_NAME:
         AcrArtifactOutcome acrArtifactOutcome = (AcrArtifactOutcome) artifactOutcome;
         connectorInfo = cdStepHelper.getConnector(acrArtifactOutcome.getConnectorRef(), ambiance);
-        azureRegistryType = AzureRegistryType.ACR;
-        image = acrArtifactOutcome.getImage();
-        tag = acrArtifactOutcome.getTag();
+        artifactConfigBuilder.registryType(AzureRegistryType.ACR);
+        artifactConfigBuilder.image(acrArtifactOutcome.getImage());
+        artifactConfigBuilder.tag(acrArtifactOutcome.getTag());
+        artifactConfigBuilder.registryHostname(acrArtifactOutcome.getRegistry());
+        break;
+      case ECR_NAME:
+        EcrArtifactOutcome ecrArtifactOutcome = (EcrArtifactOutcome) artifactOutcome;
+        connectorInfo = cdStepHelper.getConnector(ecrArtifactOutcome.getConnectorRef(), ambiance);
+        artifactConfigBuilder.registryType(AzureRegistryType.ECR);
+        artifactConfigBuilder.image(ecrArtifactOutcome.getImage());
+        artifactConfigBuilder.tag(ecrArtifactOutcome.getTag());
+        artifactConfigBuilder.region(ecrArtifactOutcome.getRegion());
+        break;
+      case GCR_NAME:
+        GcrArtifactOutcome gcrArtifactOutcome = (GcrArtifactOutcome) artifactOutcome;
+        connectorInfo = cdStepHelper.getConnector(gcrArtifactOutcome.getConnectorRef(), ambiance);
+        artifactConfigBuilder.registryType(AzureRegistryType.GCR);
+        artifactConfigBuilder.image(gcrArtifactOutcome.getImage());
+        artifactConfigBuilder.tag(gcrArtifactOutcome.getTag());
+        artifactConfigBuilder.registryHostname(gcrArtifactOutcome.getRegistryHostname());
+        break;
+      case NEXUS3_REGISTRY_NAME:
+        NexusArtifactOutcome nexusArtifactOutcome = (NexusArtifactOutcome) artifactOutcome;
+        connectorInfo = cdStepHelper.getConnector(nexusArtifactOutcome.getConnectorRef(), ambiance);
+        artifactConfigBuilder.registryType(AzureRegistryType.NEXUS_PRIVATE_REGISTRY);
+        artifactConfigBuilder.image(nexusArtifactOutcome.getImage());
+        artifactConfigBuilder.tag(nexusArtifactOutcome.getTag());
+        artifactConfigBuilder.registryHostname(nexusArtifactOutcome.getRegistryHostname());
         break;
       case ARTIFACTORY_REGISTRY_NAME:
         ArtifactoryArtifactOutcome artifactoryArtifactOutcome = (ArtifactoryArtifactOutcome) artifactOutcome;
         connectorInfo = cdStepHelper.getConnector(artifactoryArtifactOutcome.getConnectorRef(), ambiance);
-        azureRegistryType = AzureRegistryType.ARTIFACTORY_PRIVATE_REGISTRY;
-        image = artifactoryArtifactOutcome.getImage();
-        tag = artifactoryArtifactOutcome.getTag();
+        artifactConfigBuilder.registryType(AzureRegistryType.ARTIFACTORY_PRIVATE_REGISTRY);
+        artifactConfigBuilder.image(artifactoryArtifactOutcome.getImage());
+        artifactConfigBuilder.tag(artifactoryArtifactOutcome.getTag());
+        artifactConfigBuilder.registryHostname(artifactoryArtifactOutcome.getRegistryHostname());
         break;
       default:
         throw new InvalidArgumentsException(
@@ -303,14 +335,16 @@ public class AzureWebAppStepHelper {
     }
 
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+    List<DecryptableEntity> decryptableEntities = connectorInfo.getConnectorConfig().getDecryptableEntities();
+    if (decryptableEntities != null) {
+      for (DecryptableEntity decryptableEntity : decryptableEntities) {
+        encryptedDataDetails.addAll(secretManagerClientService.getEncryptionDetails(ngAccess, decryptableEntity));
+      }
+    }
 
-    return AzureContainerArtifactConfig.builder()
-        .connectorConfig(connectorInfo.getConnectorConfig())
-        .registryType(azureRegistryType)
-        .image(image)
-        .tag(tag)
-        .encryptedDataDetails(
-            secretManagerClientService.getEncryptionDetails(ngAccess, connectorInfo.getConnectorConfig()))
+    return artifactConfigBuilder.connectorConfig(connectorInfo.getConnectorConfig())
+        .encryptedDataDetails(encryptedDataDetails)
         .build();
   }
 

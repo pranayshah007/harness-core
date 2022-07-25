@@ -45,7 +45,6 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -68,9 +67,6 @@ public class PagerDutyServiceImpl implements ChannelService {
   private final YamlUtils yamlUtils;
   private final PagerDutySenderImpl pagerDutySender;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-  private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
-  private static final String ORG_IDENTIFIER = "orgIdentifier";
-  private static final String PROJECT_IDENTIFIER = "projectIdentifier";
 
   @Override
   public NotificationProcessingResponse send(NotificationRequest notificationRequest) {
@@ -96,10 +92,9 @@ public class PagerDutyServiceImpl implements ChannelService {
 
     int expressionFunctorToken = Math.toIntExact(pagerDutyDetails.getExpressionFunctorToken());
 
-    Map<String, String> abstractionMap = new HashMap<>();
-    abstractionMap.put(ACCOUNT_IDENTIFIER, notificationRequest.getAccountId());
-    abstractionMap.put(ORG_IDENTIFIER, pagerDutyDetails.getOrgIdentifier());
-    abstractionMap.put(PROJECT_IDENTIFIER, pagerDutyDetails.getProjectIdentifier());
+    Map<String, String> abstractionMap =
+        notificationSettingsService.buildTaskAbstractions(notificationRequest.getAccountId(),
+            pagerDutyDetails.getOrgIdentifier(), pagerDutyDetails.getProjectIdentifier());
 
     return send(pagerDutyKeys, templateId, templateData, notificationRequest.getId(), notificationRequest.getTeam(),
         notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap);

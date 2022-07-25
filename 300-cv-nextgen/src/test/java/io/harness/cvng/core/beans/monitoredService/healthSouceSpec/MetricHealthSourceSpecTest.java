@@ -17,15 +17,17 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.models.VerificationType;
+import io.harness.reflection.HarnessReflections;
 import io.harness.rule.Owner;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.SneakyThrows;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.reflections.Reflections;
 
 public class MetricHealthSourceSpecTest extends CvNextGenTestBase {
   @Test
@@ -34,9 +36,13 @@ public class MetricHealthSourceSpecTest extends CvNextGenTestBase {
   @SneakyThrows
   public void validateAllTimeSeriesSpecsHaveMetricHealthSourceSpec() {
     // Used for SLI metrics
-    Reflections reflection = new Reflections(IO_HARNESS, SOFTWARE_WINGS);
     Set<Class<? extends HealthSourceSpec>> allHealthSourceSpecClasses =
-        reflection.getSubTypesOf(HealthSourceSpec.class);
+        HarnessReflections.get()
+            .getSubTypesOf(HealthSourceSpec.class)
+            .stream()
+            .filter(klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), IO_HARNESS, SOFTWARE_WINGS))
+            .collect(Collectors.toSet());
+
     assertThat(allHealthSourceSpecClasses.stream()
                    .filter(healthSourceClass -> !Modifier.isAbstract(healthSourceClass.getModifiers()))
                    .filter(healthSourceClass

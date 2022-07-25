@@ -19,6 +19,7 @@ import com.stripe.model.PaymentMethod;
 import com.stripe.model.PaymentMethodCollection;
 import com.stripe.model.Price;
 import com.stripe.model.PriceCollection;
+import com.stripe.model.PriceSearchResult;
 import com.stripe.model.Subscription;
 import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.CustomerRetrieveParams;
@@ -26,6 +27,7 @@ import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.InvoiceUpcomingParams;
 import com.stripe.param.PaymentMethodListParams;
 import com.stripe.param.PriceListParams;
+import com.stripe.param.PriceSearchParams;
 import com.stripe.param.SubscriptionCreateParams;
 import com.stripe.param.SubscriptionRetrieveParams;
 import com.stripe.param.SubscriptionUpdateParams;
@@ -100,6 +102,14 @@ public class StripeHandlerImpl {
       return Customer.retrieve(customerId, customerRetrieveParams, null);
     } catch (StripeException e) {
       throw new InvalidRequestException("Unable to retrieve customer information", e);
+    }
+  }
+
+  PriceSearchResult searchPrices(PriceSearchParams priceSearchParams) {
+    try {
+      return Price.search(priceSearchParams);
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to list prices", e);
     }
   }
 

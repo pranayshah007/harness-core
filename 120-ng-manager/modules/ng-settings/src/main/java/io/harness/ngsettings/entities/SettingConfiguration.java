@@ -50,9 +50,11 @@ public class SettingConfiguration implements PersistentEntity {
   @NotEmpty @EntityIdentifier String identifier;
   @NotEmpty @NGEntityName String name;
   @NotNull SettingCategory category;
+  String groupIdentifier;
   String defaultValue;
   @NotNull SettingValueType valueType;
   Set<String> allowedValues;
+  Boolean allowOverrides;
   @NotNull Set<ScopeLevel> allowedScopes;
 
   public static List<MongoIndex> mongoIndexes() {

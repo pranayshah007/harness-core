@@ -52,6 +52,7 @@ public class Setting implements PersistentEntity, NGAccountAccess {
   @Trimmed String orgIdentifier;
   @Trimmed String projectIdentifier;
   @NotNull SettingCategory category;
+  String groupIdentifier;
   @NotNull Boolean allowOverrides;
   @NotNull SettingValueType valueType;
   @NotNull String value;
