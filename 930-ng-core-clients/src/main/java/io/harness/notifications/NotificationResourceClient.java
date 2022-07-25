@@ -10,6 +10,7 @@ package io.harness.notifications;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.dtos.NotificationChannelDTO;
 import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.rest.RestResponse;
@@ -26,5 +27,5 @@ public interface NotificationResourceClient {
   @POST(BASE_API)
   Call<RestResponse<NotificationResult>> sendNotification(
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @Body NotificationChannelDTO notificationChannelDTO);
+      @Body NotificationChannel notificationChannel);
 }
