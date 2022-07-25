@@ -28,6 +28,10 @@ import io.harness.aws.AWSCloudformationClient;
 import io.harness.aws.AWSCloudformationClientImpl;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
+import io.harness.aws.v2.ecs.AwsApiV2HelperService;
+import io.harness.aws.v2.ecs.AwsApiV2HelperServiceImpl;
+import io.harness.aws.v2.ecs.EcsV2Client;
+import io.harness.aws.v2.ecs.EcsV2ClientImpl;
 import io.harness.awscli.AwsCliClient;
 import io.harness.awscli.AwsCliClientImpl;
 import io.harness.azure.client.AzureAuthorizationClient;
@@ -88,6 +92,8 @@ import io.harness.delegate.cf.PcfRouteUpdateCommandTaskHandler;
 import io.harness.delegate.cf.PcfRunPluginCommandTaskHandler;
 import io.harness.delegate.cf.PcfValidationCommandTaskHandler;
 import io.harness.delegate.configuration.DelegateConfiguration;
+import io.harness.delegate.ecs.EcsCommandTaskNGHandler;
+import io.harness.delegate.ecs.EcsRollingDeployCommandTaskHandler;
 import io.harness.delegate.exceptionhandler.handler.AmazonClientExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.AmazonServiceExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.AuthenticationExceptionHandler;
@@ -200,6 +206,9 @@ import io.harness.delegate.task.cloudformation.handlers.CloudformationDeleteStac
 import io.harness.delegate.task.cvng.CVConnectorValidationHandler;
 import io.harness.delegate.task.docker.DockerTestConnectionDelegateTask;
 import io.harness.delegate.task.docker.DockerValidationHandler;
+import io.harness.delegate.task.ecs.EcsCommandTaskNG;
+import io.harness.delegate.task.ecs.EcsCommandTypeNG;
+import io.harness.delegate.task.ecs.EcsGitFetchTask;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTask;
 import io.harness.delegate.task.gcp.GcpTask;
 import io.harness.delegate.task.gcp.GcpTaskType;
@@ -1745,6 +1754,17 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.SERVERLESS_COMMAND_TASK).toInstance(ServerlessCommandTask.class);
     mapBinder.addBinding(TaskType.AZURE_WEB_APP_TASK_NG).toInstance(AzureWebAppTaskNG.class);
     mapBinder.addBinding(TaskType.COMMAND_TASK_NG).toInstance(CommandTaskNG.class);
+    // ECS NG
+    MapBinder<String, EcsCommandTaskNGHandler> ecsTaskTypeToTaskHandlerMap =
+            MapBinder.newMapBinder(binder(), String.class, EcsCommandTaskNGHandler.class);
+    ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_ROLLING_DEPLOY.name())
+            .to(EcsRollingDeployCommandTaskHandler.class);
+
+    mapBinder.addBinding(TaskType.ECS_GIT_FETCH_TASK_NG).toInstance(EcsGitFetchTask.class);
+    mapBinder.addBinding(TaskType.ECS_COMMAND_TASK_NG).toInstance(EcsCommandTaskNG.class);
+
+    bind(EcsV2Client.class).to(EcsV2ClientImpl.class);
+    bind(AwsApiV2HelperService.class).to(AwsApiV2HelperServiceImpl.class);
   }
 
   private void registerSecretManagementBindings() {

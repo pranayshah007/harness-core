@@ -14,6 +14,7 @@ import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStep;
 import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStep;
 import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStep;
+import io.harness.cdng.ecs.EcsRollingDeployStep;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.MergePRStepInfo;
 import io.harness.cdng.helm.HelmDeployStepInfo;
@@ -58,7 +59,8 @@ import io.swagger.annotations.ApiModel;
               CloudformationDeleteStackStepInfo.class, ServerlessAwsLambdaDeployStepInfo.class,
               ServerlessAwsLambdaRollbackStepInfo.class, CloudformationRollbackStepInfo.class, CommandStepInfo.class,
               AzureWebAppSlotDeploymentStep.class, AzureWebAppTrafficShiftStep.class, AzureWebAppSwapSlotStep.class,
-              AzureWebAppRollbackStep.class, JenkinsBuildStepInfo.class})
+              AzureWebAppRollbackStep.class, JenkinsBuildStepInfo.class,
+        EcsRollingDeployStep.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {

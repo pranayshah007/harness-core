@@ -125,6 +125,11 @@ public enum NGStepType {
   SERVERLESS_AWS_LAMBDA_ROLLBACK("Serverless Aws Lambda Rollback",
       Arrays.asList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
       StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK),
+  // ecs steps
+  @JsonProperty(StepSpecTypeConstants.ECS_ROLLING_DEPLOY)
+  ECS_ROLLING_DEPLOY("Ecs Rolling Deploy",
+          Arrays.asList(ServiceDefinitionType.ECS), "ECS",
+          StepSpecTypeConstants.ECS_ROLLING_DEPLOY),
   // ssh steps
   @JsonProperty(StepSpecTypeConstants.COMMAND)
   COMMAND("Command", Arrays.asList(ServiceDefinitionType.SSH, ServiceDefinitionType.WINRM), "Command",
