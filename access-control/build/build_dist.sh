@@ -30,6 +30,7 @@ cp ../../access-control/config/config.yml .
 cp ../../access-control/config/keystore.jks .
 cp ../../access-control/build/container/Dockerfile-accesscontrol-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../access-control/build/container/Dockerfile-accesscontrol-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+cp ../../batch-processing/build/container/Dockerfile-batch-processing-cie-jdk ./Dockerfile-batch-processing-cie-jdk
 cp -r ../../access-control/build/container/scripts/ .
 java -jar accesscontrol-service-capsule.jar scan-classpath-metadata
 
