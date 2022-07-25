@@ -18,7 +18,6 @@ import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -30,15 +29,10 @@ import lombok.experimental.Wither;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("OptimizeManifestFetch")
 @Schema(name = "OptimizeManifestFetch", description = "This contains Kustomize Manifest Optimize File Fetch details")
-public class OptimizeManifestFetchDTO {
+public class OptimizeManifestFetch {
   @NotNull
   @ApiModelProperty(dataType = STRING_CLASSPATH)
   @SkipAutoEvaluation
   @Wither
   private ParameterField<String> kustomizeYamlPath;
-
-  @Builder
-  public OptimizeManifestFetchDTO(ParameterField<String> kustomizeYamlPath) {
-    this.kustomizeYamlPath = kustomizeYamlPath;
-  }
 }

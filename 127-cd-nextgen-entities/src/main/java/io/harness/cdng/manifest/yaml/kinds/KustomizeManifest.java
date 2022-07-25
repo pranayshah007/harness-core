@@ -19,7 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
-import io.harness.cdng.manifest.yaml.kinds.kustomize.OptimizeManifestFetchDTO;
+import io.harness.cdng.manifest.yaml.kinds.kustomize.OptimizeManifestFetch;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.visitor.helpers.manifest.KustomizeManifestVisitorHelper;
@@ -71,9 +71,9 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
 
   @Wither
   @JsonProperty("optimizeManifestFetch")
-  @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.kinds.kustomize.OptimizeManifestFetchDTO")
+  @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.kinds.kustomize.OptimizeManifestFetch")
   @SkipAutoEvaluation
-  ParameterField<OptimizeManifestFetchDTO> optimizeManifestFetch;
+  OptimizeManifestFetch optimizeManifestFetch;
 
   @Wither
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
