@@ -20,6 +20,7 @@ pkg_tar(
     name = "files",
     srcs = [
         "//400-rest/src/main/resources:redisson-jcache.yaml",
+        "//800-pipeline-service/src/main/resources:enterprise-redisson-jcache.yaml",
         "//800-pipeline-service:config.yml",
     ],
     files = {
