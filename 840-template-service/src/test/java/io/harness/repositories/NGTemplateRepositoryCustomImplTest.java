@@ -387,6 +387,8 @@ public class NGTemplateRepositoryCustomImplTest {
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testUpdateInlinePipeline() {
+    GitEntityInfo branchInfo = GitEntityInfo.builder().storeType(StoreType.INLINE).build();
+    setupGitContext(branchInfo);
     String newYaml = "pipeline: new yaml";
     TemplateEntity templateToUpdate = TemplateEntity.builder()
                                           .accountId(accountIdentifier)
