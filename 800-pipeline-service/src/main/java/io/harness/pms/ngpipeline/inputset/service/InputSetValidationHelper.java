@@ -137,9 +137,9 @@ public class InputSetValidationHelper {
   InputSetErrorWrapperDTOPMS validateInputSetForOldGitSync(PMSPipelineService pmsPipelineService, String accountId,
       String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String yaml, String pipelineBranch,
       String pipelineRepoID) {
-    validateIdentifyingFieldsInYAML(orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
     String pipelineYaml = getPipelineYamlForOldGitSyncFlow(pmsPipelineService, accountId, orgIdentifier,
         projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID);
+    validateIdentifyingFieldsInYAML(orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
     return InputSetErrorsHelper.getErrorMap(pipelineYaml, yaml);
   }
 

@@ -159,6 +159,10 @@ public class ParameterField<T> {
     return expression ? expressionValue : (value != null ? value : defaultValue);
   }
 
+  public static boolean isNotNull(ParameterField<?> actualField) {
+    return !isNull(actualField);
+  }
+
   public static boolean isNull(ParameterField<?> actualField) {
     if (actualField == null) {
       return true;

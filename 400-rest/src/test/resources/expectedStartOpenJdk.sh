@@ -232,13 +232,8 @@ fi
 
 export DEPLOY_MODE=KUBERNETES
 
-echo "Checking Watcher latest version..."
-WATCHER_STORAGE_URL=http://localhost:8888
-REMOTE_WATCHER_LATEST=$(curl $MANAGER_PROXY_CURL -ks $WATCHER_STORAGE_URL/watcherci.txt)
-if [[ $DEPLOY_MODE != "KUBERNETES" ]]; then
-REMOTE_WATCHER_URL=$WATCHER_STORAGE_URL/$(echo $REMOTE_WATCHER_LATEST | cut -d " " -f2)
-fi
-REMOTE_WATCHER_VERSION=$(echo $REMOTE_WATCHER_LATEST | cut -d " " -f1)
+REMOTE_WATCHER_VERSION=0
+REMOTE_WATCHER_URL=/openjdk-8u242/0/watcher.jar
 
 if [ ! -e watcher.jar ]; then
   echo "Downloading Watcher $REMOTE_WATCHER_VERSION ..."

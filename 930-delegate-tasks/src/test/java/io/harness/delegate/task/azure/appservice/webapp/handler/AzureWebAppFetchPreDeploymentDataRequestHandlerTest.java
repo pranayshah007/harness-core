@@ -29,6 +29,7 @@ import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProg
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppFetchPreDeploymentDataRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppFetchPreDeploymentDataResponse;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppRequestResponse;
+import io.harness.delegate.task.azure.artifact.AzureRegistrySettingsAdapter;
 import io.harness.delegate.task.azure.common.AzureAppServiceService;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.rule.Owner;
@@ -51,6 +52,7 @@ public class AzureWebAppFetchPreDeploymentDataRequestHandlerTest extends Categor
   @Mock protected AzureSecretHelper azureSecretHelper;
   @Mock private AzureAppServiceResourceUtilities azureResourceUtilities;
   @Mock private AzureAppServiceService azureAppServiceService;
+  @Mock private AzureRegistrySettingsAdapter azureRegistrySettingsAdapter;
 
   @InjectMocks private AzureWebAppFetchPreDeploymentDataRequestHandler requestHandler;
 

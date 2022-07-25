@@ -8,6 +8,7 @@ LABEL name="harness/delegate:ubi-minimal" \
 RUN microdnf update \
  && microdnf install --nodocs \
     unzip \
+    tar \
     procps \
     hostname \
     lsof \

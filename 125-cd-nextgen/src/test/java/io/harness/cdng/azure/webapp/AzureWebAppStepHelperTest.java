@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -55,8 +56,10 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.azure.registry.AzureRegistryType;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
 import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
@@ -463,13 +466,9 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
             .build();
     final ConnectorInfoDTO connectorInfoDTO =
         ConnectorInfoDTO.builder().connectorType(ConnectorType.DOCKER).connectorConfig(dockerConnectorDTO).build();
-    final List<EncryptedDataDetail> encryptedDataDetails = singletonList(EncryptedDataDetail.builder().build());
 
     doReturn(Optional.of(dockerArtifactOutcome)).when(cdStepHelper).resolveArtifactsOutcome(ambiance);
     doReturn(connectorInfoDTO).when(cdStepHelper).getConnector("docker", ambiance);
-    doReturn(encryptedDataDetails)
-        .when(secretManagerClientService)
-        .getEncryptionDetails(any(NGAccess.class), eq(dockerConnectorDTO));
 
     AzureArtifactConfig azureArtifactConfig = stepHelper.getPrimaryArtifactConfig(ambiance);
     assertThat(azureArtifactConfig.getArtifactType()).isEqualTo(AzureArtifactType.CONTAINER);
@@ -478,7 +477,8 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
     assertThat(containerArtifactConfig.getImage()).isEqualTo("harness");
     assertThat(containerArtifactConfig.getTag()).isEqualTo("test");
     assertThat(containerArtifactConfig.getRegistryType()).isEqualTo(AzureRegistryType.DOCKER_HUB_PUBLIC);
-    assertThat(containerArtifactConfig.getEncryptedDataDetails()).isEqualTo(encryptedDataDetails);
+    assertThat(containerArtifactConfig.getEncryptedDataDetails()).isEmpty();
+    verify(secretManagerClientService, never()).getEncryptionDetails(any(), any());
   }
 
   @Test
@@ -491,8 +491,14 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
                                                                       .tag("test")
                                                                       .type(ARTIFACTORY_REGISTRY_NAME)
                                                                       .build();
-    final ArtifactoryConnectorDTO artifactoryConnectorDTO =
-        ArtifactoryConnectorDTO.builder().auth(ArtifactoryAuthenticationDTO.builder().build()).build();
+    final ArtifactoryUsernamePasswordAuthDTO usernamePasswordAuthDTO =
+        ArtifactoryUsernamePasswordAuthDTO.builder().build();
+    final ArtifactoryConnectorDTO artifactoryConnectorDTO = ArtifactoryConnectorDTO.builder()
+                                                                .auth(ArtifactoryAuthenticationDTO.builder()
+                                                                          .authType(ArtifactoryAuthType.USER_PASSWORD)
+                                                                          .credentials(usernamePasswordAuthDTO)
+                                                                          .build())
+                                                                .build();
     final ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
                                                   .connectorType(ConnectorType.ARTIFACTORY)
                                                   .connectorConfig(artifactoryConnectorDTO)
@@ -503,7 +509,7 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
     doReturn(connectorInfoDTO).when(cdStepHelper).getConnector("artifactory", ambiance);
     doReturn(encryptedDataDetails)
         .when(secretManagerClientService)
-        .getEncryptionDetails(any(NGAccess.class), eq(artifactoryConnectorDTO));
+        .getEncryptionDetails(any(NGAccess.class), eq(usernamePasswordAuthDTO));
 
     AzureArtifactConfig azureArtifactConfig = stepHelper.getPrimaryArtifactConfig(ambiance);
     assertThat(azureArtifactConfig.getArtifactType()).isEqualTo(AzureArtifactType.CONTAINER);

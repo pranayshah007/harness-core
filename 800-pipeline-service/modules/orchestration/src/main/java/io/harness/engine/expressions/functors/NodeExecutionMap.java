@@ -24,14 +24,18 @@ import io.harness.execution.NodeExecution;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.LateBindingMap;
 import io.harness.plan.Node;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.execution.NodeExecutionUtils;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -87,7 +91,7 @@ public class NodeExecutionMap extends LateBindingMap {
     }
 
     return fetchFirst(asList(this::fetchCurrentStatus, this::fetchChild, this::fetchNodeExecutionField,
-                          this::fetchStepParameters, this::fetchOutcomeOrOutput),
+                          this::fetchStepParameters, this::fetchOutcomeOrOutput, this::fetchStrategyData),
         (String) key);
   }
 
@@ -142,6 +146,13 @@ public class NodeExecutionMap extends LateBindingMap {
       return Optional.empty();
     }
     return ExpressionEvaluatorUtils.fetchField(extractFinalStepParameters(nodeExecution, nodeExecutionsCache), key);
+  }
+
+  private Optional<Object> fetchStrategyData(String key) {
+    if (nodeExecution == null || !entityTypes.contains(NodeExecutionEntityType.STRATEGY)) {
+      return Optional.empty();
+    }
+    return ExpressionEvaluatorUtils.fetchField(extractStrategyMetadata(nodeExecution), key);
   }
 
   private Optional<Object> fetchOutcomeOrOutput(String key) {
@@ -199,6 +210,16 @@ public class NodeExecutionMap extends LateBindingMap {
     }
     Node node = nodeExecutionsCache.fetchNode(nodeExecution.getNodeId());
     return NodeExecutionUtils.extractAndProcessObject(node.getStepParameters().toJson());
+  }
+
+  private static Map<String, Object> extractStrategyMetadata(NodeExecution nodeExecution) {
+    if (nodeExecution.getAmbiance() != null) {
+      Level currentLevel = AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance());
+      if (currentLevel != null) {
+        return StrategyUtils.fetchStrategyObjectMap(currentLevel);
+      }
+    }
+    return new HashMap<>();
   }
 
   private static Optional<Object> jsonToObject(String json) {

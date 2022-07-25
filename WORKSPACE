@@ -4544,7 +4544,7 @@ plain_artifacts = [
     "com.squareup.wire:wire-runtime:2.2.0",
     "com.squareup.wire:wire-schema:3.2.2",
     "com.squareup.wire:wire-schema:3.2.2",
-    "com.stripe:stripe-java:20.92.0",
+    "com.stripe:stripe-java:20.133.0",
     "com.sumologic.api.client:sumo-java-client:2.5",
     "com.sun.activation:jakarta.activation:1.2.2",
     "com.sun.istack:istack-commons-runtime:3.0.8",

@@ -9,6 +9,7 @@ package io.harness.execution;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.PRASHANT;
+import static io.harness.rule.OwnerRule.SHALINI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -18,6 +19,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.StrategyMetadata;
+import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.InitiateNodeEvent;
 import io.harness.rule.Owner;
 
@@ -46,6 +49,30 @@ public class InitiateNodeHelperTest extends OrchestrationTestBase {
 
     InitiateNodeEvent event =
         InitiateNodeEvent.newBuilder().setAmbiance(ambiance).setNodeId(setupId).setRuntimeId(runtimeId).build();
+    assertThat(mCaptor.getValue().getData()).isEqualTo(event.toByteString());
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testPublishEventWithStrategyMetadata() {
+    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(generateUuid()).build();
+    String setupId = generateUuid();
+    String runtimeId = generateUuid();
+    StrategyMetadata strategyMetadata = StrategyMetadata.newBuilder().build();
+    InitiateMode initiateMode = InitiateMode.CREATE;
+    initiateNodeHelper.publishEvent(ambiance, setupId, runtimeId, strategyMetadata, initiateMode);
+
+    ArgumentCaptor<Message> mCaptor = ArgumentCaptor.forClass(Message.class);
+    verify(producer).send(mCaptor.capture());
+
+    InitiateNodeEvent event = InitiateNodeEvent.newBuilder()
+                                  .setAmbiance(ambiance)
+                                  .setNodeId(setupId)
+                                  .setRuntimeId(runtimeId)
+                                  .setStrategyMetadata(strategyMetadata)
+                                  .setInitiateMode(initiateMode)
+                                  .build();
     assertThat(mCaptor.getValue().getData()).isEqualTo(event.toByteString());
   }
 }

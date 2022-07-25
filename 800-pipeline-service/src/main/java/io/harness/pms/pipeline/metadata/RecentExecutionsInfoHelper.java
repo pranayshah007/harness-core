@@ -51,7 +51,7 @@ public class RecentExecutionsInfoHelper {
     ExecutionMetadata executionMetadata = planExecution.getMetadata();
     RecentExecutionInfo newExecutionInfo = RecentExecutionInfo.builder()
                                                .executionTriggerInfo(executionMetadata.getTriggerInfo())
-                                               .planExecutionId(planExecution.getPlanId())
+                                               .planExecutionId(planExecution.getUuid())
                                                .status(Status.RUNNING)
                                                .startTs(planExecution.getStartTs())
                                                .build();
@@ -82,7 +82,7 @@ public class RecentExecutionsInfoHelper {
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
     String pipelineIdentifier = ambiance.getMetadata().getPipelineIdentifier();
-    String planExecutionId = planExecution.getPlanId();
+    String planExecutionId = planExecution.getUuid();
     Informant0<List<RecentExecutionInfo>> subject = (List<RecentExecutionInfo> recentExecutionInfoList) -> {
       if (recentExecutionInfoList == null) {
         return;

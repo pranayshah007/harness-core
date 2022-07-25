@@ -46,7 +46,7 @@ public interface ServiceEntityService {
   List<ServiceEntity> getAllServices(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
   List<ServiceEntity> getAllNonDeletedServices(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier);
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> sort);
 
   Integer findActiveServicesCountAtGivenTimestamp(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, long timestampInMs);

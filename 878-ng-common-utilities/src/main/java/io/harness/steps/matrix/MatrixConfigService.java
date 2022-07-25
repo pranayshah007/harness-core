@@ -12,8 +12,8 @@ import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.strategy.AxisConfig;
 import io.harness.plancreator.strategy.ExcludeConfig;
 import io.harness.plancreator.strategy.MatrixConfig;
-import io.harness.plancreator.strategy.StageStrategyUtils;
 import io.harness.plancreator.strategy.StrategyConfig;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.StrategyMetadata;
@@ -84,10 +84,9 @@ public class MatrixConfigService implements StrategyConfigService {
     List<JsonNode> jsonNodes = new ArrayList<>();
     int currentIteration = 0;
     for (List<Integer> matrixData : matrixMetadata) {
-      JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StageStrategyUtils.replaceExpressions(
-          jsonNode.deepCopy().toString(), combinations.get(currentIteration), currentIteration, totalCount)));
-      StageStrategyUtils.modifyJsonNode(
-          clonedNode, matrixData.stream().map(String::valueOf).collect(Collectors.toList()));
+      JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StrategyUtils.replaceExpressions(
+          jsonNode.deepCopy().toString(), combinations.get(currentIteration), currentIteration, totalCount, null)));
+      StrategyUtils.modifyJsonNode(clonedNode, matrixData.stream().map(String::valueOf).collect(Collectors.toList()));
       jsonNodes.add(clonedNode);
       currentIteration++;
     }
@@ -116,16 +115,16 @@ public class MatrixConfigService implements StrategyConfigService {
   private void fetchCombinations(Map<String, String> currentCombinationRef, Map<String, AxisConfig> axes,
       List<Map<String, String>> combinationsRef, List<ExcludeConfig> exclude, List<List<Integer>> matrixMetadataRef,
       List<String> keys, int index, List<Integer> indexPath) {
-    if (axes.size() == index) {
-      // If user does not give exclude then it will be treated as null therefore special handling is required.
-      if (exclude == null || !exclude.contains(ExcludeConfig.builder().exclude(currentCombinationRef).build())) {
-        // We have reached the end of axis combination and have one full combination. Add it to the list of combination
-        combinationsRef.add(new HashMap<>(currentCombinationRef));
-        // Add the path we chose to compute the current combination.
-        matrixMetadataRef.add(new ArrayList<>(indexPath));
-      }
+    if (exclude != null && exclude.contains(ExcludeConfig.builder().exclude(currentCombinationRef).build())) {
       return;
     }
+    if (axes.size() == index) {
+      combinationsRef.add(new HashMap<>(currentCombinationRef));
+      // Add the path we chose to compute the current combination.
+      matrixMetadataRef.add(new ArrayList<>(indexPath));
+      return;
+    }
+
     String key = keys.get(index);
     AxisConfig axisValues = axes.get(key);
     int i = 0;

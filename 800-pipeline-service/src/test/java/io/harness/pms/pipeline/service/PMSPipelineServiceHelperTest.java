@@ -22,10 +22,14 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.GovernanceService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.common.beans.NGTag;
+import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.contracts.governance.ExpansionResponseBatch;
@@ -67,6 +71,9 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
   @Mock private JsonExpander jsonExpander;
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @Mock TelemetryReporter telemetryReporter;
+  @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
+  @Mock PMSYamlSchemaService yamlSchemaService;
+  @Mock GovernanceService governanceService;
 
   String accountIdentifier = "account";
   String orgIdentifier = "org";
@@ -76,8 +83,9 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    pmsPipelineServiceHelper = new PMSPipelineServiceHelper(filterService, filterCreatorMergeService, null, null, null,
-        jsonExpander, expansionRequestsExtractor, pmsFeatureFlagService, gitSyncHelper, telemetryReporter, null);
+    pmsPipelineServiceHelper = new PMSPipelineServiceHelper(filterService, filterCreatorMergeService, yamlSchemaService,
+        pipelineTemplateHelper, governanceService, jsonExpander, expansionRequestsExtractor, pmsFeatureFlagService,
+        gitSyncHelper, telemetryReporter, null);
   }
 
   @Test
@@ -94,7 +102,7 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetPipelineEqualityCriteria() {
     Criteria criteria = PMSPipelineServiceHelper.getPipelineEqualityCriteria(
-        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, false, null);
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, false, 2L);
     assertThat(criteria).isNotNull();
     Document criteriaObject = criteria.getCriteriaObject();
     assertThat(criteriaObject.get(PipelineEntityKeys.accountId)).isEqualTo(accountIdentifier);
@@ -102,7 +110,7 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
     assertThat(criteriaObject.get(PipelineEntityKeys.projectIdentifier)).isEqualTo(projectIdentifier);
     assertThat(criteriaObject.get(PipelineEntityKeys.identifier)).isEqualTo(pipelineIdentifier);
     assertThat(criteriaObject.get(PipelineEntityKeys.deleted)).isEqualTo(false);
-    assertThat(criteriaObject.get(PipelineEntityKeys.version)).isNull();
+    assertThat(criteriaObject.get(PipelineEntityKeys.version)).isEqualTo(2L);
   }
 
   @Test
@@ -151,6 +159,13 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
                                   .pipelineIdentifiers(Collections.singletonList(pipelineIdentifier))
                                   .build())
             .build();
+    doReturn(null)
+        .when(filterService)
+        .get(accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, FilterType.PIPELINESETUP);
+    assertThatThrownBy(()
+                           -> pmsPipelineServiceHelper.populateFilterUsingIdentifier(
+                               new Criteria(), accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier))
+        .isInstanceOf(InvalidRequestException.class);
     doReturn(filterDTO)
         .when(filterService)
         .get(accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, FilterType.PIPELINESETUP);
@@ -194,6 +209,30 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
     assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get(PipelineEntityKeys.tags)).get("$in"))
                    .contains(NGTag.builder().key("c").value("h").build()))
         .isTrue();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testValidatePipelineYamlInternal() {
+    String yaml = "yaml";
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .yaml(yaml)
+                                        .build();
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
+    doReturn(templateMergeResponseDTO)
+        .when(pipelineTemplateHelper)
+        .resolveTemplateRefsInPipeline(pipelineEntity, false);
+    GovernanceMetadata governanceMetadata =
+        pmsPipelineServiceHelper.validatePipelineYamlInternal(pipelineEntity, false);
+    assertThat(governanceMetadata.getDeny()).isFalse();
+    verify(yamlSchemaService, times(1)).validateYamlSchema(accountIdentifier, orgIdentifier, projectIdentifier, yaml);
+    verify(yamlSchemaService, times(1)).validateUniqueFqn(yaml);
+    verify(governanceService, times(0)).evaluateGovernancePolicies(any(), any(), any(), any(), any(), any());
   }
 
   @Test

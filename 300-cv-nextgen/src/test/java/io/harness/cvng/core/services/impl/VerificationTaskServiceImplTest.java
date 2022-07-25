@@ -26,6 +26,7 @@ import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
+import io.harness.reflection.HarnessReflections;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.Sets;
@@ -38,11 +39,12 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.reflections.Reflections;
 
 public class VerificationTaskServiceImplTest extends CvNextGenTestBase {
   @Inject private VerificationTaskService verificationTaskService;
@@ -282,8 +284,15 @@ public class VerificationTaskServiceImplTest extends CvNextGenTestBase {
     // If any of the collection has a valid reason to not add validUntil, please add it to BLACKLIST with the reason.
     Set<Class<? extends PersistentEntity>> BLACKLIST = new HashSet<>();
     Set<Class<?>> withoutTTL = new HashSet<>();
-    Reflections reflections = new Reflections(VerificationApplication.class.getPackage().getName());
-    reflections.getSubTypesOf(PersistentEntity.class).forEach(entity -> {
+    Set<Class<? extends PersistentEntity>> reflections =
+        HarnessReflections.get()
+            .getSubTypesOf(PersistentEntity.class)
+            .stream()
+            .filter(klazz
+                -> StringUtils.startsWithAny(
+                    klazz.getPackage().getName(), VerificationApplication.class.getPackage().getName()))
+            .collect(Collectors.toSet());
+    reflections.forEach(entity -> {
       if (doesClassContainField(entity, VerificationTask.VERIFICATION_TASK_ID_KEY)) {
         if (!doesClassContainField(entity, VerificationTaskKeys.validUntil)) {
           withoutTTL.add(entity);

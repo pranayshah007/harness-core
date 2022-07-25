@@ -19,9 +19,10 @@ public enum NodeExecutionEntityType {
   NODE_EXECUTION_FIELDS,
   STEP_PARAMETERS,
   OUTCOME,
-  SWEEPING_OUTPUT;
+  SWEEPING_OUTPUT,
+  STRATEGY;
 
   public static Set<NodeExecutionEntityType> allEntities() {
-    return EnumSet.of(NODE_EXECUTION_FIELDS, STEP_PARAMETERS, OUTCOME, SWEEPING_OUTPUT);
+    return EnumSet.of(NODE_EXECUTION_FIELDS, STEP_PARAMETERS, OUTCOME, SWEEPING_OUTPUT, STRATEGY);
   }
 }

@@ -176,6 +176,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .governanceMetadata(planExecution.getGovernanceMetadata())
             .stagesExecutionMetadata(planExecutionMetadata.getStagesExecutionMetadata())
             .storeType(StoreTypeMapper.fromPipelineStoreType(metadata.getPipelineStoreType()))
+            .executionInputConfigured(orchestrationStartInfo.getPlanExecutionMetadata().getExecutionInputConfigured())
             .connectorRef(
                 EmptyPredicate.isEmpty(metadata.getPipelineConnectorRef()) ? null : metadata.getPipelineConnectorRef())
             .build();

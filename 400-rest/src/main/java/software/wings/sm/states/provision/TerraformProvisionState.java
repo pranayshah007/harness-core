@@ -45,6 +45,9 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.CGConstants.GLOBAL_ENV_ID;
+import static software.wings.beans.LogColor.Yellow;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
 import static software.wings.beans.TaskType.TERRAFORM_PROVISION_TASK;
 import static software.wings.beans.delegation.TerraformProvisionParameters.TIMEOUT_IN_MINUTES;
 import static software.wings.utils.Utils.splitCommaSeparatedFilePath;
@@ -84,6 +87,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.ff.FeatureFlagService;
+import io.harness.logging.LogLevel;
 import io.harness.provision.TfVarScriptRepositorySource;
 import io.harness.provision.TfVarSource;
 import io.harness.provision.TfVarSource.TfVarSourceType;
@@ -441,13 +445,13 @@ public abstract class TerraformProvisionState extends State {
     }
     if (terraformExecutionData.getOutputs() != null) {
       Map<String, Object> outputs = parseOutputs(terraformExecutionData.getOutputs());
+      ManagerExecutionLogCallback executionLogCallback = infrastructureProvisionerService.getManagerExecutionCallback(
+          terraformProvisioner.getAppId(), terraformExecutionData.getActivityId(), commandUnit().name());
       if (featureFlagService.isEnabled(FeatureName.SAVE_TERRAFORM_OUTPUTS_TO_SWEEPING_OUTPUT, context.getAccountId())) {
-        saveOutputs(context, outputs);
+        saveOutputs(context, outputs, executionLogCallback);
       } else {
         outputInfoElement.addOutPuts(outputs);
       }
-      ManagerExecutionLogCallback executionLogCallback = infrastructureProvisionerService.getManagerExecutionCallback(
-          terraformProvisioner.getAppId(), terraformExecutionData.getActivityId(), commandUnit().name());
       infrastructureProvisionerService.regenerateInfrastructureMappings(
           provisionerId, context, outputs, Optional.of(executionLogCallback), Optional.empty());
     }
@@ -464,12 +468,21 @@ public abstract class TerraformProvisionState extends State {
         .build();
   }
 
-  private void saveOutputs(ExecutionContext context, Map<String, Object> outputs) {
+  private void saveOutputs(
+      ExecutionContext context, Map<String, Object> outputs, ManagerExecutionLogCallback executionLogCallback) {
     TerraformOutputInfoElement outputInfoElement = context.getContextElement(ContextElementType.TERRAFORM_PROVISION);
     SweepingOutputInstance instance = sweepingOutputService.find(
         context.prepareSweepingOutputInquiryBuilder().name(TerraformOutputVariables.SWEEPING_OUTPUT_NAME).build());
     TerraformOutputVariables terraformOutputVariables =
         instance != null ? (TerraformOutputVariables) instance.getValue() : new TerraformOutputVariables();
+
+    if (null == terraformOutputVariables) {
+      String message = format("%s variable is being used in some other step. The terraform output is not saved.",
+          TerraformOutputVariables.SWEEPING_OUTPUT_NAME);
+      log.warn(message);
+      executionLogCallback.saveExecutionLog(color(message, Yellow, Bold), LogLevel.WARN);
+      return;
+    }
 
     terraformOutputVariables.putAll(outputs);
     if (outputInfoElement != null && outputInfoElement.getOutputVariables() != null) {

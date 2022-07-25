@@ -10,7 +10,6 @@ package io.harness.delegate.task.azure.appservice.webapp.ng.request;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DecryptableEntity;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryCapabilityHelper;
 import io.harness.delegate.beans.connector.azureconnector.AzureCapabilityHelper;
 import io.harness.delegate.beans.connector.docker.DockerCapabilityHelper;
@@ -24,10 +23,8 @@ import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureArtifactType;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
-import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -51,15 +48,6 @@ public class AzureWebAppSlotDeploymentRequest extends AbstractSlotDataRequest {
   @Override
   public AzureWebAppRequestType getRequestType() {
     return AzureWebAppRequestType.SLOT_DEPLOYMENT;
-  }
-
-  @Override
-  protected void populateDecryptionDetails(Map<DecryptableEntity, List<EncryptedDataDetail>> decryptionDetails) {
-    super.populateDecryptionDetails(decryptionDetails);
-    AzureArtifactConfig artifactConfig = getArtifact();
-    if (artifactConfig != null && artifactConfig.getConnectorConfig() != null) {
-      decryptionDetails.put(artifactConfig.getConnectorConfig(), artifactConfig.getEncryptedDataDetails());
-    }
   }
 
   @Override

@@ -57,6 +57,7 @@ import io.harness.git.model.ChangeType;
 import io.harness.gitsync.common.beans.InfoForGitPush;
 import io.harness.gitsync.common.dtos.CreateGitFileRequestDTO;
 import io.harness.gitsync.common.dtos.CreatePRDTO;
+import io.harness.gitsync.common.dtos.GetLatestCommitOnFileRequestDTO;
 import io.harness.gitsync.common.dtos.GitDiffResultFileListDTO;
 import io.harness.gitsync.common.dtos.GitFileChangeDTO;
 import io.harness.gitsync.common.dtos.GitFileContent;
@@ -81,6 +82,7 @@ import io.harness.product.ci.scm.proto.DeleteFileResponse;
 import io.harness.product.ci.scm.proto.FileBatchContentResponse;
 import io.harness.product.ci.scm.proto.FileContent;
 import io.harness.product.ci.scm.proto.FindCommitResponse;
+import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
@@ -785,6 +787,35 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
       return UpdateFileResponse.parseFrom(scmPushTaskResponseData.getUpdateFileResponse());
     } catch (InvalidProtocolBufferException e) {
       String errorMsg = String.format(errorFormat, "update File", scope.getAccountIdentifier(),
+          scope.getOrgIdentifier(), scope.getProjectIdentifier());
+      log.error(errorMsg, e);
+      throw new UnexpectedException(errorMsg);
+    }
+  }
+
+  @Override
+  public GetLatestCommitOnFileResponse getLatestCommitOnFile(
+      GetLatestCommitOnFileRequestDTO getLatestCommitOnFileRequestDTO) {
+    Scope scope = getLatestCommitOnFileRequestDTO.getScope();
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetails(scope.getAccountIdentifier(),
+        scope.getOrgIdentifier(), scope.getProjectIdentifier(), getLatestCommitOnFileRequestDTO.getScmConnector());
+    ScmGitRefTaskParams taskParams = ScmGitRefTaskParams.builder()
+                                         .gitRefType(GitRefType.GET_LATEST_COMMIT_ON_FILE)
+                                         .scmConnector(getLatestCommitOnFileRequestDTO.getScmConnector())
+                                         .encryptedDataDetails(encryptionDetails)
+                                         .filePath(getLatestCommitOnFileRequestDTO.getFilePath())
+                                         .branch(getLatestCommitOnFileRequestDTO.getBranchName())
+                                         .build();
+
+    final DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
+        scope.getOrgIdentifier(), scope.getProjectIdentifier(), taskParams, TaskType.SCM_GIT_REF_TASK);
+
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    ScmGitRefTaskResponseData taskResponseData = (ScmGitRefTaskResponseData) delegateResponseData;
+    try {
+      return GetLatestCommitOnFileResponse.parseFrom(taskResponseData.getGetLatestCommitOnFileResponse());
+    } catch (InvalidProtocolBufferException e) {
+      String errorMsg = String.format(errorFormat, "getLatestCommitOnFile", scope.getAccountIdentifier(),
           scope.getOrgIdentifier(), scope.getProjectIdentifier());
       log.error(errorMsg, e);
       throw new UnexpectedException(errorMsg);

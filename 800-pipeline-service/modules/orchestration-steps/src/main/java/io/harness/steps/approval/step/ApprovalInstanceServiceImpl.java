@@ -35,6 +35,7 @@ import io.harness.tasks.ResponseData;
 import io.harness.utils.RetryUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
@@ -200,7 +201,8 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
     return instance;
   }
 
-  private HarnessApprovalInstance addHarnessApprovalActivityInTransaction(@NotNull String approvalInstanceId,
+  @VisibleForTesting
+  HarnessApprovalInstance addHarnessApprovalActivityInTransaction(@NotNull String approvalInstanceId,
       @NotNull EmbeddedUser user, @NotNull @Valid HarnessApprovalActivityRequestDTO request) {
     HarnessApprovalInstance instance = fetchWaitingHarnessApproval(approvalInstanceId);
     if (instance.hasExpired()) {

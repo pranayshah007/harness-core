@@ -88,10 +88,6 @@ aeriform("//315-sto-manager:module")
 
 aeriform("//315-sto-manager:tests")
 
-aeriform("//320-ci-execution:module")
-
-aeriform("//320-ci-execution:tests")
-
 aeriform("//323-sto-utilities:module")
 
 aeriform("//323-sto-utilities:tests")

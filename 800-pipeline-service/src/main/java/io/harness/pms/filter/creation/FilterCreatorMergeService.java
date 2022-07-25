@@ -22,6 +22,7 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.manage.GlobalContextManager;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.ErrorResponse;
+import io.harness.pms.contracts.plan.ErrorResponseV2;
 import io.harness.pms.contracts.plan.FilterCreationBlobRequest;
 import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
 import io.harness.pms.contracts.plan.FilterCreationResponse;
@@ -201,6 +202,8 @@ public class FilterCreatorMergeService {
                                                                                .build());
           if (filterCreationResponse.getResponseCase() == FilterCreationResponse.ResponseCase.ERRORRESPONSE) {
             builder.errorResponse(filterCreationResponse.getErrorResponse());
+          } else if (filterCreationResponse.getResponseCase() == FilterCreationResponse.ResponseCase.ERRORRESPONSEV2) {
+            builder.errorResponseV2(filterCreationResponse.getErrorResponseV2());
           } else {
             builder.response(filterCreationResponse.getBlobResponse());
           }
@@ -218,6 +221,7 @@ public class FilterCreatorMergeService {
     }
 
     List<ErrorResponse> errorResponses;
+    List<ErrorResponseV2> errorResponsesV2;
     FilterCreationBlobResponse.Builder currentIteration = FilterCreationBlobResponse.newBuilder();
     try {
       List<FilterCreationResponseWrapper> filterCreationResponseWrappers =
@@ -226,7 +230,11 @@ public class FilterCreatorMergeService {
                            .filter(resp -> resp != null && resp.getErrorResponse() != null)
                            .map(FilterCreationResponseWrapper::getErrorResponse)
                            .collect(Collectors.toList());
-      if (EmptyPredicate.isEmpty(errorResponses)) {
+      errorResponsesV2 = filterCreationResponseWrappers.stream()
+                             .filter(resp -> resp != null && resp.getErrorResponseV2() != null)
+                             .map(FilterCreationResponseWrapper::getErrorResponseV2)
+                             .collect(Collectors.toList());
+      if (EmptyPredicate.isEmpty(errorResponses) && EmptyPredicate.isEmpty(errorResponsesV2)) {
         filterCreationResponseWrappers.forEach(
             response -> FilterCreationBlobResponseUtils.mergeResponses(currentIteration, response, filters));
       }
@@ -234,7 +242,7 @@ public class FilterCreatorMergeService {
       throw new UnexpectedException("Error fetching filter creation response from service", ex);
     }
 
-    PmsExceptionUtils.checkAndThrowFilterCreatorException(errorResponses);
+    PmsExceptionUtils.checkAndThrowFilterCreatorException(errorResponses, errorResponsesV2);
     return currentIteration.build();
   }
 }

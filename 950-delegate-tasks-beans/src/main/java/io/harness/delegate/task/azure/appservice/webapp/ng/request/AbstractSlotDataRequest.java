@@ -22,10 +22,10 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
-import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Data
 @OwnedBy(CDP)
@@ -51,7 +51,17 @@ public abstract class AbstractSlotDataRequest extends AbstractWebAppTaskRequest 
   }
 
   @Override
-  protected void populateDecryptionDetails(Map<DecryptableEntity, List<EncryptedDataDetail>> decryptionDetails) {
+  protected void populateDecryptionDetails(List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> decryptionDetails) {
+    AzureArtifactConfig artifactConfig = getArtifact();
+    if (artifactConfig != null && artifactConfig.getConnectorConfig() != null) {
+      List<DecryptableEntity> decryptableEntities = artifactConfig.getConnectorConfig().getDecryptableEntities();
+      if (decryptableEntities != null) {
+        for (DecryptableEntity decryptableEntity : decryptableEntities) {
+          decryptionDetails.add(Pair.of(decryptableEntity, artifactConfig.getEncryptedDataDetails()));
+        }
+      }
+    }
+
     addSettingsFileDecryptionDetails(startupCommand, decryptionDetails);
     addSettingsFileDecryptionDetails(applicationSettings, decryptionDetails);
     addSettingsFileDecryptionDetails(connectionStrings, decryptionDetails);
@@ -74,9 +84,9 @@ public abstract class AbstractSlotDataRequest extends AbstractWebAppTaskRequest 
   }
 
   private static void addSettingsFileDecryptionDetails(
-      AppSettingsFile settingsFile, Map<DecryptableEntity, List<EncryptedDataDetail>> decryptionDetails) {
+      AppSettingsFile settingsFile, List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> decryptionDetails) {
     if (settingsFile != null && settingsFile.isEncrypted()) {
-      decryptionDetails.put(settingsFile.getEncryptedFile(), settingsFile.getEncryptedDataDetails());
+      decryptionDetails.add(Pair.of(settingsFile.getEncryptedFile(), settingsFile.getEncryptedDataDetails()));
     }
   }
 }
