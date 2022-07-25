@@ -49,13 +49,7 @@ public class GarArtifactConfig implements ArtifactConfig, Visitable, WithConnect
    */
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
-  /**
-   * Registry where the artifact source is located.
-   */
 
-  /**
-   * Images in repos need to be referenced via a path.
-   */
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> region;
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
