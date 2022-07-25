@@ -110,8 +110,8 @@ public class PVWatcher implements ResourceEventHandler<V1PersistentVolume> {
   public void onAdd(V1PersistentVolume persistentVolume) {
     try {
       log.debug(EVENT_LOG_MSG, persistentVolume.getMetadata().getUid(), EventType.ADDED);
-
       OffsetDateTime creationTimestamp = persistentVolume.getMetadata().getCreationTimestamp();
+      log.info("pv add creationTimestamp: {}", creationTimestamp);
       if (!isClusterSeen || creationTimestamp == null
           || creationTimestamp.isAfter(OffsetDateTime.now().minusHours(2))) {
         publishPVInfo(persistentVolume);

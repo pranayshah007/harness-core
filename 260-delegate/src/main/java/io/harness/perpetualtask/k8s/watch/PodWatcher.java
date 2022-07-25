@@ -129,6 +129,7 @@ public class PodWatcher implements ResourceEventHandler<V1Pod> {
     try {
       log.debug(POD_EVENT_MSG, pod.getMetadata().getUid(), EventType.ADDED);
       OffsetDateTime creationTimestamp = pod.getMetadata().getCreationTimestamp();
+      log.info("pod add creationTimestamp: {}", creationTimestamp);
       if (!isClusterSeen || creationTimestamp == null
           || creationTimestamp.isAfter(OffsetDateTime.now().minusHours(2))) {
         eventReceived(pod);

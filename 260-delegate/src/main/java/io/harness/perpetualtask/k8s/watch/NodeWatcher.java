@@ -110,6 +110,7 @@ public class NodeWatcher implements ResourceEventHandler<V1Node> {
       log.debug(NODE_EVENT_MSG, node.getMetadata().getUid(), EventType.ADDED);
 
       OffsetDateTime creationTimestamp = node.getMetadata().getCreationTimestamp();
+      log.info("node add creationTimestamp: {}", creationTimestamp);
       if (!isClusterSeen || creationTimestamp == null
           || creationTimestamp.isAfter(OffsetDateTime.now().minusHours(2))) {
         publishNodeInfo(node);
