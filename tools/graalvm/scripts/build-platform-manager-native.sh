@@ -9,14 +9,13 @@ if [[ $# = 0 ]] ; then printf "Error - You did not pass in the path the jar you 
 
 native-image --no-fallback \
 -H:TraceClassInitialization=true \
--H:ConfigurationFileDirectories=target/config \
+-H:ConfigurationFileDirectories=./agentout \
 -H:+ReportExceptionStackTraces \
 -H:+PrintClassInitialization \
 -H:IncludeResources="org/joda/time/tz/data/ZoneInfoMap" \
 -H:IncludeResources="org/joda/time/tz/data/America/New_York" \
 --initialize-at-build-time=ch.qos.logback \
---initialize-at-build-time=org.hibernate.validator.internal.util.logging.Log \
+--initialize-at-run-time=org.hibernate.validator.internal.util.logging.Log \
 --initialize-at-run-time=io.netty \
 --initialize-at-run-time=io.netty.buffer.AbstractReferenceCountedByteBuf,io.netty.util.AbstractReferenceCounted \
---trace-class-initialization='org.codehaus.janino.Java$Literal' \
 -jar $JAR_PATH

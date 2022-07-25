@@ -1,2 +1,4 @@
 module_deploy
 reports
+agentout
+mygclogfilename.*
