@@ -12,7 +12,11 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngsettings.entities.Setting;
 
+import java.util.List;
+import org.springframework.data.mongodb.core.query.Criteria;
+
 @OwnedBy(PL)
 public interface SettingRepositoryCustom {
   Setting upsert(Setting setting);
+  List<Setting> findAll(Criteria criteria);
 }

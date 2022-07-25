@@ -629,6 +629,8 @@ public enum ErrorCode {
 
   SPOTINST_NULL_ERROR,
 
+  SCM_UNEXPECTED_ERROR,
+
   AWS_ECS_EXCEPTION;
 
   private Status status = BAD_REQUEST;

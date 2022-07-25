@@ -106,6 +106,7 @@ public class PipelineEntity
   @NotEmpty String orgIdentifier;
   @Trimmed @NotEmpty String projectIdentifier;
   @NotEmpty String identifier;
+  @Wither @Setter @NonFinal Boolean isDraft;
 
   @Wither @NotEmpty @NonFinal @Setter String yaml;
 

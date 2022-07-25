@@ -23,4 +23,6 @@ public class ScmErrorExplanations {
   public static final String INVALID_CONNECTOR_CREDS =
       "The credentials provided in the Azure connector<CONNECTOR> are invalid or have expired.";
   public static final String REPO_NOT_FOUND = "Provided Azure repository<REPO> does not exist or has been deleted.";
+  public static final String MISSING_PERMISSION_CREDS_EXPLANATION =
+      "The credentials provided in the Azure connector<CONNECTOR> do not have correct permissions.";
 }

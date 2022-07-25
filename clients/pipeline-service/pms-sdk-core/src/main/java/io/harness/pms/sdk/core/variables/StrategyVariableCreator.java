@@ -15,6 +15,7 @@ import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 
@@ -44,6 +45,13 @@ public class StrategyVariableCreator implements VariableCreator<StrategyConfig> 
         String qualifiedName = String.format(placeHolder, axis);
         yamlPropertiesMap.put(generateUuid(),
             YamlProperties.newBuilder().setFqn(qualifiedName).setLocalName(qualifiedName).setVisible(true).build());
+      }
+    }
+    if (config.getRepeat() != null) {
+      if (!ParameterField.isBlank(config.getRepeat().getItems())) {
+        String forExpression = "repeat.item";
+        yamlPropertiesMap.put(generateUuid(),
+            YamlProperties.newBuilder().setFqn(forExpression).setLocalName(forExpression).setVisible(true).build());
       }
     }
     String currentIterationExpression = "strategy.iteration";

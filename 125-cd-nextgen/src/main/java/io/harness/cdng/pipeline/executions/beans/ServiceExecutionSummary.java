@@ -26,6 +26,7 @@ public class ServiceExecutionSummary {
   String identifier;
   String displayName;
   String deploymentType;
+  boolean gitOpsEnabled;
   ArtifactsSummary artifacts;
 
   @Data

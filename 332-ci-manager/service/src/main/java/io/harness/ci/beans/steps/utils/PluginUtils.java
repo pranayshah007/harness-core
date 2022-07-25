@@ -17,12 +17,10 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.experimental.UtilityClass;
 
-@UtilityClass
 @OwnedBy(HarnessTeam.CI)
 public class PluginUtils {
-  public Map<String, ParameterField<String>> extractBaseImageConnectorRefs(
+  public static Map<String, ParameterField<String>> extractBaseImageConnectorRefs(
       ParameterField<List<String>> baseImageConnectorRefs) {
     Map<String, ParameterField<String>> baseConnectorRefMap = new HashMap<>();
     if (baseImageConnectorRefs != null && baseImageConnectorRefs.isExpression()) {

@@ -10,6 +10,7 @@ package io.harness.batch.processing.config;
 import static io.harness.AuthorizationServiceHeader.BATCH_PROCESSING;
 import static io.harness.AuthorizationServiceHeader.MANAGER;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.retry.MethodExecutionHelper;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.annotations.retry.RetryOnExceptionInterceptor;
@@ -96,6 +97,7 @@ import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.matcher.Matchers;
+import com.google.inject.multibindings.OptionalBinder;
 import com.google.inject.name.Named;
 import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
@@ -202,6 +204,7 @@ public class BatchProcessingModule extends AbstractModule {
     install(TimeModule.getInstance());
 
     bind(PersistentLocker.class).to(PersistentNoopLocker.class).in(Scopes.SINGLETON);
+    OptionalBinder.newOptionalBinder(binder(), AccountClient.class);
     bind(FeatureFlagService.class).to(FeatureFlagServiceImpl.class);
   }
 

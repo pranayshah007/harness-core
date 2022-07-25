@@ -27,6 +27,7 @@ import io.harness.NgAutoLogContext;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.EntityReference;
+import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
 import io.harness.connector.ConnectorActivityDetails;
 import io.harness.connector.ConnectorCatalogueResponseDTO;
 import io.harness.connector.ConnectorCategory;
@@ -716,6 +717,16 @@ public class ConnectorServiceImpl implements ConnectorService {
   public void deleteBatch(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiersList) {
     defaultConnectorService.deleteBatch(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifiersList);
+  }
+
+  @Override
+  public Page<CombineCcmK8sConnectorResponseDTO> listCcmK8S(int page, int size, String accountIdentifier,
+      ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
+      String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
+      Boolean getDistinctFromBranches) {
+    return defaultConnectorService.listCcmK8S(page, size, accountIdentifier, filterProperties, orgIdentifier,
+        projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
+        getDistinctFromBranches);
   }
 
   @Override

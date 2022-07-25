@@ -10,6 +10,7 @@ package io.harness.ng.scim;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.UJJAWAL;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -175,5 +176,84 @@ public class NGScimGroupServiceImplTest extends NgManagerTestBase {
 
     assertThat(response.getTotalResults()).isEqualTo(1);
     assertThat(response.getStartIndex()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_createUserGroupForDash1() {
+    String accountId = "accountId";
+
+    ScimGroup scimGroup = new ScimGroup();
+    scimGroup.setDisplayName("displayname");
+    scimGroup.setId("id");
+
+    String userGroupId = scimGroup.getDisplayName().replaceAll("-", "_");
+    UserGroup userGroup = UserGroup.builder().name(scimGroup.getDisplayName()).identifier(userGroupId).build();
+    when(userGroupService.create(any())).thenReturn(userGroup);
+    ScimGroup userGroupCreated = scimGroupService.createGroup(scimGroup, accountId);
+
+    assertThat(userGroupCreated.getDisplayName()).isNotNull();
+    assertThat(userGroupCreated.getDisplayName()).isEqualTo(scimGroup.getDisplayName());
+    assertThat(userGroupCreated.getId()).isEqualTo(scimGroup.getDisplayName());
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_createUserGroupForDash2() {
+    String accountId = "accountId";
+
+    ScimGroup scimGroup = new ScimGroup();
+    scimGroup.setDisplayName("display-name");
+    scimGroup.setId("id");
+
+    String userGroupId = scimGroup.getDisplayName().replaceAll("-", "_");
+    UserGroup userGroup = UserGroup.builder().name(scimGroup.getDisplayName()).identifier(userGroupId).build();
+    when(userGroupService.create(any())).thenReturn(userGroup);
+    ScimGroup userGroupCreated = scimGroupService.createGroup(scimGroup, accountId);
+
+    assertThat(userGroupCreated.getDisplayName()).isNotNull();
+    assertThat(userGroupCreated.getDisplayName()).isEqualTo(scimGroup.getDisplayName());
+    assertThat(userGroupCreated.getId()).isEqualTo(userGroupId);
+    assertThat(userGroupCreated.getId()).isEqualTo("display_name");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_createUserGroupForDash3() {
+    String accountId = "accountId";
+    ScimGroup scimGroup = new ScimGroup();
+    scimGroup.setDisplayName("display_name");
+    scimGroup.setId("id");
+
+    String userGroupId = scimGroup.getDisplayName().replaceAll("-", "_");
+    UserGroup userGroup = UserGroup.builder().name(scimGroup.getDisplayName()).identifier(userGroupId).build();
+    when(userGroupService.create(any())).thenReturn(userGroup);
+    ScimGroup userGroupCreated = scimGroupService.createGroup(scimGroup, accountId);
+
+    assertThat(userGroupCreated.getDisplayName()).isNotNull();
+    assertThat(userGroupCreated.getDisplayName()).isEqualTo(scimGroup.getDisplayName());
+    assertThat(userGroupCreated.getId()).isEqualTo(userGroupId);
+    assertThat(userGroupCreated.getId()).isEqualTo("display_name");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_createUserGroupForDash4() {
+    String accountId = "accountId";
+
+    ScimGroup scimGroup = new ScimGroup();
+    scimGroup.setDisplayName("display-name");
+    scimGroup.setId("id");
+
+    when(userGroupService.create(any())).thenReturn(null);
+    ScimGroup userGroupCreated = scimGroupService.createGroup(scimGroup, accountId);
+
+    assertThat(userGroupCreated.getDisplayName()).isNull();
+    assertThat(userGroupCreated.getId()).isNull();
+    assertThat(userGroupCreated.getMembers()).isNull();
   }
 }

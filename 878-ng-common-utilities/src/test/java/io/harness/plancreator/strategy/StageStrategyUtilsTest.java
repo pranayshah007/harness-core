@@ -182,7 +182,7 @@ public class StageStrategyUtilsTest extends NGCommonUtilitiesTestBase {
     assertThatThrownBy(() -> StrategyValidationUtils.validateStrategyNode(strategyConfig))
         .isInstanceOf(InvalidYamlException.class)
         .hasMessage(
-            "Values defined in the exclude are not correct. Please make sure exclude contains all the axis values and no extra value.");
+            "Values defined in the exclude are not correct. Please make sure exclude contains all the valid keys defined as axes.");
   }
 
   @Test

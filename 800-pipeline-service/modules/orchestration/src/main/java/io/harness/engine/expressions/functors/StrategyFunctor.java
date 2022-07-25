@@ -8,7 +8,11 @@
 package io.harness.engine.expressions.functors;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.plancreator.strategy.StrategyConstants.ITEM;
+import static io.harness.plancreator.strategy.StrategyConstants.ITERATION;
+import static io.harness.plancreator.strategy.StrategyConstants.ITERATIONS;
 import static io.harness.plancreator.strategy.StrategyConstants.MATRIX;
+import static io.harness.plancreator.strategy.StrategyConstants.REPEAT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.LateBindingValue;
@@ -35,13 +39,21 @@ public class StrategyFunctor implements LateBindingValue {
     List<Level> levelsWithStrategyMetadata =
         ambiance.getLevelsList().stream().filter(Level::hasStrategyMetadata).collect(Collectors.toList());
     Map<String, String> matrixValuesMap = new HashMap<>();
+    Map<String, String> repeatValuesMap = new HashMap<>();
+
     for (Level level : levelsWithStrategyMetadata) {
-      matrixValuesMap.putAll(level.getStrategyMetadata().getMatrixMetadata().getMatrixValuesMap());
-      strategyObjectMap.put("iteration", level.getStrategyMetadata().getCurrentIteration());
-      strategyObjectMap.put("iterations", level.getStrategyMetadata().getTotalIterations());
+      if (level.getStrategyMetadata().hasMatrixMetadata()) {
+        matrixValuesMap.putAll(level.getStrategyMetadata().getMatrixMetadata().getMatrixValuesMap());
+      }
+      if (level.getStrategyMetadata().hasForMetadata()) {
+        repeatValuesMap.put(ITEM, level.getStrategyMetadata().getForMetadata().getValue());
+      }
+      strategyObjectMap.put(ITERATION, level.getStrategyMetadata().getCurrentIteration());
+      strategyObjectMap.put(ITERATIONS, level.getStrategyMetadata().getTotalIterations());
       strategyObjectMap.put("identifierPostFix", AmbianceUtils.getStrategyPostfix(level));
     }
     strategyObjectMap.put(MATRIX, matrixValuesMap);
+    strategyObjectMap.put(REPEAT, repeatValuesMap);
 
     return strategyObjectMap;
   }

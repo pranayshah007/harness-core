@@ -87,11 +87,11 @@ features:
     restrictions:
       FREE:
         restrictionType: STATIC_LIMIT
-        limit: 5
+        limit: 20
         clientName: pipelineService
       TEAM:
         restrictionType: STATIC_LIMIT
-        limit: 10
+        limit: 50
         clientName: pipelineService
       ENTERPRISE:
         restrictionType: STATIC_LIMIT

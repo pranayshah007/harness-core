@@ -8,6 +8,7 @@
 package io.harness.steps.jira;
 
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -146,6 +147,13 @@ public class JiraApprovalStepTest extends CategoryTest {
     StepElementParameters parameters = getStepElementParameters();
     jiraApprovalStep.handleAbort(ambiance, parameters, null);
     verify(approvalInstanceService).expireByNodeExecutionId(null);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testgetStepParametersClass() {
+    assertThat(jiraApprovalStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
   }
 
   private StepElementParameters getStepElementParameters() {

@@ -21,4 +21,6 @@ public class ScmErrorHints {
   public static final String REPO_NOT_FOUND = "Please check if the requested Azure repository<REPO> exists.";
   public static final String FILE_NOT_FOUND =
       "Please check the requested file path<FILEPATH> / branch<BRANCH> / Azure repo name<REPO> if they exist or not.";
+  public static final String MISSING_PERMISSION_CREDS_HINTS =
+      "Please provide the token with correct permissions in the Azure connector<CONNECTOR>.";
 }
