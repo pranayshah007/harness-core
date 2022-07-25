@@ -272,9 +272,6 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   @Override
   public TemplateEntity updateTemplateYaml(TemplateEntity templateToUpdate, TemplateEntity oldTemplateEntity,
       ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
-    //    TODO: update template entity in db and update yaml in git
-    //    in monogo db replace old to new
-
     Criteria criteria = Criteria.where(TemplateEntityKeys.accountId)
                             .is(templateToUpdate.getAccountId())
                             .and(TemplateEntityKeys.orgIdentifier)
@@ -291,7 +288,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     Update updateOperations = TemplateUtils.getUpdateOperations(templateToUpdate, timeOfUpdate);
 
     TemplateEntity updatedTemplateEntity =
-        updateTemplateEntityInDB(query, updateOperations, templateToUpdate, timeOfUpdate, templateUpdateEventType);
+        updateTemplateEntityInDB(query, updateOperations, templateToUpdate, timeOfUpdate);
 
     if (updatedTemplateEntity == null) {
       return null;
@@ -317,8 +314,8 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     return templateToUpdate;
   }
 
-  TemplateEntity updateTemplateEntityInDB(Query query, Update updateOperations, TemplateEntity templateToUpdate,
-      long timeOfUpdate, TemplateUpdateEventType templateUpdateEventType) {
+  TemplateEntity updateTemplateEntityInDB(
+      Query query, Update updateOperations, TemplateEntity templateToUpdate, long timeOfUpdate) {
     TemplateEntity oldEntityFromDB = mongoTemplate.findAndModify(
         query, updateOperations, new FindAndModifyOptions().returnNew(false), TemplateEntity.class);
     if (oldEntityFromDB == null) {
