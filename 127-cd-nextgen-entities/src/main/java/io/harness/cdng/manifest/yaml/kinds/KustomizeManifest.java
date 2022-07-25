@@ -70,6 +70,7 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
   ParameterField<StoreConfigWrapper> store;
 
   @Wither
+  @JsonProperty("optimizeManifestFetch")
   @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.kinds.kustomize.OptimizeManifestFetchDTO")
   @SkipAutoEvaluation
   ParameterField<OptimizeManifestFetchDTO> optimizeManifestFetch;
