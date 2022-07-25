@@ -9,8 +9,8 @@ java_library(
     deps = [
         "//:lombok",
         "//800-pipeline-service/modules/pms-contracts:module",
-        "//953-yaml-commons:module",
         "//884-pms-commons:module",
+        "//953-yaml-commons:module",
         "@maven//:io_swagger_swagger_annotations",
         "@maven//:javax_validation_validation_api",
     ],
