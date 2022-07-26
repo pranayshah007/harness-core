@@ -589,9 +589,6 @@ public class K8sHelmCommonStepHelper {
           return KustomizeManifestDelegateConfig.builder()
               .storeDelegateConfig(localFileStoreDelegateConfig)
               .pluginPath(getParameterFieldValue(kustomizeManifestOutcome.getPluginPath()))
-              .kustomizeYamlPath(getParameterFieldValue(kustomizeManifestOutcome.getOptimizeManifestFetch() == null
-                      ? null
-                      : kustomizeManifestOutcome.getOptimizeManifestFetch().getKustomizeYamlPath()))
               .kustomizeDirPath(localFileStoreDelegateConfig.getFilePaths().get(0))
               .build();
         } else if (!ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
@@ -602,6 +599,10 @@ public class K8sHelmCommonStepHelper {
         return KustomizeManifestDelegateConfig.builder()
             .storeDelegateConfig(getStoreDelegateConfig(kustomizeManifestOutcome.getStore(), ambiance, manifestOutcome,
                 manifestOutcome.getType() + " manifest"))
+            .kustomizeYamlPath(kustomizeManifestOutcome.getOptimizeManifestFetch() == null
+                    ? null
+                    : getParameterFieldValue(
+                        kustomizeManifestOutcome.getOptimizeManifestFetch().getKustomizeYamlPath()))
             .pluginPath(getParameterFieldValue(kustomizeManifestOutcome.getPluginPath()))
             .kustomizeDirPath(getParameterFieldValue(gitStoreConfig.getFolderPath()))
             .build();
@@ -750,8 +751,14 @@ public class K8sHelmCommonStepHelper {
       ConnectorInfoDTO connectorDTO =
           cdStepHelper.getConnector(getParameterFieldValue(gitStoreConfig.getConnectorRef()), ambiance);
       cdStepHelper.validateManifest(storeConfig.getKind(), connectorDTO, validationErrorMessage);
+      List<String> gitFilePaths;
+      if (cdStepHelper.isOptimizeFetchFilesKustomize(AmbianceUtils.getAccountId(ambiance))
+          && manifestOutcome.getType().equals(ManifestType.Kustomize)) {
+        gitFilePaths = getKustomizeManifestBasePath(gitStoreConfig, manifestOutcome);
+      } else {
+        gitFilePaths = getPathsBasedOnManifest(gitStoreConfig, manifestOutcome.getType());
+      }
 
-      List<String> gitFilePaths = getPathsBasedOnManifest(gitStoreConfig, manifestOutcome.getType());
       return cdStepHelper.getGitStoreDelegateConfig(
           gitStoreConfig, connectorDTO, manifestOutcome, gitFilePaths, ambiance);
     }
@@ -887,6 +894,18 @@ public class K8sHelmCommonStepHelper {
         paths.addAll(getParameterFieldValue(gitstoreConfig.getPaths()));
     }
 
+    return paths;
+  }
+
+  public List<String> getKustomizeManifestBasePath(GitStoreConfig gitStoreConfig, ManifestOutcome manifestOutcome) {
+    List<String> paths = new ArrayList<>();
+    KustomizeManifestOutcome kustomizeManifestOutcome = (KustomizeManifestOutcome) manifestOutcome;
+    if (kustomizeManifestOutcome.getOptimizeManifestFetch() != null
+        && kustomizeManifestOutcome.getOptimizeManifestFetch().getKustomizeYamlPath() != null) {
+      paths.add(getParameterFieldValue(gitStoreConfig.getFolderPath()));
+    } else {
+      paths.add("/");
+    }
     return paths;
   }
 

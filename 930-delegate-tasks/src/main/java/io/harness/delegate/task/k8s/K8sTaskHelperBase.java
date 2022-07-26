@@ -2442,7 +2442,7 @@ public class K8sTaskHelperBase {
             storeDelegateConfig, manifestFilesDirectory, executionLogCallback);
       case GIT:
         return downloadManifestFilesFromGit(
-            storeDelegateConfig, manifestFilesDirectory, executionLogCallback, accountId);
+            manifestDelegateConfig, manifestFilesDirectory, executionLogCallback, accountId);
 
       case HTTP_HELM:
       case S3_HELM:
@@ -2496,8 +2496,9 @@ public class K8sTaskHelperBase {
     }
   }
 
-  private boolean downloadManifestFilesFromGit(StoreDelegateConfig storeDelegateConfig, String manifestFilesDirectory,
-      LogCallback executionLogCallback, String accountId) throws Exception {
+  private boolean downloadManifestFilesFromGit(ManifestDelegateConfig manifestDelegateConfig,
+      String manifestFilesDirectory, LogCallback executionLogCallback, String accountId) throws Exception {
+    StoreDelegateConfig storeDelegateConfig = manifestDelegateConfig.getStoreDelegateConfig();
     if (!(storeDelegateConfig instanceof GitStoreDelegateConfig)) {
       throw new InvalidArgumentsException(Pair.of("storeDelegateConfig", "Must be instance of GitStoreDelegateConfig"));
     }

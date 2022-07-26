@@ -75,6 +75,7 @@ import io.harness.cdng.manifest.yaml.kinds.OpenshiftParamManifest;
 import io.harness.cdng.manifest.yaml.kinds.ReleaseRepoManifest;
 import io.harness.cdng.manifest.yaml.kinds.ServerlessAwsLambdaManifest;
 import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
+import io.harness.cdng.manifest.yaml.kinds.kustomize.OptimizeManifestFetch;
 import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigType;
 import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigWrapper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
@@ -203,6 +204,7 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(AmazonS3ArtifactConfig.class, 12569);
     kryo.register(AzureRepoStore.class, 12570);
     kryo.register(CustomRemoteStoreConfig.class, 12589);
+    kryo.register(OptimizeManifestFetch.class, 12591);
     kryo.register(JenkinsArtifactConfig.class, 130012);
   }
 }
