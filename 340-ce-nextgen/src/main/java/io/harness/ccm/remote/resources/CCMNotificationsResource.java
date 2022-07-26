@@ -54,9 +54,10 @@ import org.springframework.stereotype.Service;
 @Path("notification")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Hidden
+@NextGenManagerAuth
 @Slf4j
 @Service
-@PublicApi
 @OwnedBy(CE)
 @Tag(name = "Cloud Cost Notifications", description = "Send Notifications")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",

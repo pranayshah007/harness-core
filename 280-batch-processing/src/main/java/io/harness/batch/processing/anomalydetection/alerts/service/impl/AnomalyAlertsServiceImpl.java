@@ -32,7 +32,6 @@ import io.harness.ccm.communication.CESlackWebhookService;
 import io.harness.ccm.communication.entities.CESlackWebhook;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.PerspectiveAnomalyService;
-import io.harness.eraro.ResponseMessage;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.Team;
 import io.harness.notification.dtos.NotificationChannelDTO;
@@ -57,11 +56,9 @@ import java.util.stream.Collectors;
 
 import io.harness.rest.RestResponse;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Request;
 import org.apache.http.client.utils.URIBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import retrofit2.Call;
 import retrofit2.Response;
 
 @Service
@@ -154,16 +151,14 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
 
   private void checkAndSendNgAnomalyAlerts(String accountId, Instant date) {
     checkNotNull(accountId);
-    log.info("Getting notification Channels");
     List<CCMPerspectiveNotificationChannelsDTO> notificationSettings =
         listNotificationChannelsPerPerspective(accountId);
-    log.info("Notification settings: {}", notificationSettings);
     notificationSettings.forEach(
         notificationSetting -> {
           try {
             checkAndSendAnomalyAlertsForPerspective(notificationSetting, accountId, date);
           } catch (IOException | URISyntaxException e) {
-            e.printStackTrace();
+            log.error("Error in anomaly alerts for perspective: {}", notificationSetting.getPerspectiveId(), e);
           }
         });
   }
@@ -219,35 +214,8 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
 
     // Sending email alerts
     emailChannelBuilder.templateData(templateData);
-    Call<RestResponse<NotificationResult>> call = notificationResourceClient.sendNotification(accountId, emailChannelBuilder.build());
-    Request request = call.request();
-    log.info("REQUEST: {}", request);
-    if (request.body()!=null) {
-      log.info("REQUEST body: {}", request.body().toString());
-    }
-    log.info("REQUEST headers: {}", request.headers());
-    log.info("REQUEST isHttps: {}", request.isHttps());
-    log.info("REQUEST method: {}", request.method());
-    log.info("REQUEST url: {}", request.url());
-    log.info("REQUEST toString: {}", request.toString());
-    Response<RestResponse<NotificationResult>> response = call.execute();
-    log.info("RESPONSE isSuccessful: {}", response.isSuccessful());
-    log.info("RESPONSE code: {}", response.code());
-    log.info("RESPONSE headers: {}", response.headers());
-    log.info("RESPONSE message: {}", response.message());
-    log.info("RESPONSE raw: {}", response.raw());
-    if (response.body() != null && response.body().getResponseMessages() !=null) {
-      log.info("RESPONSE responseMessages: {}", response.body().getResponseMessages());
-      if (!response.body().getResponseMessages().isEmpty()) {
-        for(ResponseMessage responseMessage: response.body().getResponseMessages()) {
-          log.info("RESPONSE in responseMessages message: {}", responseMessage.getMessage());
-        }
-      }
-    }
-    if (response.errorBody() != null) {
-      log.info("RESPONSE errorBody: {}", response.errorBody().string());
-    }
-    log.info("RESPONSE body: {}", response.body());
+    // TODO: Fix Email Template
+    // Call<RestResponse<NotificationResult>> call = notificationResourceClient.sendNotification(accountId, emailChannelBuilder.build());
 
     Map<String, String> slackTemplateData = new HashMap<>();
     slackTemplateData.put("perspective_name", perspectiveNotificationSetting.getPerspectiveName());
@@ -262,36 +230,10 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
 
     // Sending slack alerts
     slackChannelBuilder.templateData(slackTemplateData);
-    call = notificationResourceClient.sendNotification(accountId, slackChannelBuilder.build());
-    request = call.request();
-    log.info("REQUEST: {}", request);
-    log.info("REQUEST body: {}", request.body());
-    if (request.body()!=null) {
-      log.info("REQUEST body: {}", request.body().toString());
+    Response<RestResponse<NotificationResult>> response = notificationResourceClient.sendNotification(accountId, slackChannelBuilder.build()).execute();
+    if (!response.isSuccessful()) {
+      log.error("Failed to send slack notification: {}", (response.errorBody() != null) ? response.errorBody().string() : response.code());
     }
-    log.info("REQUEST headers: {}", request.headers());
-    log.info("REQUEST isHttps: {}", request.isHttps());
-    log.info("REQUEST method: {}", request.method());
-    log.info("REQUEST url: {}", request.url());
-    log.info("REQUEST toString: {}", request.toString());
-    response = call.execute();
-    log.info("RESPONSE isSuccessful: {}", response.isSuccessful());
-    log.info("RESPONSE code: {}", response.code());
-    log.info("RESPONSE headers: {}", response.headers());
-    log.info("RESPONSE message: {}", response.message());
-    log.info("RESPONSE raw: {}", response.raw());
-    if (response.body() != null && response.body().getResponseMessages() !=null) {
-      log.info("RESPONSE responseMessages: {}", response.body().getResponseMessages());
-      if (!response.body().getResponseMessages().isEmpty()) {
-        for(ResponseMessage responseMessage: response.body().getResponseMessages()) {
-          log.info("RESPONSE in responseMessages message: {}", responseMessage.getMessage());
-        }
-      }
-    }
-    if (response.errorBody() != null) {
-      log.info("RESPONSE errorBody: {}", response.errorBody().string());
-    }
-    log.info("RESPONSE body: {}", response.body());
   }
 
   public List<CCMPerspectiveNotificationChannelsDTO> listNotificationChannelsPerPerspective(String accountId) {

@@ -13,16 +13,13 @@ import io.harness.queue.QueuePublisher;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import lombok.extern.slf4j.Slf4j;
 
 @Singleton
-@Slf4j
 public class MongoClient implements MessageClient {
   @Inject QueuePublisher<MongoNotificationRequest> producer;
 
   @Override
   public void send(NotificationRequest notificationRequest, String accountId) {
-    log.info("Mongo sending notification to producer: {}", notificationRequest);
     byte[] message = notificationRequest.toByteArray();
     producer.send(MongoNotificationRequest.builder().bytes(message).build());
   }

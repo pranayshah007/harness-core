@@ -23,14 +23,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @EqualsAndHashCode(callSuper = true)
-@Slf4j
 public class EmailChannel extends NotificationChannel {
   List<String> recipients;
 
@@ -43,10 +41,8 @@ public class EmailChannel extends NotificationChannel {
 
   @Override
   public NotificationRequest buildNotificationRequest() {
-    log.info("Building Email Notification Request");
     NotificationRequest.Builder builder = NotificationRequest.newBuilder();
     String notificationId = generateUuid();
-    log.info("Email Notification Id: {}", notificationId);
     return builder.setId(notificationId)
         .setAccountId(accountId)
         .setTeam(team)

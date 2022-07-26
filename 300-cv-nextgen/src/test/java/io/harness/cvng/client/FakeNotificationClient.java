@@ -15,15 +15,12 @@ import io.harness.notification.notificationclient.NotificationResultWithoutStatu
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.remote.dto.TemplateDTO;
 import io.harness.notification.templates.PredefinedTemplate;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
-@Slf4j
 public class FakeNotificationClient implements NotificationClient {
   @Override
   public NotificationResult sendNotificationAsync(NotificationChannel notificationChannel) {
-    log.info("Sending Fake Notification Async");
     return NotificationResultWithoutStatus.builder().notificationId("notificationId").build();
   }
 

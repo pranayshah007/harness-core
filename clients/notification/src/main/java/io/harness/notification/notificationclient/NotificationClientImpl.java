@@ -43,12 +43,8 @@ public class NotificationClientImpl implements NotificationClient {
 
   @Override
   public NotificationResult sendNotificationAsync(NotificationChannel notificationChannel) {
-    log.info("Sending Notification Async");
     NotificationRequest notificationRequest = notificationChannel.buildNotificationRequest();
-    log.info("Notification request: {}", notificationRequest);
-    log.info("Message Client: {}", this.messageClient);
     this.messageClient.send(notificationRequest, notificationChannel.getAccountId());
-    log.info("Sent Notification to message client");
     return NotificationResultWithoutStatus.builder().notificationId(notificationRequest.getId()).build();
   }
 
