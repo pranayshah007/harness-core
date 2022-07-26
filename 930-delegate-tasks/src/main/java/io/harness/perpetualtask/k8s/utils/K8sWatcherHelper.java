@@ -28,7 +28,7 @@ public class K8sWatcherHelper {
   public static final String NODE_WATCHER_PREFIX = "NodeWatcher-%s";
   public static final String PV_WATCHER_PREFIX = "PVWatcher-%s";
   private static final long WAIT_TIME = Duration.ofMinutes(20).getSeconds();
-  private static final int WATCHER_CREATION_MAX_COUNT = 4;
+  private static final int WATCHER_CREATION_MAX_COUNT = 4; // Watcher creation retry count
   private static final Map<String, Instant> WATCHER_ID_LAST_SEEN = new ConcurrentHashMap<>();
   private static final Map<String, Integer> WATCHER_ID_COUNT = new ConcurrentHashMap<>();
 
