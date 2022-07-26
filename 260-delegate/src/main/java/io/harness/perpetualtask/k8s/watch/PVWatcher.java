@@ -22,6 +22,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.event.client.EventPublisher;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.perpetualtask.k8s.informer.ClusterDetails;
+import io.harness.perpetualtask.k8s.utils.K8sWatcherHelper;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -39,6 +40,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.util.CallGeneratorParams;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -98,10 +100,24 @@ public class PVWatcher implements ResourceEventHandler<V1PersistentVolume> {
 
     CoreV1Api coreV1Api = new CoreV1Api(apiClient);
     sharedInformerFactory
-        .sharedIndexInformerFor((CallGeneratorParams callGeneratorParams)
-                                    -> coreV1Api.listPersistentVolumeCall(null, null, null, null, null, null,
-                                        callGeneratorParams.resourceVersion, null, callGeneratorParams.timeoutSeconds,
-                                        callGeneratorParams.watch, null),
+        .sharedIndexInformerFor(
+            (CallGeneratorParams callGeneratorParams)
+                -> {
+              log.info("PV watcher :: Resource version: {}, timeoutSeconds: {}, watch: {}",
+                  callGeneratorParams.resourceVersion, callGeneratorParams.timeoutSeconds, callGeneratorParams.watch);
+              if (!"0".equals(callGeneratorParams.resourceVersion)) {
+                K8sWatcherHelper.updateLastSeen(
+                    String.format(K8sWatcherHelper.PV_WATCHER_PREFIX, clusterId), Instant.now());
+              }
+              try {
+                return coreV1Api.listPersistentVolumeCall(null, null, null, null, null, null,
+                    callGeneratorParams.resourceVersion, null, callGeneratorParams.timeoutSeconds,
+                    callGeneratorParams.watch, null);
+              } catch (Exception e) {
+                log.error("Unknown exception occurred for listPersistentVolumeCall", e);
+                throw e;
+              }
+            },
             V1PersistentVolume.class, V1PersistentVolumeList.class)
         .addEventHandler(this);
   }
