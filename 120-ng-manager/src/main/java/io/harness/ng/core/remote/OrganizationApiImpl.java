@@ -22,6 +22,7 @@ import static io.harness.ng.accesscontrol.PlatformResourceTypes.ORGANIZATION;
 import static io.harness.ng.core.remote.OrganizationApiMapper.getOrganizationDto;
 import static io.harness.ng.core.remote.OrganizationApiMapper.getOrganizationResponse;
 import static io.harness.ng.core.remote.OrganizationApiMapper.getPageRequest;
+
 import static javax.ws.rs.core.UriBuilder.fromPath;
 
 import io.harness.accesscontrol.AccountIdentifier;
@@ -38,14 +39,12 @@ import io.harness.spec.server.ng.model.OrganizationResponse;
 import io.harness.spec.server.ng.model.UpdateOrganizationRequest;
 
 import com.google.inject.Inject;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Link;
 import javax.ws.rs.core.Response;
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -63,9 +62,7 @@ public class OrganizationApiImpl implements OrganizationApi {
           String.format("%s cannot be used as org identifier", DEFAULT_ORG_IDENTIFIER), USER);
     }
     Organization createdOrganization = organizationService.create(account, getOrganizationDto(request));
-    return Response.ok()
-            .entity(getOrganizationResponse(createdOrganization))
-            .build();
+    return Response.ok().entity(getOrganizationResponse(createdOrganization)).build();
   }
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = VIEW_ORGANIZATION_PERMISSION)
@@ -75,14 +72,11 @@ public class OrganizationApiImpl implements OrganizationApi {
     if (!organizationOptional.isPresent()) {
       throw new NotFoundException(String.format("Organization with identifier [%s] not found", id));
     }
-    return Response.ok()
-            .entity(getOrganizationResponse(organizationOptional.get()))
-            .build();
+    return Response.ok().entity(getOrganizationResponse(organizationOptional.get())).build();
   }
 
   @Override
-  public Response getOrganizations(
-      String account, List org, String searchTerm, Integer page, Integer limit) {
+  public Response getOrganizations(String account, List org, String searchTerm, Integer page, Integer limit) {
     OrganizationFilterDTO organizationFilterDTO =
         OrganizationFilterDTO.builder().searchTerm(searchTerm).identifiers(org).ignoreCase(true).build();
 
@@ -95,28 +89,32 @@ public class OrganizationApiImpl implements OrganizationApi {
 
     Response.ResponseBuilder responseBuilder = Response.ok();
 
-    Response.ResponseBuilder responseBuilderWithLinks = addLinksHeader(responseBuilder, "/v1/orgs", organizations.size(), page, limit);
+    Response.ResponseBuilder responseBuilderWithLinks =
+        addLinksHeader(responseBuilder, "/v1/orgs", organizations.size(), page, limit);
 
-    return responseBuilderWithLinks
-            .entity(organizations)
-            .build();
+    return responseBuilderWithLinks.entity(organizations).build();
   }
 
-  private Response.ResponseBuilder addLinksHeader(Response.ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
+  private Response.ResponseBuilder addLinksHeader(
+      Response.ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
     ArrayList<Link> links = new ArrayList<>();
 
-    links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page).queryParam(PAGE_SIZE, limit).build()).rel(SELF_REL).build());
+    links.add(
+        Link.fromUri(fromPath(path).queryParam(PAGE, page).queryParam(PAGE_SIZE, limit).build()).rel(SELF_REL).build());
 
     if (page >= 1) {
-      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page - 1).queryParam(PAGE_SIZE, limit).build()).rel(PREVIOUS_REL).build());
+      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page - 1).queryParam(PAGE_SIZE, limit).build())
+                    .rel(PREVIOUS_REL)
+                    .build());
     }
     if (limit == currentResultCount) {
-      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page + 1).queryParam(PAGE_SIZE, limit).build()).rel(NEXT_REL).build());
+      links.add(Link.fromUri(fromPath(path).queryParam(PAGE, page + 1).queryParam(PAGE_SIZE, limit).build())
+                    .rel(NEXT_REL)
+                    .build());
     }
 
     return responseBuilder.links(links.toArray(new Link[links.size()]));
   }
-
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = EDIT_ORGANIZATION_PERMISSION)
   @Override
@@ -124,9 +122,7 @@ public class OrganizationApiImpl implements OrganizationApi {
       @ResourceIdentifier String id, UpdateOrganizationRequest request, @AccountIdentifier String account) {
     Organization updatedOrganization =
         organizationService.update(account, id, OrganizationApiMapper.getOrganizationDto(id, request));
-    return Response.ok()
-            .entity(getOrganizationResponse(updatedOrganization))
-            .build();
+    return Response.ok().entity(getOrganizationResponse(updatedOrganization)).build();
   }
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = DELETE_ORGANIZATION_PERMISSION)
@@ -148,8 +144,6 @@ public class OrganizationApiImpl implements OrganizationApi {
     if (!deleted) {
       throw new NotFoundException(String.format("Organization with identifier [%s] not found", id));
     }
-    return Response.ok()
-            .entity(getOrganizationResponse(organizationOptional.get()))
-            .build();
+    return Response.ok().entity(getOrganizationResponse(organizationOptional.get())).build();
   }
 }
