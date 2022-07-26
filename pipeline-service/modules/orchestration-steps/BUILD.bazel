@@ -11,8 +11,6 @@ java_library(
     visibility = ["//pipeline-service:__subpackages__"],
     deps = [
         "//:lombok",
-        "//pipeline-service/modules/orchestration:module",
-        "//pipeline-service/modules/orchestration-steps/contracts:module",
         "//878-ng-common-utilities:module",
         "//880-pipeline-cd-commons:module",
         "//950-telemetry:module",
@@ -22,6 +20,8 @@ java_library(
         "//960-yaml-sdk:module",
         "//999-annotations:module",
         "//clients/notification:module",
+        "//pipeline-service/modules/orchestration:module",
+        "//pipeline-service/modules/orchestration-steps/contracts:module",
         "//platform-service/modules/notification-service/contracts:module",
         "@maven//:com_esotericsoftware_kryo",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",

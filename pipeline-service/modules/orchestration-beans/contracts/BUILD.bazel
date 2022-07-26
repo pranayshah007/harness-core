@@ -8,9 +8,9 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//pipeline-service/modules/pms-contracts:module",
         "//884-pms-commons:module",
         "//953-yaml-commons:module",
+        "//pipeline-service/modules/pms-contracts:module",
         "@maven//:io_swagger_swagger_annotations",
         "@maven//:javax_validation_validation_api",
     ],

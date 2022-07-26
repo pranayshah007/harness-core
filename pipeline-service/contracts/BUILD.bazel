@@ -9,11 +9,11 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//pipeline-service/modules/orchestration-steps/contracts:module",
-        "//pipeline-service/modules/orchestration-visualization/contracts:module",
         "//884-pms-commons:module",
         "//970-ng-commons:module",
         "//clients/access-control/sdk:module",
+        "//pipeline-service/modules/orchestration-steps/contracts:module",
+        "//pipeline-service/modules/orchestration-visualization/contracts:module",
         "@maven//:io_swagger_swagger_annotations",
         "@maven//:javax_validation_validation_api",
     ],

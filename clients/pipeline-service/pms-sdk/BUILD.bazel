@@ -41,11 +41,11 @@ java_library(
     deps = [
         ":module",
         "//:lombok",
-        "//pipeline-service/modules/pms-contracts:module",
         "//884-pms-commons:module",
         "//960-persistence:supporter-test",
         "//990-commons-test:module",
         "//clients/pipeline-service/pms-sdk-core:module",
+        "//pipeline-service/modules/pms-contracts:module",
         "@maven//:io_grpc_grpc_testing",
         "@maven//:junit_junit",
         "@maven//:org_assertj_assertj_core",
