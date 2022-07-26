@@ -20,7 +20,8 @@ public enum ArtifactType {
   @JsonProperty("DockerRegistry") DOCKER_REGISTRY("DockerRegistry"),
   @JsonProperty("Nexus3Registry") NEXUS3_REGISTRY("Nexus3Registry"),
   @JsonProperty("ArtifactoryRegistry") ARTIFACTORY_REGISTRY("ArtifactoryRegistry"),
-  @JsonProperty("Acr") ACR("Acr");
+  @JsonProperty("Acr") ACR("Acr"),
+  @JsonProperty("AmazonS3") AMAZON_S3("AmazonS3");
 
   private String value;
 

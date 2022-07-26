@@ -35,7 +35,6 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGParameters;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGResponse;
 import io.harness.delegate.task.cloudformation.CloudformationTaskType;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
@@ -112,18 +111,6 @@ public class CloudformationDeleteStackStepTest extends CategoryTest {
     assertThat(entityDetails.get(0).getEntityRef().getOrgIdentifier()).isEqualTo(ORG_TEST_ID);
     assertThat(entityDetails.get(0).getEntityRef().getProjectIdentifier()).isEqualTo(PROJECT_TEST_ID);
     assertThat(entityDetails.get(0).getType()).isEqualTo(EntityType.CONNECTORS);
-  }
-
-  @Test
-  @Owner(developers = NGONZALEZ)
-  @Category(UnitTests.class)
-  public void testValidateExceptionIsThrownIfFFisNotEnabled() {
-    Ambiance ambiance = getAmbiance();
-    StepElementParameters stepElementParameters = createInlineDeleteStackStep();
-    Mockito.doReturn(false).when(cdFeatureFlagHelper).isEnabled(anyString(), any());
-
-    assertThatThrownBy(() -> cloudformationDeleteStackStep.validateResources(ambiance, stepElementParameters))
-        .isInstanceOf(AccessDeniedException.class);
   }
 
   @Test

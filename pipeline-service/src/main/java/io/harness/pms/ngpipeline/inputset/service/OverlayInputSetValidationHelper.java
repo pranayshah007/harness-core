@@ -88,8 +88,8 @@ public class OverlayInputSetValidationHelper {
       if (EmptyPredicate.isEmpty(identifier)) {
         throw new InvalidRequestException("Empty Input Set Identifier not allowed in Input Set References");
       }
-      inputSets.add(
-          inputSetService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false));
+      inputSets.add(inputSetService.getWithoutValidations(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false));
     });
     return inputSets;
   }

@@ -413,7 +413,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                     .addAllCategory(CLOUDFORMATION_CATEGORY)
                                                     .addFolderPaths(CLOUDFORMATION_STEP_METADATA)
                                                     .build())
-                               .setFeatureFlag(FeatureName.CLOUDFORMATION_NG.name())
                                .build();
 
     StepInfo deleteStack = StepInfo.newBuilder()
@@ -424,7 +423,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                     .addAllCategory(CLOUDFORMATION_CATEGORY)
                                                     .addFolderPaths(CLOUDFORMATION_STEP_METADATA)
                                                     .build())
-                               .setFeatureFlag(FeatureName.CLOUDFORMATION_NG.name())
                                .build();
 
     StepInfo rollbackStack = StepInfo.newBuilder()
@@ -435,7 +433,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                       .addAllCategory(CLOUDFORMATION_CATEGORY)
                                                       .addFolderPaths(CLOUDFORMATION_STEP_METADATA)
                                                       .build())
-                                 .setFeatureFlag(FeatureName.CLOUDFORMATION_NG.name())
                                  .build();
 
     StepInfo azureWebAppSlotDeployment =

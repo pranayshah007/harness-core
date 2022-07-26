@@ -34,6 +34,7 @@ import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.TemplatesResolvedPipelineResponseDTO;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.polling.contracts.AcrPayload;
+import io.harness.polling.contracts.AmazonS3Payload;
 import io.harness.polling.contracts.ArtifactoryRegistryPayload;
 import io.harness.polling.contracts.BuildInfo;
 import io.harness.polling.contracts.DockerHubPayload;
@@ -243,8 +244,18 @@ public class BuildTriggerHelper {
       validatePollingItemForArtifactory(pollingItem);
     } else if (pollingPayloadData.hasAcrPayload()) {
       validatePollingItemForAcr(pollingItem);
+    } else if (pollingPayloadData.hasAmazonS3Payload()) {
+      validatePollingItemForS3(pollingItem);
     } else {
       throw new InvalidRequestException("Invalid Polling Type");
+    }
+  }
+
+  private void validatePollingItemForS3(PollingItem pollingItem) {
+    AmazonS3Payload amazonS3Payload = pollingItem.getPollingPayloadData().getAmazonS3Payload();
+    String error = checkFiledValueError("bucketName", amazonS3Payload.getBucketName());
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
     }
   }
 

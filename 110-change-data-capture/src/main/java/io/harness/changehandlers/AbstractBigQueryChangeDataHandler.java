@@ -7,6 +7,8 @@
 
 package io.harness.changehandlers;
 
+import static io.harness.changehandlers.AbstractChangeDataHandler.escapeSql;
+
 import io.harness.BigQueryService;
 import io.harness.ChangeDataCaptureServiceConfig;
 import io.harness.ChangeHandler;
@@ -100,7 +102,7 @@ public abstract class AbstractBigQueryChangeDataHandler implements ChangeHandler
 
     if (!columnValueMappingForInsert.isEmpty()) {
       for (Map.Entry<String, String> entry : columnValueMappingForInsert.entrySet()) {
-        insertSQLBuilder.append(String.format("'%s',", entry.getValue()));
+        insertSQLBuilder.append(String.format("'%s',", escapeSql(entry.getValue())));
       }
     }
 
@@ -142,7 +144,8 @@ public abstract class AbstractBigQueryChangeDataHandler implements ChangeHandler
 
     if (!columnValueMappingForSet.isEmpty()) {
       for (Map.Entry<String, String> entry : columnValueMappingForSet.entrySet()) {
-        updateQueryBuilder.append(String.format("%s=%s,", entry.getKey(), String.format("'%s'", entry.getValue())));
+        updateQueryBuilder.append(
+            String.format("%s=%s,", entry.getKey(), String.format("'%s'", escapeSql(entry.getValue()))));
       }
     }
 
@@ -180,7 +183,8 @@ public abstract class AbstractBigQueryChangeDataHandler implements ChangeHandler
 
     if (!columnValueMappingForCondition.isEmpty()) {
       for (Map.Entry<String, String> entry : columnValueMappingForCondition.entrySet()) {
-        deleteSQLBuilder.append(String.format("%s=%s AND ", entry.getKey(), String.format("'%s'", entry.getValue())));
+        deleteSQLBuilder.append(
+            String.format("%s=%s AND ", entry.getKey(), String.format("'%s'", escapeSql(entry.getValue()))));
       }
     }
 

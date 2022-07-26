@@ -12,6 +12,7 @@ import static io.harness.ngtriggers.beans.source.ManifestType.HELM_MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ACR;
+import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.AMAZON_S3;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ARTIFACTORY_REGISTRY;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.DOCKER_REGISTRY;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.ECR;
@@ -34,6 +35,7 @@ public class GeneratorFactory {
   private final BuildTriggerHelper buildTriggerHelper;
   private final HttpHelmPollingItemGenerator httpHelmPollingItemGenerator;
   private final S3HelmPollingItemGenerator s3HelmPollingItemGenerator;
+  private final S3PollingItemGenerator s3PollingItemGenerator;
   private final GCSHelmPollingItemGenerator gcsHelmPollingItemGenerator;
   private final GcrPollingItemGenerator gcrPollingItemGenerator;
   private final EcrPollingItemGenerator ecrPollingItemGenerator;
@@ -64,6 +66,8 @@ public class GeneratorFactory {
       return artifactoryRegistryPollingItemGenerator;
     } else if (ACR.getValue().equals(buildType)) {
       return acrPollingItemGenerator;
+    } else if (AMAZON_S3.getValue().equals(buildType)) {
+      return s3PollingItemGenerator;
     }
 
     return null;

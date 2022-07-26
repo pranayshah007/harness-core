@@ -12,8 +12,8 @@ import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.strategy.AxisConfig;
 import io.harness.plancreator.strategy.ExcludeConfig;
 import io.harness.plancreator.strategy.MatrixConfig;
-import io.harness.plancreator.strategy.StageStrategyUtils;
 import io.harness.plancreator.strategy.StrategyConfig;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.StrategyMetadata;
@@ -84,10 +84,9 @@ public class MatrixConfigService implements StrategyConfigService {
     List<JsonNode> jsonNodes = new ArrayList<>();
     int currentIteration = 0;
     for (List<Integer> matrixData : matrixMetadata) {
-      JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StageStrategyUtils.replaceExpressions(
+      JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StrategyUtils.replaceExpressions(
           jsonNode.deepCopy().toString(), combinations.get(currentIteration), currentIteration, totalCount, null)));
-      StageStrategyUtils.modifyJsonNode(
-          clonedNode, matrixData.stream().map(String::valueOf).collect(Collectors.toList()));
+      StrategyUtils.modifyJsonNode(clonedNode, matrixData.stream().map(String::valueOf).collect(Collectors.toList()));
       jsonNodes.add(clonedNode);
       currentIteration++;
     }

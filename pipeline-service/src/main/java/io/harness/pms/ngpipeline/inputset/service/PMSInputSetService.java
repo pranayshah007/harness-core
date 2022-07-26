@@ -29,6 +29,9 @@ public interface PMSInputSetService {
   Optional<InputSetEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, boolean deleted);
 
+  Optional<InputSetEntity> getWithoutValidations(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String identifier, boolean deleted);
+
   // pipeline branch and repo ID are needed for old git sync
   InputSetEntity update(
       InputSetEntity inputSetEntity, ChangeType changeType, String pipelineBranch, String pipelineRepoID);

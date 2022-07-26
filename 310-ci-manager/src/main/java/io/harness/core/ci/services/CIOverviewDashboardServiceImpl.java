@@ -199,7 +199,8 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     long timestamp = System.currentTimeMillis();
     long totalTries = 0;
     String query = "select count(distinct moduleinfo_author_id) from " + tableName
-        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and startts<=? and startts>=?;";
+        + " where accountid=? and moduleinfo_type ='CI' and moduleinfo_author_id is not null and moduleinfo_is_private=true and trigger_type='"
+        + WEBHOOK + "' and startts<=? and startts>=?;";
 
     while (totalTries <= MAX_RETRY_COUNT) {
       ResultSet resultSet = null;

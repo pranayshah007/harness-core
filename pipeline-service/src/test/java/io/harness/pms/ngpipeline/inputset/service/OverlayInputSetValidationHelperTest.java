@@ -127,7 +127,7 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
     InputSetEntity inputSetEntity1 = InputSetEntity.builder().inputSetEntityType(INPUT_SET).yaml(inputSetYaml1).build();
     doReturn(Optional.of(inputSetEntity1))
         .when(inputSetService)
-        .get(accountId, orgId, projectId, pipelineId, identifier1, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, identifier1, false);
 
     String inputSetFile2 = "inputSetWrong1.yml";
     String inputSetYaml2 = readFile(inputSetFile2);
@@ -135,7 +135,7 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
     InputSetEntity inputSetEntity2 = InputSetEntity.builder().inputSetEntityType(INPUT_SET).yaml(inputSetYaml2).build();
     doReturn(Optional.of(inputSetEntity2))
         .when(inputSetService)
-        .get(accountId, orgId, projectId, pipelineId, identifier2, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, identifier2, false);
 
     String overlayInputSetYaml = getOverlayInputSetWithAllIds(true);
     InputSetEntity inputSetEntity = InputSetEntity.builder()
@@ -152,7 +152,7 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
         InputSetEntity.builder().inputSetEntityType(INPUT_SET).yaml(inputSetYaml2).isInvalid(true).build();
     doReturn(Optional.of(inputSetEntityInvalid))
         .when(inputSetService)
-        .get(accountId, orgId, projectId, pipelineId, identifier2, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, identifier2, false);
     assertThatThrownBy(() -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity))
         .isInstanceOf(InvalidOverlayInputSetException.class);
   }
@@ -173,7 +173,7 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
                                         .build();
     doReturn(Optional.empty())
         .when(inputSetService)
-        .get(accountId, orgId, projectId, pipelineId, nonExistentReference, false);
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, nonExistentReference, false);
     assertThatThrownBy(() -> OverlayInputSetValidationHelper.validateOverlayInputSet(inputSetService, inputSetEntity))
         .isInstanceOf(InvalidOverlayInputSetException.class);
   }

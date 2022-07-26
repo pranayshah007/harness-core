@@ -16,7 +16,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.plancreator.strategy.StageStrategyUtils;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
@@ -75,7 +75,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
               .dependencies(DependenciesUtils.toDependenciesProto(stepsYamlFieldMap))
               .build());
     }
-    StageStrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, config.getUuid(), config.getName(),
+    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, config.getUuid(), config.getName(),
         config.getIdentifier(), responseMap, new HashMap<>(),
         getAdviserObtainmentFromMetaData(ctx.getCurrentField(), false));
 
@@ -87,8 +87,8 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
       PlanCreationContext ctx, StepGroupElementConfig config, List<String> childrenNodeIds) {
     YamlField stepsField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STEPS));
-    config.setIdentifier(StageStrategyUtils.getIdentifierWithExpression(ctx, config.getIdentifier()));
-    config.setName(StageStrategyUtils.getIdentifierWithExpression(ctx, config.getName()));
+    config.setIdentifier(StrategyUtils.getIdentifierWithExpression(ctx, config.getIdentifier()));
+    config.setName(StrategyUtils.getIdentifierWithExpression(ctx, config.getName()));
     StepParameters stepParameters = StepGroupStepParameters.getStepParameters(config, stepsField.getNode().getUuid());
 
     boolean isStepGroupInsideRollback = false;
@@ -98,7 +98,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
 
     return PlanNode.builder()
         .name(config.getName())
-        .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, config.getUuid()))
+        .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, config.getUuid()))
         .identifier(config.getIdentifier())
         .stepType(StepGroupStep.STEP_TYPE)
         .group(StepCategory.STEP_GROUP.name())
@@ -112,7 +112,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                 .build())
         .adviserObtainments(getAdviserObtainmentFromMetaData(
-            ctx.getCurrentField(), StageStrategyUtils.isWrappedUnderStrategy(ctx.getCurrentField())))
+            ctx.getCurrentField(), StrategyUtils.isWrappedUnderStrategy(ctx.getCurrentField())))
         .skipExpressionChain(false)
         .build();
   }
