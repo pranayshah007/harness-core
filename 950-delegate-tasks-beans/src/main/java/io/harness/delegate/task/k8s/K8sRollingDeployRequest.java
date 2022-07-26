@@ -45,4 +45,5 @@ public class K8sRollingDeployRequest implements K8sDeployRequest {
   boolean skipAddingTrackSelectorToDeployment;
   boolean pruningEnabled;
   boolean useK8sApiForSteadyStateCheck;
+  boolean optimizeFetchFilesKustomize;
 }

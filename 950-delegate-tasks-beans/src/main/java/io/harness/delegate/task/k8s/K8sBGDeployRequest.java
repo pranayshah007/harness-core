@@ -42,4 +42,5 @@ public class K8sBGDeployRequest implements K8sDeployRequest {
   boolean useNewKubectlVersion;
   boolean pruningEnabled;
   boolean useK8sApiForSteadyStateCheck;
+  boolean optimizeFetchFilesKustomize;
 }

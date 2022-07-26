@@ -42,6 +42,7 @@ public class K8sApplyRequest implements K8sDeployRequest {
   boolean useLatestKustomizeVersion;
   boolean useNewKubectlVersion;
   boolean useK8sApiForSteadyStateCheck;
+  boolean optimizeFetchFilesKustomize;
 
   @Override
   public List<String> getOpenshiftParamList() {

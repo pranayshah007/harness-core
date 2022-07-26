@@ -589,6 +589,9 @@ public class K8sHelmCommonStepHelper {
           return KustomizeManifestDelegateConfig.builder()
               .storeDelegateConfig(localFileStoreDelegateConfig)
               .pluginPath(getParameterFieldValue(kustomizeManifestOutcome.getPluginPath()))
+              .kustomizeYamlPath(getParameterFieldValue(kustomizeManifestOutcome.getOptimizeManifestFetch() == null
+                      ? null
+                      : kustomizeManifestOutcome.getOptimizeManifestFetch().getKustomizeYamlPath()))
               .kustomizeDirPath(localFileStoreDelegateConfig.getFilePaths().get(0))
               .build();
         } else if (!ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
