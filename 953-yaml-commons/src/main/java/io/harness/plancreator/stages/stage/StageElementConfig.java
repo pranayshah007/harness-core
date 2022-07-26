@@ -22,8 +22,6 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.template.yaml.TemplateLinkConfig;
-import io.harness.validation.OneOfSet;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.when.beans.StageWhenCondition;
 import io.harness.yaml.YamlSchemaTypes;
@@ -53,9 +51,6 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("stageElementConfig")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@OneOfSet(fields = {"skipCondition, when, failureStrategies, type, stageType, variables, tags, delegateSelectors",
-              "template"},
-    requiredFieldNames = {"type", "template"})
 @RecasterAlias("io.harness.plancreator.stages.stage.StageElementConfig")
 // @deprecated: Use the AbstractStageNode instead.
 @Deprecated
@@ -94,7 +89,6 @@ public class StageElementConfig {
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   @VariableExpression
   StageInfoConfig stageType;
-  @VariableExpression(skipVariableExpression = true) TemplateLinkConfig template;
 
   @Builder
   public StageElementConfig(String uuid, String identifier, String name, ParameterField<String> description,
