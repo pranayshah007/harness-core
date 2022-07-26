@@ -10,7 +10,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//800-pipeline-service/modules/pms-contracts:module",
+        "//pipeline-service/modules/pms-contracts:module",
         "//884-pms-commons:module",
         "//950-wait-engine:module",
         "//953-events-api:module",
@@ -46,7 +46,7 @@ java_library(
     deps = [
         ":module",
         "//:lombok",
-        "//800-pipeline-service/modules/pms-contracts:module",
+        "//pipeline-service/modules/pms-contracts:module",
         "//884-pms-commons:module",
         "//980-commons:module",
         "//990-commons-test:module",
@@ -70,7 +70,7 @@ java_library(
         "module",
         "supporter-test",
         "//:lombok",
-        "//800-pipeline-service/modules/pms-contracts:module",
+        "//pipeline-service/modules/pms-contracts:module",
         "//884-pms-commons:module",
         "//950-delegate-tasks-beans:module",
         "//950-wait-engine:module",

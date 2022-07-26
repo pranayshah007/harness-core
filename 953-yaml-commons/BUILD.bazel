@@ -9,7 +9,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//800-pipeline-service/modules/pms-contracts:module",
+        "//pipeline-service/modules/pms-contracts:module",
         "//959-timeout-engine:module",
         "//960-yaml-sdk:module",
         "//967-walktree-visitor:module",
