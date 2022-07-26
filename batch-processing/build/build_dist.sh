@@ -37,5 +37,7 @@ cp ../../batch-processing/build/container/Dockerfile-batch-processing-jenkins-k8
 cp ../../batch-processing/build/container/Dockerfile-batch-processing-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../batch-processing/build/container/Dockerfile-batch-processing-cie-jdk ./Dockerfile-batch-processing-cie-jdk
 cp -r ../../batch-processing/build/container/scripts/ .
+cp -r ../../batch-processing/build/container/scripts/inject-onprem-apm-bins-into-dockerimage.sh .
+cp -r ../../batch-processing/build/container/scripts/inject-saas-apm-bins-into-dockerimage.sh .
 
 cd ../..
