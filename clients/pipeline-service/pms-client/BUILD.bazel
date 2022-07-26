@@ -10,7 +10,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//800-pipeline-service/modules/pms-contracts:module",
+        "//pipeline-service/modules/pms-contracts:module",
         "//900-git-sync-sdk:module",
         "//960-persistence:module",
         "//970-ng-commons:module",
