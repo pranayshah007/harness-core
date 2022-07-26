@@ -16,6 +16,8 @@ COPY --chown=65534:65534 protocol.info /opt/harness/
 
 COPY --chown=65534:65534 scripts /opt/harness
 
+RUN microdnf install yum
+
 RUN yum install -y gcc gcc-c++ openssl wget openssl-devel
 
 RUN chmod +x /opt/harness/install_redis.sh && sh /opt/harness/install_redis.sh
