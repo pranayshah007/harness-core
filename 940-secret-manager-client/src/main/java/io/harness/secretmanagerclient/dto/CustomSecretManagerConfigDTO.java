@@ -9,8 +9,13 @@ package io.harness.secretmanagerclient.dto;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.SecretManagerDescriptionConstants;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.TemplateInfo;
+import io.harness.security.encryption.EncryptedDataParams;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Set;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,6 +29,12 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 public class CustomSecretManagerConfigDTO extends SecretManagerConfigDTO {
-  private String templateId;
-  private String version;
+  Set<String> delegateSelectors;
+  private boolean onDelegate;
+
+  @Schema(description = SecretManagerDescriptionConstants.AUTH_TOKEN) private String connectorRef;
+  private String host;
+  private String workingDirectory;
+  private TemplateInfo templateInfo;
+  private Set<EncryptedDataParams> testVariables;
 }

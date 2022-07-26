@@ -14,25 +14,21 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.threading.Morpheus.sleep;
 
-import static software.wings.service.impl.security.customsecretsmanager.CustomSecretsManagerValidationUtils.buildShellScriptParameters;
+import static software.wings.service.impl.security.customsecretsmanager.CustomSecretsManagerValidationUtils.buildShellScriptTaskParametersNG;
 
 import static java.time.Duration.ofMillis;
 
 import io.harness.concurrent.HTimeLimiter;
-import io.harness.delegate.command.CommandExecutionResult;
+import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
+import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.encryptors.CustomEncryptor;
 import io.harness.exception.CommandExecutionException;
 import io.harness.exception.SecretManagementDelegateException;
-import io.harness.security.encryption.EncryptedDataParams;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.*;
 import io.harness.shell.ShellExecutionData;
 
-import software.wings.beans.delegation.ShellScriptParameters;
-import software.wings.delegatetasks.ShellScriptTaskHandler;
+import software.wings.beans.CustomSecretNGManagerConfig;
 import software.wings.delegatetasks.ShellScriptTaskHandlerNG;
-import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig;
 
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
@@ -60,13 +56,13 @@ public class NGCustomSecretManagerEncryptor implements CustomEncryptor {
 
   @Override
   public char[] fetchSecretValue(String accountId, EncryptedRecord encryptedRecord, EncryptionConfig encryptionConfig) {
-    CustomSecretsManagerConfig customSecretsManagerConfig = (CustomSecretsManagerConfig) encryptionConfig;
+    CustomSecretNGManagerConfig customSecretsManagerConfig = (CustomSecretNGManagerConfig) encryptionConfig;
     final int NUM_OF_RETRIES = 3;
     int failedAttempts = 0;
     while (true) {
       try {
         return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(20),
-            () -> fetchSecretValueInternal(encryptedRecord, customSecretsManagerConfig));
+            () -> fetchSecretValueInternal(accountId, encryptedRecord, customSecretsManagerConfig));
       } catch (SecretManagementDelegateException e) {
         throw e;
       } catch (Exception e) {
@@ -81,18 +77,21 @@ public class NGCustomSecretManagerEncryptor implements CustomEncryptor {
   }
 
   private char[] fetchSecretValueInternal(
-      EncryptedRecord encryptedRecord, CustomSecretsManagerConfig customSecretsManagerConfig) {
-    ShellScriptParameters shellScriptParameters = buildShellScriptParameters(customSecretsManagerConfig);
-    CommandExecutionResult commandExecutionResult = shellScriptTaskHandlerNG.handle(shellScriptParameters);
-    if (commandExecutionResult.getStatus() != SUCCESS) {
+      String accountId, EncryptedRecord encryptedRecord, CustomSecretNGManagerConfig customSecretNGManagerConfig) {
+    ShellScriptTaskParametersNG shellScriptTaskParametersNG =
+        buildShellScriptTaskParametersNG(accountId, encryptedRecord, customSecretNGManagerConfig);
+    ShellScriptTaskResponseNG shellScriptTaskResponseNG =
+        (ShellScriptTaskResponseNG) shellScriptTaskHandlerNG.handle(shellScriptTaskParametersNG, null);
+    if (shellScriptTaskResponseNG.getStatus() != SUCCESS) {
       String errorMessage = "Could not retrieve secret with the given parameters due to error in shell script.";
       throw new CommandExecutionException(errorMessage);
     }
-    ShellExecutionData shellExecutionData = (ShellExecutionData) commandExecutionResult.getCommandExecutionData();
+    ShellExecutionData shellExecutionData =
+        (ShellExecutionData) shellScriptTaskResponseNG.getExecuteCommandResponse().getCommandExecutionData();
     String result = shellExecutionData.getSweepingOutputEnvVariables().get(OUTPUT_VARIABLE);
     if (isEmpty(result) || result.equals("null")) {
       String errorMessage = "Empty or null value returned by custom shell script for the given secret: "
-          + encryptedRecord.getName() + ", for accountId: " + customSecretsManagerConfig.getAccountId();
+          + encryptedRecord.getName() + ", for accountId: " + accountId;
       throw new SecretManagementDelegateException(SECRET_MANAGEMENT_ERROR, errorMessage, USER);
     }
     return result.toCharArray();
