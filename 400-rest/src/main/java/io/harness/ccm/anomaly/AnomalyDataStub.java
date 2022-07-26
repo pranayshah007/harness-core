@@ -14,10 +14,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.ccm.anomaly.entities.AnomalyEntity;
 import io.harness.ccm.anomaly.entities.TimeGranularity;
-
 import io.harness.ccm.commons.entities.anomaly.AnomalyData;
 import io.harness.ccm.commons.entities.anomaly.AnomalyFeedback;
 import io.harness.ccm.commons.entities.anomaly.EntityInfo;
+
 import software.wings.graphql.schema.type.aggregation.QLTimeFilter;
 import software.wings.graphql.schema.type.aggregation.QLTimeOperator;
 import software.wings.graphql.schema.type.aggregation.billing.QLBillingDataFilter;
@@ -93,16 +93,16 @@ public class AnomalyDataStub {
 
   public static AnomalyData getAnomalyData() {
     return AnomalyData.builder()
-            .id("_id_")
-            .time(1657800397000L)
-            .anomalyRelativeTime("3hrs back")
-            .actualAmount(1.1)
-            .expectedAmount(2.2)
-            .anomalousSpend(4.4)
-            .anomalousSpendPercentage(4.0)
-            .resourceInfo("resourceInfo")
-            .resourceName("resourceName")
-            .entity(EntityInfo.builder()
+        .id("_id_")
+        .time(1657800397000L)
+        .anomalyRelativeTime("3hrs back")
+        .actualAmount(1.1)
+        .expectedAmount(2.2)
+        .anomalousSpend(4.4)
+        .anomalousSpendPercentage(4.0)
+        .resourceInfo("resourceInfo")
+        .resourceName("resourceName")
+        .entity(EntityInfo.builder()
                     .field("field")
                     .clusterName("clusterName")
                     .clusterId("cid")
@@ -123,14 +123,14 @@ public class AnomalyDataStub {
                     .azureServiceName("azureServiceName")
                     .azureInstanceId("azureInstanceId")
                     .build())
-            .details("details")
-            .status("status")
-            .statusRelativeTime("statusRelativeTime")
-            .comment("comment")
-            .cloudProvider("cloudProvider")
-            .anomalyScore(1.1)
-            .userFeedback(AnomalyFeedback.TRUE_ANOMALY)
-            .build();
+        .details("details")
+        .status("status")
+        .statusRelativeTime("statusRelativeTime")
+        .comment("comment")
+        .cloudProvider("cloudProvider")
+        .anomalyScore(1.1)
+        .userFeedback(AnomalyFeedback.TRUE_ANOMALY)
+        .build();
   }
 
   public static QLBillingDataFilter getBeforeTimeFilter() {

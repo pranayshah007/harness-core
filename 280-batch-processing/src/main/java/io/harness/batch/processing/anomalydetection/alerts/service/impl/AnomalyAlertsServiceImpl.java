@@ -37,6 +37,7 @@ import io.harness.notification.Team;
 import io.harness.notification.dtos.NotificationChannelDTO;
 import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.notifications.NotificationResourceClient;
+import io.harness.rest.RestResponse;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -53,8 +54,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import io.harness.rest.RestResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -153,18 +152,18 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     checkNotNull(accountId);
     List<CCMPerspectiveNotificationChannelsDTO> notificationSettings =
         listNotificationChannelsPerPerspective(accountId);
-    notificationSettings.forEach(
-        notificationSetting -> {
-          try {
-            checkAndSendAnomalyAlertsForPerspective(notificationSetting, accountId, date);
-          } catch (IOException | URISyntaxException e) {
-            log.error("Error in anomaly alerts for perspective: {}", notificationSetting.getPerspectiveId(), e);
-          }
-        });
+    notificationSettings.forEach(notificationSetting -> {
+      try {
+        checkAndSendAnomalyAlertsForPerspective(notificationSetting, accountId, date);
+      } catch (IOException | URISyntaxException e) {
+        log.error("Error in anomaly alerts for perspective: {}", notificationSetting.getPerspectiveId(), e);
+      }
+    });
   }
 
   private void checkAndSendAnomalyAlertsForPerspective(
-      CCMPerspectiveNotificationChannelsDTO perspectiveNotificationSetting, String accountId, Instant date) throws IOException, URISyntaxException {
+      CCMPerspectiveNotificationChannelsDTO perspectiveNotificationSetting, String accountId, Instant date)
+      throws IOException, URISyntaxException {
     log.info("Sending NG anomaly alerts -----");
     log.info("Perspective Notification settings: {}", perspectiveNotificationSetting);
     List<AnomalyData> perspectiveAnomalies = perspectiveAnomalyService.listPerspectiveAnomaliesForDate(
@@ -184,28 +183,28 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     List<String> msTeamKeys = getChannelUrls(channels, MSTEAMS);
 
     NotificationChannelDTOBuilder emailChannelBuilder = NotificationChannelDTO.builder()
-                                                  .accountId(accountId)
-                                                  .emailRecipients(eMails)
-                                                  .team(Team.OTHER)
-                                                  .templateId("email_ccm_anomaly_alert")
-                                                  .userGroups(Collections.emptyList());
+                                                            .accountId(accountId)
+                                                            .emailRecipients(eMails)
+                                                            .team(Team.OTHER)
+                                                            .templateId("email_ccm_anomaly_alert")
+                                                            .userGroups(Collections.emptyList());
 
     NotificationChannelDTOBuilder slackChannelBuilder = NotificationChannelDTO.builder()
-                                                  .accountId(accountId)
-                                                  .webhookUrls(slackWebHookUrls)
-                                                  .team(Team.OTHER)
-                                                  .templateId("slack_ccm_anomaly_alert")
-                                                  .userGroups(Collections.emptyList());
+                                                            .accountId(accountId)
+                                                            .webhookUrls(slackWebHookUrls)
+                                                            .team(Team.OTHER)
+                                                            .templateId("slack_ccm_anomaly_alert")
+                                                            .userGroups(Collections.emptyList());
 
-//    MSTeamChannelBuilder msTeamChannelBuilder = MSTeamChannel.builder()
-//                                                    .accountId(accountId)
-//                                                    .msTeamKeys(msTeamKeys)
-//                                                    .team(Team.OTHER)
-//                                                    .templateId("template-id-here")
-//                                                    .userGroups(Collections.emptyList());
+    //    MSTeamChannelBuilder msTeamChannelBuilder = MSTeamChannel.builder()
+    //                                                    .accountId(accountId)
+    //                                                    .msTeamKeys(msTeamKeys)
+    //                                                    .team(Team.OTHER)
+    //                                                    .templateId("template-id-here")
+    //                                                    .userGroups(Collections.emptyList());
 
-
-    String perspectiveUrl = getPerspectiveUrl(accountId, perspectiveNotificationSetting.getPerspectiveId(), perspectiveNotificationSetting.getPerspectiveName());
+    String perspectiveUrl = getPerspectiveUrl(accountId, perspectiveNotificationSetting.getPerspectiveId(),
+        perspectiveNotificationSetting.getPerspectiveName());
 
     Map<String, String> templateData = new HashMap<>();
     templateData.put("perspective_name", perspectiveNotificationSetting.getPerspectiveName());
@@ -215,7 +214,8 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     // Sending email alerts
     emailChannelBuilder.templateData(templateData);
     // TODO: Fix Email Template
-    // Call<RestResponse<NotificationResult>> call = notificationResourceClient.sendNotification(accountId, emailChannelBuilder.build());
+    // Call<RestResponse<NotificationResult>> call = notificationResourceClient.sendNotification(accountId,
+    // emailChannelBuilder.build());
 
     Map<String, String> slackTemplateData = new HashMap<>();
     slackTemplateData.put("perspective_name", perspectiveNotificationSetting.getPerspectiveName());
@@ -230,9 +230,11 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
 
     // Sending slack alerts
     slackChannelBuilder.templateData(slackTemplateData);
-    Response<RestResponse<NotificationResult>> response = notificationResourceClient.sendNotification(accountId, slackChannelBuilder.build()).execute();
+    Response<RestResponse<NotificationResult>> response =
+        notificationResourceClient.sendNotification(accountId, slackChannelBuilder.build()).execute();
     if (!response.isSuccessful()) {
-      log.error("Failed to send slack notification: {}", (response.errorBody() != null) ? response.errorBody().string() : response.code());
+      log.error("Failed to send slack notification: {}",
+          (response.errorBody() != null) ? response.errorBody().string() : response.code());
     }
   }
 
@@ -263,7 +265,8 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     return channelUrls;
   }
 
-  public String getPerspectiveUrl(String accountId, String perspectiveId, String perspectiveName) throws URISyntaxException {
+  public String getPerspectiveUrl(String accountId, String perspectiveId, String perspectiveName)
+      throws URISyntaxException {
     String baseUrl = mainConfiguration.getBaseUrl();
     URIBuilder uriBuilder = new URIBuilder(baseUrl);
     uriBuilder.setPath(NG_PATH_CONST);

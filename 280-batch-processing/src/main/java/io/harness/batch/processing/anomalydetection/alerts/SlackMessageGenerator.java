@@ -154,7 +154,8 @@ public class SlackMessageGenerator {
   public String addGcpProjectInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getGcpProject())) {
       if (anomaly.getEntityType().equals(EntityType.GCP_PROJECT)) {
-        templateString = templateString + "\n> *Project* : <${GCP_PROJECT_URL}|${" + AnomalyEntityKeys.gcpProject + "}>";
+        templateString =
+            templateString + "\n> *Project* : <${GCP_PROJECT_URL}|${" + AnomalyEntityKeys.gcpProject + "}>";
       } else {
         templateString = templateString + "\n> *Project* : ${" + AnomalyEntityKeys.gcpProject + "}";
       }
@@ -189,7 +190,8 @@ public class SlackMessageGenerator {
   public String addAwsAccountInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getAwsAccount())) {
       if (anomaly.getEntityType().equals(EntityType.AWS_ACCOUNT)) {
-        templateString = templateString + "\n> *Account* : <${AWS_ACCOUNT_URL}|${" + AnomalyEntityKeys.awsAccount + "}>";
+        templateString =
+            templateString + "\n> *Account* : <${AWS_ACCOUNT_URL}|${" + AnomalyEntityKeys.awsAccount + "}>";
       } else {
         templateString = templateString + "\n> *Account* : ${" + AnomalyEntityKeys.awsAccount + "}";
       }

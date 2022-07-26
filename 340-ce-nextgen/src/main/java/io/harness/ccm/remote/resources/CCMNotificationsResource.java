@@ -19,7 +19,6 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.channeldetails.EmailChannel;
-import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.channeldetails.SlackChannel;
 import io.harness.notification.dtos.NotificationChannelDTO;
 import io.harness.notification.notificationclient.NotificationClient;
@@ -29,7 +28,6 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
-import io.harness.security.annotations.PublicApi;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -82,34 +80,23 @@ public class CCMNotificationsResource {
   public ResponseDTO<NotificationResult>
   sendNotification(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(required = true, description = "Notification channel") NotificationChannelDTO notificationChannelDTO) {
-    log.info("Inside send notification api");
-    log.info("Notification Channel DTO: {}", notificationChannelDTO);
+      @RequestBody(
+          required = true, description = "Notification channel") NotificationChannelDTO notificationChannelDTO) {
     NotificationResult notificationResult = null;
     if (isNotEmpty(notificationChannelDTO.getEmailRecipients())) {
-      EmailChannel emailChannel = new EmailChannel(notificationChannelDTO.getAccountId(),
-              notificationChannelDTO.getUserGroups(),
-              notificationChannelDTO.getTemplateId(),
-              notificationChannelDTO.getTemplateData(),
-              notificationChannelDTO.getTeam(),
-              notificationChannelDTO.getEmailRecipients());
-      log.info("Email Channel: {}", emailChannel);
+      EmailChannel emailChannel =
+          new EmailChannel(notificationChannelDTO.getAccountId(), notificationChannelDTO.getUserGroups(),
+              notificationChannelDTO.getTemplateId(), notificationChannelDTO.getTemplateData(),
+              notificationChannelDTO.getTeam(), notificationChannelDTO.getEmailRecipients());
       notificationResult = notificationClient.sendNotificationAsync(emailChannel);
     }
     if (isNotEmpty(notificationChannelDTO.getWebhookUrls())) {
-      SlackChannel slackChannel = new SlackChannel(notificationChannelDTO.getAccountId(),
-              notificationChannelDTO.getUserGroups(),
-              notificationChannelDTO.getTemplateId(),
-              notificationChannelDTO.getTemplateData(),
-              notificationChannelDTO.getTeam(),
-              notificationChannelDTO.getWebhookUrls(),
-              null,
-              null,
-              0);
-      log.info("Slack Channel: {}", slackChannel);
+      SlackChannel slackChannel =
+          new SlackChannel(notificationChannelDTO.getAccountId(), notificationChannelDTO.getUserGroups(),
+              notificationChannelDTO.getTemplateId(), notificationChannelDTO.getTemplateData(),
+              notificationChannelDTO.getTeam(), notificationChannelDTO.getWebhookUrls(), null, null, 0);
       notificationResult = notificationClient.sendNotificationAsync(slackChannel);
     }
-    log.info("Notification Result: {}", notificationResult);
     return ResponseDTO.newResponse(notificationResult);
   }
 }
