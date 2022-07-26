@@ -45,6 +45,7 @@ public class K8sWatcherHelper {
         && WATCHER_ID_COUNT.getOrDefault(watchId, 0) < WATCHER_CREATION_MAX_COUNT;
     if (shouldCreateWatcher) {
       WATCHER_ID_COUNT.put(watchId, WATCHER_ID_COUNT.getOrDefault(watchId, 0) + 1);
+      log.info("Count of watcher id {}: {}", watchId, WATCHER_ID_COUNT.get(watchId));
     }
     return shouldCreateWatcher;
   }
@@ -72,6 +73,8 @@ public class K8sWatcherHelper {
     deleteWatcher(watchId, POD_WATCHER_PREFIX);
     deleteWatcher(watchId, NODE_WATCHER_PREFIX);
     deleteWatcher(watchId, PV_WATCHER_PREFIX);
+    WATCHER_ID_COUNT.remove(watchId);
+    log.info("Removed/Deleted watcher id: {}", watchId);
   }
 
   private static void deleteWatcher(@NonNull final String watchId, @NonNull final String prefix) {
