@@ -21,6 +21,7 @@ import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.connector.services.NGVaultService;
+import io.harness.delegate.beans.connector.customseceretmanager.CustomSecretManagerDTO;
 import io.harness.encryptors.CustomEncryptor;
 import io.harness.encryptors.CustomEncryptorsRegistry;
 import io.harness.encryptors.KmsEncryptor;
@@ -35,6 +36,7 @@ import io.harness.ng.core.api.NGSecretManagerService;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.secretmanagerclient.dto.*;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
+import io.harness.security.encryption.EncryptedDataParams;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.services.NGTemplateService;
@@ -48,7 +50,9 @@ import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import io.github.resilience4j.retry.RetryRegistry;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -132,7 +136,9 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
                 templateService.get(customNGSecretManagerConfigDTO.getAccountIdentifier(),
                     customNGSecretManagerConfigDTO.getOrgIdentifier(),
                     customNGSecretManagerConfigDTO.getProjectIdentifier(),
-                    customNGSecretManagerConfigDTO.getTemplateId(), customNGSecretManagerConfigDTO.getVersion(), false);
+                    customNGSecretManagerConfigDTO.getTemplateInfo().getTemplateRef(),
+                    customNGSecretManagerConfigDTO.getTemplateInfo().getVersionLabel(), false);
+
             String yaml = template.get().getYaml();
             log.info("Yaml received from template service is " + yaml);
             // resolve the yaml
@@ -145,14 +151,20 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
             // get the script out of resolved yaml
             String script = shellScriptBaseDTO.getShellScriptSpec().getSource().getSpec().getScript().getValue();
             log.info("Resolved script is " + script);
-            // pass the script to encryptor
+            // pass the script to encryptor -> encryptor passes call to create delegate task which is then executed.
+            // delegate task is picked by encryptor to execute it.
 
+            // delegate task creation ->
             // Get template id , version , name all will be in secManagerConfigDTO-> template service (id, ver) ->
             // template (yaml) yeml -> resolve -> yaml -> filter relevant fields ( script field ) -> encryptor( resolved
             // yaml / script , config
             encryptionConfig.setEncryptionType(CUSTOM_NG);
 
             CustomEncryptor customEncryptor = customEncryptorsRegistry.getCustomEncryptor(CUSTOM_NG);
+            Set<EncryptedDataParams> encryptedDataParamsSet = new HashSet<>();
+            encryptedDataParamsSet.add(EncryptedDataParams.builder().name("Script").value(script).build());
+            customEncryptor.validateReference(accountIdentifier, encryptedDataParamsSet, encryptionConfig);
+            // encryptor will pass it to delegate.
             //              validationResult = customEncryptor.validateReference(encryptionConfig.getAccountId(),
             //              encryptionConfig);
             break;
@@ -165,7 +177,6 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
         throw wingsException;
       } catch (Exception exception) {
         log.error("Validation for Secret Manager/KMS failed: " + encryptionConfig.getName(), exception);
-        throw exception;
       }
     }
     return validationResult;

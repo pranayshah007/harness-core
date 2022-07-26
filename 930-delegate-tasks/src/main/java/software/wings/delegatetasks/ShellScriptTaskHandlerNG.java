@@ -7,116 +7,125 @@
 
 package software.wings.delegatetasks;
 
-import static io.harness.govern.Switch.unhandled;
-import static io.harness.logging.CommandExecutionStatus.FAILURE;
-
-import static java.lang.String.format;
-
-import io.harness.delegate.command.CommandExecutionResult;
-import io.harness.delegate.command.CommandExecutionResultMapper;
-import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
+import io.harness.connector.task.shell.SshSessionConfigMapper;
+import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.shell.ShellExecutorFactoryNG;
+import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
+import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.delegate.task.shell.SshExecutorFactoryNG;
-import io.harness.delegate.task.winrm.WinRmSessionConfig;
-import io.harness.exception.CommandExecutionException;
+import io.harness.k8s.K8sConstants;
+import io.harness.k8s.KubernetesContainerService;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.*;
 
-import software.wings.beans.delegation.ShellScriptParameters;
-import software.wings.core.winrm.executors.WinRmExecutor;
-import software.wings.core.winrm.executors.WinRmExecutorFactory;
-import software.wings.service.intfc.security.EncryptionService;
-import software.wings.service.intfc.security.SecretManagementDelegateService;
-
 import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import org.apache.commons.lang3.StringUtils;
+import lombok.extern.slf4j.Slf4j;
 
-@Singleton
+@Slf4j
 public class ShellScriptTaskHandlerNG {
-  @Inject private SshExecutorFactoryNG sshExecutorFactoryNG;
+  public static final String COMMAND_UNIT = "Execute";
+
   @Inject private ShellExecutorFactoryNG shellExecutorFactory;
-  // Need slight code handling in it
+  @Inject private SshExecutorFactoryNG sshExecutorFactoryNG;
+  @Inject private KubernetesContainerService kubernetesContainerService;
   @Inject private ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
-  // Same as CG
-  @Inject private EncryptionService encryptionService;
-  @Inject private ExecutionConfigOverrideFromFileOnDelegate delegateLocalConfigService;
-  @Inject private SecretManagementDelegateService secretManagementDelegateService;
+  @Inject private SecretDecryptionService secretDecryptionService;
+  @Inject private SshSessionConfigMapper sshSessionConfigMapper;
 
-  // CONFIRM IF WE NEED IT
-  @Inject private WinRmExecutorFactory winrmExecutorFactory;
+  public DelegateResponseData handle(TaskParameters parameters, ILogStreamingTaskClient iLogStreamingTaskClient) {
+    ShellScriptTaskParametersNG taskParameters = (ShellScriptTaskParametersNG) parameters;
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
 
-  public CommandExecutionResult handle(ShellScriptParameters parameters) {
-    // Define output variables and secret output variables together
-    List<String> items = new ArrayList<>();
-    List<String> secretItems = new ArrayList<>();
-    Long timeoutInMillis = parameters.getSshTimeOut() != null ? (long) parameters.getSshTimeOut() : null;
-    if (parameters.getOutputVars() != null && StringUtils.isNotEmpty(parameters.getOutputVars().trim())) {
-      items = Arrays.asList(parameters.getOutputVars().split("\\s*,\\s*"));
-      items.replaceAll(String::trim);
-    }
-    if (parameters.getSecretOutputVars() != null && StringUtils.isNotEmpty(parameters.getSecretOutputVars().trim())) {
-      secretItems = Arrays.asList(parameters.getSecretOutputVars().split("\\s*,\\s*"));
-      secretItems.replaceAll(String::trim);
-    }
-    if (parameters.isExecuteOnDelegate()) {
-      ScriptProcessExecutor executor = shellExecutorFactory.getExecutor(
-          parameters.processExecutorConfig(containerDeploymentDelegateBaseHelper, encryptionService),
-          parameters.isSaveExecutionLogs());
-      if (parameters.isLocalOverrideFeatureFlag()) {
-        parameters.setScript(delegateLocalConfigService.replacePlaceholdersWithLocalConfig(parameters.getScript()));
-      }
-      return CommandExecutionResultMapper.from(
-          executor.executeCommandString(parameters.getScript(), items, secretItems, timeoutInMillis));
-    }
-
-    switch (parameters.getConnectionType()) {
-      case SSH: {
-        try {
-          SshSessionConfig expectedSshConfig =
-              parameters.sshSessionConfig(encryptionService, secretManagementDelegateService);
-          BaseScriptExecutor executor =
-              sshExecutorFactory.getExecutor(expectedSshConfig, parameters.isSaveExecutionLogs());
-          enableJSchLogsPerSSHTaskExecution(parameters.isEnableJSchLogs());
-          return CommandExecutionResultMapper.from(
-              executor.executeCommandString(parameters.getScript(), items, secretItems, timeoutInMillis));
-        } catch (Exception e) {
-          throw new CommandExecutionException("Bash Script Failed to execute", e);
-        } finally {
-          SshSessionManager.evictAndDisconnectCachedSession(parameters.getActivityId(), parameters.getHost());
-          disableJSchLogsPerSSHTaskExecution();
-        }
-      }
-      case WINRM: {
-        try {
-          WinRmSessionConfig winRmSessionConfig = parameters.winrmSessionConfig(encryptionService);
-          WinRmExecutor executor = winrmExecutorFactory.getExecutor(
-              winRmSessionConfig, parameters.isDisableWinRMCommandEncodingFFSet(), parameters.isSaveExecutionLogs());
-          return CommandExecutionResultMapper.from(
-              executor.executeCommandString(parameters.getScript(), items, secretItems, timeoutInMillis));
-        } catch (Exception e) {
-          throw new CommandExecutionException("Powershell script Failed to execute", e);
-        }
-      }
-      default:
-        unhandled(parameters.getConnectionType());
-        return CommandExecutionResult.builder()
-            .status(FAILURE)
-            .errorMessage(format("Unsupported ConnectionType %s", parameters.getConnectionType()))
+    if (taskParameters.isExecuteOnDelegate()) {
+      ShellExecutorConfig shellExecutorConfig = getShellExecutorConfig(taskParameters);
+      ScriptProcessExecutor executor =
+          shellExecutorFactory.getExecutor(shellExecutorConfig, iLogStreamingTaskClient, commandUnitsProgress);
+      // TODO: check later
+      // if (taskParameters.isLocalOverrideFeatureFlag()) {
+      //   taskParameters.setScript(delegateLocalConfigService.replacePlaceholdersWithLocalConfig(taskParameters.getScript()));
+      // }
+      ExecuteCommandResponse executeCommandResponse =
+          executor.executeCommandString(taskParameters.getScript(), taskParameters.getOutputVars());
+      return ShellScriptTaskResponseNG.builder()
+          .executeCommandResponse(executeCommandResponse)
+          .status(executeCommandResponse.getStatus())
+          .errorMessage(getErrorMessage(executeCommandResponse.getStatus()))
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
+    } else {
+      try {
+        SshSessionConfig sshSessionConfig = getSshSessionConfig(taskParameters);
+        ScriptSshExecutor executor =
+            sshExecutorFactoryNG.getExecutor(sshSessionConfig, iLogStreamingTaskClient, commandUnitsProgress);
+        ExecuteCommandResponse executeCommandResponse =
+            executor.executeCommandString(taskParameters.getScript(), taskParameters.getOutputVars());
+        return ShellScriptTaskResponseNG.builder()
+            .executeCommandResponse(executeCommandResponse)
+            .status(executeCommandResponse.getStatus())
+            .errorMessage(getErrorMessage(executeCommandResponse.getStatus()))
+            .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
             .build();
+      } catch (Exception e) {
+        log.error("Bash Script Failed to execute.", e);
+        return ShellScriptTaskResponseNG.builder()
+            .status(CommandExecutionStatus.FAILURE)
+            .errorMessage("Bash Script Failed to execute. Reason: " + e.getMessage())
+            .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+            .build();
+      } finally {
+        SshSessionManager.evictAndDisconnectCachedSession(taskParameters.getExecutionId(), taskParameters.getHost());
+      }
     }
   }
 
-  private void enableJSchLogsPerSSHTaskExecution(boolean enableJSchLogs) {
-    if (enableJSchLogs) {
-      JSchLogAdapter.attachLogger().enableDebugLogLevel();
+  private String getErrorMessage(CommandExecutionStatus status) {
+    switch (status) {
+      case QUEUED:
+        return "Shell Script execution queued.";
+      case FAILURE:
+        return "Shell Script execution failed. Please check execution logs.";
+      case RUNNING:
+        return "Shell Script execution running.";
+      case SKIPPED:
+        return "Shell Script execution skipped.";
+      case SUCCESS:
+      default:
+        return "";
     }
   }
 
-  private void disableJSchLogsPerSSHTaskExecution() {
-    JSchLogAdapter.detachLogger();
+  private SshSessionConfig getSshSessionConfig(ShellScriptTaskParametersNG taskParameters) {
+    SshSessionConfig sshSessionConfig = sshSessionConfigMapper.getSSHSessionConfig(
+        taskParameters.getSshKeySpecDTO(), taskParameters.getEncryptionDetails());
+
+    sshSessionConfig.setAccountId(taskParameters.getAccountId());
+    sshSessionConfig.setExecutionId(taskParameters.getExecutionId());
+    sshSessionConfig.setHost(taskParameters.getHost());
+    sshSessionConfig.setWorkingDirectory(taskParameters.getWorkingDirectory());
+    sshSessionConfig.setCommandUnitName(COMMAND_UNIT);
+    return sshSessionConfig;
+  }
+
+  private ShellExecutorConfig getShellExecutorConfig(ShellScriptTaskParametersNG taskParameters) {
+    String kubeConfigFileContent = taskParameters.getScript().contains(K8sConstants.HARNESS_KUBE_CONFIG_PATH)
+            && taskParameters.getK8sInfraDelegateConfig() != null
+        ? containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(taskParameters.getK8sInfraDelegateConfig())
+        : "";
+
+    return ShellExecutorConfig.builder()
+        .accountId(taskParameters.getAccountId())
+        .executionId(taskParameters.getExecutionId())
+        .commandUnitName(COMMAND_UNIT)
+        .workingDirectory(taskParameters.getWorkingDirectory())
+        .environment(taskParameters.getEnvironmentVariables())
+        .kubeConfigContent(kubeConfigFileContent)
+        .scriptType(taskParameters.getScriptType())
+        .build();
   }
 }
