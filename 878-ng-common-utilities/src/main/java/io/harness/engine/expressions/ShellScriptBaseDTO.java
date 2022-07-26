@@ -25,7 +25,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("ShellScriptBaseDTO")
 public class ShellScriptBaseDTO {
   // TYPE
-  @JsonProperty("type") String type = TemplateEntityConstants.SCRIPT;
+  @JsonProperty("type") String type = "script";
 
   @NotNull
   @JsonProperty("spec")
