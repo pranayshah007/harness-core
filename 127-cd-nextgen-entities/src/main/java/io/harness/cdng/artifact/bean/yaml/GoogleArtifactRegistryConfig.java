@@ -5,6 +5,7 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GOOGLE_
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.GoogleArtifactRegistryType;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
@@ -18,8 +19,6 @@ import io.harness.validation.OneOfField;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.VariableExpression;
-
-import software.wings.utils.RepositoryType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -42,12 +41,12 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = false)
 @JsonTypeName(GOOGLE_ARTIFACT_REGISTRY_NAME)
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
-@TypeAlias("garArtifactConfig")
+@TypeAlias("googleArtifactRegistryConfig")
 @OneOfField(fields = {"tag", "tagRegex"})
-@RecasterAlias("io.harness.cdng.artifact.bean.yaml.GarArtifactConfig")
-public class GarArtifactConfig implements ArtifactConfig, Visitable, WithConnectorRef {
+@RecasterAlias("io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig")
+public class GoogleArtifactRegistryConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**
-   * GAR connector to connect to Google Artifact Registry.
+   * GoogleArtifactRegistry connector to connect to Google Artifact Registry.
    */
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
@@ -78,11 +77,11 @@ public class GarArtifactConfig implements ArtifactConfig, Visitable, WithConnect
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Wither
-  RepositoryType repositoryType = RepositoryType.docker;
+  ParameterField<GoogleArtifactRegistryType> googleArtifactRegistryType;
 
   @Override
   public ArtifactSourceType getSourceType() {
-    return ArtifactSourceType.GAR;
+    return ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY;
   }
 
   @Override
@@ -99,19 +98,19 @@ public class GarArtifactConfig implements ArtifactConfig, Visitable, WithConnect
 
   @Override
   public ArtifactConfig applyOverrides(ArtifactConfig overrideConfig) {
-    GarArtifactConfig garArtifactConfig = (GarArtifactConfig) overrideConfig;
-    GarArtifactConfig resultantConfig = this;
-    if (!ParameterField.isNull(garArtifactConfig.getConnectorRef())) {
-      resultantConfig = resultantConfig.withConnectorRef(garArtifactConfig.getConnectorRef());
+    GoogleArtifactRegistryConfig googleArtifactRegistryConfig = (GoogleArtifactRegistryConfig) overrideConfig;
+    GoogleArtifactRegistryConfig resultantConfig = this;
+    if (!ParameterField.isNull(googleArtifactRegistryConfig.getConnectorRef())) {
+      resultantConfig = resultantConfig.withConnectorRef(googleArtifactRegistryConfig.getConnectorRef());
     }
-    if (!ParameterField.isNull(garArtifactConfig.getRegion())) {
-      resultantConfig = resultantConfig.withRegion(garArtifactConfig.getRegion());
+    if (!ParameterField.isNull(googleArtifactRegistryConfig.getRegion())) {
+      resultantConfig = resultantConfig.withRegion(googleArtifactRegistryConfig.getRegion());
     }
-    if (!ParameterField.isNull(garArtifactConfig.getRepositoryName())) {
-      resultantConfig = resultantConfig.withRepositoryName(garArtifactConfig.getRepositoryName());
+    if (!ParameterField.isNull(googleArtifactRegistryConfig.getRepositoryName())) {
+      resultantConfig = resultantConfig.withRepositoryName(googleArtifactRegistryConfig.getRepositoryName());
     }
-    if (!ParameterField.isNull(garArtifactConfig.getProject())) {
-      resultantConfig = resultantConfig.withProject(garArtifactConfig.getProject());
+    if (!ParameterField.isNull(googleArtifactRegistryConfig.getProject())) {
+      resultantConfig = resultantConfig.withProject(googleArtifactRegistryConfig.getProject());
     }
     return resultantConfig;
   }

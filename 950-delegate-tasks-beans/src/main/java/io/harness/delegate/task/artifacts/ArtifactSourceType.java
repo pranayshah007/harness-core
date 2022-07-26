@@ -33,7 +33,7 @@ public enum ArtifactSourceType {
   @JsonProperty(ACR_NAME) ACR(ACR_NAME),
   @JsonProperty(JENKINS_NAME) JENKINS(JENKINS_NAME),
   @JsonProperty(AMAZON_S3_NAME) AMAZONS3(AMAZON_S3_NAME),
-  @JsonProperty(GOOGLE_ARTIFACT_REGISTRY_NAME) GAR(GOOGLE_ARTIFACT_REGISTRY_NAME);
+  @JsonProperty(GOOGLE_ARTIFACT_REGISTRY_NAME) GOOGLE_ARTIFACT_REGISTRY(GOOGLE_ARTIFACT_REGISTRY_NAME);
   private final String displayName;
 
   ArtifactSourceType(String displayName) {
