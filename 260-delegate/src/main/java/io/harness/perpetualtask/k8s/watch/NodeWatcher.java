@@ -35,6 +35,7 @@ import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1NodeList;
 import io.kubernetes.client.util.CallGeneratorParams;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import lombok.extern.slf4j.Slf4j;
@@ -84,7 +85,8 @@ public class NodeWatcher implements ResourceEventHandler<V1Node> {
                 -> {
               log.info("Node watcher :: Resource version: {}, timeoutSeconds: {}, watch: {}",
                   callGeneratorParams.resourceVersion, callGeneratorParams.timeoutSeconds, callGeneratorParams.watch);
-              if (!"0".equals(callGeneratorParams.resourceVersion)) {
+              if (!"0".equals(callGeneratorParams.resourceVersion)
+                  && Objects.nonNull(callGeneratorParams.timeoutSeconds)) {
                 K8sWatcherHelper.updateLastSeen(
                     String.format(K8sWatcherHelper.NODE_WATCHER_PREFIX, clusterId), Instant.now());
               }
