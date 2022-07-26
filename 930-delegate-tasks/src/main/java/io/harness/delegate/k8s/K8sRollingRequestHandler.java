@@ -265,9 +265,10 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
 
     List<String> manifestOverrideFiles = getManifestOverrideFlies(request);
 
-    List<FileData> manifestFiles = k8sTaskHelperBase.renderTemplate(k8sDelegateTaskParams,
-        request.getManifestDelegateConfig(), manifestFilesDirectory, manifestOverrideFiles, releaseName,
-        kubernetesConfig.getNamespace(), executionLogCallback, request.getTimeoutIntervalInMin());
+    List<FileData> manifestFiles =
+        k8sTaskHelperBase.renderTemplate(k8sDelegateTaskParams, request.getManifestDelegateConfig(),
+            manifestFilesDirectory, manifestOverrideFiles, releaseName, kubernetesConfig.getNamespace(),
+            executionLogCallback, request.getTimeoutIntervalInMin(), request.isOptimizeFetchFilesKustomize());
 
     resources = k8sTaskHelperBase.readManifestAndOverrideLocalSecrets(
         manifestFiles, executionLogCallback, request.isLocalOverrideFeatureFlag(), isErrorFrameworkSupported());

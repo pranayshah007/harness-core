@@ -199,7 +199,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     List<FileData> manifestFiles = k8sTaskHelperBase.renderTemplate(k8sDelegateTaskParams,
         request.getManifestDelegateConfig(), k8sCanaryHandlerConfig.getManifestFilesDirectory(), manifestOverrideFiles,
         request.getReleaseName(), k8sCanaryHandlerConfig.getKubernetesConfig().getNamespace(), logCallback,
-        request.getTimeoutIntervalInMin());
+        request.getTimeoutIntervalInMin(), request.isOptimizeFetchFilesKustomize());
 
     List<KubernetesResource> resources =
         k8sTaskHelperBase.readManifests(manifestFiles, logCallback, isErrorFrameworkSupported());

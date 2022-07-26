@@ -163,7 +163,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
         K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
 
     when(k8sTaskHelperBase.renderTemplate(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory,
-             openshiftParamList, releaseName, namespace, logCallback, timeoutIntervalInMin))
+             openshiftParamList, releaseName, namespace, logCallback, timeoutIntervalInMin, false))
         .thenReturn(manifestFiles);
 
     when(k8sTaskHelperBase.readManifests(manifestFiles, logCallback, true)).thenReturn(kubernetesResources);
@@ -177,7 +177,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     verify(k8sTaskHelperBase, times(1)).readManifests(manifestFiles, logCallback, true);
     verify(k8sTaskHelperBase, times(1))
         .renderTemplate(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory, openshiftParamList,
-            releaseName, namespace, logCallback, timeoutIntervalInMin);
+            releaseName, namespace, logCallback, timeoutIntervalInMin, false);
     verify(k8sTaskHelperBase, times(1)).deleteSkippedManifestFiles(manifestFileDirectory, logCallback);
     verify(k8sTaskHelperBase, times(1)).getReleaseHistoryDataFromConfigMap(kubernetesConfig, releaseName);
     verify(k8sCanaryBaseHandler, times(1))
@@ -304,14 +304,14 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     doReturn(manifestFiles)
         .when(k8sTaskHelperBase)
         .renderTemplate(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory, valuesYamlList, releaseName,
-            namespace, logCallback, timeoutIntervalInMin);
+            namespace, logCallback, timeoutIntervalInMin, false);
     doReturn(deployment).when(k8sTaskHelperBase).readManifests(manifestFiles, logCallback, true);
     k8sCanaryRequestHandler.init(canaryDeployRequest, delegateTaskParams, logCallback);
 
     verify(k8sTaskHelperBase, times(1)).deleteSkippedManifestFiles(manifestFileDirectory, logCallback);
     verify(k8sTaskHelperBase, times(1))
         .renderTemplate(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory, valuesYamlList, releaseName,
-            namespace, logCallback, timeoutIntervalInMin);
+            namespace, logCallback, timeoutIntervalInMin, false);
     verify(k8sTaskHelperBase, times(1)).setNamespaceToKubernetesResourcesIfRequired(deployment, "default");
   }
 
@@ -334,7 +334,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     doThrow(thrownException)
         .when(k8sTaskHelperBase)
         .renderTemplate(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory, valuesYamlList, releaseName,
-            namespace, logCallback, timeoutIntervalInMin);
+            namespace, logCallback, timeoutIntervalInMin, false);
 
     assertThatThrownBy(() -> k8sCanaryRequestHandler.init(canaryDeployRequest, delegateTaskParams, logCallback))
         .isSameAs(thrownException);
@@ -396,7 +396,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     final K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
 
     when(k8sTaskHelperBase.renderTemplate(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory,
-             emptyList(), releaseName, namespace, logCallback, timeoutIntervalInMin))
+             emptyList(), releaseName, namespace, logCallback, timeoutIntervalInMin, false))
         .thenReturn(emptyList());
     when(k8sTaskHelperBase.readManifests(emptyList(), logCallback)).thenReturn(emptyList());
     when(k8sTaskHelperBase.getReleaseHistoryDataFromConfigMap(kubernetesConfig, releaseName)).thenReturn(null);

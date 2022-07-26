@@ -431,7 +431,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
     doReturn(renderedFiles)
         .when(k8sTaskHelperBase)
         .renderTemplate(eq(k8sDelegateTaskParams), eq(k8sManifestDelegateConfig), any(), eq(valuesYamlFiles), any(),
-            eq("default"), eq(logCallback), eq(10));
+            eq("default"), eq(logCallback), eq(10), false);
 
     if (throwException) {
       doThrow(thrownException).when(k8sTaskHelperBase).readManifests(renderedFiles, logCallback, true);

@@ -28,9 +28,9 @@ import lombok.experimental.Wither;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@ApiModel("OptimizeManifestFetch")
-@Schema(name = "OptimizeManifestFetch", description = "This contains Kustomize Manifest Optimize File Fetch details")
-public class OptimizeManifestFetch {
+@ApiModel("OverlayConfiguration")
+@Schema(name = "OverlayConfiguration", description = "This contains Kustomize Manifest Optimize File Fetch details")
+public class OverlayConfiguration {
   @NotNull
   @ApiModelProperty(dataType = STRING_CLASSPATH)
   @SkipAutoEvaluation
@@ -38,7 +38,7 @@ public class OptimizeManifestFetch {
   private ParameterField<String> kustomizeYamlPath;
 
   @Builder
-  public OptimizeManifestFetch(ParameterField<String> kustomizeYamlPath) {
+  public OverlayConfiguration(ParameterField<String> kustomizeYamlPath) {
     this.kustomizeYamlPath = kustomizeYamlPath;
   }
 }

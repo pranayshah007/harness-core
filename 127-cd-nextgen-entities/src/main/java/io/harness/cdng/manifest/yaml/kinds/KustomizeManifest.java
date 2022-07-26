@@ -19,7 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
-import io.harness.cdng.manifest.yaml.kinds.kustomize.OptimizeManifestFetch;
+import io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.visitor.helpers.manifest.KustomizeManifestVisitorHelper;
@@ -70,10 +70,10 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
   ParameterField<StoreConfigWrapper> store;
 
   @Wither
-  @JsonProperty("optimizeManifestFetch")
-  @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.kinds.kustomize.OptimizeManifestFetch")
+  @JsonProperty("overlayConfiguration")
+  @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration")
   @SkipAutoEvaluation
-  OptimizeManifestFetch optimizeManifestFetch;
+  OverlayConfiguration overlayConfiguration;
 
   @Wither
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
@@ -118,8 +118,8 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
     if (kustomizeManifest.getManifestScope() != null) {
       resultantManifest = resultantManifest.withManifestScope(kustomizeManifest.getManifestScope());
     }
-    if (kustomizeManifest.getOptimizeManifestFetch() != null) {
-      resultantManifest = resultantManifest.withOptimizeManifestFetch(kustomizeManifest.getOptimizeManifestFetch());
+    if (kustomizeManifest.getOverlayConfiguration() != null) {
+      resultantManifest = resultantManifest.withOverlayConfiguration(kustomizeManifest.getOverlayConfiguration());
     }
 
     return resultantManifest;

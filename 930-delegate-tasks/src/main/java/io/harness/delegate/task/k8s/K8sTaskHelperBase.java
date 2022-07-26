@@ -2330,7 +2330,8 @@ public class K8sTaskHelperBase {
 
   public List<FileData> renderTemplate(K8sDelegateTaskParams k8sDelegateTaskParams,
       ManifestDelegateConfig manifestDelegateConfig, String manifestFilesDirectory, List<String> manifestOverrideFiles,
-      String releaseName, String namespace, LogCallback executionLogCallback, Integer timeoutInMin) throws Exception {
+      String releaseName, String namespace, LogCallback executionLogCallback, Integer timeoutInMin,
+      boolean optimizeFetchFilesKustomize) throws Exception {
     ManifestType manifestType = manifestDelegateConfig.getManifestType();
     long timeoutInMillis = K8sTaskHelperBase.getTimeoutMillisFromMinutes(timeoutInMin);
 
@@ -2350,10 +2351,14 @@ public class K8sTaskHelperBase {
       case KUSTOMIZE:
         KustomizeManifestDelegateConfig kustomizeManifest = (KustomizeManifestDelegateConfig) manifestDelegateConfig;
 
-        String kustomizePath = Paths.get(manifestFilesDirectory, kustomizeManifest.getKustomizeDirPath()).toString();
+        String kustomizeYamlPath = optimizeFetchFilesKustomize && kustomizeManifest.getKustomizeYamlPath() != null
+            ? kustomizeManifest.getKustomizeYamlPath()
+            : kustomizeManifest.getKustomizeDirPath();
+
+        String kustomizePath = Paths.get(manifestFilesDirectory, kustomizeYamlPath).toString();
         savingPatchesToDirectory(kustomizePath, manifestOverrideFiles, executionLogCallback);
         return kustomizeTaskHelper.build(manifestFilesDirectory, k8sDelegateTaskParams.getKustomizeBinaryPath(),
-            kustomizeManifest.getPluginPath(), kustomizeManifest.getKustomizeDirPath(), executionLogCallback);
+            kustomizeManifest.getPluginPath(), kustomizeYamlPath, executionLogCallback);
 
       case OPENSHIFT_TEMPLATE:
         OpenshiftManifestDelegateConfig openshiftManifestConfig =
@@ -2442,7 +2447,7 @@ public class K8sTaskHelperBase {
             storeDelegateConfig, manifestFilesDirectory, executionLogCallback);
       case GIT:
         return downloadManifestFilesFromGit(
-            manifestDelegateConfig, manifestFilesDirectory, executionLogCallback, accountId);
+            storeDelegateConfig, manifestFilesDirectory, executionLogCallback, accountId);
 
       case HTTP_HELM:
       case S3_HELM:
@@ -2496,9 +2501,8 @@ public class K8sTaskHelperBase {
     }
   }
 
-  private boolean downloadManifestFilesFromGit(ManifestDelegateConfig manifestDelegateConfig,
-      String manifestFilesDirectory, LogCallback executionLogCallback, String accountId) throws Exception {
-    StoreDelegateConfig storeDelegateConfig = manifestDelegateConfig.getStoreDelegateConfig();
+  private boolean downloadManifestFilesFromGit(StoreDelegateConfig storeDelegateConfig, String manifestFilesDirectory,
+      LogCallback executionLogCallback, String accountId) throws Exception {
     if (!(storeDelegateConfig instanceof GitStoreDelegateConfig)) {
       throw new InvalidArgumentsException(Pair.of("storeDelegateConfig", "Must be instance of GitStoreDelegateConfig"));
     }
