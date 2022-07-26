@@ -21,7 +21,7 @@ java_library(
     deps = [
         "@maven//:com_google_guava_guava",
     ] + [
-        "//800-pipeline-service/modules/pms-contracts:module",
+        "//pipeline-service/modules/pms-contracts:module",
         "//clients/pipeline-service/pms-sdk-core:module",
         "//884-pms-commons:module",
         "//959-timeout-engine:module",
@@ -41,7 +41,7 @@ java_library(
     deps = [
         ":module",
         "//:lombok",
-        "//800-pipeline-service/modules/pms-contracts:module",
+        "//pipeline-service/modules/pms-contracts:module",
         "//884-pms-commons:module",
         "//960-persistence:supporter-test",
         "//990-commons-test:module",
