@@ -11,7 +11,6 @@ import static io.harness.rule.OwnerRule.NGONZALEZ;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
@@ -47,7 +46,6 @@ import io.harness.delegate.task.cloudformation.CloudFormationCreateStackNGRespon
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGParameters;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGResponse;
 import io.harness.delegate.task.cloudformation.CloudformationTaskType;
-import io.harness.exception.AccessDeniedException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
@@ -194,16 +192,6 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
     assertThat(entityDetails.get(2).getEntityRef().getAccountIdentifier()).isEqualTo("test-account");
     assertThat(entityDetails.get(3).getEntityRef().getIdentifier()).isEqualTo("test" + CONNECTOR_REF);
     assertThat(entityDetails.get(3).getEntityRef().getAccountIdentifier()).isEqualTo("test-account");
-  }
-
-  @Test
-  @Owner(developers = NGONZALEZ)
-  @Category(UnitTests.class)
-  public void testValidateFailsIfFFisNotEnabled() {
-    doReturn(false).when(cdFeatureFlagHelper).isEnabled(anyString(), any());
-    assertThatThrownBy(
-        () -> cloudformationCreateStackStep.validateResources(getAmbiance(), StepElementParameters.builder().build()))
-        .isInstanceOf(AccessDeniedException.class);
   }
 
   @Test

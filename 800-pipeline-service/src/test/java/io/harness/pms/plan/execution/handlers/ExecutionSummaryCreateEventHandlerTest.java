@@ -167,8 +167,8 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
     assertThat(capturedEntity.getLayoutNodeMap()).containsKeys("startId");
     assertThat(capturedEntity.getStagesExecutionMetadata().isStagesExecution()).isTrue();
     assertThat(capturedEntity.isStagesExecutionAllowed()).isTrue();
-    assertThat(capturedEntity.isExecutionInputConfigured())
-        .isEqualTo(planExecutionMetadata.isExecutionInputConfigured());
+    assertThat(capturedEntity.getExecutionInputConfigured())
+        .isEqualTo(planExecutionMetadata.getExecutionInputConfigured());
     assertThat(capturedEntity.getStoreType()).isNull();
     assertThat(capturedEntity.getConnectorRef()).isNull();
 

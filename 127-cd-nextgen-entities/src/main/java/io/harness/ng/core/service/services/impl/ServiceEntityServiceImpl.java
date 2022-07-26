@@ -50,6 +50,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.utils.NGFeatureFlagHelperService;
+import io.harness.utils.PageUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -343,13 +344,14 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   @Override
   public List<ServiceEntity> getAllServices(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    return getAllServices(accountIdentifier, orgIdentifier, projectIdentifier, QUERY_PAGE_SIZE, true);
+    return getAllServices(
+        accountIdentifier, orgIdentifier, projectIdentifier, QUERY_PAGE_SIZE, true, new ArrayList<>());
   }
 
   @Override
   public List<ServiceEntity> getAllNonDeletedServices(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    return getAllServices(accountIdentifier, orgIdentifier, projectIdentifier, QUERY_PAGE_SIZE, false);
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> sort) {
+    return getAllServices(accountIdentifier, orgIdentifier, projectIdentifier, QUERY_PAGE_SIZE, false, sort);
   }
 
   @Override
@@ -487,7 +489,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   @VisibleForTesting
   List<ServiceEntity> getAllServices(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      Integer pageSize, boolean includeDeletedServices) {
+      Integer pageSize, boolean includeDeletedServices, List<String> sort) {
     List<ServiceEntity> serviceEntityList = new ArrayList<>();
 
     Criteria criteria = Criteria.where(ServiceEntityKeys.accountId)
@@ -504,8 +506,12 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     int pageNum = 0;
     // Query in batches of 10k
     while (true) {
-      PageRequest pageRequest =
-          PageRequest.of(pageNum, pageSize, Sort.by(Sort.Direction.ASC, ServiceEntityKeys.createdAt));
+      Pageable pageRequest;
+      if (isEmpty(sort)) {
+        pageRequest = PageRequest.of(pageNum, pageSize, Sort.by(Sort.Direction.DESC, ServiceEntityKeys.createdAt));
+      } else {
+        pageRequest = PageUtils.getPageRequest(pageNum, pageSize, sort);
+      }
       Page<ServiceEntity> pageResponse = serviceRepository.findAll(criteria, pageRequest);
       if (pageResponse.isEmpty()) {
         break;

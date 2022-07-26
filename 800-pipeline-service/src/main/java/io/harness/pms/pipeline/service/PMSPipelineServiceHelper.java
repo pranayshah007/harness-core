@@ -224,8 +224,7 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  private GovernanceMetadata validatePipelineYamlInternal(
-      PipelineEntity pipelineEntity, boolean checkAgainstOPAPolicies) {
+  GovernanceMetadata validatePipelineYamlInternal(PipelineEntity pipelineEntity, boolean checkAgainstOPAPolicies) {
     String accountId = pipelineEntity.getAccountId();
     String orgIdentifier = pipelineEntity.getOrgIdentifier();
     String projectIdentifier = pipelineEntity.getProjectIdentifier();

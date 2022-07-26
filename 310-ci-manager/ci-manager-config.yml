@@ -117,7 +117,7 @@ ciExecutionServiceConfig:
     # The below config is for K8 steps
     gitCloneConfig:
       # Use rootless image only for K8 git clone
-      image: harness/drone-git:1.2.0-rootless
+      image: harness/drone-git:1.2.2-rootless
       entrypoint:
         - /usr/local/bin/clone
       windowsEntrypoint:

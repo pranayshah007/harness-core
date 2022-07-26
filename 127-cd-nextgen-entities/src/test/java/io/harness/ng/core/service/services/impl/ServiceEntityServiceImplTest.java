@@ -257,7 +257,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     serviceEntityService.bulkCreate(ACCOUNT_ID, serviceEntities);
 
     List<ServiceEntity> serviceEntityList =
-        serviceEntityService.getAllServices(ACCOUNT_ID, ORG_ID, PROJECT_ID, pageSize, true);
+        serviceEntityService.getAllServices(ACCOUNT_ID, ORG_ID, PROJECT_ID, pageSize, true, new ArrayList<>());
     assertThat(serviceEntityList.size()).isEqualTo(numOfServices);
   }
 
@@ -277,8 +277,30 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     serviceEntityService.bulkCreate(ACCOUNT_ID, serviceEntities);
 
     List<ServiceEntity> serviceEntityList =
-        serviceEntityService.getAllNonDeletedServices(ACCOUNT_ID, ORG_ID, PROJECT_ID);
+        serviceEntityService.getAllNonDeletedServices(ACCOUNT_ID, ORG_ID, PROJECT_ID, new ArrayList<>());
     assertThat(serviceEntityList.size()).isEqualTo(numOfServices / 2);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testGetAllNonDeletedServicesWithSort() {
+    List<ServiceEntity> serviceEntities = new ArrayList<>();
+    int numOfServices = 20;
+    for (int i = 0; i < numOfServices; i++) {
+      String serviceIdentifier = "identifier" + i;
+      String serviceName = String.valueOf((char) ('A' + i));
+      ServiceEntity serviceEntity = createServiceEntity(serviceIdentifier, serviceName);
+      serviceEntity.setDeleted(i % 2 == 0); // Every alternate service is deleted
+      serviceEntities.add(serviceEntity);
+    }
+    serviceEntityService.bulkCreate(ACCOUNT_ID, serviceEntities);
+
+    List<ServiceEntity> serviceEntityList =
+        serviceEntityService.getAllNonDeletedServices(ACCOUNT_ID, ORG_ID, PROJECT_ID, Arrays.asList("name,DESC"));
+    assertThat(serviceEntityList.size()).isEqualTo(numOfServices / 2);
+    assertThat(serviceEntityList.get(0).getName())
+        .isGreaterThan(serviceEntityList.get(serviceEntityList.size() - 1).getName());
   }
 
   @Test

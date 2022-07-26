@@ -13,8 +13,6 @@ import static java.lang.Long.parseLong;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
 import io.harness.EntityType;
-import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
-import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.NGExpressionUtils;
@@ -174,7 +172,7 @@ public class PMSPipelineDtoMapper {
         .build();
   }
 
-  List<RecentExecutionInfoDTO> prepareRecentExecutionsInfo(PipelineMetadataV2 pipelineMetadataV2) {
+  public List<RecentExecutionInfoDTO> prepareRecentExecutionsInfo(PipelineMetadataV2 pipelineMetadataV2) {
     if (pipelineMetadataV2 == null) {
       return Collections.emptyList();
     }
@@ -270,20 +268,6 @@ public class PMSPipelineDtoMapper {
           pipeline.getExecutionSummaryInfo().getDeployments().getOrDefault(sdf.format(cal.getTime()), 0));
     }
     return numberOfDeployments;
-  }
-
-  public PermissionCheckDTO toPermissionCheckDTO(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String pipelineIdentifier, String permission) {
-    return PermissionCheckDTO.builder()
-        .resourceScope(ResourceScope.builder()
-                           .accountIdentifier(accountIdentifier)
-                           .orgIdentifier(orgIdentifier)
-                           .projectIdentifier(projectIdentifier)
-                           .build())
-        .resourceType("PIPELINE")
-        .resourceIdentifier(pipelineIdentifier)
-        .permission(permission)
-        .build();
   }
 
   public EntityDetail toEntityDetail(PipelineEntity entity) {

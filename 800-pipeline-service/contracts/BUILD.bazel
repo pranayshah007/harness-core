@@ -10,7 +10,7 @@ java_library(
     deps = [
         "//:lombok",
         "//800-pipeline-service/modules/orchestration-steps/contracts:module",
-        "//800-pipeline-service/modules/orchestration-visualization:module",
+        "//800-pipeline-service/modules/orchestration-visualization/contracts:module",
         "//884-pms-commons:module",
         "//970-ng-commons:module",
         "//clients/access-control/sdk:module",

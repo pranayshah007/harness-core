@@ -24,12 +24,15 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.expressions.NodeExecutionsCache;
 import io.harness.engine.pms.data.PmsOutcomeService;
+import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
@@ -59,6 +62,8 @@ import org.mockito.junit.MockitoRule;
 public class NodeExecutionValueTest extends OrchestrationTestBase {
   @Mock NodeExecutionService nodeExecutionService;
   @Mock PmsOutcomeService pmsOutcomeService;
+  @Mock PmsSweepingOutputService pmsSweepingOutputService;
+
   @Mock PlanService planService;
 
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -142,20 +147,25 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
 
     PlanNode node4 = preparePlanNode(false, "d", "di1", "STAGE");
     when(planService.fetchNode(planId, node4.getUuid())).thenReturn(node4);
-    nodeExecution4 = NodeExecution.builder()
-                         .uuid(nodeExecution4Id)
-                         .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution3Id, node3))
-                                       .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution4Id, node4))
-                                       .build())
-                         .nodeId(node4.getUuid())
-                         .name(node4.getName())
-                         .stepType(node4.getStepType())
-                         .identifier(node4.getIdentifier())
-                         .module(node4.getServiceName())
-                         .skipGraphType(node4.getSkipGraphType())
-                         .parentId(nodeExecution3Id)
-                         .nextId(nodeExecution5Id)
-                         .build();
+    nodeExecution4 =
+        NodeExecution.builder()
+            .uuid(nodeExecution4Id)
+            .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution3Id, node3))
+                          .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution4Id, node4,
+                              StrategyMetadata.newBuilder()
+                                  .setMatrixMetadata(MatrixMetadata.newBuilder().putMatrixValues("os", "test").build())
+                                  .setCurrentIteration(2)
+                                  .build()))
+                          .build())
+            .nodeId(node4.getUuid())
+            .name(node4.getName())
+            .stepType(node4.getStepType())
+            .identifier(node4.getIdentifier())
+            .module(node4.getServiceName())
+            .skipGraphType(node4.getSkipGraphType())
+            .parentId(nodeExecution3Id)
+            .nextId(nodeExecution5Id)
+            .build();
 
     PlanNode node5 = preparePlanNode(false, "d", "di2");
     when(planService.fetchNode(planId, node5.getUuid())).thenReturn(node5);
@@ -315,6 +325,23 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
     assertThat(engine.getProperty(functor, "d.param")).isEqualTo("di1");
     assertThat(engine.getProperty(functor, "d.e.param")).isEqualTo("eo");
     assertThat(engine.getProperty(functor, "e.param")).isEqualTo("eo");
+  }
+
+  @Test
+  @Owner(developers = GARVIT)
+  @Category(UnitTests.class)
+  public void testNodeExecutionAncestorFunctorMatrix() {
+    Ambiance newAmbiance = nodeExecution6.getAmbiance();
+    NodeExecutionAncestorFunctor functor =
+        NodeExecutionAncestorFunctor.builder()
+            .nodeExecutionsCache(new NodeExecutionsCache(nodeExecutionService, planService, newAmbiance))
+            .pmsOutcomeService(pmsOutcomeService)
+            .pmsSweepingOutputService(pmsSweepingOutputService)
+            .ambiance(newAmbiance)
+            .groupAliases(ImmutableMap.of("stage", "STAGE"))
+            .build();
+    assertThat(engine.getProperty(functor, "stage.matrix.os")).isEqualTo("test");
+    assertThat(engine.getProperty(functor, "stage.iteration")).isEqualTo(2);
   }
 
   @Test

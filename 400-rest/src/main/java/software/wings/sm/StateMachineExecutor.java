@@ -1590,9 +1590,15 @@ public class StateMachineExecutor implements StateInspectionListener {
           ? context.getStateExecutionData().getErrorMsg()
           : errorMsgBuilder.toString();
 
-      if (stateExecutionInstance.getStateParams() != null) {
-        MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
+      try {
+        if (stateExecutionInstance.getStateParams() != null) {
+          MapperUtils.mapObject(stateExecutionInstance.getStateParams(), currentState);
+        }
+      } catch (org.modelmapper.MappingException e) {
+        log.error("Got model mapping exception during mapping the stateparams {}",
+            stateExecutionInstance.getStateParams(), e);
       }
+
       currentState.handleAbortEvent(context);
       if (!(isStepSupportingTimeout(stateExecutionInstance)
               && featureFlagService.isEnabled(TIMEOUT_FAILURE_SUPPORT, context.getAccountId())

@@ -107,8 +107,7 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
 
   @Override
   public String fetchRootRetryExecutionId(String planExecutionId) {
-    Query query =
-        query(where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId));
+    Query query = query(where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId));
 
     queryFieldsForPipelineExecutionSummaryEntity(query);
 

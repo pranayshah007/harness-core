@@ -39,7 +39,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.MockitoAnnotations;
 
-public class StageStrategyUtilsTest extends NGCommonUtilitiesTestBase {
+public class StrategyUtilsTest extends NGCommonUtilitiesTestBase {
   @Inject KryoSerializer kryoSerializer;
 
   @Test
@@ -60,7 +60,7 @@ public class StageStrategyUtilsTest extends NGCommonUtilitiesTestBase {
     List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
 
     YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
-    assertThat(StageStrategyUtils.isWrappedUnderStrategy(approvalStageYamlField)).isTrue();
+    assertThat(StrategyUtils.isWrappedUnderStrategy(approvalStageYamlField)).isTrue();
   }
 
   @Test
@@ -81,10 +81,9 @@ public class StageStrategyUtilsTest extends NGCommonUtilitiesTestBase {
     List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
 
     YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
-    assertThat(StageStrategyUtils.isWrappedUnderStrategy(approvalStageYamlField)).isTrue();
+    assertThat(StrategyUtils.isWrappedUnderStrategy(approvalStageYamlField)).isTrue();
 
-    assertThat(StageStrategyUtils.getAdviserObtainments(approvalStageYamlField, kryoSerializer, false).size())
-        .isEqualTo(1);
+    assertThat(StrategyUtils.getAdviserObtainments(approvalStageYamlField, kryoSerializer, false).size()).isEqualTo(1);
   }
 
   @Test
@@ -105,10 +104,9 @@ public class StageStrategyUtilsTest extends NGCommonUtilitiesTestBase {
     List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
 
     YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
-    assertThat(StageStrategyUtils.isWrappedUnderStrategy(approvalStageYamlField)).isTrue();
+    assertThat(StrategyUtils.isWrappedUnderStrategy(approvalStageYamlField)).isTrue();
 
-    assertThat(StageStrategyUtils.getAdviserObtainments(approvalStageYamlField, kryoSerializer, true).size())
-        .isEqualTo(0);
+    assertThat(StrategyUtils.getAdviserObtainments(approvalStageYamlField, kryoSerializer, true).size()).isEqualTo(0);
   }
 
   @Test
@@ -129,9 +127,9 @@ public class StageStrategyUtilsTest extends NGCommonUtilitiesTestBase {
     List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
 
     YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
-    assertThat(StageStrategyUtils.isWrappedUnderStrategy(approvalStageYamlField)).isTrue();
+    assertThat(StrategyUtils.isWrappedUnderStrategy(approvalStageYamlField)).isTrue();
 
-    assertThat(StageStrategyUtils.modifyStageLayoutNodeGraph(approvalStageYamlField).size()).isEqualTo(2);
+    assertThat(StrategyUtils.modifyStageLayoutNodeGraph(approvalStageYamlField).size()).isEqualTo(2);
   }
 
   @Test
@@ -254,7 +252,7 @@ public class StageStrategyUtilsTest extends NGCommonUtilitiesTestBase {
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
     YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
-    StageStrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer,
+    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer,
         PlanCreationContext.builder().currentField(approvalStageYamlField).build(),
         approvalStageYamlField.getNode().getUuid(), approvalStageYamlField.getNode().getIdentifier(),
         approvalStageYamlField.getNode().getName(), planCreationResponseMap, metadataMap, new ArrayList<>());
@@ -281,7 +279,7 @@ public class StageStrategyUtilsTest extends NGCommonUtilitiesTestBase {
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
     YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
-    StageStrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer,
+    StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer,
         PlanCreationContext.builder().currentField(approvalStageYamlField).build(),
         approvalStageYamlField.getNode().getUuid(), approvalStageYamlField.getNode().getIdentifier(),
         approvalStageYamlField.getNode().getName(), dependenciesNodeMap, metadataMap, new ArrayList<>());

@@ -10,8 +10,8 @@ package io.harness.steps.matrix;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.strategy.HarnessForConfig;
 import io.harness.plancreator.strategy.RepeatUnit;
-import io.harness.plancreator.strategy.StageStrategyUtils;
 import io.harness.plancreator.strategy.StrategyConfig;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.ForMetadata;
 import io.harness.pms.contracts.execution.StrategyMetadata;
@@ -118,18 +118,18 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
     List<JsonNode> jsonNodes = new ArrayList<>();
     if (!ParameterField.isBlank(harnessForConfig.getTimes())) {
       for (int i = 0; i < harnessForConfig.getTimes().getValue(); i++) {
-        JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StageStrategyUtils.replaceExpressions(
+        JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StrategyUtils.replaceExpressions(
             jsonNode.deepCopy().toString(), new HashMap<>(), i, harnessForConfig.getTimes().getValue(), null)));
-        StageStrategyUtils.modifyJsonNode(clonedNode, Lists.newArrayList(String.valueOf(i)));
+        StrategyUtils.modifyJsonNode(clonedNode, Lists.newArrayList(String.valueOf(i)));
         jsonNodes.add(clonedNode);
       }
     } else {
       int currentIteration = 0;
       List<String> params = splitParamsIfNeeded(harnessForConfig);
       for (String value : params) {
-        JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StageStrategyUtils.replaceExpressions(
+        JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(StrategyUtils.replaceExpressions(
             jsonNode.deepCopy().toString(), new HashMap<>(), currentIteration, params.size(), value)));
-        StageStrategyUtils.modifyJsonNode(clonedNode, Lists.newArrayList(String.valueOf(currentIteration)));
+        StrategyUtils.modifyJsonNode(clonedNode, Lists.newArrayList(String.valueOf(currentIteration)));
         jsonNodes.add(clonedNode);
         currentIteration++;
       }
