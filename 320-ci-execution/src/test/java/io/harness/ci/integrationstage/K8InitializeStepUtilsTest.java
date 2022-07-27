@@ -57,8 +57,9 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
 
     List<ContainerDefinitionInfo> expected = K8InitializeStepUtilsHelper.getStepContainers();
-    List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
-        steps, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, K8sDirectInfraYaml.builder().build());
+    List<ContainerDefinitionInfo> stepContainers =
+        k8InitializeStepUtils.createStepContainerDefinitions(steps, integrationStageConfig, ciExecutionArgs, portFinder,
+            "test", OSType.Linux, K8sDirectInfraYaml.builder().build());
 
     assertThat(stepContainers).isEqualTo(expected);
   }
@@ -73,8 +74,9 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
 
-    List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitionsStepGroupWithFF(
-        steps, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, 0, K8sDirectInfraYaml.builder().build());
+    List<ContainerDefinitionInfo> stepContainers =
+        k8InitializeStepUtils.createStepContainerDefinitionsStepGroupWithFF(steps, integrationStageConfig,
+            ciExecutionArgs, portFinder, "test", OSType.Linux, 0, K8sDirectInfraYaml.builder().build());
 
     HashMap<String, ContainerResourceParams> map = populateMap(stepContainers);
 
@@ -106,8 +108,9 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
 
-    List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitionsStepGroupWithFF(
-        steps, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, 0, K8sDirectInfraYaml.builder().build());
+    List<ContainerDefinitionInfo> stepContainers =
+        k8InitializeStepUtils.createStepContainerDefinitionsStepGroupWithFF(steps, integrationStageConfig,
+            ciExecutionArgs, portFinder, "test", OSType.Linux, 0, K8sDirectInfraYaml.builder().build());
 
     HashMap<String, ContainerResourceParams> map = populateMap(stepContainers);
 
@@ -131,8 +134,9 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
 
-    List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitionsStepGroupWithFF(
-        steps, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, 0, K8sDirectInfraYaml.builder().build());
+    List<ContainerDefinitionInfo> stepContainers =
+        k8InitializeStepUtils.createStepContainerDefinitionsStepGroupWithFF(steps, integrationStageConfig,
+            ciExecutionArgs, portFinder, "test", OSType.Linux, 0, K8sDirectInfraYaml.builder().build());
 
     HashMap<String, ContainerResourceParams> map = populateMap(stepContainers);
 
@@ -166,8 +170,9 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
 
     List<ContainerDefinitionInfo> expected = K8InitializeStepUtilsHelper.getWinStepContainers();
-    List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
-        steps, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Windows, K8sDirectInfraYaml.builder().build());
+    List<ContainerDefinitionInfo> stepContainers =
+        k8InitializeStepUtils.createStepContainerDefinitions(steps, integrationStageConfig, ciExecutionArgs, portFinder,
+            "test", OSType.Windows, K8sDirectInfraYaml.builder().build());
 
     assertThat(stepContainers).isEqualTo(expected);
   }
