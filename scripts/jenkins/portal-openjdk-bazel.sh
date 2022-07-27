@@ -245,7 +245,7 @@ mkdir -p dist/pipeline-service
 cd dist/pipeline-service
 
 cp ${HOME}/.bazel-dirs/bin/pipeline-service/service/module_deploy.jar pipeline-service-capsule.jar
-cp ../../pipeline-service/config.yml .
+cp ../../pipeline-service/config/config.yml .
 cp ../../pipeline-service/config/keystore.jks .
 cp ../../pipeline-service/config/key.pem .
 cp ../../pipeline-service/config/cert.pem .
