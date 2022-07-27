@@ -31,7 +31,6 @@ import io.harness.ng.accesscontrol.migrations.models.AccessControlMigration;
 import io.harness.ng.accesscontrol.migrations.services.AccessControlMigrationService;
 import io.harness.ng.core.AccountOrgProjectValidator;
 import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
-import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.services.OrganizationService;
@@ -72,7 +71,6 @@ public class NGAccountSetupService {
   private final CIDefaultEntityManager ciDefaultEntityManager;
   private final boolean shouldAssignAdmins;
   private final NGAccountSettingService accountSettingService;
-  private final UserGroupService userGroupService;
 
   @Inject
   public NGAccountSetupService(OrganizationService organizationService,
@@ -80,7 +78,7 @@ public class NGAccountSetupService {
       @Named("PRIVILEGED") AccessControlAdminClient accessControlAdminClient, NgUserService ngUserService,
       UserClient userClient, AccessControlMigrationService accessControlMigrationService,
       HarnessSMManager harnessSMManager, CIDefaultEntityManager ciDefaultEntityManager,
-      NextGenConfiguration nextGenConfiguration, NGAccountSettingService accountSettingService, UserGroupService userGroupService) {
+      NextGenConfiguration nextGenConfiguration, NGAccountSettingService accountSettingService) {
     this.organizationService = organizationService;
     this.accountOrgProjectValidator = accountOrgProjectValidator;
     this.accessControlAdminClient = accessControlAdminClient;
@@ -93,7 +91,6 @@ public class NGAccountSetupService {
         nextGenConfiguration.getAccessControlAdminClientConfiguration().getMockAccessControlService().equals(
             Boolean.FALSE);
     this.accountSettingService = accountSettingService;
-    this.userGroupService = userGroupService;
   }
 
   public void setupAccountForNG(String accountIdentifier) {
@@ -104,7 +101,6 @@ public class NGAccountSetupService {
     }
 
     Organization defaultOrg = createDefaultOrg(accountIdentifier);
-    userGroupService.setUpDefaultUserGroup(Scope.of(accountIdentifier, defaultOrg.getIdentifier(), null));
     setupRBAC(defaultOrg.getAccountIdentifier(), defaultOrg.getIdentifier());
     log.info("[NGAccountSetupService]: Creating global SM for account{}", accountIdentifier);
     harnessSMManager.createGlobalSecretManager();
