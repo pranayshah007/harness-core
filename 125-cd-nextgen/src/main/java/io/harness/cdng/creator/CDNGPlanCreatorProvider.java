@@ -63,24 +63,9 @@ import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotDeployment
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotSwapSlotPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppTrafficShiftStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaGenericStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
-import io.harness.cdng.creator.variables.DeploymentStageVariableCreator;
-import io.harness.cdng.creator.variables.GitOpsCreatePRStepVariableCreator;
-import io.harness.cdng.creator.variables.GitOpsMergePRStepVariableCreator;
-import io.harness.cdng.creator.variables.HelmDeployStepVariableCreator;
-import io.harness.cdng.creator.variables.HelmRollbackStepVariableCreator;
-import io.harness.cdng.creator.variables.K8sApplyStepVariableCreator;
-import io.harness.cdng.creator.variables.K8sBGSwapServicesVariableCreator;
-import io.harness.cdng.creator.variables.K8sBlueGreenStepVariableCreator;
-import io.harness.cdng.creator.variables.K8sCanaryDeleteStepVariableCreator;
-import io.harness.cdng.creator.variables.K8sCanaryStepVariableCreator;
-import io.harness.cdng.creator.variables.K8sDeleteStepVariableCreator;
-import io.harness.cdng.creator.variables.K8sRollingRollbackStepVariableCreator;
-import io.harness.cdng.creator.variables.K8sRollingStepVariableCreator;
-import io.harness.cdng.creator.variables.K8sScaleStepVariableCreator;
-import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployStepVariableCreator;
-import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariableCreator;
-import io.harness.cdng.creator.variables.SshVariableCreator;
+import io.harness.cdng.creator.variables.*;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsCreateStepPlanCreator;
 import io.harness.cdng.provision.cloudformation.variablecreator.CloudformationCreateStepVariableCreator;
@@ -162,6 +147,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new CDStepsPlanCreator());
     planCreators.add(new StepGroupPMSPlanCreator());
     planCreators.add(new ParallelPlanCreator());
+    planCreators.add(new ServerlessAwsLambdaGenericStepPlanCreator());
     planCreators.add(new ServerlessAwsLambdaDeployStepPlanCreator());
     planCreators.add(new ServerlessAwsLambdaRollbackStepPlanCreator());
     planCreators.add(new CloudformationCreateStackStepPlanCreator());
@@ -217,6 +203,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new TerraformRollbackStepVariableCreator());
     variableCreators.add(new HelmDeployStepVariableCreator());
     variableCreators.add(new HelmRollbackStepVariableCreator());
+    variableCreators.add(new ServerlessAwsLambdaGenericStepVariableCreator());
     variableCreators.add(new ServerlessAwsLambdaDeployStepVariableCreator());
     variableCreators.add(new ServerlessAwsLambdaRollbackStepVariableCreator());
     variableCreators.add(new CloudformationCreateStepVariableCreator());
@@ -387,6 +374,15 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Ssh").addFolderPaths("Ssh").build())
             .build();
 
+    StepInfo serverlessGeneric =
+            StepInfo.newBuilder()
+                    .setName("Serverless Lambda Generic")
+                    .setType(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_GENERIC)
+                    .setStepMetaData(
+                            StepMetaData.newBuilder().addCategory("ServerlessAwsLambda").setFolderPath("Serverless Lambda").build())
+                    .setFeatureFlag(FeatureName.SERVERLESS_SUPPORT.name())
+                    .build();
+
     StepInfo serverlessDeploy =
         StepInfo.newBuilder()
             .setName("Serverless Lambda Deploy")
@@ -498,6 +494,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(terraformDestroy);
     stepInfos.add(helmDeploy);
     stepInfos.add(helmRollback);
+    stepInfos.add(serverlessGeneric);
     stepInfos.add(serverlessDeploy);
     stepInfos.add(serverlessRollback);
     stepInfos.add(createStack);

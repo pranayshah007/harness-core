@@ -277,6 +277,12 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
                                          .manifestFilePathContent(manifestFilePathContent.get())
                                          .manifestFileOverrideContent(manifestFileOverrideContent)
                                          .build();
+    } else if (serverlessStepExecutor instanceof ServerlessAwsLambdaGenericStep) {
+      serverlessStepExecutorParams = ServerlessAwsLambdaStepExecutorParams.builder()
+              .shouldOpenFetchFilesLogStream(false)
+              .manifestFilePathContent(manifestFilePathContent.get())
+              .manifestFileOverrideContent(manifestFileOverrideContent)
+              .build();
     } else {
       throw new UnsupportedOperationException(
           format("Unsupported serverless step executer: [%s]", serverlessStepExecutor.getClass()));
@@ -298,8 +304,8 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
               .build();
       return TaskChainResponse.builder().passThroughData(serverlessStepExceptionPassThroughData).chainEnd(true).build();
     }
-    ServerlessAwsLambdaDeployStepParameters deployStepParameters =
-        (ServerlessAwsLambdaDeployStepParameters) stepElementParameters.getSpec();
+//    ServerlessAwsLambdaDeployStepParameters deployStepParameters =
+//        (ServerlessAwsLambdaDeployStepParameters) stepElementParameters.getSpec();
     OptionalSweepingOutput serverlessGitFetchOptionalOutput = executionSweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.SERVERLESS_GIT_FETCH_OUTCOME));
     if (!serverlessGitFetchOptionalOutput.isFound()) {
@@ -313,7 +319,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
             .lastActiveUnitProgressData(serverlessPrepareRollbackDataResponse.getUnitProgressData())
             .build();
     ServerlessStepExecutorParams serverlessStepExecutorParams;
-    if (serverlessStepExecutor instanceof ServerlessAwsLambdaDeployStep) {
+    if (serverlessStepExecutor instanceof ServerlessAwsLambdaDeployStep || serverlessStepExecutor instanceof ServerlessAwsLambdaGenericStep) {
       ServerlessAwsLambdaPrepareRollbackDataResult serverlessAwsLambdaPrepareRollbackDataResult =
           (ServerlessAwsLambdaPrepareRollbackDataResult)
               serverlessPrepareRollbackDataResponse.getServerlessPrepareRollbackDataResult();

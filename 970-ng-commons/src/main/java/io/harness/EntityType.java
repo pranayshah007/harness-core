@@ -240,6 +240,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.CLOUDFORMATION_DELETE_STACK_STEP)
   CLOUDFORMATION_DELETE_STACK_STEP(ModuleType.CD, EntityTypeConstants.CLOUDFORMATION_DELETE_STACK_STEP,
       IdentifierRef.class, EntityYamlRootNames.CLOUDFORMATION_DELETE_STACK_STEP),
+  @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_GENERIC)
+  SERVERLESS_AWS_LAMBDA_GENERIC_STEP(ModuleType.CD, EntityTypeConstants.SERVERLESS_AWS_LAMBDA_GENERIC,
+          IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_GENERIC),
   @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY)
   SERVERLESS_AWS_LAMBDA_DEPLOY_STEP(ModuleType.CD, EntityTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY,
       IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_DEPLOY),

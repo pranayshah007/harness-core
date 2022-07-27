@@ -304,6 +304,9 @@ io.harness.cdng.manifest.yaml.kinds.ServerlessAwsLambdaManifest
 io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepInfo
 io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepNode
 io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepParameters
+io.harness.cdng.serverless.ServerlessAwsLambdaGenericStepInfo
+io.harness.cdng.serverless.ServerlessAwsLambdaGenericStepNode
+io.harness.cdng.serverless.ServerlessAwsLambdaGenericStepParameters
 io.harness.cdng.serverless.ServerlessAwsLambdaRollbackDataOutcome
 io.harness.cdng.serverless.ServerlessAwsLambdaRollbackOutcome
 io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo

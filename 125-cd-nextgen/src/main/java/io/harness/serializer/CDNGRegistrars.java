@@ -39,6 +39,7 @@ import io.harness.cdng.provision.terraform.TerraformDestroyStepNode;
 import io.harness.cdng.provision.terraform.TerraformPlanStepNode;
 import io.harness.cdng.provision.terraform.TerraformRollbackStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepNode;
+import io.harness.cdng.serverless.ServerlessAwsLambdaGenericStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepNode;
 import io.harness.cdng.ssh.CommandStepNode;
 import io.harness.morphia.MorphiaRegistrar;
@@ -343,6 +344,18 @@ public class CDNGRegistrars {
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
+              .add(YamlSchemaRootClass.builder()
+                      .entityType(EntityType.SERVERLESS_AWS_LAMBDA_GENERIC_STEP)
+                      .availableAtProjectLevel(true)
+                      .availableAtOrgLevel(false)
+                      .availableAtAccountLevel(false)
+                      .clazz(ServerlessAwsLambdaGenericStepNode.class)
+                      .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                              .namespace(SchemaNamespaceConstants.CD)
+                              .modulesSupported(Collections.singletonList(ModuleType.CD))
+                              .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                              .build())
+                      .build())
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.SERVERLESS_AWS_LAMBDA_DEPLOY_STEP)
                    .availableAtProjectLevel(true)

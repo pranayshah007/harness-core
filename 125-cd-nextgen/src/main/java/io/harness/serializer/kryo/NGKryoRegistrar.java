@@ -70,13 +70,7 @@ import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepInf
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepInfo;
 import io.harness.cdng.provision.terraform.TerraformApplyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
-import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepInfo;
-import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepParameters;
-import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackDataOutcome;
-import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo;
-import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepParameters;
-import io.harness.cdng.serverless.ServerlessGitFetchOutcome;
-import io.harness.cdng.serverless.ServerlessStepPassThroughData;
+import io.harness.cdng.serverless.*;
 import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
@@ -181,6 +175,8 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(JenkinsBuildStepInfo.class, 12700);
     kryo.register(MergePRStepParams.class, 12604);
     kryo.register(MergePRStepInfo.class, 12605);
+    kryo.register(ServerlessAwsLambdaGenericStepInfo.class, 12606);
+    kryo.register(ServerlessAwsLambdaGenericStepParameters.class, 12607);
 
     kryo.register(CustomFetchResponsePassThroughData.class, 12705);
   }

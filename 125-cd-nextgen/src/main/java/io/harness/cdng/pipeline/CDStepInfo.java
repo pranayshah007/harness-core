@@ -37,6 +37,7 @@ import io.harness.cdng.provision.terraform.TerraformDestroyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepInfo;
+import io.harness.cdng.serverless.ServerlessAwsLambdaGenericStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo;
 import io.harness.cdng.ssh.CommandStepInfo;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
@@ -55,7 +56,7 @@ import io.swagger.annotations.ApiModel;
               K8sCanaryDeleteStepInfo.class, TerraformApplyStepInfo.class, TerraformPlanStepInfo.class,
               TerraformDestroyStepInfo.class, TerraformRollbackStepInfo.class, HelmDeployStepInfo.class,
               HelmRollbackStepInfo.class, CloudformationCreateStackStepInfo.class,
-              CloudformationDeleteStackStepInfo.class, ServerlessAwsLambdaDeployStepInfo.class,
+              CloudformationDeleteStackStepInfo.class, ServerlessAwsLambdaGenericStepInfo.class, ServerlessAwsLambdaDeployStepInfo.class,
               ServerlessAwsLambdaRollbackStepInfo.class, CloudformationRollbackStepInfo.class, CommandStepInfo.class,
               AzureWebAppSlotDeploymentStep.class, AzureWebAppTrafficShiftStep.class, AzureWebAppSwapSlotStep.class,
               AzureWebAppRollbackStep.class, JenkinsBuildStepInfo.class})

@@ -117,6 +117,10 @@ public enum NGStepType {
       "Utilites/Non-Scripted/", StepSpecTypeConstants.PLACEHOLDER),
 
   // serverless steps
+  @JsonProperty(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_GENERIC)
+  SERVERLESS_AWS_LAMBDA_GENERIC("Serverless Aws Lambda Generic",
+          Arrays.asList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
+          StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_GENERIC),
   @JsonProperty(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY)
   SERVERLESS_AWS_LAMBDA_DEPLOY("Serverless Aws Lambda Deploy",
       Arrays.asList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",

@@ -103,6 +103,7 @@ public class EntityYamlRootNames {
   public static final String QUEUE = "Lock";
   public static final String CLOUDFORMATION_CREATE_STACK_STEP = "CreateStack";
   public static final String CLOUDFORMATION_DELETE_STACK_STEP = "DeleteStack";
+  public static final String SERVERLESS_AWS_LAMBDA_GENERIC = "ServerlessAwsLambdaGeneric";
   public static final String SERVERLESS_AWS_LAMBDA_DEPLOY = "ServerlessAwsLambdaDeploy";
   public static final String SERVERLESS_AWS_LAMBDA_ROLLBACK = "ServerlessAwsLambdaRollback";
   public static final String CLOUDFORMATION_ROLLBACK_STACK_STEP = "RollbackStack";
