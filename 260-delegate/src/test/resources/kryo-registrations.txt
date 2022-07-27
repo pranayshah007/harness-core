@@ -1585,6 +1585,7 @@
 20102:io.harness.ng.core.user.UserMembershipUpdateMechanism
 20103:io.harness.ng.core.account.AuthenticationMechanism
 20104:io.harness.ng.core.account.ServiceAccountConfig
+20105:io.harness.steps.shellscript.ShellType
 22001:io.harness.ng.core.common.beans.NGTag
 22004:io.harness.ng.core.common.beans.KeyValuePair
 22005:io.harness.ng.core.ResourceScope
@@ -1722,6 +1723,8 @@
 55334:io.harness.delegate.task.ssh.config.SecretConfigFile
 55335:io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig
 55336:io.harness.delegate.task.shell.WinrmTaskParameters
+55337:io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest
+55338:io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse
 55401:io.harness.delegate.beans.SerializedResponseData
 55402:software.wings.beans.SerializationFormat
 55403:io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse
