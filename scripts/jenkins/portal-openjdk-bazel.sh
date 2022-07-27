@@ -244,9 +244,9 @@ cd ../..
 mkdir -p dist/pipeline-service
 cd dist/pipeline-service
 
-cp ${HOME}/.bazel-dirs/bin/pipeline-service/module_deploy.jar pipeline-service-capsule.jar
+cp ${HOME}/.bazel-dirs/bin/pipeline-service/service/module_deploy.jar pipeline-service-capsule.jar
 cp ../../pipeline-service/config.yml .
-cp ../../pipeline-service/keystore.jks .
+cp ../../pipeline-service/config/keystore.jks .
 cp ../../pipeline-service/config/key.pem .
 cp ../../pipeline-service/config/cert.pem .
 cp ../../pipeline-service/service/src/main/resources/redisson-jcache.yaml .
