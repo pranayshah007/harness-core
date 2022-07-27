@@ -1,0 +1,214 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/api/v2/metrics/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "qva35651.live.dynatrace.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "entitySelector" : [ {
+            "matcher" : "exact",
+            "value" : "type(\"dt.entity.service_method\"),entityId(\"SERVICE_METHOD-F3988BEE84FF7388\")"
+          } ],
+          "from" : [ {
+            "matcher" : "exact",
+            "value" : "1658793540000"
+          } ],
+          "metricSelector" : [ {
+            "matcher" : "exact",
+            "value" : "builtin:service.keyRequest.count.total"
+          } ],
+          "resolution" : [ {
+            "matcher" : "exact",
+            "value" : "1m"
+          } ],
+          "to" : [ {
+            "matcher" : "exact",
+            "value" : "1658793600000"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAAIWPwU7DMAyG38XnLlpVumU5MlIxoYmpIC5omkJnQUSajMadqKa9O05BaLclp/i3vy8+AQUybhl6T6DyDDx+08a84wMOoHzvXAYdxuB6ssGDgryFsdI77n89QYvU2Wa15+itt46sVxG7o21QfOJQ41ePkUST+GJU8fjekNkE62nU1obRoEox1RPJoW3RR5ZdhnkKy9/JUfvfFfkJT7p+WS31bq2f7x/vJlWxkPJWa3lTVfNCStheYNfmAIoBJNCTpUH8fXfHm3yEtMc12jkDYlok0x6SPp+Vcr4oZtN0WHU0jpdOgdye0/0BOaKDFGUBAAA=",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Cache-Control" : [ "no-store, no-cache" ],
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "251" ],
+          "Content-Type" : [ "application/json;charset=utf-8" ],
+          "Date" : [ "Tue, 26 Jul 2022 09:47:30 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Pragma" : [ "no-cache" ],
+          "Server" : [ "ruxit server" ],
+          "Server-Timing" : [ "dtRpid;desc=\"771742975\", dtSInfo;desc=\"0\"" ],
+          "Set-Cookie" : [ "dtCookie=v_4_srv_7_sn_4D69BF1BEF205BEC57CC2C778C1219CB_perc_100000_ol_0_mul_1_app-3Af6b10dd0df01cfe1_1_rcs-3Acss_0; Path=/; Domain=.dynatrace.com; Secure" ],
+          "Strict-Transport-Security" : [ "max-age=31536000;includeSubDomains" ],
+          "Vary" : [ "Accept-Encoding" ],
+          "X-Oneagent-Js-Injection" : [ "true" ],
+          "X-Robots-Tag" : [ "noindex" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/api/v2/metrics/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "qva35651.live.dynatrace.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "entitySelector" : [ {
+            "matcher" : "exact",
+            "value" : "type(\"dt.entity.service_method\"),entityId(\"SERVICE_METHOD-F3988BEE84FF7388\")"
+          } ],
+          "from" : [ {
+            "matcher" : "exact",
+            "value" : "1658793540000"
+          } ],
+          "metricSelector" : [ {
+            "matcher" : "exact",
+            "value" : "builtin:service.keyRequest.response.time"
+          } ],
+          "resolution" : [ {
+            "matcher" : "exact",
+            "value" : "1m"
+          } ],
+          "to" : [ {
+            "matcher" : "exact",
+            "value" : "1658793600000"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAAIWPwU7DMBBE/2XPqdUQ0rg+UhJRoYoqIC6oqky7AgvHDvG6Iqr672wCor2xPtlvdsZzBPKk7cJHR6DSBBx+0Vq/4T32oFy0NoEOg7eRjHegIG1gfImW9S9HaJA6s1vuGb1GY8k4FbA7mB2KD+xr/IwYSPBC611AQaZBNthr0mtvHI3BtWZzULmYlhPJkDUucNwlTAeY/2yOwX+qwFd4LOvn5aLcrsqnu4fbSZXNpbwpS3ldVUUmJWwubFe6BcUGJNCRoV78fnjLXd790OQ/t1MCQ5FAummH+HSWy2KezabDcNRBW67NIC+KVFydJ9uchvMNs6KsNXYBAAA=",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Cache-Control" : [ "no-store, no-cache" ],
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "260" ],
+          "Content-Type" : [ "application/json;charset=utf-8" ],
+          "Date" : [ "Tue, 26 Jul 2022 09:47:31 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Pragma" : [ "no-cache" ],
+          "Server" : [ "ruxit server" ],
+          "Server-Timing" : [ "dtRpid;desc=\"-49602639\", dtSInfo;desc=\"0\"" ],
+          "Set-Cookie" : [ "dtCookie=v_4_srv_3_sn_398F8723F4C2660BF44CE02FC60C082C_perc_100000_ol_0_mul_1_app-3Af6b10dd0df01cfe1_1_rcs-3Acss_0; Path=/; Domain=.dynatrace.com; Secure" ],
+          "Strict-Transport-Security" : [ "max-age=31536000;includeSubDomains" ],
+          "Vary" : [ "Accept-Encoding" ],
+          "X-Oneagent-Js-Injection" : [ "true" ],
+          "X-Robots-Tag" : [ "noindex" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/api/v2/metrics/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "qva35651.live.dynatrace.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "entitySelector" : [ {
+            "matcher" : "exact",
+            "value" : "type(\"dt.entity.service_method\"),entityId(\"SERVICE_METHOD-F3988BEE84FF7388\")"
+          } ],
+          "from" : [ {
+            "matcher" : "exact",
+            "value" : "1658793540000"
+          } ],
+          "metricSelector" : [ {
+            "matcher" : "exact",
+            "value" : "builtin:service.keyRequest.errors.server.count"
+          } ],
+          "resolution" : [ {
+            "matcher" : "exact",
+            "value" : "1m"
+          } ],
+          "to" : [ {
+            "matcher" : "exact",
+            "value" : "1658793600000"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAAIWPwU7DMAyG38XnLmpVumU9MlIxoYmpIC5omkJnQUSajMSdmKa9O05BaLclp/hz/s8+AXnSduEHR1AXGTj8prV+xwc8Qu0GazMIGL0dyHgHNRQ9jJXBcv/rCXqkYLrljtHbYCwZV0cMB9Oh+MRji18DRhIYgg9RJIJBdKMtg50mvfbG0ahvNSugrkSuJpKh6dFFll7CIsHq9+eo/++K/IQn1b4sF2q7Us/3j3eTppxLeauUvGmaWSklbC5iV3oPNQfwcI4MHcXf2Fve6MOnfa6lnTMgTouk+33SF9NKzublNE+HVQdteXkG+eac7g9rWTBzbAEAAA==",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Cache-Control" : [ "no-store, no-cache" ],
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "256" ],
+          "Content-Type" : [ "application/json;charset=utf-8" ],
+          "Date" : [ "Tue, 26 Jul 2022 09:47:32 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Pragma" : [ "no-cache" ],
+          "Server" : [ "ruxit server" ],
+          "Server-Timing" : [ "dtRpid;desc=\"489053321\", dtSInfo;desc=\"0\"" ],
+          "Set-Cookie" : [ "dtCookie=v_4_srv_1_sn_BF247D76CFD937F50927AAD2F14F320A_perc_100000_ol_0_mul_1_app-3Af6b10dd0df01cfe1_1_rcs-3Acss_0; Path=/; Domain=.dynatrace.com; Secure" ],
+          "Strict-Transport-Security" : [ "max-age=31536000;includeSubDomains" ],
+          "Vary" : [ "Accept-Encoding" ],
+          "X-Oneagent-Js-Injection" : [ "true" ],
+          "X-Robots-Tag" : [ "noindex" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-07-26T09:47:36Z"
+  }
+}

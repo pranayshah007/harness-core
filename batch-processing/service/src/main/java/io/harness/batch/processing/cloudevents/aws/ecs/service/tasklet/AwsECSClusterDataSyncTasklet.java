@@ -364,6 +364,9 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
                   String.valueOf(containerInstantData.getTotalResource().getMemoryMb()));
               metaData.put(InstanceMetaDataConstants.PARENT_RESOURCE_ID, containerInstanceId);
               metaData.put(InstanceMetaDataConstants.ACTUAL_PARENT_RESOURCE_ID, containerInstanceId);
+            } else {
+              metaData.put(InstanceMetaDataConstants.INSTANCE_CATEGORY,
+                  InstanceMetaDataUtils.getInstanceCategoryECSFargate(task.getCapacityProviderName()).name());
             }
             metaData.put(InstanceMetaDataConstants.TASK_ID, taskId);
             metaData.put(InstanceMetaDataConstants.REGION, region);
