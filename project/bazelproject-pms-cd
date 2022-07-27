@@ -105,7 +105,7 @@ derive_targets_from_directories: false
 
 targets:
   120-ng-manager:module
-  pipeline-service:module
+  pipeline-service/service:module
 
 
 import_run_configurations:

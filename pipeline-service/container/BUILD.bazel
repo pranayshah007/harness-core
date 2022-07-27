@@ -24,7 +24,7 @@ pkg_tar(
     ],
     files = {
         "@alpn_boot_8.1.13.v20181017//file": "alpn-boot-8.1.13.v20181017.jar",
-        "//pipeline-service:module_deploy.jar": "pipeline-service-capsule.jar",
+        "//pipeline-service/service:module_deploy.jar": "pipeline-service-capsule.jar",
     },
     mode = "0600",
     owner = "65534.65534",
