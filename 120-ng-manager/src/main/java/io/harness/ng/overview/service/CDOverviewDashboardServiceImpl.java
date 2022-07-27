@@ -297,7 +297,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
   public String queryBuilderServiceTag(String queryIdCdTable) {
     String selectStatusQuery =
-        "select service_name,tag,env_id,env_name,env_type,artifact_image,pipeline_execution_summary_cd_id, infrastructureidentifier from "
+        "select service_name,tag,env_id,env_name,env_type,artifact_image,pipeline_execution_summary_cd_id, infrastructureName from "
         + tableNameServiceAndInfra + " where ";
     StringBuilder totalBuildSqlBuilder = new StringBuilder(20480);
 
@@ -540,7 +540,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           String envName = resultSet.getString("env_name");
           String envType = resultSet.getString("env_type");
           String image = resultSet.getString("artifact_image");
-          String infrastructureIdentifier = resultSet.getString("infrastructureidentifier");
+          String infrastructureName = resultSet.getString("infrastructureName");
           if (serviceTagMap.containsKey(pipeline_execution_summary_cd_id)) {
             serviceTagMap.get(pipeline_execution_summary_cd_id).add(getServiceDeployment(service_name, tag, image));
           } else {
@@ -553,7 +553,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
           pipelineEnvInfraMap.putIfAbsent(pipeline_execution_summary_cd_id, new HashMap<>());
           pipelineEnvInfraMap.get(pipeline_execution_summary_cd_id).putIfAbsent(envId, new ArrayList<>());
-          pipelineEnvInfraMap.get(pipeline_execution_summary_cd_id).get(envId).add(infrastructureIdentifier);
+          pipelineEnvInfraMap.get(pipeline_execution_summary_cd_id).get(envId).add(infrastructureName);
         }
         successfulOperation = true;
       } catch (SQLException ex) {
@@ -577,12 +577,12 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       List<EnvironmentDeploymentsInfo> environmentDeploymentsInfoList = new ArrayList<>();
       for (Map.Entry<String, List<String>> entry1 : envInfraMap.entrySet()) {
         String envId = entry1.getKey();
-        List<String> infrastructureIdentifiers = entry1.getValue();
+        List<String> infrastructureNames = entry1.getValue();
         environmentDeploymentsInfoList.add(EnvironmentDeploymentsInfo.builder()
                                                .envId(envId)
                                                .envName(envIdToNameAndTypeMap.get(envId).getEnvName())
                                                .envType(envIdToNameAndTypeMap.get(envId).getEnvType())
-                                               .infrastructureIdentifiers(infrastructureIdentifiers)
+                                               .infrastructureNames(infrastructureNames)
                                                .build());
       }
       pipelineExecutionIdToEnvironmentDeploymentsInfoMap.putIfAbsent(
