@@ -399,7 +399,7 @@ public enum FeatureName {
   CD_ONBOARDING_ENABLED,
   ATTRIBUTE_TYPE_ACL_ENABLED("Enable attribute filter on NG UI for ACL", HarnessTeam.PL),
   CREATE_DEFAULT_PROJECT("Enables auto create default project after user signup", HarnessTeam.GTM),
-  NG_OPTIMIZE_FETCH_FILES_KUSTOMIZE;
+  NG_OPTIMIZE_FETCH_FILES_KUSTOMIZE("Used to Optimize kustomize Manifest files fetch in NG", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

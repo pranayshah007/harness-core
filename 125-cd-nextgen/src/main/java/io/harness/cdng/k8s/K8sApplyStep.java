@@ -153,7 +153,6 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
             .useLatestKustomizeVersion(cdStepHelper.isUseLatestKustomizeVersion(accountId))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
-            .optimizeFetchFilesKustomize(cdStepHelper.isOptimizeFetchFilesKustomize(accountId))
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);

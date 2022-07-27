@@ -146,7 +146,6 @@ public class K8sDeleteStep extends TaskChainExecutableWithRollbackAndRbac implem
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .useLatestKustomizeVersion(cdStepHelper.isUseLatestKustomizeVersion(accountId))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
-            .optimizeFetchFilesKustomize(cdStepHelper.isOptimizeFetchFilesKustomize(accountId))
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);

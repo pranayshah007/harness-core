@@ -136,7 +136,6 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .skipAddingTrackSelectorToDeployment(cdStepHelper.isSkipAddingTrackSelectorToDeployment(accountId))
             .pruningEnabled(cdStepHelper.isPruningEnabled(accountId))
-            .optimizeFetchFilesKustomize(cdStepHelper.isOptimizeFetchFilesKustomize(accountId))
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);

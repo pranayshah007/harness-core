@@ -2939,7 +2939,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
             executionLogCallback, HelmVersion.V3, 600000, TEST_HELM_COMMAND);
 
     List<FileData> result = spyHelper.renderTemplate(K8sDelegateTaskParams.builder().helmPath(helmPath).build(),
-        manifestDelegateConfig, manifestDirectory, valuesList, "release", "namespace", executionLogCallback, 10, false);
+        manifestDelegateConfig, manifestDirectory, valuesList, "release", "namespace", executionLogCallback, 10);
 
     assertThat(result).isEqualTo(renderedFiles);
     verify(spyHelper, times(1))
@@ -2999,7 +2999,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         .build("manifest", kustomizePath, kustomizePluginPath, "kustomize-dir-path", executionLogCallback);
 
     List<FileData> result = k8sTaskHelperBase.renderTemplate(delegateTaskParams, manifestDelegateConfig, "manifest",
-        valuesList, "release", "namespace", executionLogCallback, 10, false);
+        valuesList, "release", "namespace", executionLogCallback, 10);
 
     assertThat(result).isEqualTo(renderedFiles);
     verify(kustomizeTaskHelper, times(1))
@@ -3053,7 +3053,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         .processTemplatization("manifest", ocPath, ocTemplatePath, executionLogCallback, valuesList);
 
     List<FileData> result = k8sTaskHelperBase.renderTemplate(delegateTaskParams, manifestDelegateConfig, "manifest",
-        valuesList, "release", "namespace", executionLogCallback, 10, false);
+        valuesList, "release", "namespace", executionLogCallback, 10);
 
     assertThat(result).isEqualTo(renderedFiles);
     verify(openShiftDelegateService, times(1))

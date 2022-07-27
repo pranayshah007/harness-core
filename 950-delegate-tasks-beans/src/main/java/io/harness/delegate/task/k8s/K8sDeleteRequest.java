@@ -40,7 +40,6 @@ public class K8sDeleteRequest implements K8sDeployRequest {
   CommandUnitsProgress commandUnitsProgress;
   boolean useLatestKustomizeVersion;
   boolean useNewKubectlVersion;
-  boolean optimizeFetchFilesKustomize;
 
   @Override
   public List<String> getOpenshiftParamList() {

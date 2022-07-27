@@ -2330,8 +2330,7 @@ public class K8sTaskHelperBase {
 
   public List<FileData> renderTemplate(K8sDelegateTaskParams k8sDelegateTaskParams,
       ManifestDelegateConfig manifestDelegateConfig, String manifestFilesDirectory, List<String> manifestOverrideFiles,
-      String releaseName, String namespace, LogCallback executionLogCallback, Integer timeoutInMin,
-      boolean optimizeFetchFilesKustomize) throws Exception {
+      String releaseName, String namespace, LogCallback executionLogCallback, Integer timeoutInMin) throws Exception {
     ManifestType manifestType = manifestDelegateConfig.getManifestType();
     long timeoutInMillis = K8sTaskHelperBase.getTimeoutMillisFromMinutes(timeoutInMin);
 
@@ -2351,7 +2350,7 @@ public class K8sTaskHelperBase {
       case KUSTOMIZE:
         KustomizeManifestDelegateConfig kustomizeManifest = (KustomizeManifestDelegateConfig) manifestDelegateConfig;
 
-        String kustomizeYamlPath = optimizeFetchFilesKustomize && kustomizeManifest.getKustomizeYamlPath() != null
+        String kustomizeYamlPath = kustomizeManifest.getKustomizeYamlPath() != null
             ? kustomizeManifest.getKustomizeYamlPath()
             : kustomizeManifest.getKustomizeDirPath();
 

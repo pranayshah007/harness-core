@@ -238,10 +238,9 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
     List<String> manifestOverrideFiles = getManifestOverrideFlies(request);
 
-    List<FileData> manifestFiles =
-        k8sTaskHelperBase.renderTemplate(k8sDelegateTaskParams, request.getManifestDelegateConfig(),
-            manifestFilesDirectory, manifestOverrideFiles, releaseName, kubernetesConfig.getNamespace(),
-            executionLogCallback, request.getTimeoutIntervalInMin(), request.isOptimizeFetchFilesKustomize());
+    List<FileData> manifestFiles = k8sTaskHelperBase.renderTemplate(k8sDelegateTaskParams,
+        request.getManifestDelegateConfig(), manifestFilesDirectory, manifestOverrideFiles, releaseName,
+        kubernetesConfig.getNamespace(), executionLogCallback, request.getTimeoutIntervalInMin());
 
     resources = k8sTaskHelperBase.readManifests(manifestFiles, executionLogCallback, isErrorFrameworkSupported());
     k8sTaskHelperBase.setNamespaceToKubernetesResourcesIfRequired(resources, kubernetesConfig.getNamespace());
