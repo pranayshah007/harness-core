@@ -83,7 +83,7 @@ java_library(
 
 filegroup(
     name = "resource",
-    srcs = ["../config/batch-processing-config.yml"],
+    srcs = ["config/batch-processing-config.yml"],
 )
 
 java_library(
