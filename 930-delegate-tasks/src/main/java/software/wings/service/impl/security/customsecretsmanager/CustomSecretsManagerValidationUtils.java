@@ -20,10 +20,13 @@ import static software.wings.settings.SettingVariableTypes.HOST_CONNECTION_ATTRI
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.security.encryption.EncryptedDataParams;
+import io.harness.security.encryption.EncryptedRecord;
 import io.harness.shell.ScriptType;
 
+import software.wings.beans.CustomSecretNGManagerConfig;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.delegation.ShellScriptParameters;
@@ -31,9 +34,7 @@ import software.wings.beans.delegation.ShellScriptParameters.ShellScriptParamete
 import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig;
 
 import com.google.common.collect.Sets;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.NonNull;
@@ -125,4 +126,79 @@ public class CustomSecretsManagerValidationUtils {
     }
     return shellScriptParametersBuilder.build();
   }
+
+  /*
+  --account Id
+  --executeOnDelegate
+  environmentVariables
+  executionId
+  -- outputVars
+  --script
+  --scriptType
+  --workingDirectory
+  k8sInfraDelegateConfig
+
+  taskParametersNGBuilder.accountId(AmbianceUtils.getAccountId(ambiance))
+        .executeOnDelegate(shellScriptStepParameters.onDelegate.getValue())
+        .environmentVariables(
+            shellScriptHelperService.getEnvironmentVariables(shellScriptStepParameters.getEnvironmentVariables()))
+        .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
+        .outputVars(shellScriptHelperService.getOutputVars(shellScriptStepParameters.getOutputVariables()))
+        .script(shellScript)
+        .scriptType(scriptType)
+        .workingDirectory(shellScriptHelperService.getWorkingDirectory(
+            workingDirectory, scriptType, shellScriptStepParameters.onDelegate.getValue()))
+        .build();
+   */
+  // All backend changes in PL-25548
+  // UI up
+  // Template will be up
+  // Use yaml ( create via yaml ) - in db
+  // test connection ( via postman ) with connector identifier ( of yaml in db )
+  // Test connection --> debug
+  public static ShellScriptTaskParametersNG buildShellScriptTaskParametersNG(
+      String accountId, EncryptedRecord encryptedRecord, CustomSecretNGManagerConfig customSecretNGManagerConfig) {
+    ScriptType scriptType = ScriptType.BASH;
+    ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder taskParametersNGBuilder =
+        ShellScriptTaskParametersNG.builder();
+    String script = encryptedRecord.getParameters()
+                        .stream()
+                        .filter(encryptedDataParams -> encryptedDataParams.getName().equals("Script"))
+                        .findFirst()
+                        .get()
+                        .getValue();
+    /*
+    taskParametersNGBuilder.k8sInfraDelegateConfig(
+            shellScriptHelperService.getK8sInfraDelegateConfig(ambiance, shellScript));
+    shellScriptHelperService.prepareTaskParametersForExecutionTarget(
+            ambiance, shellScriptStepParameters, taskParametersNGBuilder);
+
+     */
+    Map<String, String> envVars = new HashMap<>();
+    customSecretNGManagerConfig.getTestVariables().forEach(
+        encryptedDataParams -> envVars.put(encryptedDataParams.getName(), encryptedDataParams.getValue()));
+    return taskParametersNGBuilder.accountId(accountId)
+        .executeOnDelegate(customSecretNGManagerConfig.isOnDelegate())
+        .environmentVariables(envVars)
+        .outputVars(Collections.singletonList(OUTPUT_VARIABLE))
+        .script(script)
+        .scriptType(scriptType)
+        .workingDirectory(customSecretNGManagerConfig.getWorkingDirectory())
+        .host(customSecretNGManagerConfig.getHost())
+        .build();
+  }
+
+  /*public K8sInfraDelegateConfig getK8sInfraDelegateConfig(@Nonnull Ambiance ambiance, @Nonnull String shellScript) {
+    if(shellScript.contains(K8sConstants.HARNESS_KUBE_CONFIG_PATH))
+    {
+      OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(ambiance,
+              RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.K8S_INFRA_DELEGATE_CONFIG_OUTPUT_NAME));
+      if (optionalSweepingOutput.isFound()) {
+        K8sInfraDelegateConfigOutput k8sInfraDelegateConfigOutput =
+                (K8sInfraDelegateConfigOutput) optionalSweepingOutput.getOutput();
+        return k8sInfraDelegateConfigOutput.getK8sInfraDelegateConfig();
+      }
+    }
+    return null;
+  }*/
 }
