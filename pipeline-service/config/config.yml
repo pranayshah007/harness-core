@@ -77,8 +77,8 @@ grpcServerConfig:
   connectors:
     - port: 12011
       secure: true
-      keyFilePath: pipeline-service/key.pem
-      certFilePath: pipeline-service/cert.pem
+      keyFilePath: key.pem
+      certFilePath: cert.pem
     - port: 12012
 
 grpcClientConfigs:
