@@ -43,7 +43,8 @@ import lombok.experimental.SuperBuilder;
   , @Type(name = "VAULT", value = VaultConfigDTO.class), @Type(name = "GCP_KMS", value = GcpKmsConfigDTO.class),
       @Type(name = "KMS", value = AwsKmsConfigDTO.class),
       @Type(name = "AZURE_VAULT", value = AzureKeyVaultConfigDTO.class),
-      @Type(name = "AWS_SECRETS_MANAGER", value = AwsSMConfigDTO.class)
+      @Type(name = "AWS_SECRETS_MANAGER", value = AwsSMConfigDTO.class),
+      @Type(name = "CUSTOM_SECRET_MANAGER", value = CustomSecretManagerConfigDTO.class)
 })
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(
