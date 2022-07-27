@@ -31,6 +31,7 @@ shared_dependencies = [
     "//136-git-sync-manager:module",
     "//295-cdng-contracts:module",
     "//pipeline-service/modules/pms-contracts:module",
+    "//840-template-service:module",
     "//920-ng-signup:module",
     "//925-enforcement-service:module",
     "//925-subscription-service:module",
