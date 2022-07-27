@@ -63,9 +63,8 @@ public class ShellScriptTaskHandlerNG {
       secretItems.replaceAll(String::trim);
     }
     if (parameters.isExecuteOnDelegate()) {
-      ScriptProcessExecutor executor = shellExecutorFactory.getExecutor(
-          parameters.processExecutorConfig(containerDeploymentDelegateBaseHelper, encryptionService),
-          parameters.isSaveExecutionLogs());
+      ScriptProcessExecutor executor =
+          shellExecutorFactory.getExecutor(parameters.processExecutorConfig(null, encryptionService), null, null);
       if (parameters.isLocalOverrideFeatureFlag()) {
         parameters.setScript(delegateLocalConfigService.replacePlaceholdersWithLocalConfig(parameters.getScript()));
       }
@@ -78,8 +77,7 @@ public class ShellScriptTaskHandlerNG {
         try {
           SshSessionConfig expectedSshConfig =
               parameters.sshSessionConfig(encryptionService, secretManagementDelegateService);
-          BaseScriptExecutor executor =
-              sshExecutorFactory.getExecutor(expectedSshConfig, parameters.isSaveExecutionLogs());
+          BaseScriptExecutor executor = sshExecutorFactoryNG.getExecutor(expectedSshConfig, null, null);
           enableJSchLogsPerSSHTaskExecution(parameters.isEnableJSchLogs());
           return CommandExecutionResultMapper.from(
               executor.executeCommandString(parameters.getScript(), items, secretItems, timeoutInMillis));

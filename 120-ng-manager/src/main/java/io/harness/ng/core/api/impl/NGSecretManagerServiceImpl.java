@@ -164,7 +164,6 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
         throw wingsException;
       } catch (Exception exception) {
         log.error("Validation for Secret Manager/KMS failed: " + encryptionConfig.getName(), exception);
-        throw exception;
       }
     }
     return validationResult;

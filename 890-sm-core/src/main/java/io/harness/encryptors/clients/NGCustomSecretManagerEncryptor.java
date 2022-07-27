@@ -31,6 +31,7 @@ import io.harness.shell.ShellExecutionData;
 
 import software.wings.beans.delegation.ShellScriptParameters;
 import software.wings.delegatetasks.ShellScriptTaskHandler;
+import software.wings.delegatetasks.ShellScriptTaskHandlerNG;
 import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig;
 
 import com.google.common.util.concurrent.TimeLimiter;
@@ -39,15 +40,15 @@ import java.time.Duration;
 import java.util.Set;
 
 public class NGCustomSecretManagerEncryptor implements CustomEncryptor {
-  private final NGShellScriptTaskHandler ngShellScriptTaskHandler;
+  private final ShellScriptTaskHandlerNG shellScriptTaskHandlerNG;
 
   private static final String OUTPUT_VARIABLE = "secret";
   private final TimeLimiter timeLimiter;
 
   @Inject
-  public NGCustomSecretManagerEncryptor(TimeLimiter timeLimiter, NGShellScriptTaskHandler ngShellScriptTaskHandler) {
+  public NGCustomSecretManagerEncryptor(TimeLimiter timeLimiter, ShellScriptTaskHandlerNG shellScriptTaskHandlerNG) {
     this.timeLimiter = timeLimiter;
-    this.ngShellScriptTaskHandler = ngShellScriptTaskHandler;
+    this.shellScriptTaskHandlerNG = shellScriptTaskHandlerNG;
   }
 
   @Override
@@ -82,7 +83,7 @@ public class NGCustomSecretManagerEncryptor implements CustomEncryptor {
   private char[] fetchSecretValueInternal(
       EncryptedRecord encryptedRecord, CustomSecretsManagerConfig customSecretsManagerConfig) {
     ShellScriptParameters shellScriptParameters = buildShellScriptParameters(customSecretsManagerConfig);
-    CommandExecutionResult commandExecutionResult = shellScriptTaskHandler.handle(shellScriptParameters);
+    CommandExecutionResult commandExecutionResult = shellScriptTaskHandlerNG.handle(shellScriptParameters);
     if (commandExecutionResult.getStatus() != SUCCESS) {
       String errorMessage = "Could not retrieve secret with the given parameters due to error in shell script.";
       throw new CommandExecutionException(errorMessage);
