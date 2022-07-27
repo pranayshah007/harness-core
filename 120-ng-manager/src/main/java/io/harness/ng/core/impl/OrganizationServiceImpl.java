@@ -37,6 +37,7 @@ import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.dto.OrganizationFilterDTO;
@@ -97,12 +98,13 @@ public class OrganizationServiceImpl implements OrganizationService {
   private final ScopeAccessHelper scopeAccessHelper;
   private final OrganizationInstrumentationHelper instrumentationHelper;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private final UserGroupService userGroupService;
 
   @Inject
   public OrganizationServiceImpl(OrganizationRepository organizationRepository, OutboxService outboxService,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, NgUserService ngUserService,
       AccessControlClient accessControlClient, ScopeAccessHelper scopeAccessHelper,
-      OrganizationInstrumentationHelper instrumentationHelper, NGFeatureFlagHelperService ngFeatureFlagHelperService) {
+      OrganizationInstrumentationHelper instrumentationHelper, NGFeatureFlagHelperService ngFeatureFlagHelperService, UserGroupService userGroupService) {
     this.organizationRepository = organizationRepository;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
@@ -111,6 +113,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     this.scopeAccessHelper = scopeAccessHelper;
     this.instrumentationHelper = instrumentationHelper;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
+    this.userGroupService = userGroupService;
   }
 
   @Override
@@ -156,6 +159,7 @@ public class OrganizationServiceImpl implements OrganizationService {
       throw new InvalidRequestException("User not found in security context");
     }
     try {
+      userGroupService.setUpDefaultUserGroup(scope);
       assignOrgAdmin(scope, principalId, principalType);
       busyPollUntilOrgSetupCompletes(scope, principalId);
     } catch (Exception e) {

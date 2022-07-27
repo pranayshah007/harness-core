@@ -95,4 +95,5 @@ public interface UserGroupService {
       @NotBlank String userGroupId, boolean retainMembers);
 
   void sanitize(Scope scope, String identifier);
+  void setUpDefaultUserGroup(Scope scope);
 }
