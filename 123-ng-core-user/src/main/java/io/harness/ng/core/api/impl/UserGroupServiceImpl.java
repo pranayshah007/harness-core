@@ -495,7 +495,7 @@ public class UserGroupServiceImpl implements UserGroupService {
       validateUsers(userGroup.getUsers());
       validateScopeMembership(userGroup);
     }
-    validateManagedUserGroup(userGroup);
+    //validateManagedUserGroup(userGroup);
   }
 
   private void validateManagedUserGroup(UserGroup userGroup) {
@@ -834,7 +834,7 @@ public class UserGroupServiceImpl implements UserGroupService {
             .roleIdentifier(roleIdentifier)
             .disabled(false)
             .managed(managed)
-            .principal(PrincipalDTO.builder().identifier(userGroupIdentifier).scopeLevel(ScopeLevel.of(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier()).name()).type(USER_GROUP).build())
+            .principal(PrincipalDTO.builder().identifier(userGroupIdentifier).scopeLevel(ScopeLevel.of(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier()).name().toLowerCase()).type(USER_GROUP).build())
             .build());
 
     RoleAssignmentCreateRequestDTO roleAssignmentCreateRequestDTO = RoleAssignmentCreateRequestDTO.builder()
