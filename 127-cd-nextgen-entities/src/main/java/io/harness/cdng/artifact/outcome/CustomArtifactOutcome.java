@@ -9,6 +9,7 @@ package io.harness.cdng.artifact.outcome;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.CustomArtifactSummary;
@@ -27,6 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("customArtifactOutcome")
 @JsonTypeName("customArtifactOutcome")
 @OwnedBy(CDC)
+@RecasterAlias("io.harness.cdng.artifact.outcome.customArtifactOutcome")
 public class CustomArtifactOutcome implements ArtifactOutcome {
   /** Identifier for artifact. */
   String identifier;

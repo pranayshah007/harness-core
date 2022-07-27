@@ -379,3 +379,10 @@ io.harness.ngpipeline.artifact.bean.JenkinsArtifactOutcome
 io.harness.cdng.artifact.JenkinsArtifactSummary
 io.harness.logging.CommandExecutionStatus
 io.harness.plancreator.steps.TaskSelectorYaml
+io.harness.cdng.artifact.outcome.customArtifactOutcome
+io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptInfo
+io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScripts
+io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptSourceWrapper
+io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource
+io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts
+io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactSpecInfo

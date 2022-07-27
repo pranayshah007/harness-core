@@ -7,6 +7,7 @@
 
 package io.harness.cdng.artifact.bean.yaml.customartifact;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.YamlNode;
@@ -26,6 +27,7 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @AllArgsConstructor
 @TypeAlias("CustomArtifactScriptInfo")
+@RecasterAlias("io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptInfo")
 public class CustomArtifactScriptInfo {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })

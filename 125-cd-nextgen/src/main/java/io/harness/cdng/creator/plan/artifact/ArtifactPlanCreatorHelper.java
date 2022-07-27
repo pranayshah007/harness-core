@@ -9,6 +9,7 @@ package io.harness.cdng.creator.plan.artifact;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.steps.ArtifactStep;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.artifact.steps.ArtifactSyncStep;
@@ -41,7 +42,7 @@ public class ArtifactPlanCreatorHelper {
   }
 
   public boolean isCustomArtifactIsDelegateTask(ArtifactStepParameters artifactStepParameters) {
-    if (artifactStepParameters.getSpec().toString().contains("scripts")) {
+    if (((CustomArtifactConfig) artifactStepParameters.getSpec()).getScripts() != null) {
       return true;
     }
     return false;

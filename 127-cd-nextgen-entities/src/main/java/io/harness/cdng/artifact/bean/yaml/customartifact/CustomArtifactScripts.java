@@ -7,6 +7,7 @@
 
 package io.harness.cdng.artifact.bean.yaml.customartifact;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -21,6 +22,7 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @AllArgsConstructor
 @TypeAlias("CustomArtifactScripts")
+@RecasterAlias("io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScripts")
 public class CustomArtifactScripts {
   @NotNull FetchAllArtifacts fetchAllArtifacts;
 }

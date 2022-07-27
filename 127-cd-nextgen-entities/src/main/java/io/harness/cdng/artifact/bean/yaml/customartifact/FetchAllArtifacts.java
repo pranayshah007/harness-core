@@ -7,23 +7,24 @@
 
 package io.harness.cdng.artifact.bean.yaml.customartifact;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
+
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.variables.NGVariable;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Wither;
 import org.springframework.data.annotation.TypeAlias;
-
-import javax.validation.constraints.NotNull;
-import java.util.List;
-
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 @OwnedBy(HarnessTeam.CDC)
 @Data
@@ -31,6 +32,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 @AllArgsConstructor
 @SimpleVisitorHelper(helperClass = CustomArtifactSpecVisitorHelper.class)
 @TypeAlias("FetchAllArtifacts")
+@RecasterAlias("io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts")
 public class FetchAllArtifacts {
   @YamlSchemaTypes({string}) @Wither private ParameterField<String> artifactsArrayPath;
   private List<NGVariable> attributes;
