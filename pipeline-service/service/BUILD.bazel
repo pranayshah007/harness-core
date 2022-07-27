@@ -13,7 +13,7 @@ java_binary(
     ],
     main_class = "io.harness.PipelineServiceApplication",
     resources = [
-        "//pipeline-service/src/main/resources:resource",
+        "//pipeline-service/service/src/main/resources:resource",
     ],
     visibility = ["//visibility:public"],
     runtime_deps = [
@@ -116,7 +116,7 @@ java_library(
     name = "tests",
     testonly = True,
     srcs = glob(["src/test/**/*.java"]),
-    resources = ["//pipeline-service/src/test/resources:resource"],
+    resources = ["//pipeline-service/service/src/test/resources:resource"],
     visibility = ["//visibility:public"],
     deps = [
         ":module",
