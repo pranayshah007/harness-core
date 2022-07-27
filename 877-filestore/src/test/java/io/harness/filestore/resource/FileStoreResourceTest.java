@@ -186,7 +186,7 @@ public class FileStoreResourceTest extends CategoryTest {
 
     assertThat(response.getStatus()).isEqualTo(Status.SUCCESS);
 
-    verify(fileStoreService).update(any(), any(), eq(IDENTIFIER));
+    verify(fileStoreService).update(any(), any());
   }
 
   @Test
@@ -206,7 +206,7 @@ public class FileStoreResourceTest extends CategoryTest {
 
     assertThat(response.getStatus()).isEqualTo(Status.SUCCESS);
 
-    verify(fileStoreService).update(any(), any(), eq(IDENTIFIER));
+    verify(fileStoreService).update(any(), any());
   }
 
   @Test
@@ -259,10 +259,10 @@ public class FileStoreResourceTest extends CategoryTest {
   public void testListFolderNodes() {
     FolderNodeDTO folderDTO = FolderNodeDTO.builder().build();
     doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), eq(FILE_VIEW_PERMISSION));
-    when(fileStoreService.listFolderNodes(ACCOUNT, ORG, PROJECT, folderDTO))
+    when(fileStoreService.listFolderNodes(ACCOUNT, ORG, PROJECT, folderDTO, null))
         .thenReturn(FolderNodeDTO.builder().name("returnedFolderName").identifier("returnedFolderIdentifier").build());
     ResponseDTO<FolderNodeDTO> folderNodeDTOResponseDTO =
-        fileStoreResource.listFolderNodes(ACCOUNT, ORG, PROJECT, folderDTO);
+        fileStoreResource.listFolderNodes(ACCOUNT, ORG, PROJECT, folderDTO, null);
     FolderNodeDTO data = folderNodeDTOResponseDTO.getData();
 
     assertThat(data).isNotNull();
@@ -278,7 +278,7 @@ public class FileStoreResourceTest extends CategoryTest {
     doThrow(new NGAccessDeniedException("Principal doesn't have file view permission", USER, null))
         .when(accessControlClient)
         .checkForAccessOrThrow(any(), any(), eq(FILE_VIEW_PERMISSION));
-    assertThatThrownBy(() -> fileStoreResource.listFolderNodes(ACCOUNT, ORG, PROJECT, folderDTO))
+    assertThatThrownBy(() -> fileStoreResource.listFolderNodes(ACCOUNT, ORG, PROJECT, folderDTO, null))
         .isInstanceOf(NGAccessDeniedException.class)
         .hasMessage("Principal doesn't have file view permission");
   }
@@ -289,10 +289,10 @@ public class FileStoreResourceTest extends CategoryTest {
   public void testListFolderNodesWithException() {
     FolderNodeDTO folderDTO = FolderNodeDTO.builder().build();
     doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), eq(FILE_VIEW_PERMISSION));
-    when(fileStoreService.listFolderNodes(ACCOUNT, ORG, PROJECT, folderDTO))
+    when(fileStoreService.listFolderNodes(ACCOUNT, ORG, PROJECT, folderDTO, null))
         .thenThrow(new InvalidRequestException("Unable to list folder nodes"));
 
-    assertThatThrownBy(() -> fileStoreResource.listFolderNodes(ACCOUNT, ORG, PROJECT, folderDTO))
+    assertThatThrownBy(() -> fileStoreResource.listFolderNodes(ACCOUNT, ORG, PROJECT, folderDTO, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Unable to list folder nodes");
   }

@@ -155,6 +155,7 @@ public class ServiceNowCreateUpdateState extends State implements SweepingOutput
         throw new ServiceNowException("Json Body is not a valid Json: " + serviceNowCreateUpdateParams.getJsonBody(),
             ErrorCode.SERVICENOW_ERROR, WingsException.USER);
       }
+      renderImportSetExpressions(context, serviceNowCreateUpdateParams);
       serviceNowTaskParameters = ServiceNowTaskParameters.builder()
                                      .serviceNowConfig(config)
                                      .encryptionDetails(secretManager.getEncryptionDetails(config,
@@ -229,6 +230,11 @@ public class ServiceNowCreateUpdateState extends State implements SweepingOutput
     }
 
     params.setAdditionalFields(renderedAdditionalFields);
+  }
+
+  protected void renderImportSetExpressions(ExecutionContext context, ServiceNowCreateUpdateParams params) {
+    params.setImportSetTableName(context.renderExpression(params.getImportSetTableName()));
+    params.setJsonBody(context.renderExpression(params.getJsonBody()));
   }
 
   private ServiceNowConfig getSnowConfig(String snowConnectorId, String accountId) {

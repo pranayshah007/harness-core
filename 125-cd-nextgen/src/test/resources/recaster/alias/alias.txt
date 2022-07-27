@@ -365,10 +365,10 @@ io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentPassThroughData
 io.harness.cdng.service.steps.ServiceSectionStepOutcome
 io.harness.cdng.azure.webapp.ApplicationSettingsParameters
 io.harness.cdng.azure.webapp.ConnectionStringsParameters
-io.harness.cdng.azure.webapp.StartupScriptParameters
+io.harness.cdng.azure.webapp.StartupCommandParameters
 io.harness.cdng.azure.config.ApplicationSettingsOutcome
 io.harness.cdng.azure.config.ConnectionStringsOutcome
-io.harness.cdng.azure.config.StartupScriptOutcome
+io.harness.cdng.azure.config.StartupCommandOutcome
 io.harness.cdng.service.beans.AzureWebAppServiceSpec
 io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData
 JenkinsBuildStepNode

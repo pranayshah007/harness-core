@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 31
+version: 32
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1071,6 +1071,22 @@ permissions:
     name: Delete a Chaos Workflow
     status: ACTIVE
     includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_setting_view
+    name: View Settings
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: core_setting_edit
+    name: Edit a Setting
+    status: ACTIVE
+    includeInAllRoles: false
     allowedScopeLevels:
       - account
       - organization

@@ -59,7 +59,7 @@ public class LogStreamingStepClientFactory {
           .token(accountIdToTokenCache.get(accountId))
           .build();
     } catch (Exception exception) {
-      throw new InvalidRequestException("Could not generate token for given account Id" + accountId);
+      throw new InvalidRequestException("Could not generate token for given account Id " + accountId);
     }
   }
 

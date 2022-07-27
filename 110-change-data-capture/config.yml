@@ -57,7 +57,7 @@ timescaledb:
   logUnclosedConnections: false
   loggerLevel: OFF
 
-debeziumEnabled: false
+debeziumEnabled: ${DEBEZIUM_ENABLED:-false}
 
 cfClientConfig:
   apiKey: ""

@@ -110,14 +110,14 @@ ciExecutionServiceConfig:
   defaultInternalImageConnector: ''
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.14.9
-  liteEngineImage: harness/ci-lite-engine:1.14.9
+  addonImage: harness/ci-addon:1.14.10
+  liteEngineImage: harness/ci-lite-engine:1.14.10
   isLocal: false
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:
       # Use rootless image only for K8 git clone
-      image: harness/drone-git:1.2.0-rootless
+      image: harness/drone-git:1.2.2-rootless
       entrypoint:
         - /usr/local/bin/clone
       windowsEntrypoint:

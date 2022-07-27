@@ -18,6 +18,9 @@ import io.harness.pms.sdk.core.data.StepTransput;
 import io.harness.pms.sdk.core.execution.AsyncSdkProgressCallback;
 import io.harness.pms.sdk.core.execution.AsyncSdkResumeCallback;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
+import io.harness.steps.fork.ForkStepParameters;
+import io.harness.steps.section.chain.SectionChainPassThroughData;
+import io.harness.steps.section.chain.SectionChainStepParameters;
 
 import java.util.Set;
 
@@ -35,5 +38,8 @@ public class PmsSdkCoreMorphiaRegistrar implements MorphiaRegistrar {
   public void registerImplementationClasses(MorphiaRegistrarHelperPut h, MorphiaRegistrarHelperPut w) {
     h.put("pms.sdk.core.execution.AsyncSdkResumeCallback", AsyncSdkResumeCallback.class);
     h.put("pms.sdk.core.execution.AsyncSdkProgressCallback", AsyncSdkProgressCallback.class);
+    h.put("steps.fork.ForkStepParameters", ForkStepParameters.class);
+    h.put("steps.section.chain.SectionStepParameters", SectionChainStepParameters.class);
+    h.put("steps.section.chain.SectionChainPassThroughData", SectionChainPassThroughData.class);
   }
 }

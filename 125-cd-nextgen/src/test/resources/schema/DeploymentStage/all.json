@@ -512,7 +512,7 @@
             "connectionStrings": {
               "$ref": "#/definitions/StoreConfigWrapper"
             },
-            "startupScript": {
+            "startupCommand": {
               "$ref": "#/definitions/StoreConfigWrapper"
             }
           }
