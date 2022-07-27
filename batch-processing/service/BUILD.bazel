@@ -81,11 +81,6 @@ java_library(
     ],
 )
 
-filegroup(
-    name = "resource",
-    srcs = ["//batch-processing/config/batch-processing-config.yml"],
-)
-
 java_library(
     name = "tests",
     testonly = True,
