@@ -118,23 +118,6 @@ function copy_ce_nextgen_jars(){
 	cd ../..
 }
 
-function copy_batch_processing_jars(){
-	mkdir -p dist/batch-processing ;
-	cd dist/batch-processing
-
-	cp ${BAZEL_BIN}/280-batch-processing/module_deploy.jar batch-processing-capsule.jar
-	cp ../../280-batch-processing/batch-processing-config.yml .
-	cp ../../dockerization/batch-processing/Dockerfile-batch-processing-jenkins-k8-openjdk Dockerfile
-	cp ../../dockerization/batch-processing/Dockerfile-batch-processing-cie-jdk Dockerfile-cie-jdk
-	cp ../../dockerization/batch-processing/Dockerfile-batch-processing-jenkins-k8-gcr-openjdk Dockerfile-gcr
-	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
-  cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
-	cp -r ../../dockerization/batch-processing/scripts/ .
-	
-	copy_common_files
-
-	cd ../..
-}
 
 function copy_change_data_capture_jars(){
 	mkdir -p dist/change-data-capture ;
