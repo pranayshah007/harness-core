@@ -7,8 +7,6 @@
 
 package io.harness.engine.expressions;
 
-import io.harness.data.algorithm.HashGenerator;
-import io.harness.engine.expressions.functors.SecretFunctor;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.ExpressionEvaluatorUtils;
@@ -41,7 +39,7 @@ public class ShellScriptYamlExpressionEvaluator extends EngineExpressionEvaluato
     addToContext("__yamlExpression",
         ShellScriptYamlExpressionFunctor.builder().rootYamlField(getShellScriptYamlField()).build());
     // Add secret functor
-    addToContext("secrets", new SecretFunctor(HashGenerator.generateIntegerHash()));
+    // addToContext("secrets", new SecretFunctor(HashGenerator.generateIntegerHash()));
   }
 
   @Override

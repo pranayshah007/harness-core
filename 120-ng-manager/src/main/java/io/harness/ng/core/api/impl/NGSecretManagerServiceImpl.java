@@ -36,7 +36,6 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.services.NGTemplateService;
 
 import software.wings.beans.VaultConfig;
-import software.wings.beans.template.Template;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
