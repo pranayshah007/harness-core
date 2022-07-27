@@ -34,7 +34,10 @@ public class NGCoreMigrationProvider implements MigrationProvider {
   @Override
   public List<Class<? extends MigrationDetails>> getMigrationDetailsList() {
     return new ArrayList<Class<? extends MigrationDetails>>() {
-      { add(NGCoreMigrationDetails.class); }
+      {
+        add(NGCoreMigrationDetails.class);
+        add(HardDeleteSoftDeletedEntities.class);
+      }
     };
   }
 }
