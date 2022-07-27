@@ -10,8 +10,11 @@ package io.harness.ng.core.user.service.impl;
 import static io.harness.NGConstants.ACCOUNT_ADMIN_ROLE;
 import static io.harness.NGConstants.ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
@@ -550,7 +553,23 @@ public class NgUserServiceImpl implements NgUserService {
     addUserToParentScope(userId, scope, source, isAccountBasicFeatureFlagEnabled);
     createRoleAssignments(
         userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope), isAccountBasicFeatureFlagEnabled);
+    addUserToDefaultUserGroup(scope, userGroups);
     userGroupService.addUserToUserGroups(scope, userId, getValidUserGroups(scope, userGroups));
+  }
+
+  private void addUserToDefaultUserGroup(Scope scope, List<String> userGroups) {
+    if (isEmpty(userGroups)) {
+      userGroups = new ArrayList<>();
+    }
+    if (!isEmpty(scope.getProjectIdentifier())) {
+      userGroups.add(DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER);
+    }
+    else if (!isEmpty(scope.getOrgIdentifier())) {
+      userGroups.add(DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER);
+    }
+    else {
+      userGroups.add(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER);
+    }
   }
 
   private List<String> getValidUserGroups(Scope scope, List<String> userGroupIdentifiers) {
