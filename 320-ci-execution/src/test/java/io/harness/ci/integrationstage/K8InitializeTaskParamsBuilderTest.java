@@ -111,8 +111,8 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
         k8InitializeTaskParamsBuilder.getK8InitializeTaskParams(initializeStepInfo, ambiance, "");
     assertThat(response.getCik8PodParams().getName()).isEqualTo(podName);
     verify(k8InitializeStepUtils, times(1))
-        .createStepContainerDefinitionsStepGroupWithFF(any(), any(), any(), any(), any(), any(), anyInt(), initializeStepInfo.getInfrastructure());
-    verify(k8InitializeStepUtils, times(0)).createStepContainerDefinitions(any(), any(), any(), any(), any(), any(), initializeStepInfo.getInfrastructure());
+        .createStepContainerDefinitionsStepGroupWithFF(any(), any(), any(), any(), any(), any(), anyInt(), any());
+    verify(k8InitializeStepUtils, times(0)).createStepContainerDefinitions(any(), any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -145,7 +145,7 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     when(k8InitializeStepUtils.getStageCpuRequest(any(), any())).thenReturn(1024);
     when(k8InitializeStepUtils.getStageMemoryRequest(any(), any())).thenReturn(1024);
     when(k8InitializeServiceUtils.createServiceContainerDefinitions(any(), any(), any())).thenReturn(new ArrayList<>());
-    when(k8InitializeStepUtils.createStepContainerDefinitions(any(), any(), any(), any(), any(), any(), initializeStepInfo.getInfrastructure()))
+    when(k8InitializeStepUtils.createStepContainerDefinitions(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(Arrays.asList(K8InitializeTaskUtilsHelper.getRunStepContainer(0)));
     doNothing().when(k8InitializeTaskUtils).consumeSweepingOutput(any(), any(), any());
     doNothing().when(k8InitializeTaskUtils).consumeSweepingOutput(any(), any(), any());
@@ -154,7 +154,7 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
         k8InitializeTaskParamsBuilder.getK8InitializeTaskParams(initializeStepInfo, ambiance, "");
     assertThat(response.getCik8PodParams().getName()).isEqualTo(podName);
     verify(k8InitializeStepUtils, times(0))
-        .createStepContainerDefinitionsStepGroupWithFF(any(), any(), any(), any(), any(), any(), anyInt(), initializeStepInfo.getInfrastructure());
-    verify(k8InitializeStepUtils, times(1)).createStepContainerDefinitions(any(), any(), any(), any(), any(), any(), initializeStepInfo.getInfrastructure());
+        .createStepContainerDefinitionsStepGroupWithFF(any(), any(), any(), any(), any(), any(), anyInt(), any());
+    verify(k8InitializeStepUtils, times(1)).createStepContainerDefinitions(any(), any(), any(), any(), any(), any(), any());
   }
 }
