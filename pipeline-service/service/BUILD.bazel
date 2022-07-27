@@ -12,7 +12,10 @@ java_binary(
     resources = [
         "//pipeline-service/service/src/main/resources:resource",
     ],
-    visibility = ["//platform-service/build:__subpackages__"],
+    visibility = [
+        "//110-change-data-capture:__pkg__",
+        "//pipeline-service/build:__subpackages__",
+    ],
     runtime_deps = [
         "@maven//:javax_ws_rs_javax_ws_rs_api",
     ],
