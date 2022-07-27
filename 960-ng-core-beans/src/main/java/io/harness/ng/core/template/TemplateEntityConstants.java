@@ -34,5 +34,5 @@ public interface TemplateEntityConstants {
   String PIPELINE_ROOT_FIELD = "pipeline";
   String MONITORED_SERVICE_ROOT_FIELD = "monitoredService";
   String SECRET_MANAGER_ROOT_FIELD = "secretManager";
-  // String SCRIPT_ROOT_FIELD = "script";
+  String SCRIPT_ROOT_FIELD = "script";
 }
