@@ -18,7 +18,7 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.monitoredService.HealthSource.CVConfigUpdateResult;
-import io.harness.cvng.core.beans.monitoredService.MetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.DynatraceHealthSourceSpec;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.CVConfig;
@@ -104,7 +104,7 @@ public class DynatraceHealthSourceSpecTest extends CvNextGenTestBase {
             .feature(FEATURE)
             .serviceId(DYNATRACE_ENTITY_SERVICE_ID)
             .metricPacks(Collections.singleton(
-                MetricPackDTO.builder().identifier(CVNextGenConstants.PERFORMANCE_PACK_IDENTIFIER).build()))
+                TimeSeriesMetricPackDTO.builder().identifier(CVNextGenConstants.PERFORMANCE_PACK_IDENTIFIER).build()))
             .build();
     List<CVConfig> cvConfigs = new ArrayList<>();
     CVConfigUpdateResult result = classUnderTest.getCVConfigUpdateResult(mockedProjectParams.getAccountIdentifier(),

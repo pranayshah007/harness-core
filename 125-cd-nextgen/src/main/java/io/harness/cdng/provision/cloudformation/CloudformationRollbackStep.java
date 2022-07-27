@@ -17,7 +17,6 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -33,9 +32,6 @@ import io.harness.delegate.task.cloudformation.CloudformationCommandUnit;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGParameters;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGResponse;
 import io.harness.delegate.task.cloudformation.CloudformationTaskType;
-import io.harness.eraro.ErrorCode;
-import io.harness.exception.AccessDeniedException;
-import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logging.CommandExecutionStatus;
@@ -88,13 +84,7 @@ public class CloudformationRollbackStep extends TaskExecutableWithRollbackAndRba
                                                .build();
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CLOUDFORMATION_NG)) {
-      throw new AccessDeniedException(
-          "Cloudformation NG is not enabled for this account. Please contact harness customer care.",
-          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
-    }
-  }
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,

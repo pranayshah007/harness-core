@@ -10,6 +10,7 @@ package io.harness.pms.pipeline.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SAMARTH;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -23,10 +24,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.GovernanceService;
+import io.harness.exception.GitYamlException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
@@ -43,6 +48,7 @@ import io.harness.pms.governance.JsonExpander;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
+import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.yaml.validator.InvalidYamlException;
@@ -58,6 +64,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.mongodb.core.query.Criteria;
 
@@ -74,6 +82,8 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
   @Mock PMSYamlSchemaService yamlSchemaService;
   @Mock GovernanceService governanceService;
+  @Mock GitAwareEntityHelper gitAwareEntityHelper;
+  @Mock PMSPipelineRepository pmsPipelineRepository;
 
   String accountIdentifier = "account";
   String orgIdentifier = "org";
@@ -85,7 +95,7 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     pmsPipelineServiceHelper = new PMSPipelineServiceHelper(filterService, filterCreatorMergeService, yamlSchemaService,
         pipelineTemplateHelper, governanceService, jsonExpander, expansionRequestsExtractor, pmsFeatureFlagService,
-        gitSyncHelper, telemetryReporter, null);
+        gitSyncHelper, telemetryReporter, gitAwareEntityHelper, pmsPipelineRepository);
   }
 
   @Test
@@ -300,5 +310,27 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
     InvalidYamlException invalidYamlException = PMSPipelineServiceHelper.buildInvalidYamlException(error, yaml);
     assertThat(invalidYamlException.getYaml()).isEqualTo(yaml);
     assertThatThrownBy(() -> { throw invalidYamlException; }).hasMessage(error);
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testGetRepoUrlAndCheckForFileUniqueness() {
+    String repoUrl = "repoUrl";
+    GitEntityInfo gitEntityInfo = GitEntityInfo.builder().filePath("filePath").build();
+    MockedStatic<GitAwareContextHelper> utilities = Mockito.mockStatic(GitAwareContextHelper.class);
+    utilities.when(() -> GitAwareContextHelper.getGitRequestParamsInfo()).thenReturn(gitEntityInfo);
+
+    doReturn(repoUrl).when(gitAwareEntityHelper).getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier);
+    doReturn(10L)
+        .when(pmsPipelineRepository)
+        .countFileInstances(accountIdentifier, repoUrl, gitEntityInfo.getFilePath());
+    assertThatThrownBy(()
+                           -> pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
+                               accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, false))
+        .isInstanceOf(GitYamlException.class);
+    assertThat(pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
+                   accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, true))
+        .isEqualTo(repoUrl);
   }
 }

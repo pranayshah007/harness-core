@@ -190,4 +190,12 @@ public class GitAwareEntityHelper {
   private boolean isNullOrDefault(String val) {
     return EmptyPredicate.isEmpty(val) || val.equals(DEFAULT);
   }
+
+  public String getRepoUrl(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
+    return scmGitSyncHelper
+        .getRepoUrl(scope, gitEntityInfo.getRepoName(), gitEntityInfo.getConnectorRef(), Collections.emptyMap())
+        .getRepoUrl();
+  }
 }

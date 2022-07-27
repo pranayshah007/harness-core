@@ -10,8 +10,8 @@ package io.harness.cdng.creator.plan.azure.webapps;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.azure.webapp.StartupScriptParameters;
-import io.harness.cdng.azure.webapp.StartupScriptStep;
+import io.harness.cdng.azure.webapp.StartupCommandParameters;
+import io.harness.cdng.azure.webapp.StartupCommandStep;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
@@ -33,7 +33,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @OwnedBy(CDP)
-public class StartupScriptPlanCreator implements PartialPlanCreator<StoreConfigWrapper> {
+public class StartupCommandPlanCreator implements PartialPlanCreator<StoreConfigWrapper> {
   @Inject KryoSerializer kryoSerializer;
   @Override
   public Class<StoreConfigWrapper> getFieldClass() {
@@ -42,23 +42,23 @@ public class StartupScriptPlanCreator implements PartialPlanCreator<StoreConfigW
 
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
-    return Collections.singletonMap(YamlTypes.STARTUP_SCRIPT,
+    return Collections.singletonMap(YamlTypes.STARTUP_COMMAND,
         Arrays.stream(StoreConfigType.values()).map(StoreConfigType::getDisplayName).collect(Collectors.toSet()));
   }
 
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, StoreConfigWrapper field) {
-    String startupsScriptFileId = (String) kryoSerializer.asInflatedObject(
+    String startupCommandFileId = (String) kryoSerializer.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YamlTypes.UUID).toByteArray());
-    StartupScriptParameters stepParameters = (StartupScriptParameters) kryoSerializer.asInflatedObject(
-        ctx.getDependency().getMetadataMap().get(PlanCreatorConstants.STARTUP_SCRIPT_STEP_PARAMETER).toByteArray());
+    StartupCommandParameters stepParameters = (StartupCommandParameters) kryoSerializer.asInflatedObject(
+        ctx.getDependency().getMetadataMap().get(PlanCreatorConstants.STARTUP_COMMAND_STEP_PARAMETER).toByteArray());
 
-    PlanNode startupScriptPlanNode =
+    PlanNode startupCommandPlanNode =
         PlanNode.builder()
-            .uuid(startupsScriptFileId)
-            .stepType(StartupScriptStep.STEP_TYPE)
-            .name(PlanCreatorConstants.STARTUP_SCRIPT)
-            .identifier(YamlTypes.STARTUP_SCRIPT)
+            .uuid(startupCommandFileId)
+            .stepType(StartupCommandStep.STEP_TYPE)
+            .name(PlanCreatorConstants.STARTUP_COMMAND)
+            .identifier(YamlTypes.STARTUP_COMMAND)
             .stepParameters(stepParameters)
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
@@ -67,6 +67,6 @@ public class StartupScriptPlanCreator implements PartialPlanCreator<StoreConfigW
             .skipExpressionChain(false)
             .build();
 
-    return PlanCreationResponse.builder().planNode(startupScriptPlanNode).build();
+    return PlanCreationResponse.builder().planNode(startupCommandPlanNode).build();
   }
 }

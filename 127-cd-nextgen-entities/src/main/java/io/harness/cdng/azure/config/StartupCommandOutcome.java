@@ -23,10 +23,10 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CDP)
 @Value
 @Builder
-@TypeAlias("startupScriptOutcome")
-@JsonTypeName("startupScript")
-@FieldNameConstants(innerTypeName = "StartupScriptOutcomeKeys")
-@RecasterAlias("io.harness.cdng.azure.config.StartupScriptOutcome")
-public class StartupScriptOutcome implements Outcome {
+@TypeAlias("startupCommandOutcome")
+@JsonTypeName("startupCommand")
+@FieldNameConstants(innerTypeName = "StartupCommandOutcomeKeys")
+@RecasterAlias("io.harness.cdng.azure.config.StartupCommandOutcome")
+public class StartupCommandOutcome implements Outcome {
   StoreConfig store;
 }

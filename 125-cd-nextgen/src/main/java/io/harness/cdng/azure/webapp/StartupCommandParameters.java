@@ -20,8 +20,8 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@TypeAlias("startupScriptParameters")
-@RecasterAlias("io.harness.cdng.azure.webapp.StartupScriptParameters")
-public class StartupScriptParameters implements StepParameters {
-  StoreConfigWrapper startupScript;
+@TypeAlias("startupCommandParameters")
+@RecasterAlias("io.harness.cdng.azure.webapp.StartupCommandParameters")
+public class StartupCommandParameters implements StepParameters {
+  StoreConfigWrapper startupCommand;
 }

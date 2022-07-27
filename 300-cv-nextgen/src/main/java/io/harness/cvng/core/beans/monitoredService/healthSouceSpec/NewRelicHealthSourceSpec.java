@@ -11,7 +11,7 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource.CVConfigUpdateResult;
-import io.harness.cvng.core.beans.monitoredService.MetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.NewRelicCVConfig;
@@ -43,7 +43,7 @@ public class NewRelicHealthSourceSpec extends MetricHealthSourceSpec {
   String applicationName;
   String applicationId;
   String feature;
-  Set<MetricPackDTO> metricPacks;
+  Set<TimeSeriesMetricPackDTO> metricPacks;
   @UniqueIdentifierCheck List<NewRelicMetricDefinition> newRelicMetricDefinitions;
 
   @Override

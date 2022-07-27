@@ -132,7 +132,7 @@ go_repository(
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.17.8")
+go_register_toolchains(version = "1.18.1")
 
 gazelle_dependencies()
 
@@ -4648,18 +4648,18 @@ plain_artifacts = [
     "io.github.resilience4j:resilience4j-ratelimiter:1.5.0",
     "io.github.resilience4j:resilience4j-retrofit:1.5.0",
     "io.github.resilience4j:resilience4j-retry:1.5.0",
-    "io.grpc:grpc-alts:1.33.1",
-    "io.grpc:grpc-api:1.33.1",
-    "io.grpc:grpc-auth:1.33.1",
-    "io.grpc:grpc-context:1.33.1",
-    "io.grpc:grpc-core:1.33.1",
-    "io.grpc:grpc-grpclb:1.33.1",
-    "io.grpc:grpc-netty-shaded:1.33.1",
-    "io.grpc:grpc-netty:1.33.1",
-    "io.grpc:grpc-protobuf-lite:1.33.1",
-    "io.grpc:grpc-protobuf:1.33.1",
-    "io.grpc:grpc-services:1.33.1",
-    "io.grpc:grpc-stub:1.33.1",
+    "io.grpc:grpc-alts:1.48.0",
+    "io.grpc:grpc-api:1.48.0",
+    "io.grpc:grpc-auth:1.48.0",
+    "io.grpc:grpc-context:1.48.0",
+    "io.grpc:grpc-core:1.48.0",
+    "io.grpc:grpc-grpclb:1.48.0",
+    "io.grpc:grpc-netty-shaded:1.48.0",
+    "io.grpc:grpc-netty:1.48.0",
+    "io.grpc:grpc-protobuf-lite:1.48.0",
+    "io.grpc:grpc-protobuf:1.48.0",
+    "io.grpc:grpc-services:1.48.0",
+    "io.grpc:grpc-stub:1.48.0",
     "io.gsonfire:gson-fire:1.8.3",
     "io.harness.cv:data-collection-dsl:0.38-RELEASE",
     "io.harness:ff-java-server-sdk:1.0.5.1",
@@ -5185,7 +5185,7 @@ maven_install(
         maven_test_artifact("io.dropwizard:dropwizard-testing:2.0.10"),
         maven_test_artifact("io.fabric8:kubernetes-server-mock:5.12.1"),
         maven_test_artifact("io.fabric8:mockwebserver:0.2.2"),
-        maven_test_artifact("io.grpc:grpc-testing:1.33.1"),
+        maven_test_artifact("io.grpc:grpc-testing:1.48.0"),
         maven_test_artifact("junit:junit:4.12"),
         maven_test_artifact("net.javacrumbs.json-unit:json-unit-fluent:1.12.1"),
         maven_test_artifact("org.assertj:assertj-core:3.16.1"),

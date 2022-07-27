@@ -10,6 +10,7 @@ package software.wings.sm.states.azure;
 import static io.harness.azure.model.AzureConstants.AZURE_WEBAPP_SLOT_SETUP_ACTIVITY_COMMAND_NAME;
 import static io.harness.azure.model.AzureConstants.STEADY_STATE_TIMEOUT_REGEX;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.OrchestrationWorkflowType.BASIC;
 import static io.harness.beans.OrchestrationWorkflowType.BLUE_GREEN;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -240,39 +241,37 @@ public class AzureVMSSStateHelper {
 
   // One workflow tied with specific service might have more workflow executions. One workflow execution has more
   // activities. Artifact is deployed on stage slot in AZURE_WEBAPP_SLOT_SETUP step activity.
-  // - get pre-latest success workflow execution by app id, workflow id and service id,
-  // - get pre-latest success workflow execution activities
+  // - get success workflow execution by app id, workflow id and service id,
+  // - get success workflow execution activities
   // - get AZURE_WEBAPP_SLOT_SETUP step activity
   public Optional<Activity> getWebAppPackageRollbackActivity(ExecutionContext context, final String serviceId) {
     String appId = context.getAppId();
     String workflowId = context.getWorkflowId();
-    int executionsToSkip = 1;
+    int executionsToSkip = context.getOrchestrationWorkflowType().equals(BASIC) ? 0 : 1;
     int executionsToIncludeInResponse = 1;
-    // get pre-latest success workflow execution by app id, workflow id and service id
-    List<WorkflowExecution> preLatestSuccessWorkflowExecutions =
-        workflowExecutionService.getLatestSuccessWorkflowExecutions(
-            appId, workflowId, singletonList(serviceId), executionsToSkip, executionsToIncludeInResponse);
+    // get success workflow execution by app id, workflow id and service id
+    List<WorkflowExecution> successWorkflowExecutions = workflowExecutionService.getLatestSuccessWorkflowExecutions(
+        appId, workflowId, singletonList(serviceId), executionsToSkip, executionsToIncludeInResponse);
 
-    if (preLatestSuccessWorkflowExecutions.isEmpty()) {
+    if (successWorkflowExecutions.isEmpty()) {
       return Optional.empty();
     }
 
-    WorkflowExecution preLatestSuccessWorkflowExecution = preLatestSuccessWorkflowExecutions.get(0);
+    WorkflowExecution successWorkflowExecution = successWorkflowExecutions.get(0);
     log.info(format(
-        "Found pre-latest success workflow execution for WebAppNC rollback, executionId: %s, appId: %s, workflowId: %s, serviceId: %s",
-        preLatestSuccessWorkflowExecution.getUuid(), appId, workflowId, serviceId));
+        "Found success workflow execution for WebAppNC rollback, executionId: %s, appId: %s, workflowId: %s, serviceId: %s",
+        successWorkflowExecution.getUuid(), appId, workflowId, serviceId));
 
-    // get pre-latest success workflow execution activities
-    List<Activity> preLatestSuccessWorkflowExecutionActivities =
-        activityService.listWorkflowExecutionActivitiesArtifactIdExists(
-            appId, serviceId, workflowId, preLatestSuccessWorkflowExecution.getUuid());
+    // get success workflow execution activities
+    List<Activity> successWorkflowExecutionActivities = activityService.listWorkflowExecutionActivitiesArtifactIdExists(
+        appId, serviceId, workflowId, successWorkflowExecution.getUuid());
 
-    if (preLatestSuccessWorkflowExecutionActivities.isEmpty()) {
+    if (successWorkflowExecutionActivities.isEmpty()) {
       return Optional.empty();
     }
 
     // get AZURE_WEBAPP_SLOT_SETUP step activity
-    return preLatestSuccessWorkflowExecutionActivities.stream()
+    return successWorkflowExecutionActivities.stream()
         .filter(activity
             -> activity.getCommandName().equals(AZURE_WEBAPP_SLOT_SETUP_ACTIVITY_COMMAND_NAME)
                 && activity.getStatus().equals(SUCCESS))

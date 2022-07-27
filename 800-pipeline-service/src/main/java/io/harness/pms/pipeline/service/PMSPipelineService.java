@@ -60,7 +60,7 @@ public interface PMSPipelineService {
       String projectIdentifier, Boolean getDistinctFromBranches);
 
   PipelineEntity importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest);
+      String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, boolean isForceImport);
 
   Long countAllPipelines(Criteria criteria);
 

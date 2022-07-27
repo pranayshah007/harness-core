@@ -253,19 +253,31 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
   @Override
   public PipelineCRUDResult updatePipelineYaml(PipelineEntity pipelineEntity, ChangeType changeType) {
+    if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
+      log.info("Updating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
+      PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
+      GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
+      return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(updatedEntity).build();
+    }
     PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier());
     GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.validatePipelineYaml(pipelineEntity);
     if (governanceMetadata.getDeny()) {
       return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
     }
+    PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
+    return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(updatedEntity).build();
+  }
+
+  private PipelineEntity updatePipelineWithoutValidation(PipelineEntity pipelineEntity, ChangeType changeType) {
+    PipelineEntity updatedEntity;
     if (gitSyncSdkService.isGitSyncEnabled(
             pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier())) {
-      PipelineEntity updatedEntity = updatePipelineForOldGitSync(pipelineEntity, changeType);
-      return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(updatedEntity).build();
+      updatedEntity = updatePipelineForOldGitSync(pipelineEntity, changeType);
+    } else {
+      updatedEntity = makePipelineUpdateCall(pipelineEntity, null, changeType, false);
     }
-    PipelineEntity updatedEntity = makePipelineUpdateCall(pipelineEntity, null, changeType, false);
-    return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(updatedEntity).build();
+    return updatedEntity;
   }
 
   private PipelineEntity updatePipelineForOldGitSync(PipelineEntity pipelineEntity, ChangeType changeType) {
@@ -317,7 +329,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   private PipelineEntity makePipelineUpdateCall(
       PipelineEntity pipelineEntity, PipelineEntity oldEntity, ChangeType changeType, boolean isOldFlow) {
     try {
-      PipelineEntity entityWithUpdatedInfo = pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity);
+      PipelineEntity entityWithUpdatedInfo;
+      if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
+        entityWithUpdatedInfo = pipelineEntity;
+      } else {
+        entityWithUpdatedInfo = pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity);
+      }
       PipelineEntity updatedResult;
       if (isOldFlow) {
         updatedResult =
@@ -440,7 +457,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
   @Override
   public PipelineEntity importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest) {
+      String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, boolean isForceImport) {
+    String repoUrl = pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, isForceImport);
+
     String importedPipelineYAML =
         pmsPipelineServiceHelper.importPipelineFromRemote(accountId, orgIdentifier, projectIdentifier);
 
@@ -449,6 +469,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
     PipelineEntity pipelineEntity =
         PMSPipelineDtoMapper.toPipelineEntity(accountId, orgIdentifier, projectIdentifier, importedPipelineYAML);
+    pipelineEntity.setRepoURL(repoUrl);
+
     try {
       PipelineEntity entityWithUpdatedInfo = pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity);
       PipelineEntity savedPipelineEntity =

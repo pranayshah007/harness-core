@@ -13,7 +13,7 @@ import static io.harness.azure.model.AzureConstants.UPDATE_SLOT_CONFIGURATION_SE
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.APPLICATION_SETTINGS;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.CONNECTION_STRINGS;
-import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_SCRIPT;
+import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_COMMAND;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
@@ -252,7 +252,7 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
                     getParameterFieldValue(azureWebAppSlotDeploymentStepParameters.getDeploymentSlot())))
             .applicationSettings(passThroughData.getConfigs().get(APPLICATION_SETTINGS))
             .connectionStrings(passThroughData.getConfigs().get(CONNECTION_STRINGS))
-            .startupCommand(passThroughData.getConfigs().get(STARTUP_SCRIPT))
+            .startupCommand(passThroughData.getConfigs().get(STARTUP_COMMAND))
             .artifact(azureWebAppStepHelper.getPrimaryArtifactConfig(ambiance))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .commandUnitsProgress(passThroughData.getCommandUnitsProgress())
@@ -277,7 +277,7 @@ public class AzureWebAppSlotDeploymentStep extends TaskChainExecutableWithRollba
             .preDeploymentData(passThroughData.getPreDeploymentData())
             .applicationSettings(passThroughData.getConfigs().get(APPLICATION_SETTINGS))
             .connectionStrings(passThroughData.getConfigs().get(CONNECTION_STRINGS))
-            .startupCommand(passThroughData.getConfigs().get(STARTUP_SCRIPT))
+            .startupCommand(passThroughData.getConfigs().get(STARTUP_COMMAND))
             .infrastructure(azureWebAppStepHelper.getInfraDelegateConfig(ambiance, passThroughData.getInfrastructure(),
                 getParameterFieldValue(azureWebAppSlotDeploymentStepParameters.getWebApp()),
                 getParameterFieldValue(azureWebAppSlotDeploymentStepParameters.getDeploymentSlot())))

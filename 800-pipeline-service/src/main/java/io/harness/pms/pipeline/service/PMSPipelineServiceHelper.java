@@ -22,6 +22,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.engine.GovernanceService;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
+import io.harness.exception.GitYamlException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.InvalidFieldsDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
@@ -62,6 +63,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YAMLMetadataFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.serializer.JsonUtils;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.yaml.validator.InvalidYamlException;
@@ -101,6 +103,7 @@ public class PMSPipelineServiceHelper {
   @Inject private final PmsGitSyncHelper gitSyncHelper;
   @Inject private final TelemetryReporter telemetryReporter;
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
+  @Inject private final PMSPipelineRepository pmsPipelineRepository;
 
   public static String PIPELINE_SAVE = "pipeline_save";
   public static String PIPELINE_SAVE_ACTION_TYPE = "action";
@@ -432,5 +435,26 @@ public class PMSPipelineServiceHelper {
               + changedFields.keySet(),
           invalidFields);
     }
+  }
+
+  public String getRepoUrlAndCheckForFileUniqueness(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, boolean isForceImport) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    String repoURL = gitAwareEntityHelper.getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier);
+
+    if (isForceImport) {
+      log.info("Importing YAML forcefully with Pipeline Id: {}, RepoURl: {}, FilePath: {}", pipelineIdentifier, repoURL,
+          gitEntityInfo.getFilePath());
+    } else if (isAlreadyImported(accountIdentifier, repoURL, gitEntityInfo.getFilePath())) {
+      String error = "The Requested YAML with Pipeline Id: " + pipelineIdentifier + ", RepoURl: " + repoURL
+          + ", FilePath: " + gitEntityInfo.getFilePath() + " has already been imported.";
+      throw new GitYamlException(error);
+    }
+    return repoURL;
+  }
+
+  private boolean isAlreadyImported(String accountIdentifier, String repoURL, String filePath) {
+    Long totalInstancesOfYAML = pmsPipelineRepository.countFileInstances(accountIdentifier, repoURL, filePath);
+    return totalInstancesOfYAML > 0;
   }
 }

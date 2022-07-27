@@ -13,6 +13,7 @@ java_library(
     deps = [
         "//:lombok",
         "//800-pipeline-service/modules/orchestration:module",
+        "//800-pipeline-service/modules/orchestration-visualization/contracts:module",
         "//800-pipeline-service/modules/orchestration/contracts:module",
         "@maven//:com_esotericsoftware_kryo",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",

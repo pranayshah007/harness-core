@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.dto.GitContextRequestParams;
@@ -372,6 +373,10 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
 
   void addGitParamsToPipelineEntity(PipelineEntity pipelineToSave, GitEntityInfo gitEntityInfo) {
     pipelineToSave.setStoreType(StoreType.REMOTE);
+    if (EmptyPredicate.isEmpty(pipelineToSave.getRepoURL())) {
+      pipelineToSave.setRepoURL(gitAwareEntityHelper.getRepoUrl(
+          pipelineToSave.getAccountId(), pipelineToSave.getOrgIdentifier(), pipelineToSave.getProjectIdentifier()));
+    }
     pipelineToSave.setConnectorRef(gitEntityInfo.getConnectorRef());
     pipelineToSave.setRepo(gitEntityInfo.getRepoName());
     pipelineToSave.setFilePath(gitEntityInfo.getFilePath());
