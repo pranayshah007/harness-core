@@ -114,7 +114,7 @@ public class SubscriptionResource {
         ApiResponse(responseCode = "default", description = "Returns subscription details")
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = EDIT_LICENSE_PERMISSION)
-  public ResponseDTO<InvoiceDetailDTO>
+  public ResponseDTO<SubscriptionDetailDTO>
   createFfSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(
