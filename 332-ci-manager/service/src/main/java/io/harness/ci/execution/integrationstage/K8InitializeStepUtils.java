@@ -770,6 +770,7 @@ public class K8InitializeStepUtils {
       case RUN_TESTS:
         return ((RunTestsStepInfo) ciStepInfo).getResources();
       case GCR:
+      case ECR:
       case ACR:
       case DOCKER:
       case UPLOAD_ARTIFACTORY:
