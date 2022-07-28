@@ -147,6 +147,9 @@ public class PluginSettingUtils {
     Map<EnvVariableEnum, String> map = new HashMap<>();
     switch (stepInfoType) {
       case ECR:
+      case RESTORE_CACHE_S3:
+      case SAVE_CACHE_S3:
+      case UPLOAD_S3:
         map.put(EnvVariableEnum.AWS_ACCESS_KEY, PLUGIN_ACCESS_KEY);
         map.put(EnvVariableEnum.AWS_SECRET_KEY, PLUGIN_SECRET_KEY);
         map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_ROLE_ARN, PLUGIN_ASSUME_ROLE);
@@ -157,12 +160,6 @@ public class PluginSettingUtils {
         map.put(EnvVariableEnum.AZURE_APP_SECRET, APP_SECRET);
         map.put(EnvVariableEnum.AZURE_APPLICATION_ID, APPLICATION_ID);
         map.put(EnvVariableEnum.AZURE_TENANT_ID, TENANT_ID);
-      case RESTORE_CACHE_S3:
-      case SAVE_CACHE_S3:
-      case UPLOAD_S3:
-        map.put(EnvVariableEnum.AWS_ACCESS_KEY, PLUGIN_ACCESS_KEY);
-        map.put(EnvVariableEnum.AWS_SECRET_KEY, PLUGIN_SECRET_KEY);
-        map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_ROLE_ARN, PLUGIN_ASSUME_ROLE);
         return map;
       case GCR:
       case RESTORE_CACHE_GCS:

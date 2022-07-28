@@ -430,7 +430,6 @@ public class ConnectorUtils {
   private ConnectorDetails getAzureConnectorDetails(
       NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
     List<EncryptedDataDetail> encryptedDataDetails;
-    ;
     AzureConnectorDTO azureConnectorDTO = (AzureConnectorDTO) connectorDTO.getConnectorInfo().getConnectorConfig();
     AzureCredentialDTO credentialDTO = azureConnectorDTO.getCredential();
     if (credentialDTO.getAzureCredentialType() == MANUAL_CREDENTIALS) {
