@@ -56,7 +56,7 @@ import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
-import io.harness.template.helpers.TemplateReferenceHelper;
+import io.harness.template.helpers.NGTemplateReferenceServiceImpl;
 import io.harness.template.helpers.TemplateYamlConversionHelper;
 import io.harness.template.helpers.YamlVariablesUtils;
 import io.harness.template.mappers.NGTemplateDtoMapper;
@@ -150,7 +150,7 @@ public class NGTemplateResource {
   private final TemplateMergeService templateMergeService;
   private final VariablesServiceBlockingStub variablesServiceBlockingStub;
   private final TemplateYamlConversionHelper templateYamlConversionHelper;
-  private final TemplateReferenceHelper templateReferenceHelper;
+  private final NGTemplateReferenceServiceImpl templateReferenceHelper;
 
   public static final String TEMPLATE_PARAM_MESSAGE = "Template Identifier for the entity";
 

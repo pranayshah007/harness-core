@@ -49,7 +49,7 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
 import io.harness.template.gitsync.TemplateGitSyncBranchContextGuard;
-import io.harness.template.helpers.TemplateReferenceHelper;
+import io.harness.template.helpers.NGTemplateReferenceServiceImpl;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -81,7 +81,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject EnforcementClientService enforcementClientService;
   @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
   @Inject @Named("PRIVILEGED") private OrganizationClient organizationClient;
-  @Inject private TemplateReferenceHelper templateReferenceHelper;
+  @Inject private NGTemplateReferenceServiceImpl templateReferenceHelper;
   @Inject private AccountClient accountClient;
 
   @Inject private NGTemplateSchemaService ngTemplateSchemaService;

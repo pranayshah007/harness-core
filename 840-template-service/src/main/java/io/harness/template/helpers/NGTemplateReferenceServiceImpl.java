@@ -37,6 +37,7 @@ import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.template.TemplateReferenceProtoUtils;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.services.NGTemplateReferenceService;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.IdentifierRefProtoUtils;
@@ -61,7 +62,7 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Singleton
 @Slf4j
-public class TemplateReferenceHelper {
+public class NGTemplateReferenceServiceImpl implements NGTemplateReferenceService {
   private static final String FQN_SEPARATOR = ".";
   EntityReferenceServiceBlockingStub entityReferenceServiceBlockingStub;
   TemplateYamlConversionHelper templateYamlConversionHelper;

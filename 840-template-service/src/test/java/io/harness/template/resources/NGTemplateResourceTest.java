@@ -46,7 +46,7 @@ import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
-import io.harness.template.helpers.TemplateReferenceHelper;
+import io.harness.template.helpers.NGTemplateReferenceServiceImpl;
 import io.harness.template.helpers.TemplateYamlConversionHelper;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
@@ -93,7 +93,7 @@ public class NGTemplateResourceTest extends CategoryTest {
   @Mock TemplateMergeService templateMergeService;
   @Inject VariablesServiceBlockingStub variablesServiceBlockingStub;
   @Mock TemplateYamlConversionHelper templateYamlConversionHelper;
-  @Mock TemplateReferenceHelper templateReferenceHelper;
+  @Mock NGTemplateReferenceServiceImpl templateReferenceHelper;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";

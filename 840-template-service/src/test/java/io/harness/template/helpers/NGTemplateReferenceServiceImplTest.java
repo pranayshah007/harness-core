@@ -76,7 +76,7 @@ import retrofit2.Call;
 import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
-public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
+public class NGTemplateReferenceServiceImplTest extends TemplateServiceTestBase {
   @Rule public final GrpcCleanupRule grpcCleanupRule = new GrpcCleanupRule();
 
   EntityReferenceServiceGrpc.EntityReferenceServiceBlockingStub entityReferenceServiceBlockingStub;
@@ -88,7 +88,7 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Mock AccountClient accountClient;
 
-  TemplateReferenceHelper templateReferenceHelper;
+  NGTemplateReferenceServiceImpl templateReferenceHelper;
 
   @Before
   public void setup() throws IOException {
@@ -101,7 +101,7 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
     entityReferenceServiceBlockingStub = EntityReferenceServiceGrpc.newBlockingStub(
         grpcCleanupRule.register(InProcessChannelBuilder.forName(serverName).directExecutor().build()));
 
-    templateReferenceHelper = new TemplateReferenceHelper(entityReferenceServiceBlockingStub,
+    templateReferenceHelper = new NGTemplateReferenceServiceImpl(entityReferenceServiceBlockingStub,
         templateYamlConversionHelper, pmsGitSyncHelper, templateServiceHelper, templateSetupUsageHelper, accountClient);
     Call<RestResponse<Boolean>> ffCall = mock(Call.class);
     when(accountClient.isFeatureFlagEnabled(eq(FeatureName.NG_TEMPLATE_REFERENCES_SUPPORT.name()), anyString()))
