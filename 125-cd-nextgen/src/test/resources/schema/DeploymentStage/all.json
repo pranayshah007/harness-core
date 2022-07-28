@@ -3932,6 +3932,9 @@
             "metadata": {
               "type": "string"
             },
+            "overlayConfiguration": {
+              "$ref": "#/definitions/OverlayConfiguration"
+            },
             "patchesPaths": {
               "oneOf": [
                 {
@@ -4831,6 +4834,18 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "OverlayConfiguration": {
+      "type": "object",
+      "required": [
+        "kustomizeYamlPath"
+      ],
+      "properties": {
+        "kustomizeYamlPath": {
+          "type": "string"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ParallelStepElementConfig": {
