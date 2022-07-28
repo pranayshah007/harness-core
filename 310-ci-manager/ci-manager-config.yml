@@ -135,10 +135,11 @@ ciExecutionServiceConfig:
       image: plugins/kaniko-gcr:1.6.1
       entrypoint:
         - /kaniko/kaniko-gcr
+    # I am working on creating a new tag for acr and will update it once that is created.
     buildAndPushACRConfig:
-      image: plugins/kaniko-gcr:1.6.1
+      image: plugins/kaniko:1.6.1
       entrypoint:
-        - /kaniko/kaniko-gcr
+        - /kaniko/kaniko-docker
     gcsUploadConfig:
       image: plugins/gcs:1.3.0
       entrypoint:
