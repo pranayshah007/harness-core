@@ -20,14 +20,15 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class WorkflowSummary extends BaseSummary {
-  Map<String, Long> typeSummary;
-  Map<String, Long> stepTypeSummary;
+public class InfraDefSummary extends BaseSummary {
+  Map<String, Long> deploymentTypeSummary;
+  Map<String, Long> cloudProviderTypeSummary;
 
   @Builder
-  public WorkflowSummary(int count, Map<String, Long> typeSummary, Map<String, Long> stepTypeSummary) {
+  public InfraDefSummary(
+      int count, Map<String, Long> deploymentTypeSummary, Map<String, Long> cloudProviderTypeSummary) {
     super(count);
-    this.typeSummary = typeSummary;
-    this.stepTypeSummary = stepTypeSummary;
+    this.deploymentTypeSummary = deploymentTypeSummary;
+    this.cloudProviderTypeSummary = cloudProviderTypeSummary;
   }
 }

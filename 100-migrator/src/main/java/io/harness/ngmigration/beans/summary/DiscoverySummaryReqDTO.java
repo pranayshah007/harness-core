@@ -9,8 +9,8 @@ package io.harness.ngmigration.beans.summary;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.MigrationTrackReqPayload;
 
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,16 +18,9 @@ import lombok.NoArgsConstructor;
 
 @OwnedBy(HarnessTeam.CDC)
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WorkflowSummary extends BaseSummary {
-  Map<String, Long> typeSummary;
-  Map<String, Long> stepTypeSummary;
-
-  @Builder
-  public WorkflowSummary(int count, Map<String, Long> typeSummary, Map<String, Long> stepTypeSummary) {
-    super(count);
-    this.typeSummary = typeSummary;
-    this.stepTypeSummary = stepTypeSummary;
-  }
+public class DiscoverySummaryReqDTO extends MigrationTrackReqPayload {
+  private String accountId;
 }

@@ -20,14 +20,12 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class WorkflowSummary extends BaseSummary {
+public class SecretManagerSummary extends BaseSummary {
   Map<String, Long> typeSummary;
-  Map<String, Long> stepTypeSummary;
 
   @Builder
-  public WorkflowSummary(int count, Map<String, Long> typeSummary, Map<String, Long> stepTypeSummary) {
+  public SecretManagerSummary(int count, Map<String, Long> typeSummary) {
     super(count);
     this.typeSummary = typeSummary;
-    this.stepTypeSummary = stepTypeSummary;
   }
 }

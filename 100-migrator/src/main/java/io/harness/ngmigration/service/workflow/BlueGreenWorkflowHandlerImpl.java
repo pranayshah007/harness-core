@@ -7,29 +7,29 @@
 
 package io.harness.ngmigration.service.workflow;
 
+import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.GraphNode;
-import software.wings.beans.RollingOrchestrationWorkflow;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase.Yaml;
-import software.wings.service.impl.yaml.handler.workflow.RollingWorkflowYamlHandler;
-import software.wings.yaml.workflow.RollingWorkflowYaml;
+import software.wings.service.impl.yaml.handler.workflow.BlueGreenWorkflowYamlHandler;
+import software.wings.yaml.workflow.BlueGreenWorkflowYaml;
 
 import com.google.inject.Inject;
 import java.util.List;
 
-public class RollingWorkflowHandlerImpl implements WorkflowHandler {
-  @Inject RollingWorkflowYamlHandler rollingWorkflowYamlHandler;
+public class BlueGreenWorkflowHandlerImpl implements WorkflowHandler {
+  @Inject BlueGreenWorkflowYamlHandler blueGreenWorkflowYamlHandler;
 
   @Override
   public List<Yaml> getPhases(Workflow workflow) {
-    RollingWorkflowYaml rollingWorkflowYaml = rollingWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    return rollingWorkflowYaml.getPhases();
+    BlueGreenWorkflowYaml blueGreenWorkflowYaml = blueGreenWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
+    return blueGreenWorkflowYaml.getPhases();
   }
 
   @Override
   public List<GraphNode> getSteps(Workflow workflow) {
-    RollingOrchestrationWorkflow orchestrationWorkflow =
-        (RollingOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
     return getSteps(orchestrationWorkflow.getWorkflowPhases(), orchestrationWorkflow.getPreDeploymentSteps(),
         orchestrationWorkflow.getPostDeploymentSteps());
   }
