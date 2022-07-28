@@ -12,7 +12,9 @@ RUN yum install -y hostname tar gzip python3
 
 # Add the capsule JAR and config.yml
 COPY --chown=65534:65534 batch-processing-capsule.jar /opt/harness/
-COPY --chown=65534:65534 batch-processing-config.yml  /opt/harness/
+COPY --chown=65534:65534 --chmod=755 batch-processing-config.yml  /opt/harness/
+RUN chmod 755 /opt/harness/batch-processing-capsule.jar
+
 
 RUN pip3 install awscli
 
