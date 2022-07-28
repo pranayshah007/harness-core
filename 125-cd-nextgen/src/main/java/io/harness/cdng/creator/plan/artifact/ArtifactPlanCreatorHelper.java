@@ -13,6 +13,7 @@ import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.steps.ArtifactStep;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.artifact.steps.ArtifactSyncStep;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.steps.StepType;
@@ -42,7 +43,9 @@ public class ArtifactPlanCreatorHelper {
   }
 
   public boolean isCustomArtifactIsDelegateTask(ArtifactStepParameters artifactStepParameters) {
-    if (((CustomArtifactConfig) artifactStepParameters.getSpec()).getScripts() != null) {
+    if (((CustomArtifactConfig) artifactStepParameters.getSpec()).getScripts() != null
+        && EmptyPredicate.isNotEmpty(
+            ((CustomArtifactConfig) artifactStepParameters.getSpec()).getScripts().toString())) {
       return true;
     }
     return false;

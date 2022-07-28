@@ -66,7 +66,7 @@ public class CustomArtifactConfig implements ArtifactConfig, Visitable {
   /**
    * Scripts Details
    */
-  @NotNull @Wither CustomArtifactScripts scripts;
+  @Wither CustomArtifactScripts scripts;
 
   /**
    * Input list
