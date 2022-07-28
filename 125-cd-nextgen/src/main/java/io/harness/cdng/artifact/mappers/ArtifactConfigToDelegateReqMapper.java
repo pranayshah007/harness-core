@@ -7,6 +7,8 @@
 
 package io.harness.cdng.artifact.mappers;
 
+import static software.wings.utils.RepositoryFormat.generic;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
@@ -44,12 +46,10 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.yaml.utils.NGVariablesUtils;
-import lombok.experimental.UtilityClass;
 
 import java.util.Arrays;
 import java.util.List;
-
-import static software.wings.utils.RepositoryFormat.generic;
+import lombok.experimental.UtilityClass;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)

@@ -163,8 +163,7 @@ public class ShellScriptExecutionOnDelegateNG {
   public CustomRepositoryResponse mapToCustomRepositoryResponse(
       String json, String artifactRoot, String buildNoPath, Map<String, String> map) {
     DocumentContext ctx = JsonUtils.parseJson(json);
-    CustomRepositoryResponseBuilder customRepositoryResponse =
-        CustomRepositoryResponse.builder();
+    CustomRepositoryResponseBuilder customRepositoryResponse = CustomRepositoryResponse.builder();
     List<CustomRepositoryResponse.Result> result = new ArrayList<>();
 
     LinkedList<LinkedHashMap> children = JsonUtils.jsonPath(ctx, artifactRoot + "[*]");

@@ -64,13 +64,14 @@ public class CustomArtifactTaskHandler extends DelegateArtifactTaskHandler<Custo
     String script = attributesRequest.getScript();
     List<BuildDetails> buildDetails = new ArrayList<>();
     buildDetails = getBuildDetails(attributesRequest, logStreamingTaskClient);
-    if(filterVersion(buildDetails, attributesRequest) != null && EmptyPredicate.isNotEmpty(filterVersion(buildDetails, attributesRequest))){
+    if (filterVersion(buildDetails, attributesRequest) != null
+        && EmptyPredicate.isNotEmpty(filterVersion(buildDetails, attributesRequest))) {
       CustomArtifactDelegateResponse customArtifactDelegateResponse =
-              CustomRequestResponseMapper.toCustomArtifactDelegateResponse(filterVersion(buildDetails, attributesRequest).get(0), attributesRequest);
+          CustomRequestResponseMapper.toCustomArtifactDelegateResponse(
+              filterVersion(buildDetails, attributesRequest).get(0), attributesRequest);
       return getSuccessTaskExecutionResponse(
-              Collections.singletonList(customArtifactDelegateResponse), filterVersion(buildDetails, attributesRequest));
-    }
-    else {
+          Collections.singletonList(customArtifactDelegateResponse), filterVersion(buildDetails, attributesRequest));
+    } else {
       log.error("Artifact Version Not found");
       throw new InvalidArtifactServerException("Artifact version not found", Level.INFO, USER);
     }

@@ -13,10 +13,10 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.pms.yaml.ParameterField;
-import lombok.Builder;
-import lombok.Value;
 
 import java.util.Map;
+import lombok.Builder;
+import lombok.Value;
 
 @OwnedBy(HarnessTeam.CDC)
 @Value
