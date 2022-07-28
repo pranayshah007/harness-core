@@ -72,8 +72,7 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
   @Wither
   @JsonProperty("overlayConfiguration")
   @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration")
-  @SkipAutoEvaluation
-  ParameterField<OverlayConfiguration> overlayConfiguration;
+  OverlayConfiguration overlayConfiguration;
 
   @Wither
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
