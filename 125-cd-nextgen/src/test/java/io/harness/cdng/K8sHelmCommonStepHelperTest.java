@@ -43,9 +43,10 @@ public class K8sHelmCommonStepHelperTest extends CategoryTest {
     GithubStore githubStore = GithubStore.builder().folderPath(ParameterField.createValueField("kustomize/")).build();
     KustomizeManifestOutcome kustomizeManifestOutcome =
         KustomizeManifestOutcome.builder()
-            .overlayConfiguration(OverlayConfiguration.builder()
-                                      .kustomizeYamlFolderPath(ParameterField.createValueField("env/prod/"))
-                                      .build())
+            .overlayConfiguration(ParameterField.createValueField(
+                OverlayConfiguration.builder()
+                    .kustomizeYamlFolderPath(ParameterField.createValueField("env/prod/"))
+                    .build()))
             .build();
     List<String> paths = k8sHelmCommonStepHelper.getKustomizeManifestBasePath(githubStore, kustomizeManifestOutcome);
 
@@ -58,7 +59,9 @@ public class K8sHelmCommonStepHelperTest extends CategoryTest {
   public void getKustomizeManifestBasePathCase2Test() {
     GithubStore githubStore = GithubStore.builder().folderPath(ParameterField.createValueField("kustomize/")).build();
     KustomizeManifestOutcome kustomizeManifestOutcome =
-        KustomizeManifestOutcome.builder().overlayConfiguration(OverlayConfiguration.builder().build()).build();
+        KustomizeManifestOutcome.builder()
+            .overlayConfiguration(ParameterField.createValueField(OverlayConfiguration.builder().build()))
+            .build();
     List<String> paths = k8sHelmCommonStepHelper.getKustomizeManifestBasePath(githubStore, kustomizeManifestOutcome);
 
     assertThat(paths.get(0)).isEqualTo("/");

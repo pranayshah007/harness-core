@@ -34,7 +34,7 @@ public class KustomizeManifestOutcome implements ManifestOutcome {
   String identifier;
   String type = ManifestType.Kustomize;
   StoreConfig store;
-  OverlayConfiguration overlayConfiguration;
+  ParameterField<OverlayConfiguration> overlayConfiguration;
   ParameterField<String> pluginPath;
   ParameterField<Boolean> skipResourceVersioning;
   ParameterField<List<String>> patchesPaths;
