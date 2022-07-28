@@ -16,6 +16,7 @@ import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -48,6 +49,8 @@ public interface PMSInputSetService {
 
   Page<InputSetEntity> list(
       Criteria criteria, Pageable pageable, String accountIdentifier, String orgIdentifier, String projectIdentifier);
+
+  List<InputSetEntity> list(Criteria criteria);
 
   void deleteInputSetsOnPipelineDeletion(PipelineEntity pipelineEntity);
 

@@ -12,21 +12,32 @@ import static io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.VED;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.context.GlobalContext;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.interceptor.GitSyncBranchContext;
+import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.manage.GlobalContextManager;
+import io.harness.pms.merger.helpers.InputSetYamlHelper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlDiffDTO;
 import io.harness.pms.ngpipeline.inputset.exceptions.InvalidOverlayInputSetException;
 import io.harness.rule.Owner;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.junit.Before;
@@ -38,6 +49,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(PIPELINE)
 public class OverlayInputSetValidationHelperTest extends CategoryTest {
   @Mock PMSInputSetService inputSetService;
+  @Mock GitSyncSdkService gitSyncSdkService;
 
   String accountId = "accountId";
   String orgId = "orgId";
@@ -223,6 +235,76 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
         .hasMessage("Overlay Input Set identifier length cannot be more that 63 characters.");
   }
 
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetYAMLDiffWithOneInvalidReference() {
+    String yaml = getOverlayInputSetWithAllIds(true);
+    doReturn(Optional.of(InputSetEntity.builder().inputSetEntityType(INPUT_SET).isInvalid(false).build()))
+        .when(inputSetService)
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "input1", false);
+    doReturn(Optional.empty())
+        .when(inputSetService)
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "thisInputSetIsWrong", false);
+    InputSetYamlDiffDTO yamlDiffForOverlayInputSet =
+        OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(null, inputSetService,
+            InputSetEntity.builder()
+                .accountId(accountId)
+                .orgIdentifier(orgId)
+                .projectIdentifier(projectId)
+                .pipelineIdentifier(pipelineId)
+                .yaml(yaml)
+                .inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET)
+                .build());
+    assertThat(yamlDiffForOverlayInputSet.getOldYAML()).isEqualTo(yaml);
+    List<String> newReferences =
+        InputSetYamlHelper.getReferencesFromOverlayInputSetYaml(yamlDiffForOverlayInputSet.getNewYAML());
+    assertThat(newReferences).containsExactly("input1");
+    assertThat(yamlDiffForOverlayInputSet.isInputSetEmpty()).isFalse();
+    assertThat(yamlDiffForOverlayInputSet.isNoUpdatePossible()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetYAMLDiffWithAllInvalidReferences() {
+    String yaml = getOverlayInputSetWithAllIds(true);
+    doReturn(Optional.empty())
+        .when(inputSetService)
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "input1", false);
+    doReturn(Optional.empty())
+        .when(inputSetService)
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "thisInputSetIsWrong", false);
+    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, orgId, projectId);
+    doReturn(Collections.emptyList()).when(inputSetService).list(any());
+    InputSetEntity inputSetEntity = InputSetEntity.builder()
+                                        .accountId(accountId)
+                                        .orgIdentifier(orgId)
+                                        .projectIdentifier(projectId)
+                                        .pipelineIdentifier(pipelineId)
+                                        .yaml(yaml)
+                                        .inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET)
+                                        .build();
+
+    InputSetYamlDiffDTO yamlDiffForOverlayInputSet = OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
+        gitSyncSdkService, inputSetService, inputSetEntity);
+    assertThat(yamlDiffForOverlayInputSet.isInputSetEmpty()).isTrue();
+    assertThat(yamlDiffForOverlayInputSet.isNoUpdatePossible()).isTrue();
+
+    doReturn(Collections.singletonList(inputSetEntity)).when(inputSetService).list(any());
+    yamlDiffForOverlayInputSet = OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
+        gitSyncSdkService, inputSetService, inputSetEntity);
+    assertThat(yamlDiffForOverlayInputSet.isInputSetEmpty()).isTrue();
+    assertThat(yamlDiffForOverlayInputSet.isNoUpdatePossible()).isFalse();
+
+    doReturn(true).when(gitSyncSdkService).isGitSyncEnabled(accountId, orgId, projectId);
+    setupGitContext(GitEntityInfo.builder().branch("random").yamlGitConfigId("random").build());
+    yamlDiffForOverlayInputSet = OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
+        gitSyncSdkService, inputSetService, inputSetEntity);
+    assertThat(yamlDiffForOverlayInputSet.isInputSetEmpty()).isTrue();
+    assertThat(yamlDiffForOverlayInputSet.isNoUpdatePossible()).isFalse();
+  }
+
   private String getOverlayInputSetWithNonExistentReference() {
     return getOverlayInputSetYaml(true, true, true, true, true);
   }
@@ -256,5 +338,12 @@ public class OverlayInputSetValidationHelperTest extends CategoryTest {
     } catch (IOException e) {
       throw new InvalidRequestException("Could not read resource file: " + filename);
     }
+  }
+
+  private void setupGitContext(GitEntityInfo branchInfo) {
+    if (!GlobalContextManager.isAvailable()) {
+      GlobalContextManager.set(new GlobalContext());
+    }
+    GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(branchInfo).build());
   }
 }

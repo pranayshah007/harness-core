@@ -19,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig;
+import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
@@ -59,6 +60,8 @@ public class ManifestOutcomeValidator {
       validateArtifactoryStore((ArtifactoryStoreConfig) store, manifestId, allowExpression);
     } else if (ManifestStoreType.HARNESS.equals(store.getKind())) {
       validateHarnessStore((HarnessStore) store, manifestId, allowExpression);
+    } else if (ManifestStoreType.CUSTOM_REMOTE.equals(store.getKind())) {
+      validateCustomRemoteStore((CustomRemoteStoreConfig) store, manifestId, allowExpression);
     }
   }
 
@@ -68,6 +71,12 @@ public class ManifestOutcomeValidator {
       HarnessStore harnessStore = (HarnessStore) helmChartManifest.getStore();
       if (!hasValue(harnessStore.getFiles())) {
         throw new InvalidArgumentsException(Pair.of("files", format("required for %s store type", manifestStoreKind)));
+      }
+    } else if (ManifestStoreType.CUSTOM_REMOTE.equals(manifestStoreKind)) {
+      CustomRemoteStoreConfig customRemoteStoreConfig = (CustomRemoteStoreConfig) helmChartManifest.getStore();
+      if (!hasValue(customRemoteStoreConfig.getFilePath(), allowExpression)) {
+        throw new InvalidArgumentsException(
+            Pair.of("filePath", format("required for %s store type", manifestStoreKind)));
       }
     } else if (!ManifestStoreType.isInGitSubset(manifestStoreKind)) {
       if (!hasValue(helmChartManifest.getChartName(), allowExpression)) {
@@ -179,6 +188,22 @@ public class ManifestOutcomeValidator {
 
     if (!hasValue(store.getFiles())) {
       throw new InvalidArgumentsException(Pair.of("files", "Cannot be empty or null for Harness store"));
+    }
+  }
+
+  private void validateCustomRemoteStore(CustomRemoteStoreConfig store, String manifestId, boolean allowExpression) {
+    if (hasValue(store.getConnectorReference(), allowExpression)) {
+      throw new InvalidArgumentsException(
+          format("Non empty connectorRef in Custom Remote store spec for manifest with identifier: %s", manifestId));
+    }
+
+    if (!hasValue(store.getFilePath(), allowExpression)) {
+      throw new InvalidArgumentsException(Pair.of("filePath", "Cannot be empty or null for Custom Remote store"));
+    }
+
+    if (!hasValue(store.getExtractionScript(), allowExpression)) {
+      throw new InvalidArgumentsException(
+          Pair.of("extractionScript", "Cannot be empty or null for Custom Remote store"));
     }
   }
 

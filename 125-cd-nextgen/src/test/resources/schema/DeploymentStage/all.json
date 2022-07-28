@@ -1189,6 +1189,9 @@
                 ]
               }
             },
+            "host": {
+              "type": "string"
+            },
             "metadata": {
               "type": "string"
             },

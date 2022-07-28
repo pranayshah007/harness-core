@@ -335,7 +335,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
     doReturn(Optional.of(overlayEntity))
         .when(inputSetService)
         .getWithoutValidations(accountId, orgId, projectId, pipelineId, "inputSetId", false);
-    when(OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(inputSetService, overlayEntity))
+    when(OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(null, inputSetService, overlayEntity))
         .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());
     InputSetYamlDiffDTO yamlDiffDTO = InputSetValidationHelper.getYAMLDiff(
         null, inputSetService, null, null, accountId, orgId, projectId, pipelineId, "inputSetId", null, null);

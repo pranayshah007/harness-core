@@ -47,4 +47,10 @@ public class SshExceptionConstants {
   public final String ARTIFACT_SIZE_EXCEEDED_HINT = "Please make sure the file size is not exceeding 4GB.";
   public final String ARTIFACT_SIZE_EXCEEDED_EXPLANATION =
       "Artifact file size should not exceed  4GB. Artifact with id %s size is: %s";
+
+  public final String ARTIFACT_CONFIGURATION_NOT_FOUND = "Missing artifact details";
+  public final String ARTIFACT_CONFIGURATION_NOT_FOUND_HINT =
+      "Please provide artifact details with the service definition";
+  public final String ARTIFACT_CONFIGURATION_NOT_FOUND_EXPLANATION =
+      "Selected copy artifact option requires artifact details to be specified with the service definition";
 }

@@ -14,7 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
@@ -32,13 +31,12 @@ import org.springframework.data.annotation.TypeAlias;
 public class CommandStepParameters extends CommandBaseStepInfo implements SshSpecParameters {
   Map<String, Object> environmentVariables;
   Map<String, Object> outputVariables;
-  @JsonIgnore String host;
 
   @Builder(builderMethodName = "infoBuilder")
   public CommandStepParameters(ParameterField<Boolean> onDelegate,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, Map<String, Object> environmentVariables,
-      List<CommandUnitWrapper> commandUnits, Map<String, Object> outputVariables) {
-    super(onDelegate, delegateSelectors, commandUnits);
+      List<CommandUnitWrapper> commandUnits, Map<String, Object> outputVariables, ParameterField<String> host) {
+    super(onDelegate, delegateSelectors, commandUnits, host);
     this.environmentVariables = environmentVariables;
     this.outputVariables = outputVariables;
   }

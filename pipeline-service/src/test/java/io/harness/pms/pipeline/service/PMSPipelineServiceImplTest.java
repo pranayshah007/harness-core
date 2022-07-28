@@ -373,4 +373,24 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     assertThatThrownBy(() -> pmsPipelineService.updatePipelineYaml(pipelineEntity, ChangeType.ADD))
         .isInstanceOf(InvalidRequestException.class);
   }
+
+  @Test
+  @Owner(developers = SOUMYAJIT)
+  @Category(UnitTests.class)
+  public void testCreateDraftException() {
+    pipelineEntity.setIsDraft(true);
+    assertThatThrownBy(() -> pmsPipelineService.create(pipelineEntity)).isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = SOUMYAJIT)
+  @Category(UnitTests.class)
+  public void testUpdateDraft() throws IOException {
+    on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
+    pipelineEntity.setIsDraft(true);
+    doReturn(pipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any());
+    pmsPipelineRepository.save(pipelineEntity);
+    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.updatePipelineYaml(pipelineEntity, ChangeType.ADD);
+    assertThat(pipelineCRUDResult.getPipelineEntity().getIdentifier()).isEqualTo(pipelineEntity.getIdentifier());
+  }
 }

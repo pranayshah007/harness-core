@@ -9,6 +9,7 @@ package io.harness.repositories;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ADITHYA;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
@@ -36,6 +37,8 @@ import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -153,6 +156,42 @@ public class NGTemplateRepositoryCustomImplTest {
     assertThat(savedTemplateEntity).isEqualTo(templateToSaveWithStoreTypeWithExtraFields);
     // to check if the supplier is actually called
     verify(gitAwareEntityHelper, times(1)).createEntityOnGit(templateToSave, pipelineYaml, scope);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testDeleteAllTemplatesInAProject() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(templateId)
+                                        .yaml(pipelineYaml)
+                                        .build();
+    List<TemplateEntity> entityList = Arrays.asList(templateEntity);
+    doReturn(entityList).when(mongoTemplate).findAllAndRemove(any(), (Class<TemplateEntity>) any());
+    ngTemplateRepositoryCustom.deleteAllTemplatesInAProject(accountIdentifier, orgIdentifier, projectIdentifier);
+    verify(mongoTemplate, times(1)).findAllAndRemove(any(), (Class<TemplateEntity>) any());
+    verify(outboxService, times(1)).save(any());
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testDeleteAllTemplatesInAOrg() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(templateId)
+                                        .yaml(pipelineYaml)
+                                        .build();
+    List<TemplateEntity> entityList = Arrays.asList(templateEntity);
+    doReturn(entityList).when(mongoTemplate).findAllAndRemove(any(), (Class<TemplateEntity>) any());
+    ngTemplateRepositoryCustom.deleteAllOrgLevelTemplates(accountIdentifier, orgIdentifier);
+    verify(mongoTemplate, times(1)).findAllAndRemove(any(), (Class<TemplateEntity>) any());
+    verify(outboxService, times(1)).save(any());
   }
 
   @Test

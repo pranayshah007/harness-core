@@ -566,6 +566,41 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         templateEntity.getProjectIdentifier(), criteria, update);
   }
 
+  @Override
+  public boolean deleteAllTemplatesInAProject(String accountId, String orgId, String projectId) {
+    boolean isOldGitSyncEnabled = gitSyncSdkService.isGitSyncEnabled(accountId, orgId, projectId);
+    if (isOldGitSyncEnabled) {
+      Criteria criteria = Criteria.where(TemplateEntityKeys.accountId)
+                              .is(accountId)
+                              .and(TemplateEntityKeys.orgIdentifier)
+                              .is(orgId)
+                              .and(TemplateEntityKeys.projectIdentifier)
+                              .is(projectId);
+      Pageable pageRequest = org.springframework.data.domain.PageRequest.of(
+          0, 1000, Sort.by(Sort.Direction.DESC, TemplateEntityKeys.lastUpdatedAt));
+
+      Page<TemplateEntity> templateEntities =
+          templateRepository.findAll(criteria, pageRequest, accountId, orgId, projectId, false);
+      for (TemplateEntity templateEntity : templateEntities) {
+        // Update the git context with details of the template on which the operation is going to run.
+        try (TemplateGitSyncBranchContextGuard ignored = templateServiceHelper.getTemplateGitContextForGivenTemplate(
+                 templateEntity, GitContextHelper.getGitEntityInfo(),
+                 format("Template with identifier [%s] and versionLabel [%s] marking stable template as false.",
+                     templateEntity.getIdentifier(), templateEntity.getVersionLabel()))) {
+          templateRepository.hardDeleteTemplate(templateEntity, "");
+        }
+      }
+      return true;
+    }
+    return templateRepository.deleteAllTemplatesInAProject(accountId, orgId, projectId);
+  }
+
+  @Override
+  public boolean deleteAllOrgLevelTemplates(String accountId, String orgId) {
+    // Delete all the org level templates only
+    return templateRepository.deleteAllOrgLevelTemplates(accountId, orgId);
+  }
+
   private void assureThatTheProjectAndOrgExists(String accountId, String orgId, String projectId) {
     if (isNotEmpty(projectId)) {
       // it's project level template

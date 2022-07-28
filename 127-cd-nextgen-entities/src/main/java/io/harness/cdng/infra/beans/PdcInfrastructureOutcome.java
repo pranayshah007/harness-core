@@ -44,6 +44,6 @@ public class PdcInfrastructureOutcome extends InfrastructureDetailsAbstract impl
   }
 
   public boolean useInfrastructureHosts() {
-    return EmptyPredicate.isNotEmpty(hosts);
+    return EmptyPredicate.isEmpty(connectorRef);
   }
 }
