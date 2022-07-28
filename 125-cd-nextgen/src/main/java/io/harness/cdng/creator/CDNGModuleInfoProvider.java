@@ -139,7 +139,8 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
         cdPipelineModuleInfoBuilder.envIdentifier(infrastructureOutcome.getEnvironment().getIdentifier())
             .environmentType(infrastructureOutcome.getEnvironment().getType())
             .infrastructureType(infrastructureOutcome.getKind())
-            .infrastructureIdentifier(infrastructureOutcome.getInfraIdentifier());
+            .infrastructureIdentifier(infrastructureOutcome.getInfraIdentifier())
+            .infrastructureName(infrastructureOutcome.getInfraName());
       }
     } else if (isGitopsNodeAndCompleted(stepType, event.getStatus())) {
       OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
@@ -188,6 +189,7 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
                                                              .name(outcome.getEnvironment().getName())
                                                              .type(outcome.getEnvironment().getType().name())
                                                              .infrastructureIdentifier(outcome.getInfraIdentifier())
+                                                             .infrastructureName(outcome.getInfraName())
                                                              .build());
         }
       });

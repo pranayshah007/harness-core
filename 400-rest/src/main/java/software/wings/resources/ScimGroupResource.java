@@ -47,7 +47,7 @@ public class ScimGroupResource extends ScimResource {
     try {
       return Response.status(Status.CREATED).entity(scimGroupService.createGroup(groupQuery, accountId)).build();
     } catch (Exception ex) {
-      log.info("Failed to create the group", ex);
+      log.error("SCIM: Failed to create the group {}, for accountId {}", groupQuery.getDisplayName(), accountId, ex);
       return getExceptionResponse(ex, Status.NOT_FOUND.getStatusCode(), Status.CONFLICT);
     }
   }
@@ -59,7 +59,7 @@ public class ScimGroupResource extends ScimResource {
     try {
       return Response.status(Response.Status.OK).entity(scimGroupService.getGroup(groupId, accountId)).build();
     } catch (Exception ex) {
-      log.info("Failed to fetch the groups with id: {}", groupId, ex);
+      log.error("SCIM: Failed to fetch the groups with id: {}, for accountId {}", groupId, accountId, ex);
       return getExceptionResponse(ex, Status.NOT_FOUND.getStatusCode(), Status.NOT_FOUND);
     }
   }
@@ -109,7 +109,7 @@ public class ScimGroupResource extends ScimResource {
     try {
       return scimGroupService.updateGroup(groupId, accountId, groupQuery);
     } catch (Exception ex) {
-      log.info("Failed to update the group with id: {}, accountId {} ", groupId, accountId, ex);
+      log.error("SCIM: Failed to update the group with id: {}, accountId {} ", groupId, accountId, ex);
       return getExceptionResponse(ex, Status.NOT_FOUND.getStatusCode(), Status.PRECONDITION_FAILED);
     }
   }

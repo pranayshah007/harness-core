@@ -20,7 +20,7 @@ import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStep;
 import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStep;
 import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStep;
 import io.harness.cdng.azure.webapp.ConnectionStringsStep;
-import io.harness.cdng.azure.webapp.StartupScriptStep;
+import io.harness.cdng.azure.webapp.StartupCommandStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStep;
 import io.harness.cdng.configfile.steps.IndividualConfigFileStep;
 import io.harness.cdng.creator.plan.environment.steps.EnvironmentStepV2;
@@ -134,7 +134,7 @@ public class NgStepRegistrar {
     engineSteps.put(AzureWebAppTrafficShiftStep.STEP_TYPE, AzureWebAppTrafficShiftStep.class);
     engineSteps.put(AzureWebAppSwapSlotStep.STEP_TYPE, AzureWebAppSwapSlotStep.class);
     engineSteps.put(AzureWebAppRollbackStep.STEP_TYPE, AzureWebAppRollbackStep.class);
-    engineSteps.put(StartupScriptStep.STEP_TYPE, StartupScriptStep.class);
+    engineSteps.put(StartupCommandStep.STEP_TYPE, StartupCommandStep.class);
     engineSteps.put(ApplicationSettingsStep.STEP_TYPE, ApplicationSettingsStep.class);
     engineSteps.put(ConnectionStringsStep.STEP_TYPE, ConnectionStringsStep.class);
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());

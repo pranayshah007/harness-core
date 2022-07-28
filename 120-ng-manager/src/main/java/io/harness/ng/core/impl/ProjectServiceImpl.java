@@ -273,7 +273,7 @@ public class ProjectServiceImpl implements ProjectService {
   @DefaultOrganization
   public Optional<Project> get(
       String accountIdentifier, @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier) {
-    return projectRepository.findByAccountIdentifierAndOrgIdentifierAndIdentifierAndDeletedNot(
+    return projectRepository.findByAccountIdentifierAndOrgIdentifierAndIdentifierIgnoreCaseAndDeletedNot(
         accountIdentifier, orgIdentifier, projectIdentifier, true);
   }
 

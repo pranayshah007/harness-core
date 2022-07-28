@@ -200,21 +200,25 @@ public class ManifestMigrationService extends NgMigrationService {
       GitFileConfig gitFileConfig, ManifestProvidedEntitySpec manifestInput, String connectorRef) {
     GitStoreBuilder gitStoreBuilder =
         GitStore.builder()
-            .branch(ParameterField.createValueField(gitFileConfig.getBranch()))
             .commitId(ParameterField.createValueField(gitFileConfig.getCommitId()))
             .connectorRef(ParameterField.createValueField(connectorRef))
             .gitFetchType(gitFileConfig.isUseBranch() ? FetchType.BRANCH : FetchType.COMMIT)
             .repoName(ParameterField.createValueField(gitFileConfig.getRepoName()));
     if (manifestInput != null) {
+      if (StringUtils.isNotBlank(manifestInput.getBranch())) {
+        gitStoreBuilder.branch(ParameterField.createValueField(manifestInput.getBranch()));
+      }
       if (StringUtils.isNotBlank(manifestInput.getFolderPath())) {
-        gitStoreBuilder.folderPath(ParameterField.createValueField(manifestInput.getFolderPath()));
+        gitStoreBuilder.paths(
+            ParameterField.createValueField(Collections.singletonList(manifestInput.getFolderPath())));
       } else if (EmptyPredicate.isNotEmpty(manifestInput.getPaths())) {
         gitStoreBuilder.paths(ParameterField.createValueField(manifestInput.getPaths()));
       } else {
         gitStoreBuilder.paths(ParameterField.createValueField(Collections.singletonList(gitFileConfig.getFilePath())));
       }
     } else {
-      gitStoreBuilder.paths(ParameterField.createValueField(Collections.singletonList(gitFileConfig.getFilePath())));
+      gitStoreBuilder.branch(ParameterField.createValueField(gitFileConfig.getBranch()))
+          .paths(ParameterField.createValueField(Collections.singletonList(gitFileConfig.getFilePath())));
     }
     return gitStoreBuilder.build();
   }

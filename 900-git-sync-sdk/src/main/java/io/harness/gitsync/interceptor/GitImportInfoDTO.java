@@ -41,4 +41,7 @@ public class GitImportInfoDTO {
   @Parameter(description = GitSyncApiConstants.FILEPATH_PARAM_MESSAGE)
   @QueryParam(GitSyncApiConstants.FILE_PATH_KEY)
   String filePath;
+  @Parameter(description = GitSyncApiConstants.FORCE_IMPORT)
+  @QueryParam(GitSyncApiConstants.FORCE_IMPORT)
+  boolean isForceImport;
 }

@@ -936,6 +936,20 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     return query.asList();
   }
 
+  @Override
+  public List<MonitoredService> listWithFilter(
+      @NonNull ProjectParams projectParams, List<String> identifiers, String filter) {
+    List<MonitoredService> monitoredServices = list(projectParams, identifiers);
+    if (filter != null) {
+      monitoredServices =
+          monitoredServices.stream()
+              .filter(monitoredService
+                  -> isEmpty(filter) || monitoredService.getName().toLowerCase().contains(filter.trim().toLowerCase()))
+              .collect(Collectors.toList());
+    }
+    return monitoredServices;
+  }
+
   private List<RiskData> getSortedDependentServiceRiskScoreList(
       ProjectParams projectParams, List<String> dependentServices) {
     List<RiskData> dependentServiceRiskScores = new ArrayList<>();

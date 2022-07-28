@@ -42,6 +42,7 @@ import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupWrapperConfig;
 import io.harness.cdng.gitSync.EnvironmentGroupEntityGitSyncHelper;
 import io.harness.cdng.licenserestriction.ServiceRestrictionsUsageImpl;
+import io.harness.cdng.migration.CDMigrationProvider;
 import io.harness.cdng.orchestration.NgStepRegistrar;
 import io.harness.cdng.pipeline.executions.CdngOrchestrationExecutionEventHandlerRegistrar;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
@@ -476,6 +477,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
           { add(GitSyncMigrationProvider.class); }
           { add(DelegateMigrationProvider.class); }
           { add(UserGroupMigrationProvider.class); }
+          { add(CDMigrationProvider.class); }
         })
         .build();
   }

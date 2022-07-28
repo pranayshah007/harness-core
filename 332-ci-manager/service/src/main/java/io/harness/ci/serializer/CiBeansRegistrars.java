@@ -28,6 +28,8 @@ import io.harness.beans.steps.nodes.SaveCacheGCSNode;
 import io.harness.beans.steps.nodes.SaveCacheS3Node;
 import io.harness.beans.steps.nodes.SecurityNode;
 import io.harness.ci.serializer.morphia.CIExecutionMorphiaRegistrar;
+import io.harness.cimanager.serializer.CIManagerKryoRegistrar;
+import io.harness.cimanager.serializer.CIManagerMorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.serializer.kryo.CIBeansKryoRegistrar;
@@ -62,6 +64,7 @@ public class CiBeansRegistrars {
           .addAll(SMCoreRegistrars.kryoRegistrars)
           .addAll(ConnectorNextGenRegistrars.kryoRegistrars)
           .add(CIBeansKryoRegistrar.class)
+          .add(CIManagerKryoRegistrar.class)
           .add(NotificationBeansKryoRegistrar.class)
           .build();
 
@@ -81,6 +84,7 @@ public class CiBeansRegistrars {
           .addAll(ConnectorNextGenRegistrars.morphiaRegistrars)
           .add(NotificationBeansMorphiaRegistrar.class)
           .add(CIBeansMorphiaRegistrar.class)
+          .add(CIManagerMorphiaRegistrar.class)
           .add(CIExecutionMorphiaRegistrar.class)
           .add(YamlMorphiaRegistrar.class)
           .build();

@@ -2,7 +2,11 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
 
 go_library(
     name = "split_tests_lib",
-    srcs = ["main.go"],
+    srcs = [
+        "filetime.go",
+        "main.go",
+        "utils.go",
+    ],
     importpath = "github.com/harness/harness-core/product/ci/split_tests",
     visibility = ["//:__pkg__"],
     deps = [
@@ -17,6 +21,7 @@ go_library(
         "@com_github_alexflint_go_arg//:go-arg",
         "@com_github_bmatcuk_doublestar//:doublestar",
         "@org_uber_go_zap//:zap",
+        "@org_uber_go_zap//zapcore",
     ],
 )
 

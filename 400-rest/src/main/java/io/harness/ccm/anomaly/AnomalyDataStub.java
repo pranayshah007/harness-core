@@ -14,6 +14,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.ccm.anomaly.entities.AnomalyEntity;
 import io.harness.ccm.anomaly.entities.TimeGranularity;
+import io.harness.ccm.commons.entities.anomaly.AnomalyData;
+import io.harness.ccm.commons.entities.anomaly.AnomalyFeedback;
+import io.harness.ccm.commons.entities.anomaly.EntityInfo;
 
 import software.wings.graphql.schema.type.aggregation.QLTimeFilter;
 import software.wings.graphql.schema.type.aggregation.QLTimeOperator;
@@ -85,6 +88,48 @@ public class AnomalyDataStub {
         .anomalyScore(12.34)
         .awsAccount("AWS_ACCOUNT")
         .timeGranularity(TimeGranularity.DAILY)
+        .build();
+  }
+
+  public static AnomalyData getAnomalyData() {
+    return AnomalyData.builder()
+        .id("_id_")
+        .time(1657800397000L)
+        .anomalyRelativeTime("3hrs back")
+        .actualAmount(1.1)
+        .expectedAmount(2.2)
+        .anomalousSpend(4.4)
+        .anomalousSpendPercentage(4.0)
+        .resourceInfo("resourceInfo")
+        .resourceName("resourceName")
+        .entity(EntityInfo.builder()
+                    .field("field")
+                    .clusterName("clusterName")
+                    .clusterId("cid")
+                    .namespace("namespace")
+                    .workloadName("workloadName")
+                    .workloadType("workloadType")
+                    .gcpProjectId("gcpProjectId")
+                    .gcpProduct("gcpProduct")
+                    .gcpSKUId("gcpSkuId")
+                    .gcpSKUDescription("gcpSKUDescription")
+                    .awsUsageAccountId("awsUsageAccountId")
+                    .awsServiceCode("awsServiceCode")
+                    .awsInstancetype("awsInstanceType")
+                    .awsUsageType("awsUsageType")
+                    .azureSubscriptionGuid("azureSubscriptionGuid")
+                    .azureResourceGroup("azureResourceGroup")
+                    .azureMeterCategory("azureMeterCategory")
+                    .azureServiceName("azureServiceName")
+                    .azureInstanceId("azureInstanceId")
+                    .build())
+        .details("details")
+        .status("status")
+        .statusRelativeTime("statusRelativeTime")
+        .comment("comment")
+        .cloudProvider("cloudProvider")
+        .anomalyScore(1.1)
+        .userFeedback(AnomalyFeedback.TRUE_ANOMALY)
         .build();
   }
 

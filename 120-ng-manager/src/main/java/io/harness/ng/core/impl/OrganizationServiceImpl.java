@@ -239,7 +239,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   @Override
   public Optional<Organization> get(String accountIdentifier, String organizationIdentifier) {
-    return organizationRepository.findByAccountIdentifierAndIdentifierAndDeletedNot(
+    return organizationRepository.findByAccountIdentifierAndIdentifierIgnoreCaseAndDeletedNot(
         accountIdentifier, organizationIdentifier, true);
   }
 

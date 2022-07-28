@@ -8,7 +8,9 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Setter;
 import lombok.Value;
+import lombok.experimental.NonFinal;
 
 @OwnedBy(HarnessTeam.CDP)
 @Value
@@ -43,4 +45,11 @@ public class GitOpsInstanceRequest {
   @NotNull private long creationTimestamp;
   @NotNull private long lastDeployedAt;
   @NotNull private K8sBasicInfo instanceInfo; // PodInfo
+
+  @NonFinal @Setter private String pipelineName;
+  @NonFinal @Setter private Long lastExecutedAt;
+  @NonFinal @Setter private String pipelineExecutionId;
+
+  @NonFinal @Setter private String lastDeployedByName;
+  @NonFinal @Setter private String lastDeployedById;
 }
