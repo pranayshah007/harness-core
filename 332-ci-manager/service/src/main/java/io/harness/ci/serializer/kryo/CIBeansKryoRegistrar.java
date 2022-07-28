@@ -35,7 +35,7 @@ import io.harness.beans.inputset.WebhookTriggerExecutionInputSet;
 import io.harness.beans.outcomes.DependencyOutcome;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
-import io.harness.beans.steps.stepinfo.ACRStepInfo;
+import io.harness.cimanager.stepinfo.ACRStepInfo;
 import io.harness.beans.steps.stepinfo.BuildEnvSetupStepInfo;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.ContainerPortDetails;
