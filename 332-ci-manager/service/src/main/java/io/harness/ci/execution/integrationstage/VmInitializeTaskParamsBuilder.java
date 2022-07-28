@@ -47,6 +47,7 @@ import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.tiserviceclient.TIServiceUtils;
 import io.harness.ci.utils.CIVmSecretEvaluator;
+import io.harness.ci.utils.HostedVmSecretResolver;
 import io.harness.ci.utils.InfrastructureUtils;
 import io.harness.ci.utils.ValidationUtils;
 import io.harness.connector.SecretSpecBuilder;
@@ -95,6 +96,8 @@ import org.apache.commons.lang3.StringUtils;
 public class VmInitializeTaskParamsBuilder {
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject CILogServiceUtils logServiceUtils;
+
+  @Inject HostedVmSecretResolver hostedVmSecretResolver;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject TIServiceUtils tiServiceUtils;
   @Inject STOServiceUtils stoServiceUtils;
@@ -126,7 +129,10 @@ public class VmInitializeTaskParamsBuilder {
       }
     }
 
-    return DliteVmInitializeTaskParams.builder().setupVmRequest(setupVmRequest).services(services).build();
+    DliteVmInitializeTaskParams taskParams =
+        DliteVmInitializeTaskParams.builder().setupVmRequest(setupVmRequest).services(services).build();
+    hostedVmSecretResolver.resolve(ambiance, taskParams);
+    return taskParams;
   }
 
   public CIVmInitializeTaskParams getDirectVmInitializeTaskParams(

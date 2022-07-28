@@ -512,7 +512,7 @@
             "connectionStrings": {
               "$ref": "#/definitions/StoreConfigWrapper"
             },
-            "startupScript": {
+            "startupCommand": {
               "$ref": "#/definitions/StoreConfigWrapper"
             }
           }
@@ -1188,6 +1188,9 @@
                   }
                 ]
               }
+            },
+            "host": {
+              "type": "string"
             },
             "metadata": {
               "type": "string"
@@ -5101,9 +5104,7 @@
                   }
                 },
                 {
-                  "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
-                  "minLength": 1
+                  "type": "string"
                 }
               ]
             }

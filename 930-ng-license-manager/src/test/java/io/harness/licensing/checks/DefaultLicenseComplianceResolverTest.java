@@ -95,7 +95,7 @@ public class DefaultLicenseComplianceResolverTest extends CategoryTest {
     Map<Edition, Set<EditionAction>> editionStates =
         defaultLicenseComplianceResolver.getEditionStates(MODULE_TYPE, ACCOUNT_ID);
 
-    assertThat(editionStates.get(Edition.FREE)).isEqualTo(Sets.newHashSet(UPGRADE));
+    assertThat(editionStates.get(Edition.FREE)).isEqualTo(EMPTY_SET);
     assertThat(editionStates.get(Edition.TEAM)).isEqualTo(Sets.newHashSet(UPGRADE, CONTACT_SALES));
     assertThat(editionStates.get(Edition.ENTERPRISE)).isEqualTo(Sets.newHashSet(UPGRADE, CONTACT_SALES));
   }

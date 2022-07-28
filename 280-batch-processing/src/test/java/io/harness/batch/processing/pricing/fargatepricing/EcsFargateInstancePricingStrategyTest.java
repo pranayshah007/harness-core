@@ -46,6 +46,7 @@ public class EcsFargateInstancePricingStrategyTest extends CategoryTest {
   private static final Instant NOW = Instant.now();
   private final String REGION = "us-east-1";
   private final String ACCOUNT_ID = "accountId";
+  private static final String INSTANCE_CATEGORY = "ON_DEMAND";
 
   @Test
   @Owner(developers = HITESH)
@@ -56,7 +57,7 @@ public class EcsFargateInstancePricingStrategyTest extends CategoryTest {
     metaData.put(InstanceMetaDataConstants.REGION, REGION);
     doReturn(EcsFargatePricingInfo.builder().region(REGION).cpuPrice(0.04656).memoryPrice(0.00511).build())
         .when(vmPricingService)
-        .getFargatePricingInfo(REGION);
+        .getFargatePricingInfo(INSTANCE_CATEGORY, REGION);
     doReturn(null).when(customBillingMetaDataService).getAwsDataSetId(ACCOUNT_ID);
 
     InstanceData instanceData = InstanceData.builder()
@@ -82,7 +83,7 @@ public class EcsFargateInstancePricingStrategyTest extends CategoryTest {
     metaData.put(InstanceMetaDataConstants.REGION, REGION);
     doReturn(EcsFargatePricingInfo.builder().region(REGION).cpuPrice(0.04656).memoryPrice(0.00511).build())
         .when(vmPricingService)
-        .getFargatePricingInfo(REGION);
+        .getFargatePricingInfo(INSTANCE_CATEGORY, REGION);
     doReturn(null).when(customBillingMetaDataService).getAwsDataSetId(ACCOUNT_ID);
 
     InstanceData instanceData =

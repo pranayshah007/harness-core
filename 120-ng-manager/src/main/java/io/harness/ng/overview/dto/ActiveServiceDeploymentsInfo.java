@@ -17,4 +17,6 @@ public class ActiveServiceDeploymentsInfo {
   private String envName;
   private String tag;
   private String pipelineExecutionId;
+  private String infrastructureIdentifier;
+  private String infrastructureName;
 }

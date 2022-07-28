@@ -125,7 +125,7 @@ public class SshCommandStepHelper extends CDStepHelper {
             configFilesOutcomeOptional.map(configFilesOutcome -> getFileDelegateConfig(ambiance, configFilesOutcome))
                 .orElse(null))
         .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
-        .host(commandStepParameters.getHost())
+        .host(ParameterFieldHelper.getParameterFieldValue(commandStepParameters.getHost()))
         .build();
   }
 
@@ -150,7 +150,7 @@ public class SshCommandStepHelper extends CDStepHelper {
             configFilesOutcomeOptional.map(configFilesOutcome -> getFileDelegateConfig(ambiance, configFilesOutcome))
                 .orElse(null))
         .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
-        .host(commandStepParameters.getHost())
+        .host(ParameterFieldHelper.getParameterFieldValue(commandStepParameters.getHost()))
         .useWinRMKerberosUniqueCacheFile(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
         .disableWinRMCommandEncodingFFSet(

@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.APPLICATION_SETTINGS;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.CONNECTION_STRINGS;
-import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_SCRIPT;
+import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_COMMAND;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.rule.OwnerRule.ABOSII;
@@ -41,7 +41,7 @@ import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.azure.config.ApplicationSettingsOutcome;
 import io.harness.cdng.azure.config.ConnectionStringsOutcome;
-import io.harness.cdng.azure.config.StartupScriptOutcome;
+import io.harness.cdng.azure.config.StartupCommandOutcome;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
@@ -187,16 +187,16 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testFetchWebAppConfig() {
-    final StartupScriptOutcome startupScriptOutcome =
-        StartupScriptOutcome.builder().store(createTestGitStore()).build();
+    final StartupCommandOutcome startupCommandOutcome =
+        StartupCommandOutcome.builder().store(createTestGitStore()).build();
     final ApplicationSettingsOutcome applicationSettingsOutcome =
         ApplicationSettingsOutcome.builder().store(createTestHarnessStore()).build();
     final ConnectionStringsOutcome connectionStringsOutcome =
         ConnectionStringsOutcome.builder().store(createTestGitStore()).build();
 
-    doReturn(OptionalOutcome.builder().outcome(startupScriptOutcome).found(true).build())
+    doReturn(OptionalOutcome.builder().outcome(startupCommandOutcome).found(true).build())
         .when(outcomeService)
-        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(STARTUP_SCRIPT));
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(STARTUP_COMMAND));
     doReturn(OptionalOutcome.builder().outcome(applicationSettingsOutcome).found(true).build())
         .when(outcomeService)
         .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(APPLICATION_SETTINGS));
@@ -206,8 +206,8 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
 
     final Map<String, StoreConfig> webAppConfigs = stepHelper.fetchWebAppConfig(ambiance);
 
-    assertThat(webAppConfigs).containsKeys(STARTUP_SCRIPT, APPLICATION_SETTINGS, CONNECTION_STRINGS);
-    assertThat(webAppConfigs.get(STARTUP_SCRIPT).getKind()).isEqualTo(ManifestStoreType.GIT);
+    assertThat(webAppConfigs).containsKeys(STARTUP_COMMAND, APPLICATION_SETTINGS, CONNECTION_STRINGS);
+    assertThat(webAppConfigs.get(STARTUP_COMMAND).getKind()).isEqualTo(ManifestStoreType.GIT);
     assertThat(webAppConfigs.get(APPLICATION_SETTINGS).getKind()).isEqualTo(HARNESS_STORE_TYPE);
     assertThat(webAppConfigs.get(CONNECTION_STRINGS).getKind()).isEqualTo(ManifestStoreType.GIT);
   }
@@ -218,7 +218,7 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
   public void testFetchWebAppConfigEmpty() {
     doReturn(OptionalOutcome.builder().found(false).build())
         .when(outcomeService)
-        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(STARTUP_SCRIPT));
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(STARTUP_COMMAND));
     doReturn(OptionalOutcome.builder().found(false).build())
         .when(outcomeService)
         .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(APPLICATION_SETTINGS));

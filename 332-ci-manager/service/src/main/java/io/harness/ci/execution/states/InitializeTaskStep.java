@@ -12,6 +12,7 @@ import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_
 import static io.harness.beans.outcomes.VmDetailsOutcome.VM_DETAILS_OUTCOME;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.ci.CIInitializeTaskParams.Type.DLITE_VM;
 
 import static java.lang.String.format;
 
@@ -136,7 +137,10 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
 
     CIInitializeTaskParams buildSetupTaskParams =
         buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, logPrefix);
-    log.info("Created params for build task: {}", buildSetupTaskParams);
+    // Secrets are in decrypted format for DLITE_VM type
+    if (buildSetupTaskParams.getType() != DLITE_VM) {
+      log.info("Created params for build task: {}", buildSetupTaskParams);
+    }
 
     return StepUtils.prepareTaskRequest(
         ambiance, getTaskData(stepElementParameters, buildSetupTaskParams), kryoSerializer);
@@ -164,7 +168,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
         Timeout.fromString((String) stepElementParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis();
     SerializationFormat serializationFormat = SerializationFormat.KRYO;
     String taskType = TaskType.INITIALIZATION_PHASE.getDisplayName();
-    if (buildSetupTaskParams.getType() == CIInitializeTaskParams.Type.DLITE_VM) {
+    if (buildSetupTaskParams.getType() == DLITE_VM) {
       serializationFormat = SerializationFormat.JSON;
       taskType = TaskType.DLITE_CI_VM_INITIALIZE_TASK.getDisplayName();
     }

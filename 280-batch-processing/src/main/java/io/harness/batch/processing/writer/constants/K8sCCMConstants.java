@@ -15,6 +15,7 @@ public class K8sCCMConstants {
   public static final String HELM_RELEASE_NAME = "release";
   public static final String K8SV1_RELEASE_NAME = "harness.io/service-infra-id";
   public static final String OPERATING_SYSTEM = "beta.kubernetes.io/os";
+  public static final String GKE_SPOT_KEY = "cloud.google.com/gke-spot";
   public static final String GKE_PREEMPTIBLE_KEY = "cloud.google.com/gke-preemptible";
   public static final String PREEMPTIBLE_KEY = "preemptible";
   public static final String PREEMPTIBLE_NODE_KEY = "preemptible-node";

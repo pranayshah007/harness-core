@@ -103,8 +103,6 @@ public interface AuthService {
   void validateDelegateToken(String accountId, String tokenString, String delegateId, String delegateTokenName,
       String agentMtlAuthority, boolean shouldSetTokenNameInGlobalContext);
 
-  void validateDelegateToken(String accountId, String tokenString, String agentMtlsAuthority);
-
   void invalidateAllTokensForUser(String userId);
 
   void invalidateToken(String utoken);

@@ -19,5 +19,4 @@ public interface K8sGlobalConfigService {
   String getChartMuseumPath(boolean useLatestVersion);
   String getOcPath();
   String getKustomizePath(boolean useLatestVersion);
-  String getScmPath();
 }

@@ -14,6 +14,7 @@ import io.harness.ngsettings.entities.Setting;
 import io.harness.ngsettings.entities.Setting.SettingKeys;
 
 import com.google.inject.Inject;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.FindAndReplaceOptions;
@@ -39,5 +40,11 @@ public class SettingRepositoryCustomImpl implements SettingRepositoryCustom {
     Query query = new Query(criteria);
     FindAndReplaceOptions findAndReplaceOptions = FindAndReplaceOptions.options().upsert().returnNew();
     return mongoTemplate.findAndReplace(query, setting, findAndReplaceOptions);
+  }
+
+  @Override
+  public List<Setting> findAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.find(query, Setting.class);
   }
 }

@@ -10,7 +10,7 @@ package io.harness.cdng.azure.webapp;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.APPLICATION_SETTINGS;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.CONNECTION_STRINGS;
-import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_SCRIPT;
+import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_COMMAND;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.docker.DockerAuthType.ANONYMOUS;
@@ -39,7 +39,7 @@ import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.azure.config.ApplicationSettingsOutcome;
 import io.harness.cdng.azure.config.ConnectionStringsOutcome;
-import io.harness.cdng.azure.config.StartupScriptOutcome;
+import io.harness.cdng.azure.config.StartupCommandOutcome;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
@@ -129,16 +129,16 @@ public class AzureWebAppStepHelper {
 
   public Map<String, StoreConfig> fetchWebAppConfig(Ambiance ambiance) {
     Map<String, StoreConfig> settingsConfig = new HashMap<>();
-    OptionalOutcome startupScriptOutcome =
-        outcomeService.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(STARTUP_SCRIPT));
+    OptionalOutcome startupCommandOutcome =
+        outcomeService.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(STARTUP_COMMAND));
     OptionalOutcome applicationSettingsOutcome =
         outcomeService.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(APPLICATION_SETTINGS));
     OptionalOutcome connectionStringsOutcome =
         outcomeService.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(CONNECTION_STRINGS));
 
-    if (startupScriptOutcome.isFound()) {
-      StartupScriptOutcome startupScript = (StartupScriptOutcome) startupScriptOutcome.getOutcome();
-      settingsConfig.put(STARTUP_SCRIPT, startupScript.getStore());
+    if (startupCommandOutcome.isFound()) {
+      StartupCommandOutcome startupCommand = (StartupCommandOutcome) startupCommandOutcome.getOutcome();
+      settingsConfig.put(STARTUP_COMMAND, startupCommand.getStore());
     }
 
     if (applicationSettingsOutcome.isFound()) {

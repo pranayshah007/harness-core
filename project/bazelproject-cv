@@ -27,7 +27,7 @@ directories:
   125-cd-nextgen
   360-cg-manager
   270-verification
-  800-pipeline-service
+  pipeline-service
   tools/bazel
 
 import_run_configurations:

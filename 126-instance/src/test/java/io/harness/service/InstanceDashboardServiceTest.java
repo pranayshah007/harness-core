@@ -265,7 +265,7 @@ public class InstanceDashboardServiceTest extends InstancesTestBase {
 
     List<ActiveServiceInstanceInfo> buildPipelineEnvInfraInstanceCounts =
         instanceDashboardService.getActiveServiceInstanceInfo(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, 10);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER);
     assertThat(buildPipelineEnvInfraInstanceCounts.size()).isGreaterThan(0);
     buildPipelineEnvInfraInstanceCounts.forEach(buildPipelineEnvInfraInstanceCount -> {
       final String envId = buildPipelineEnvInfraInstanceCount.getEnvIdentifier();

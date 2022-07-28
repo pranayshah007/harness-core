@@ -39,9 +39,9 @@ public class StrategyValidationUtils {
           && ((MatrixConfig) config.getMatrixConfig()).getExclude().getValue() != null) {
         List<ExcludeConfig> excludeConfigs = ((MatrixConfig) config.getMatrixConfig()).getExclude().getValue();
         for (ExcludeConfig excludeConfig : excludeConfigs) {
-          if (!excludeConfig.getExclude().keySet().equals(axisConfig.keySet())) {
+          if (!axisConfig.keySet().containsAll(excludeConfig.getExclude().keySet())) {
             throw new InvalidYamlException(
-                "Values defined in the exclude are not correct. Please make sure exclude contains all the axis values and no extra value.");
+                "Values defined in the exclude are not correct. Please make sure exclude contains all the valid keys defined as axes.");
           }
         }
       }

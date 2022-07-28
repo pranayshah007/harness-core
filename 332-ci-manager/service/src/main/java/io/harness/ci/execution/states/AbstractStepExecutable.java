@@ -54,6 +54,7 @@ import io.harness.ci.serializer.RunTestsStepProtobufSerializer;
 import io.harness.ci.serializer.vm.VmStepSerializer;
 import io.harness.ci.utils.GithubApiFunctor;
 import io.harness.ci.utils.GithubApiTokenEvaluator;
+import io.harness.ci.utils.HostedVmSecretResolver;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
@@ -141,6 +142,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
   @Inject private ConnectorUtils connectorUtils;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private VmExecuteStepUtils vmExecuteStepUtils;
+  @Inject private HostedVmSecretResolver hostedVmSecretResolver;
   @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
 
   @Override
@@ -277,8 +279,8 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
     VmStepInfo vmStepInfo = vmStepSerializer.serialize(ambiance, ciStepInfo, stageInfraDetails, stepIdentifier,
         ParameterField.createValueField(Timeout.fromString(stringTimeout)));
     Set<String> secrets = vmStepSerializer.getStepSecrets(vmStepInfo, ambiance);
-    CIExecuteStepTaskParams params = getVmTaskParams(
-        vmStepInfo, secrets, stageInfraDetails, stageDetails, vmDetailsOutcome, runtimeId, stepIdentifier, logKey);
+    CIExecuteStepTaskParams params = getVmTaskParams(ambiance, vmStepInfo, secrets, stageInfraDetails, stageDetails,
+        vmDetailsOutcome, runtimeId, stepIdentifier, logKey);
 
     List<String> eligibleToExecuteDelegateIds = new ArrayList<>();
     if (isNotEmpty(vmDetailsOutcome.getDelegateId())) {
@@ -293,7 +295,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
         .build();
   }
 
-  private CIExecuteStepTaskParams getVmTaskParams(VmStepInfo vmStepInfo, Set<String> secrets,
+  private CIExecuteStepTaskParams getVmTaskParams(Ambiance ambiance, VmStepInfo vmStepInfo, Set<String> secrets,
       StageInfraDetails stageInfraDetails, StageDetails stageDetails, VmDetailsOutcome vmDetailsOutcome,
       String runtimeId, String stepIdentifier, String logKey) {
     if (stageInfraDetails.getType() != StageInfraDetails.Type.VM
@@ -332,9 +334,12 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
       return ciVmExecuteStepTaskParams;
     }
 
-    return DliteVmExecuteStepTaskParams.builder()
-        .executeStepRequest(vmExecuteStepUtils.convertStep(ciVmExecuteStepTaskParams).build())
-        .build();
+    DliteVmExecuteStepTaskParams dliteVmExecuteStepTaskParams =
+        DliteVmExecuteStepTaskParams.builder()
+            .executeStepRequest(vmExecuteStepUtils.convertStep(ciVmExecuteStepTaskParams).build())
+            .build();
+    hostedVmSecretResolver.resolve(ambiance, dliteVmExecuteStepTaskParams);
+    return dliteVmExecuteStepTaskParams;
   }
 
   private void resolveGitAppFunctor(Ambiance ambiance, CIStepInfo ciStepInfo) {

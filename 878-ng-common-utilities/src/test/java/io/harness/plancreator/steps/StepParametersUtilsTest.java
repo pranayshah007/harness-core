@@ -9,6 +9,7 @@ package io.harness.plancreator.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -20,6 +21,7 @@ import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.steps.SdkCoreStepUtils;
 import io.harness.when.beans.StageWhenCondition;
 import io.harness.when.beans.StepWhenCondition;
 import io.harness.when.beans.WhenConditionStatus;
@@ -29,6 +31,9 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(PIPELINE)
 public class StepParametersUtilsTest extends CategoryTest {
+  ParameterField<String> nullField = ParameterField.createValueField(null);
+  ParameterField<String> stringField = ParameterField.createValueField("value");
+
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
@@ -71,5 +76,14 @@ public class StepParametersUtilsTest extends CategoryTest {
     assertThat(stageParameters.getType()).isEqualTo(config.getType());
     assertThat(stageParameters.getSkipCondition()).isEqualTo(config.getSkipCondition());
     assertThat(stageParameters.getWhen()).isEqualTo(config.getWhen());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetParameterFieldHandleValueNull() {
+    assertThat(SdkCoreStepUtils.getParameterFieldHandleValueNull(null)).isNull();
+    assertThat(SdkCoreStepUtils.getParameterFieldHandleValueNull(nullField).getValue()).isEqualTo("");
+    assertThat(SdkCoreStepUtils.getParameterFieldHandleValueNull(stringField)).isEqualTo(stringField);
   }
 }

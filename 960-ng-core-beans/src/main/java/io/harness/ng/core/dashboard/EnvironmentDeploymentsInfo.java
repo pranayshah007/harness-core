@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.dashboard;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
@@ -16,4 +17,5 @@ public class EnvironmentDeploymentsInfo {
   private String envId;
   private String envName;
   private String envType;
+  private List<InfrastructureInfo> infrastructureDetails;
 }

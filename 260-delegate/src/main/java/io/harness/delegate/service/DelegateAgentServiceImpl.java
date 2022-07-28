@@ -1636,7 +1636,16 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private String findExpectedWatcherVersion() {
     try {
-      // TODO - if multiVersion, get versions from manager endpoint
+      RestResponse<String> restResponse =
+          executeRestCall(delegateAgentManagerClient.getWatcherVersion(delegateConfiguration.getAccountId()));
+      if (restResponse != null) {
+        return restResponse.getResource();
+      }
+    } catch (Exception e) {
+      log.warn("Encountered error while fetching watcher version from manager ", e);
+    }
+    try {
+      // Try fetching watcher version from gcp
       String watcherMetadata = Http.getResponseStringFromUrl(delegateConfiguration.getWatcherCheckLocation(), 10, 10);
       return substringBefore(watcherMetadata, " ").trim();
     } catch (IOException e) {
@@ -1667,9 +1676,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     String receivedId = delegateHeartbeatResponse.getDelegateId();
     if (delegateId.equals(receivedId)) {
       final long now = clock.millis();
-      if ((now - lastHeartbeatSentAt.get()) > TimeUnit.MINUTES.toMillis(3)) {
+      final long diff = now - lastHeartbeatSentAt.longValue();
+      if (diff > TimeUnit.MINUTES.toMillis(3)) {
         log.warn(
-            "Delegate {} received heartbeat response {} after sending. {} since last recorded heartbeat response. Harness sent response at {} before",
+            "Delegate {} received heartbeat response {} after sending. {} since last recorded heartbeat response. Harness sent response {} back",
             receivedId, getDurationString(lastHeartbeatSentAt.get(), now),
             getDurationString(lastHeartbeatReceivedAt.get(), now),
             getDurationString(delegateHeartbeatResponse.getResponseSentAt(), now));

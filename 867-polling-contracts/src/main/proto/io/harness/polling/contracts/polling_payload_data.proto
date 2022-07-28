@@ -22,6 +22,7 @@ message PollingPayloadData {
     Nexus3RegistryPayload nexus3RegistryPayload = 9;
     ArtifactoryRegistryPayload artifactoryRegistryPayload = 10;
     AcrPayload acrPayload = 11;
+    AmazonS3Payload amazonS3Payload = 12;
   }
 }
 
@@ -36,6 +37,7 @@ enum Type {
   NEXUS3 = 7;
   ARTIFACTORY = 8;
   ACR = 9;
+  AMAZON_S3 = 10;
 }
 
 message HttpHelmPayload {
@@ -96,4 +98,9 @@ message AcrPayload {
   string subscriptionId = 1;
   string registry = 2;
   string repository = 3;
+}
+
+message AmazonS3Payload {
+  string bucketName = 1;
+  string filePathRegex = 2;
 }

@@ -28,6 +28,7 @@ import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.tiserviceclient.TIServiceUtils;
 import io.harness.ci.utils.CIVmSecretEvaluator;
+import io.harness.ci.utils.HostedVmSecretResolver;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -57,6 +58,7 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
   @Mock CodebaseUtils codebaseUtils;
   @Mock ConnectorUtils connectorUtils;
   @Mock CIVmSecretEvaluator ciVmSecretEvaluator;
+  @Mock HostedVmSecretResolver hostedVmSecretResolver;
   @Mock private CIFeatureFlagService featureFlagService;
 
   @Mock private VmInitializeUtils vmInitializeUtils;
@@ -155,6 +157,7 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     when(stoServiceUtils.getStoServiceConfig()).thenReturn(STOServiceConfig.builder().baseUrl("1.1.1.3").build());
     when(stoServiceUtils.getSTOServiceToken(any())).thenReturn("test");
     when(featureFlagService.isEnabled(any(), any())).thenReturn(false);
+    doNothing().when(hostedVmSecretResolver).resolve(any(), any());
 
     DliteVmInitializeTaskParams response =
         vmInitializeTaskParamsBuilder.getHostedVmInitializeTaskParams(initializeStepInfo, ambiance);

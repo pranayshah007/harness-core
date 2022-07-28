@@ -12,9 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
-import io.harness.steps.fork.ForkStepParameters;
-import io.harness.steps.section.chain.SectionChainPassThroughData;
-import io.harness.steps.section.chain.SectionChainStepParameters;
 
 import java.util.Set;
 
@@ -27,8 +24,6 @@ public class NGCommonUtilMorphiaRegistrar implements MorphiaRegistrar {
 
   @Override
   public void registerImplementationClasses(MorphiaRegistrarHelperPut h, MorphiaRegistrarHelperPut w) {
-    h.put("steps.fork.ForkStepParameters", ForkStepParameters.class);
-    h.put("steps.section.chain.SectionStepParameters", SectionChainStepParameters.class);
-    h.put("steps.section.chain.SectionChainPassThroughData", SectionChainPassThroughData.class);
+    // No classes registered
   }
 }

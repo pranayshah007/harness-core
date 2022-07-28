@@ -8,11 +8,13 @@
 package io.harness.ngsettings.services.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ngsettings.SettingCategory;
 import io.harness.ngsettings.SettingUpdateType;
 import io.harness.ngsettings.dto.SettingDTO;
@@ -21,6 +23,7 @@ import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.ngsettings.dto.SettingUpdateResponseDTO;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.ngsettings.entities.Setting;
+import io.harness.ngsettings.entities.Setting.SettingKeys;
 import io.harness.ngsettings.entities.SettingConfiguration;
 import io.harness.ngsettings.mapper.SettingsMapper;
 import io.harness.ngsettings.services.SettingsService;
@@ -40,6 +43,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -63,34 +69,57 @@ public class SettingsServiceImpl implements SettingsService {
   }
 
   @Override
-  public List<SettingResponseDTO> list(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category) {
+  public List<SettingResponseDTO> list(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      SettingCategory category, String groupIdentifier) {
     Map<String, SettingConfiguration> settingConfigurations =
-        getSettingConfigurations(accountIdentifier, orgIdentifier, projectIdentifier, category);
-    Map<String, Setting> settings = getSettings(accountIdentifier, orgIdentifier, projectIdentifier, category);
+        getSettingConfigurations(accountIdentifier, orgIdentifier, projectIdentifier, category, groupIdentifier);
+    Map<Pair<String, Scope>, Setting> settings =
+        getSettings(accountIdentifier, orgIdentifier, projectIdentifier, category, groupIdentifier);
     List<SettingResponseDTO> settingResponseDTOList = new ArrayList<>();
     settingConfigurations.forEach((identifier, settingConfiguration) -> {
-      if (settings.containsKey(identifier)) {
+      Pair<String, Scope> currentScopeSettingKey =
+          new ImmutablePair<>(identifier, Scope.of(accountIdentifier, orgIdentifier, projectIdentifier));
+      if (settings.containsKey(currentScopeSettingKey)) {
         settingResponseDTOList.add(
-            settingsMapper.writeSettingResponseDTO(settings.get(identifier), settingConfiguration));
+            settingsMapper.writeSettingResponseDTO(settings.get(currentScopeSettingKey), settingConfiguration, true));
       } else {
-        settingResponseDTOList.add(settingsMapper.writeSettingResponseDTO(settingConfiguration));
+        Scope currentScope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
+        settingResponseDTOList.add(getSettingResponseDTOFromParentScopes(currentScope, settingConfiguration, settings));
       }
     });
     return settingResponseDTOList;
+  }
+
+  private SettingResponseDTO getSettingResponseDTOFromParentScopes(
+      Scope currentScope, SettingConfiguration settingConfiguration, Map<Pair<String, Scope>, Setting> settings) {
+    ScopeLevel currentScopeLevel = ScopeLevel.of(currentScope);
+    while ((currentScope = SettingUtils.getParentScope(currentScope)) != null) {
+      Pair<String, Scope> currentScopeSettingKey = new ImmutablePair<>(settingConfiguration.getIdentifier(),
+          Scope.of(currentScope.getAccountIdentifier(), currentScope.getOrgIdentifier(),
+              currentScope.getProjectIdentifier()));
+      Setting setting = settings.get(currentScopeSettingKey);
+      if (setting != null) {
+        return settingsMapper.writeSettingResponseDTO(setting, settingConfiguration, setting.getAllowOverrides());
+      }
+    }
+    Boolean isSettingEditable = settingConfiguration.getAllowOverrides();
+    if (SettingUtils.getHighestScopeForSetting(settingConfiguration.getAllowedScopes()) == currentScopeLevel) {
+      isSettingEditable = true;
+    }
+    return settingsMapper.writeSettingResponseDTO(settingConfiguration, isSettingEditable);
   }
 
   @Override
   public List<SettingUpdateResponseDTO> update(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<SettingRequestDTO> settingRequestDTOList) {
     List<SettingUpdateResponseDTO> settingResponses = new ArrayList<>();
+    Scope currentScope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
     settingRequestDTOList.forEach(settingRequestDTO -> {
       try {
         SettingResponseDTO settingResponseDTO;
+        checkOverridesAreAllowedInParentScope(currentScope, settingRequestDTO);
         if (settingRequestDTO.getUpdateType() == SettingUpdateType.RESTORE) {
-          SettingConfiguration settingConfiguration =
-              restoreSetting(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO);
-          settingResponseDTO = settingsMapper.writeSettingResponseDTO(settingConfiguration);
+          settingResponseDTO = restoreSetting(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO);
         } else {
           settingResponseDTO = updateSetting(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO);
         }
@@ -101,6 +130,36 @@ public class SettingsServiceImpl implements SettingsService {
       }
     });
     return settingResponses;
+  }
+
+  private void checkOverridesAreAllowedInParentScope(Scope currentScope, SettingRequestDTO settingRequestDTO) {
+    ScopeLevel currentScopeLevel = ScopeLevel.of(currentScope);
+    if (currentScopeLevel.equals(ScopeLevel.ACCOUNT)) {
+      return;
+    }
+    while ((currentScope = SettingUtils.getParentScope(currentScope)) != null) {
+      Optional<Setting> setting =
+          settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+              currentScope.getAccountIdentifier(), currentScope.getOrgIdentifier(), currentScope.getProjectIdentifier(),
+              settingRequestDTO.getIdentifier());
+      if (setting.isPresent() && Boolean.FALSE.equals(setting.get().getAllowOverrides())) {
+        throw new InvalidRequestException(
+            String.format("Setting- %s cannot be overridden at the current scope", settingRequestDTO.getIdentifier()));
+      }
+    }
+    Optional<SettingConfiguration> settingConfiguration =
+        settingConfigurationRepository.findByIdentifier(settingRequestDTO.getIdentifier());
+    if (settingConfiguration.isEmpty()) {
+      throw new InvalidRequestException(String.format("Setting- %s does not exist", settingRequestDTO.getIdentifier()));
+    }
+    if (SettingUtils.getHighestScopeForSetting(settingConfiguration.get().getAllowedScopes())
+            .equals(currentScopeLevel)) {
+      return;
+    }
+    if (Boolean.FALSE.equals(settingConfiguration.get().getAllowOverrides())) {
+      throw new InvalidRequestException(
+          String.format("Setting- %s cannot be overridden at the current scope", settingRequestDTO.getIdentifier()));
+    }
   }
 
   @Override
@@ -115,9 +174,23 @@ public class SettingsServiceImpl implements SettingsService {
     if (existingSetting.isPresent()) {
       value = existingSetting.get().getValue();
     } else {
-      value = settingConfiguration.getDefaultValue();
+      value = getSettingValueFromParentScope(Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), identifier,
+          settingConfiguration.getDefaultValue());
     }
     return SettingValueResponseDTO.builder().valueType(settingConfiguration.getValueType()).value(value).build();
+  }
+
+  private String getSettingValueFromParentScope(Scope currentScope, String identifier, String defaultValue) {
+    while ((currentScope = SettingUtils.getParentScope(currentScope)) != null) {
+      Optional<Setting> setting =
+          settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+              currentScope.getAccountIdentifier(), currentScope.getOrgIdentifier(), currentScope.getProjectIdentifier(),
+              identifier);
+      if (setting.isPresent()) {
+        return setting.get().getValue();
+      }
+    }
+    return defaultValue;
   }
 
   @Override
@@ -143,19 +216,42 @@ public class SettingsServiceImpl implements SettingsService {
     return settingConfigurationRepository.save(settingConfiguration);
   }
 
-  private Map<String, Setting> getSettings(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category) {
-    List<Setting> settings = settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndCategory(
-        accountIdentifier, orgIdentifier, projectIdentifier, category);
-    return settings.stream().collect(Collectors.toMap(Setting::getIdentifier, Function.identity()));
+  private Map<Pair<String, Scope>, Setting> getSettings(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, SettingCategory category, String groupIdentifier) {
+    List<Setting> settings;
+    Criteria criteria =
+        Criteria.where(SettingKeys.accountIdentifier)
+            .is(accountIdentifier)
+            .and(SettingKeys.category)
+            .is(category)
+            .andOperator(new Criteria().orOperator(
+                Criteria.where(SettingKeys.orgIdentifier).is(null).and(SettingKeys.projectIdentifier).is(null),
+                Criteria.where(SettingKeys.orgIdentifier).is(orgIdentifier).and(SettingKeys.projectIdentifier).is(null),
+                Criteria.where(SettingKeys.orgIdentifier)
+                    .is(orgIdentifier)
+                    .and(SettingKeys.projectIdentifier)
+                    .is(projectIdentifier)));
+    if (isNotEmpty(groupIdentifier)) {
+      criteria.and(SettingKeys.groupIdentifier).is(groupIdentifier);
+    }
+    settings = settingRepository.findAll(criteria);
+    return settings.stream().collect(Collectors.toMap(setting
+        -> new ImmutablePair<>(setting.getIdentifier(),
+            Scope.of(accountIdentifier, setting.getOrgIdentifier(), setting.getProjectIdentifier())),
+        Function.identity()));
   }
 
-  private Map<String, SettingConfiguration> getSettingConfigurations(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category) {
+  private Map<String, SettingConfiguration> getSettingConfigurations(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, SettingCategory category, String groupIdentifier) {
     Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
     List<ScopeLevel> scopes = Collections.singletonList(ScopeLevel.of(scope));
-    List<SettingConfiguration> defaultSettingConfigurations =
-        settingConfigurationRepository.findByCategoryAndAllowedScopesIn(category, scopes);
+    List<SettingConfiguration> defaultSettingConfigurations;
+    if (isNotEmpty(groupIdentifier)) {
+      defaultSettingConfigurations = settingConfigurationRepository.findByCategoryAndGroupIdentifierAndAllowedScopesIn(
+          category, groupIdentifier, scopes);
+    } else {
+      defaultSettingConfigurations = settingConfigurationRepository.findByCategoryAndAllowedScopesIn(category, scopes);
+    }
     return defaultSettingConfigurations.stream().collect(
         Collectors.toMap(SettingConfiguration::getIdentifier, Function.identity()));
   }
@@ -168,17 +264,19 @@ public class SettingsServiceImpl implements SettingsService {
     Optional<Setting> settingOptional =
         settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO.getIdentifier());
-
     SettingDTO newSettingDTO;
     if (settingOptional.isPresent()) {
-      newSettingDTO = settingsMapper.writeNewDTO(settingOptional.get(), settingRequestDTO, settingConfiguration);
+      newSettingDTO = settingsMapper.writeNewDTO(settingOptional.get(), settingRequestDTO, settingConfiguration, true);
     } else {
       newSettingDTO =
-          settingsMapper.writeNewDTO(orgIdentifier, projectIdentifier, settingRequestDTO, settingConfiguration);
+          settingsMapper.writeNewDTO(orgIdentifier, projectIdentifier, settingRequestDTO, settingConfiguration, true);
+    }
+    if (Boolean.FALSE.equals(settingRequestDTO.getAllowOverrides())) {
+      deleteSettingInSubScopes(Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), settingRequestDTO);
     }
     SettingUtils.validate(newSettingDTO);
     Setting setting = settingRepository.upsert(settingsMapper.toSetting(accountIdentifier, newSettingDTO));
-    return settingsMapper.writeSettingResponseDTO(setting, settingConfiguration);
+    return settingsMapper.writeSettingResponseDTO(setting, settingConfiguration, true);
   }
 
   private SettingConfiguration getSettingConfiguration(
@@ -194,13 +292,33 @@ public class SettingsServiceImpl implements SettingsService {
     return settingConfigurationOptional.get();
   }
 
-  private SettingConfiguration restoreSetting(
+  private SettingResponseDTO restoreSetting(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingRequestDTO settingRequestDTO) {
     Optional<Setting> setting =
         settingRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO.getIdentifier());
-    setting.ifPresent(settingRepository::delete);
-    return getSettingConfiguration(
-        accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO.getIdentifier());
+    SettingConfiguration settingConfiguration =
+        getSettingConfiguration(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTO.getIdentifier());
+    SettingDTO settingDTO = null;
+    if (setting.isPresent()) {
+      settingRequestDTO.setValue(settingConfiguration.getDefaultValue());
+      settingDTO = settingsMapper.writeNewDTO(setting.get(), settingRequestDTO, settingConfiguration, true);
+    } else {
+      settingDTO =
+          settingsMapper.writeNewDTO(orgIdentifier, projectIdentifier, settingRequestDTO, settingConfiguration, true);
+    }
+    Setting updatedSetting = settingRepository.upsert(settingsMapper.toSetting(accountIdentifier, settingDTO));
+    return settingsMapper.writeSettingResponseDTO(updatedSetting, settingConfiguration, true);
+  }
+
+  private void deleteSettingInSubScopes(Scope currentScope, SettingRequestDTO settingRequestDTO) {
+    ScopeLevel currentScopeLevel = ScopeLevel.of(currentScope);
+    if (currentScopeLevel.equals(ScopeLevel.ACCOUNT)) {
+      settingRepository.deleteByAccountIdentifierAndOrgIdentifierNotNullAndIdentifier(
+          currentScope.getAccountIdentifier(), settingRequestDTO.getIdentifier());
+    } else if (currentScopeLevel.equals(ScopeLevel.ORGANIZATION)) {
+      settingRepository.deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierNotNullAndIdentifier(
+          currentScope.getAccountIdentifier(), currentScope.getOrgIdentifier(), settingRequestDTO.getIdentifier());
+    }
   }
 }

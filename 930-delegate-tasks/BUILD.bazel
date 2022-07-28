@@ -91,6 +91,7 @@ java_library(
         "@maven//:com_amazonaws_aws_java_sdk_core",
         "@maven//:com_amazonaws_aws_java_sdk_ecr",
         "@maven//:com_esotericsoftware_yamlbeans_yamlbeans",
+        "@maven//:com_github_tomakehurst_wiremock_jre8_standalone",
         "@maven//:com_google_api_client_google_api_client",
         "@maven//:com_google_apis_google_api_services_container",
         "@maven//:com_google_apis_google_api_services_storage",

@@ -13,7 +13,6 @@ io.harness.when.beans.StageWhenCondition
 io.harness.beans.steps.stepinfo.SaveCacheGCSStepInfo
 io.harness.beans.steps.stepinfo.SaveCacheS3StepInfo
 io.harness.beans.outcomes.DependencyOutcome
-io.harness.beans.common.VariablesSweepingOutput
 io.harness.beans.sweepingoutputs.StepLogKeyDetails
 io.harness.pms.sdk.core.data.StringOutcome
 io.harness.beans.steps.outcome.CIStepOutcome
@@ -105,7 +104,6 @@ io.harness.plancreator.strategy.ExcludeConfig
 io.harness.plancreator.strategy.MatrixConfig
 io.harness.plancreator.strategy.StrategyConfig
 io.harness.plancreator.strategy.HarnessForConfig
-io.harness.ng.core.envGroup.EnvironmentGroupOutcome
 io.harness.beans.yaml.extended.ArchiveFormat
 io.harness.beans.execution.BranchWebhookEvent
 io.harness.beans.sweepingoutputs.Build

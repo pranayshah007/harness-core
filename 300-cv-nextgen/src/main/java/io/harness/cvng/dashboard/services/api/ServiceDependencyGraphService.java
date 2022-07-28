@@ -21,7 +21,8 @@ import lombok.NonNull;
 public interface ServiceDependencyGraphService {
   @Deprecated
   ServiceDependencyGraphDTO getDependencyGraph(@NonNull ProjectParams projectParams, @Nullable String serviceIdentifier,
-      @Nullable String environmentIdentifier, @NonNull boolean servicesAtRiskFilter);
+      @Nullable String environmentIdentifier, @NonNull boolean servicesAtRiskFilter, @Nullable String filter);
   ServiceDependencyGraphDTO getDependencyGraph(@NonNull ProjectParams projectParams,
-      @Nullable List<String> monitoredServiceIdentifiers, @NonNull boolean servicesAtRiskFilter);
+      @Nullable List<String> monitoredServiceIdentifiers, @NonNull boolean servicesAtRiskFilter,
+      @Nullable String filter);
 }

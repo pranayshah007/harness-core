@@ -11,6 +11,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.codec.digest.DigestUtils.md5Hex;
 
 import io.harness.batch.processing.pricing.service.support.GCPCustomInstanceDetailProvider;
+import io.harness.ccm.commons.beans.billing.InstanceCategory;
 import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.pricing.client.CloudInfoPricingClient;
 import io.harness.pricing.dto.cloudinfo.ProductDetails;
@@ -67,7 +68,10 @@ public class VMPricingServiceImpl implements VMPricingService {
   }
 
   @Override
-  public io.harness.batch.processing.pricing.vmpricing.EcsFargatePricingInfo getFargatePricingInfo(String region) {
+  public EcsFargatePricingInfo getFargatePricingInfo(String instanceCategory, String region) {
+    if (InstanceCategory.SPOT.name().equals(instanceCategory)) {
+      return EcsFargatePricingInfo.builder().region(region).cpuPrice(0.01334053).memoryPrice(0.00146489).build();
+    }
     return EcsFargatePricingInfo.builder().region(region).cpuPrice(0.04656).memoryPrice(0.00511).build();
   }
 

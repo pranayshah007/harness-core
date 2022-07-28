@@ -24,6 +24,7 @@ import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
+import io.harness.exception.InvalidRequestException;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -206,8 +207,14 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
                   filterCreationContext.getSetupMetadata().getOrgId(),
                   filterCreationContext.getSetupMetadata().getProjectId(), entity.getIdentifier(),
                   infraList.get(0).getIdentifier());
-          infrastructureEntity.ifPresent(
-              ie -> filterBuilder.infrastructureType(infrastructureEntity.get().getType().getDisplayName()));
+          if (infrastructureEntity.isPresent()) {
+            if (infrastructureEntity.get().getType() == null) {
+              throw new InvalidRequestException(format(
+                  "Infrastructure Definition [%s] in environment [%s] does not have an associated type. Please select a type for the infrastructure and try again",
+                  infrastructureEntity.get().getIdentifier(), infrastructureEntity.get().getEnvIdentifier()));
+            }
+            filterBuilder.infrastructureType(infrastructureEntity.get().getType().getDisplayName());
+          }
         }
       }
     }

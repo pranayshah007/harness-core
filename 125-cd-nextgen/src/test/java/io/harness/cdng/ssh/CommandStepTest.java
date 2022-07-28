@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -26,6 +27,7 @@ import io.harness.delegate.task.ssh.NgCleanupCommandUnit;
 import io.harness.delegate.task.ssh.NgInitCommandUnit;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -66,6 +68,16 @@ public class CommandStepTest extends CategoryTest {
   private final String accountId = "accountId";
   private final Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
   private final CommandStepParameters commandStepParameters =
+      CommandStepParameters.infoBuilder()
+          .host(ParameterField.createValueField("localhost"))
+          .commandUnits(Arrays.asList(
+              CommandUnitWrapper.builder()
+                  .commandUnit(
+                      StepCommandUnit.builder().spec(ScriptCommandUnitSpec.builder().build()).name("test").build())
+                  .build()))
+          .build();
+
+  private final CommandStepParameters commandStepParametersNoHosts =
       CommandStepParameters.infoBuilder()
           .commandUnits(Arrays.asList(
               CommandUnitWrapper.builder()
@@ -160,5 +172,20 @@ public class CommandStepTest extends CategoryTest {
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
     assertThat(stepResponse.getUnitProgressList()).containsAll(unitProgresses);
     assertThat(stepResponse.getFailureInfo().getErrorMessage()).isEqualTo("Something went wrong");
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testExecuteTaskNoHost() {
+    final StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                            .spec(commandStepParametersNoHosts)
+                                                            .timeout(ParameterField.createValueField("30m"))
+                                                            .build();
+
+    assertThatThrownBy(
+        () -> commandStep.obtainTaskAfterRbac(ambiance, stepElementParameters, StepInputPackage.builder().build()))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("Host information is missing in Command Step.");
   }
 }

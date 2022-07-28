@@ -60,10 +60,10 @@ import io.harness.cvng.core.beans.RiskProfile;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO.ChangeSourceDTOBuilder;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
-import io.harness.cvng.core.beans.monitoredService.MetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.MonitoredServiceDTOBuilder;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.ServiceDependencyDTO;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.HarnessCDChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.HarnessCDCurrentGenChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.KubernetesChangeSourceSpec;
@@ -335,8 +335,8 @@ public class BuilderFactory {
         .connectorRef(CONNECTOR_IDENTIFIER)
         .feature("Application Monitoring")
         .metricDefinitions(Collections.emptyList())
-        .metricPacks(new HashSet<MetricPackDTO>() {
-          { add(MetricPackDTO.builder().identifier(cvMonitoringCategory.getDisplayName()).build()); }
+        .metricPacks(new HashSet<TimeSeriesMetricPackDTO>() {
+          { add(TimeSeriesMetricPackDTO.builder().identifier(cvMonitoringCategory.getDisplayName()).build()); }
         })
         .build();
   }

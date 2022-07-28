@@ -21,7 +21,7 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 @HarnessRepo
 public interface OrganizationRepository
     extends PagingAndSortingRepository<Organization, String>, OrganizationRepositoryCustom {
-  Optional<Organization> findByAccountIdentifierAndIdentifierAndDeletedNot(
+  Optional<Organization> findByAccountIdentifierAndIdentifierIgnoreCaseAndDeletedNot(
       String accountIdentifier, String identifier, boolean notDeleted);
 
   Long countByAccountIdentifier(String accountIdentifier);

@@ -8,10 +8,13 @@
 package io.harness.ci;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.ci.utils.HostedVmSecretResolver.SECRET_CACHE_KEY;
 
 import static org.mockito.Mockito.mock;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cache.NoOpCache;
+import io.harness.ci.beans.entities.EncryptedDataDetails;
 import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;
 import io.harness.ci.logserviceclient.CILogServiceClientModule;
@@ -40,6 +43,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.List;
 import java.util.Set;
+import javax.cache.Cache;
 import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 
@@ -83,6 +87,12 @@ public class CIExecutionTestModule extends AbstractModule {
   @Named("serviceSecret")
   String serviceSecret() {
     return "j6ErHMBlC2dn6WctNQKt0xfyo_PZuK7ls0Z4d6XCaBg";
+  }
+
+  @Provides
+  @Named(SECRET_CACHE_KEY)
+  Cache<String, EncryptedDataDetails> getSecretTokenCache() {
+    return new NoOpCache<>();
   }
 
   @Override

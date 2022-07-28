@@ -569,6 +569,15 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public Boolean updateIsProductLed(String accountId, boolean isProductLed) {
+    Account account = get(accountId);
+    account.setProductLed(isProductLed);
+    update(account);
+    publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
+    return true;
+  }
+
+  @Override
   public AccountDetails getAccountDetails(String accountId) {
     Account account = wingsPersistence.get(Account.class, accountId);
     if (account == null) {
@@ -1023,7 +1032,7 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public List<String> getWatcherVersion(String accountId) {
+  public String getWatcherVersion(String accountId) {
     return delegateVersionService.getWatcherJarVersions(accountId);
   }
 
