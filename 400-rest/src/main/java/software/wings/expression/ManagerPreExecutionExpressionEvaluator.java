@@ -30,6 +30,7 @@ import software.wings.service.intfc.security.ManagerDecryptionService;
 import software.wings.service.intfc.security.SecretManager;
 
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import javax.cache.Cache;
 import lombok.Value;
 
@@ -47,7 +48,7 @@ public class ManagerPreExecutionExpressionEvaluator extends ExpressionEvaluator 
       SecretManager secretManager, String accountId, String workflowExecutionId, int expressionFunctorToken,
       SecretManagerClientService ngSecretService, Map<String, String> taskSetupAbstractions,
       Cache<String, EncryptedDataDetails> secretsCache, DelegateMetricsService delegateMetricsService,
-      java.util.concurrent.ExecutorService expressionEvaluatorExecutor) {
+      ExecutorService expressionEvaluatorExecutor) {
     String appId = taskSetupAbstractions == null ? null : taskSetupAbstractions.get(Cd1SetupFields.APP_ID_FIELD);
     String envId = taskSetupAbstractions == null ? null : taskSetupAbstractions.get(Cd1SetupFields.ENV_ID_FIELD);
     String serviceTemplateId =
