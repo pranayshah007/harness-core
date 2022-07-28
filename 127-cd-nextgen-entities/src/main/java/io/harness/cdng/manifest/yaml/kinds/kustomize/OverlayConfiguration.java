@@ -10,7 +10,6 @@ package io.harness.cdng.manifest.yaml.kinds.kustomize;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.SkipAutoEvaluation;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
@@ -33,12 +32,11 @@ import lombok.experimental.Wither;
 public class OverlayConfiguration {
   @NotNull
   @ApiModelProperty(dataType = STRING_CLASSPATH)
-  @SkipAutoEvaluation
   @Wither
-  private ParameterField<String> kustomizeYamlPath;
+  private ParameterField<String> kustomizeYamlFolderPath;
 
   @Builder
-  public OverlayConfiguration(ParameterField<String> kustomizeYamlPath) {
-    this.kustomizeYamlPath = kustomizeYamlPath;
+  public OverlayConfiguration(ParameterField<String> kustomizeYamlFolderPath) {
+    this.kustomizeYamlFolderPath = kustomizeYamlFolderPath;
   }
 }

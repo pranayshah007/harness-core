@@ -599,9 +599,10 @@ public class K8sHelmCommonStepHelper {
         return KustomizeManifestDelegateConfig.builder()
             .storeDelegateConfig(getStoreDelegateConfig(kustomizeManifestOutcome.getStore(), ambiance, manifestOutcome,
                 manifestOutcome.getType() + " manifest"))
-            .kustomizeYamlPath(kustomizeManifestOutcome.getOverlayConfiguration() == null
+            .kustomizeYamlFolderPath(kustomizeManifestOutcome.getOverlayConfiguration() == null
                     ? null
-                    : getParameterFieldValue(kustomizeManifestOutcome.getOverlayConfiguration().getKustomizeYamlPath()))
+                    : getParameterFieldValue(
+                        kustomizeManifestOutcome.getOverlayConfiguration().getKustomizeYamlFolderPath()))
             .pluginPath(getParameterFieldValue(kustomizeManifestOutcome.getPluginPath()))
             .kustomizeDirPath(getParameterFieldValue(gitStoreConfig.getFolderPath()))
             .build();
@@ -900,7 +901,7 @@ public class K8sHelmCommonStepHelper {
     List<String> paths = new ArrayList<>();
     KustomizeManifestOutcome kustomizeManifestOutcome = (KustomizeManifestOutcome) manifestOutcome;
     if (kustomizeManifestOutcome.getOverlayConfiguration() != null
-        && kustomizeManifestOutcome.getOverlayConfiguration().getKustomizeYamlPath() != null) {
+        && kustomizeManifestOutcome.getOverlayConfiguration().getKustomizeYamlFolderPath() != null) {
       paths.add(getParameterFieldValue(gitStoreConfig.getFolderPath()));
     } else {
       paths.add("/");

@@ -2350,14 +2350,14 @@ public class K8sTaskHelperBase {
       case KUSTOMIZE:
         KustomizeManifestDelegateConfig kustomizeManifest = (KustomizeManifestDelegateConfig) manifestDelegateConfig;
 
-        String kustomizeYamlPath = kustomizeManifest.getKustomizeYamlPath() != null
-            ? kustomizeManifest.getKustomizeYamlPath()
+        String kustomizeYamlFolderPath = kustomizeManifest.getKustomizeYamlFolderPath() != null
+            ? kustomizeManifest.getKustomizeYamlFolderPath()
             : kustomizeManifest.getKustomizeDirPath();
 
-        String kustomizePath = Paths.get(manifestFilesDirectory, kustomizeYamlPath).toString();
+        String kustomizePath = Paths.get(manifestFilesDirectory, kustomizeYamlFolderPath).toString();
         savingPatchesToDirectory(kustomizePath, manifestOverrideFiles, executionLogCallback);
         return kustomizeTaskHelper.build(manifestFilesDirectory, k8sDelegateTaskParams.getKustomizeBinaryPath(),
-            kustomizeManifest.getPluginPath(), kustomizeYamlPath, executionLogCallback);
+            kustomizeManifest.getPluginPath(), kustomizeYamlFolderPath, executionLogCallback);
 
       case OPENSHIFT_TEMPLATE:
         OpenshiftManifestDelegateConfig openshiftManifestConfig =

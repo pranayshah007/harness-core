@@ -4839,10 +4839,10 @@
     "OverlayConfiguration": {
       "type": "object",
       "required": [
-        "kustomizeYamlPath"
+        "kustomizeYamlFolderPath"
       ],
       "properties": {
-        "kustomizeYamlPath": {
+        "kustomizeYamlFolderPath": {
           "type": "string"
         }
       },

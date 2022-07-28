@@ -43,8 +43,9 @@ public class K8sHelmCommonStepHelperTest extends CategoryTest {
     GithubStore githubStore = GithubStore.builder().folderPath(ParameterField.createValueField("kustomize/")).build();
     KustomizeManifestOutcome kustomizeManifestOutcome =
         KustomizeManifestOutcome.builder()
-            .overlayConfiguration(
-                OverlayConfiguration.builder().kustomizeYamlPath(ParameterField.createValueField("env/prod/")).build())
+            .overlayConfiguration(OverlayConfiguration.builder()
+                                      .kustomizeYamlFolderPath(ParameterField.createValueField("env/prod/"))
+                                      .build())
             .build();
     List<String> paths = k8sHelmCommonStepHelper.getKustomizeManifestBasePath(githubStore, kustomizeManifestOutcome);
 
