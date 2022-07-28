@@ -599,7 +599,8 @@ public class K8sHelmCommonStepHelper {
         return KustomizeManifestDelegateConfig.builder()
             .storeDelegateConfig(getStoreDelegateConfig(kustomizeManifestOutcome.getStore(), ambiance, manifestOutcome,
                 manifestOutcome.getType() + " manifest"))
-            .kustomizeYamlFolderPath(kustomizeManifestOutcome.getOverlayConfiguration() == null
+            .kustomizeYamlFolderPath(cdStepHelper.isOptimizeFetchFilesKustomize(AmbianceUtils.getAccountId(ambiance))
+                        && kustomizeManifestOutcome.getOverlayConfiguration() == null
                     ? null
                     : getParameterFieldValue(
                         kustomizeManifestOutcome.getOverlayConfiguration().getKustomizeYamlFolderPath()))
