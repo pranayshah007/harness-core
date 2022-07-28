@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.template.helpers;
+package io.harness.template.services;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -37,8 +37,8 @@ import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.template.TemplateReferenceProtoUtils;
 import io.harness.template.entity.TemplateEntity;
-import io.harness.template.services.NGTemplateReferenceService;
-import io.harness.template.services.NGTemplateServiceHelper;
+import io.harness.template.helpers.TemplateSetupUsageHelper;
+import io.harness.template.helpers.TemplateYamlConversionHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.IdentifierRefProtoUtils;
 

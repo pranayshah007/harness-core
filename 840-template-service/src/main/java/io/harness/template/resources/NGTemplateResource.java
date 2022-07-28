@@ -56,10 +56,10 @@ import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
-import io.harness.template.helpers.NGTemplateReferenceServiceImpl;
 import io.harness.template.helpers.TemplateYamlConversionHelper;
 import io.harness.template.helpers.YamlVariablesUtils;
 import io.harness.template.mappers.NGTemplateDtoMapper;
+import io.harness.template.services.NGTemplateReferenceService;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateMergeService;
@@ -150,7 +150,7 @@ public class NGTemplateResource {
   private final TemplateMergeService templateMergeService;
   private final VariablesServiceBlockingStub variablesServiceBlockingStub;
   private final TemplateYamlConversionHelper templateYamlConversionHelper;
-  private final NGTemplateReferenceServiceImpl templateReferenceHelper;
+  private final NGTemplateReferenceService templateReferenceService;
 
   public static final String TEMPLATE_PARAM_MESSAGE = "Template Identifier for the entity";
 
@@ -647,7 +647,7 @@ public class NGTemplateResource {
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @NotNull TemplateReferenceRequestDTO templateReferenceRequestDTO) {
-    return ResponseDTO.newResponse(templateReferenceHelper.getNestedTemplateReferences(
+    return ResponseDTO.newResponse(templateReferenceService.getNestedTemplateReferences(
         accountId, orgId, projectId, templateReferenceRequestDTO.getYaml(), false));
   }
 }

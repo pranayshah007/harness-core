@@ -49,7 +49,6 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
 import io.harness.template.gitsync.TemplateGitSyncBranchContextGuard;
-import io.harness.template.helpers.NGTemplateReferenceServiceImpl;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -81,7 +80,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject EnforcementClientService enforcementClientService;
   @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
   @Inject @Named("PRIVILEGED") private OrganizationClient organizationClient;
-  @Inject private NGTemplateReferenceServiceImpl templateReferenceHelper;
+  @Inject private NGTemplateReferenceService templateReferenceService;
   @Inject private AccountClient accountClient;
 
   @Inject private NGTemplateSchemaService ngTemplateSchemaService;
@@ -111,7 +110,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
     try {
       // populate template references
-      templateReferenceHelper.populateTemplateReferences(templateEntity);
+      templateReferenceService.populateTemplateReferences(templateEntity);
 
       // Check if this is template identifier first entry, for marking it as stable template.
       boolean firstVersionEntry =
@@ -177,7 +176,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
     ngTemplateSchemaService.validateYamlSchemaInternal(templateEntity);
     // update template references
-    templateReferenceHelper.populateTemplateReferences(templateEntity);
+    templateReferenceService.populateTemplateReferences(templateEntity);
     return transactionHelper.performTransaction(() -> {
       makePreviousLastUpdatedTemplateFalse(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
           templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(), templateEntity.getVersionLabel());
@@ -356,7 +355,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
                format("Deleting template with identifier [%s] and versionLabel [%s].", templateEntity.getIdentifier(),
                    templateEntity.getVersionLabel()))) {
         // delete template references
-        templateReferenceHelper.deleteTemplateReferences(templateEntity);
+        templateReferenceService.deleteTemplateReferences(templateEntity);
         deleteSingleTemplateHelper(accountId, orgIdentifier, projectIdentifier, templateEntity.getIdentifier(),
             templateEntity, version, canDeleteStableTemplate, comments);
       }
@@ -497,7 +496,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
               StringValueUtils.getStringFromStringValue(templateRef.getIdentifier()),
               StringValueUtils.getStringFromStringValue(templateRef.getVersionLabel()));
 
-      unSyncedTemplate.ifPresent(templateEntity -> templateReferenceHelper.populateTemplateReferences(templateEntity));
+      unSyncedTemplate.ifPresent(templateEntity -> templateReferenceService.populateTemplateReferences(templateEntity));
       return templateServiceHelper.makeTemplateUpdateCall(unSyncedTemplate.get(), unSyncedTemplate.get(),
           ChangeType.ADD, "", TemplateUpdateEventType.OTHERS_EVENT, true);
     } catch (DuplicateKeyException ex) {

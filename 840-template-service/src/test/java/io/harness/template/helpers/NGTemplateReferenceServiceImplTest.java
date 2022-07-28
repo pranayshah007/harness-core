@@ -50,6 +50,7 @@ import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.handler.TemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandlerRegistry;
+import io.harness.template.services.NGTemplateReferenceServiceImpl;
 import io.harness.template.services.NGTemplateServiceHelper;
 
 import com.google.common.io.Resources;

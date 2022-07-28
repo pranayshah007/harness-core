@@ -50,7 +50,6 @@ import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
-import io.harness.template.helpers.NGTemplateReferenceServiceImpl;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -88,7 +87,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Inject private TransactionHelper transactionHelper;
   @Mock private ProjectClient projectClient;
   @Mock private OrganizationClient organizationClient;
-  @Mock private NGTemplateReferenceServiceImpl templateReferenceHelper;
+  @Mock private NGTemplateReferenceService templateReferenceService;
   @Mock AccountClient accountClient;
 
   @InjectMocks NGTemplateServiceImpl templateService;
@@ -128,7 +127,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     on(templateService).set("enforcementClientService", enforcementClientService);
     on(templateService).set("projectClient", projectClient);
     on(templateService).set("organizationClient", organizationClient);
-    on(templateService).set("templateReferenceHelper", templateReferenceHelper);
+    on(templateService).set("templateReferenceHelper", templateReferenceService);
     on(templateService).set("accountClient", accountClient);
 
     doNothing().when(enforcementClientService).checkAvailability(any(), any());

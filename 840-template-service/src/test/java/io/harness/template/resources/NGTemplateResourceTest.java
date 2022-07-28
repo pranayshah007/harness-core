@@ -46,8 +46,8 @@ import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.beans.TemplateWrapperResponseDTO;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
-import io.harness.template.helpers.NGTemplateReferenceServiceImpl;
 import io.harness.template.helpers.TemplateYamlConversionHelper;
+import io.harness.template.services.NGTemplateReferenceService;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateMergeService;
@@ -93,7 +93,7 @@ public class NGTemplateResourceTest extends CategoryTest {
   @Mock TemplateMergeService templateMergeService;
   @Inject VariablesServiceBlockingStub variablesServiceBlockingStub;
   @Mock TemplateYamlConversionHelper templateYamlConversionHelper;
-  @Mock NGTemplateReferenceServiceImpl templateReferenceHelper;
+  @Mock NGTemplateReferenceService templateReferenceService;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -139,7 +139,7 @@ public class NGTemplateResourceTest extends CategoryTest {
     variablesServiceBlockingStub = VariablesServiceGrpc.newBlockingStub(channel);
 
     templateResource = new NGTemplateResource(templateService, templateServiceHelper, accessControlClient,
-        templateMergeService, variablesServiceBlockingStub, templateYamlConversionHelper, templateReferenceHelper);
+        templateMergeService, variablesServiceBlockingStub, templateYamlConversionHelper, templateReferenceService);
     ClassLoader classLoader = this.getClass().getClassLoader();
     String filename = "template.yaml";
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
