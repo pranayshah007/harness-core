@@ -23,7 +23,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
 
 @OwnedBy(CDP)
 public class K8sHelmCommonStepHelperTest extends CategoryTest {
