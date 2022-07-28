@@ -233,7 +233,7 @@ public enum EntityType {
       EntityYamlRootNames.BUILD_AND_PUSH_ECR),
   @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_ACR)
   BUILD_AND_PUSH_ACR(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_ACR, IdentifierRef.class,
-          EntityYamlRootNames.BUILD_AND_PUSH_ACR),
+      EntityYamlRootNames.BUILD_AND_PUSH_ACR),
   @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_DOCKER_REGISTRY)
   BUILD_AND_PUSH_DOCKER_REGISTRY(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_DOCKER_REGISTRY, IdentifierRef.class,
       EntityYamlRootNames.BUILD_AND_PUSH_DOCKER_REGISTRY),

@@ -11,7 +11,7 @@ import io.harness.beans.steps.stepinfo.ACRStepInfo;
 import io.harness.pms.contracts.steps.StepType;
 
 public class ACRStep extends AbstractStepExecutable {
-    public static final StepType STEP_TYPE = ACRStepInfo.STEP_TYPE;
+  public static final StepType STEP_TYPE = ACRStepInfo.STEP_TYPE;
 
-    // TODO - https://harness.atlassian.net/browse/CI-5084
+  // TODO - https://harness.atlassian.net/browse/CI-5084
 }

@@ -1,9 +1,13 @@
 package io.harness.beans.steps.stepinfo;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
+import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.STRING_MAP_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
@@ -20,28 +24,24 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.extended.ci.container.ContainerResource;
-import io.swagger.annotations.ApiModelProperty;
-import lombok.Builder;
-import lombok.Data;
-import lombok.Getter;
-import org.springframework.data.annotation.TypeAlias;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.annotations.ApiModelProperty;
 import java.beans.ConstructorProperties;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
-import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
-import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
-import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
-import static io.harness.beans.SwaggerConstants.STRING_MAP_CLASSPATH;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import lombok.Builder;
+import lombok.Data;
+import lombok.Getter;
+import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @JsonTypeName("BuildAndPushACR")
@@ -50,97 +50,94 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 @OwnedBy(CI)
 @RecasterAlias("io.harness.beans.steps.stepinfo.ACRStepInfo")
 public class ACRStepInfo implements PluginCompatibleStep, WithConnectorRef {
-    @VariableExpression(skipVariableExpression = true) public static final int DEFAULT_RETRY = 1;
+  @VariableExpression(skipVariableExpression = true) public static final int DEFAULT_RETRY = 1;
 
-    @JsonProperty(YamlNode.UUID_FIELD_NAME)
-    @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-    @ApiModelProperty(hidden = true)
-    private String uuid;
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private String uuid;
 
-    @JsonIgnore
-    public static final TypeInfo typeInfo = TypeInfo.builder().stepInfoType(CIStepInfoType.ACR).build();
-    @JsonIgnore
-    public static final StepType STEP_TYPE =
-            StepType.newBuilder().setType(CIStepInfoType.ACR.getDisplayName()).setStepCategory(StepCategory.STEP).build();
+  @JsonIgnore public static final TypeInfo typeInfo = TypeInfo.builder().stepInfoType(CIStepInfoType.ACR).build();
+  @JsonIgnore
+  public static final StepType STEP_TYPE =
+      StepType.newBuilder().setType(CIStepInfoType.ACR.getDisplayName()).setStepCategory(StepCategory.STEP).build();
 
-    @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private String identifier;
-    @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private String name;
-    @VariableExpression(skipVariableExpression = true) @Min(MIN_RETRY) @Max(MAX_RETRY) private int retry;
-    @NotNull
-    @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> connectorRef;
-    private ContainerResource resources;
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private String identifier;
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private String name;
+  @VariableExpression(skipVariableExpression = true) @Min(MIN_RETRY) @Max(MAX_RETRY) private int retry;
+  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> connectorRef;
+  private ContainerResource resources;
 
-    // plugin settings
-    @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> repository;
-    @NotNull
-    @YamlSchemaTypes(value = {string})
-    @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
-    private ParameterField<List<String>> tags;
-    @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> context;
-    @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> dockerfile;
-    @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> target;
-    @YamlSchemaTypes(value = {string})
-    @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
-    private ParameterField<Map<String, String>> labels;
-    @YamlSchemaTypes(value = {string})
-    @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
-    private ParameterField<Map<String, String>> buildArgs;
-    @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) private ParameterField<Integer> runAsUser;
-    @YamlSchemaTypes({string}) @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) private ParameterField<Boolean> optimize;
-    @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> remoteCacheImage;
-    @YamlSchemaTypes(value = {string})
-    @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
-    private ParameterField<List<String>> baseImageConnectorRefs;
+  // plugin settings
+  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> repository;
+  @NotNull
+  @YamlSchemaTypes(value = {string})
+  @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
+  private ParameterField<List<String>> tags;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> context;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> dockerfile;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> target;
+  @YamlSchemaTypes(value = {string})
+  @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
+  private ParameterField<Map<String, String>> labels;
+  @YamlSchemaTypes(value = {string})
+  @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
+  private ParameterField<Map<String, String>> buildArgs;
+  @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) private ParameterField<Integer> runAsUser;
+  @YamlSchemaTypes({string}) @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) private ParameterField<Boolean> optimize;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> remoteCacheImage;
+  @YamlSchemaTypes(value = {string})
+  @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
+  private ParameterField<List<String>> baseImageConnectorRefs;
 
-    @Builder
-    @ConstructorProperties({"identifier", "name", "retry", "connectorRef", "resources", "repository",
-            "tags", "context", "dockerfile", "target", "labels", "buildArgs", "runAsUser", "optimize", "remoteCacheImage",
-            "baseImageConnectorRefs"})
-    public ACRStepInfo(String identifier, String name, Integer retry, ParameterField<String> connectorRef,
-                       ContainerResource resources,
-                       ParameterField<String> repository, ParameterField<List<String>> tags, ParameterField<String> context,
-                       ParameterField<String> dockerfile, ParameterField<String> target, ParameterField<Map<String, String>> labels,
-                       ParameterField<Map<String, String>> buildArgs, ParameterField<Integer> runAsUser,
-                       ParameterField<Boolean> optimize, ParameterField<String> remoteCacheImage,
-                       ParameterField<List<String>> baseImageConnectorRefs) {
-        this.identifier = identifier;
-        this.name = name;
-        this.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
-        this.connectorRef = connectorRef;
-        this.resources = resources;
-        this.repository = repository;
-        this.tags = tags;
-        this.context = context;
-        this.dockerfile = dockerfile;
-        this.target = target;
-        this.labels = labels;
-        this.buildArgs = buildArgs;
-        this.runAsUser = runAsUser;
-        this.optimize = optimize;
-        this.remoteCacheImage = remoteCacheImage;
-        this.baseImageConnectorRefs = baseImageConnectorRefs;
-    }
+  @Builder
+  @ConstructorProperties(
+      {"identifier", "name", "retry", "connectorRef", "resources", "repository", "tags", "context", "dockerfile",
+          "target", "labels", "buildArgs", "runAsUser", "optimize", "remoteCacheImage", "baseImageConnectorRefs"})
+  public ACRStepInfo(String identifier, String name, Integer retry, ParameterField<String> connectorRef,
+      ContainerResource resources, ParameterField<String> repository, ParameterField<List<String>> tags,
+      ParameterField<String> context, ParameterField<String> dockerfile, ParameterField<String> target,
+      ParameterField<Map<String, String>> labels, ParameterField<Map<String, String>> buildArgs,
+      ParameterField<Integer> runAsUser, ParameterField<Boolean> optimize, ParameterField<String> remoteCacheImage,
+      ParameterField<List<String>> baseImageConnectorRefs) {
+    this.identifier = identifier;
+    this.name = name;
+    this.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
+    this.connectorRef = connectorRef;
+    this.resources = resources;
+    this.repository = repository;
+    this.tags = tags;
+    this.context = context;
+    this.dockerfile = dockerfile;
+    this.target = target;
+    this.labels = labels;
+    this.buildArgs = buildArgs;
+    this.runAsUser = runAsUser;
+    this.optimize = optimize;
+    this.remoteCacheImage = remoteCacheImage;
+    this.baseImageConnectorRefs = baseImageConnectorRefs;
+  }
 
-    @Override
-    public TypeInfo getNonYamlInfo() {
-        return typeInfo;
-    }
+  @Override
+  public TypeInfo getNonYamlInfo() {
+    return typeInfo;
+  }
 
-    @Override
-    public StepType getStepType() {
-        return STEP_TYPE;
-    }
+  @Override
+  public StepType getStepType() {
+    return STEP_TYPE;
+  }
 
-    @Override
-    public String getFacilitatorType() {
-        return OrchestrationFacilitatorType.ASYNC;
-    }
+  @Override
+  public String getFacilitatorType() {
+    return OrchestrationFacilitatorType.ASYNC;
+  }
 
-    @Override
-    public Map<String, ParameterField<String>> extractConnectorRefs() {
-        Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
-        connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
-        connectorRefMap.putAll(PluginUtils.extractBaseImageConnectorRefs(baseImageConnectorRefs));
-        return connectorRefMap;
-    }
+  @Override
+  public Map<String, ParameterField<String>> extractConnectorRefs() {
+    Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
+    connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
+    connectorRefMap.putAll(PluginUtils.extractBaseImageConnectorRefs(baseImageConnectorRefs));
+    return connectorRefMap;
+  }
 }

@@ -427,13 +427,16 @@ public class ConnectorUtils {
         awsCredentialDTO.getAwsCredentialType(), awsConnectorDTO));
   }
 
-  private ConnectorDetails getAzureConnectorDetails(NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
-    List<EncryptedDataDetail> encryptedDataDetails;;
+  private ConnectorDetails getAzureConnectorDetails(
+      NGAccess ngAccess, ConnectorDTO connectorDTO, ConnectorDetailsBuilder connectorDetailsBuilder) {
+    List<EncryptedDataDetail> encryptedDataDetails;
+    ;
     AzureConnectorDTO azureConnectorDTO = (AzureConnectorDTO) connectorDTO.getConnectorInfo().getConnectorConfig();
     AzureCredentialDTO credentialDTO = azureConnectorDTO.getCredential();
     if (credentialDTO.getAzureCredentialType() == MANUAL_CREDENTIALS) {
       AzureManualDetailsDTO config = (AzureManualDetailsDTO) credentialDTO.getConfig();
-      encryptedDataDetails = secretManagerClientService.getEncryptionDetails(ngAccess, config.getAuthDTO().getCredentials());
+      encryptedDataDetails =
+          secretManagerClientService.getEncryptionDetails(ngAccess, config.getAuthDTO().getCredentials());
       return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
     } else {
       return connectorDetailsBuilder.build();

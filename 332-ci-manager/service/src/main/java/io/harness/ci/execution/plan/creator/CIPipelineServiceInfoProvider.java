@@ -200,7 +200,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
             .build();
 
     StepInfo acrPushBuilds =
-          StepInfo.newBuilder()
+        StepInfo.newBuilder()
             .setName("Build and Push to ACR")
             .setType(StepSpecTypeConstants.BUILD_AND_PUSH_ACR)
             .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Artifacts").addFolderPaths("Build").build())

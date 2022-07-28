@@ -56,6 +56,8 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.CommandExecutionStatus;
 
+import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
+
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -93,7 +95,6 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.FailsafeException;
-import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
@@ -467,15 +468,16 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
     }
   }
 
-  private void updateSecretForAzure(Map<String, SecretParams> secretData, Map<String, ConnectorDetails> pluginConnectors) {
-    for (Map.Entry<String, ConnectorDetails> entry: pluginConnectors.entrySet()) {
+  private void updateSecretForAzure(
+      Map<String, SecretParams> secretData, Map<String, ConnectorDetails> pluginConnectors) {
+    for (Map.Entry<String, ConnectorDetails> entry : pluginConnectors.entrySet()) {
       ConnectorDetails connectorDetails = entry.getValue();
-      if(connectorDetails.getConnectorType() != ConnectorType.AZURE) {
+      if (connectorDetails.getConnectorType() != ConnectorType.AZURE) {
         return;
       }
 
       AzureAcrTokenTaskResponse acrLoginToken = azureAsyncTaskHelper.getAcrLoginToken("testciaman.azurecr.io",
-              connectorDetails.getEncryptedDataDetails(), (AzureConnectorDTO) connectorDetails.getConnectorConfig());
+          connectorDetails.getEncryptedDataDetails(), (AzureConnectorDTO) connectorDetails.getConnectorConfig());
     }
   }
 

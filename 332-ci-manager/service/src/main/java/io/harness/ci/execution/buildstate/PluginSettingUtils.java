@@ -37,8 +37,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.CIStepInfoType;
-import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ACRStepInfo;
+import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
 import io.harness.beans.steps.stepinfo.GCRStepInfo;
 import io.harness.beans.steps.stepinfo.RestoreCacheGCSStepInfo;
@@ -254,15 +254,17 @@ public class PluginSettingUtils {
     return map;
   }
 
-  private static Map<String, String> getACRStepInfoEnvVariables(ACRStepInfo stepInfo, String identifier, Type infraType) {
+  private static Map<String, String> getACRStepInfoEnvVariables(
+      ACRStepInfo stepInfo, String identifier, Type infraType) {
     Map<String, String> map = new HashMap<>();
-    String repository = resolveStringParameter(REPOSITORY, "BuildAndPushACR", identifier, stepInfo.getRepository(), true);
+    String repository =
+        resolveStringParameter(REPOSITORY, "BuildAndPushACR", identifier, stepInfo.getRepository(), true);
     setMandatoryEnvironmentVariable(map, REPOSITORY, repository);
     setMandatoryEnvironmentVariable(map, PLUGIN_TAGS,
-            listToStringSlice(resolveListParameter("tags", "BuildAndPushECR", identifier, stepInfo.getTags(), true)));
+        listToStringSlice(resolveListParameter("tags", "BuildAndPushECR", identifier, stepInfo.getTags(), true)));
 
     String dockerfile =
-            resolveStringParameter("dockerfile", "BuildAndPushACR", identifier, stepInfo.getDockerfile(), false);
+        resolveStringParameter("dockerfile", "BuildAndPushACR", identifier, stepInfo.getDockerfile(), false);
     if (dockerfile != null && !dockerfile.equals(UNRESOLVED_PARAMETER)) {
       setOptionalEnvironmentVariable(map, PLUGIN_DOCKERFILE, dockerfile);
     }
@@ -278,13 +280,13 @@ public class PluginSettingUtils {
     }
 
     Map<String, String> buildArgs =
-            resolveMapParameter("buildArgs", "BuildAndPushACR", identifier, stepInfo.getBuildArgs(), false);
+        resolveMapParameter("buildArgs", "BuildAndPushACR", identifier, stepInfo.getBuildArgs(), false);
     if (isNotEmpty(buildArgs)) {
       setOptionalEnvironmentVariable(map, PLUGIN_BUILD_ARGS, mapToStringSlice(buildArgs));
     }
 
     Map<String, String> labels =
-            resolveMapParameter("labels", "BuildAndPushACR", identifier, stepInfo.getLabels(), false);
+        resolveMapParameter("labels", "BuildAndPushACR", identifier, stepInfo.getLabels(), false);
     if (isNotEmpty(labels)) {
       setOptionalEnvironmentVariable(map, PLUGIN_CUSTOM_LABELS, mapToStringSlice(labels));
     }
@@ -296,7 +298,7 @@ public class PluginSettingUtils {
       }
 
       String remoteCacheImage = resolveStringParameter(
-              "remoteCacheImage", "BuildAndPushACR", identifier, stepInfo.getRemoteCacheImage(), false);
+          "remoteCacheImage", "BuildAndPushACR", identifier, stepInfo.getRemoteCacheImage(), false);
       if (remoteCacheImage != null && !remoteCacheImage.equals(UNRESOLVED_PARAMETER)) {
         setOptionalEnvironmentVariable(map, PLUGIN_ENABLE_CACHE, "true");
         setOptionalEnvironmentVariable(map, PLUGIN_CACHE_REPO, remoteCacheImage);

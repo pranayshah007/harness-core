@@ -12,6 +12,7 @@ import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.ci.pod.SecretParams.Type.FILE;
 import static io.harness.delegate.beans.ci.pod.SecretParams.Type.TEXT;
+import static io.harness.delegate.beans.connector.azureconnector.AzureCredentialType.MANUAL_CREDENTIALS;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -44,15 +45,12 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
 import io.harness.secrets.SecretDecryptor;
 import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
-import lombok.extern.slf4j.Slf4j;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import java.util.HashMap;
 import java.util.Map;
-
-import static io.harness.delegate.beans.connector.azureconnector.AzureCredentialType.MANUAL_CREDENTIALS;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Helper class to create spec for image registry and GIT secrets. Generated spec can be used for creation of secrets on
@@ -258,10 +256,11 @@ public class ConnectorEnvVariablesHelper {
     AzureCredentialDTO credentialDTO = connectorConfig.getCredential();
     if (MANUAL_CREDENTIALS == connectorConfig.getCredential().getAzureCredentialType()) {
       AzureManualDetailsDTO config = (AzureManualDetailsDTO) credentialDTO.getConfig();
-      AzureClientSecretKeyDTO decryptedConfig = (AzureClientSecretKeyDTO) secretDecryptor.decrypt(config.getAuthDTO().getCredentials(), connectorDetails.getEncryptedDataDetails());
+      AzureClientSecretKeyDTO decryptedConfig = (AzureClientSecretKeyDTO) secretDecryptor.decrypt(
+          config.getAuthDTO().getCredentials(), connectorDetails.getEncryptedDataDetails());
       String secret = String.valueOf(decryptedConfig.getSecretKey().getDecryptedValue());
-      secretData.put(azure_token,
-              getVariableSecret(azure_token + connectorDetails.getIdentifier(), encodeBase64(secret)));
+      secretData.put(
+          azure_token, getVariableSecret(azure_token + connectorDetails.getIdentifier(), encodeBase64(secret)));
     }
     return secretData;
   }
