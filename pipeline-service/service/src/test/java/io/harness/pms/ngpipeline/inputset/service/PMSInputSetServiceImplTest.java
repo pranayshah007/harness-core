@@ -65,6 +65,7 @@ import com.google.inject.Inject;
 import com.google.protobuf.StringValue;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -694,6 +695,19 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     YamlSchemaErrorDTO yamlSchemaErrorDTO = schemaErrors.get(0);
     assertThat(yamlSchemaErrorDTO.getMessage()).isEqualTo("error msg from test");
     assertThat(yamlSchemaErrorDTO.getFqn()).isEqualTo("$.inputSet");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testListWithCriteria() {
+    Criteria randomCriteria = Criteria.where("thisKey").is("thisValue");
+    doReturn(Collections.singletonList(InputSetEntity.builder().identifier("thisId").build()))
+        .when(inputSetRepository)
+        .findAll(randomCriteria);
+    List<InputSetEntity> list = pmsInputSetServiceMock.list(randomCriteria);
+    assertThat(list).hasSize(1);
+    assertThat(list.get(0).getIdentifier()).isEqualTo("thisId");
   }
 
   private void setupGitContext(GitEntityInfo branchInfo) {

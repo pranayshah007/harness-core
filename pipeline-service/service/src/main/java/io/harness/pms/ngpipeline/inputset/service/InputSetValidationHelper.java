@@ -204,7 +204,8 @@ public class InputSetValidationHelper {
       return getYAMLDiffForInputSet(
           gitSyncSdkService, pipelineService, validateAndMergeHelper, inputSetEntity, pipelineBranch, pipelineRepoID);
     } else {
-      return OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(inputSetService, inputSetEntity);
+      return OverlayInputSetValidationHelper.getYAMLDiffForOverlayInputSet(
+          gitSyncSdkService, inputSetService, inputSetEntity);
     }
   }
 

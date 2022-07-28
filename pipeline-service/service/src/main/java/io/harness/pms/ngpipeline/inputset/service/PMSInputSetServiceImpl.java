@@ -56,6 +56,7 @@ import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -341,6 +342,11 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   public Page<InputSetEntity> list(
       Criteria criteria, Pageable pageable, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return inputSetRepository.findAll(criteria, pageable, accountIdentifier, orgIdentifier, projectIdentifier);
+  }
+
+  @Override
+  public List<InputSetEntity> list(Criteria criteria) {
+    return inputSetRepository.findAll(criteria);
   }
 
   @Override

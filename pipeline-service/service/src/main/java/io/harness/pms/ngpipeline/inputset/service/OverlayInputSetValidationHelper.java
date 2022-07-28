@@ -15,20 +15,27 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.inputset.OverlayInputSetErrorWrapperDTOPMS;
 import io.harness.pms.merger.helpers.InputSetYamlHelper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
+import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlDiffDTO;
 import io.harness.pms.ngpipeline.inputset.exceptions.InvalidOverlayInputSetException;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetErrorsHelper;
+import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PIPELINE)
 @UtilityClass
@@ -55,22 +62,8 @@ public class OverlayInputSetValidationHelper {
     InputSetYamlHelper.confirmPipelineIdentifierInOverlayInputSet(yaml, pipelineIdentifier);
     InputSetYamlHelper.confirmOrgAndProjectIdentifier(yaml, "overlayInputSet", orgIdentifier, projectIdentifier);
 
-    List<Optional<InputSetEntity>> inputSets;
-    if (GitContextHelper.isUpdateToNewBranch()) {
-      String baseBranch = Objects.requireNonNull(GitContextHelper.getGitEntityInfo()).getBaseBranch();
-      String repoIdentifier = GitContextHelper.getGitEntityInfo().getYamlGitConfigId();
-      GitSyncBranchContext branchContext =
-          GitSyncBranchContext.builder()
-              .gitBranchInfo(GitEntityInfo.builder().branch(baseBranch).yamlGitConfigId(repoIdentifier).build())
-              .build();
-      try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
-        inputSets = findAllReferredInputSets(
-            inputSetService, inputSetReferences, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
-      }
-    } else {
-      inputSets = findAllReferredInputSets(
-          inputSetService, inputSetReferences, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
-    }
+    List<Optional<InputSetEntity>> inputSets = findAllReferredInputSets(
+        inputSetService, inputSetReferences, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     Map<String, String> invalidReferences =
         InputSetErrorsHelper.getInvalidInputSetReferences(inputSets, inputSetReferences);
     if (!invalidReferences.isEmpty()) {
@@ -82,6 +75,27 @@ public class OverlayInputSetValidationHelper {
   }
 
   private List<Optional<InputSetEntity>> findAllReferredInputSets(PMSInputSetService inputSetService,
+      List<String> referencesInOverlay, String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier) {
+    if (GitContextHelper.isUpdateToNewBranch()) {
+      String baseBranch = Objects.requireNonNull(GitContextHelper.getGitEntityInfo()).getBaseBranch();
+      String repoIdentifier = GitContextHelper.getGitEntityInfo().getYamlGitConfigId();
+      GitSyncBranchContext branchContext =
+          GitSyncBranchContext.builder()
+              .gitBranchInfo(GitEntityInfo.builder().branch(baseBranch).yamlGitConfigId(repoIdentifier).build())
+              .build();
+      try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
+        return findAllReferredInputSetsInternal(
+            inputSetService, referencesInOverlay, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+      }
+    } else {
+      return findAllReferredInputSetsInternal(
+          inputSetService, referencesInOverlay, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+    }
+  }
+
+  // todo: optimise this
+  private List<Optional<InputSetEntity>> findAllReferredInputSetsInternal(PMSInputSetService inputSetService,
       List<String> referencesInOverlay, String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier) {
     List<Optional<InputSetEntity>> inputSets = new ArrayList<>();
@@ -96,18 +110,44 @@ public class OverlayInputSetValidationHelper {
   }
 
   public static InputSetYamlDiffDTO getYAMLDiffForOverlayInputSet(
-      PMSInputSetService inputSetService, InputSetEntity inputSetEntity) {
-    // todo: implement this, and change overlay input set validation in validateOverlayInputSet accordingly
-    /*
-    1. get references in ois
-    2. create criteria for db call
-    3. input set list call
-    4. remove non-existing references from the references in ois
-    5.1 if some references remain, return
-    5.2 if not, check if normal input sets exist for the pipeline.
-    5.2.1 if no references remain, don't allow start afresh
-    5.2.2 if remaining, allow start afresh
-     */
-    return null;
+      GitSyncSdkService gitSyncSdkService, PMSInputSetService inputSetService, InputSetEntity inputSetEntity) {
+    String accountId = inputSetEntity.getAccountId();
+    String orgIdentifier = inputSetEntity.getOrgIdentifier();
+    String projectIdentifier = inputSetEntity.getProjectIdentifier();
+    String pipelineIdentifier = inputSetEntity.getPipelineIdentifier();
+    String yaml = inputSetEntity.getYaml();
+
+    List<String> currentReferences = InputSetYamlHelper.getReferencesFromOverlayInputSetYaml(yaml);
+    List<Optional<InputSetEntity>> inputSets = findAllReferredInputSetsInternal(
+        inputSetService, currentReferences, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+    Set<String> invalidReferences =
+        InputSetErrorsHelper.getInvalidInputSetReferences(inputSets, currentReferences).keySet();
+    List<String> validReferences =
+        currentReferences.stream().filter(ref -> !invalidReferences.contains(ref)).collect(Collectors.toList());
+    if (EmptyPredicate.isNotEmpty(validReferences)) {
+      String newYaml = InputSetYamlHelper.setReferencesFromOverlayInputSetYaml(yaml, validReferences);
+      return InputSetYamlDiffDTO.builder()
+          .oldYAML(yaml)
+          .newYAML(newYaml)
+          .isInputSetEmpty(false)
+          .noUpdatePossible(false)
+          .build();
+    }
+
+    Criteria criteria = PMSInputSetFilterHelper.createCriteriaForGetList(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, InputSetListTypePMS.INPUT_SET, null, false);
+    if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
+      GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+      criteria = criteria.and(InputSetEntityKeys.branch)
+                     .is(gitEntityInfo.getBranch())
+                     .and(InputSetEntityKeys.yamlGitConfigRef)
+                     .is(gitEntityInfo.getYamlGitConfigId());
+    }
+    boolean hasInputSets = EmptyPredicate.isNotEmpty(inputSetService.list(criteria));
+    if (hasInputSets) {
+      return InputSetYamlDiffDTO.builder().isInputSetEmpty(true).noUpdatePossible(false).build();
+    } else {
+      return InputSetYamlDiffDTO.builder().isInputSetEmpty(true).noUpdatePossible(true).build();
+    }
   }
 }
