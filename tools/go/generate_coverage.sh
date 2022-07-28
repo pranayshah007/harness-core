@@ -37,7 +37,7 @@ COVERAGE_OUT="/tmp/symportal/coverage/combined_coverage.out"
 COVERAGE_HTML="/tmp/symportal/coverage/combined_coverage.html"
 
 echo "Merging coverage reports ... "
-if ! ((find $PROJECT_ROOT/bazel-testlogs/ -name coverage.dat | tr '\n' ' ' | xargs gocovmerge) | sed '/mock.go/d' >> $COVERAGE_OUT); then
+if ! ((find `bazelisk info bazel-testlogs` -name coverage.dat | tr '\n' ' ' | xargs gocovmerge) | sed '/mock.go/d' >> $COVERAGE_OUT); then
 	printf "\e[31mFailed to merge coverage dat files. Please make sure you have run portal/tools/go/go_setup.sh.\n"
 	printf "\e[31mAlso ensure \$GOPATH/bin is added to \$PATH and contains the gocovmerge binary."
 	exit
