@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.CI)
-public class PluginUtils {
+public class YamlUtils {
   public static Map<String, ParameterField<String>> extractBaseImageConnectorRefs(
       ParameterField<List<String>> baseImageConnectorRefs) {
     Map<String, ParameterField<String>> baseConnectorRefMap = new HashMap<>();

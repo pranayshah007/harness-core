@@ -8,7 +8,6 @@ set -ex
 
 # This script requires JDK, VERSION and PURPOSE as environment variables
 
-
 mkdir -p dist/pipeline-service
 cd dist/pipeline-service
 
@@ -22,11 +21,11 @@ then
 fi
 
 cp ${HOME}/.bazel-dirs/bin/pipeline-service/module_deploy.jar pipeline-service-capsule.jar
-cp ../../pipeline-service/config.yml .
-cp ../../pipeline-service/keystore.jks .
-cp ../../pipeline-service/key.pem .
-cp ../../pipeline-service/cert.pem .
-cp ../../pipeline-service/src/main/resources/redisson-jcache.yaml .
+cp ../../pipeline-service/config/config.yml .
+cp ../../pipeline-service/config/keystore.jks .
+cp ../../pipeline-service/config/key.pem .
+cp ../../pipeline-service/config/cert.pem .
+cp ../../pipeline-service/service/src/main/resources/redisson-jcache.yaml .
 
 cp ../../dockerization/pipeline-service/Dockerfile-pipeline-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/pipeline-service/Dockerfile-pipeline-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr

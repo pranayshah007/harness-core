@@ -34,7 +34,9 @@ public class UserGroupBackgroundMigrationDetails implements MigrationDetails {
   public List<Pair<Integer, Class<? extends NGMigration>>> getMigrations() {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
         .add(Pair.of(1, NoOpMigration.class))
-        .add(Pair.of(2, UserGroupSanitizationMigration.class))
+        .add(Pair.of(2, NoOpMigration.class))
+        .add(Pair.of(3, NoOpMigration.class))
+        .add(Pair.of(4, UserGroupSanitizationMigration.class))
         .build();
   }
 }

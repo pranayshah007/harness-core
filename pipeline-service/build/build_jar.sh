@@ -13,7 +13,7 @@ fi
 
 BAZEL_DIRS=${HOME}/.bazel-dirs
 BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --symlink_prefix=${BAZEL_DIRS}/"
-bazel ${bazelrc} build //pipeline-service:module_deploy.jar ${BAZEL_ARGUMENTS}
+bazel ${bazelrc} build //pipeline-service/service:module_deploy.jar ${BAZEL_ARGUMENTS}
 
 module=pipeline-service
 moduleName=pipeline-service

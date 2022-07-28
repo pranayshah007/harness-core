@@ -7,15 +7,15 @@ java_binary(
     srcs = glob([
         "src/main/java/**/*.java",
     ]),
-    data = [
-        "cert.pem",
-        "key.pem",
-    ],
+    data = ["//:resource"],
     main_class = "io.harness.PipelineServiceApplication",
     resources = [
-        "//pipeline-service/src/main/resources:resource",
+        "//pipeline-service/service/src/main/resources:resource",
     ],
-    visibility = ["//visibility:public"],
+    visibility = [
+        "//110-change-data-capture:__pkg__",
+        "//pipeline-service/build:__subpackages__",
+    ],
     runtime_deps = [
         "@maven//:javax_ws_rs_javax_ws_rs_api",
     ],
@@ -116,7 +116,7 @@ java_library(
     name = "tests",
     testonly = True,
     srcs = glob(["src/test/**/*.java"]),
-    resources = ["//pipeline-service/src/test/resources:resource"],
+    resources = ["//pipeline-service/service/src/test/resources:resource"],
     visibility = ["//visibility:public"],
     deps = [
         ":module",
@@ -173,7 +173,3 @@ java_library(
 run_tests()
 
 run_analysis()
-
-exports_files([
-    "config.yml",
-])

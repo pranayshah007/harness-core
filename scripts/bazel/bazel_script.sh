@@ -82,7 +82,7 @@ BAZEL_MODULES="\
   //450-ce-views:module \
   //460-capability:module \
   //490-ce-commons:module \
-  //pipeline-service:module \
+  //pipeline-service/service:module \
   //pipeline-service/modules/ng-triggers:module \
   //pipeline-service/modules/orchestration-steps:module \
   //pipeline-service/modules/orchestration-steps/contracts:module \

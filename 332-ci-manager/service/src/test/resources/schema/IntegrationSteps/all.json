@@ -683,7 +683,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -695,7 +695,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -707,7 +707,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -765,7 +765,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -835,7 +835,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -942,7 +942,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -957,7 +957,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -969,7 +969,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -981,7 +981,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -1013,7 +1013,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -1050,7 +1050,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -1069,7 +1069,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -1101,7 +1101,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -1121,7 +1121,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -1137,7 +1137,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -1155,7 +1155,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -1176,7 +1176,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -1188,7 +1188,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -1230,7 +1230,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -1268,7 +1268,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -1352,7 +1352,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -1450,7 +1450,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -1465,7 +1465,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
@@ -1477,7 +1477,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
                 }
               ]
