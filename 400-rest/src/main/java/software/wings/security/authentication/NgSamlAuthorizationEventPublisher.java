@@ -32,6 +32,7 @@ public class NgSamlAuthorizationEventPublisher {
 
   public void publishSamlAuthorizationAssertion(
       SamlUserAuthorization samlUserAuthorization, String accountIdentifier, String ssoId) {
+    log.info("SAML: Publishing SAML authorization assertion for ssoId {}, for accountId {}", ssoId, accountIdentifier);
     SamlAuthorizationDTO samlAuthorizationDTO = SamlAuthorizationDTO.newBuilder()
                                                     .setAccountIdentifier(accountIdentifier)
                                                     .setSsoId(ssoId)

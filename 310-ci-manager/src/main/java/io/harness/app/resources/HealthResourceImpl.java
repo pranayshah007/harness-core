@@ -16,40 +16,21 @@ import io.harness.exception.NoResultFoundException;
 import io.harness.health.HealthException;
 import io.harness.health.HealthService;
 import io.harness.rest.RestResponse;
-import io.harness.security.annotations.PublicApi;
 
-import com.codahale.metrics.annotation.ExceptionMetered;
-import com.codahale.metrics.annotation.Timed;
 import com.codahale.metrics.health.HealthCheck;
 import com.google.inject.Inject;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 
-@Api("health")
-@Path("/health")
-@Consumes(MediaType.APPLICATION_JSON)
-@Produces(MediaType.APPLICATION_JSON)
-@PublicApi
 @Slf4j
 @ExposeInternalException
-public class HealthResource {
+public class HealthResourceImpl implements io.harness.cimanager.health.HealthResource {
   private HealthService healthService;
 
   @Inject
-  public HealthResource(HealthService healthService) {
+  public HealthResourceImpl(HealthService healthService) {
     this.healthService = healthService;
   }
 
-  @GET
-  @Timed
-  @ExceptionMetered
-  @ApiOperation(value = "get health for CI service", nickname = "getCIHealthStatus")
   public RestResponse<String> get() throws Exception {
     if (getMaintenanceFlag()) {
       log.info("In maintenance mode. Throwing exception to prevent traffic.");

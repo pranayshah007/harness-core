@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.rest.RestResponse;
 import io.harness.security.annotations.PublicApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -38,5 +38,5 @@ public interface HealthResource {
   @ExceptionMetered
   @ApiOperation(value = "get health for CI service", nickname = "getCIHealthStatus", hidden = true)
   @Operation(hidden = true)
-  ResponseDTO<String> get() throws Exception;
+  RestResponse<String> get() throws Exception;
 }

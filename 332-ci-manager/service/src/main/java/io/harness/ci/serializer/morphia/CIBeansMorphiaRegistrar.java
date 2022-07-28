@@ -16,7 +16,6 @@ import io.harness.beans.sweepingoutputs.K8PodDetails;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.PodCleanupDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
-import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.StepTaskDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.ci.beans.entities.BuildNumberDetails;
@@ -47,7 +46,6 @@ public class CIBeansMorphiaRegistrar implements MorphiaRegistrar {
     set.add(ContainerPortDetails.class);
     set.add(LiteEnginePodDetailsOutcome.class);
     set.add(VmDetailsOutcome.class);
-    set.add(StageInfraDetails.class);
     set.add(CITelemetrySentStatus.class);
     set.add(DliteVmStageInfraDetails.class);
   }
@@ -57,7 +55,6 @@ public class CIBeansMorphiaRegistrar implements MorphiaRegistrar {
     w.put("sweepingoutputs.K8PodDetails", K8PodDetails.class);
     w.put("sweepingoutputs.StageDetails", StageDetails.class);
     w.put("sweepingoutputs.PodCleanupDetails", PodCleanupDetails.class);
-    w.put("sweepingoutputs.StageInfraDetails", StageInfraDetails.class);
     w.put("sweepingoutputs.K8StageInfraDetails", K8StageInfraDetails.class);
     w.put("sweepingoutputs.AwsVmStageInfraDetails", VmStageInfraDetails.class);
   }

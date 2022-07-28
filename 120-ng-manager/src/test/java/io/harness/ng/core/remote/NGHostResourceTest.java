@@ -47,7 +47,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.CDP)
-public class HostValidationResourceTest extends CategoryTest {
+public class NGHostResourceTest extends CategoryTest {
   private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
   private static final String ORG_IDENTIFIER = "orgIdentifier";
   private static final String PROJECT_IDENTIFIER = "projectIdentifier";
@@ -55,7 +55,7 @@ public class HostValidationResourceTest extends CategoryTest {
 
   @Mock NGHostValidationService hostValidationService;
   @Mock AccessControlClient accessControlClient;
-  @InjectMocks HostValidationResource hostValidationResource;
+  @InjectMocks NGHostResource ngHostResource;
 
   @Test
   @Owner(developers = VLAD)
@@ -73,7 +73,7 @@ public class HostValidationResourceTest extends CategoryTest {
         .when(hostValidationService)
         .validateHosts(hosts, ACCOUNT_IDENTIFIER, null, null, SECRET_IDENTIFIER, tags);
 
-    ResponseDTO<List<HostValidationDTO>> result = hostValidationResource.validateHost(ACCOUNT_IDENTIFIER, null, null,
+    ResponseDTO<List<HostValidationDTO>> result = ngHostResource.validateHost(ACCOUNT_IDENTIFIER, null, null,
         SECRET_IDENTIFIER,
         HostValidationParams.builder().hosts(Collections.singletonList(host1)).tags(Collections.emptyList()).build());
 
@@ -96,8 +96,8 @@ public class HostValidationResourceTest extends CategoryTest {
         .validateHosts(hosts, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SECRET_IDENTIFIER, tags);
     assertThatThrownBy(
         ()
-            -> hostValidationResource.validateHost(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER,
-                SECRET_IDENTIFIER, HostValidationParams.builder().hosts(hosts).tags(Collections.emptyList()).build()))
+            -> ngHostResource.validateHost(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SECRET_IDENTIFIER,
+                HostValidationParams.builder().hosts(hosts).tags(Collections.emptyList()).build()))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Secret identifier is empty or null");
   }
@@ -111,10 +111,9 @@ public class HostValidationResourceTest extends CategoryTest {
         .when(accessControlClient)
         .checkForAccessOrThrow(any(ResourceScope.class), any(Resource.class), eq(SECRET_ACCESS_PERMISSION), any());
 
-    assertThatThrownBy(
-        ()
-            -> hostValidationResource.validateHost(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER,
-                SECRET_IDENTIFIER, HostValidationParams.builder().hosts(hosts).build()))
+    assertThatThrownBy(()
+                           -> ngHostResource.validateHost(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER,
+                               SECRET_IDENTIFIER, HostValidationParams.builder().hosts(hosts).build()))
         .isInstanceOf(NGAccessDeniedException.class)
         .hasMessage("Not enough permission");
   }

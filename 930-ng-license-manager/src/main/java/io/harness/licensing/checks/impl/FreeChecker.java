@@ -31,15 +31,8 @@ public class FreeChecker implements LicenseEditionChecker {
       Map<ModuleType, ModuleLicense> lastExpiredActiveLicenseMap) {
     Set<EditionAction> result = new HashSet<>();
 
-    switch (currentModuleState) {
-      case NO_LICENSE:
-        result.add(EditionAction.START_FREE);
-        break;
-      case ACTIVE_FREE:
-        result.add(EditionAction.UPGRADE);
-        break;
-      default:
-        break;
+    if (ModuleLicenseState.NO_LICENSE.equals(currentModuleState)) {
+      result.add(EditionAction.START_FREE);
     }
     return result;
   }

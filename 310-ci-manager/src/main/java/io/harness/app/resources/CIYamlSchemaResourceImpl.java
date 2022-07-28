@@ -12,10 +12,10 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 import static java.lang.String.format;
 
 import io.harness.EntityType;
-import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.intfc.CIYamlSchemaService;
 import io.harness.ci.plan.creator.execution.CIPipelineModuleInfo;
+import io.harness.cimanager.yamlschema.api.CIYamlSchemaResource;
 import io.harness.common.EntityTypeConstants;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
@@ -33,19 +33,13 @@ import io.harness.yaml.schema.beans.YamlSchemaWithDetails;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.util.ArrayList;
 import java.util.List;
-import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import lombok.AllArgsConstructor;
 
 @OwnedBy(CI)
@@ -59,15 +53,11 @@ import lombok.AllArgsConstructor;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
-public class CIYamlSchemaResource implements YamlSchemaResource {
+public class CIYamlSchemaResourceImpl implements CIYamlSchemaResource, YamlSchemaResource {
   CIYamlSchemaService ciYamlSchemaService;
 
-  @GET
-  @ApiOperation(value = "Get Partial Yaml Schema", nickname = "getPartialYamlSchema")
   public ResponseDTO<List<PartialSchemaDTO>> getYamlSchema(
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier, @QueryParam("scope") Scope scope) {
+      String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope) {
     List<PartialSchemaDTO> partialSchemaDTOList = new ArrayList<>();
     partialSchemaDTOList.add(
         ciYamlSchemaService.getStageYamlSchema(accountIdentifier, orgIdentifier, projectIdentifier, scope));
@@ -75,54 +65,31 @@ public class CIYamlSchemaResource implements YamlSchemaResource {
     return ResponseDTO.newResponse(partialSchemaDTOList);
   }
 
-  @GET
-  @ApiOperation(value = "dummy api for checking integration stage", nickname = "dummyApiForSwaggerStageSchemaCheck")
-  @Path("/dummyApiForSwaggerStageSchemaCheck")
   // DO NOT DELETE THIS WITHOUT CONFIRMING WITH UI
   public ResponseDTO<StageElementConfig> dummyApiForSwaggerSchemaCheckForStage() {
     return ResponseDTO.newResponse(StageElementConfig.builder().build());
   }
 
-  @GET
-  @ApiOperation(value = "dummy api for checking integration stage", nickname = "dummyApiForSwaggerStepSchemaCheck")
-  @Path("/dummyApiForSwaggerStepSchemaCheck")
   // DO NOT DELETE THIS WITHOUT CONFIRMING WITH UI
   public ResponseDTO<StepElementConfig> dummyApiForSwaggerSchemaCheckForStep() {
     return ResponseDTO.newResponse(StepElementConfig.builder().build());
   }
 
-  @GET
-  @ApiOperation(value = "dummy api for checking CIPipelineModuleInfo",
-      nickname = "dummyApiForSwaggerCIPipelineModuleInfoSchemaCheck")
-  @Path("/dummyApiForSwaggerCIPipelineModuleInfoSchemaCheck")
   // DO NOT DELETE THIS WITHOUT CONFIRMING WITH UI
-  public ResponseDTO<CIPipelineModuleInfo>
-  dummyApiForSwaggerSchemaCheckForCIPipelineModuleInfo() {
+  public ResponseDTO<CIPipelineModuleInfo> dummyApiForSwaggerSchemaCheckForCIPipelineModuleInfo() {
     return ResponseDTO.newResponse(CIPipelineModuleInfo.builder().build());
   }
 
-  @GET
-  @Path("/details")
-  @ApiOperation(value = "Get Partial Yaml Schema with details", nickname = "getPartialYamlSchemaWithDetails")
   public ResponseDTO<YamlSchemaDetailsWrapper> getYamlSchemaWithDetails(
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier, @QueryParam("scope") Scope scope) {
+      String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope) {
     List<YamlSchemaWithDetails> ciSchemaWithDetails =
         ciYamlSchemaService.getStageYamlSchemaWithDetails(accountIdentifier, orgIdentifier, projectIdentifier, scope);
     return ResponseDTO.newResponse(
         YamlSchemaDetailsWrapper.builder().yamlSchemaWithDetailsList(ciSchemaWithDetails).build());
   }
 
-  @POST
-  @Path("/merged")
-  @ApiOperation(value = "Get Merged Partial Yaml Schema", nickname = "getMergedPartialYamlSchema")
-  public ResponseDTO<List<PartialSchemaDTO>> getMergedYamlSchema(
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier, @QueryParam("scope") Scope scope,
-      @RequestBody(required = true,
-          description = "Step Schema with details") YamlSchemaDetailsWrapper yamlSchemaDetailsWrapper) {
+  public ResponseDTO<List<PartialSchemaDTO>> getMergedYamlSchema(String accountIdentifier, String projectIdentifier,
+      String orgIdentifier, Scope scope, YamlSchemaDetailsWrapper yamlSchemaDetailsWrapper) {
     PartialSchemaDTO ciSchema = ciYamlSchemaService.getMergedStageYamlSchema(accountIdentifier, projectIdentifier,
         orgIdentifier, scope, yamlSchemaDetailsWrapper.getYamlSchemaWithDetailsList());
 
@@ -131,15 +98,9 @@ public class CIYamlSchemaResource implements YamlSchemaResource {
     return ResponseDTO.newResponse(partialSchemaDTOList);
   }
 
-  @POST
-  @ApiOperation(value = "Get step YAML schema", nickname = "getStepYamlSchema")
-  public ResponseDTO<JsonNode> getStepYamlSchema(
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier, @QueryParam("scope") Scope scope,
-      @QueryParam(NGCommonEntityConstants.ENTITY_TYPE) EntityType entityType, @QueryParam("yamlGroup") String yamlGroup,
-      @RequestBody(required = true,
-          description = "Step Schema with details") YamlSchemaDetailsWrapper yamlSchemaDetailsWrapper) {
+  public ResponseDTO<JsonNode> getStepYamlSchema(String accountIdentifier, String projectIdentifier,
+      String orgIdentifier, Scope scope, EntityType entityType, String yamlGroup,
+      YamlSchemaDetailsWrapper yamlSchemaDetailsWrapper) {
     if (yamlGroup.equals(StepCategory.STAGE.toString())) {
       // Add more cases when ci module contains more stages.
       if (entityType.getYamlName().equals(EntityTypeConstants.INTEGRATION_STAGE)) {

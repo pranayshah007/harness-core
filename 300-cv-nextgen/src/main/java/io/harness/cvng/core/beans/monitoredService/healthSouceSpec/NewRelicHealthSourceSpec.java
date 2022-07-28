@@ -18,6 +18,7 @@ import io.harness.cvng.core.entities.NewRelicCVConfig;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.validators.UniqueIdentifierCheck;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.Sets;
 import java.util.ArrayList;
@@ -156,9 +157,10 @@ public class NewRelicHealthSourceSpec extends MetricHealthSourceSpec {
         .build();
   }
 
+  @JsonIgnore
   @Override
   public List<? extends HealthSourceMetricDefinition> getMetricDefinitions() {
-    return this.newRelicMetricDefinitions;
+    return getNewRelicMetricDefinitions();
   }
 
   @Data

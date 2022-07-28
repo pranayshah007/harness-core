@@ -166,4 +166,34 @@ public class PipelineCloneHelperTest {
     verify(accessControlClient, times(1))
         .checkForAccessOrThrow(any(), any(), eq(PipelineRbacPermissions.PIPELINE_VIEW));
   }
+
+  @Test
+  @Owner(developers = SOUMYAJIT)
+  @Category(UnitTests.class)
+  public void testCheckInvalidYaml() {
+    String invalidYaml = ":";
+
+    assertThatThrownBy(
+        () -> pipelineCloneHelper.updatePipelineMetadataInSourceYaml(clonePipelineDTO, invalidYaml, accountId))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format("Generic Backend Error occurred for pipeline [%s] org [%s] project [%s]",
+            clonePipelineDTO.getSourceConfig().getPipelineIdentifier(),
+            clonePipelineDTO.getSourceConfig().getOrgIdentifier(),
+            clonePipelineDTO.getSourceConfig().getProjectIdentifier()));
+  }
+
+  @Test
+  @Owner(developers = SOUMYAJIT)
+  @Category(UnitTests.class)
+  public void testCheckSameDestConfig() {
+    clonePipelineDTO.setDestinationConfig(DestinationPipelineConfig.builder()
+                                              .pipelineName("temp")
+                                              .pipelineIdentifier(SOURCE_PIPELINE_IDENTIFIER)
+                                              .projectIdentifier(SOURCE_PROJ_IDENTIFIER)
+                                              .orgIdentifier(SOURCE_ORG_IDENTIFIER)
+                                              .build());
+    String yaml =
+        pipelineCloneHelper.updatePipelineMetadataInSourceYaml(clonePipelineDTO, SOURCE_PIPELINE_YAML, accountId);
+    assertThat(yaml).isNotEqualTo(null);
+  }
 }

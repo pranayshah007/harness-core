@@ -66,7 +66,6 @@ import io.harness.beans.sweepingoutputs.K8PodDetails;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.PodCleanupDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
-import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.StepTaskDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.beans.yaml.extended.CustomSecretVariable;
@@ -174,7 +173,6 @@ public class CIBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(VmBuildJobInfo.class, 100095);
     kryo.register(VmInfraYaml.class, 100096);
     kryo.register(VmStageInfraDetails.class, 100098);
-    kryo.register(StageInfraDetails.class, 100099);
     kryo.register(K8StageInfraDetails.class, 100100);
 
     kryo.register(VmDetailsOutcome.class, 110101); // quantum change in order because 100101 is already assigned.

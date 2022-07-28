@@ -39,8 +39,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -76,13 +77,18 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @NextGenManagerAuth
 @Slf4j
+/*
+  @deprecated {@link io.harness.ng.core.remote.NGHostResource#validateHost(String, String, String, String,
+     HostValidationParams )} should be used instead.
+ * */
+@Deprecated
 public class HostValidationResource {
   private final NGHostValidationService hostValidationService;
   private final AccessControlClient accessControlClient;
 
   @POST
   @Consumes({"application/json"})
-  @ApiOperation(value = "Validate hosts connectivity", nickname = "validateHosts")
+  @ApiOperation(value = "Validate hosts connectivity", nickname = "validateHostsConnectivity")
   @Operation(operationId = "validateHosts", summary = "Validates hosts connectivity credentials",
       responses =
       {
@@ -99,13 +105,13 @@ public class HostValidationResource {
           NGCommonEntityConstants.IDENTIFIER_KEY) @NotNull String secretIdentifier,
       @RequestBody(
           required = true, description = "List of SSH or WinRm hosts to validate, and Delegate tags (optional)")
-      @NotNull HostValidationParams hostValidationParams) {
+      @NotNull @Valid HostValidationParams hostValidationParams) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(SECRET_RESOURCE_TYPE, secretIdentifier), SECRET_ACCESS_PERMISSION, "Unauthorized to view secrets.");
 
     return ResponseDTO.newResponse(hostValidationService.validateHosts(hostValidationParams.getHosts(),
         accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier,
-        hostValidationParams.getTags() != null ? hostValidationParams.getTags().stream().collect(Collectors.toSet())
+        hostValidationParams.getTags() != null ? new HashSet<>(hostValidationParams.getTags())
                                                : Collections.emptySet()));
   }
 }

@@ -23,7 +23,8 @@ PROJECTID = os.environ.get('GCP_PROJECT', 'ccm-play')
 INVENTORY_TYPE = ["disk", "instance"]
 sc_client = scheduler.CloudSchedulerClient()
 publisher = pubsub_v1.PublisherClient()
-parent = f"projects/{PROJECTID}/locations/us-central1"
+regions = ["us-central1", "us-east1"]
+parent = None
 
 
 def main(event, context):
@@ -65,10 +66,31 @@ def delete_job(name):
 
 
 def manage_scheduler_jobs(event_json):
+    global parent
     for event in event_json:
         for inventory_type in INVENTORY_TYPE:
+            for region in regions:
+                possible_parent = f"projects/{PROJECTID}/locations/{region}"
+                try:
+                    request = scheduler.GetJobRequest(
+                        name=f"{possible_parent}/jobs/ce-gcp-%s-data-%s" % (inventory_type, event["accountId"])
+                    )
+                    response = sc_client.get_job(request=request)
+                    parent = possible_parent
+                    print(f"Cloud Scheduler ce-gcp-%s-data-%s already exists in {region}. Using it." % (inventory_type, event["accountId"]))
+                    break
+                except Exception as e:
+                    print(e)
+                    # job was not found in this region
+            print(f"parent: {parent}")
+            if not parent:
+                # job was not found in any region, update region to any region whose quota is not exhausted: us-east1
+                print(f"Cloud Scheduler ce-gcp-%s-data-%s not found in any region. Using us-east1 region for this scheduler." % (inventory_type, event["accountId"]))
+                parent = f"projects/{PROJECTID}/locations/us-east1"
+
             manage_inventory_data_scheduler_job(event, inventory_type)
             manage_inventory_data_load_scheduler_job(event, inventory_type)
+            parent = None
 
 
 def manage_inventory_data_scheduler_job(event, inventory_type):
