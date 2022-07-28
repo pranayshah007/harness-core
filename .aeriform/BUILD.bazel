@@ -178,10 +178,6 @@ aeriform("//490-ce-commons:module")
 
 aeriform("//490-ce-commons:tests")
 
-aeriform("//pipeline-service/service:module")
-
-aeriform("//pipeline-service/service:tests")
-
 aeriform("//815-cg-triggers:module")
 
 aeriform("//840-template-service:module")

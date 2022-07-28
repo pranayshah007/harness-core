@@ -8,7 +8,6 @@ set -ex
 
 # This script requires JDK, VERSION and PURPOSE as environment variables
 
-
 mkdir -p dist/pipeline-service
 cd dist/pipeline-service
 
