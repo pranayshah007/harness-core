@@ -67,7 +67,6 @@ import io.harness.security.dto.Principal;
 import io.harness.security.dto.PrincipalType;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.telemetry.helpers.ProjectInstrumentationHelper;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.lang.reflect.Field;
@@ -113,7 +112,6 @@ public class ProjectServiceImplTest extends CategoryTest {
   @Mock private YamlGitConfigService yamlGitConfigService;
   @InjectMocks ProjectInstrumentationHelper instrumentationHelper;
   private ProjectServiceImpl projectService;
-  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private FeatureFlagService featureFlagService;
 
   @Before
@@ -121,7 +119,7 @@ public class ProjectServiceImplTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     projectService = spy(new ProjectServiceImpl(projectRepository, organizationService, transactionTemplate,
         outboxService, ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper,
-        yamlGitConfigService, ngFeatureFlagHelperService, featureFlagService));
+        yamlGitConfigService, featureFlagService));
     when(scopeAccessHelper.getPermittedScopes(any())).then(returnsFirstArg());
   }
 
@@ -391,7 +389,6 @@ public class ProjectServiceImplTest extends CategoryTest {
     ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
 
     when(projectRepository.delete(any(), any(), any(), any())).thenReturn(project);
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
     when(yamlGitConfigService.deleteAll(any(), any(), any())).thenReturn(true);
     when(transactionTemplate.execute(any()))
         .thenAnswer(invocationOnMock
@@ -422,13 +419,12 @@ public class ProjectServiceImplTest extends CategoryTest {
     ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
 
     when(projectRepository.delete(any(), any(), any(), any())).thenReturn(project);
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     when(yamlGitConfigService.deleteAll(any(), any(), any())).thenReturn(true);
     when(transactionTemplate.execute(any()))
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
-    when(projectRepository.hardDelete(any(), any(), any(), any())).thenReturn(true);
+    when(projectRepository.hardDelete(any(), any(), any(), any())).thenReturn(project);
 
     projectService.delete(accountIdentifier, orgIdentifier, projectIdentifier, version);
     verify(projectRepository, times(1)).hardDelete(any(), any(), argumentCaptor.capture(), any());

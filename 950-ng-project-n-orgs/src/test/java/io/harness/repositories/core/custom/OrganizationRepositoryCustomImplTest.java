@@ -28,7 +28,6 @@ import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
 import io.harness.rule.Owner;
 
-import com.mongodb.client.result.DeleteResult;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -108,11 +107,13 @@ public class OrganizationRepositoryCustomImplTest extends CategoryTest {
     String accountIdentifier = randomAlphabetic(10);
     String identifier = randomAlphabetic(10);
     Long version = 0L;
+    Organization organization =
+        Organization.builder().accountIdentifier(accountIdentifier).identifier(identifier).version(version).build();
     ArgumentCaptor<Query> queryArgumentCaptor = ArgumentCaptor.forClass(Query.class);
 
-    when(mongoTemplate.remove(any(), eq(Organization.class))).thenReturn(DeleteResult.acknowledged(1));
-    boolean deleted = organizationRepository.hardDelete(accountIdentifier, identifier, version);
-    verify(mongoTemplate, times(1)).remove(queryArgumentCaptor.capture(), eq(Organization.class));
+    when(mongoTemplate.findAndRemove(any(), eq(Organization.class))).thenReturn(organization);
+    boolean deleted = organizationRepository.hardDelete(accountIdentifier, identifier, version) == organization;
+    verify(mongoTemplate, times(1)).findAndRemove(queryArgumentCaptor.capture(), eq(Organization.class));
     Query query = queryArgumentCaptor.getValue();
     assertTrue(deleted);
     assertEquals(3, query.getQueryObject().size());

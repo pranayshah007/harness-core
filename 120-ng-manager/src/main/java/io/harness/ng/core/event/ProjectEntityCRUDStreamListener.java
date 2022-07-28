@@ -168,9 +168,7 @@ public class ProjectEntityCRUDStreamListener implements MessageListener {
     Criteria criteria = Criteria.where(ProjectKeys.accountIdentifier)
                             .is(accountIdentifier)
                             .and(ProjectKeys.orgIdentifier)
-                            .is(orgIdentifier)
-                            .and(ProjectKeys.deleted)
-                            .ne(Boolean.TRUE);
+                            .is(orgIdentifier);
     List<Project> projects = projectService.list(criteria);
     AtomicBoolean success = new AtomicBoolean(true);
     projects.forEach(project -> {

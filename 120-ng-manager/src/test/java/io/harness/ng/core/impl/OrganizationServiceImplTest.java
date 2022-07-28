@@ -50,7 +50,6 @@ import io.harness.rule.Owner;
 import io.harness.security.SourcePrincipalContextData;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.telemetry.helpers.OrganizationInstrumentationHelper;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.util.ArrayList;
@@ -83,13 +82,12 @@ public class OrganizationServiceImplTest extends CategoryTest {
   @Mock private ScopeAccessHelper scopeAccessHelper;
   @Mock private OrganizationInstrumentationHelper instrumentationHelper;
   private OrganizationServiceImpl organizationService;
-  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
     organizationService = spy(new OrganizationServiceImpl(organizationRepository, outboxService, transactionTemplate,
-        ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper, ngFeatureFlagHelperService));
+        ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper));
     when(scopeAccessHelper.getPermittedScopes(any())).then(returnsFirstArg());
   }
 
@@ -217,7 +215,6 @@ public class OrganizationServiceImplTest extends CategoryTest {
     ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
 
     when(organizationRepository.delete(any(), any(), any())).thenReturn(organization);
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
     when(transactionTemplate.execute(any()))
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
@@ -244,12 +241,11 @@ public class OrganizationServiceImplTest extends CategoryTest {
     ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
 
     when(organizationRepository.delete(any(), any(), any())).thenReturn(organization);
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     when(transactionTemplate.execute(any()))
         .thenAnswer(invocationOnMock
             -> invocationOnMock.getArgument(0, TransactionCallback.class)
                    .doInTransaction(new SimpleTransactionStatus()));
-    when(organizationRepository.hardDelete(any(), any(), any())).thenReturn(true);
+    when(organizationRepository.hardDelete(any(), any(), any())).thenReturn(organization);
 
     organizationService.delete(accountIdentifier, identifier, version);
     verify(organizationRepository, times(1)).hardDelete(any(), argumentCaptor.capture(), any());

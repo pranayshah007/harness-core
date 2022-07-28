@@ -19,7 +19,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(PL)
 @Slf4j
 public class HardDeleteSoftDeletedOrgs implements NGMigration {
-  private OrganizationRepository organizationRepository;
+  @Inject private OrganizationRepository organizationRepository;
   @Inject AccountClient accountClient;
   @Inject OrganizationService organizationService;
 
@@ -30,6 +30,7 @@ public class HardDeleteSoftDeletedOrgs implements NGMigration {
       for (AccountDTO accountDTO : accountDTOList) {
         log.info("Starting to delete soft deleted Orgs for account {}.", accountDTO.getName());
         deleteSoftDeletedOrgsForAccount(accountDTO);
+        log.info("Successfully deleted soft deleted Orgs for account {}.", accountDTO.getName());
       }
     } catch (Exception ex) {
       log.error("Background job for deleting soft Deleted organizations failed while fetching the accounts", ex);

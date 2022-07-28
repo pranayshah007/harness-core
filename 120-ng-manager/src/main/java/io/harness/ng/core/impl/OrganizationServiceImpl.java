@@ -10,7 +10,6 @@ package io.harness.ng.core.impl;
 import static io.harness.NGConstants.ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.HARD_DELETE_ENTITIES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.enforcement.constants.FeatureRestrictionName.MULTIPLE_ORGANIZATIONS;
 import static io.harness.exception.WingsException.USER_SRE;
@@ -57,7 +56,6 @@ import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.PrincipalType;
 import io.harness.telemetry.helpers.OrganizationInstrumentationHelper;
 import io.harness.utils.ScopeUtils;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -96,13 +94,12 @@ public class OrganizationServiceImpl implements OrganizationService {
   private final AccessControlClient accessControlClient;
   private final ScopeAccessHelper scopeAccessHelper;
   private final OrganizationInstrumentationHelper instrumentationHelper;
-  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Inject
   public OrganizationServiceImpl(OrganizationRepository organizationRepository, OutboxService outboxService,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, NgUserService ngUserService,
       AccessControlClient accessControlClient, ScopeAccessHelper scopeAccessHelper,
-      OrganizationInstrumentationHelper instrumentationHelper, NGFeatureFlagHelperService ngFeatureFlagHelperService) {
+      OrganizationInstrumentationHelper instrumentationHelper) {
     this.organizationRepository = organizationRepository;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
@@ -110,7 +107,6 @@ public class OrganizationServiceImpl implements OrganizationService {
     this.accessControlClient = accessControlClient;
     this.scopeAccessHelper = scopeAccessHelper;
     this.instrumentationHelper = instrumentationHelper;
-    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
   }
 
   @Override
@@ -346,11 +342,8 @@ public class OrganizationServiceImpl implements OrganizationService {
   @Override
   public boolean delete(String accountIdentifier, String organizationIdentifier, Long version) {
     return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
-      Organization organization = organizationRepository.delete(accountIdentifier, organizationIdentifier, version);
+      Organization organization = organizationRepository.hardDelete(accountIdentifier, organizationIdentifier, version);
       boolean delete = organization != null;
-      if (delete && ngFeatureFlagHelperService.isEnabled(accountIdentifier, HARD_DELETE_ENTITIES)) {
-        organizationRepository.hardDelete(accountIdentifier, organizationIdentifier, version);
-      }
       if (delete) {
         log.info(String.format("Organization with identifier %s was successfully deleted", organizationIdentifier));
         outboxService.save(new OrganizationDeleteEvent(accountIdentifier, OrganizationMapper.writeDto(organization)));
