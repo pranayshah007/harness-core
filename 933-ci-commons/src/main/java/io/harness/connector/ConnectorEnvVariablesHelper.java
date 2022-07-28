@@ -64,7 +64,6 @@ import static io.harness.delegate.beans.connector.azureconnector.AzureCredential
 @Singleton
 public class ConnectorEnvVariablesHelper {
   @Inject private SecretDecryptor secretDecryptor;
-//  @Inject private AzureAsyncTaskHelper azureAsyncTaskHelper;
 
   public Map<String, SecretParams> getArtifactorySecretVariables(ConnectorDetails connectorDetails) {
     Map<String, SecretParams> secretData = new HashMap<>();
@@ -253,18 +252,16 @@ public class ConnectorEnvVariablesHelper {
   }
 
   public Map<String, SecretParams> getAzureSecretVariables(ConnectorDetails connectorDetails) {
+    String azure_token = "AZURE_TOKEN";
     Map<String, SecretParams> secretData = new HashMap<>();
     AzureConnectorDTO connectorConfig = (AzureConnectorDTO) connectorDetails.getConnectorConfig();
     AzureCredentialDTO credentialDTO = connectorConfig.getCredential();
     if (MANUAL_CREDENTIALS == connectorConfig.getCredential().getAzureCredentialType()) {
       AzureManualDetailsDTO config = (AzureManualDetailsDTO) credentialDTO.getConfig();
-      // TODO AMAN --  needs to be checked for other cases as well.
       AzureClientSecretKeyDTO decryptedConfig = (AzureClientSecretKeyDTO) secretDecryptor.decrypt(config.getAuthDTO().getCredentials(), connectorDetails.getEncryptedDataDetails());
       String secret = String.valueOf(decryptedConfig.getSecretKey().getDecryptedValue());
-      log.info("acr test 1 " + secret);
-      secretData.put("AZURE_TOKEN",
-              getVariableSecret("AZURE_TOKEN" + connectorDetails.getIdentifier(), encodeBase64(secret)));
-//      AzureAcrTokenTaskResponse acrLoginToken = azureAsyncTaskHelper.getAcrLoginToken("testciaman.azurecr.io/server/nginx", connectorDetails.getEncryptedDataDetails(), connectorConfig);
+      secretData.put(azure_token,
+              getVariableSecret(azure_token + connectorDetails.getIdentifier(), encodeBase64(secret)));
     }
     return secretData;
   }

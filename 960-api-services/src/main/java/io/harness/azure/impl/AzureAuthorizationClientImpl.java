@@ -154,7 +154,6 @@ public class AzureAuthorizationClientImpl extends AzureClient implements AzureAu
                 .execute();
 
       } else if (azureCredentialType == AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET) {
-        // TODO -- Aman Hardcoding this value.
         scope = "https://management.azure.com/.default";
         response =
             azureAuthorizationRestClient
