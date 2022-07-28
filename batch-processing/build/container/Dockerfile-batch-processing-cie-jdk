@@ -26,7 +26,7 @@ RUN aws configure set default.s3.multipart_chunksize 16MB
 
 ENV AZCOPY_LOG_LOCATION=/opt/harness/azlogs
 
-COPY --chown=65534:65534 --chmod=711  scripts /opt/harness
+COPY --chown=65534:65534 --chmod=711  scripts /opt/harness/
 
 CMD [ "./run.sh" ]
 
