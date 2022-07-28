@@ -143,7 +143,7 @@ public class GitConfig extends SettingValue implements EncryptableSetting {
 
   public enum UrlType { REPO, ACCOUNT }
 
-  public enum ProviderType { GITHUB, GITLAB, GIT }
+  public enum ProviderType { GITHUB, GITLAB, GIT, BITBUCKET }
 
   /**
    * Instantiates a new setting value.

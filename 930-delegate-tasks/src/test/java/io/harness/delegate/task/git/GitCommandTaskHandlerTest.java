@@ -13,6 +13,7 @@ import static io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAcce
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.MANKRIT;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -46,6 +47,9 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthentica
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
@@ -300,6 +304,75 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
     ScmConnector connector =
         GitlabConnectorDTO.builder()
             .apiAccess(GitlabApiAccessDTO.builder().spec(GitlabTokenSpecDTO.builder().build()).build())
+            .build();
+    doThrow(new InvalidRequestException(SIMULATED_EXCEPTION_MESSAGE)).when(scmDelegateClient).processScmRequest(any());
+    try {
+      gitCommandTaskHandler.handleValidateTask(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig);
+    } catch (Exception e) {
+      assertThat(e instanceof SCMRuntimeException).isTrue();
+      assertThat(e.getMessage().equals(SIMULATED_EXCEPTION_MESSAGE)).isTrue();
+    }
+  }
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testValidateTaskHandleApiAccessValidationBitbucket() {
+    GitConfigDTO gitConfig = GitConfigDTO.builder().gitConnectionType(GitConnectionType.ACCOUNT).build();
+    ScmConnector connector =
+        BitbucketConnectorDTO.builder()
+            .apiAccess(
+                BitbucketApiAccessDTO.builder().spec(BitbucketUsernameTokenApiAccessDTO.builder().build()).build())
+            .build();
+    GetUserReposResponse userReposResponse = GetUserReposResponse.newBuilder().build();
+    doReturn(userReposResponse).when(scmDelegateClient).processScmRequest(any());
+
+    GitCommandExecutionResponse response = (GitCommandExecutionResponse) gitCommandTaskHandler.handleValidateTask(
+        gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig);
+    assertThat(response.getGitCommandStatus()).isEqualTo(GitCommandExecutionResponse.GitCommandStatus.SUCCESS);
+  }
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testApiAccessValidationGivenExceptionInScmRequestBitbucket() {
+    GitConfigDTO gitConfig = GitConfigDTO.builder().gitConnectionType(GitConnectionType.ACCOUNT).build();
+    ScmConnector connector =
+        BitbucketConnectorDTO.builder()
+            .apiAccess(
+                BitbucketApiAccessDTO.builder().spec(BitbucketUsernameTokenApiAccessDTO.builder().build()).build())
+            .build();
+    doThrow(new SCMRuntimeException(SIMULATED_EXCEPTION_MESSAGE)).when(scmDelegateClient).processScmRequest(any());
+    assertThatThrownBy(
+        () -> gitCommandTaskHandler.handleValidateTask(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig))
+        .isInstanceOf(SCMRuntimeException.class);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testApiAccessValidationGivenErrorInRepoResponseBitbucket() {
+    GitConfigDTO gitConfig = GitConfigDTO.builder().gitConnectionType(GitConnectionType.ACCOUNT).build();
+    ScmConnector connector =
+        BitbucketConnectorDTO.builder()
+            .apiAccess(
+                BitbucketApiAccessDTO.builder().spec(BitbucketUsernameTokenApiAccessDTO.builder().build()).build())
+            .build();
+    GetUserReposResponse userReposResponse = GetUserReposResponse.newBuilder().setStatus(400).build();
+    doReturn(userReposResponse).when(scmDelegateClient).processScmRequest(any());
+
+    assertThatThrownBy(
+        () -> gitCommandTaskHandler.handleValidateTask(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig))
+        .isInstanceOf(SCMRuntimeException.class);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testInvalidScmRequestBitbucket() {
+    GitConfigDTO gitConfig = GitConfigDTO.builder().gitConnectionType(GitConnectionType.ACCOUNT).build();
+    ScmConnector connector =
+        BitbucketConnectorDTO.builder()
+            .apiAccess(
+                BitbucketApiAccessDTO.builder().spec(BitbucketUsernameTokenApiAccessDTO.builder().build()).build())
             .build();
     doThrow(new InvalidRequestException(SIMULATED_EXCEPTION_MESSAGE)).when(scmDelegateClient).processScmRequest(any());
     try {
