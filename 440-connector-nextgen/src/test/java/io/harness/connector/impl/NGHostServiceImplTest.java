@@ -73,9 +73,8 @@ public class NGHostServiceImplTest extends ConnectorsTestBase {
   public void testGetPdcConnectorHostsFilterByHostNameCommaSeparated() {
     createConnectorWithHosts();
     PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(2).build();
-    HostFilterDTO filter = new HostFilterDTO();
-    filter.setType(HostFilterType.HOST_NAMES);
-    filter.setFilter("host1, host2,host3\nhost4\nhost5");
+    HostFilterDTO filter =
+        HostFilterDTO.builder().type(HostFilterType.HOST_NAMES).filter("host1, host2,host3\nhost4\nhost5").build();
     Page<HostDTO> pageResponse =
         hostService.filterHostsByConnector(accountIdentifier, null, null, scopedIdentifier, filter, pageRequest);
 
@@ -90,9 +89,10 @@ public class NGHostServiceImplTest extends ConnectorsTestBase {
   public void testGetPdcConnectorHostsFilterByHostAttributesCommaSeparated() {
     createConnectorWithHosts();
     PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(2).build();
-    HostFilterDTO filter = new HostFilterDTO();
-    filter.setType(HostFilterType.HOST_ATTRIBUTES);
-    filter.setFilter("region:west, hostType:DB\n hostType:VM");
+    HostFilterDTO filter = HostFilterDTO.builder()
+                               .type(HostFilterType.HOST_ATTRIBUTES)
+                               .filter("region:west, hostType:DB\n hostType:VM")
+                               .build();
     Page<HostDTO> pageResponse =
         hostService.filterHostsByConnector(accountIdentifier, null, null, scopedIdentifier, filter, pageRequest);
 
@@ -107,9 +107,8 @@ public class NGHostServiceImplTest extends ConnectorsTestBase {
   public void testGetPdcConnectorHostsFilterByHostAttributesNewLineSeparated() {
     createConnectorWithHosts();
     PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(2).build();
-    HostFilterDTO filter = new HostFilterDTO();
-    filter.setType(HostFilterType.HOST_ATTRIBUTES);
-    filter.setFilter("region:west\nhostType:DB");
+    HostFilterDTO filter =
+        HostFilterDTO.builder().type(HostFilterType.HOST_ATTRIBUTES).filter("region:west\nhostType:DB").build();
     Page<HostDTO> pageResponse =
         hostService.filterHostsByConnector(accountIdentifier, null, null, scopedIdentifier, filter, pageRequest);
 
