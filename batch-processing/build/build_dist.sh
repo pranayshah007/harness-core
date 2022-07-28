@@ -40,4 +40,12 @@ cp -r ../../batch-processing/build/container/scripts/ .
 cp ../../batch-processing/build/container/inject-onprem-apm-bins-into-dockerimage.sh ./inject-onprem-apm-bins-into-dockerimage.sh
 cp ../../batch-processing/build/container/inject-saas-apm-bins-into-dockerimage.sh ./inject-saas-apm-bins-into-dockerimage.sh
 
+cp ../../protocol.info .
+echo ${JDK} > jdk.txt
+echo ${VERSION} > version.txt
+if [ ! -z ${PURPOSE} ]
+then
+	  echo ${PURPOSE} > purpose.txt
+fi
+
 cd ../..
