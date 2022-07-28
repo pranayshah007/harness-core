@@ -319,7 +319,7 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
     String repoUrl = "repoUrl";
     GitEntityInfo gitEntityInfo = GitEntityInfo.builder().filePath("filePath").build();
     MockedStatic<GitAwareContextHelper> utilities = Mockito.mockStatic(GitAwareContextHelper.class);
-    utilities.when(() -> GitAwareContextHelper.getGitRequestParamsInfo()).thenReturn(gitEntityInfo);
+    utilities.when(GitAwareContextHelper::getGitRequestParamsInfo).thenReturn(gitEntityInfo);
 
     doReturn(repoUrl).when(gitAwareEntityHelper).getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier);
     doReturn(10L)
@@ -332,5 +332,16 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
     assertThat(pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
                    accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, true))
         .isEqualTo(repoUrl);
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testFilePathCheck() {
+    String filePath = ".notInHarnessFolder";
+    GitEntityInfo gitEntityInfo = GitEntityInfo.builder().filePath(filePath).build();
+    MockedStatic<GitAwareContextHelper> utilities = Mockito.mockStatic(GitAwareContextHelper.class);
+    utilities.when(GitAwareContextHelper::getGitRequestParamsInfo).thenReturn(gitEntityInfo);
+    assertThatThrownBy(() -> pmsPipelineServiceHelper.filePathCheck()).isInstanceOf(InvalidRequestException.class);
   }
 }

@@ -528,7 +528,7 @@ public class PipelineResourceTest extends CategoryTest {
     doReturn(PipelineEntity.builder().identifier(PIPELINE_IDENTIFIER).build())
         .when(pmsPipelineService)
         .importPipelineFromRemote(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
-            pipelineImportRequestDTO, gitImportInfoDTO.isForceImport());
+            pipelineImportRequestDTO, gitImportInfoDTO.getIsForceImport());
     ResponseDTO<PipelineSaveResponse> importPipelineFromGit = pipelineResource.importPipelineFromGit(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, gitImportInfoDTO, pipelineImportRequestDTO);
     assertThat(importPipelineFromGit.getData().getIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);

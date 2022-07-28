@@ -331,7 +331,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       @ResourceIdentifier String pipelineId, GitImportInfoDTO gitImportInfoDTO,
       PipelineImportRequestDTO pipelineImportRequestDTO) {
     PipelineEntity savedPipelineEntity = pmsPipelineService.importPipelineFromRemote(
-        accountId, orgId, projectId, pipelineId, pipelineImportRequestDTO, gitImportInfoDTO.isForceImport());
+        accountId, orgId, projectId, pipelineId, pipelineImportRequestDTO, gitImportInfoDTO.getIsForceImport());
     return ResponseDTO.newResponse(
         PipelineSaveResponse.builder().identifier(savedPipelineEntity.getIdentifier()).build());
   }

@@ -438,11 +438,11 @@ public class PMSPipelineServiceHelper {
   }
 
   public String getRepoUrlAndCheckForFileUniqueness(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String pipelineIdentifier, boolean isForceImport) {
+      String projectIdentifier, String pipelineIdentifier, Boolean isForceImport) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     String repoURL = gitAwareEntityHelper.getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier);
 
-    if (isForceImport) {
+    if (Boolean.TRUE.equals(isForceImport)) {
       log.info("Importing YAML forcefully with Pipeline Id: {}, RepoURl: {}, FilePath: {}", pipelineIdentifier, repoURL,
           gitEntityInfo.getFilePath());
     } else if (isAlreadyImported(accountIdentifier, repoURL, gitEntityInfo.getFilePath())) {
@@ -456,5 +456,14 @@ public class PMSPipelineServiceHelper {
   private boolean isAlreadyImported(String accountIdentifier, String repoURL, String filePath) {
     Long totalInstancesOfYAML = pmsPipelineRepository.countFileInstances(accountIdentifier, repoURL, filePath);
     return totalInstancesOfYAML > 0;
+  }
+
+  public static void filePathCheck() {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    String filePath = gitEntityInfo.getFilePath();
+    String key = GitAwareEntityHelper.HARNESS_FOLDER_EXTENSION_WITH_SEPARATOR;
+    if (!filePath.startsWith(key)) {
+      throw new InvalidRequestException("The Requested YAML path should begin with \".harness/\"");
+    }
   }
 }

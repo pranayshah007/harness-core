@@ -457,16 +457,14 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
   @Override
   public PipelineEntity importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, boolean isForceImport) {
+      String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, Boolean isForceImport) {
+    PMSPipelineServiceHelper.filePathCheck();
     String repoUrl = pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, isForceImport);
-
     String importedPipelineYAML =
         pmsPipelineServiceHelper.importPipelineFromRemote(accountId, orgIdentifier, projectIdentifier);
-
     PMSPipelineServiceHelper.checkAndThrowMismatchInImportedPipelineMetadata(
         orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineImportRequest, importedPipelineYAML);
-
     PipelineEntity pipelineEntity =
         PMSPipelineDtoMapper.toPipelineEntity(accountId, orgIdentifier, projectIdentifier, importedPipelineYAML);
     pipelineEntity.setRepoURL(repoUrl);
