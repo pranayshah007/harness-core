@@ -297,18 +297,21 @@ public class K8sHelmCommonStepHelper {
       }
 
       // adding default override path
-      fetchFilesList.add(0,
-          CustomManifestFetchConfig.builder()
-              .key(manifestOutcome.getIdentifier())
-              .required(false)
-              .defaultSource(true)
-              .customManifestSource(CustomManifestSource.builder()
-                                        .filePaths(Arrays.asList(
-                                            getValuesYamlGitFilePath(customRemoteStoreConfig.getFilePath().getValue(),
-                                                getDefaultOverridePath(manifestOutcome.getType()))))
-                                        .accountId(accountId)
-                                        .build())
-              .build());
+      if (ManifestType.K8Manifest.equals(manifestOutcome.getType())
+          || ManifestType.HelmChart.equals(manifestOutcome.getType())) {
+        fetchFilesList.add(0,
+            CustomManifestFetchConfig.builder()
+                .key(manifestOutcome.getIdentifier())
+                .required(false)
+                .defaultSource(true)
+                .customManifestSource(CustomManifestSource.builder()
+                                          .filePaths(Arrays.asList(
+                                              getValuesYamlGitFilePath(customRemoteStoreConfig.getFilePath().getValue(),
+                                                  getDefaultOverridePath(manifestOutcome.getType()))))
+                                          .accountId(accountId)
+                                          .build())
+                .build());
+      }
     }
 
     CustomManifestValuesFetchParams customManifestValuesFetchRequest = CustomManifestValuesFetchParams.builder()
@@ -714,7 +717,7 @@ public class K8sHelmCommonStepHelper {
     return retVal;
   }
 
-  public boolean shouldExecuteGitFetchTask(List<ValuesManifestOutcome> manifestOutcomes) {
+  public boolean shouldExecuteGitFetchTask(List<? extends ManifestOutcome> manifestOutcomes) {
     boolean retVal = false;
     for (ManifestOutcome manifestOutcome : manifestOutcomes) {
       retVal = retVal || ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind());
@@ -1065,6 +1068,7 @@ public class K8sHelmCommonStepHelper {
     Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents = new HashMap<>();
     StoreConfig storeConfig = manifestOutcome.getStore();
     LogCallback logCallback = cdStepHelper.getLogCallback(K8sCommandUnitConstants.FetchFiles, ambiance, true);
+    logCallback.saveExecutionLog(color(format("%nStarting Harness Fetch Files"), LogColor.White, LogWeight.Bold));
     if (ManifestStoreType.HARNESS.equals(storeConfig.getKind())) {
       HarnessStore localStoreConfig = (HarnessStore) storeConfig;
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
@@ -1104,6 +1108,8 @@ public class K8sHelmCommonStepHelper {
       localStoreFileMapContents.putAll(
           getFileContentsForLocalStore(manifestOutcomeList, AmbianceUtils.getNgAccess(ambiance), logCallback));
     }
+    logCallback.saveExecutionLog(
+        color(format("%nHarness Fetch Files completed successfully."), LogColor.White, LogWeight.Bold));
     return localStoreFileMapContents;
   }
 

@@ -31,6 +31,7 @@ public class AccountMapper {
         .authenticationMechanism(account.getAuthenticationMechanism())
         .isNextGenEnabled(account.isNextGenEnabled())
         .serviceAccountConfig(account.getServiceAccountConfig())
+        .isProductLed(account.isProductLed())
         .build();
   }
 

@@ -66,13 +66,6 @@ public class UserGroupSanitizationMigration implements NGMigration {
   }
 
   private void handleWithRetries(UserGroup userGroup) {
-    if (Boolean.TRUE.equals(userGroup.getExternallyManaged()) || Boolean.TRUE.equals(userGroup.getIsSsoLinked())) {
-      log.info(String.format(
-          "[UserGroupSanitizationMigration] Skipping migration for user group with account %s, org %s, project %s and identifier %s",
-          userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier(),
-          userGroup.getIdentifier()));
-      return;
-    }
     try {
       Failsafe.with(retryPolicy).run(() -> sanitizeUserGroup(userGroup));
     } catch (Exception exception) {

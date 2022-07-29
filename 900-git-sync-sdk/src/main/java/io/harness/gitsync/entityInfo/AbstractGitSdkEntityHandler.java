@@ -14,6 +14,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.FullSyncChangeSet;
 import io.harness.gitsync.beans.YamlDTO;
+import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncableEntity;
@@ -35,7 +36,7 @@ public abstract class AbstractGitSdkEntityHandler<B extends GitSyncableEntity, Y
       final EntityGitDetails entityGitDetails = entityGitDetailsOptional.get();
       final String objectIdOfNewYaml = EntityObjectIdUtils.getObjectIdOfYaml(yaml);
       final String lastCompleteFilePath =
-          ScmGitUtils.createFilePath(entityGitDetails.getRootFolder(), entityGitDetails.getFilePath());
+          GitSyncFilePathUtils.createFilePath(entityGitDetails.getRootFolder(), entityGitDetails.getFilePath());
       if (entityGitDetails.getObjectId().equals(objectIdOfNewYaml)) {
         if (lastCompleteFilePath.equals(filePath)) {
           log.info("Object already processed hence skipping database update.");

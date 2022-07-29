@@ -51,6 +51,12 @@ public interface NGTemplateRepositoryCustom {
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNot(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted);
 
+  TemplateEntity updateTemplateYamlForOldGitSync(TemplateEntity templateEntity, TemplateEntity oldTemplateEntity,
+      ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits);
+
+  TemplateEntity updateTemplateInDb(TemplateEntity templateEntity, TemplateEntity oldTemplateEntity,
+      ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits);
+
   TemplateEntity updateTemplateYaml(TemplateEntity templateEntity, TemplateEntity oldTemplateEntity,
       ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits);
 
@@ -70,4 +76,8 @@ public interface NGTemplateRepositoryCustom {
   TemplateEntity updateIsStableTemplate(TemplateEntity templateEntity, boolean value);
 
   TemplateEntity updateIsLastUpdatedTemplate(TemplateEntity templateEntity, boolean value);
+
+  boolean deleteAllTemplatesInAProject(String accountId, String orgId, String projectId);
+
+  boolean deleteAllOrgLevelTemplates(String accountId, String orgId);
 }

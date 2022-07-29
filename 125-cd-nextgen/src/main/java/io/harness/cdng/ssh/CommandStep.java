@@ -10,13 +10,16 @@ package io.harness.cdng.ssh;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.CommandTaskResponse;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.UnitProgress;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -64,6 +67,7 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     CommandStepParameters executeCommandStepParameters = (CommandStepParameters) stepParameters.getSpec();
+    validateStepParameters(executeCommandStepParameters);
 
     CommandTaskParameters taskParameters =
         sshCommandStepHelper.buildCommandTaskParameters(ambiance, executeCommandStepParameters);
@@ -104,5 +108,16 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
     stepResponseBuilder.failureInfo(failureInfoBuilder.build());
 
     return stepResponseBuilder.build();
+  }
+
+  private void validateStepParameters(CommandStepParameters executeCommandStepParameters) {
+    boolean onDelegate =
+        ParameterFieldHelper.getBooleanParameterFieldValue(executeCommandStepParameters.getOnDelegate());
+    if (!onDelegate) {
+      String host = ParameterFieldHelper.getParameterFieldValue(executeCommandStepParameters.getHost());
+      if (isEmpty(host)) {
+        throw new InvalidArgumentsException("Host information is missing in Command Step.");
+      }
+    }
   }
 }

@@ -14,6 +14,7 @@ import io.harness.gitsync.sdk.GitSyncApiConstants;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -43,5 +44,6 @@ public class GitImportInfoDTO {
   String filePath;
   @Parameter(description = GitSyncApiConstants.FORCE_IMPORT)
   @QueryParam(GitSyncApiConstants.FORCE_IMPORT)
-  boolean isForceImport;
+  @DefaultValue("false")
+  Boolean isForceImport;
 }

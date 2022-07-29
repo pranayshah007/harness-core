@@ -83,6 +83,7 @@ public enum FeatureName {
   FFM_1859,
   FFM_2134_FF_PIPELINES_TRIGGER,
   FFM_3938_STALE_FLAGS_ACTIVE_CARD_HIDE_SHOW,
+  FFM_4117_INTEGRATE_SRM("Enable Feature Flags to send events to the SRM module", HarnessTeam.CF),
   WINRM_COPY_CONFIG_OPTIMIZE,
   ECS_MULTI_LBS,
   ENTITY_AUDIT_RECORD,
@@ -189,7 +190,6 @@ public enum FeatureName {
   ENABLE_LOGIN_AUDITS,
   CUSTOM_MANIFEST,
   WEBHOOK_TRIGGER_AUTHORIZATION,
-  NG_HELM_SOURCE_REPO,
   ENHANCED_GCR_CONNECTIVITY_CHECK,
   USE_TF_CLIENT,
   SERVICE_DASHBOARD_NG,
@@ -384,7 +384,6 @@ public enum FeatureName {
   GIT_SIMPLIFICATION_DISABLED,
   USE_K8S_API_FOR_STEADY_STATE_CHECK,
   WINRM_ASG_ROLLBACK("Used for Collect remaining instances rollback step", HarnessTeam.CDP),
-  NG_INLINE_MANIFEST,
   NG_CUSTOM_REMOTE_MANIFEST,
   CI_DISABLE_RESOURCE_OPTIMIZATION(
       "Used for disabling the resource optimization, AXA had asked this flag", HarnessTeam.CI),
