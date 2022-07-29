@@ -2445,6 +2445,15 @@ public class K8sTaskHelperBase {
         return downloadZippedManifestFilesFormCustomSource(
             storeDelegateConfig, manifestFilesDirectory, executionLogCallback);
       case GIT:
+        if (manifestDelegateConfig instanceof KustomizeManifestDelegateConfig) {
+          KustomizeManifestDelegateConfig kustomizeManifestDelegateConfig =
+              (KustomizeManifestDelegateConfig) manifestDelegateConfig;
+          if (kustomizeManifestDelegateConfig.getKustomizeYamlFolderPath() != null) {
+            executionLogCallback.saveExecutionLog(color(
+                "\nUsing Optimized File Fetch For Kustomize, will fetch the subset of files needed for Deployment. ",
+                LogColor.White, LogWeight.Bold));
+          }
+        }
         return downloadManifestFilesFromGit(
             storeDelegateConfig, manifestFilesDirectory, executionLogCallback, accountId);
 
