@@ -86,12 +86,6 @@ public class ServerlessAwsLambdaStepHelper implements ServerlessStepHelper {
       return ServerlessAwsLambdaDeployConfig.builder()
           .commandOptions(serverlessAwsLambdaDeployStepParameters.getCommandOptions().getValue())
           .build();
-    } else if (serverlessSpecParameters instanceof ServerlessAwsLambdaGenericStepParameters) {
-      ServerlessAwsLambdaGenericStepParameters serverlessAwsLambdaGenericStepParameters =
-              (ServerlessAwsLambdaGenericStepParameters) serverlessSpecParameters;
-      return ServerlessAwsLambdaDeployConfig.builder()
-              .commandOptions(serverlessAwsLambdaGenericStepParameters.getCommandOptions().getValue())
-              .build();
     }
     throw new UnsupportedOperationException(
         format("Unsupported serverless spec : [%s]", serverlessSpecParameters.getClass()));
