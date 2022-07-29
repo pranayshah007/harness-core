@@ -35,7 +35,6 @@ import io.harness.beans.inputset.WebhookTriggerExecutionInputSet;
 import io.harness.beans.outcomes.DependencyOutcome;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
-import io.harness.cimanager.stepinfo.ACRStepInfo;
 import io.harness.beans.steps.stepinfo.BuildEnvSetupStepInfo;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.ContainerPortDetails;
@@ -110,6 +109,5 @@ public class CIBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(EncryptedDataDetails.class, 110111);
     kryo.register(BuildUpdateType.class, 390003);
     kryo.register(BuildStatusUpdateParameter.class, 390004);
-    kryo.register(ACRStepInfo.class, 390009);
   }
 }

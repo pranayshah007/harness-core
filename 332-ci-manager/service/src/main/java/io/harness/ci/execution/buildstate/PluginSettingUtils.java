@@ -37,7 +37,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.CIStepInfoType;
-import io.harness.cimanager.stepinfo.ACRStepInfo;
+import io.harness.beans.steps.stepinfo.ACRStepInfo;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
 import io.harness.beans.steps.stepinfo.GCRStepInfo;
@@ -59,6 +59,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CI)
 public class PluginSettingUtils {
@@ -256,7 +257,11 @@ public class PluginSettingUtils {
     Map<String, String> map = new HashMap<>();
     String repository =
         resolveStringParameter(REPOSITORY, "BuildAndPushACR", identifier, stepInfo.getRepository(), true);
-    setMandatoryEnvironmentVariable(map, REPOSITORY, repository);
+    StringUtils.substringBefore(repository, "/");
+    setMandatoryEnvironmentVariable(map, PLUGIN_REGISTRY, "https://" + StringUtils.substringBefore(repository, "/"));
+
+    setMandatoryEnvironmentVariable(map, PLUGIN_REPO, repository);
+
     setMandatoryEnvironmentVariable(map, PLUGIN_TAGS,
         listToStringSlice(resolveListParameter("tags", "BuildAndPushECR", identifier, stepInfo.getTags(), true)));
 

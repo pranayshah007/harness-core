@@ -18,6 +18,9 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.client.AzureAuthorizationRestClient;
+import io.harness.azure.utility.AzureUtils;
+import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.ci.pod.SecretParams;
@@ -58,6 +61,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 public class ConnectorEnvVariablesHelper {
+  public static final String PLUGIN_USERNAME = "PLUGIN_USERNAME";
+  public static final String PLUGIN_PASSWORD = "PLUGIN_PASSWORD";
+  public static final String AZURE_DEFAULT_USER = "00000000-0000-0000-0000-000000000000";
   @Inject private SecretDecryptor secretDecryptor;
 
   public Map<String, SecretParams> getArtifactorySecretVariables(ConnectorDetails connectorDetails) {
@@ -236,6 +242,18 @@ public class ConnectorEnvVariablesHelper {
       secretData.put(registryEnvVarName,
           getVariableSecret(registryEnvVarName + connectorDetails.getIdentifier(), encodeBase64(registryUrl)));
     }
+    return secretData;
+  }
+
+  public Map<String, SecretParams> getAzureSecretVariablesAsDockerVariable(
+      ConnectorDetails connectorDetails, String token) {
+    Map<String, SecretParams> secretData = new HashMap<>();
+    AzureConnectorDTO dockerConnectorConfig = (AzureConnectorDTO) connectorDetails.getConnectorConfig();
+    String registryEnvVarName = connectorDetails.getEnvToSecretsMap().get(EnvVariableEnum.DOCKER_REGISTRY);
+    secretData.put(PLUGIN_USERNAME,
+        getVariableSecret(PLUGIN_USERNAME + connectorDetails.getIdentifier(), encodeBase64(AZURE_DEFAULT_USER)));
+    secretData.put(
+        PLUGIN_PASSWORD, getVariableSecret(PLUGIN_PASSWORD + connectorDetails.getIdentifier(), encodeBase64(token)));
     return secretData;
   }
 

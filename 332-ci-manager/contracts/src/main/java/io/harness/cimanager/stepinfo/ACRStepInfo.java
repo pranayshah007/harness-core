@@ -1,4 +1,4 @@
-package io.harness.cimanager.stepinfo;
+package io.harness.beans.steps.stepinfo;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;

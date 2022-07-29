@@ -7,7 +7,7 @@
 
 package io.harness.ci.states;
 
-import io.harness.cimanager.stepinfo.ACRStepInfo;
+import io.harness.beans.steps.stepinfo.ACRStepInfo;
 import io.harness.pms.contracts.steps.StepType;
 
 public class ACRStep extends AbstractStepExecutable {
