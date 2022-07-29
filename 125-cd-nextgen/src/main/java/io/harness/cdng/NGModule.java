@@ -45,6 +45,8 @@ import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
 import io.harness.cdng.k8s.resources.azure.service.AzureResourceServiceImpl;
 import io.harness.cdng.k8s.resources.gcp.service.GcpResourceService;
 import io.harness.cdng.k8s.resources.gcp.service.impl.GcpResourceServiceImpl;
+import io.harness.cdng.serverless.ShellScriptHelperService;
+import io.harness.cdng.serverless.ShellScriptHelperServiceImpl;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceService;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceServiceImpl;
 import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
@@ -117,6 +119,7 @@ public class NGModule extends AbstractModule {
     bind(JenkinsResourceService.class).to(JenkinsResourceServiceImpl.class);
     bind(FilterService.class).to(FilterServiceImpl.class);
     bind(ClusterService.class).to(ClusterServiceImpl.class);
+    bind(ShellScriptHelperService.class).to(ShellScriptHelperServiceImpl.class);
     bind(InfrastructureEntityService.class).to(InfrastructureEntityServiceImpl.class);
     bind(ServiceOverrideService.class).to(ServiceOverrideServiceImpl.class);
     bind(ScheduledExecutorService.class)

@@ -14,10 +14,11 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
+import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
 public interface ServerlessStepExecutor {
   TaskChainResponse executeServerlessTask(ManifestOutcome serverlessManifestOutcome, Ambiance ambiance,
-      StepElementParameters stepParameters, ServerlessExecutionPassThroughData executionPassThroughData,
+      StepElementParameters stepParameters, PassThroughData passThroughData,
       UnitProgressData unitProgressData, ServerlessStepExecutorParams serverlessStepExecutorParams);
 
   TaskChainResponse executeServerlessPrepareRollbackTask(ManifestOutcome serverlessManifestOutcome, Ambiance ambiance,

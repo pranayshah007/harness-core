@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.steps.shellscript.ShellScriptBaseStepInfo;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -19,6 +20,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
 import java.util.List;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data
@@ -28,9 +30,14 @@ import java.util.List;
 @RecasterAlias("io.harness.cdng.serverless.ServerlessAwsLambdaGenericStepParameters")
 public class ServerlessAwsLambdaGenericStepParameters
     extends ServerlessAwsLambdaGenericBaseStepInfo implements ServerlessSpecParameters {
+  Map<String, Object> outputVariables;
+  Map<String, Object> environmentVariables;
   @Builder(builderMethodName = "infoBuilder")
   public ServerlessAwsLambdaGenericStepParameters(
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<String> commandOptions) {
-    super(delegateSelectors, commandOptions);
+          ShellScriptBaseStepInfo serverlessShellScriptSpec, ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<String> commandOptions,
+          Map<String, Object> outputVariables, Map<String, Object> environmentVariables) {
+    super(serverlessShellScriptSpec, delegateSelectors, commandOptions);
+    this.outputVariables = outputVariables;
+    this.environmentVariables = environmentVariables;
   }
 }

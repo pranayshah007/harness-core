@@ -2152,6 +2152,8 @@
 563534:io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig
 563535:io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability
 563536:io.harness.delegate.task.serverless.ServerlessS3ArtifactConfig
+563537:io.harness.delegate.task.serverless.request.ServerlessGenericRequest
+563538:io.harness.delegate.task.serverless.request.ServerlessGenericResponse
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO

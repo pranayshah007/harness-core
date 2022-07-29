@@ -30,6 +30,15 @@ public interface ServerlessSpecParameters extends SpecParameters {
         ServerlessCommandUnitConstants.rollbackData.toString(),
         ServerlessCommandUnitConstants.setupDirectory.toString(), ServerlessCommandUnitConstants.artifact.toString(),
         ServerlessCommandUnitConstants.configureCred.toString(), ServerlessCommandUnitConstants.plugin.toString(),
-        ServerlessCommandUnitConstants.deploy.toString());
+        ServerlessCommandUnitConstants.deploy.toString(), ServerlessCommandUnitConstants.serverlessShellScript.toString());
+  }
+
+  @Nonnull
+  @JsonIgnore
+  default List<String> getCommandUnitsForGenericStep() {
+    return Arrays.asList(ServerlessCommandUnitConstants.fetchFiles.toString(),
+            ServerlessCommandUnitConstants.setupDirectory.toString(), ServerlessCommandUnitConstants.artifact.toString(),
+            ServerlessCommandUnitConstants.configureCred.toString(), ServerlessCommandUnitConstants.plugin.toString(),
+            ServerlessCommandUnitConstants.serverlessShellScript.toString());
   }
 }

@@ -84,8 +84,9 @@ public class ServerlessAwsLambdaDeployStep
 
   @Override
   public TaskChainResponse executeServerlessTask(ManifestOutcome serverlessManifestOutcome, Ambiance ambiance,
-      StepElementParameters stepElementParameters, ServerlessExecutionPassThroughData executionPassThroughData,
+      StepElementParameters stepElementParameters, PassThroughData passThroughData,
       UnitProgressData unitProgressData, ServerlessStepExecutorParams serverlessStepExecutorParams) {
+    ServerlessExecutionPassThroughData executionPassThroughData = (ServerlessExecutionPassThroughData) passThroughData;
     InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
     ServerlessAwsLambdaDeployStepParameters serverlessDeployStepParameters =
         (ServerlessAwsLambdaDeployStepParameters) stepElementParameters.getSpec();

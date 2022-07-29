@@ -25,15 +25,24 @@ import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.ServerlessDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
 import io.harness.delegate.task.serverless.request.ServerlessDeployRequest;
+import io.harness.delegate.task.serverless.request.ServerlessGenericRequest;
 import io.harness.delegate.task.serverless.request.ServerlessPrepareRollbackDataRequest;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
+import io.harness.delegate.task.serverless.response.ServerlessGenericResponse;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
+import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
+import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.UnitProgress;
+import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -43,6 +52,11 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.shell.ShellExecutionData;
+import io.harness.steps.OutputExpressionConstants;
+import io.harness.steps.StepUtils;
+import io.harness.steps.shellscript.ShellScriptOutcome;
+import io.harness.steps.shellscript.ShellScriptStepParameters;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +66,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static java.util.Collections.emptyList;
+
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class ServerlessAwsLambdaGenericStep
@@ -60,12 +76,11 @@ public class ServerlessAwsLambdaGenericStep
                                                .setType(ExecutionNodeType.SERVERLESS_AWS_LAMBDA_GENERIC.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
-  private final String SERVERLESS_AWS_LAMBDA_DEPLOY_COMMAND_NAME = "ServerlessAwsLambdaDeploy";
   private final String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_NAME = "ServerlessAwsLambdaPrepareRollback";
-  @Inject private ServerlessStepCommonHelper serverlessStepCommonHelper;
-  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
-  @Inject private InstanceInfoService instanceInfoService;
+  private final String SERVERLESS_AWS_LAMBDA_GENERIC_COMMAND_NAME = "ServerlessAwsLambdaGeneric";
+  @Inject private ServerlessGenericStepCommonHelper serverlessStepCommonHelper;
   @Inject private ServerlessAwsLambdaStepHelper serverlessAwsLambdaStepHelper;
+  @Inject private ShellScriptHelperService shellScriptHelperService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -80,13 +95,26 @@ public class ServerlessAwsLambdaGenericStep
 
   @Override
   public TaskChainResponse executeServerlessTask(ManifestOutcome serverlessManifestOutcome, Ambiance ambiance,
-      StepElementParameters stepElementParameters, ServerlessExecutionPassThroughData executionPassThroughData,
+      StepElementParameters stepElementParameters, PassThroughData passThroughData,
       UnitProgressData unitProgressData, ServerlessStepExecutorParams serverlessStepExecutorParams) {
-    InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
+    ServerlessStepPassThroughData stepPassThroughData = (ServerlessStepPassThroughData) passThroughData;
+    InfrastructureOutcome infrastructureOutcome = stepPassThroughData.getInfrastructureOutcome();
     ServerlessAwsLambdaGenericStepParameters serverlessDeployStepParameters =
         (ServerlessAwsLambdaGenericStepParameters) stepElementParameters.getSpec();
     ServerlessAwsLambdaStepExecutorParams serverlessAwsLambdaStepExecutorParams =
         (ServerlessAwsLambdaStepExecutorParams) serverlessStepExecutorParams;
+    ShellScriptStepParameters shellScriptStepParameters = ShellScriptStepParameters.infoBuilder()
+            .environmentVariables(serverlessDeployStepParameters.getEnvironmentVariables())
+            .outputVariables(serverlessDeployStepParameters.getOutputVariables())
+            .executionTarget(serverlessDeployStepParameters.getServerlessShellScriptSpec().getExecutionTarget())
+            .shellType(serverlessDeployStepParameters.getServerlessShellScriptSpec().getShell())
+            .onDelegate(serverlessDeployStepParameters.getServerlessShellScriptSpec().getOnDelegate())
+            .delegateSelectors(serverlessDeployStepParameters.getDelegateSelectors())
+            .source(serverlessDeployStepParameters.getServerlessShellScriptSpec().getSource())
+            .uuid(serverlessDeployStepParameters.getServerlessShellScriptSpec().getUuid())
+            .build();
+    ShellScriptTaskParametersNG serverlessShellScriptTaskParameters =
+            shellScriptHelperService.buildShellScriptTaskParametersNG(ambiance, shellScriptStepParameters);
     final String accountId = AmbianceUtils.getAccountId(ambiance);
     ServerlessArtifactConfig serverlessArtifactConfig = null;
     Optional<ArtifactsOutcome> artifactsOutcome = serverlessStepCommonHelper.getArtifactsOutcome(ambiance);
@@ -106,21 +134,19 @@ public class ServerlessAwsLambdaGenericStep
       }
     }
 
-    ServerlessDeployConfig serverlessDeployConfig = serverlessStepCommonHelper.getServerlessDeployConfig(
-        serverlessDeployStepParameters, serverlessAwsLambdaStepHelper);
     Map<String, Object> manifestParams = new HashMap<>();
     manifestParams.put(
         "manifestFileOverrideContent", serverlessAwsLambdaStepExecutorParams.getManifestFileOverrideContent());
     manifestParams.put("manifestFilePathContent", serverlessAwsLambdaStepExecutorParams.getManifestFilePathContent());
     ServerlessManifestConfig serverlessManifestConfig = serverlessStepCommonHelper.getServerlessManifestConfig(
         manifestParams, serverlessManifestOutcome, ambiance, serverlessAwsLambdaStepHelper);
-    ServerlessDeployRequest serverlessDeployRequest =
-        ServerlessDeployRequest.builder()
-            .commandName(SERVERLESS_AWS_LAMBDA_DEPLOY_COMMAND_NAME)
+    ServerlessGenericRequest serverlessGenericRequest =
+        ServerlessGenericRequest.builder()
+            .commandName(SERVERLESS_AWS_LAMBDA_GENERIC_COMMAND_NAME)
             .accountId(accountId)
-            .serverlessCommandType(ServerlessCommandType.SERVERLESS_AWS_LAMBDA_DEPLOY)
+            .serverlessCommandType(ServerlessCommandType.SERVERLESS_AWS_LAMBDA_GENERIC)
             .serverlessInfraConfig(serverlessStepCommonHelper.getServerlessInfraConfig(infrastructureOutcome, ambiance))
-            .serverlessDeployConfig(serverlessDeployConfig)
+            .shellScriptTaskParametersNG(serverlessShellScriptTaskParameters)
             .serverlessManifestConfig(serverlessManifestConfig)
             .serverlessArtifactConfig(serverlessArtifactConfig)
             .sidecarServerlessArtifactConfigs(sidecarServerlessArtifactConfigMap)
@@ -129,7 +155,7 @@ public class ServerlessAwsLambdaGenericStep
             .manifestContent(serverlessAwsLambdaStepExecutorParams.getManifestFileOverrideContent())
             .build();
     return serverlessStepCommonHelper.queueServerlessTask(
-        stepElementParameters, serverlessDeployRequest, ambiance, executionPassThroughData, true);
+        stepElementParameters, serverlessGenericRequest, ambiance, stepPassThroughData, true);
   }
 
   @Override
@@ -183,33 +209,38 @@ public class ServerlessAwsLambdaGenericStep
     }
 
     log.info("Finalizing execution with passThroughData: " + passThroughData.getClass().getName());
-    ServerlessExecutionPassThroughData serverlessExecutionPassThroughData =
-        (ServerlessExecutionPassThroughData) passThroughData;
-    InfrastructureOutcome infrastructureOutcome = serverlessExecutionPassThroughData.getInfrastructure();
-    ServerlessDeployResponse serverlessDeployResponse;
     try {
-      serverlessDeployResponse = (ServerlessDeployResponse) responseDataSupplier.get();
-    } catch (Exception e) {
-      ServerlessNGException serverlessException = ExceptionUtils.cause(ServerlessNGException.class, e);
-      if (serverlessException == null) {
-        log.error("Error while processing serverless task response: {}", e.getMessage(), e);
-        return serverlessStepCommonHelper.handleTaskException(ambiance, serverlessExecutionPassThroughData, e);
-      }
-      log.error("Error while processing serverless task response: {}", e.getMessage(), e);
-      return serverlessStepCommonHelper.handleTaskException(ambiance, serverlessExecutionPassThroughData, e);
-    }
-    StepResponseBuilder stepResponseBuilder =
-        StepResponse.builder().unitProgressList(serverlessDeployResponse.getUnitProgressData().getUnitProgresses());
-    if (serverlessDeployResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
-      return ServerlessStepCommonHelper.getFailureResponseBuilder(serverlessDeployResponse, stepResponseBuilder)
-          .build();
-    }
-    List<ServerInstanceInfo> functionInstanceInfos = serverlessStepCommonHelper.getFunctionInstanceInfo(
-        serverlessDeployResponse, serverlessAwsLambdaStepHelper, infrastructureOutcome.getInfrastructureKey());
-    StepResponse.StepOutcome stepOutcome =
-        instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, functionInstanceInfos);
+      StepResponseBuilder stepResponseBuilder = StepResponse.builder();
+      ServerlessGenericResponse taskResponse = (ServerlessGenericResponse) responseDataSupplier.get();
+      ServerlessAwsLambdaGenericStepParameters shellScriptStepParameters = (ServerlessAwsLambdaGenericStepParameters) stepParameters.getSpec();
+      List<UnitProgress> unitProgresses = taskResponse.getUnitProgressData() == null
+              ? emptyList()
+              : taskResponse.getUnitProgressData().getUnitProgresses();
+      stepResponseBuilder.unitProgressList(unitProgresses);
 
-    return stepResponseBuilder.status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();
+      stepResponseBuilder.status(StepUtils.getStepStatus(taskResponse.getCommandExecutionStatus()));
+
+      FailureInfo.Builder failureInfoBuilder = FailureInfo.newBuilder();
+      if (taskResponse.getErrorMessage() != null) {
+        failureInfoBuilder.setErrorMessage(taskResponse.getErrorMessage());
+      }
+      stepResponseBuilder.failureInfo(failureInfoBuilder.build());
+
+      if (taskResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
+        ShellExecutionData commandExecutionData =
+                (ShellExecutionData) taskResponse.getExecuteCommandResponse().getCommandExecutionData();
+        ShellScriptOutcome shellScriptOutcome = shellScriptHelperService.prepareShellScriptOutcome(
+                commandExecutionData.getSweepingOutputEnvVariables(), shellScriptStepParameters.getOutputVariables());
+        if (shellScriptOutcome != null) {
+          stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
+                  .name(OutputExpressionConstants.OUTPUT)
+                  .outcome(shellScriptOutcome)
+                  .build());
+        }
+      }
+      return stepResponseBuilder.build();
+    } finally {
+    }
   }
 
   @Override

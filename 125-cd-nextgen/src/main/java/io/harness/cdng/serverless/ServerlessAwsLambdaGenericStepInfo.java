@@ -21,8 +21,12 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.steps.shellscript.ShellScriptBaseStepInfo;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.core.VariableExpression;
+import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.utils.NGVariablesUtils;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
 import org.springframework.data.annotation.TypeAlias;
@@ -39,6 +43,8 @@ import java.util.List;
 @RecasterAlias("io.harness.cdng.serverless.ServerlessAwsLambdaGenericStepInfo")
 public class ServerlessAwsLambdaGenericStepInfo
     extends ServerlessAwsLambdaGenericBaseStepInfo implements CDStepInfo, Visitable {
+  @VariableExpression(skipVariableExpression = true) List<NGVariable> outputVariables;
+  List<NGVariable> environmentVariables;
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -48,8 +54,11 @@ public class ServerlessAwsLambdaGenericStepInfo
 
   @Builder(builderMethodName = "infoBuilder")
   public ServerlessAwsLambdaGenericStepInfo(
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<String> commandOptions) {
-    super(delegateSelectors, commandOptions);
+          ShellScriptBaseStepInfo serverlessShellScriptSpec, ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<String> commandOptions
+          , List<NGVariable> outputVariables, List<NGVariable> environmentVariables) {
+    super(serverlessShellScriptSpec, delegateSelectors, commandOptions);
+    this.outputVariables = outputVariables;
+    this.environmentVariables = environmentVariables;
   }
   @Override
   public StepType getStepType() {
@@ -64,6 +73,9 @@ public class ServerlessAwsLambdaGenericStepInfo
   @Override
   public SpecParameters getSpecParameters() {
     return ServerlessAwsLambdaGenericStepParameters.infoBuilder()
+            .outputVariables(NGVariablesUtils.getMapOfVariables(outputVariables, 0L))
+            .environmentVariables(NGVariablesUtils.getMapOfVariables(environmentVariables, 0L))
+            .serverlessShellScriptSpec(serverlessShellScriptSpec)
         .delegateSelectors(this.getDelegateSelectors())
         .commandOptions(commandOptions)
         .build();

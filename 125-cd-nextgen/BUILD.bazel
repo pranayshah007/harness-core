@@ -16,6 +16,7 @@ java_library(
         "//400-rest:module",
         "//440-connector-nextgen:module",
         "//445-gitops:module",
+        "//800-pipeline-service/modules/orchestration-steps/contracts:module",
         "//867-polling-contracts:module",
         "//878-ng-common-utilities:module",
         "//880-pipeline-cd-commons:module",

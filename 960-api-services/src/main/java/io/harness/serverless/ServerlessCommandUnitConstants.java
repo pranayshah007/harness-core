@@ -61,5 +61,11 @@ public enum ServerlessCommandUnitConstants {
     public String toString() {
       return "Prepare Rollback Data";
     }
+  },
+  serverlessShellScript {
+    @Override
+    public String toString() {
+      return "Execute Serverless Shell Script";
+    }
   }
 }
