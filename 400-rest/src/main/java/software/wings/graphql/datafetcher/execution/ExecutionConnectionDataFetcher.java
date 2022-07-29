@@ -106,31 +106,7 @@ public class ExecutionConnectionDataFetcher
 
   @Override
   protected void populateFilters(List<QLExecutionFilter> filters, Query query) {
-    filters = addAppIdValidation(filters);
     executionQueryHelper.setQuery(filters, query, getAccountId());
-  }
-
-  private List<QLExecutionFilter> addAppIdValidation(List<QLExecutionFilter> filters) {
-    List<QLExecutionFilter> updatedFilters = filters != null ? new ArrayList<>(filters) : new ArrayList<>();
-    boolean appIdFilterFound = false;
-    if (isNotEmpty(filters)) {
-      for (QLExecutionFilter filter : filters) {
-        if (filter.getApplication() != null) {
-          appIdFilterFound = true;
-          break;
-        }
-      }
-    }
-
-    if (!appIdFilterFound) {
-      List<String> appIds = appService.getAppIdsByAccountId(super.getAccountId());
-      updatedFilters.add(
-          QLExecutionFilter.builder()
-              .application(QLIdFilter.builder().operator(QLIdOperator.IN).values(appIds.toArray(new String[0])).build())
-              .build());
-    }
-
-    return updatedFilters;
   }
 
   @Override
