@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 
+import software.wings.stencils.DefaultValue;
+
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Optional;
 import lombok.Builder;
@@ -25,7 +27,7 @@ import lombok.EqualsAndHashCode;
 @JsonTypeName("WinRmCredentials")
 @OwnedBy(CDP)
 public class WinRmCredentialsSpec extends SecretSpec {
-  int port;
+  @DefaultValue("5986") int port;
   WinRmAuth auth;
 
   @Override

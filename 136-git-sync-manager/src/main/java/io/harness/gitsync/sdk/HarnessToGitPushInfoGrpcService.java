@@ -64,7 +64,8 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Inject ExceptionManager exceptionManager;
   private String errorFormat =
-      "Unexpected error occurred while performing %s git operation. Please contact Harness Support.";
+      "Unexpected error occurred while performing %s git operation in %s. Please contact Harness Support.";
+  private String GIT_SERVICE = "Git Service";
 
   @Override
   public void pushFromHarness(PushInfo request, StreamObserver<PushResponse> responseObserver) {
@@ -111,11 +112,11 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
         request.getBranchName(), request.getFilePath(), GitOperation.GET_FILE, request.getContextMapMap());
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
-      log.info("Grpc request received for getFile ops {}", request);
+      log.info(String.format("%s Grpc request received for getFile ops %s", GIT_SERVICE, request));
       try {
         setPrincipal(request.getScopeIdentifiers().getAccountIdentifier(), request.getPrincipal());
         getFileResponse = harnessToGitHelperService.getFileByBranch(request);
-        log.info("Git Sync Service getFile ops response : {}", getFileResponse);
+        log.info(String.format("%s getFile ops response : %s", GIT_SERVICE, getFileResponse));
       } catch (Exception ex) {
         final String errorMessage = String.format(errorFormat, GitOperation.GET_FILE.name());
         log.error(errorMessage, ex);
@@ -137,11 +138,11 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
         request.getBranchName(), request.getFilePath(), GitOperation.CREATE_FILE, request.getContextMapMap());
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
-      log.info("Grpc request received for createFile ops {}", request);
+      log.info(String.format("%s Grpc request received for createFile ops %s", GIT_SERVICE, request));
       try {
         setPrincipal(request.getScopeIdentifiers().getAccountIdentifier(), request.getPrincipal());
         createFileResponse = harnessToGitHelperService.createFile(request);
-        log.info("Git Sync Service createFile ops response : {}", createFileResponse);
+        log.info(String.format("%s createFile ops response : %s", GIT_SERVICE, createFileResponse));
       } catch (Exception ex) {
         final String errorMessage = String.format(errorFormat, GitOperation.CREATE_FILE.name());
         log.error(errorMessage, ex);
@@ -163,11 +164,11 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
         request.getBranchName(), request.getFilePath(), GitOperation.UPDATE_FILE, request.getContextMapMap());
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
-      log.info("Grpc request received for updateFile ops {}", request);
+      log.info(String.format("%s Grpc request received for updateFile ops %s", GIT_SERVICE, request));
       try {
         setPrincipal(request.getScopeIdentifiers().getAccountIdentifier(), request.getPrincipal());
         updateFileResponse = harnessToGitHelperService.updateFile(request);
-        log.info("Git Sync Service updateFile ops response : {}", updateFileResponse);
+        log.info(String.format("%s updateFile ops response : %s", GIT_SERVICE, updateFileResponse));
       } catch (Exception ex) {
         final String errorMessage = String.format(errorFormat, GitOperation.UPDATE_FILE.name());
         log.error(errorMessage, ex);
@@ -202,22 +203,26 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
 
   @Override
   public void getRepoUrl(GetRepoUrlRequest request, StreamObserver<GetRepoUrlResponse> responseObserver) {
-    GetRepoUrlResponse response;
+    GetRepoUrlResponse getRepoUrlResponse;
     Map<String, String> contextMap = GitSyncLogContextHelper.setContextMap(
         ScopeIdentifierMapper.getScopeFromScopeIdentifiers(request.getScopeIdentifiers()), request.getRepoName(), "",
-        "", GitOperation.GET_FILE, request.getContextMapMap());
+        "", GitOperation.GET_REPO_URL, request.getContextMapMap());
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
-         MdcContextSetter ignore1 = new MdcContextSetter(request.getContextMapMap())) {
-      response = harnessToGitHelperService.getRepoUrl(request);
-      log.info("Git Sync Service getRepoUrl ops response : {}", response);
-    } catch (Exception ex) {
-      log.error("Faced exception during getRepoUrl GIT call", ex);
-      final String errorMessage = ExceptionUtils.getMessage(ex);
-      response = GetRepoUrlResponse.newBuilder()
-                     .setError(ErrorDetails.newBuilder().setErrorMessage(errorMessage).build())
-                     .build();
+         MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
+      log.info(String.format("%s Grpc request received for getRepoUrl ops %s", GIT_SERVICE, request));
+      try {
+        getRepoUrlResponse = harnessToGitHelperService.getRepoUrl(request);
+        log.info(String.format("%s getRepoUrl ops response : %s", GIT_SERVICE, getRepoUrlResponse));
+      } catch (Exception ex) {
+        final String errorMessage = String.format(errorFormat, GitOperation.GET_REPO_URL.name());
+        log.error(errorMessage, ex);
+        getRepoUrlResponse = GetRepoUrlResponse.newBuilder()
+                                 .setStatusCode(HTTP_500)
+                                 .setError(ErrorDetails.newBuilder().setErrorMessage(errorMessage).build())
+                                 .build();
+      }
     }
-    responseObserver.onNext(response);
+    responseObserver.onNext(getRepoUrlResponse);
     responseObserver.onCompleted();
   }
 

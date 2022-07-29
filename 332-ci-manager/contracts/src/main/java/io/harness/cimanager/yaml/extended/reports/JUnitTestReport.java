@@ -13,7 +13,6 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
@@ -34,8 +33,4 @@ public class JUnitTestReport implements UnitTestReportSpec {
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
   ParameterField<List<String>> paths;
-
-  public List<String> resolve(String identifier, String stepType) {
-    return RunTimeInputHandler.resolveListParameter("paths", stepType, identifier, paths, false);
-  }
 }

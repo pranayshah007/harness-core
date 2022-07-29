@@ -13,7 +13,7 @@ import io.harness.morphia.MorphiaRegistrarHelperPut;
 
 import java.util.Set;
 
-public class CIManagerMorphiaRegistrar implements MorphiaRegistrar {
+public class CIContractsMorphiaRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
     set.add(StageInfraDetails.class);
