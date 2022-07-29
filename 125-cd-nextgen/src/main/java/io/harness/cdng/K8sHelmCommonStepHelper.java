@@ -603,10 +603,13 @@ public class K8sHelmCommonStepHelper {
             .storeDelegateConfig(getStoreDelegateConfig(kustomizeManifestOutcome.getStore(), ambiance, manifestOutcome,
                 manifestOutcome.getType() + " manifest"))
             .kustomizeYamlFolderPath(cdStepHelper.isOptimizeFetchFilesKustomize(AmbianceUtils.getAccountId(ambiance))
-                        && kustomizeManifestOutcome.getOverlayConfiguration() == null
-                    ? null
-                    : getParameterFieldValue(getParameterFieldValue(kustomizeManifestOutcome.getOverlayConfiguration())
-                                                 .getKustomizeYamlFolderPath()))
+                        && ParameterField.isNotNull(kustomizeManifestOutcome.getOverlayConfiguration())
+                        && ParameterField.isNotNull(
+                            getParameterFieldValue(kustomizeManifestOutcome.getOverlayConfiguration())
+                                .getKustomizeYamlFolderPath())
+                    ? getParameterFieldValue(getParameterFieldValue(kustomizeManifestOutcome.getOverlayConfiguration())
+                                                 .getKustomizeYamlFolderPath())
+                    : null)
             .pluginPath(getParameterFieldValue(kustomizeManifestOutcome.getPluginPath()))
             .kustomizeDirPath(getParameterFieldValue(gitStoreConfig.getFolderPath()))
             .build();
@@ -904,9 +907,9 @@ public class K8sHelmCommonStepHelper {
   public List<String> getKustomizeManifestBasePath(GitStoreConfig gitStoreConfig, ManifestOutcome manifestOutcome) {
     List<String> paths = new ArrayList<>();
     KustomizeManifestOutcome kustomizeManifestOutcome = (KustomizeManifestOutcome) manifestOutcome;
-    if (kustomizeManifestOutcome.getOverlayConfiguration() != null
-        && getParameterFieldValue(kustomizeManifestOutcome.getOverlayConfiguration()).getKustomizeYamlFolderPath()
-            != null) {
+    if (ParameterField.isNotNull(kustomizeManifestOutcome.getOverlayConfiguration())
+        && ParameterField.isNotNull(
+            getParameterFieldValue(kustomizeManifestOutcome.getOverlayConfiguration()).getKustomizeYamlFolderPath())) {
       paths.add(getParameterFieldValue(gitStoreConfig.getFolderPath()));
     } else {
       paths.add("/");
