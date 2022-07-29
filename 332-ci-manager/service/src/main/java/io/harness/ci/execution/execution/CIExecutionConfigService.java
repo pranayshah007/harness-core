@@ -147,6 +147,7 @@ public class CIExecutionConfigService {
         break;
       case BUILD_PUSH_ACR:
         vmImageConfig.setBuildAndPushACR(value);
+        break;
       case BUILD_PUSH_ECR:
         vmImageConfig.setBuildAndPushECR(value);
         break;

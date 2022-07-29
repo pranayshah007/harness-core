@@ -7,20 +7,9 @@
 
 package io.harness.connector;
 
-import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.data.encoding.EncodingUtils.encodeBase64;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.beans.ci.pod.SecretParams.Type.FILE;
-import static io.harness.delegate.beans.ci.pod.SecretParams.Type.TEXT;
-import static io.harness.delegate.beans.connector.azureconnector.AzureCredentialType.MANUAL_CREDENTIALS;
-
-import static java.lang.String.format;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.client.AzureAuthorizationRestClient;
-import io.harness.azure.utility.AzureUtils;
-import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.ci.pod.SecretParams;
@@ -45,12 +34,19 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
 import io.harness.secrets.SecretDecryptor;
 import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
+import lombok.extern.slf4j.Slf4j;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.data.encoding.EncodingUtils.encodeBase64;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.ci.pod.SecretParams.Type.FILE;
+import static io.harness.delegate.beans.ci.pod.SecretParams.Type.TEXT;
+import static io.harness.delegate.beans.connector.azureconnector.AzureCredentialType.MANUAL_CREDENTIALS;
+import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * Helper class to create spec for image registry and GIT secrets. Generated spec can be used for creation of secrets on

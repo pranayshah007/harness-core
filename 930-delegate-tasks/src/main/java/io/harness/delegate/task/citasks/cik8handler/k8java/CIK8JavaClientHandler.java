@@ -77,6 +77,7 @@ import org.json.JSONObject;
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
 public class CIK8JavaClientHandler {
+  public static final String USER_NAME = "00000000-0000-0000-0000-000000000000";
   @Inject private ImageSecretBuilder imageSecretBuilder;
 
   private static final String DOCKER_CONFIG_KEY = ".dockercfg";
@@ -108,7 +109,7 @@ public class CIK8JavaClientHandler {
       credentialData =
           imageSecretBuilder.getJSONEncodedAzureCredentials(ImageCredentials.builder()
                                                                 .registryUrl(regName)
-                                                                .userName("00000000-0000-0000-0000-000000000000")
+                                                                .userName(USER_NAME)
                                                                 .password(acrLoginToken.getToken())
                                                                 .build());
     } else {
