@@ -100,6 +100,9 @@ public class CIExecutionConfigService {
       case BUILD_PUSH_ECR:
         executionConfig.setBuildAndPushECRImage(value);
         break;
+      case BUILD_PUSH_ACR:
+        executionConfig.setBuildAndPushACRImage(value);
+        break;
       case BUILD_PUSH_GCR:
         executionConfig.setBuildAndPushGCRImage(value);
         break;
@@ -142,6 +145,8 @@ public class CIExecutionConfigService {
       case BUILD_PUSH_DOCKER_REGISTRY:
         vmImageConfig.setBuildAndPushDockerRegistry(value);
         break;
+      case BUILD_PUSH_ACR:
+        vmImageConfig.setBuildAndPushACR(value);
       case BUILD_PUSH_ECR:
         vmImageConfig.setBuildAndPushECR(value);
         break;
@@ -221,6 +226,9 @@ public class CIExecutionConfigService {
     if (Strings.isNotBlank(overriddenConfig.getBuildAndPushDockerRegistryTag())) {
       defaultConfig.setBuildAndPushDockerRegistryTag(overriddenConfig.getBuildAndPushDockerRegistryTag());
     }
+    if (Strings.isNotBlank(overriddenConfig.getBuildAndPushACRTag())) {
+      defaultConfig.setBuildAndPushECRTag(overriddenConfig.getBuildAndPushACRTag());
+    }
     if (Strings.isNotBlank(overriddenConfig.getBuildAndPushECRTag())) {
       defaultConfig.setBuildAndPushECRTag(overriddenConfig.getBuildAndPushECRTag());
     }
@@ -257,6 +265,7 @@ public class CIExecutionConfigService {
         .buildAndPushDockerRegistryTag(vmImageConfig.getBuildAndPushDockerRegistry())
         .gitCloneTag(vmImageConfig.getGitClone())
         .buildAndPushECRTag(vmImageConfig.getBuildAndPushECR())
+        .buildAndPushACRTag(vmImageConfig.getBuildAndPushACR())
         .buildAndPushGCRTag(vmImageConfig.getBuildAndPushGCR())
         .gcsUploadTag(vmImageConfig.getGcsUpload())
         .s3UploadTag(vmImageConfig.getS3Upload())
@@ -304,7 +313,7 @@ public class CIExecutionConfigService {
         .buildAndPushDockerRegistryTag(vmImageConfig.getBuildAndPushDockerRegistry())
         .gitCloneTag(vmImageConfig.getGitClone())
         .buildAndPushECRTag(vmImageConfig.getBuildAndPushECR())
-        .buildAndPushGCRTag(vmImageConfig.getBuildAndPushGCR())
+        .buildAndPushACRTag(vmImageConfig.getBuildAndPushACR())
         .gcsUploadTag(vmImageConfig.getGcsUpload())
         .s3UploadTag(vmImageConfig.getS3Upload())
         .artifactoryUploadTag(vmImageConfig.getArtifactoryUpload())
@@ -324,7 +333,7 @@ public class CIExecutionConfigService {
         .liteEngineTag(ciExecutionServiceConfig.getLiteEngineImage())
         .gitCloneTag(config.getGitCloneConfig().getImage())
         .buildAndPushECRTag(config.getBuildAndPushECRConfig().getImage())
-        .buildAndPushGCRTag(config.getBuildAndPushGCRConfig().getImage())
+        .buildAndPushACRTag(config.getBuildAndPushACRConfig().getImage())
         .gcsUploadTag(config.getGcsUploadConfig().getImage())
         .s3UploadTag(config.getS3UploadConfig().getImage())
         .artifactoryUploadTag(config.getArtifactoryUploadConfig().getImage())
@@ -342,6 +351,7 @@ public class CIExecutionConfigService {
         .gitCloneTag(config.getGitCloneImage())
         .buildAndPushECRTag(config.getBuildAndPushECRImage())
         .buildAndPushGCRTag(config.getBuildAndPushGCRImage())
+        .buildAndPushACRTag(config.getBuildAndPushACRImage())
         .gcsUploadTag(config.getGcsUploadImage())
         .s3UploadTag(config.getS3UploadImage())
         .artifactoryUploadTag(config.getArtifactoryUploadTag())
