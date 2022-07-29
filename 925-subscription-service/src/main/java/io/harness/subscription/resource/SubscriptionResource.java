@@ -367,7 +367,9 @@ public class SubscriptionResource {
   @Path("/pay_invoice")
   @PublicApi
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = EDIT_LICENSE_PERMISSION)
-  public RestResponse<Void> payInvoice(@NotNull @QueryParam(INVOICE_ID) String invoiceId) {
+  public RestResponse<Void> payInvoice(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+                                       @NotNull @QueryParam(INVOICE_ID) String invoiceId) {
     subscriptionService.payInvoice(invoiceId);
     return new RestResponse();
   }
