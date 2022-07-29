@@ -12,6 +12,7 @@ import static io.harness.beans.EnvironmentType.ALL;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.ACTIVITY_ID_BASED_TF_BASE_DIR;
+import static io.harness.beans.FeatureName.ANALYSE_TF_PLAN_SUMMARY;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.SAVE_TERRAFORM_APPLY_SWEEPING_OUTPUT_TO_WORKFLOW;
 import static io.harness.beans.FeatureName.TERRAFORM_AWS_CP_AUTHENTICATION;
@@ -32,6 +33,9 @@ import static io.harness.provision.TerraformConstants.TF_APPLY_VAR_NAME;
 import static io.harness.provision.TerraformConstants.TF_DESTROY_NAME_PREFIX;
 import static io.harness.provision.TerraformConstants.TF_DESTROY_VAR_NAME;
 import static io.harness.provision.TerraformConstants.TF_NAME_PREFIX;
+import static io.harness.provision.TerraformConstants.TF_PLAN_RESOURCES_ADD;
+import static io.harness.provision.TerraformConstants.TF_PLAN_RESOURCES_CHANGE;
+import static io.harness.provision.TerraformConstants.TF_PLAN_RESOURCES_DESTROY;
 import static io.harness.provision.TerraformConstants.TF_VAR_FILES_GIT_BRANCH_KEY;
 import static io.harness.provision.TerraformConstants.TF_VAR_FILES_GIT_COMMIT_ID_KEY;
 import static io.harness.provision.TerraformConstants.TF_VAR_FILES_GIT_CONNECTOR_ID_KEY;
@@ -342,6 +346,7 @@ public abstract class TerraformProvisionState extends State {
     // We are checking for nulls in tfPlanJson field because it can be null even if feature flag is set to true.
     // Customer sometimes enables that flag because the customer is using multiple terraform versions at the same time,
     // some of which do not support exporting in json format
+    TerraformPlanParamBuilder tfPlanParamBuilder = TerraformPlanParam.builder();
     boolean saveTfPlanSweepingOutput =
         executionData.getTfPlanJsonFiledId() != null || executionData.getTfPlanJson() != null;
     if (featureFlagService.isEnabled(FeatureName.EXPORT_TF_PLAN, context.getAccountId()) && saveTfPlanSweepingOutput) {
@@ -359,8 +364,6 @@ public abstract class TerraformProvisionState extends State {
           }
         }
       }
-
-      TerraformPlanParamBuilder tfPlanParamBuilder = TerraformPlanParam.builder();
       if (featureFlagService.isEnabled(FeatureName.OPTIMIZED_TF_PLAN, context.getAccountId())) {
         tfPlanParamBuilder.tfPlanJsonFileId(executionData.getTfPlanJsonFiledId());
       } else {
@@ -371,6 +374,52 @@ public abstract class TerraformProvisionState extends State {
           featureFlagService.isEnabled(SAVE_TERRAFORM_APPLY_SWEEPING_OUTPUT_TO_WORKFLOW, context.getAccountId())
           ? Scope.WORKFLOW
           : Scope.PIPELINE;
+      populateTerraformPlanParamWithSummaryInfo(tfPlanParamBuilder, executionData, context);
+      sweepingOutputService.save(
+          context.prepareSweepingOutputBuilder(scope).name(variableName).value(tfPlanParamBuilder.build()).build());
+    } else {
+      populateTerraformPlanParamWithSummaryInfo(tfPlanParamBuilder, executionData, context);
+      saveTerraformPlanSummary(context, terraformCommand, tfPlanParamBuilder);
+    }
+  }
+
+  private void populateTerraformPlanParamWithSummaryInfo(
+      TerraformPlanParamBuilder tfPlanParamBuilder, TerraformExecutionData executionData, ExecutionContext context) {
+    if (featureFlagService.isEnabled(ANALYSE_TF_PLAN_SUMMARY, context.getAccountId())) {
+      if (executionData.getEnvironmentVariables() != null) {
+        final Map<String, Object> tfPlanSummaryVars =
+            executionData.getEnvironmentVariables()
+                .stream()
+                .filter(item -> item.getValue() != null)
+                .filter(item -> "TEXT".equals(item.getValueType()))
+                .collect(toMap(NameValuePair::getName, NameValuePair::getValue));
+
+        if (tfPlanSummaryVars.containsKey(TF_PLAN_RESOURCES_ADD)
+            && tfPlanSummaryVars.containsKey(TF_PLAN_RESOURCES_CHANGE)
+            && tfPlanSummaryVars.containsKey(TF_PLAN_RESOURCES_DESTROY)) {
+          tfPlanParamBuilder.add(Integer.parseInt(String.valueOf(tfPlanSummaryVars.get(TF_PLAN_RESOURCES_ADD))))
+              .change(Integer.parseInt(String.valueOf(tfPlanSummaryVars.get(TF_PLAN_RESOURCES_CHANGE))))
+              .destroy(Integer.parseInt(String.valueOf(tfPlanSummaryVars.get(TF_PLAN_RESOURCES_DESTROY))));
+        }
+      }
+    }
+  }
+
+  private void saveTerraformPlanSummary(
+      ExecutionContext context, TerraformCommand terraformCommand, TerraformPlanParamBuilder tfPlanParamBuilder) {
+    if (featureFlagService.isEnabled(ANALYSE_TF_PLAN_SUMMARY, context.getAccountId())) {
+      Scope scope =
+          featureFlagService.isEnabled(SAVE_TERRAFORM_APPLY_SWEEPING_OUTPUT_TO_WORKFLOW, context.getAccountId())
+          ? Scope.WORKFLOW
+          : Scope.PIPELINE;
+
+      String variableName = terraformCommand == TerraformCommand.APPLY ? TF_APPLY_VAR_NAME : TF_DESTROY_VAR_NAME;
+
+      SweepingOutputInstance sweepingOutputInstance =
+          sweepingOutputService.find(context.prepareSweepingOutputInquiryBuilder().name(variableName).build());
+      if (sweepingOutputInstance != null) {
+        sweepingOutputService.deleteById(context.getAppId(), sweepingOutputInstance.getUuid());
+      }
       sweepingOutputService.save(
           context.prepareSweepingOutputBuilder(scope).name(variableName).value(tfPlanParamBuilder.build()).build());
     }
@@ -437,6 +486,10 @@ public abstract class TerraformProvisionState extends State {
           .errorMessage(terraformExecutionData.getErrorMessage())
           .build();
     }
+
+    TerraformPlanParamBuilder tfPlanParamBuilder = TerraformPlanParam.builder();
+    populateTerraformPlanParamWithSummaryInfo(tfPlanParamBuilder, terraformExecutionData, context);
+    saveTerraformPlanSummary(context, command(), tfPlanParamBuilder);
 
     saveUserInputs(context, terraformExecutionData, terraformProvisioner);
     TerraformOutputInfoElement outputInfoElement = context.getContextElement(ContextElementType.TERRAFORM_PROVISION);
@@ -811,7 +864,9 @@ public abstract class TerraformProvisionState extends State {
             .isGitHostConnectivityCheck(
                 featureFlagService.isEnabled(GIT_HOST_CONNECTIVITY, executionContext.getApp().getAccountId()))
             .useActivityIdBasedTfBaseDir(
-                featureFlagService.isEnabled(ACTIVITY_ID_BASED_TF_BASE_DIR, context.getAccountId()));
+                featureFlagService.isEnabled(ACTIVITY_ID_BASED_TF_BASE_DIR, context.getAccountId()))
+            .analyseTfPlanSummary(
+                featureFlagService.isEnabled(FeatureName.ANALYSE_TF_PLAN_SUMMARY, context.getAccountId()));
 
     if (featureFlagService.isEnabled(TERRAFORM_AWS_CP_AUTHENTICATION, context.getAccountId())) {
       setAWSAuthParamsIfPresent(context, terraformProvisionParametersBuilder);
@@ -973,6 +1028,18 @@ public abstract class TerraformProvisionState extends State {
           encryptedBackendConfigs = extractEncryptedData(context, fileMetadata, ENCRYPTED_BACKEND_CONFIGS_KEY);
 
           environmentVars = extractData(fileMetadata, ENVIRONMENT_VARS_KEY);
+          if (environmentVars != null
+              && featureFlagService.isNotEnabled(ANALYSE_TF_PLAN_SUMMARY, context.getAccountId())) {
+            if (environmentVars.containsKey(TF_PLAN_RESOURCES_ADD)) {
+              environmentVars.remove(TF_PLAN_RESOURCES_ADD);
+            }
+            if (environmentVars.containsKey(TF_PLAN_RESOURCES_CHANGE)) {
+              environmentVars.remove(TF_PLAN_RESOURCES_CHANGE);
+            }
+            if (environmentVars.containsKey(TF_PLAN_RESOURCES_DESTROY)) {
+              environmentVars.remove(TF_PLAN_RESOURCES_DESTROY);
+            }
+          }
           encryptedEnvironmentVars = extractEncryptedData(context, fileMetadata, ENCRYPTED_ENVIRONMENT_VARS_KEY);
 
           List<String> targets = (List<String>) fileMetadata.getMetadata().get(TARGETS_KEY);
@@ -1059,7 +1126,9 @@ public abstract class TerraformProvisionState extends State {
             .isGitHostConnectivityCheck(
                 featureFlagService.isEnabled(GIT_HOST_CONNECTIVITY, executionContext.getApp().getAccountId()))
             .useActivityIdBasedTfBaseDir(
-                featureFlagService.isEnabled(ACTIVITY_ID_BASED_TF_BASE_DIR, context.getAccountId()));
+                featureFlagService.isEnabled(ACTIVITY_ID_BASED_TF_BASE_DIR, context.getAccountId()))
+            .analyseTfPlanSummary(
+                featureFlagService.isEnabled(FeatureName.ANALYSE_TF_PLAN_SUMMARY, context.getAccountId()));
 
     if (featureFlagService.isEnabled(TERRAFORM_AWS_CP_AUTHENTICATION, context.getAccountId())) {
       setAWSAuthParamsIfPresent(context, terraformProvisionParametersBuilder);

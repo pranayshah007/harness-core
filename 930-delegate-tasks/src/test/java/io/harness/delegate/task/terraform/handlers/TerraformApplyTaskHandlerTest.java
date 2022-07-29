@@ -53,6 +53,7 @@ import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.SecretDecryptionService;
+import io.harness.terraform.TerraformStepResponse;
 
 import com.google.inject.Inject;
 import java.io.File;
@@ -111,7 +112,10 @@ public class TerraformApplyTaskHandlerTest extends CategoryTest {
     FileUtils.touch(outputFile);
 
     when(terraformBaseHelper.executeTerraformApplyStep(any()))
-        .thenReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build());
+        .thenReturn(
+            TerraformStepResponse.builder()
+                .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+                .build());
     TerraformTaskNGResponse response = terraformApplyTaskHandler.executeTaskInternal(
         getTerraformTaskParameters(), "delegateId", "taskId", logCallback);
     assertThat(response).isNotNull();
@@ -133,7 +137,10 @@ public class TerraformApplyTaskHandlerTest extends CategoryTest {
     FileUtils.touch(outputFile);
     doNothing().when(terraformBaseHelper).addVarFilesCommitIdsToMap(any(), any(), any());
     when(terraformBaseHelper.executeTerraformApplyStep(any()))
-        .thenReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build());
+        .thenReturn(
+            TerraformStepResponse.builder()
+                .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+                .build());
     TerraformTaskNGResponse response = terraformApplyTaskHandler.executeTaskInternal(
         getTerraformTaskParametersWithArtifactoryConfig(), "delegateId", "taskId", logCallback);
     assertThat(response).isNotNull();

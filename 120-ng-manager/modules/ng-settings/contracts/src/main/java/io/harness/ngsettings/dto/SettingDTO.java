@@ -24,6 +24,7 @@ import static io.harness.ngsettings.SettingConstants.VALUE_TYPE;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
+import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ngsettings.SettingCategory;
 import io.harness.ngsettings.SettingSource;
 import io.harness.ngsettings.SettingValueType;
@@ -39,7 +40,7 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.PL)
 @Data
 @Builder
-public class SettingDTO {
+public class SettingDTO implements YamlDTO {
   @Schema(description = IDENTIFIER) @NotNull @NotBlank @EntityIdentifier String identifier;
   @Schema(description = NAME) @NotNull @NotBlank @EntityIdentifier String name;
   @Schema(description = ORG_PARAM_MESSAGE) String orgIdentifier;

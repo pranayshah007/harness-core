@@ -66,4 +66,8 @@ public final class TerraformConstants {
 
   public static final String COMMAND_UNIT = "Execute Terraform";
   public static final String DEFAULT_TIMEOUT = "10m";
+
+  public static final String TF_PLAN_RESOURCES_ADD = "TF_PLAN_RESOURCES_ADD";
+  public static final String TF_PLAN_RESOURCES_CHANGE = "TF_PLAN_RESOURCES_CHANGE";
+  public static final String TF_PLAN_RESOURCES_DESTROY = "TF_PLAN_RESOURCES_DESTROY";
 }

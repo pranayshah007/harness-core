@@ -20,7 +20,7 @@ import java.util.List;
 public class CDDashboardServiceHelper {
   public static List<String> failedStatusList =
       Arrays.asList(ExecutionStatus.FAILED.name(), ExecutionStatus.ABORTED.name(), ExecutionStatus.EXPIRED.name(),
-          ExecutionStatus.IGNOREFAILED.name(), ExecutionStatus.ERRORED.name());
+          ExecutionStatus.IGNOREFAILED.name(), ExecutionStatus.ERRORED.name(), ExecutionStatus.APPROVALREJECTED.name());
 
   public static List<String> getSuccessFailedStatusList() {
     List<String> successFailedList = new ArrayList<>(failedStatusList);

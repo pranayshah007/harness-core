@@ -7,9 +7,9 @@
 
 package io.harness.ccm.audittrails.events;
 
-import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_REPORT;
+import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_FOLDER;
 
-import io.harness.ccm.views.entities.CEReportSchedule;
+import io.harness.ccm.views.entities.CEViewFolder;
 import io.harness.event.Event;
 import io.harness.ng.core.AccountScope;
 import io.harness.ng.core.Resource;
@@ -24,14 +24,13 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public abstract class ReportEvent implements Event {
-  private CEReportSchedule reportDTO;
+public abstract class PerspectiveFolderEvent implements Event {
+  private CEViewFolder perspectiveFolderDTO;
   private String accountIdentifier;
-  public static final String RELATED_PERSPECTIVE_ID = "RelatedPerspectiveId";
 
-  public ReportEvent(String accountIdentifier, CEReportSchedule reportDTO) {
+  public PerspectiveFolderEvent(String accountIdentifier, CEViewFolder perspectiveFolderDTO) {
     this.accountIdentifier = accountIdentifier;
-    this.reportDTO = reportDTO;
+    this.perspectiveFolderDTO = perspectiveFolderDTO;
   }
 
   @Override
@@ -44,10 +43,11 @@ public abstract class ReportEvent implements Event {
   @JsonIgnore
   public Resource getResource() {
     Map<String, String> labels = new HashMap<>();
-    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, reportDTO.getName());
-    if (reportDTO.getViewsId().length > 0) {
-      labels.put(RELATED_PERSPECTIVE_ID, reportDTO.getViewsId()[0]);
-    }
-    return Resource.builder().identifier(reportDTO.getUuid()).type(PERSPECTIVE_REPORT).labels(labels).build();
+    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, perspectiveFolderDTO.getName());
+    return Resource.builder()
+        .identifier(perspectiveFolderDTO.getUuid())
+        .type(PERSPECTIVE_FOLDER)
+        .labels(labels)
+        .build();
   }
 }

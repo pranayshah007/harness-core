@@ -97,6 +97,7 @@ public class SettingsMapper {
         .valueType(settingConfiguration.getValueType())
         .defaultValue(settingConfiguration.getDefaultValue())
         .isSettingEditable(isSettingEditable)
+        .settingSource(SettingUtils.getSettingSource(setting))
         .build();
   }
 

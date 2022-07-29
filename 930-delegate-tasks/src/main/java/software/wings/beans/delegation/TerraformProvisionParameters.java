@@ -109,6 +109,8 @@ public class TerraformProvisionParameters implements TaskParameters, ActivityAcc
   private final String awsRegion;
   private List<EncryptedDataDetail> awsConfigEncryptionDetails;
 
+  private final boolean analyseTfPlanSummary; // FF: ANALYSE_TF_PLAN_SUMMARY
+
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilities = ProcessExecutionCapabilityHelper.generateExecutionCapabilitiesForTerraform(
