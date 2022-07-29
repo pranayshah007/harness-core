@@ -40,6 +40,7 @@ public class VMPricingServiceImplTest extends CategoryTest {
   @InjectMocks private VMPricingServiceImpl vmPricingService;
   @Mock private CloudInfoPricingClient banzaiPricingClient;
   private static final String REGION = "us-east-1";
+  private static final String INSTANCE_CATEGORY = "ON_DEMAND";
   private static final String COMPUTE_SERVICE = "compute";
   private static final String DEFAULT_INSTANCE_FAMILY = "c4.8xlarge";
   private static final double DEFAULT_INSTANCE_CPU = 36;
@@ -138,10 +139,20 @@ public class VMPricingServiceImplTest extends CategoryTest {
   @Owner(developers = HITESH)
   @Category(UnitTests.class)
   public void testGetFargatePricingInfo() {
-    EcsFargatePricingInfo fargatePricingInfo = vmPricingService.getFargatePricingInfo(REGION);
+    EcsFargatePricingInfo fargatePricingInfo = vmPricingService.getFargatePricingInfo(INSTANCE_CATEGORY, REGION);
     assertThat(fargatePricingInfo).isNotNull();
     assertThat(fargatePricingInfo.getCpuPrice()).isGreaterThan(0d);
     assertThat(fargatePricingInfo.getMemoryPrice()).isGreaterThan(0d);
+  }
+
+  @Test
+  @Owner(developers = HITESH)
+  @Category(UnitTests.class)
+  public void testGetFargateSpotPricingInfo() {
+    EcsFargatePricingInfo fargatePricingInfo = vmPricingService.getFargatePricingInfo("SPOT", REGION);
+    assertThat(fargatePricingInfo).isNotNull();
+    assertThat(fargatePricingInfo.getCpuPrice()).isEqualTo(0.01334053d);
+    assertThat(fargatePricingInfo.getMemoryPrice()).isEqualTo(0.00146489d);
   }
 
   @Test

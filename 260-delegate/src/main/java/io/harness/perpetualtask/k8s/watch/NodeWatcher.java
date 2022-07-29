@@ -20,6 +20,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.event.client.EventPublisher;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.perpetualtask.k8s.informer.ClusterDetails;
+import io.harness.perpetualtask.k8s.utils.K8sWatcherHelper;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -29,11 +30,12 @@ import io.kubernetes.client.informer.EventType;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.openapi.ApiClient;
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1NodeList;
 import io.kubernetes.client.util.CallGeneratorParams;
+import java.time.Instant;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import lombok.extern.slf4j.Slf4j;
@@ -81,11 +83,18 @@ public class NodeWatcher implements ResourceEventHandler<V1Node> {
         .sharedIndexInformerFor(
             (CallGeneratorParams callGeneratorParams)
                 -> {
+              log.info("Node watcher :: Resource version: {}, timeoutSeconds: {}, watch: {}",
+                  callGeneratorParams.resourceVersion, callGeneratorParams.timeoutSeconds, callGeneratorParams.watch);
+              if (!"0".equals(callGeneratorParams.resourceVersion)
+                  && Objects.nonNull(callGeneratorParams.timeoutSeconds)) {
+                K8sWatcherHelper.updateLastSeen(
+                    String.format(K8sWatcherHelper.NODE_WATCHER_PREFIX, clusterId), Instant.now());
+              }
               try {
                 return coreV1Api.listNodeCall(null, null, null, null, null, null, callGeneratorParams.resourceVersion,
                     null, callGeneratorParams.timeoutSeconds, callGeneratorParams.watch, null);
-              } catch (ApiException e) {
-                log.error("Unknown exception occurred", e);
+              } catch (Exception e) {
+                log.error("Unknown exception occurred for listNodeCall", e);
                 throw e;
               }
             },

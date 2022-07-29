@@ -28,6 +28,7 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.perpetualtask.k8s.informer.ClusterDetails;
 import io.harness.perpetualtask.k8s.informer.SharedInformerFactoryFactory;
 import io.harness.perpetualtask.k8s.utils.K8sClusterHelper;
+import io.harness.perpetualtask.k8s.utils.K8sWatcherHelper;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 
@@ -43,16 +44,19 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.JSON;
 import io.kubernetes.client.openapi.models.V1NamespaceBuilder;
 import io.kubernetes.client.util.ClientBuilder;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
 
 @Slf4j
 public class K8sWatchServiceDelegateTest extends DelegateTestBase {
-  private static final String CLUSTER_ID = "cluster-id";
   private static final String KUBE_UID = "ed044e6a-8b7f-456c-b035-f05e9ce56a60";
   private K8sWatchServiceDelegate k8sWatchServiceDelegate;
   private WatcherFactory watcherFactory;
@@ -101,7 +105,8 @@ public class K8sWatchServiceDelegateTest extends DelegateTestBase {
   @Test
   @Owner(developers = AVMOHAN)
   @Category(UnitTests.class)
-  public void shouldCreateAllWatchersAndFetchers() throws Exception {
+  public void shouldCreateAllWatchersAndFetchers() {
+    String clusterId = UUID.randomUUID().toString();
     String cloudProviderId = UUID.randomUUID().toString();
 
     ByteString k8sClusterConfig = ByteString.copyFrom(kryoSerializer.asBytes(
@@ -110,7 +115,7 @@ public class K8sWatchServiceDelegateTest extends DelegateTestBase {
     K8sWatchTaskParams k8sWatchTaskParams = K8sWatchTaskParams.newBuilder()
                                                 .setK8SClusterConfig(k8sClusterConfig)
                                                 .setCloudProviderId(cloudProviderId)
-                                                .setClusterId(CLUSTER_ID)
+                                                .setClusterId(clusterId)
                                                 .build();
     String watchId = k8sWatchServiceDelegate.create(k8sWatchTaskParams, KUBERNETES_CONFIG);
 
@@ -129,43 +134,55 @@ public class K8sWatchServiceDelegateTest extends DelegateTestBase {
   @Test
   @Owner(developers = AVMOHAN)
   @Category(UnitTests.class)
-  public void shouldCreateClusterEventWatch() throws Exception {
+  public void shouldCreateClusterEventWatch() {
+    String clusterId = UUID.randomUUID().toString();
     String cloudProviderId = UUID.randomUUID().toString();
     ByteString k8sClusterConfig = ByteString.copyFrom(kryoSerializer.asBytes(
         K8sClusterConfig.builder().clusterName("test-cluster").namespace("namespace").cloudProvider(null).build()));
     K8sWatchTaskParams k8sWatchTaskParams = K8sWatchTaskParams.newBuilder()
                                                 .setK8SClusterConfig(k8sClusterConfig)
                                                 .setCloudProviderId(cloudProviderId)
-                                                .setClusterId(CLUSTER_ID)
+                                                .setClusterId(clusterId)
                                                 .build();
     String watchId = k8sWatchServiceDelegate.create(k8sWatchTaskParams, KUBERNETES_CONFIG);
     assertThat(watchId).isNotNull();
     assertThat(k8sWatchServiceDelegate.watchIds()).contains(watchId);
-    assertThat(K8sClusterHelper.isSeen(CLUSTER_ID, KUBE_UID)).isFalse();
+    assertThat(K8sClusterHelper.isSeen(clusterId, KUBE_UID)).isFalse();
   }
 
   @Test
   @Owner(developers = AVMOHAN)
   @Category(UnitTests.class)
-  public void shouldNotCreateDuplicateWatch() throws Exception {
+  public void shouldNotCreateDuplicateWatch() {
+    String clusterId = UUID.randomUUID().toString();
     String cloudProviderId = UUID.randomUUID().toString();
     ByteString k8sClusterConfig = ByteString.copyFrom(kryoSerializer.asBytes(
         K8sClusterConfig.builder().clusterName("test-cluster").namespace("namespace").cloudProvider(null).build()));
     K8sWatchTaskParams k8sWatchTaskParams = K8sWatchTaskParams.newBuilder()
                                                 .setK8SClusterConfig(k8sClusterConfig)
                                                 .setCloudProviderId(cloudProviderId)
-                                                .setClusterId(CLUSTER_ID)
+                                                .setClusterId(clusterId)
                                                 .build();
     String watch1 = k8sWatchServiceDelegate.create(k8sWatchTaskParams, KUBERNETES_CONFIG);
-    String watch2 = k8sWatchServiceDelegate.create(k8sWatchTaskParams, KUBERNETES_CONFIG);
+    String watch2;
+    try (MockedStatic<K8sWatcherHelper> k8sWatcherHelperMock = Mockito.mockStatic(K8sWatcherHelper.class)) {
+      k8sWatcherHelperMock
+          .when(()
+                    -> K8sWatcherHelper.updateLastSeen(
+                        String.format(K8sWatcherHelper.POD_WATCHER_PREFIX, k8sWatchTaskParams.getClusterId()),
+                        Instant.now()))
+          .thenAnswer((Answer<?>) invocation -> null);
+      watch2 = k8sWatchServiceDelegate.create(k8sWatchTaskParams, KUBERNETES_CONFIG);
+    }
     assertThat(watch2).isEqualTo(watch1);
-    verify(watcherFactory, times(1)).createPodWatcher(any(ApiClient.class), any(), any(), any(), any(), any());
+    verify(watcherFactory).createPodWatcher(any(ApiClient.class), any(), any(), any(), any(), any());
   }
 
   @Test
   @Owner(developers = AVMOHAN)
   @Category(UnitTests.class)
-  public void shouldCreateMultipleWatchesIfNotDuplicate() throws Exception {
+  public void shouldCreateMultipleWatchesIfNotDuplicate() {
+    String clusterId = UUID.randomUUID().toString();
     String cloudProviderId1 = UUID.randomUUID().toString();
     ByteString k8sClusterConfig1 = ByteString.copyFrom(kryoSerializer.asBytes(
         K8sClusterConfig.builder().clusterName("test-cluster1").namespace("namespace1").cloudProvider(null).build()));
@@ -173,7 +190,7 @@ public class K8sWatchServiceDelegateTest extends DelegateTestBase {
                                                  .setClusterId("clusterId1")
                                                  .setK8SClusterConfig(k8sClusterConfig1)
                                                  .setCloudProviderId(cloudProviderId1)
-                                                 .setClusterId(CLUSTER_ID)
+                                                 .setClusterId(clusterId)
                                                  .build();
     String cloudProviderId2 = UUID.randomUUID().toString();
     ByteString k8sClusterConfig2 = ByteString.copyFrom(kryoSerializer.asBytes(
@@ -194,13 +211,14 @@ public class K8sWatchServiceDelegateTest extends DelegateTestBase {
   @Owner(developers = AVMOHAN)
   @Category(UnitTests.class)
   public void shouldDeletePodWatch() throws Exception {
+    String clusterId = UUID.randomUUID().toString();
     String cloudProviderId = UUID.randomUUID().toString();
     ByteString k8sClusterConfig = ByteString.copyFrom(kryoSerializer.asBytes(
         K8sClusterConfig.builder().clusterName("test-cluster").namespace("namespace").cloudProvider(null).build()));
     K8sWatchTaskParams k8sWatchTaskParams = K8sWatchTaskParams.newBuilder()
                                                 .setK8SClusterConfig(k8sClusterConfig)
                                                 .setCloudProviderId(cloudProviderId)
-                                                .setClusterId(CLUSTER_ID)
+                                                .setClusterId(clusterId)
                                                 .build();
     String watchId = k8sWatchServiceDelegate.create(k8sWatchTaskParams, KUBERNETES_CONFIG);
     assertThat(k8sWatchServiceDelegate.watchIds()).contains(watchId);
@@ -212,13 +230,14 @@ public class K8sWatchServiceDelegateTest extends DelegateTestBase {
   @Owner(developers = AVMOHAN)
   @Category(UnitTests.class)
   public void shouldDeleteNodeWatch() throws Exception {
+    String clusterId = UUID.randomUUID().toString();
     String cloudProviderId = UUID.randomUUID().toString();
     ByteString k8sClusterConfig = ByteString.copyFrom(kryoSerializer.asBytes(
         K8sClusterConfig.builder().clusterName("test-cluster").namespace("namespace").cloudProvider(null).build()));
     K8sWatchTaskParams k8sWatchTaskParams = K8sWatchTaskParams.newBuilder()
                                                 .setK8SClusterConfig(k8sClusterConfig)
                                                 .setCloudProviderId(cloudProviderId)
-                                                .setClusterId(CLUSTER_ID)
+                                                .setClusterId(clusterId)
                                                 .build();
     String watchId = k8sWatchServiceDelegate.create(k8sWatchTaskParams, KUBERNETES_CONFIG);
     assertThat(k8sWatchServiceDelegate.watchIds()).contains(watchId);
