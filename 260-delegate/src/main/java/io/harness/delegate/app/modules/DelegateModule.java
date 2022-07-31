@@ -28,8 +28,6 @@ import io.harness.aws.AWSCloudformationClient;
 import io.harness.aws.AWSCloudformationClientImpl;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
-import io.harness.aws.v2.ecs.AwsApiV2HelperService;
-import io.harness.aws.v2.ecs.AwsApiV2HelperServiceImpl;
 import io.harness.aws.v2.ecs.EcsV2Client;
 import io.harness.aws.v2.ecs.EcsV2ClientImpl;
 import io.harness.awscli.AwsCliClient;
@@ -1764,7 +1762,6 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.ECS_COMMAND_TASK_NG).toInstance(EcsCommandTaskNG.class);
 
     bind(EcsV2Client.class).to(EcsV2ClientImpl.class);
-    bind(AwsApiV2HelperService.class).to(AwsApiV2HelperServiceImpl.class);
   }
 
   private void registerSecretManagementBindings() {

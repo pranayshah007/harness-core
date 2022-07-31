@@ -18,6 +18,10 @@ import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.CreateServiceResponse;
 import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest;
 import software.amazon.awssdk.services.ecs.model.DescribeServicesResponse;
+import software.amazon.awssdk.services.ecs.model.DescribeTasksRequest;
+import software.amazon.awssdk.services.ecs.model.DescribeTasksResponse;
+import software.amazon.awssdk.services.ecs.model.ListTasksRequest;
+import software.amazon.awssdk.services.ecs.model.ListTasksResponse;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionRequest;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionResponse;
 import software.amazon.awssdk.services.ecs.model.Service;
@@ -25,6 +29,7 @@ import software.amazon.awssdk.services.ecs.model.TaskDefinition;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceResponse;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface EcsV2Client {
@@ -63,7 +68,9 @@ public interface EcsV2Client {
 
     TaskDefinition getTaskDefinitionForService(AwsInternalConfig awsConfig, Service service, String region);
 
+    ListTasksResponse listTaskArns(AwsInternalConfig awsConfig, String clusterName, String serviceName, String region);
 
+    DescribeTasksResponse getTasks(AwsInternalConfig awsConfig, String clusterName, List<String> taskArns,  String region);
 
 
 }

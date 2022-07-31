@@ -1,5 +1,15 @@
 package io.harness.aws.v2.ecs;
+import com.google.inject.Singleton;
+import io.harness.annotations.dev.OwnedBy;
+import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
+import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
+@OwnedBy(CDP)
+@Singleton
+@Slf4j
 public class EcsMapper {
     public UpdateServiceRequest createServiceRequestToUpdateServiceRequest(CreateServiceRequest createServiceRequest) {
         return UpdateServiceRequest.builder()

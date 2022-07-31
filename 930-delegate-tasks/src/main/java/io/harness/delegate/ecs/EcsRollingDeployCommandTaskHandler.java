@@ -109,6 +109,7 @@ public class EcsRollingDeployCommandTaskHandler extends EcsCommandTaskNGHandler 
 
         deployLogCallback.saveExecutionLog(format("Updated Service %s with Arn %s %n", updateServiceRequest.service(), updateServiceResponse.service().serviceArn()), LogLevel.INFO);
       }
+
       deployLogCallback.saveExecutionLog(color(format("%n Deployment Successful."), LogColor.Green, LogWeight.Bold),
               LogLevel.INFO, CommandExecutionStatus.SUCCESS);
       return EcsRollingDeployResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();

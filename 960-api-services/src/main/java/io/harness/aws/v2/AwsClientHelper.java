@@ -1,10 +1,9 @@
-package io.harness.aws.v2.ecs;
+package io.harness.aws.v2;
 
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
-import io.harness.aws.v2.ecs.AwsApiV2HelperService;
 import io.harness.data.structure.UUIDGenerator;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -13,9 +12,9 @@ import software.amazon.awssdk.auth.credentials.ContainerCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
-//import software.amazon.awssdk.regions.Region;
 
 import com.google.inject.Singleton;
+import software.amazon.awssdk.core.SdkClient;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.retry.RetryPolicy;
 import software.amazon.awssdk.core.retry.backoff.EqualJitterBackoffStrategy;
@@ -40,9 +39,20 @@ import static software.wings.service.impl.aws.model.AwsConstants.DEFAULT_BACKOFF
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
-public class AwsApiV2HelperServiceImpl implements AwsApiV2HelperService {
-    @Override
-    public AwsCredentialsProvider getAwsCredentialsProvider(AwsInternalConfig awsConfig) {
+public abstract class AwsClientHelper {
+
+     public abstract SdkClient getClient(AwsInternalConfig awsConfig, String region);
+
+     public abstract String client();
+
+     public void logCall(String client, String method) {
+         log.info("AWS Call: client: {}, method: {}", client, method);
+     }
+
+     public void handleException(Exception ex)  {
+         //todo: exception handling
+     }
+     public AwsCredentialsProvider getAwsCredentialsProvider(AwsInternalConfig awsConfig) {
         AwsCredentialsProvider credentialsProvider;
         if (awsConfig.isUseEc2IamCredentials()) {
             log.info("Instantiating EC2ContainerCredentialsProviderWrapper");
@@ -60,7 +70,7 @@ public class AwsApiV2HelperServiceImpl implements AwsApiV2HelperService {
         return credentialsProvider;
     }
 
-    @Override
+
     public ClientOverrideConfiguration getClientOverrideConfiguration(AwsInternalConfig awsConfig) {
         AmazonClientSDKDefaultBackoffStrategy defaultBackoffStrategy = awsConfig.getAmazonClientSDKDefaultBackoffStrategy();
         RetryPolicy retryPolicy;
