@@ -14,8 +14,9 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMap
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveListParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
-import static io.harness.ci.commonconstants.CIExecutionConstants.APPLICATION_ID;
-import static io.harness.ci.commonconstants.CIExecutionConstants.APP_SECRET;
+import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_ID;
+import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_SECRET;
+import static io.harness.ci.commonconstants.CIExecutionConstants.CERT_PATH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ACCESS_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ARTIFACT_FILE_VALUE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ASSUME_ROLE;
@@ -158,9 +159,10 @@ public class PluginSettingUtils {
         //        map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_EXTERNAL_ID, PLUGIN_EXTERNAL_ID);
         return map;
       case ACR:
-        map.put(EnvVariableEnum.AZURE_APP_SECRET, APP_SECRET);
-        map.put(EnvVariableEnum.AZURE_APPLICATION_ID, APPLICATION_ID);
+        map.put(EnvVariableEnum.AZURE_APP_SECRET, CLIENT_SECRET);
+        map.put(EnvVariableEnum.AZURE_APP_ID, CLIENT_ID);
         map.put(EnvVariableEnum.AZURE_TENANT_ID, TENANT_ID);
+        map.put(EnvVariableEnum.AZURE_CERT_PATH, CERT_PATH);
         return map;
       case GCR:
       case RESTORE_CACHE_GCS:
@@ -255,12 +257,11 @@ public class PluginSettingUtils {
   private static Map<String, String> getACRStepInfoEnvVariables(
       ACRStepInfo stepInfo, String identifier, Type infraType) {
     Map<String, String> map = new HashMap<>();
-    String repository =
+    String pluginRepo =
         resolveStringParameter(REPOSITORY, "BuildAndPushACR", identifier, stepInfo.getRepository(), true);
-    StringUtils.substringBefore(repository, "/");
-    setMandatoryEnvironmentVariable(map, PLUGIN_REGISTRY, "https://" + StringUtils.substringBefore(repository, "/"));
-
-    setMandatoryEnvironmentVariable(map, PLUGIN_REPO, repository);
+    String pluginRegistry = StringUtils.substringBefore(pluginRepo, "/");
+    setMandatoryEnvironmentVariable(map, PLUGIN_REGISTRY, pluginRegistry);
+    setMandatoryEnvironmentVariable(map, PLUGIN_REPO, pluginRepo);
 
     setMandatoryEnvironmentVariable(map, PLUGIN_TAGS,
         listToStringSlice(resolveListParameter("tags", "BuildAndPushECR", identifier, stepInfo.getTags(), true)));

@@ -27,7 +27,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.SecretSpecBuilder;
 import io.harness.data.encoding.EncodingUtils;
-import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.k8s.CIK8InitializeTaskParams;
 import io.harness.delegate.beans.ci.k8s.CiK8sTaskResponse;
@@ -43,7 +42,6 @@ import io.harness.delegate.beans.ci.pod.SecretParams;
 import io.harness.delegate.beans.ci.pod.SecretVarParams;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.citasks.CIInitializeTaskHandler;
 import io.harness.delegate.task.citasks.cik8handler.helper.DelegateServiceTokenHelper;
@@ -55,8 +53,6 @@ import io.harness.k8s.apiclient.ApiClientFactory;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.CommandExecutionStatus;
-
-import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableMap;
@@ -95,7 +91,6 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.FailsafeException;
-import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
@@ -109,8 +104,6 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
   @Inject private SecretVolumesHelper secretVolumesHelper;
   @Inject private DelegateServiceTokenHelper delegateServiceTokenHelper;
   @Inject private ApiClientFactory apiClientFactory;
-
-  @Inject AzureAsyncTaskHelper azureAsyncTaskHelper;
 
   @NotNull private Type type = CIInitializeTaskHandler.Type.GCP_K8;
 
@@ -470,29 +463,12 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
   private Map<String, String> getAndUpdateConnectorSecretData(
       Map<String, ConnectorDetails> pluginConnectors, CIK8ContainerParams containerParams, String secretName) {
     Map<String, SecretParams> secretData = secretSpecBuilder.decryptConnectorSecretVariables(pluginConnectors);
-    updateEnvSecretForAzure(secretData, pluginConnectors, containerParams.getEnvVars());
     if (isNotEmpty(secretData)) {
       updateContainer(containerParams, secretName, secretData);
       return secretData.values().stream().collect(Collectors.toMap(SecretParams::getSecretKey, SecretParams::getValue));
     } else {
       return Collections.emptyMap();
     }
-  }
-
-  private void updateEnvSecretForAzure(Map<String, SecretParams> secretData,
-      Map<String, ConnectorDetails> pluginConnectors, Map<String, String> envVars) {
-    for (Map.Entry<String, ConnectorDetails> connectorDetailsEntry : pluginConnectors.entrySet()) {
-      ConnectorDetails connectorDetails = connectorDetailsEntry.getValue();
-      if (connectorDetails.getConnectorType() == ConnectorType.AZURE) {
-        String pluginRepo = StringUtils.substringBefore(envVars.get("PLUGIN_REPO").replace("https://", ""), "/");
-        AzureAcrTokenTaskResponse acrLoginToken = azureAsyncTaskHelper.getAcrLoginToken(pluginRepo,
-            connectorDetails.getEncryptedDataDetails(), (AzureConnectorDTO) connectorDetails.getConnectorConfig());
-        Map<String, SecretParams> azureSecret =
-            secretSpecBuilder.getAzureSecretVariablesAsDockerVariable(connectorDetails, acrLoginToken.getToken());
-        secretData.putAll(azureSecret);
-      }
-    }
-    log.info("added secret for azure connector");
   }
 
   private Map<String, String> getAndUpdateCustomVariableSecretData(

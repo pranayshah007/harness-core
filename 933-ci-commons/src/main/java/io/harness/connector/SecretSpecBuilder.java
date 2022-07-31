@@ -638,9 +638,4 @@ public class SecretSpecBuilder {
                                              .build()));
     return secretParamsMap;
   }
-
-  public Map<String, SecretParams> getAzureSecretVariablesAsDockerVariable(
-      ConnectorDetails connectorDetails, String token) {
-    return connectorEnvVariablesHelper.getAzureSecretVariablesAsDockerVariable(connectorDetails, token);
-  }
 }

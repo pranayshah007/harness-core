@@ -20,6 +20,7 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsern
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureClientKeyCertDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
@@ -45,6 +46,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.ci.pod.SecretParams.Type.FILE;
 import static io.harness.delegate.beans.ci.pod.SecretParams.Type.TEXT;
 import static io.harness.delegate.beans.connector.azureconnector.AzureCredentialType.MANUAL_CREDENTIALS;
+import static io.harness.delegate.beans.connector.azureconnector.AzureSecretType.KEY_CERT;
+import static io.harness.delegate.beans.connector.azureconnector.AzureSecretType.SECRET_KEY;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -57,9 +60,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 @Slf4j
 @Singleton
 public class ConnectorEnvVariablesHelper {
-  public static final String PLUGIN_USERNAME = "PLUGIN_USERNAME";
-  public static final String PLUGIN_PASSWORD = "PLUGIN_PASSWORD";
-  public static final String AZURE_DEFAULT_USER = "00000000-0000-0000-0000-000000000000";
   @Inject private SecretDecryptor secretDecryptor;
 
   public Map<String, SecretParams> getArtifactorySecretVariables(ConnectorDetails connectorDetails) {
@@ -201,6 +201,42 @@ public class ConnectorEnvVariablesHelper {
     return secretData;
   }
 
+  public Map<String, SecretParams> getAzureSecretVariables(ConnectorDetails connectorDetails) {
+    Map<String, SecretParams> secretData = new HashMap<>();
+    AzureConnectorDTO connectorConfig = (AzureConnectorDTO) connectorDetails.getConnectorConfig();
+    AzureCredentialDTO credentialDTO = connectorConfig.getCredential();
+    if (MANUAL_CREDENTIALS == connectorConfig.getCredential().getAzureCredentialType()) {
+      AzureManualDetailsDTO config = (AzureManualDetailsDTO) credentialDTO.getConfig();
+      String clientIdEnvName = connectorDetails.getEnvToSecretsMap().get(EnvVariableEnum.AZURE_APP_ID);
+      String tenantIdEnvName = connectorDetails.getEnvToSecretsMap().get(EnvVariableEnum.AZURE_TENANT_ID);
+      secretData.put(clientIdEnvName,
+              getVariableSecret(clientIdEnvName + connectorDetails.getIdentifier(), encodeBase64(config.getClientId())));
+      secretData.put(tenantIdEnvName,
+              getVariableSecret(tenantIdEnvName + connectorDetails.getIdentifier(), encodeBase64(config.getTenantId())));
+
+      if(config.getAuthDTO().getAzureSecretType() == SECRET_KEY) {
+        String clientSecretEnvName = connectorDetails.getEnvToSecretsMap().get(EnvVariableEnum.AZURE_APP_SECRET);
+        AzureClientSecretKeyDTO decryptedConfig = (AzureClientSecretKeyDTO) secretDecryptor.decrypt(
+                config.getAuthDTO().getCredentials(), connectorDetails.getEncryptedDataDetails());
+        String clientSecret = String.valueOf(decryptedConfig.getSecretKey().getDecryptedValue());
+        secretData.put(clientSecretEnvName,
+                getVariableSecret(clientSecretEnvName + connectorDetails.getIdentifier(), encodeBase64(clientSecret)));
+      } else if (config.getAuthDTO().getAzureSecretType() == KEY_CERT){
+        String certPathEnvName = connectorDetails.getEnvToSecretsMap().get(EnvVariableEnum.AZURE_CERT_PATH);
+        AzureClientKeyCertDTO decryptedConfig = (AzureClientKeyCertDTO) secretDecryptor.decrypt(
+                config.getAuthDTO().getCredentials(), connectorDetails.getEncryptedDataDetails());
+        String clientSecret = String.valueOf(decryptedConfig.getClientCertRef().getDecryptedValue());
+        secretData.put(certPathEnvName,
+                getVariableSecret(certPathEnvName + connectorDetails.getIdentifier(), encodeBase64(clientSecret)));
+      } else {
+        throw new InvalidArgumentsException(
+                format("Unsupported type for azure manual credentials %s", config.getAuthDTO().getAzureSecretType()),
+                WingsException.USER);
+      }
+    }
+    return secretData;
+  }
+
   public Map<String, SecretParams> getDockerSecretVariables(ConnectorDetails connectorDetails) {
     Map<String, SecretParams> secretData = new HashMap<>();
     DockerConnectorDTO dockerConnectorConfig = (DockerConnectorDTO) connectorDetails.getConnectorConfig();
@@ -241,38 +277,10 @@ public class ConnectorEnvVariablesHelper {
     return secretData;
   }
 
-  public Map<String, SecretParams> getAzureSecretVariablesAsDockerVariable(
-      ConnectorDetails connectorDetails, String token) {
-    Map<String, SecretParams> secretData = new HashMap<>();
-    AzureConnectorDTO dockerConnectorConfig = (AzureConnectorDTO) connectorDetails.getConnectorConfig();
-    String registryEnvVarName = connectorDetails.getEnvToSecretsMap().get(EnvVariableEnum.DOCKER_REGISTRY);
-    secretData.put(PLUGIN_USERNAME,
-        getVariableSecret(PLUGIN_USERNAME + connectorDetails.getIdentifier(), encodeBase64(AZURE_DEFAULT_USER)));
-    secretData.put(
-        PLUGIN_PASSWORD, getVariableSecret(PLUGIN_PASSWORD + connectorDetails.getIdentifier(), encodeBase64(token)));
-    return secretData;
-  }
-
   private SecretParams getVariableSecret(String key, String encodedSecret) {
     return SecretParams.builder().secretKey(key).value(encodedSecret).type(TEXT).build();
   }
   private SecretParams getFileSecret(String key, String encodedSecret) {
     return SecretParams.builder().secretKey(key).value(encodedSecret).type(FILE).build();
-  }
-
-  public Map<String, SecretParams> getAzureSecretVariables(ConnectorDetails connectorDetails) {
-    String azure_token = "AZURE_TOKEN";
-    Map<String, SecretParams> secretData = new HashMap<>();
-    AzureConnectorDTO connectorConfig = (AzureConnectorDTO) connectorDetails.getConnectorConfig();
-    AzureCredentialDTO credentialDTO = connectorConfig.getCredential();
-    if (MANUAL_CREDENTIALS == connectorConfig.getCredential().getAzureCredentialType()) {
-      AzureManualDetailsDTO config = (AzureManualDetailsDTO) credentialDTO.getConfig();
-      AzureClientSecretKeyDTO decryptedConfig = (AzureClientSecretKeyDTO) secretDecryptor.decrypt(
-          config.getAuthDTO().getCredentials(), connectorDetails.getEncryptedDataDetails());
-      String secret = String.valueOf(decryptedConfig.getSecretKey().getDecryptedValue());
-      secretData.put(
-          azure_token, getVariableSecret(azure_token + connectorDetails.getIdentifier(), encodeBase64(secret)));
-    }
-    return secretData;
   }
 }
