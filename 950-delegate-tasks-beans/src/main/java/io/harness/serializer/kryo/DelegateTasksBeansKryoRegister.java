@@ -206,7 +206,10 @@ import io.harness.delegate.beans.connector.servicenow.connection.ServiceNowTestC
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskParams;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskResponse;
 import io.harness.delegate.beans.connector.vaultconnector.VaultValidationParams;
+import io.harness.delegate.beans.ecs.EcsContainer;
 import io.harness.delegate.beans.ecs.EcsDeployResult;
+import io.harness.delegate.beans.ecs.EcsRollingDeployResult;
+import io.harness.delegate.beans.ecs.EcsTask;
 import io.harness.delegate.beans.executioncapability.AlwaysFalseValidationCapability;
 import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
 import io.harness.delegate.beans.executioncapability.AwsRegionCapability;
@@ -1644,5 +1647,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsInfraType.class, 573508);
     kryo.register(EcsDeployResult.class, 573509);
     kryo.register(EcsNGException.class, 573510);
+    kryo.register(EcsRollingDeployResult.class, 573511);
+    kryo.register(EcsTask.class, 573512);
+    kryo.register(EcsContainer.class, 573713);
   }
 }

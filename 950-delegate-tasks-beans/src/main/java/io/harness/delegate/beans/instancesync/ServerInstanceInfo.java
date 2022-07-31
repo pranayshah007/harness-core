@@ -27,7 +27,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
   , @JsonSubTypes.Type(value = NativeHelmServerInstanceInfo.class, name = "NativeHelmServerInstanceInfo"),
       @JsonSubTypes.Type(
           value = ServerlessAwsLambdaServerInstanceInfo.class, name = "ServerlessAwsLambdaServerInstanceInfo"),
-      @JsonSubTypes.Type(value = AzureWebAppServerInstanceInfo.class, name = "AzureWebAppServerInstanceInfo")
+      @JsonSubTypes.Type(value = AzureWebAppServerInstanceInfo.class, name = "AzureWebAppServerInstanceInfo"),
+        @JsonSubTypes.Type(value = EcsServerInstanceInfo.class, name = "EcsServerInstanceInfo")
+
 })
 @OwnedBy(HarnessTeam.DX)
 public abstract class ServerInstanceInfo {}

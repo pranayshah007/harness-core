@@ -58,7 +58,7 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
     @Override
     public CreateServiceResponse createService(AwsInternalConfig awsConfig, CreateServiceRequest createServiceRequest, String region) {
         try(EcsClient ecsClient = (EcsClient)getClient(awsConfig, region)) {
-            super.logCall(client(), EcsV2ClientImpl.class.getEnclosingMethod().getName());
+            super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
             return ecsClient.createService(createServiceRequest);
         }
         catch(Exception exception) {
@@ -70,7 +70,7 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
     @Override
     public UpdateServiceResponse updateService(AwsInternalConfig awsConfig, UpdateServiceRequest updateServiceRequest, String region) {
         try(EcsClient ecsClient = (EcsClient)getClient(awsConfig, region)) {
-            super.logCall(client(), EcsV2ClientImpl.class.getEnclosingMethod().getName());
+            super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
             return ecsClient.updateService(updateServiceRequest);
         }
         catch(Exception exception) {
@@ -82,7 +82,7 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
     @Override
     public RegisterTaskDefinitionResponse createTask(AwsInternalConfig awsConfig, RegisterTaskDefinitionRequest registerTaskDefinitionRequest, String region) {
         try(EcsClient ecsClient = (EcsClient)getClient(awsConfig, region)) {
-            super.logCall(client(), EcsV2ClientImpl.class.getEnclosingMethod().getName());
+            super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
             return ecsClient.registerTaskDefinition(registerTaskDefinitionRequest);
         }
         catch(Exception exception) {
@@ -100,7 +100,7 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
         int maxAttempts = (int) TimeUnit.MINUTES.toSeconds(serviceSteadyStateTimeout) / delayInSeconds;
         try(EcsClient ecsClient = (EcsClient)getClient(awsConfig, region);
             EcsWaiter ecsWaiter = getEcsWaiter(ecsClient, delayInSeconds, maxAttempts)){
-            super.logCall(client(), EcsV2ClientImpl.class.getEnclosingMethod().getName());
+            super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
             return ecsWaiter.waitUntilServicesStable(describeServicesRequest);
         }
         catch(Exception exception) {
@@ -114,7 +114,7 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
                                                                  RegisterScalableTargetRequest registerScalableTargetRequest, String region) {
        try(ApplicationAutoScalingClient applicationAutoScalingClient =
                    getApplicationAutoScalingClient(awsConfig, region)) {
-           super.logCall(client(), EcsV2ClientImpl.class.getEnclosingMethod().getName());
+           super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
            return applicationAutoScalingClient.registerScalableTarget(registerScalableTargetRequest);
        }
        catch(Exception exception) {
@@ -128,7 +128,7 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
                                                                      DeregisterScalableTargetRequest deregisterScalableTargetRequest, String region) {
         try(ApplicationAutoScalingClient applicationAutoScalingClient =
                     getApplicationAutoScalingClient(awsConfig, region)) {
-            super.logCall(client(), EcsV2ClientImpl.class.getEnclosingMethod().getName());
+            super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
             return applicationAutoScalingClient.deregisterScalableTarget(deregisterScalableTargetRequest);
         }
         catch(Exception exception) {
@@ -141,7 +141,7 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
     public PutScalingPolicyResponse attachScalingPolicy(AwsInternalConfig awsConfig, PutScalingPolicyRequest putScalingPolicyRequest, String region) {
         try(ApplicationAutoScalingClient applicationAutoScalingClient =
                     getApplicationAutoScalingClient(awsConfig, region)) {
-            super.logCall(client(), EcsV2ClientImpl.class.getEnclosingMethod().getName());
+            super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
             return applicationAutoScalingClient.putScalingPolicy(putScalingPolicyRequest);
         }
         catch(Exception exception) {
@@ -154,7 +154,7 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
     public DeleteScalingPolicyResponse deleteScalingPolicy(AwsInternalConfig awsConfig, DeleteScalingPolicyRequest deleteScalingPolicyRequest, String region) {
         try(ApplicationAutoScalingClient applicationAutoScalingClient =
                     getApplicationAutoScalingClient(awsConfig, region)) {
-            super.logCall(client(), EcsV2ClientImpl.class.getEnclosingMethod().getName());
+            super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
             return applicationAutoScalingClient.deleteScalingPolicy(deleteScalingPolicyRequest);
         }
         catch(Exception exception) {
@@ -168,7 +168,7 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
                                                                DescribeScalableTargetsRequest describeScalableTargetsRequest, String region) {
         try(ApplicationAutoScalingClient applicationAutoScalingClient =
                     getApplicationAutoScalingClient(awsConfig, region)) {
-            super.logCall(client(), EcsV2ClientImpl.class.getEnclosingMethod().getName());
+            super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
             return applicationAutoScalingClient.describeScalableTargets(describeScalableTargetsRequest);
         }
         catch(Exception exception) {
@@ -182,7 +182,7 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
                                                                DescribeScalingPoliciesRequest describeScalingPoliciesRequest, String region) {
         try(ApplicationAutoScalingClient applicationAutoScalingClient =
                     getApplicationAutoScalingClient(awsConfig, region)) {
-            super.logCall(client(), EcsV2ClientImpl.class.getEnclosingMethod().getName());
+            super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
             return applicationAutoScalingClient.describeScalingPolicies(describeScalingPoliciesRequest);
         }
         catch(Exception exception) {
@@ -198,7 +198,7 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
                 .cluster(clusterName)
                 .build();
         try(EcsClient ecsClient = (EcsClient)getClient(awsConfig, region)) {
-            super.logCall(client(), EcsV2ClientImpl.class.getEnclosingMethod().getName());
+            super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
             List<Service> services =  ecsClient.describeServices(describeServicesRequest).services();
             return (services.isEmpty())? Optional.empty() :  Optional.of(services.get(0));
         }
@@ -214,7 +214,7 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
                 .taskDefinition(service.taskDefinition())
                 .build();
         try(EcsClient ecsClient = (EcsClient)getClient(awsConfig, region)) {
-            super.logCall(client(), EcsV2ClientImpl.class.getEnclosingMethod().getName());
+            super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
             return ecsClient.describeTaskDefinition(describeTaskDefinitionRequest).taskDefinition();
         }
         catch(Exception exception) {
@@ -224,15 +224,19 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
     }
 
     @Override
-    public ListTasksResponse listTaskArns(AwsInternalConfig awsConfig, String clusterName, String serviceName, String region) {
-       ListTasksRequest listTasksRequest = ListTasksRequest.builder()
+    public ListTasksResponse listTaskArns(AwsInternalConfig awsConfig, String clusterName, String serviceName,
+                                          String region, String nextToken) {
+       ListTasksRequest.Builder listTasksRequestBuilder = ListTasksRequest.builder()
                .cluster(clusterName)
-               .serviceName(serviceName).build();
+               .serviceName(serviceName);
+       if(nextToken!=null) {
+           listTasksRequestBuilder.nextToken(nextToken);
+       }
        //todo: other filters
         ListTasksResponse response=null;
         try(EcsClient ecsClient = (EcsClient)getClient(awsConfig, region)) {
-            super.logCall(client(), EcsV2ClientImpl.class.getEnclosingMethod().getName());
-            response = ecsClient.listTasks(listTasksRequest);
+            super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
+            response = ecsClient.listTasks(listTasksRequestBuilder.build());
         }
         catch(Exception exception) {
             super.handleException(exception);
@@ -241,14 +245,15 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
     }
 
     @Override
-    public DescribeTasksResponse getTasks(AwsInternalConfig awsConfig, String clusterName, List<String> taskArns, String region) {
+    public DescribeTasksResponse getTasks(AwsInternalConfig awsConfig, String clusterName, List<String> taskArns,
+                                          String region) {
         DescribeTasksRequest describeTasksRequest = DescribeTasksRequest.builder()
                 .cluster(clusterName)
                 .tasks(taskArns)
                 .build();
         DescribeTasksResponse response=null;
         try(EcsClient ecsClient = (EcsClient)getClient(awsConfig, region)) {
-            super.logCall(client(), EcsV2ClientImpl.class.getEnclosingMethod().getName());
+            super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
             response = ecsClient.describeTasks(describeTasksRequest);
         }
         catch(Exception exception) {

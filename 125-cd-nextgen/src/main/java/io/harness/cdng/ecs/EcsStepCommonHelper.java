@@ -21,6 +21,9 @@ import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.ecs.EcsRollingDeployResult;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.mapper.EcsTaskToServerInstanceInfoMapper;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.ecs.EcsGitFetchFileConfig;
@@ -29,6 +32,7 @@ import io.harness.delegate.task.ecs.request.EcsCommandRequest;
 import io.harness.delegate.task.ecs.request.EcsGitFetchRequest;
 import io.harness.delegate.task.ecs.response.EcsCommandResponse;
 import io.harness.delegate.task.ecs.response.EcsGitFetchResponse;
+import io.harness.delegate.task.ecs.response.EcsRollingDeployResponse;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.exception.ExceptionUtils;
@@ -364,6 +368,16 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
   public static String getErrorMessage(EcsCommandResponse ecsCommandResponse) {
     return ecsCommandResponse.getErrorMessage() == null ? "" : ecsCommandResponse.getErrorMessage();
+  }
+
+  public List<ServerInstanceInfo> getServerInstanceInfos(EcsCommandResponse ecsCommandResponse, String infrastructureKey) {
+    if(ecsCommandResponse instanceof EcsRollingDeployResponse) {
+      EcsRollingDeployResult ecsRollingDeployResult = (EcsRollingDeployResult)
+              ((EcsRollingDeployResponse) ecsCommandResponse).getEcsDeployResult();
+      return EcsTaskToServerInstanceInfoMapper.toServerInstanceInfoList(ecsRollingDeployResult.getEcsTasks(), infrastructureKey,
+              ecsRollingDeployResult.getRegion());
+    }
+    throw new GeneralException("Invalid ecs command response instance");
   }
 
 }

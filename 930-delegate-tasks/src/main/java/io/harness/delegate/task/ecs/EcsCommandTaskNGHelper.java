@@ -3,6 +3,8 @@ package io.harness.delegate.task.ecs;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.v2.ecs.EcsV2Client;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.ecs.EcsMapper;
+import io.harness.delegate.beans.ecs.EcsTask;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -12,6 +14,8 @@ import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.CreateServiceResponse;
 import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest;
 import software.amazon.awssdk.services.ecs.model.DescribeServicesResponse;
+import software.amazon.awssdk.services.ecs.model.DescribeTasksResponse;
+import software.amazon.awssdk.services.ecs.model.ListTasksResponse;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionRequest;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionResponse;
 import software.amazon.awssdk.services.ecs.model.Service;
@@ -21,8 +25,11 @@ import software.amazon.awssdk.services.ecs.model.UpdateServiceResponse;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static java.lang.String.format;
@@ -31,9 +38,9 @@ import static java.lang.String.format;
 @Singleton
 @Slf4j
 public class EcsCommandTaskNGHelper {
-  @Inject
-  EcsV2Client ecsV2Client;
+  @Inject private EcsV2Client ecsV2Client;
   @Inject private AwsNgConfigMapper awsNgConfigMapper;
+  @Inject private EcsMapper ecsMapper;
 
   public RegisterTaskDefinitionResponse createTaskDefinition(RegisterTaskDefinitionRequest registerTaskDefinitionRequest, String region, AwsConnectorDTO awsConnectorDTO) {
     return ecsV2Client.createTask(awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO), registerTaskDefinitionRequest, region);
@@ -90,6 +97,24 @@ public class EcsCommandTaskNGHelper {
     return  describeServicesResponseWaiterResponse;
   }
 
-  public
+  public List<EcsTask> getEcsTasks(AwsConnectorDTO awsConnectorDTO,
+                                   String cluster, String serviceName, String region) {
+    String nextToken = null;
+    List<EcsTask> response = new ArrayList<>();
+    do {
+      ListTasksResponse listTasksResponse = ecsV2Client.listTaskArns(awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO),
+              cluster,serviceName, region, null);
+      nextToken = listTasksResponse.nextToken();
+      DescribeTasksResponse describeTasksResponse = ecsV2Client.getTasks(awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO),
+              cluster, listTasksResponse.taskArns(), region);
+      response.addAll( describeTasksResponse.tasks()
+              .stream()
+              .map(task -> ecsMapper.toEcsTask(task, serviceName))
+              .collect(Collectors.toList()));
+
+    }
+    while (nextToken != null);
+    return response;
+  }
 
 }

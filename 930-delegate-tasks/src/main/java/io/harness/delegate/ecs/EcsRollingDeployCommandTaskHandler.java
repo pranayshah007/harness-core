@@ -6,6 +6,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.ecs.EcsRollingDeployResult;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.EcsNGException;
@@ -90,9 +91,9 @@ public class EcsRollingDeployCommandTaskHandler extends EcsCommandTaskNGHandler 
       // replace cluster and task definition
       CreateServiceRequest createServiceRequest = createServiceRequestBuilder.cluster(ecsInfraConfig.getCluster()).taskDefinition(registerTaskDefinitionResponse.taskDefinition().taskDefinitionArn()).build();
 
+      String serviceName;
       // if service exists create service, otherwise update service
       boolean serviceExists = ecsCommandTaskHelper.serviceExists(createServiceRequest.cluster(), createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
-
       if (!serviceExists) {
         deployLogCallback.saveExecutionLog(format("Creating Service with name %s %n", createServiceRequest.serviceName()), LogLevel.INFO);
         CreateServiceResponse createServiceResponse = ecsCommandTaskHelper.createService(createServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
@@ -100,6 +101,7 @@ public class EcsRollingDeployCommandTaskHandler extends EcsCommandTaskNGHandler 
         ecsCommandTaskHelper.ecsServiceSteadyStateCheck(deployLogCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(), createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), (int)TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis));
 
         deployLogCallback.saveExecutionLog(format("Created Service %s with Arn %s %n", createServiceRequest.serviceName(), createServiceResponse.service().serviceArn()), LogLevel.INFO);
+        serviceName = createServiceRequest.serviceName();
       } else {
         UpdateServiceRequest updateServiceRequest = ecsCommandTaskHelper.convertCreateServiceRequestToUpdateServiceRequest(createServiceRequest);
         deployLogCallback.saveExecutionLog(format("Updating Service with name %s %n", updateServiceRequest.service()), LogLevel.INFO);
@@ -108,11 +110,21 @@ public class EcsRollingDeployCommandTaskHandler extends EcsCommandTaskNGHandler 
         ecsCommandTaskHelper.ecsServiceSteadyStateCheck(deployLogCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(), createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), (int)TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis));
 
         deployLogCallback.saveExecutionLog(format("Updated Service %s with Arn %s %n", updateServiceRequest.service(), updateServiceResponse.service().serviceArn()), LogLevel.INFO);
+        serviceName = updateServiceRequest.service();
       }
-
+      EcsRollingDeployResult ecsRollingDeployResult = EcsRollingDeployResult.builder()
+              .region(ecsInfraConfig.getRegion())
+              .ecsTasks(ecsCommandTaskHelper.getEcsTasks(ecsInfraConfig.getAwsConnectorDTO(), ecsInfraConfig.getCluster(),
+                      serviceName,ecsInfraConfig.getRegion()))
+              .build();
+      EcsRollingDeployResponse ecsRollingDeployResponse =
+              EcsRollingDeployResponse.builder()
+                              .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                              .ecsDeployResult(ecsRollingDeployResult)
+                              .build();
       deployLogCallback.saveExecutionLog(color(format("%n Deployment Successful."), LogColor.Green, LogWeight.Bold),
               LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-      return EcsRollingDeployResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+      return ecsRollingDeployResponse;
 
     } catch (Exception ex) {
       deployLogCallback.saveExecutionLog(color(format("%n Deployment Failed."), LogColor.Red, LogWeight.Bold),

@@ -20,4 +20,6 @@ import java.util.List;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class EcsRollingDeployResult implements EcsDeployResult {
+    private String region;
+    private List<EcsTask> ecsTasks;
 }

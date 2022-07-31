@@ -9,6 +9,7 @@ import io.harness.cdng.ecs.beans.EcsGitFetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.serverless.ServerlessStepCommonHelper;
 import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData;
@@ -57,6 +58,8 @@ public class EcsRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
   @Inject
   private EcsStepCommonHelper ecsStepCommonHelper;
   @Inject private EcsStepHelperImpl ecsStepHelper;
+  @Inject private InstanceInfoService instanceInfoService;
+
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -103,14 +106,10 @@ public class EcsRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
               .build();
     }
 
-//    List<ServerInstanceInfo> functionInstanceInfos = serverlessStepCommonHelper.getFunctionInstanceInfo(
-//            ecsRollingDeployResponse, serverlessAwsLambdaStepHelper, infrastructureOutcome.getInfrastructureKey());
-//    StepResponse.StepOutcome stepOutcome =
-//            instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, functionInstanceInfos);
-    // todo
-    StepResponse.StepOutcome stepOutcome = StepResponse.StepOutcome.builder()
-            .name(OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME)
-            .build();
+    List<ServerInstanceInfo> serverInstanceInfos = ecsStepCommonHelper.getServerInstanceInfos(
+            ecsRollingDeployResponse, infrastructureOutcome.getInfrastructureKey());
+    StepResponse.StepOutcome stepOutcome =
+            instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfos);
     return stepResponseBuilder.status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();
   }
 

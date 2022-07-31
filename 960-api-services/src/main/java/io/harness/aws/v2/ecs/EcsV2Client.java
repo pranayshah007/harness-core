@@ -68,9 +68,10 @@ public interface EcsV2Client {
 
     TaskDefinition getTaskDefinitionForService(AwsInternalConfig awsConfig, Service service, String region);
 
-    ListTasksResponse listTaskArns(AwsInternalConfig awsConfig, String clusterName, String serviceName, String region);
+    ListTasksResponse listTaskArns(AwsInternalConfig awsConfig, String clusterName, String serviceName,
+                                   String region, String nextToken);
 
-    DescribeTasksResponse getTasks(AwsInternalConfig awsConfig, String clusterName, List<String> taskArns,  String region);
+    DescribeTasksResponse getTasks(AwsInternalConfig awsConfig, String clusterName, List<String> taskArns, String region);
 
 
 }

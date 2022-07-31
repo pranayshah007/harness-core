@@ -5,6 +5,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.exception.WingsException;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
@@ -50,7 +51,8 @@ public abstract class AwsClientHelper {
      }
 
      public void handleException(Exception ex)  {
-         //todo: exception handling
+        throw new WingsException(ex);
+        //todo: handle exceptions
      }
      public AwsCredentialsProvider getAwsCredentialsProvider(AwsInternalConfig awsConfig) {
         AwsCredentialsProvider credentialsProvider;
