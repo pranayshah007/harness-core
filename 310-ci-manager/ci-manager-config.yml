@@ -137,7 +137,7 @@ ciExecutionServiceConfig:
         - /kaniko/kaniko-gcr
     # I am working on creating a new tag for acr and will update it once that is created.
     buildAndPushACRConfig:
-      image: plugins/kaniko:1.6.1
+      image: bewithaman/kaniko:latest
       entrypoint:
         - /kaniko/kaniko-docker
     gcsUploadConfig:
@@ -180,6 +180,7 @@ ciExecutionServiceConfig:
       # Use root image for VM git clone
       gitClone: harness/drone-git:1.2.0
       buildAndPushDockerRegistry: plugins/docker:latest
+      buildAndPushACR: plugins/acr:latest
       buildAndPushECR: plugins/ecr:latest
       buildAndPushGCR: plugins/gcr:latest
       gcsUpload: plugins/gcs:1.3.0
