@@ -33,6 +33,8 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.annotations.retry.MethodExecutionHelper;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.annotations.retry.RetryOnExceptionInterceptor;
+import io.harness.artifacts.gar.service.GARApiServiceImpl;
+import io.harness.artifacts.gar.service.GarApiService;
 import io.harness.artifacts.gcr.service.GcrApiService;
 import io.harness.artifacts.gcr.service.GcrApiServiceImpl;
 import io.harness.audit.client.remote.AuditClientModule;
@@ -1076,6 +1078,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(AwsEcrHelperServiceDelegate.class).to(AwsEcrHelperServiceDelegateImpl.class);
     bind(EcrClassicService.class).to(EcrClassicServiceImpl.class);
     bind(GcrApiService.class).to(GcrApiServiceImpl.class);
+    bind(GarApiService.class).to(GARApiServiceImpl.class);
     bind(GcrBuildService.class).to(GcrBuildServiceImpl.class);
     bind(AcrService.class).to(AcrServiceImpl.class);
     bind(AcrBuildService.class).to(AcrBuildServiceImpl.class);

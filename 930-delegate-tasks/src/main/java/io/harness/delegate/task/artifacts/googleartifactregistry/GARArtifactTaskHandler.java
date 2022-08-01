@@ -1,0 +1,100 @@
+package io.harness.delegate.task.artifacts.googleartifactregistry;
+
+import static io.harness.exception.WingsException.USER;
+
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
+import io.harness.artifacts.gar.beans.GarInternalConfig;
+import io.harness.artifacts.gar.service.GarApiService;
+import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
+import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
+import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
+import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
+import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
+import io.harness.delegate.task.artifacts.gar.GarDelegateResponse;
+import io.harness.delegate.task.artifacts.mappers.GarRequestResponseMapper;
+import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
+import io.harness.delegate.task.gcp.helpers.GcpHelperService;
+import io.harness.encryption.SecretRefData;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.runtime.SecretNotFoundRuntimeException;
+import io.harness.security.encryption.SecretDecryptionService;
+
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@OwnedBy(HarnessTeam.CDC)
+@Singleton
+@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
+@Slf4j
+public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDelegateRequest> {
+  private final GarApiService garApiService;
+  private final GcpHelperService gcpHelperService;
+  private final SecretDecryptionService secretDecryptionService;
+
+  @Override
+  public ArtifactTaskExecutionResponse getBuilds(GarDelegateRequest attributesRequest) {
+    List<BuildDetailsInternal> builds;
+    GarInternalConfig garInternalConfig;
+    try {
+      garInternalConfig = getGarInternalConfig(attributesRequest);
+    } catch (IOException e) {
+      log.error("Could not get basic auth header", e);
+      throw new InvalidRequestException(
+          "Could not get basic auth header - " + e.getMessage(), USER); // HintExcpetion Explaination
+    }
+    builds = garApiService.getBuilds(garInternalConfig, GarApiService.MAX_NO_OF_TAGS_PER_IMAGE);
+    List<GarDelegateResponse> garArtifactDelegateResponseList =
+        builds.stream()
+            .sorted(new BuildDetailsInternalComparatorDescending())
+            .map(build -> GarRequestResponseMapper.toGarResponse(build, attributesRequest))
+            .collect(Collectors.toList());
+    return getSuccessTaskExecutionResponse(garArtifactDelegateResponseList);
+  }
+  private GarInternalConfig getGarInternalConfig(GarDelegateRequest attributesRequest) throws IOException {
+    char[] serviceAccountKeyFileContent = new char[0];
+    boolean isUseDelegate = false;
+
+    if (attributesRequest.getGcpConnectorDTO() != null) {
+      GcpConnectorCredentialDTO credential = attributesRequest.getGcpConnectorDTO().getCredential();
+      if (credential.getGcpCredentialType() == GcpCredentialType.INHERIT_FROM_DELEGATE) {
+        isUseDelegate = true;
+      } else {
+        SecretRefData secretRef = ((GcpManualDetailsDTO) credential.getConfig()).getSecretKeyRef();
+        if (secretRef.getDecryptedValue() == null) {
+          throw new SecretNotFoundRuntimeException("Could not find secret " + secretRef.getIdentifier()
+                  + " under the scope of current " + secretRef.getScope(),
+              secretRef.getIdentifier(), secretRef.getScope().toString(), attributesRequest.getConnectorRef());
+        }
+        serviceAccountKeyFileContent = secretRef.getDecryptedValue();
+      }
+    }
+    GoogleCredential gc = gcpHelperService.getGoogleCredential(serviceAccountKeyFileContent, isUseDelegate);
+    gc.refreshToken();
+    String token = gc.getAccessToken();
+    return GarRequestResponseMapper.toGarInternalConfig(attributesRequest, "Bearer " + token);
+  }
+  private ArtifactTaskExecutionResponse getSuccessTaskExecutionResponse(List<GarDelegateResponse> responseList) {
+    return ArtifactTaskExecutionResponse.builder()
+        .artifactDelegateResponses(responseList)
+        .isArtifactSourceValid(true)
+        .isArtifactServerValid(true)
+        .build();
+  }
+  public void decryptRequestDTOs(GarDelegateRequest garDelegateRequest) {
+    if (garDelegateRequest.getGcpConnectorDTO().getCredential() != null
+        && garDelegateRequest.getGcpConnectorDTO().getCredential().getConfig() != null) {
+      secretDecryptionService.decrypt(garDelegateRequest.getGcpConnectorDTO().getCredential().getConfig(),
+          garDelegateRequest.getEncryptedDataDetails());
+    }
+  }
+}

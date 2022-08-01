@@ -308,6 +308,8 @@ import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
+import io.harness.delegate.task.artifacts.gar.GarDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
@@ -1640,5 +1642,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureInfraDelegateConfig.class, 55413);
     kryo.register(AzureSshInfraDelegateConfig.class, 55414);
     kryo.register(AzureWinrmInfraDelegateConfig.class, 55415);
+    kryo.register(GarDelegateRequest.class, 55416);
+    kryo.register(GarDelegateResponse.class, 55417);
   }
 }

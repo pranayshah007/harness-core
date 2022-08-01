@@ -7,8 +7,10 @@
 
 package io.harness.cdng;
 
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.inject.AbstractModule;
+import com.google.inject.multibindings.MapBinder;
+import com.google.inject.name.Names;
 import io.harness.WalkTreeModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceService;
@@ -21,6 +23,8 @@ import io.harness.cdng.artifact.resources.ecr.service.EcrResourceService;
 import io.harness.cdng.artifact.resources.ecr.service.EcrResourceServiceImpl;
 import io.harness.cdng.artifact.resources.gcr.service.GcrResourceService;
 import io.harness.cdng.artifact.resources.gcr.service.GcrResourceServiceImpl;
+import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
+import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceServiceImpl;
 import io.harness.cdng.artifact.resources.jenkins.service.JenkinsResourceService;
 import io.harness.cdng.artifact.resources.jenkins.service.JenkinsResourceServiceImpl;
 import io.harness.cdng.artifact.resources.nexus.service.NexusResourceService;
@@ -69,15 +73,13 @@ import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.services.impl.ServiceOverrideServiceImpl;
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instance.InstanceServiceImpl;
+import lombok.extern.slf4j.Slf4j;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.google.inject.AbstractModule;
-import com.google.inject.multibindings.MapBinder;
-import com.google.inject.name.Names;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicReference;
-import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 @OwnedBy(CDP)
 @Slf4j
@@ -131,7 +133,7 @@ public class NGModule extends AbstractModule {
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
     bind(RollbackDataService.class).to(RollbackDataServiceImpl.class);
-
+    bind(GARResourceService.class).to(GARResourceServiceImpl.class);
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ENVIRONMENTGROUP.toString())
