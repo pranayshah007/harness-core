@@ -228,7 +228,7 @@ public class CIExecutionConfigService {
       defaultConfig.setBuildAndPushDockerRegistryTag(overriddenConfig.getBuildAndPushDockerRegistryTag());
     }
     if (Strings.isNotBlank(overriddenConfig.getBuildAndPushACRTag())) {
-      defaultConfig.setBuildAndPushECRTag(overriddenConfig.getBuildAndPushACRTag());
+      defaultConfig.setBuildAndPushACRTag(overriddenConfig.getBuildAndPushACRTag());
     }
     if (Strings.isNotBlank(overriddenConfig.getBuildAndPushECRTag())) {
       defaultConfig.setBuildAndPushECRTag(overriddenConfig.getBuildAndPushECRTag());
