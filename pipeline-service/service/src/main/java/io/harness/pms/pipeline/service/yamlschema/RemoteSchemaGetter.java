@@ -51,7 +51,7 @@ public class RemoteSchemaGetter implements SchemaGetter {
       RetryPolicy<Object> retryPolicy = getRetryPolicy(moduleType);
       return Failsafe.with(retryPolicy).get(() -> SafeHttpCall.execute(call.clone())).getData();
     } catch (Exception e) {
-      log.error(format("[PMS] Unable to get %s schema information", moduleType.name()), e.getCause());
+      log.error(format("[PMS] Unable to get %s schema information", moduleType.name()), e);
     }
     return null;
   }
