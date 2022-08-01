@@ -20,6 +20,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.event.client.EventPublisher;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.perpetualtask.k8s.informer.ClusterDetails;
+import io.harness.perpetualtask.k8s.utils.K8sWatcherHelper;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -29,15 +30,16 @@ import io.kubernetes.client.informer.EventType;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.openapi.ApiClient;
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1NodeList;
 import io.kubernetes.client.util.CallGeneratorParams;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
 
 @OwnedBy(HarnessTeam.CE)
 @Slf4j
@@ -81,11 +83,18 @@ public class NodeWatcher implements ResourceEventHandler<V1Node> {
         .sharedIndexInformerFor(
             (CallGeneratorParams callGeneratorParams)
                 -> {
+              log.info("Node watcher :: Resource version: {}, timeoutSeconds: {}, watch: {}",
+                  callGeneratorParams.resourceVersion, callGeneratorParams.timeoutSeconds, callGeneratorParams.watch);
+              if (!"0".equals(callGeneratorParams.resourceVersion)
+                  && Objects.nonNull(callGeneratorParams.timeoutSeconds)) {
+                K8sWatcherHelper.updateLastSeen(
+                    String.format(K8sWatcherHelper.NODE_WATCHER_PREFIX, clusterId), Instant.now());
+              }
               try {
                 return coreV1Api.listNodeCall(null, null, null, null, null, null, callGeneratorParams.resourceVersion,
                     null, callGeneratorParams.timeoutSeconds, callGeneratorParams.watch, null);
-              } catch (ApiException e) {
-                log.error("Unknown exception occurred", e);
+              } catch (Exception e) {
+                log.error("Unknown exception occurred for listNodeCall", e);
                 throw e;
               }
             },
@@ -109,8 +118,9 @@ public class NodeWatcher implements ResourceEventHandler<V1Node> {
     try {
       log.debug(NODE_EVENT_MSG, node.getMetadata().getUid(), EventType.ADDED);
 
-      DateTime creationTimestamp = node.getMetadata().getCreationTimestamp();
-      if (!isClusterSeen || creationTimestamp == null || creationTimestamp.isAfter(DateTime.now().minusHours(2))) {
+      OffsetDateTime creationTimestamp = node.getMetadata().getCreationTimestamp();
+      if (!isClusterSeen || creationTimestamp == null
+          || creationTimestamp.isAfter(OffsetDateTime.now().minusHours(2))) {
         publishNodeInfo(node);
       } else {
         publishedNodes.add(node.getMetadata().getUid());
@@ -133,7 +143,7 @@ public class NodeWatcher implements ResourceEventHandler<V1Node> {
 
   public void publishNodeStoppedEvent(V1Node node) {
     final Timestamp timestamp = HTimestamps.fromMillis(
-        ofNullable(node.getMetadata().getDeletionTimestamp()).orElse(DateTime.now()).getMillis());
+        ofNullable(node.getMetadata().getDeletionTimestamp()).orElse(OffsetDateTime.now()).toInstant().toEpochMilli());
 
     NodeEvent nodeStoppedEvent = NodeEvent.newBuilder(nodeEventPrototype)
                                      .setNodeUid(node.getMetadata().getUid())
@@ -150,7 +160,8 @@ public class NodeWatcher implements ResourceEventHandler<V1Node> {
 
   public void publishNodeInfo(V1Node node) {
     if (!publishedNodes.contains(node.getMetadata().getUid())) {
-      final Timestamp timestamp = HTimestamps.fromMillis(node.getMetadata().getCreationTimestamp().getMillis());
+      final Timestamp timestamp =
+          HTimestamps.fromMillis(node.getMetadata().getCreationTimestamp().toInstant().toEpochMilli());
 
       NodeInfo nodeInfo =
           NodeInfo.newBuilder(nodeInfoPrototype)

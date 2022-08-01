@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.VIKAS_M;
+import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.utils.PageTestUtils.getPage;
 
 import static io.github.benas.randombeans.api.EnhancedRandom.random;
@@ -42,6 +43,7 @@ import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.beans.PageRequest;
@@ -113,13 +115,14 @@ public class ProjectServiceImplTest extends CategoryTest {
   @InjectMocks ProjectInstrumentationHelper instrumentationHelper;
   private ProjectServiceImpl projectService;
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Mock private FeatureFlagService featureFlagService;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
     projectService = spy(new ProjectServiceImpl(projectRepository, organizationService, transactionTemplate,
         outboxService, ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper,
-        yamlGitConfigService, ngFeatureFlagHelperService));
+        yamlGitConfigService, ngFeatureFlagHelperService, featureFlagService));
     when(scopeAccessHelper.getPermittedScopes(any())).then(returnsFirstArg());
   }
 
@@ -435,5 +438,18 @@ public class ProjectServiceImplTest extends CategoryTest {
     assertEquals(projectIdentifier, argumentCaptor.getValue());
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(any());
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void shouldGetProjectIdentifierCaseInsensitive() {
+    String accountIdentifier = "accountIdentifier";
+    String orgIdentifier = "orgIdentifier";
+    String projectIdentifier = "projectIdentifier";
+    projectService.get(accountIdentifier, orgIdentifier, projectIdentifier);
+    verify(projectRepository, times(1))
+        .findByAccountIdentifierAndOrgIdentifierAndIdentifierIgnoreCaseAndDeletedNot(
+            accountIdentifier, orgIdentifier, projectIdentifier, true);
   }
 }

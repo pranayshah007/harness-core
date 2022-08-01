@@ -57,6 +57,8 @@ public interface SettingsService extends OwnedByAccount, OwnedBySettingAttribute
 
   List<SettingAttribute> listAllSettingAttributesByType(String accountId, String type);
 
+  List<String> getSettingIdsForAccount(String accountId);
+
   List<SettingAttribute> list(String accountId, SettingAttribute.SettingCategory category);
 
   List<SettingAttribute> getFilteredSettingAttributes(List<SettingAttribute> inputSettingAttributes,

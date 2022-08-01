@@ -15,6 +15,7 @@ public class NGPipelineSummaryCDConstants {
   public static final String PIPELINE_IDENTIFIER = "pipelineidentifier";
   public static final String PLAN_EXECUTION_ID = "planexecutionid";
   public static final String AUTHOR_ID = "moduleinfo_author_id";
+  public static final String AUTHOR_NAME = "author_name";
   public static final String AUTHOR_AVATAR = "author_avatar";
   public static final String TRIGGER_TYPE = "trigger_type";
 }

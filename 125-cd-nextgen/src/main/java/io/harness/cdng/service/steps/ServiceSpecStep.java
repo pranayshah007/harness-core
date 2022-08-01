@@ -30,7 +30,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.steps.OutputExpressionConstants;
-import io.harness.steps.StepUtils;
+import io.harness.steps.SdkCoreStepUtils;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.tasks.ResponseData;
 import io.harness.yaml.core.variables.NGVariable;
@@ -85,7 +85,7 @@ public class ServiceSpecStep
   @Override
   public StepResponse handleChildrenResponse(
       Ambiance ambiance, ServiceSpecStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    StepResponse stepResponse = StepUtils.createStepResponseFromChildResponse(responseDataMap);
+    StepResponse stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
     if (StatusUtils.positiveStatuses().contains(stepResponse.getStatus())) {
       NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
       logCallback.saveExecutionLog("Processed artifacts and manifests");

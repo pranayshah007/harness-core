@@ -10,6 +10,7 @@ package io.harness.template.services;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.TemplateServiceTestBase;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -81,7 +83,7 @@ import retrofit2.Response;
 public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock EnforcementClientService enforcementClientService;
   @InjectMocks private NGTemplateServiceHelper templateServiceHelper;
-  @Inject private GitSyncSdkService gitSyncSdkService;
+  @Mock private GitSyncSdkService gitSyncSdkService;
   @Inject private NGTemplateRepository templateRepository;
   @Inject private TransactionHelper transactionHelper;
   @Mock private ProjectClient projectClient;
@@ -92,6 +94,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @InjectMocks NGTemplateServiceImpl templateService;
 
   @Mock NGTemplateSchemaServiceImpl templateSchemaService;
+  @Mock AccessControlClient accessControlClient;
 
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
@@ -104,11 +107,19 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
   TemplateEntity entity;
 
+  private String readFile(String filename) {
+    ClassLoader classLoader = getClass().getClassLoader();
+    try {
+      return Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Could not read resource file: " + filename);
+    }
+  }
+
   @Before
   public void setUp() throws IOException {
-    ClassLoader classLoader = this.getClass().getClassLoader();
     String filename = "template.yaml";
-    yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    yaml = readFile(filename);
     on(templateServiceHelper).set("templateRepository", templateRepository);
     on(templateService).set("templateRepository", templateRepository);
     on(templateService).set("gitSyncSdkService", gitSyncSdkService);
@@ -326,6 +337,82 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     templateEntities = templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
     assertThat(templateEntities.getContent()).isNotNull();
     assertThat(templateEntities.getContent().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testDeleteAllTemplatesInAProject() {
+    TemplateEntity createdEntity = templateService.create(entity, false, "");
+    assertThat(createdEntity.isStableTemplate()).isTrue();
+
+    TemplateEntity entityVersion2 = templateService.create(entity.withVersionLabel("version2"), true, "");
+    assertThat(entityVersion2.isStableTemplate()).isTrue();
+
+    TemplateEntity template2EntityVersion2 =
+        templateService.create(entity.withVersionLabel("version2").withIdentifier("template2"), false, "");
+    assertThat(template2EntityVersion2.isStableTemplate()).isTrue();
+
+    TemplateEntity template2EntityVersion3 =
+        templateService.create(entity.withVersionLabel("version3").withIdentifier("template2"), true, "");
+    assertThat(template2EntityVersion3.isStableTemplate()).isTrue();
+    assertThat(template2EntityVersion3.isLastUpdatedTemplate()).isTrue();
+
+    Criteria criteria =
+        templateServiceHelper.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, false, "", false);
+    Pageable pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, TemplateEntityKeys.lastUpdatedAt));
+    Page<TemplateEntity> templateEntities =
+        templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
+    assertThat(templateEntities.getContent()).isNotNull();
+    assertThat(templateEntities.getContent().size()).isEqualTo(4);
+
+    // Deleting all templates in the project
+    boolean delete = templateService.deleteAllTemplatesInAProject(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    assertThat(delete).isTrue();
+
+    templateEntities = templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
+    assertThat(templateEntities.getContent()).isNotNull();
+    assertThat(templateEntities.getContent().size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testDeleteAllOrgLevelTemplates() {
+    entity = TemplateEntity.builder()
+                 .accountId(ACCOUNT_ID)
+                 .orgIdentifier(ORG_IDENTIFIER)
+                 .identifier(TEMPLATE_IDENTIFIER)
+                 .name(TEMPLATE_IDENTIFIER)
+                 .versionLabel(TEMPLATE_VERSION_LABEL)
+                 .yaml(yaml)
+                 .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
+                 .childType(TEMPLATE_CHILD_TYPE)
+                 .fullyQualifiedIdentifier("account_id/orgId/projId/template1/version1/")
+                 .templateScope(Scope.PROJECT)
+                 .build();
+    TemplateEntity createdEntity = templateService.create(entity, false, "");
+    assertThat(createdEntity.isStableTemplate()).isTrue();
+
+    Criteria criteria = Criteria.where(TemplateEntityKeys.accountId)
+                            .is(ACCOUNT_ID)
+                            .and(TemplateEntityKeys.orgIdentifier)
+                            .is(ORG_IDENTIFIER)
+                            .and(TemplateEntityKeys.projectIdentifier)
+                            .exists(false);
+    Pageable pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, TemplateEntityKeys.lastUpdatedAt));
+    Page<TemplateEntity> templateEntities =
+        templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, null, false);
+    assertThat(templateEntities.getContent()).isNotNull();
+    assertThat(templateEntities.getContent().size()).isEqualTo(1);
+
+    // Deleting all org level templates
+    boolean delete = templateService.deleteAllOrgLevelTemplates(ACCOUNT_ID, ORG_IDENTIFIER);
+    assertThat(delete).isTrue();
+
+    templateEntities = templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, null, false);
+    assertThat(templateEntities.getContent()).isNotNull();
+    assertThat(templateEntities.getContent().size()).isEqualTo(0);
   }
 
   @Test

@@ -27,6 +27,7 @@ import io.harness.NgAutoLogContext;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.EntityReference;
+import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
 import io.harness.connector.ConnectorActivityDetails;
 import io.harness.connector.ConnectorCatalogueResponseDTO;
 import io.harness.connector.ConnectorCategory;
@@ -62,13 +63,13 @@ import io.harness.git.model.ChangeType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.activityhistory.NGActivityType;
 import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.ng.opa.entities.connector.OpaConnectorService;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.perpetualtask.PerpetualTaskId;
-import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.telemetry.helpers.ConnectorInstrumentationHelper;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
@@ -716,6 +717,16 @@ public class ConnectorServiceImpl implements ConnectorService {
   public void deleteBatch(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> connectorIdentifiersList) {
     defaultConnectorService.deleteBatch(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifiersList);
+  }
+
+  @Override
+  public Page<CombineCcmK8sConnectorResponseDTO> listCcmK8S(int page, int size, String accountIdentifier,
+      ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
+      String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
+      Boolean getDistinctFromBranches) {
+    return defaultConnectorService.listCcmK8S(page, size, accountIdentifier, filterProperties, orgIdentifier,
+        projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
+        getDistinctFromBranches);
   }
 
   @Override

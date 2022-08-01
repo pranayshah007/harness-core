@@ -24,7 +24,7 @@ import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.LiveM
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.SLIDTO;
 import io.harness.cvng.core.beans.RiskProfile;
 import io.harness.cvng.core.beans.monitoredService.HealthSource.CVConfigUpdateResult;
-import io.harness.cvng.core.beans.monitoredService.MetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec.AppDMetricDefinitions;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
@@ -63,7 +63,7 @@ public class AppDynamicsHealthSourceSpecTest extends CvNextGenTestBase {
   String identifier;
   String name;
   String monitoredServiceIdentifier;
-  List<MetricPackDTO> metricPackDTOS;
+  List<TimeSeriesMetricPackDTO> metricPackDTOS;
   BuilderFactory builderFactory;
 
   @Before
@@ -82,7 +82,7 @@ public class AppDynamicsHealthSourceSpecTest extends CvNextGenTestBase {
     identifier = "identifier";
     name = "some-name";
     metricPackDTOS =
-        Arrays.asList(MetricPackDTO.builder().identifier(CVNextGenConstants.ERRORS_PACK_IDENTIFIER).build());
+        Arrays.asList(TimeSeriesMetricPackDTO.builder().identifier(CVNextGenConstants.ERRORS_PACK_IDENTIFIER).build());
     appDynamicsHealthSourceSpec =
         AppDynamicsHealthSourceSpec.builder()
             .applicationName(applicationName)

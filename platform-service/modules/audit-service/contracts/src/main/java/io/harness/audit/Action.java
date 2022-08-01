@@ -31,5 +31,8 @@ public enum Action {
 
   // Deprecated
   ADD_MEMBERSHIP,
-  REMOVE_MEMBERSHIP
+  REMOVE_MEMBERSHIP,
+
+  // SLO Event
+  ERROR_BUDGET_RESET,
 }

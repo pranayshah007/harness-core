@@ -14,6 +14,7 @@ import io.harness.annotation.StoreIn;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.analysis.beans.Risk;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
@@ -59,7 +60,7 @@ public final class TimeSeriesRiskSummary implements PersistentEntity, UuidAware 
   }
 
   @Id private String uuid;
-  @NotEmpty private String verificationTaskId;
+  @FdIndex private String verificationTaskId;
   @NotEmpty private Instant analysisStartTime;
   @NotEmpty private Instant analysisEndTime;
   private List<TransactionMetricRisk> transactionMetricRiskList;

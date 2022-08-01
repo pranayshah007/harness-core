@@ -25,5 +25,5 @@ public class CcmConnectorFilter {
   String azureSubscriptionId;
   String azureTenantId;
   String gcpProjectId;
-  String k8sConnectorRef;
+  List<String> k8sConnectorRef;
 }

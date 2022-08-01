@@ -831,20 +831,19 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
                                     .filter(DelegateTaskKeys.uuid, taskId)
                                     .get();
 
-    if (delegateTask.getData().getSerializationFormat().equals(SerializationFormat.JSON)) {
-      TaskType type = TaskType.valueOf(delegateTask.getData().getTaskType());
-      TaskParameters taskParameters;
-      try {
-        taskParameters = objectMapper.readValue(delegateTask.getData().getData(), type.getRequest());
-      } catch (IOException e) {
-        throw new InvalidRequestException("could not parse bytes from delegate task data", e);
-      }
-      TaskData taskData = delegateTask.getData();
-      taskData.setParameters(new Object[] {taskParameters});
-      delegateTask.setData(taskData);
-    }
-
     if (delegateTask != null) {
+      if (SerializationFormat.JSON.equals(delegateTask.getData().getSerializationFormat())) {
+        TaskType type = TaskType.valueOf(delegateTask.getData().getTaskType());
+        TaskParameters taskParameters;
+        try {
+          taskParameters = objectMapper.readValue(delegateTask.getData().getData(), type.getRequest());
+        } catch (IOException e) {
+          throw new InvalidRequestException("could not parse bytes from delegate task data", e);
+        }
+        TaskData taskData = delegateTask.getData();
+        taskData.setParameters(new Object[] {taskParameters});
+        delegateTask.setData(taskData);
+      }
       try (AutoLogContext ignore = new TaskLogContext(taskId, delegateTask.getData().getTaskType(),
                TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
         if (delegateTask.getDelegateId() == null && delegateTask.getStatus() == QUEUED) {
@@ -858,7 +857,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             delegateTask.getDelegateId(), delegateTask.getDelegateInstanceId(), delegateTask.getStatus());
       }
     } else {
-      log.info("Task no longer exists", taskId);
+      log.info("Task with id: {} no longer exists", taskId);
     }
     return null;
   }

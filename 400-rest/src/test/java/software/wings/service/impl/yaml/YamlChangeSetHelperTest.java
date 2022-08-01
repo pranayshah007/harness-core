@@ -8,28 +8,40 @@
 package software.wings.service.impl.yaml;
 
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
+import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.USER_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.beans.FeatureName;
+import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.category.element.UnitTests;
 import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
 import io.harness.rule.Owner;
 
 import software.wings.beans.AwsInfrastructureMapping;
+import software.wings.beans.BuildWorkflow;
 import software.wings.beans.InfrastructureMapping;
+import software.wings.beans.OrchestrationWorkflow;
+import software.wings.beans.Workflow;
+import software.wings.beans.Workflow.WorkflowBuilder;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.DockerArtifactStream;
 import software.wings.beans.yaml.GitFileChange;
 import software.wings.service.impl.yaml.handler.YamlHandlerFactory;
+import software.wings.service.impl.yaml.handler.YamlHandlerFromBeanFactory;
+import software.wings.service.impl.yaml.handler.workflow.WorkflowYamlHandler;
 import software.wings.service.intfc.yaml.EntityUpdateService;
 import software.wings.service.intfc.yaml.YamlChangeSetService;
 import software.wings.service.intfc.yaml.YamlDirectoryService;
@@ -37,6 +49,8 @@ import software.wings.service.intfc.yaml.YamlGitService;
 import software.wings.yaml.gitSync.YamlChangeSet;
 import software.wings.yaml.gitSync.YamlGitConfig;
 import software.wings.yaml.gitSync.YamlGitConfig.SyncMode;
+import software.wings.yaml.workflow.BasicWorkflowYaml;
+import software.wings.yaml.workflow.BuildWorkflowYaml;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -48,6 +62,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 public class YamlChangeSetHelperTest extends CategoryTest {
   public static final String ACCOUNTID = "000111";
@@ -57,10 +72,12 @@ public class YamlChangeSetHelperTest extends CategoryTest {
   @Mock private YamlChangeSetService yamlChangeSetService;
   @Mock private EntityUpdateService entityUpdateService;
   @Mock private YamlHandlerFactory yamlHandlerFactory;
+  @Mock private YamlHandlerFromBeanFactory yamlHandlerFromBeanFactory;
   @Mock private YamlDirectoryService yamlDirectoryService;
   @Mock private YamlGitService yamlGitService;
   @Mock private FeatureFlagService featureFlagService;
-  @InjectMocks @Inject private YamlChangeSetHelper yamlChangeSetHelper;
+  @Mock private WorkflowYamlHandler workflowYamlHandler;
+  @Spy @InjectMocks @Inject private YamlChangeSetHelper yamlChangeSetHelper;
 
   @Before
   public void setUp() {
@@ -236,5 +253,49 @@ public class YamlChangeSetHelperTest extends CategoryTest {
     assertThat(gitFileChangeForModify.getAccountId()).isEqualTo(ACCOUNTID);
     assertThat(gitFileChangeForModify.getChangeType()).isEqualTo(ChangeType.MODIFY);
     assertThat(gitFileChangeForModify.getFileContent()).isEqualTo(OLD);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_compareYaml() {
+    when(featureFlagService.isEnabled(FeatureName.COMPARE_YAML_IN_GIT_SYNC, ACCOUNTID)).thenReturn(true);
+    OrchestrationWorkflow orchestrationWorkflow1 =
+        BuildWorkflow.BuildOrchestrationWorkflowBuilder.aBuildOrchestrationWorkflow().build();
+    orchestrationWorkflow1.setOrchestrationWorkflowType(OrchestrationWorkflowType.BASIC);
+    Workflow workflow1 = WorkflowBuilder.aWorkflow()
+                             .accountId(ACCOUNTID)
+                             .appId(APP_ID)
+                             .uuid("UUID1")
+                             .orchestrationWorkflow(orchestrationWorkflow1)
+                             .build();
+
+    Workflow workflow2 = WorkflowBuilder.aWorkflow()
+                             .accountId(ACCOUNTID)
+                             .appId(APP_ID)
+                             .uuid("UUID2")
+                             .orchestrationWorkflow(orchestrationWorkflow1)
+                             .build();
+
+    when(yamlHandlerFromBeanFactory.getYamlHandler(any())).thenReturn(workflowYamlHandler);
+    when(workflowYamlHandler.toYaml(eq(workflow1), any())).thenReturn(BasicWorkflowYaml.builder().build());
+    when(workflowYamlHandler.toYaml(eq(workflow2), any())).thenReturn(BasicWorkflowYaml.builder().build());
+    yamlChangeSetHelper.entityUpdateYamlChange(ACCOUNTID, workflow1, workflow2, false);
+    verify(yamlChangeSetHelper, times(0)).entityYamlChangeSet(eq(ACCOUNTID), any(), any());
+
+    OrchestrationWorkflow orchestrationWorkflow2 =
+        BuildWorkflow.BuildOrchestrationWorkflowBuilder.aBuildOrchestrationWorkflow().build();
+    orchestrationWorkflow2.setOrchestrationWorkflowType(OrchestrationWorkflowType.BUILD);
+    Workflow workflow3 = WorkflowBuilder.aWorkflow()
+                             .accountId(ACCOUNTID)
+                             .appId(APP_ID)
+                             .uuid("UUID3")
+                             .orchestrationWorkflow(orchestrationWorkflow2)
+                             .build();
+
+    doReturn(BasicWorkflowYaml.builder().build()).when(workflowYamlHandler).toYaml(eq(workflow1), any());
+    doReturn(BuildWorkflowYaml.builder().build()).when(workflowYamlHandler).toYaml(eq(workflow3), any());
+    yamlChangeSetHelper.entityUpdateYamlChange(ACCOUNTID, workflow1, workflow3, false);
+    verify(yamlChangeSetHelper, times(1)).entityYamlChangeSet(eq(ACCOUNTID), any(), any());
   }
 }

@@ -957,7 +957,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ec2-function" {
   name                      = "ce-awsdata-ec2-terraform"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
-  available_memory_mb       = 256
+  available_memory_mb       = 1024
   timeout                   = 540
   runtime                   = "python38"
   project                   = "${var.projectId}"
@@ -1038,7 +1038,7 @@ resource "google_cloudfunctions_function" "ce-awsdata-ebs-function" {
   name                      = "ce-awsdata-ebs-terraform"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
-  available_memory_mb       = 256
+  available_memory_mb       = 1024
   timeout                   = 540
   runtime                   = "python38"
   project                   = "${var.projectId}"
@@ -1254,7 +1254,7 @@ resource "google_cloudfunctions_function" "ce-gcp-instance-inventory-data-functi
   name                      = "ce-gcp-instance-inventory-data-terraform"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
-  available_memory_mb       = 256
+  available_memory_mb       = 1024
   timeout                   = 540
   runtime                   = "python38"
   project                   = "${var.projectId}"
@@ -1308,7 +1308,7 @@ resource "google_cloudfunctions_function" "ce-gcp-disk-inventory-data-function" 
   name                      = "ce-gcp-disk-inventory-data-terraform"
   description               = "This cloudfunction gets triggered upon event in a pubsub topic"
   entry_point               = "main"
-  available_memory_mb       = 256
+  available_memory_mb       = 1024
   timeout                   = 540
   runtime                   = "python38"
   project                   = "${var.projectId}"

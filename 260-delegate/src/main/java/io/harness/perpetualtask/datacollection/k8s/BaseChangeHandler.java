@@ -17,11 +17,11 @@ import io.harness.verificationclient.CVNextGenServiceClient;
 import com.google.inject.Inject;
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.informer.ResourceEventHandler;
+import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
 import org.joor.Reflect;
 
 @SuperBuilder
@@ -95,9 +95,9 @@ public abstract class BaseChangeHandler<ApiType extends KubernetesObject> implem
     if (shouldProcessEvent(eventDTO)) {
       ((KubernetesChangeEventMetadata) eventDTO.getMetadata()).setOldYaml(oldYaml);
       ((KubernetesChangeEventMetadata) eventDTO.getMetadata()).setAction(KubernetesChangeEventMetadata.Action.Delete);
-      DateTime deletionTime = k8sHandlerUtils.getMetadata(newResource).getDeletionTimestamp();
+      OffsetDateTime deletionTime = k8sHandlerUtils.getMetadata(newResource).getDeletionTimestamp();
       if (deletionTime != null) {
-        eventDTO.setEventTime(deletionTime.toDate().toInstant().toEpochMilli());
+        eventDTO.setEventTime(deletionTime.toInstant().toEpochMilli());
       }
       sendEvent(accountId, eventDTO);
     }

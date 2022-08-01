@@ -7,10 +7,10 @@
 
 package io.harness.delegate.task.citasks.cik8handler.k8java;
 
+import static io.harness.connector.SecretSpecBuilder.DOCKER_REGISTRY_SECRET_TYPE;
+import static io.harness.connector.SecretSpecBuilder.OPAQUE_SECRET_TYPE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.task.citasks.cik8handler.SecretSpecBuilder.DOCKER_REGISTRY_SECRET_TYPE;
-import static io.harness.delegate.task.citasks.cik8handler.SecretSpecBuilder.OPAQUE_SECRET_TYPE;
 import static io.harness.exception.WingsException.USER;
 
 import static java.lang.String.format;
@@ -18,16 +18,23 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.ImageCredentials;
+import io.harness.connector.ImageSecretBuilder;
+import io.harness.connector.SecretSpecBuilder;
+import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.ci.k8s.CIContainerStatus;
 import io.harness.delegate.beans.ci.k8s.PodStatus;
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
-import io.harness.delegate.task.citasks.cik8handler.ImageSecretBuilder;
-import io.harness.delegate.task.citasks.cik8handler.SecretSpecBuilder;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.PodNotFoundException;
 import io.harness.k8s.apiclient.ApiClientFactory;
 import io.harness.threading.Sleeper;
+
+import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
@@ -63,12 +70,14 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
 public class CIK8JavaClientHandler {
+  public static final String USER_NAME = "00000000-0000-0000-0000-000000000000";
   @Inject private ImageSecretBuilder imageSecretBuilder;
 
   private static final String DOCKER_CONFIG_KEY = ".dockercfg";
@@ -78,6 +87,7 @@ public class CIK8JavaClientHandler {
   @Inject private SecretSpecBuilder secretSpecBuilder;
   @Inject private Sleeper sleeper;
   @Inject private ApiClientFactory apiClientFactory;
+  @Inject private AzureAsyncTaskHelper azureAsyncTaskHelper;
 
   private final int DELETION_MAX_ATTEMPTS = 15;
 
@@ -89,7 +99,21 @@ public class CIK8JavaClientHandler {
 
   public V1Secret createRegistrySecret(
       CoreV1Api coreV1Api, String namespace, String secretName, ImageDetailsWithConnector imageDetails) {
-    String credentialData = imageSecretBuilder.getJSONEncodedImageCredentials(imageDetails);
+    String credentialData = null;
+    if (imageDetails.getImageConnectorDetails() != null
+        && imageDetails.getImageConnectorDetails().getConnectorType() == ConnectorType.AZURE) {
+      ConnectorDetails connectorDetails = imageDetails.getImageConnectorDetails();
+      String regName = StringUtils.substringBefore(imageDetails.getImageDetails().getName(), "/");
+      AzureAcrTokenTaskResponse acrLoginToken = azureAsyncTaskHelper.getAcrLoginToken(regName,
+          connectorDetails.getEncryptedDataDetails(), (AzureConnectorDTO) connectorDetails.getConnectorConfig());
+      credentialData = imageSecretBuilder.getJSONEncodedAzureCredentials(ImageCredentials.builder()
+                                                                             .registryUrl(regName)
+                                                                             .userName(USER_NAME)
+                                                                             .password(acrLoginToken.getToken())
+                                                                             .build());
+    } else {
+      credentialData = imageSecretBuilder.getJSONEncodedImageCredentials(imageDetails);
+    }
     if (credentialData == null) {
       return null;
     }

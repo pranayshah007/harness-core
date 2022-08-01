@@ -177,7 +177,7 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
             .commandUnitsProgress(UnitProgressData.builder().build())
             .commandExecutionStatus(SUCCESS)
             .build();
-    when(k8sStepHelper.getReleaseName(any(), any())).thenReturn("releaseName");
+    when(cdStepHelper.getReleaseName(any(), any())).thenReturn("releaseName");
     StepResponse.StepOutcome stepOutcome = StepResponse.StepOutcome.builder()
                                                .name(OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME)
                                                .outcome(DeploymentInfoOutcome.builder().build())
@@ -267,13 +267,13 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
             .commandUnitsProgress(UnitProgressData.builder().build())
             .commandExecutionStatus(SUCCESS)
             .build();
-    when(k8sStepHelper.getReleaseName(any(), any())).thenReturn("releaseName");
+    when(cdStepHelper.getReleaseName(any(), any())).thenReturn("releaseName");
     StepResponse.StepOutcome stepOutcome = StepResponse.StepOutcome.builder()
                                                .name(OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME)
                                                .outcome(DeploymentInfoOutcome.builder().build())
                                                .build();
     doReturn(stepOutcome).when(instanceInfoService).saveServerInstancesIntoSweepingOutput(any(), any());
-    when(k8sStepHelper.handleGitTaskFailure(any())).thenReturn(StepResponse.builder().status(Status.SUCCEEDED).build());
+    when(cdStepHelper.handleGitTaskFailure(any())).thenReturn(StepResponse.builder().status(Status.SUCCEEDED).build());
     StepResponse response = k8sRollingStep.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, GitFetchResponsePassThroughData.builder().build(), () -> k8sDeployResponse);
     assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
@@ -286,7 +286,7 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
                    .getStatus())
         .isEqualTo(Status.SUCCEEDED);
 
-    when(k8sStepHelper.handleStepExceptionFailure(any()))
+    when(cdStepHelper.handleStepExceptionFailure(any()))
         .thenReturn(StepResponse.builder().status(Status.SUCCEEDED).build());
     assertThat(k8sRollingStep
                    .finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,

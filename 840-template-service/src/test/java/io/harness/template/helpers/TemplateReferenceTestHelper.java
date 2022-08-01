@@ -10,12 +10,16 @@ package io.harness.template.helpers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.eraro.ErrorCode;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
+import io.harness.pms.contracts.service.EntityReferenceErrorResponse;
 import io.harness.pms.contracts.service.EntityReferenceRequest;
 import io.harness.pms.contracts.service.EntityReferenceResponse;
+import io.harness.pms.contracts.service.EntityReferenceResponseWrapper;
 import io.harness.pms.contracts.service.EntityReferenceServiceGrpc;
+import io.harness.pms.contracts.service.ErrorMetadata;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.template.TemplateReferenceProtoUtils;
 import io.harness.utils.IdentifierRefHelper;
@@ -33,6 +37,18 @@ public class TemplateReferenceTestHelper extends EntityReferenceServiceGrpc.Enti
   static final String PROJECT_ID = "projectId";
 
   static final String IDENTIFIER_PROJECT_SCOPE = "projectLevelIdentifier";
+
+  public static final String INVALID_IDENTIFIER_REF_YAML = "template:\n"
+      + "  spec:\n"
+      + "    connector: abc";
+
+  private static final String DUMMY_INVALID_IDENTIFIER_REF_YAML = "Dummy:\n"
+      + "  connector: \"abc\"\n";
+
+  public static final String INVALID_YAML = "template:\n"
+      + "  spec: {}";
+
+  private static final String DUMMY_INVALID_YAML = "Dummy: {}\n";
 
   public static final Map<String, String> metadata_StepTemplate =
       new HashMap<>(Collections.singletonMap(PreFlightCheckMetadata.FQN, "spec.connector"));
@@ -101,15 +117,48 @@ public class TemplateReferenceTestHelper extends EntityReferenceServiceGrpc.Enti
   }
 
   @Override
-  public void getReferences(EntityReferenceRequest request, StreamObserver<EntityReferenceResponse> responseObserver) {
-    Map<String, String> metadata = new HashMap<>();
-    metadata.put(PreFlightCheckMetadata.FQN, "stage.spec.execution.steps.jiraApproval.spec.connectorRef");
-    EntityReferenceResponse entityReferenceResponse =
-        EntityReferenceResponse.newBuilder()
-            .addReferredEntities(generateIdentifierRefEntityDetailProto(
-                ACCOUNT_ID, ORG_ID, PROJECT_ID, "jiraConnector", metadata, EntityTypeProtoEnum.CONNECTORS))
-            .build();
-    responseObserver.onNext(entityReferenceResponse);
+  public void getReferences(
+      EntityReferenceRequest request, StreamObserver<EntityReferenceResponseWrapper> responseObserver) {
+    EntityReferenceResponseWrapper entityReferenceResponseWrapper;
+    if (DUMMY_INVALID_IDENTIFIER_REF_YAML.equals(request.getYaml())) {
+      entityReferenceResponseWrapper =
+          EntityReferenceResponseWrapper.newBuilder()
+              .setErrorResponse(EntityReferenceErrorResponse.newBuilder()
+                                    .addErrorMetadata(ErrorMetadata.newBuilder()
+                                                          .setErrorMessage("Some error")
+                                                          .setWingsExceptionErrorCode(
+                                                              String.valueOf(ErrorCode.INVALID_IDENTIFIER_REF))
+                                                          .build())
+                                    .build())
+              .build();
+    } else if (DUMMY_INVALID_YAML.equals(request.getYaml())) {
+      entityReferenceResponseWrapper =
+          EntityReferenceResponseWrapper.newBuilder()
+              .setErrorResponse(
+                  EntityReferenceErrorResponse.newBuilder()
+                      .addErrorMetadata(ErrorMetadata.newBuilder()
+                                            .setErrorMessage("Some error1")
+                                            .setWingsExceptionErrorCode(String.valueOf(ErrorCode.INVALID_URL))
+                                            .build())
+                      .addErrorMetadata(ErrorMetadata.newBuilder()
+                                            .setErrorMessage("Some error2")
+                                            .setWingsExceptionErrorCode(String.valueOf(ErrorCode.INVALID_YAML_ERROR))
+                                            .build())
+                      .build())
+              .build();
+    } else {
+      Map<String, String> metadata = new HashMap<>();
+      metadata.put(PreFlightCheckMetadata.FQN, "stage.spec.execution.steps.jiraApproval.spec.connectorRef");
+      EntityReferenceResponse entityReferenceResponse =
+          EntityReferenceResponse.newBuilder()
+              .addReferredEntities(generateIdentifierRefEntityDetailProto(
+                  ACCOUNT_ID, ORG_ID, PROJECT_ID, "jiraConnector", metadata, EntityTypeProtoEnum.CONNECTORS))
+              .build();
+      entityReferenceResponseWrapper =
+          EntityReferenceResponseWrapper.newBuilder().setReferenceResponse(entityReferenceResponse).build();
+    }
+
+    responseObserver.onNext(entityReferenceResponseWrapper);
     responseObserver.onCompleted();
   }
 }

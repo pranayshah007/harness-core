@@ -31,12 +31,12 @@ import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServ
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppSlotSetupParameters;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlotSetupResponse;
+import io.harness.delegate.task.azure.common.AutoCloseableWorkingDirectory;
 import io.harness.delegate.task.azure.common.AzureContainerRegistryService;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.delegatetasks.azure.appservice.webapp.AbstractAzureWebAppTaskHandler;
-import software.wings.delegatetasks.azure.common.AutoCloseableWorkingDirectory;
 import software.wings.utils.ArtifactType;
 
 import com.google.inject.Inject;
@@ -171,6 +171,7 @@ public class AzureWebAppSlotSetupTaskHandler extends AbstractAzureWebAppTaskHand
         .startupCommand(slotSetupParameters.getStartupCommand())
         .azureWebClientContext(azureWebClientContext)
         .steadyStateTimeoutInMin(slotSetupParameters.getTimeoutIntervalInMin())
+        .isBasicDeployment(slotSetupParameters.isBasicDeployment())
         .build();
   }
 
@@ -219,6 +220,7 @@ public class AzureWebAppSlotSetupTaskHandler extends AbstractAzureWebAppTaskHand
         .artifactFile(artifactFile)
         .artifactType(artifactType)
         .steadyStateTimeoutInMin(slotSetupParameters.getTimeoutIntervalInMin())
+        .isBasicDeployment(slotSetupParameters.isBasicDeployment())
         .build();
   }
 }

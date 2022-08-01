@@ -3,7 +3,7 @@ load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
 
 shared_dependencies = [
-    "//330-ci-beans:module",
+    "//332-ci-manager/service:module",
 ]
 
 java_library(

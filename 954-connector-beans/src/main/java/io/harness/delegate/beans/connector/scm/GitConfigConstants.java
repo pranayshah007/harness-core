@@ -14,4 +14,5 @@ public class GitConfigConstants {
   // connection type
   public static final String ACCOUNT = "Account";
   public static final String REPO = "Repo";
+  public static final String PROJECT = "Project";
 }

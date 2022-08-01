@@ -40,6 +40,10 @@ public class NotificationRuleCommonUtils {
     return lookBackDurationInMillis;
   }
 
+  public static long getDurationInSeconds(long durationInMillis) {
+    return durationInMillis / (1000 * 60);
+  }
+
   public static String getDurationAsString(long duration) {
     return TimeUnit.MILLISECONDS.toMinutes(duration) + "m";
   }

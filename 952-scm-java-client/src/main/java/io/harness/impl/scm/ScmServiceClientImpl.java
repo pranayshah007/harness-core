@@ -31,6 +31,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.git.GitClientHelper;
 import io.harness.impl.ScmResponseStatusUtils;
 import io.harness.logger.RepoBranchLogContext;
 import io.harness.logging.AutoLogContext;
@@ -91,6 +92,8 @@ import io.harness.product.ci.scm.proto.NativeEvents;
 import io.harness.product.ci.scm.proto.PRFile;
 import io.harness.product.ci.scm.proto.PageRequest;
 import io.harness.product.ci.scm.proto.Provider;
+import io.harness.product.ci.scm.proto.RefreshTokenRequest;
+import io.harness.product.ci.scm.proto.RefreshTokenResponse;
 import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.product.ci.scm.proto.Signature;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
@@ -126,6 +129,9 @@ public class ScmServiceClientImpl implements ScmServiceClient {
         ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::createFile, fileModifyRequest);
     if (ScmResponseStatusUtils.isSuccessResponse(createFileResponse.getStatus())
         && isEmpty(createFileResponse.getCommitId())) {
+      if (isBitbucketOnPrem(scmConnector)) {
+        return createFileResponse;
+      }
       // In case commit id is empty for any reason, we treat this as an error case even if file got created on git
       return CreateFileResponse.newBuilder()
           .setStatus(Constants.SCM_INTERNAL_SERVER_ERROR_CODE)
@@ -146,7 +152,6 @@ public class ScmServiceClientImpl implements ScmServiceClient {
         .setContent(gitFileDetails.getFileContent())
         .setMessage(gitFileDetails.getCommitMessage())
         .setProvider(gitProvider)
-        .setCommitId(Strings.nullToEmpty(gitFileDetails.getCommitId()))
         .setSignature(Signature.newBuilder()
                           .setEmail(gitFileDetails.getUserEmail())
                           .setName(gitFileDetails.getUserName())
@@ -163,6 +168,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     }
 
     final FileModifyRequest.Builder fileModifyRequestBuilder = getFileModifyRequest(scmConnector, gitFileDetails);
+    handleUpdateFileRequestIfBBOnPrem(fileModifyRequestBuilder, scmConnector, gitFileDetails);
     final FileModifyRequest fileModifyRequest =
         fileModifyRequestBuilder.setBlobId(Strings.nullToEmpty(gitFileDetails.getOldFileSha())).build();
     UpdateFileResponse updateFileResponse =
@@ -867,6 +873,22 @@ public class ScmServiceClientImpl implements ScmServiceClient {
             .build());
   }
 
+  @Override
+  public RefreshTokenResponse refreshToken(ScmConnector scmConnector, String clientId, String clientSecret,
+      String endpoint, String refreshToken, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    return scmBlockingStub.refreshToken(RefreshTokenRequest.newBuilder()
+                                            .setClientID(clientId)
+                                            .setClientSecret(clientSecret)
+                                            .setRefreshToken(refreshToken)
+                                            .setEndpoint(endpoint)
+                                            .build());
+  }
+
+  public GetLatestCommitOnFileResponse getLatestCommitOnFile(
+      ScmConnector scmConnector, String branchName, String filepath, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    return getLatestCommitOnFile(scmConnector, scmBlockingStub, branchName, filepath);
+  }
+
   private FileContentBatchResponse processListFilesByFilePaths(ScmConnector connector, List<String> filePaths,
       String branch, String commitId, SCMGrpc.SCMBlockingStub scmBlockingStub) {
     Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(connector);
@@ -940,6 +962,22 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     if (ConnectorType.BITBUCKET.equals(scmConnector.getConnectorType())) {
       GetLatestCommitOnFileResponse latestCommitResponse = getLatestCommitOnFile(
           scmConnector, scmBlockingStub, gitFileDetails.getBranch(), gitFileDetails.getFilePath());
+      if (isEmpty(latestCommitResponse.getCommitId()) && isBitbucketOnPrem(scmConnector)) {
+        return Optional.of(UpdateFileResponse.newBuilder()
+                               .setStatus(Constants.SCM_INTERNAL_SERVER_ERROR_CODE)
+                               .setError(Constants.SCM_GIT_PROVIDER_ERROR_MESSAGE)
+                               .build());
+      }
+      if (!latestCommitResponse.getCommitId().equals(gitFileDetails.getCommitId())) {
+        return Optional.of(UpdateFileResponse.newBuilder()
+                               .setStatus(Constants.SCM_CONFLICT_ERROR_CODE)
+                               .setError(Constants.SCM_CONFLICT_ERROR_MESSAGE)
+                               .setCommitId(latestCommitResponse.getCommitId())
+                               .build());
+      }
+    } else if (ConnectorType.AZURE_REPO.equals(scmConnector.getConnectorType())) {
+      GetLatestCommitOnFileResponse latestCommitResponse = getLatestCommitOnFile(
+          scmConnector, scmBlockingStub, gitFileDetails.getBranch(), gitFileDetails.getFilePath());
       if (!latestCommitResponse.getCommitId().equals(gitFileDetails.getCommitId())) {
         return Optional.of(UpdateFileResponse.newBuilder()
                                .setStatus(Constants.SCM_CONFLICT_ERROR_CODE)
@@ -951,7 +989,19 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     return Optional.empty();
   }
 
+  private void handleUpdateFileRequestIfBBOnPrem(
+      FileModifyRequest.Builder fileModifyRequestBuilder, ScmConnector scmConnector, GitFileDetails gitFileDetails) {
+    if (isBitbucketOnPrem(scmConnector)) {
+      fileModifyRequestBuilder.setCommitId(gitFileDetails.getCommitId());
+    }
+  }
+
   private boolean isFailureResponse(int statusCode) {
     return statusCode >= 300;
+  }
+
+  private boolean isBitbucketOnPrem(ScmConnector scmConnector) {
+    return ConnectorType.BITBUCKET.equals(scmConnector.getConnectorType())
+        && !GitClientHelper.isBitBucketSAAS(scmConnector.getUrl());
   }
 }

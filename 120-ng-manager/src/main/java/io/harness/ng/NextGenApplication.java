@@ -42,6 +42,7 @@ import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupWrapperConfig;
 import io.harness.cdng.gitSync.EnvironmentGroupEntityGitSyncHelper;
 import io.harness.cdng.licenserestriction.ServiceRestrictionsUsageImpl;
+import io.harness.cdng.migration.CDMigrationProvider;
 import io.harness.cdng.orchestration.NgStepRegistrar;
 import io.harness.cdng.pipeline.executions.CdngOrchestrationExecutionEventHandlerRegistrar;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
@@ -116,8 +117,10 @@ import io.harness.ng.migration.NGCoreMigrationProvider;
 import io.harness.ng.migration.SourceCodeManagerMigrationProvider;
 import io.harness.ng.migration.UserMembershipMigrationProvider;
 import io.harness.ng.migration.UserMetadataMigrationProvider;
+import io.harness.ng.oauth.OAuthTokenRereshers;
 import io.harness.ng.overview.eventGenerator.DeploymentEventGenerator;
 import io.harness.ng.webhook.services.api.WebhookEventProcessingService;
+import io.harness.ngsettings.settings.SettingsCreationJob;
 import io.harness.observer.NoOpRemoteObserverInformerImpl;
 import io.harness.observer.RemoteObserver;
 import io.harness.observer.RemoteObserverInformer;
@@ -175,6 +178,7 @@ import io.harness.telemetry.TelemetryReporter;
 import io.harness.telemetry.filter.APIAuthTelemetryFilter;
 import io.harness.telemetry.filter.APIAuthTelemetryResponseFilter;
 import io.harness.telemetry.filter.APIErrorsTelemetrySenderFilter;
+import io.harness.telemetry.service.CdTelemetryRecordsJob;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
@@ -372,6 +376,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     modules.add(PipelineServiceUtilityModule.getInstance());
     CacheModule cacheModule = new CacheModule(appConfig.getCacheConfig());
     modules.add(cacheModule);
+
     Injector injector = Guice.createInjector(modules);
 
     // Will create collections and Indexes
@@ -395,13 +400,17 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerIterators(appConfig.getNgIteratorsConfig(), injector);
     registerJobs(injector);
     registerQueueListeners(injector);
-    registerPmsSdkEvents(injector);
+    registerPmsSdkEvents(appConfig, injector);
     initializeMonitoring(appConfig, injector);
     registerObservers(injector);
     registerOasResource(appConfig, environment, injector);
     registerManagedBeans(environment, injector);
     initializeEnforcementService(injector, appConfig);
     initializeEnforcementSdk(injector);
+    initializeCdMonitoring(appConfig, injector);
+    SettingsCreationJob settingsCreationJob = injector.getInstance(SettingsCreationJob.class);
+    settingsCreationJob.run();
+
     if (appConfig.getShouldDeployWithGitSync()) {
       intializeGitSync(injector);
       GitSyncSdkInitHelper.initGitSyncSdk(injector, environment, getGitSyncConfiguration(appConfig));
@@ -421,6 +430,11 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   private void initializeNGMonitoring(NextGenConfiguration appConfig, Injector injector) {
     log.info("Initializing NGMonitoring");
     injector.getInstance(NGTelemetryRecordsJob.class).scheduleTasks();
+  }
+
+  private void initializeCdMonitoring(NextGenConfiguration appConfig, Injector injector) {
+    log.info("Initializing Cd Monitoring");
+    injector.getInstance(CdTelemetryRecordsJob.class).scheduleTasks();
   }
 
   private void registerOasResource(NextGenConfiguration appConfig, Environment environment, Injector injector) {
@@ -464,6 +478,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
           { add(GitSyncMigrationProvider.class); }
           { add(DelegateMigrationProvider.class); }
           { add(UserGroupMigrationProvider.class); }
+          { add(CDMigrationProvider.class); }
         })
         .build();
   }
@@ -532,6 +547,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     injector.getInstance(InstanceStatsIteratorHandler.class).registerIterators();
     injector.getInstance(GitFullSyncEntityIterator.class)
         .registerIterators(ngIteratorsConfig.getGitFullSyncEntityIteratorConfig().getThreadPoolSize());
+    injector.getInstance(OAuthTokenRereshers.class)
+        .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
   }
 
   public void registerJobs(Injector injector) {
@@ -550,7 +567,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
   }
 
-  private void registerPmsSdkEvents(Injector injector) {
+  private void registerPmsSdkEvents(NextGenConfiguration appConfig, Injector injector) {
     log.info("Initializing sdk redis abstract consumers...");
     PipelineEventConsumerController pipelineEventConsumerController =
         injector.getInstance(PipelineEventConsumerController.class);
@@ -562,8 +579,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 2);
-    pipelineEventConsumerController.register(
-        injector.getInstance(PipelineExecutionSummaryCDRedisEventConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(PipelineExecutionSummaryCDRedisEventConsumer.class),
+        appConfig.getDebeziumConsumerConfigs().get(0).getNumberOfThreads());
   }
 
   private void registerYamlSdk(Injector injector) {

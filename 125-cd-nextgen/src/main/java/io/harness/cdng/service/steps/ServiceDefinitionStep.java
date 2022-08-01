@@ -17,7 +17,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.executables.ChildExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.steps.StepUtils;
+import io.harness.steps.SdkCoreStepUtils;
 import io.harness.tasks.ResponseData;
 
 import java.util.Map;
@@ -43,6 +43,6 @@ public class ServiceDefinitionStep implements ChildExecutable<ServiceDefinitionS
   @Override
   public StepResponse handleChildResponse(
       Ambiance ambiance, ServiceDefinitionStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    return StepUtils.createStepResponseFromChildResponse(responseDataMap);
+    return SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
   }
 }

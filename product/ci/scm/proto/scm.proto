@@ -738,6 +738,20 @@ message FindCommitResponse {
   Commit commit = 3;
 }
 
+message RefreshTokenRequest {
+  string clientID = 1;
+  string clientSecret = 2;
+  string endpoint = 3;
+  string redirectUri = 4;
+  string refreshToken = 5;
+}
+
+message RefreshTokenResponse {
+  string accessToken = 1;
+  int32 expiresIn = 3;
+  string refreshToken = 4;
+}
+
 service SCM {
   // RPC to stop tailing on a file.
   rpc ParseWebhook(ParseWebhookRequest) returns (ParseWebhookResponse);
@@ -780,4 +794,6 @@ service SCM {
   rpc CreateWebhook(CreateWebhookRequest) returns (CreateWebhookResponse);
   rpc DeleteWebhook(DeleteWebhookRequest) returns (DeleteWebhookResponse);
   rpc ListWebhooks(ListWebhooksRequest) returns (ListWebhooksResponse);
+
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
 }

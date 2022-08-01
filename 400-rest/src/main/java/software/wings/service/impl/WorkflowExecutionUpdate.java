@@ -293,7 +293,8 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
          */
         if (workflowExecution.getStartTs() != null && workflowExecution.getEndTs() != null) {
           updateDeploymentInformation(workflowExecution);
-          workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
+          workflowExecution =
+              workflowExecutionService.getWorkflowExecutionWithFailureDetails(appId, workflowExecutionId);
           /**
            * Had to do a double check on the finalStatus since workflowStatus is still not in finalStatus while
            * the callBack says it is finalStatus (Check with Srinivas)

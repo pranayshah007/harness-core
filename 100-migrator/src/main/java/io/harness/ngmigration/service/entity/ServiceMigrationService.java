@@ -13,6 +13,9 @@ import static software.wings.ngmigration.NGMigrationEntityType.ARTIFACT_STREAM;
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 import static software.wings.ngmigration.NGMigrationEntityType.SERVICE;
 
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
@@ -25,6 +28,7 @@ import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYaml;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.encryption.Scope;
 import io.harness.exception.UnsupportedOperationException;
@@ -35,6 +39,8 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.summary.BaseSummary;
+import io.harness.ngmigration.beans.summary.ServiceSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
@@ -62,6 +68,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -78,7 +85,26 @@ public class ServiceMigrationService extends NgMigrationService {
   }
 
   @Override
+  public BaseSummary getSummary(List<CgEntityNode> entities) {
+    if (EmptyPredicate.isEmpty(entities)) {
+      return null;
+    }
+    Map<String, Long> artifactTypeSummary = entities.stream()
+                                                .map(entity -> ((Service) entity.getEntity()).getArtifactType())
+                                                .filter(Objects::nonNull)
+                                                .collect(groupingBy(ArtifactType::name, counting()));
+    Map<String, Long> deploymentTypeSummary = entities.stream()
+                                                  .map(entity -> ((Service) entity.getEntity()).getDeploymentType())
+                                                  .filter(Objects::nonNull)
+                                                  .collect(groupingBy(DeploymentType::name, counting()));
+    return new ServiceSummary(entities.size(), deploymentTypeSummary, artifactTypeSummary);
+  }
+
+  @Override
   public DiscoveryNode discover(NGMigrationEntity entity) {
+    if (entity == null) {
+      return null;
+    }
     Service service = (Service) entity;
     String serviceId = service.getUuid();
     CgEntityId serviceEntityId = CgEntityId.builder().type(SERVICE).id(serviceId).build();

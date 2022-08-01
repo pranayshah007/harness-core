@@ -82,6 +82,9 @@ public class EnvironmentMigrationService extends NgMigrationService {
 
   @Override
   public DiscoveryNode discover(NGMigrationEntity entity) {
+    if (entity == null) {
+      return null;
+    }
     Environment environment = (Environment) entity;
     String entityId = environment.getUuid();
     CgEntityId environmentEntityId = CgEntityId.builder().type(NGMigrationEntityType.ENVIRONMENT).id(entityId).build();

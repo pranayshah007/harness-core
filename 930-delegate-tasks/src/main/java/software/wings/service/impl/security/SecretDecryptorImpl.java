@@ -18,8 +18,7 @@ import java.util.List;
 public class SecretDecryptorImpl implements SecretDecryptor {
   @Inject private SecretDecryptionService secretDecryptionService;
 
-  public DecryptableEntity decrypt(
-      DecryptableEntity object, List<EncryptedDataDetail> encryptedDataDetails, String accountId) {
+  public DecryptableEntity decrypt(DecryptableEntity object, List<EncryptedDataDetail> encryptedDataDetails) {
     return secretDecryptionService.decrypt(object, encryptedDataDetails);
   }
 }

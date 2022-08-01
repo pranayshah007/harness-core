@@ -131,6 +131,14 @@ public class ProvisionService {
     if (!delegateInstallStatus) {
       return ProvisionResponse.SetupStatus.DELEGATE_PROVISION_FAILURE;
     }
+
+    try {
+      ConnectorValidationResult testConnectionResult =
+          connectorService.testConnection(accountId, null, null, "harnessImage");
+      log.info("testConnectionResult for harnessImageConnector: " + testConnectionResult.getStatus());
+    } catch (Exception ex) {
+      log.info("failed to test connection for harnessImageConnector", ex);
+    }
     return ProvisionResponse.SetupStatus.SUCCESS;
   }
 
@@ -370,6 +378,10 @@ public class ProvisionService {
     //    ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnector(
     //        accountId, null, null, (ScmConnector) connector.get().getConnector().getConnectorConfig());
     return convertToUserRepo(scmClient.getAllUserRepos(null));
+  }
+
+  public void refreshCode(String clientId, String clientSecret, String endpoint, String refreshCode) {
+    scmClient.refreshToken(null, clientId, clientSecret, endpoint, refreshCode);
   }
 
   private List<UserRepoResponse> convertToUserRepo(GetUserReposResponse allUserRepos) {

@@ -57,7 +57,7 @@ class WorkloadSpecWriter implements ItemWriter<PublishedMessage> {
                                   .kind(k8sWorkloadSpec.getWorkloadKind())
                                   .build();
 
-      if (featureFlagService.isEnabled(FeatureName.NODE_RECOMMENDATION_1, accountId)) {
+      if (featureFlagService.isEnabled(FeatureName.NODE_RECOMMENDATION_AGGREGATE, accountId)) {
         instanceInfoTimescaleDAO.insertIntoWorkloadInfo(accountId, k8sWorkloadSpec);
       }
       List<K8sWorkloadSpec.ContainerSpec> containerSpecs = k8sWorkloadSpec.getContainerSpecsList();

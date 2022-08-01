@@ -45,6 +45,9 @@ public interface InstanceRepositoryCustom {
   List<Instance> getActiveInstancesByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
 
+  List<Instance> getActiveInstancesByServiceId(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
+
   List<Instance> getActiveInstancesByInfrastructureMappingId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String infrastructureMappingId);
 
@@ -52,7 +55,7 @@ public interface InstanceRepositoryCustom {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
 
   AggregationResults<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
   AggregationResults<InstancesByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,

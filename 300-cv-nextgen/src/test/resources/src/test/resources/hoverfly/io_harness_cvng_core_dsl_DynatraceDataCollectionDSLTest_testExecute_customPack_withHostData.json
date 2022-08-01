@@ -1,0 +1,80 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/api/v2/metrics/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "qva35651.live.dynatrace.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "entitySelector" : [ {
+            "matcher" : "exact",
+            "value" : "type(\"dt.entity.service\"),entityId(\"SERVICE-D739201C4CBBA618\")"
+          } ],
+          "from" : [ {
+            "matcher" : "exact",
+            "value" : "1658793540000"
+          } ],
+          "metricSelector" : [ {
+            "matcher" : "exact",
+            "value" : "builtin:service.ioTime"
+          } ],
+          "resolution" : [ {
+            "matcher" : "exact",
+            "value" : "1m"
+          } ],
+          "to" : [ {
+            "matcher" : "exact",
+            "value" : "1658793600000"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAAHWOTW/CMAyG/4vPpWoKLW1uo+sBISTEpl0mDhlYk6U0QY2DhhD/fU43TVzmnJzn/fAN2LOxnY+OQasMHH7xznziBq+gXbQ2gxGDt5HJO9CgBph+ohX9+w0G5JGO65Ogj0iWyemA44WOmJN/pQFFfjJsdp4cTzV7I1Ggq7zoZ41A0bgg4Y9QJVj9OKeaP1WQFV76/du662fPy3lbFqpbdKvVU60aODzkbc0ZtDg5R8fE1/z3Lrn0X/89AxZ/YDOcU5Oqq2bZzusijYRfjI2YQFuWi+JwT+8b4oqy+0MBAAA=",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Cache-Control" : [ "no-store, no-cache" ],
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Length" : [ "233" ],
+          "Content-Type" : [ "application/json;charset=utf-8" ],
+          "Date" : [ "Tue, 26 Jul 2022 09:47:14 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Pragma" : [ "no-cache" ],
+          "Server" : [ "ruxit server" ],
+          "Server-Timing" : [ "dtRpid;desc=\"-1453901860\", dtSInfo;desc=\"0\"" ],
+          "Set-Cookie" : [ "dtCookie=v_4_srv_7_sn_592A7AA8E2FF40B921846A23E0C3605C_perc_100000_ol_0_mul_1_app-3Af6b10dd0df01cfe1_1; Path=/; Domain=.dynatrace.com; Secure" ],
+          "Strict-Transport-Security" : [ "max-age=31536000;includeSubDomains" ],
+          "Vary" : [ "Accept-Encoding" ],
+          "X-Oneagent-Js-Injection" : [ "true" ],
+          "X-Robots-Tag" : [ "noindex" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-07-26T09:47:19Z"
+  }
+}

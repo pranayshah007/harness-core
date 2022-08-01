@@ -75,4 +75,9 @@ public interface DelegateSetupService {
   DelegateGroup getDelegateGroup(String accountId, String delegateGroupId);
 
   void deleteDelegateGroupsOnDeletingOwner(String accountId, DelegateEntityOwner owner);
+
+  List<DelegateGroupDTO> listDelegateGroupsHavingTags(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, DelegateGroupTags tags);
+
+  List<String> listDelegateImplicitSelectors(Delegate delegate);
 }

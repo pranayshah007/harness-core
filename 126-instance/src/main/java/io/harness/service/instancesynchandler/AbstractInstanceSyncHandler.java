@@ -52,6 +52,12 @@ public abstract class AbstractInstanceSyncHandler implements IInstanceSyncHandle
     return instanceInfoList;
   }
 
+  public final List<InstanceInfoDTO> getInstanceDetailsFromInstances(List<InstanceDTO> serverInstanceInfoList) {
+    List<InstanceInfoDTO> instanceInfoList = new ArrayList<>();
+    serverInstanceInfoList.forEach(serverInstanceInfo -> instanceInfoList.add(serverInstanceInfo.getInstanceInfoDTO()));
+    return instanceInfoList;
+  }
+
   @Override
   public String getInstanceSyncHandlerKey(InstanceInfoDTO instanceInfoDTO) {
     return instanceInfoDTO.prepareInstanceSyncHandlerKey();

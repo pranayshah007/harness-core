@@ -52,6 +52,8 @@ public interface AzureWebClient {
    */
   Optional<WebApp> getWebAppByName(AzureWebClientContext context);
 
+  WebApp getWebApp(AzureWebClientContext context);
+
   /**
    * Get deployment slot by name.
    *
@@ -79,6 +81,9 @@ public interface AzureWebClient {
   Completable startDeploymentSlotAsync(AzureWebClientContext context, String slotName);
 
   void startDeploymentSlotAsync(AzureWebClientContext context, String slotName, ServiceCallback<Void> callback);
+
+  void startWebAppAsync(AzureWebClientContext context, ServiceCallback<Void> callback);
+
   /**
    * Start deployment slot.
    *
@@ -112,6 +117,9 @@ public interface AzureWebClient {
   Completable stopDeploymentSlotAsync(AzureWebClientContext context, String slotName);
 
   void stopDeploymentSlotAsync(AzureWebClientContext context, String slotName, ServiceCallback<Void> callback);
+
+  void stopWebAppAsync(AzureWebClientContext context, ServiceCallback<Void> callback);
+
   /**
    * Stop deployment slot.
    *
@@ -146,6 +154,9 @@ public interface AzureWebClient {
   void updateDeploymentSlotAppSettings(
       AzureWebClientContext context, String slotName, Map<String, AzureAppServiceApplicationSetting> appSettings);
 
+  void updateWebAppAppSettings(
+      AzureWebClientContext context, Map<String, AzureAppServiceApplicationSetting> appSettings);
+
   /**
    * List deployment slot application settings.
    *
@@ -155,6 +166,9 @@ public interface AzureWebClient {
    */
   Map<String, AzureAppServiceApplicationSetting> listDeploymentSlotAppSettings(
       AzureWebClientContext context, String slotName);
+
+  void deleteWebAppAppSettings(
+      AzureWebClientContext context, Map<String, AzureAppServiceApplicationSetting> appSettingsToRemove);
 
   /**
    * Update deployment slot connection settings.
@@ -166,6 +180,9 @@ public interface AzureWebClient {
   void updateDeploymentSlotConnectionStrings(
       AzureWebClientContext context, String slotName, Map<String, AzureAppServiceConnectionString> connectionSettings);
 
+  void updateWebAppConnectionStrings(
+      AzureWebClientContext context, Map<String, AzureAppServiceConnectionString> connectionStrings);
+
   /**
    * List deployment slot connection settings.
    *
@@ -175,6 +192,9 @@ public interface AzureWebClient {
    */
   Map<String, AzureAppServiceConnectionString> listDeploymentSlotConnectionStrings(
       AzureWebClientContext context, String slotName);
+
+  void deleteWebAppConnectionStrings(
+      AzureWebClientContext context, Map<String, AzureAppServiceConnectionString> connSettingsToRemove);
 
   /**
    * Update deployment slot docker settings.
@@ -186,6 +206,9 @@ public interface AzureWebClient {
   void updateDeploymentSlotDockerSettings(
       AzureWebClientContext context, String slotName, Map<String, AzureAppServiceApplicationSetting> dockerSettings);
 
+  void updateWebAppDockerSettings(
+      AzureWebClientContext context, Map<String, AzureAppServiceApplicationSetting> dockerSettings);
+
   /**
    * List deployment slot docker settings.
    *
@@ -196,6 +219,8 @@ public interface AzureWebClient {
   Map<String, AzureAppServiceApplicationSetting> listDeploymentSlotDockerSettings(
       AzureWebClientContext azureWebClientContext, String slotName);
 
+  Map<String, AzureAppServiceApplicationSetting> listWebAppDockerSettings(AzureWebClientContext azureWebClientContext);
+
   /**
    * List deployment slot docker settings.
    *
@@ -203,6 +228,8 @@ public interface AzureWebClient {
    * @param slotName
    */
   void deleteDeploymentSlotDockerSettings(AzureWebClientContext context, String slotName);
+
+  void deleteWebAppDockerSettings(AzureWebClientContext context);
 
   /**
    * Update deployment slot docker image name and tag settings.
@@ -214,6 +241,9 @@ public interface AzureWebClient {
    */
   void updateDeploymentSlotDockerImageNameAndTagSettings(
       AzureWebClientContext context, String slotName, String newImageAndTag, WebAppHostingOS hostingOS);
+
+  void updateWebAppDockerImageNameAndTagSettings(
+      AzureWebClientContext context, String dockerImageAndTagPath, WebAppHostingOS hostingOS);
 
   /**
    * Delete deployment slot docker image name and tag settings.
@@ -279,6 +309,8 @@ public interface AzureWebClient {
    */
   Optional<String> getSlotDockerImageNameAndTag(AzureWebClientContext context, String slotName);
 
+  Optional<String> getWebAppDockerImageNameAndTag(AzureWebClientContext context);
+
   /**
    * Reroute production slot traffic to target slot in percentage.
    *
@@ -290,6 +322,8 @@ public interface AzureWebClient {
   void rerouteProductionSlotTraffic(
       AzureWebClientContext context, String targetRerouteSlotName, double trafficReroutePercentage);
 
+  Map<String, AzureAppServiceApplicationSetting> listWebAppAppSettings(AzureWebClientContext context);
+
   /**
    * Delete deployment slot application settings.
    *
@@ -297,8 +331,10 @@ public interface AzureWebClient {
    * @param slotName
    * @param appSettingsToRemove
    */
-  DeploymentSlot deleteDeploymentSlotAppSettings(AzureWebClientContext context, String slotName,
+  void deleteDeploymentSlotAppSettings(AzureWebClientContext context, String slotName,
       Map<String, AzureAppServiceApplicationSetting> appSettingsToRemove);
+
+  Map<String, AzureAppServiceConnectionString> listWebAppConnectionStrings(AzureWebClientContext context);
 
   /**
    * Delete deployment slot connections settings.
@@ -306,9 +342,8 @@ public interface AzureWebClient {
    * @param context
    * @param slotName
    * @param connSettingsToRemove
-   * @return
    */
-  DeploymentSlot deleteDeploymentSlotConnectionStrings(AzureWebClientContext context, String slotName,
+  void deleteDeploymentSlotConnectionStrings(AzureWebClientContext context, String slotName,
       Map<String, AzureAppServiceConnectionString> connSettingsToRemove);
 
   /**
@@ -329,6 +364,8 @@ public interface AzureWebClient {
    */
   List<SiteInstanceInner> listInstanceIdentifiersSlot(AzureWebClientContext context, String slotName);
 
+  List<SiteInstanceInner> listInstanceIdentifiers(AzureWebClientContext context);
+
   /**
    * Deploying ZIP to deployment slot.
    *
@@ -347,6 +384,8 @@ public interface AzureWebClient {
    * @return
    */
   Completable deployZipToSlotAsync(AzureWebClientContext context, String slotName, File file);
+
+  Completable deployZipToWebAppAsync(AzureWebClientContext context, File file);
 
   /**
    * Deploying WAR to deployment slot.
@@ -367,6 +406,8 @@ public interface AzureWebClient {
    */
   Completable deployWarToSlotAsync(AzureWebClientContext context, String slotName, File file);
 
+  Completable deployWarToWebAppAsync(AzureWebClientContext context, File file);
+
   /**
    * Stream deployment logs on slot.
    *
@@ -385,6 +426,8 @@ public interface AzureWebClient {
    */
   Observable<String> streamDeploymentLogsAsync(AzureWebClientContext context, String slotName);
 
+  Observable<String> streamDeploymentLogsAsync(AzureWebClientContext context);
+
   /**
    * Update slot configuration with app command line script.
    *
@@ -396,6 +439,9 @@ public interface AzureWebClient {
   SiteConfigResourceInner updateSlotConfigurationWithAppCommandLineScript(
       AzureWebClientContext context, String slotName, String startupCommand);
 
+  SiteConfigResourceInner updateWebAppConfigurationWithAppCommandLineScript(
+      AzureWebClientContext context, String startupCommand);
+
   /**
    * Get deployment slot startup command.
    *
@@ -404,4 +450,6 @@ public interface AzureWebClient {
    * @return startup command
    */
   String getDeploymentSlotStartupCommand(AzureWebClientContext azureWebClientContext, String slotName);
+
+  String getWebAppStartupCommand(AzureWebClientContext context);
 }

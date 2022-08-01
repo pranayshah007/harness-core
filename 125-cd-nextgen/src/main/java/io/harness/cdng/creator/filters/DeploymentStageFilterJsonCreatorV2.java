@@ -24,6 +24,7 @@ import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
+import io.harness.exception.InvalidRequestException;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -178,9 +179,12 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
 
-    if (!gitOpsEnabled && env.isDeployToAll()) {
-      throw new InvalidYamlRuntimeException(
-          "Deploy to all environments is not supported yet. Please select a specific infrastructure and try again");
+    final ParameterField<Boolean> deployToAll = env.getDeployToAll();
+    if (!gitOpsEnabled) {
+      if (deployToAll.isExpression() || deployToAll.getValue() == Boolean.TRUE) {
+        throw new InvalidYamlRuntimeException(
+            "Deploy to all environments is not supported yet. Please select a specific infrastructure and try again");
+      }
     }
 
     if (!environmentRef.isExpression()) {
@@ -203,19 +207,25 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
                   filterCreationContext.getSetupMetadata().getOrgId(),
                   filterCreationContext.getSetupMetadata().getProjectId(), entity.getIdentifier(),
                   infraList.get(0).getIdentifier());
-          infrastructureEntity.ifPresent(
-              ie -> filterBuilder.infrastructureType(infrastructureEntity.get().getType().getDisplayName()));
+          if (infrastructureEntity.isPresent()) {
+            if (infrastructureEntity.get().getType() == null) {
+              throw new InvalidRequestException(format(
+                  "Infrastructure Definition [%s] in environment [%s] does not have an associated type. Please select a type for the infrastructure and try again",
+                  infrastructureEntity.get().getIdentifier(), infrastructureEntity.get().getEnvIdentifier()));
+            }
+            filterBuilder.infrastructureType(infrastructureEntity.get().getType().getDisplayName());
+          }
         }
       }
     }
 
-    if (gitOpsEnabled) {
-      if (env.isDeployToAll() && env.getGitOpsClusters().fetchFinalValue() != null) {
+    if (gitOpsEnabled && !deployToAll.isExpression()) {
+      if (deployToAll.getValue() && env.getGitOpsClusters().fetchFinalValue() != null) {
         throw new InvalidYamlRuntimeException(format(
             "When deploying to all, individual gitops clusters must not be provided in stage [%s]. Please remove the gitOpsClusters property and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
       }
-      if (!env.isDeployToAll() && env.getGitOpsClusters().fetchFinalValue() == null) {
+      if (!deployToAll.getValue() && env.getGitOpsClusters().fetchFinalValue() == null) {
         throw new InvalidYamlRuntimeException(format(
             "When deploy to all is false, list of gitops clusters must be provided  in stage [%s].  Please specify the gitOpsClusters property and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));

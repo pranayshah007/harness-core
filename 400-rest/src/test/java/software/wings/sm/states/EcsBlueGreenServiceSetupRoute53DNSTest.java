@@ -217,16 +217,16 @@ public class EcsBlueGreenServiceSetupRoute53DNSTest extends WingsBaseTest {
     ContainerServiceElement containerServiceElement = ContainerServiceElement.builder().build();
     doReturn(containerServiceElement)
         .when(mockEcsStateHelper)
-        .buildContainerServiceElement(any(), any(), any(), any(), nullable(String.class), nullable(String.class),
-            nullable(String.class), any(), anyInt(), any());
+        .buildContainerServiceElement(any(), any(), any(), nullable(String.class), nullable(String.class),
+            nullable(String.class), any(), anyInt());
     SweepingOutputInstanceBuilder builder = SweepingOutputInstance.builder();
     doReturn(builder).when(mockContext).prepareSweepingOutputBuilder(any());
     doReturn("foo").when(mockEcsStateHelper).getSweepingOutputName(any(), anyBoolean(), nullable(String.class));
     doReturn(null).when(mockSweepingOutputService).save(any());
     ExecutionResponse response = state.handleAsyncResponse(mockContext, ImmutableMap.of(ACTIVITY_ID, delegateResponse));
     verify(mockEcsStateHelper)
-        .buildContainerServiceElement(any(), any(), any(), any(), nullable(String.class), nullable(String.class),
-            nullable(String.class), any(), anyInt(), any());
+        .buildContainerServiceElement(any(), any(), any(), nullable(String.class), nullable(String.class),
+            nullable(String.class), any(), anyInt());
     verify(mockEcsStateHelper).populateFromDelegateResponse(any(), any(), any());
   }
 

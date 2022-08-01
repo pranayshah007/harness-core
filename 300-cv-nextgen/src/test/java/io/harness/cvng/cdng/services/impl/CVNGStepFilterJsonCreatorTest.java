@@ -45,6 +45,7 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import lombok.SneakyThrows;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,7 +54,8 @@ import org.mockito.MockitoAnnotations;
 
 public class CVNGStepFilterJsonCreatorTest extends CvNextGenTestBase {
   private static final List<String> YAML_FILE_PATHS = Arrays.asList("pipeline/pipeline-with-verify.yaml",
-      "pipeline/pipeline-canary-with-verify.yaml", "pipeline/pipeline-service-propagation-with-verify.yaml");
+      "pipeline/pipeline-canary-with-verify.yaml", "pipeline/pipeline-service-propagation-with-verify.yaml",
+      "pipeline/pipeline-with-service-as-serviceConfig-with-verify.yaml");
   private static final List<String> CONFIGURED_YAML_FILE_PATHS =
       Arrays.asList("pipeline/pipeline-with-verify-configured-monitored-service.yaml");
   @Inject private CVNGStepFilterJsonCreator cvngStepFilterJsonCreator;
@@ -253,6 +255,34 @@ public class CVNGStepFilterJsonCreatorTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testHandleNode_configuredMonitoredServiceInputParam() throws IOException {
+    ParameterField<String> monitoredServiceRef =
+        ParameterField.createExpressionField(true, "<+step.input>", null, true);
+    MonitoredServiceNode monitoredServiceNode =
+        MonitoredServiceNode.builder()
+            .spec(ConfiguredMonitoredServiceSpec.builder().monitoredServiceRef(monitoredServiceRef).build())
+            .type("Configured")
+            .build();
+    CVNGStepInfo cvngStepInfo = builderFactory.cvngStepInfoBuilder().build();
+    cvngStepInfo.setMonitoredService(monitoredServiceNode);
+    CONFIGURED_YAML_FILE_PATHS.forEach(yamlFilePath -> {
+      FilterCreationResponse filterCreationResponse =
+          cvngStepFilterJsonCreator.handleNode(FilterCreationContext.builder()
+                                                   .currentField(getVerifyStepYamlField(yamlFilePath))
+                                                   .setupMetadata(SetupMetadata.newBuilder()
+                                                                      .setAccountId(accountId)
+                                                                      .setOrgId(orgIdentifier)
+                                                                      .setProjectId(projectIdentifier)
+                                                                      .build())
+                                                   .build(),
+              StepElementConfig.builder().stepSpecType(cvngStepInfo).build());
+      assertThat(filterCreationResponse.getReferredEntities()).hasSize(0);
+    });
+  }
+
+  @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testHandleNode_validConfiguredMonitoredService() throws IOException {
@@ -292,7 +322,8 @@ public class CVNGStepFilterJsonCreatorTest extends CvNextGenTestBase {
     }
   }
 
-  public YamlField getVerifyStepYamlField(String yamlFilePath) throws IOException {
+  @SneakyThrows
+  public YamlField getVerifyStepYamlField(String yamlFilePath) {
     return getVerifyStepYamlField(yamlFilePath, serviceIdentifier, envIdentifier);
   }
 

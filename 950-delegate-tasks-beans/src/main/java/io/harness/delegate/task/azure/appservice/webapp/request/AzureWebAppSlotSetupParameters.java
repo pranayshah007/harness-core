@@ -37,6 +37,7 @@ public class AzureWebAppSlotSetupParameters extends AzureAppServiceTaskParameter
   List<EncryptedDataDetail> encryptedDataDetails;
   AzureRegistryType azureRegistryType;
   @Expression(ALLOW_SECRETS) private String startupCommand;
+  private boolean isBasicDeployment;
 
   @Builder
   public AzureWebAppSlotSetupParameters(String appId, String accountId, String activityId, String subscriptionId,
@@ -44,7 +45,7 @@ public class AzureWebAppSlotSetupParameters extends AzureAppServiceTaskParameter
       String imageTag, String commandName, Integer timeoutIntervalInMin, ConnectorConfigDTO connectorConfigDTO,
       List<EncryptedDataDetail> encryptedDataDetails, AzureRegistryType azureRegistryType,
       List<AzureAppServiceApplicationSetting> applicationSettings,
-      List<AzureAppServiceConnectionString> connectionStrings, String startupCommand) {
+      List<AzureAppServiceConnectionString> connectionStrings, String startupCommand, boolean isBasicDeployment) {
     super(appId, accountId, activityId, subscriptionId, resourceGroupName, webAppName, commandName,
         timeoutIntervalInMin, SLOT_SETUP, WEB_APP);
     this.slotName = slotName;
@@ -57,5 +58,6 @@ public class AzureWebAppSlotSetupParameters extends AzureAppServiceTaskParameter
     this.applicationSettings = applicationSettings;
     this.connectionStrings = connectionStrings;
     this.startupCommand = startupCommand;
+    this.isBasicDeployment = isBasicDeployment;
   }
 }

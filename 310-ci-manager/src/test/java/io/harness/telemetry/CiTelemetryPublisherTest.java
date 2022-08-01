@@ -27,8 +27,10 @@ import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.core.ci.services.CIOverviewDashboardService;
+import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.repositories.CITelemetryStatusRepository;
+import io.harness.repositories.ModuleLicenseRepository;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
@@ -46,6 +48,7 @@ public class CiTelemetryPublisherTest extends CategoryTest {
   TelemetryReporter telemetryReporter = mock(TelemetryReporter.class);
   AccountClient accountClient = mock(AccountClient.class);
   CITelemetryStatusRepository ciTelemetryStatusRepository = mock(CITelemetryStatusRepository.class);
+  ModuleLicenseRepository moduleLicenseRepository = mock(ModuleLicenseRepository.class);
 
   @Before
   public void setUp() {
@@ -54,6 +57,7 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     telemetryPublisher.telemetryReporter = telemetryReporter;
     telemetryPublisher.accountClient = accountClient;
     telemetryPublisher.ciTelemetryStatusRepository = ciTelemetryStatusRepository;
+    telemetryPublisher.moduleLicenseRepository = moduleLicenseRepository;
   }
 
   @Test
@@ -63,6 +67,81 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     long activeCommitters = 20L;
     doReturn(activeCommitters).when(ciOverviewDashboardService).getActiveCommitterCount(any());
     doReturn(true).when(ciTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
+    ModuleLicense moduleLicense = null;
+    List<ModuleLicense> moduleLicenses = Collections.singletonList(moduleLicense);
+    doReturn(moduleLicenses).when(moduleLicenseRepository).findByAccountIdentifierAndModuleType(any(), any());
+    AccountDTO accountDTO1 = AccountDTO.builder().identifier("acc1").build();
+    AccountDTO accountDTO2 = AccountDTO.builder().identifier("acc2").build();
+    List<AccountDTO> accountDTOList = new ArrayList<>();
+    accountDTOList.add(accountDTO1);
+    accountDTOList.add(accountDTO2);
+    doReturn(accountDTOList).when(telemetryPublisher).getAllAccounts();
+    HashMap<String, Object> firstAccountExpectedMap = new HashMap<>();
+    firstAccountExpectedMap.put("group_type", "Account");
+    firstAccountExpectedMap.put("group_id", "acc1");
+    firstAccountExpectedMap.put("ci_license_developers_used", activeCommitters);
+    firstAccountExpectedMap.put("account_deploy_type", null);
+
+    HashMap<String, Object> secondAccountExpectedMap = new HashMap<>();
+    secondAccountExpectedMap.put("group_type", "Account");
+    secondAccountExpectedMap.put("group_id", "acc2");
+    secondAccountExpectedMap.put("ci_license_developers_used", activeCommitters);
+    secondAccountExpectedMap.put("account_deploy_type", null);
+
+    telemetryPublisher.recordTelemetry();
+    verify(telemetryReporter, times(1))
+        .sendGroupEvent("acc1", null, firstAccountExpectedMap, Collections.singletonMap(ALL, true),
+            TelemetryOption.builder().sendForCommunity(true).build());
+    verify(telemetryReporter, times(1))
+        .sendGroupEvent("acc2", null, secondAccountExpectedMap, Collections.singletonMap(ALL, true),
+            TelemetryOption.builder().sendForCommunity(true).build());
+  }
+
+  @Test
+  @Owner(developers = JAMIE)
+  @Category(UnitTests.class)
+  public void testRecordTelemetryNoActiveCI() {
+    long activeCommitters = 0L;
+    doReturn(activeCommitters).when(ciOverviewDashboardService).getActiveCommitterCount(any());
+    doReturn(true).when(ciTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
+    List<ModuleLicense> moduleLicenses = Collections.emptyList();
+    doReturn(moduleLicenses).when(moduleLicenseRepository).findByAccountIdentifierAndModuleType(any(), any());
+    AccountDTO accountDTO1 = AccountDTO.builder().identifier("acc1").build();
+    AccountDTO accountDTO2 = AccountDTO.builder().identifier("acc2").build();
+    List<AccountDTO> accountDTOList = new ArrayList<>();
+    accountDTOList.add(accountDTO1);
+    accountDTOList.add(accountDTO2);
+    doReturn(accountDTOList).when(telemetryPublisher).getAllAccounts();
+    HashMap<String, Object> firstAccountExpectedMap = new HashMap<>();
+    firstAccountExpectedMap.put("group_type", "Account");
+    firstAccountExpectedMap.put("group_id", "acc1");
+    firstAccountExpectedMap.put("ci_license_developers_used", null);
+    firstAccountExpectedMap.put("account_deploy_type", null);
+
+    HashMap<String, Object> secondAccountExpectedMap = new HashMap<>();
+    secondAccountExpectedMap.put("group_type", "Account");
+    secondAccountExpectedMap.put("group_id", "acc2");
+    secondAccountExpectedMap.put("ci_license_developers_used", null);
+    secondAccountExpectedMap.put("account_deploy_type", null);
+
+    telemetryPublisher.recordTelemetry();
+    verify(telemetryReporter, times(1))
+        .sendGroupEvent("acc1", null, firstAccountExpectedMap, Collections.singletonMap(ALL, true),
+            TelemetryOption.builder().sendForCommunity(true).build());
+    verify(telemetryReporter, times(1))
+        .sendGroupEvent("acc2", null, secondAccountExpectedMap, Collections.singletonMap(ALL, true),
+            TelemetryOption.builder().sendForCommunity(true).build());
+  }
+
+  @Test
+  @Owner(developers = JAMIE)
+  @Category(UnitTests.class)
+  public void testRecordTelemetryNoActiveCIButHaveExecHistory() {
+    long activeCommitters = 20L;
+    doReturn(activeCommitters).when(ciOverviewDashboardService).getActiveCommitterCount(any());
+    doReturn(true).when(ciTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
+    List<ModuleLicense> moduleLicenses = Collections.emptyList();
+    doReturn(moduleLicenses).when(moduleLicenseRepository).findByAccountIdentifierAndModuleType(any(), any());
     AccountDTO accountDTO1 = AccountDTO.builder().identifier("acc1").build();
     AccountDTO accountDTO2 = AccountDTO.builder().identifier("acc2").build();
     List<AccountDTO> accountDTOList = new ArrayList<>();
@@ -97,6 +176,9 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     long activeCommitters = 20L;
     doReturn(activeCommitters).when(ciOverviewDashboardService).getActiveCommitterCount(any());
     doReturn(false).when(ciTelemetryStatusRepository).updateTimestampIfOlderThan(anyString(), anyLong(), anyLong());
+    ModuleLicense moduleLicense = null;
+    List<ModuleLicense> moduleLicenses = Collections.singletonList(moduleLicense);
+    doReturn(moduleLicenses).when(moduleLicenseRepository).findByAccountIdentifierAndModuleType(any(), any());
     AccountDTO accountDTO1 = AccountDTO.builder().identifier("acc1").build();
     AccountDTO accountDTO2 = AccountDTO.builder().identifier("acc2").build();
     List<AccountDTO> accountDTOList = new ArrayList<>();

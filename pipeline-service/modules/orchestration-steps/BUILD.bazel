@@ -1,0 +1,76 @@
+load("@rules_java//java:defs.bzl", "java_binary")
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+java_library(
+    name = "module",
+    srcs = glob(["src/main/java/**/*.java"]),
+    resources = [
+        "//pipeline-service/modules/orchestration-steps/src/main/resources:resource",
+    ],
+    visibility = [
+        "//100-migrator:__subpackages__",
+        "//pipeline-service:__subpackages__",
+    ],
+    deps = [
+        "//:lombok",
+        "//878-ng-common-utilities:module",
+        "//880-pipeline-cd-commons:module",
+        "//950-telemetry:module",
+        "//953-yaml-commons:module",
+        "//955-delegate-beans:module",
+        "//960-continuous-features:module",
+        "//960-yaml-sdk:module",
+        "//999-annotations:module",
+        "//clients/notification:module",
+        "//clients/pipeline-service/pms-sdk-core:module",
+        "//pipeline-service/modules/orchestration:module",
+        "//pipeline-service/modules/orchestration-steps/contracts:module",
+        "//platform-service/modules/notification-service/contracts:module",
+        "@maven//:com_esotericsoftware_kryo",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_github_reinert_jjschema",
+        "@maven//:com_google_code_findbugs_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+        "@maven//:javax_validation_validation_api",
+        "@maven//:org_apache_commons_commons_collections4",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_hibernate_validator_hibernate_validator",
+        "@maven//:org_mongodb_mongo_java_driver",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_slf4j_slf4j_api",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_context",
+        "@maven//:org_springframework_spring_tx",
+        "@maven//:ru_vyarus_guice_validator",
+    ],
+)
+
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/**/*.java"]),
+    resources = ["//pipeline-service/modules/orchestration-steps/src/test/resources:resource"],
+    visibility = ["//pipeline-service:__subpackages__"],
+    deps = [
+        ":module",
+        "//:lombok",
+        "//960-persistence:supporter-test",
+        "//990-commons-test:module",
+        "@maven//:com_github_tomakehurst_wiremock_jre8_standalone",
+        "@maven//:io_fabric8_fabric8_utils",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_mockito_mockito_inline",
+        "@maven//:org_powermock_powermock_api_mockito2",
+        "@maven//:org_powermock_powermock_core",
+        "@maven//:org_powermock_powermock_module_junit4",
+    ],
+)
+
+run_tests()
+
+run_analysis()

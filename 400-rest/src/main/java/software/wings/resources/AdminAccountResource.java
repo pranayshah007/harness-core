@@ -130,6 +130,13 @@ public class AdminAccountResource {
   }
 
   @PUT
+  @Path("{accountId}/is-product-led")
+  public RestResponse<Boolean> updateIsProductLed(@PathParam("accountId") String accountId,
+      @QueryParam("isProductLed") @DefaultValue("false") boolean isProductLed) {
+    return new RestResponse<>(adminAccountService.enableOrDisableNextGen(accountId, isProductLed));
+  }
+
+  @PUT
   @Path("{accountId}/license/continuous-efficiency/")
   @Timed
   @ExceptionMetered

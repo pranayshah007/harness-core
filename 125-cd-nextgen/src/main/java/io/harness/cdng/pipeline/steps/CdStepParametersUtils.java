@@ -12,7 +12,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.stage.DeploymentAbstractStageNode;
 import io.harness.cdng.pipeline.CdAbstractStepNode;
-import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
@@ -20,6 +19,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.pms.tags.TagUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.steps.SdkCoreStepUtils;
 import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -50,7 +50,7 @@ public class CdStepParametersUtils {
     StageElementParametersBuilder stageBuilder = StageElementParameters.builder();
     stageBuilder.name(stageNode.getName());
     stageBuilder.identifier(stageNode.getIdentifier());
-    stageBuilder.description(ParameterFieldHelper.getParameterFieldHandleValueNull(stageNode.getDescription()));
+    stageBuilder.description(SdkCoreStepUtils.getParameterFieldHandleValueNull(stageNode.getDescription()));
     stageBuilder.failureStrategies(stageNode.getFailureStrategies());
     stageBuilder.skipCondition(stageNode.getSkipCondition());
     stageBuilder.when(stageNode.getWhen());

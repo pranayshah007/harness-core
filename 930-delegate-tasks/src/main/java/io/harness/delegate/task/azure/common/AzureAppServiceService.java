@@ -8,6 +8,7 @@
 package io.harness.delegate.task.azure.common;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_NAME;
 import static io.harness.azure.model.AzureConstants.SAVE_EXISTING_CONFIGURATIONS;
 import static io.harness.azure.model.AzureConstants.SLOT_NAME_BLANK_ERROR_MSG;
 import static io.harness.azure.model.AzureConstants.TARGET_SLOT_CANNOT_BE_IN_STOPPED_STATE;
@@ -42,6 +43,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.microsoft.azure.management.appservice.DeploymentSlot;
+import com.microsoft.azure.management.appservice.WebApp;
 import com.microsoft.azure.management.appservice.implementation.SiteInstanceInner;
 import java.util.Collections;
 import java.util.List;
@@ -64,7 +66,8 @@ public class AzureAppServiceService {
     return getAzureAppServicePreDeploymentDataAndLog(dockerDeploymentContext.getAzureWebClientContext(),
         dockerDeploymentContext.getSlotName(), dockerDeploymentContext.getTargetSlotName(),
         dockerDeploymentContext.getAppSettingsToAdd(), dockerDeploymentContext.getConnSettingsToAdd(), true,
-        dockerDeploymentContext.getLogCallbackProvider(), dockerDeploymentContext.isSkipTargetSlotValidation());
+        dockerDeploymentContext.getLogCallbackProvider(), dockerDeploymentContext.isSkipTargetSlotValidation(),
+        dockerDeploymentContext.isBasicDeployment());
   }
 
   public AzureAppServicePreDeploymentData getPackageDeploymentPreDeploymentData(
@@ -72,7 +75,8 @@ public class AzureAppServiceService {
     return getAzureAppServicePreDeploymentDataAndLog(packageDeploymentContext.getAzureWebClientContext(),
         packageDeploymentContext.getSlotName(), packageDeploymentContext.getTargetSlotName(),
         packageDeploymentContext.getAppSettingsToAdd(), packageDeploymentContext.getConnSettingsToAdd(), false,
-        packageDeploymentContext.getLogCallbackProvider(), false);
+        packageDeploymentContext.getLogCallbackProvider(), packageDeploymentContext.isSkipTargetSlotValidation(),
+        packageDeploymentContext.isBasicDeployment());
   }
 
   @VisibleForTesting
@@ -80,13 +84,13 @@ public class AzureAppServiceService {
       AzureWebClientContext azureWebClientContext, final String slotName, String targetSlotName,
       Map<String, AzureAppServiceApplicationSetting> userAddedAppSettings,
       Map<String, AzureAppServiceConnectionString> userAddedConnStrings, boolean includeDockerSettings,
-      AzureLogCallbackProvider logCallbackProvider, boolean skipTargetSlotValidation) {
+      AzureLogCallbackProvider logCallbackProvider, boolean skipTargetSlotValidation, boolean isBasicDeployment) {
     LogCallback logCallback = logCallbackProvider.obtainLogCallback(SAVE_EXISTING_CONFIGURATIONS);
     logCallback.saveExecutionLog(String.format("Saving existing configurations for slot - [%s] of App Service - [%s]",
         slotName, azureWebClientContext.getAppName()));
 
     try {
-      if (!skipTargetSlotValidation) {
+      if (!skipTargetSlotValidation && !isBasicDeployment) {
         validateSlotStatus(azureWebClientContext, slotName, targetSlotName, logCallback);
       }
 
@@ -101,7 +105,9 @@ public class AzureAppServiceService {
       if (includeDockerSettings) {
         saveDockerSettings(azureWebClientContext, slotName, preDeploymentDataBuilder, logCallback);
       }
-      saveTrafficWeight(azureWebClientContext, slotName, preDeploymentDataBuilder, logCallback);
+      if (!isBasicDeployment) {
+        saveTrafficWeight(azureWebClientContext, slotName, preDeploymentDataBuilder, logCallback);
+      }
       logCallback.saveExecutionLog(
           String.format("All configurations saved successfully for slot - [%s] of App Service - [%s]", slotName,
               azureWebClientContext.getAppName()),
@@ -130,15 +136,28 @@ public class AzureAppServiceService {
   public List<AzureAppDeploymentData> fetchDeploymentData(
       AzureWebClientContext azureWebClientContext, String slotName) {
     log.info("Start fetching deployment data for app name: {}, slot: {}", azureWebClientContext.getAppName(), slotName);
-    Optional<DeploymentSlot> deploymentSlotName =
-        azureWebClient.getDeploymentSlotByName(azureWebClientContext, slotName);
+    String deploySlotId;
+    String appServicePlanId;
+    String hostName;
+    if (DEPLOYMENT_SLOT_PRODUCTION_NAME.equals(slotName)) {
+      Optional<WebApp> azureApp = azureWebClient.getWebAppByName(azureWebClientContext);
+      if (!azureApp.isPresent()) {
+        throw new InvalidRequestException(format("WebApp - [%s] not found", azureWebClientContext.getAppName()));
+      }
+      deploySlotId = azureApp.get().id();
+      appServicePlanId = azureApp.get().appServicePlanId();
+      hostName = azureApp.get().defaultHostName();
+    } else {
+      Optional<DeploymentSlot> deploymentSlot = azureWebClient.getDeploymentSlotByName(azureWebClientContext, slotName);
 
-    if (!deploymentSlotName.isPresent()) {
-      throw new InvalidRequestException(
-          format("Deployment slot - [%s] not found for Web App - [%s]", slotName, azureWebClientContext.getAppName()));
+      if (!deploymentSlot.isPresent()) {
+        throw new InvalidRequestException(format(
+            "Deployment slot - [%s] not found for Web App - [%s]", slotName, azureWebClientContext.getAppName()));
+      }
+      deploySlotId = deploymentSlot.get().id();
+      appServicePlanId = deploymentSlot.get().appServicePlanId();
+      hostName = deploymentSlot.get().defaultHostName();
     }
-
-    DeploymentSlot deploymentSlot = deploymentSlotName.get();
 
     List<SiteInstanceInner> siteInstanceInners =
         azureWebClient.listInstanceIdentifiersSlot(azureWebClientContext, slotName);
@@ -150,9 +169,9 @@ public class AzureAppServiceService {
                    .resourceGroup(azureWebClientContext.getResourceGroupName())
                    .appName(azureWebClientContext.getAppName())
                    .deploySlot(slotName)
-                   .deploySlotId(deploymentSlot.id())
-                   .appServicePlanId(deploymentSlot.appServicePlanId())
-                   .hostName(deploymentSlot.defaultHostName())
+                   .deploySlotId(deploySlotId)
+                   .appServicePlanId(appServicePlanId)
+                   .hostName(hostName)
                    .instanceId(siteInstanceInner.id())
                    .instanceName(siteInstanceInner.name())
                    .instanceType(siteInstanceInner.type())

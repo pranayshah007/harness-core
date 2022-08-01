@@ -17,6 +17,7 @@ import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactTaskHandler;
+import io.harness.delegate.task.artifacts.s3.S3ArtifactTaskHandler;
 import io.harness.exception.InvalidRequestException;
 
 import com.google.inject.Inject;
@@ -48,6 +49,8 @@ public class ArtifactCollectionServiceRegistryNg {
         return ArtifactoryArtifactTaskHandler.class;
       case ACR:
         return AcrArtifactTaskHandler.class;
+      case AMAZONS3:
+        return S3ArtifactTaskHandler.class;
       default:
         throw new InvalidRequestException("Unknown artifact source type: " + artifactSourceType);
     }

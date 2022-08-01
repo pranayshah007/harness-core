@@ -36,7 +36,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@JsonTypeName(ServiceSpecType.AZURE_WEBAPPS)
+@JsonTypeName(ServiceSpecType.AZURE_WEBAPP)
 @SimpleVisitorHelper(helperClass = AzureWebAppServiceSpecVisitorHelper.class)
 @TypeAlias("azureWebAppServiceSpec")
 @RecasterAlias("io.harness.cdng.service.beans.AzureWebAppServiceSpec")
@@ -50,7 +50,7 @@ public class AzureWebAppServiceSpec implements ServiceSpec, Visitable {
   List<ManifestConfigWrapper> manifests;
   List<ConfigFileWrapper> configFiles;
 
-  StoreConfigWrapper startupScript;
+  StoreConfigWrapper startupCommand;
   StoreConfigWrapper applicationSettings;
   StoreConfigWrapper connectionStrings;
 
@@ -78,8 +78,8 @@ public class AzureWebAppServiceSpec implements ServiceSpec, Visitable {
       configFiles.forEach(configFile -> children.add("configFiles", configFile));
     }
 
-    if (startupScript != null) {
-      children.add("startupScript", startupScript);
+    if (startupCommand != null) {
+      children.add("startupCommand", startupCommand);
     }
 
     if (applicationSettings != null) {

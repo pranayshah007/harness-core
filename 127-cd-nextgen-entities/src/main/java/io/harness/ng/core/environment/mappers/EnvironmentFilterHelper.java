@@ -32,20 +32,24 @@ import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import lombok.experimental.UtilityClass;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.util.StringUtils;
 
 @OwnedBy(PIPELINE)
-@UtilityClass
+@Singleton
+@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 public class EnvironmentFilterHelper {
-  FilterService filterService;
+  @Inject private final FilterService filterService;
 
   public Criteria createCriteriaForGetList(
       String accountId, String orgIdentifier, String projectIdentifier, boolean deleted, String searchTerm) {
@@ -195,7 +199,7 @@ public class EnvironmentFilterHelper {
     return criteria;
   }
 
-  public Update getUpdateOperations(Environment environment) {
+  public static Update getUpdateOperations(Environment environment) {
     Update update = new Update();
     update.set(EnvironmentKeys.accountId, environment.getAccountId());
     update.set(EnvironmentKeys.orgIdentifier, environment.getOrgIdentifier());
@@ -213,13 +217,13 @@ public class EnvironmentFilterHelper {
     return update;
   }
 
-  public Update getUpdateOperationsForDelete() {
+  public static Update getUpdateOperationsForDelete() {
     Update update = new Update();
     update.set(EnvironmentKeys.deleted, true);
     return update;
   }
 
-  public Update getUpdateOperationsForServiceOverride(NGServiceOverridesEntity serviceOverridesEntity) {
+  public static Update getUpdateOperationsForServiceOverride(NGServiceOverridesEntity serviceOverridesEntity) {
     Update update = new Update();
     update.set(NGServiceOverridesEntityKeys.accountId, serviceOverridesEntity.getAccountId());
     update.set(NGServiceOverridesEntityKeys.orgIdentifier, serviceOverridesEntity.getOrgIdentifier());

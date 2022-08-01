@@ -8,9 +8,11 @@
 package io.harness.service.intfc;
 
 import io.harness.beans.DelegateTask;
+import io.harness.delegate.beans.DelegateProgressData;
 import io.harness.delegate.beans.DelegateTaskResponse;
 
 import java.util.List;
+import java.util.Optional;
 import javax.validation.Valid;
 import org.mongodb.morphia.query.Query;
 
@@ -21,4 +23,9 @@ public interface DelegateTaskService {
       String accountId, String delegateId, String taskId, @Valid DelegateTaskResponse response);
 
   void handleResponse(DelegateTask delegateTask, Query<DelegateTask> taskQuery, DelegateTaskResponse response);
+
+  void publishTaskProgressResponse(
+      String accountId, String driverId, String delegateTaskId, DelegateProgressData responseData);
+
+  Optional<DelegateTask> fetchDelegateTask(String accountId, String taskId);
 }

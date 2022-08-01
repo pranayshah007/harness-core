@@ -14,5 +14,7 @@ import lombok.Data;
 @Data
 @Builder
 public class DebeziumConsumerConfig {
-  @JsonProperty("topicName") String topicName;
+  @JsonProperty("debeziumTopicName") String topicName;
+  @JsonProperty("debeziumNumberOfThreads") int numberOfThreads;
+  @JsonProperty("debeziumBatchSize") int batchSize;
 }

@@ -10,6 +10,7 @@ package io.harness.cdng.azure.webapp;
 import static io.harness.azure.model.AzureConstants.SLOT_SWAP;
 import static io.harness.cdng.azure.webapp.beans.AzureWebAppSwapSlotsDataOutput.OUTPUT_NAME;
 import static io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType.SWAP_SLOTS;
+import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VLICA;
 
 import static java.util.Collections.singletonList;
@@ -29,6 +30,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSwapSlotsRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSwapSlotsResponseNG;
@@ -66,6 +68,7 @@ public class AzureWebAppSwapSlotStepTest extends CDNGTestBase {
 
   private AzureWebAppSwapSlotStepParameters parameters =
       AzureWebAppSwapSlotStepParameters.infoBuilder()
+          .targetSlot(ParameterField.createValueField("dummy-production"))
           .delegateSelectors(ParameterField.createValueField(List.of(new TaskSelectorYaml("selector-1"))))
           .build();
   private final StepElementParameters stepElementParameters = StepElementParameters.builder().spec(parameters).build();
@@ -77,13 +80,14 @@ public class AzureWebAppSwapSlotStepTest extends CDNGTestBase {
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
   public void testSwapSlotObtainTaskAfterRbac() {
-    doReturn(AzureWebAppInfraDelegateConfig.builder()
-                 .appName("webAppName")
-                 .targetSlot("dummy-production")
-                 .deploymentSlot("deploymentSlotName")
-                 .build())
+    String webAppName = "webAppName";
+    String deploymentSlotName = "deploymentSlotName";
+    doReturn(AzureWebAppInfraDelegateConfig.builder().appName(webAppName).deploymentSlot(deploymentSlotName).build())
         .when(stepHelper)
-        .getInfraDelegateConfig(ambiance);
+        .getInfraDelegateConfig(eq(ambiance), any(), any());
+    doReturn(AzureAppServicePreDeploymentData.builder().build())
+        .when(stepHelper)
+        .getPreDeploymentData(eq(ambiance), any());
 
     ArgumentCaptor<TaskParameters> taskParametersArgumentCaptor = ArgumentCaptor.forClass(TaskParameters.class);
     doReturn(TaskRequest.newBuilder().build())
@@ -103,9 +107,22 @@ public class AzureWebAppSwapSlotStepTest extends CDNGTestBase {
         (AzureWebAppSwapSlotsRequest) taskParametersArgumentCaptor.getValue();
 
     assertThat(requestParameters.getRequestType()).isEqualTo(SWAP_SLOTS);
-    assertThat(requestParameters.getInfrastructure().getTargetSlot()).isEqualTo("dummy-production");
-    assertThat(requestParameters.getInfrastructure().getDeploymentSlot()).isEqualTo("deploymentSlotName");
-    assertThat(requestParameters.getInfrastructure().getAppName()).isEqualTo("webAppName");
+    assertThat(requestParameters.getTargetSlot()).isEqualTo("dummy-production");
+    assertThat(requestParameters.getInfrastructure().getDeploymentSlot()).isEqualTo(deploymentSlotName);
+    assertThat(requestParameters.getInfrastructure().getAppName()).isEqualTo(webAppName);
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testObtainTaskAfterRbacNoPreDeploymentDataFound() {
+    doReturn(null).when(stepHelper).getPreDeploymentData(eq(ambiance), any());
+
+    TaskRequest taskRequest =
+        azureWebAppSwapSlotStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
+
+    assertThat(taskRequest.getSkipTaskRequest().getMessage())
+        .isEqualTo("No successful Slot deployment step found, swap slots can't be done");
   }
 
   @Test

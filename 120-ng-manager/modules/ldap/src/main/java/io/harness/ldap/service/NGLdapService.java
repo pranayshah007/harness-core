@@ -22,6 +22,11 @@ import javax.validation.constraints.NotNull;
 public interface NGLdapService {
   LdapTestResponse validateLdapConnectionSettings(
       @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @Valid LdapSettings settings);
+  LdapTestResponse validateLdapUserSettings(
+      @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @Valid LdapSettings settings);
+  LdapTestResponse validateLdapGroupSettings(
+      @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @Valid LdapSettings settings);
   Collection<LdapGroupResponse> searchLdapGroupsByName(@NotNull String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotNull String ldapId, @NotNull String name);
+  void syncUserGroupsJob(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

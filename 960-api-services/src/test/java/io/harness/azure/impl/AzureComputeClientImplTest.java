@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.times;
@@ -28,10 +29,13 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 import io.harness.CategoryTest;
 import io.harness.azure.AzureClient;
 import io.harness.azure.model.AzureConfig;
+import io.harness.azure.model.AzureOSType;
 import io.harness.azure.model.AzureVMSSTagsData;
+import io.harness.azure.model.VirtualMachineData;
 import io.harness.category.element.UnitTests;
 import io.harness.network.Http;
 import io.harness.rule.Owner;
+import io.harness.rule.OwnerRule;
 
 import com.google.common.util.concurrent.TimeLimiter;
 import com.microsoft.azure.Page;
@@ -42,7 +46,11 @@ import com.microsoft.azure.management.appservice.DeploymentSlot;
 import com.microsoft.azure.management.appservice.DeploymentSlots;
 import com.microsoft.azure.management.appservice.WebApp;
 import com.microsoft.azure.management.appservice.WebApps;
+import com.microsoft.azure.management.compute.LinuxConfiguration;
+import com.microsoft.azure.management.compute.OSProfile;
+import com.microsoft.azure.management.compute.PowerState;
 import com.microsoft.azure.management.compute.UpgradeMode;
+import com.microsoft.azure.management.compute.VirtualMachine;
 import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
 import com.microsoft.azure.management.compute.VirtualMachineScaleSet.UpdateStages.WithApply;
 import com.microsoft.azure.management.compute.VirtualMachineScaleSet.UpdateStages.WithPrimaryInternetFacingLoadBalancerBackendOrNatPool;
@@ -51,7 +59,9 @@ import com.microsoft.azure.management.compute.VirtualMachineScaleSet.UpdateStage
 import com.microsoft.azure.management.compute.VirtualMachineScaleSetVM;
 import com.microsoft.azure.management.compute.VirtualMachineScaleSetVMs;
 import com.microsoft.azure.management.compute.VirtualMachineScaleSets;
+import com.microsoft.azure.management.compute.VirtualMachines;
 import com.microsoft.azure.management.network.LoadBalancer;
+import com.microsoft.azure.management.network.PublicIPAddress;
 import com.microsoft.azure.management.resources.ResourceGroup;
 import com.microsoft.azure.management.resources.ResourceGroups;
 import com.microsoft.azure.management.resources.Subscription;
@@ -59,6 +69,7 @@ import com.microsoft.azure.management.resources.Subscriptions;
 import com.microsoft.rest.LogLevel;
 import com.microsoft.rest.RestException;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -419,6 +430,63 @@ public class AzureComputeClientImplTest extends CategoryTest {
     azureComputeClient.updateVMInstances(virtualMachineScaleSet, instanceIds);
 
     verify(virtualMachines, times(1)).updateInstances(instanceIds);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.FILIP)
+  @Category(UnitTests.class)
+  public void testListHosts() {
+    // Given
+    PagedList<VirtualMachine> pageList = getPageList();
+    pageList.add(aVirtualMachineWithName("vm-hostname-1"));
+    pageList.add(aVirtualMachineWithName("vm-hostname-2"));
+
+    VirtualMachines mockedVirtualMachines = mock(VirtualMachines.class);
+    when(mockedVirtualMachines.listByResourceGroup(eq("resourceGroup"))).thenReturn(pageList);
+    when(azure.virtualMachines()).thenReturn(mockedVirtualMachines);
+
+    // When
+    List<VirtualMachineData> result = azureComputeClient.listHosts(
+        getAzureComputeConfig(), "subscriptionId", "resourceGroup", AzureOSType.LINUX, Collections.emptyMap());
+
+    // Then
+    assertThat(result)
+        .isNotNull()
+        .hasSize(2)
+        .extracting(VirtualMachineData::getHostName)
+        .containsExactlyInAnyOrder("vm-hostname-1", "vm-hostname-2");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.FILIP)
+  @Category(UnitTests.class)
+  public void testListHostsNoHosts() {
+    // Given
+    PagedList<VirtualMachine> pageList = getPageList();
+
+    VirtualMachines mockedVirtualMachines = mock(VirtualMachines.class);
+    when(mockedVirtualMachines.listByResourceGroup(eq("resourceGroup"))).thenReturn(pageList);
+    when(azure.virtualMachines()).thenReturn(mockedVirtualMachines);
+
+    // When
+    List<VirtualMachineData> result = azureComputeClient.listHosts(
+        getAzureComputeConfig(), "subscriptionId", "resourceGroup", AzureOSType.LINUX, Collections.emptyMap());
+
+    // Then
+    assertThat(result).isNotNull().isEmpty();
+  }
+
+  private VirtualMachine aVirtualMachineWithName(String name) {
+    final VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
+    final PublicIPAddress publicIPAddress = Mockito.mock(PublicIPAddress.class);
+    Mockito.when(publicIPAddress.ipAddress()).thenReturn(name);
+
+    Mockito.when(virtualMachine.name()).thenReturn(name);
+    Mockito.when(virtualMachine.getPrimaryPublicIPAddress()).thenReturn(publicIPAddress);
+    Mockito.when(virtualMachine.powerState()).thenReturn(PowerState.RUNNING);
+    Mockito.when(virtualMachine.osProfile())
+        .thenReturn(new OSProfile().withLinuxConfiguration(new LinuxConfiguration()));
+    return virtualMachine;
   }
 
   public VirtualMachineScaleSet mockVirtualMachineScaleSet(

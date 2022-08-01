@@ -99,7 +99,7 @@ public class BusinessMappingResource {
     BusinessMapping oldCostCategory = businessMappingService.get(businessMapping.getUuid(), accountId);
     BusinessMapping newCostCategory = businessMappingService.update(businessMapping);
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new CostCategoryUpdateEvent(accountId, oldCostCategory.toDTO(), newCostCategory.toDTO()));
+      outboxService.save(new CostCategoryUpdateEvent(accountId, newCostCategory.toDTO(), oldCostCategory.toDTO()));
       return true;
     }));
     return new RestResponse<>("Successfully updated the Business Mapping");

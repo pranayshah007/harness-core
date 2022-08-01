@@ -9,8 +9,10 @@ package io.harness.ldap.resource;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ldap.service.NGLdapService;
+import io.harness.ng.core.api.UserGroupService;
 import io.harness.rest.RestResponse;
 
 import software.wings.beans.sso.LdapGroupResponse;
@@ -29,6 +31,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NGLdapResourceImpl implements NGLdapResource {
   NGLdapService ngLdapService;
+  AccessControlClient accessControlClient;
+  UserGroupService userGroupService;
 
   @Override
   public RestResponse<LdapTestResponse> validateLdapConnectionSettings(
@@ -39,10 +43,32 @@ public class NGLdapResourceImpl implements NGLdapResource {
   }
 
   @Override
+  public RestResponse<LdapTestResponse> validateLdapUserSettings(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
+    LdapTestResponse ldapTestResponse = ngLdapService.validateLdapUserSettings(
+        accountIdentifier, orgIdentifier, projectIdentifier, LdapSettingsMapper.ldapSettingsDTO(settings));
+    return new RestResponse<>(ldapTestResponse);
+  }
+
+  @Override
+  public RestResponse<LdapTestResponse> validateLdapGroupSettings(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, LdapSettings settings) {
+    LdapTestResponse ldapTestResponse = ngLdapService.validateLdapGroupSettings(
+        accountIdentifier, orgIdentifier, projectIdentifier, LdapSettingsMapper.ldapSettingsDTO(settings));
+    return new RestResponse<>(ldapTestResponse);
+  }
+
+  @Override
   public RestResponse<Collection<LdapGroupResponse>> searchLdapGroups(
       String ldapId, String accountId, String orgIdentifier, String projectIdentifier, String name) {
     Collection<LdapGroupResponse> groups =
         ngLdapService.searchLdapGroupsByName(accountId, orgIdentifier, projectIdentifier, ldapId, name);
     return new RestResponse<>(groups);
+  }
+
+  @Override
+  public RestResponse<Boolean> syncLdapGroups(String accountId, String orgIdentifier, String projectIdentifier) {
+    ngLdapService.syncUserGroupsJob(accountId, orgIdentifier, projectIdentifier);
+    return new RestResponse<>(true);
   }
 }

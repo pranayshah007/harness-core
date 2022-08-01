@@ -23,7 +23,7 @@ EC2:
       dimensionDisplay: Host name expression
       metricType: VALUE
       enabledDefault: true
-      statistics: Count
+      statistics: Average
       unit: Count
 
     - metricName: DiskWriteBytes

@@ -28,6 +28,7 @@ import io.harness.product.ci.scm.proto.FileContent;
 import io.harness.product.ci.scm.proto.FindCommitResponse;
 import io.harness.product.ci.scm.proto.FindFilesInBranchResponse;
 import io.harness.product.ci.scm.proto.FindFilesInCommitResponse;
+import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
@@ -37,6 +38,7 @@ import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.ListCommitsInPRResponse;
 import io.harness.product.ci.scm.proto.ListCommitsResponse;
 import io.harness.product.ci.scm.proto.ListWebhooksResponse;
+import io.harness.product.ci.scm.proto.RefreshTokenResponse;
 import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
 import io.harness.service.ScmClient;
@@ -214,5 +216,16 @@ public class SCMServiceGitClientImpl implements ScmClient {
       ScmConnector scmConnector, String sourceBranchName, String targetBranchName, String prTitle) {
     return scmServiceClient.createPullRequestV2(
         scmConnector, sourceBranchName, targetBranchName, prTitle, scmBlockingStub);
+  }
+
+  @Override
+  public RefreshTokenResponse refreshToken(
+      ScmConnector scmConnector, String clientId, String clientSecret, String endpoint, String refreshToken) {
+    return scmServiceClient.refreshToken(scmConnector, clientId, clientSecret, endpoint, refreshToken, scmBlockingStub);
+  }
+  @Override
+  public GetLatestCommitOnFileResponse getLatestCommitOnFile(
+      ScmConnector scmConnector, String branchName, String filePath) {
+    return scmServiceClient.getLatestCommitOnFile(scmConnector, branchName, filePath, scmBlockingStub);
   }
 }

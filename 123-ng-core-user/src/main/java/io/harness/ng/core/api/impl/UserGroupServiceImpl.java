@@ -42,6 +42,7 @@ import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.eraro.ErrorCode;
@@ -141,6 +142,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     try {
       UserGroup userGroup = toEntity(userGroupDTO);
       validate(userGroup);
+      sanitizeInternal(userGroup);
       return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
         UserGroup savedUserGroup = userGroupRepository.save(userGroup);
         outboxService.save(new UserGroupCreateEvent(userGroupDTO.getAccountIdentifier(), userGroupDTO));
@@ -218,6 +220,32 @@ public class UserGroupServiceImpl implements UserGroupService {
     userGroup.setId(savedUserGroup.getId());
     userGroup.setVersion(savedUserGroup.getVersion());
     return updateInternal(userGroup, toDTO(savedUserGroup));
+  }
+
+  @Override
+  public UserGroup updateWithCheckThatSCIMFieldsAreNotModified(UserGroupDTO userGroupDTO) {
+    UserGroup savedUserGroup = getOrThrow(userGroupDTO.getAccountIdentifier(), userGroupDTO.getOrgIdentifier(),
+        userGroupDTO.getProjectIdentifier(), userGroupDTO.getIdentifier());
+    checkIfSCIMFieldsAreNotUpdatedInExternallyManagedGroup(userGroupDTO, savedUserGroup);
+    return update(userGroupDTO);
+  }
+
+  private void checkIfSCIMFieldsAreNotUpdatedInExternallyManagedGroup(
+      UserGroupDTO toBeSavedUserGroup, UserGroup savedUserGroup) {
+    if (!isExternallyManaged(toBeSavedUserGroup.getAccountIdentifier(), toBeSavedUserGroup.getOrgIdentifier(),
+            toBeSavedUserGroup.getProjectIdentifier(), toBeSavedUserGroup.getIdentifier())) {
+      return;
+    }
+    List<String> newUsersToBeAdded = toBeSavedUserGroup.getUsers();
+    List<String> savedUsers = savedUserGroup.getUsers();
+    if (!CollectionUtils.isEqualCollection(newUsersToBeAdded, savedUsers)) {
+      throw new InvalidRequestException(
+          "Update is not supported for externally managed group " + toBeSavedUserGroup.getIdentifier());
+    }
+
+    if (!savedUserGroup.getName().equals(toBeSavedUserGroup.getName())) {
+      throw new InvalidRequestException("The name cannot be updated for externally managed group");
+    }
   }
 
   @Override
@@ -454,6 +482,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   private UserGroup updateInternal(UserGroup newUserGroup, UserGroupDTO oldUserGroup) {
     log.info("[NGSamlUserGroupSync] Old User Group {}", oldUserGroup);
     validate(newUserGroup);
+    sanitizeInternal(newUserGroup);
     try {
       return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
         log.info("[NGSamlUserGroupSync] Saving new User group {}", newUserGroup);
@@ -474,53 +503,12 @@ public class UserGroupServiceImpl implements UserGroupService {
     if (userGroup.getNotificationConfigs() != null) {
       validateNotificationSettings(userGroup.getNotificationConfigs());
     }
-    if (userGroup.getUsers() != null) {
-      validateUsers(userGroup.getUsers());
-      validateScopeMembership(userGroup);
-    }
-  }
-
-  private void validateUsers(List<String> usersIds) {
-    Set<String> duplicates = getDuplicates(usersIds);
-    if (isNotEmpty(duplicates)) {
-      throw new InvalidArgumentsException(
-          String.format("Duplicate users %s provided in the user group", duplicates.toString()));
-    }
-  }
-
-  private static <T> Set<T> getDuplicates(Iterable<T> elements) {
-    Set<T> set = new HashSet<>();
-    Set<T> duplicates = new HashSet<>();
-    for (T element : elements) {
-      if (!set.add(element)) {
-        duplicates.add(element);
-      }
-    }
-    return duplicates;
-  }
-
-  private void validateScopeMembership(UserGroup userGroup) {
-    Scope scope = Scope.builder()
-                      .accountIdentifier(userGroup.getAccountIdentifier())
-                      .orgIdentifier(userGroup.getOrgIdentifier())
-                      .projectIdentifier(userGroup.getProjectIdentifier())
-                      .build();
-    List<String> userIds = ngUserService.listUserIds(scope);
-    Sets.SetView<String> invalidUserIds = Sets.difference(new HashSet<>(userGroup.getUsers()), new HashSet<>(userIds));
-    if (isNotEmpty(invalidUserIds)) {
-      throw new InvalidArgumentsException(getInvalidUserMessage(invalidUserIds));
-    }
   }
 
   private void validateFilter(UserGroupFilterDTO filter) {
     if (isNotEmpty(filter.getIdentifierFilter()) && isNotEmpty(filter.getDatabaseIdFilter())) {
       throw new InvalidArgumentsException("Both the database id filter and identifier filter cannot be provided");
     }
-  }
-
-  private String getInvalidUserMessage(Set<String> invalidUserIds) {
-    return String.format("The following user%s not valid: [%s]", invalidUserIds.size() > 1 ? "s are" : " is",
-        String.join(", ", invalidUserIds));
   }
 
   private void validateNotificationSettings(List<NotificationSettingConfig> notificationSettingConfigs) {
@@ -737,20 +725,30 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   @Override
-  public void sanitize(Scope scope, String identifier) {
+  public void sanitize(Scope scope, String userGroupIdentifier) {
     Optional<UserGroup> userGroupOptional =
-        get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), identifier);
+        get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
     if (userGroupOptional.isPresent()) {
       UserGroup userGroup = userGroupOptional.get();
-      List<String> currentUserIds = userGroup.getUsers();
-      Set<String> uniqueUserIds = new HashSet<>(currentUserIds);
-
-      List<String> userIds = ngUserService.listUserIds(scope);
-      Set<String> invalidUserIds = new HashSet<>(Sets.difference(uniqueUserIds, new HashSet<>(userIds)));
-      uniqueUserIds.removeAll(invalidUserIds);
-      userGroup.setUsers(new ArrayList<>(uniqueUserIds));
-
+      sanitizeInternal(userGroup);
       userGroupRepository.save(userGroup);
     }
+  }
+
+  private void sanitizeInternal(UserGroup userGroup) {
+    if (userGroup.getUsers() != null) {
+      Set<String> uniqueUsers = new HashSet<>(userGroup.getUsers());
+      Set<String> invalidUsers = getAllInvalidUsers(
+          Scope.of(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier()),
+          uniqueUsers);
+      uniqueUsers.removeAll(invalidUsers);
+      userGroup.setUsers(new ArrayList<>(uniqueUsers));
+    }
+  }
+
+  private Set<String> getAllInvalidUsers(Scope scope, Set<String> currentUserIds) {
+    List<String> userIds = ngUserService.listUserIds(scope);
+    userIds = userIds == null ? new ArrayList<>() : userIds;
+    return new HashSet<>(Sets.difference(currentUserIds, new HashSet<>(userIds)));
   }
 }

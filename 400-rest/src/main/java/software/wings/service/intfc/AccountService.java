@@ -67,6 +67,8 @@ public interface AccountService {
 
   Boolean updateNextGenEnabled(String accountId, boolean enabled);
 
+  Boolean updateIsProductLed(String accountId, boolean isProductLed);
+
   AccountDetails getAccountDetails(String accountId);
 
   List<Account> getAccounts(List<String> identifiers);
@@ -117,7 +119,7 @@ public interface AccountService {
 
   DelegateConfiguration getDelegateConfiguration(String accountId);
 
-  List<String> getWatcherVersion(String accountId);
+  String getWatcherVersion(String accountId);
 
   String getAccountPrimaryDelegateVersion(String accountId);
 

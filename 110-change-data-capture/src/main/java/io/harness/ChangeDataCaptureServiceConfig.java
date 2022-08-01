@@ -39,6 +39,7 @@ public class ChangeDataCaptureServiceConfig extends Configuration {
   @JsonProperty("timescaledb") private TimeScaleDBConfig timeScaleDBConfig;
   @JsonProperty("mongotags") private MongoTagsConfig mongoTagsConfig = MongoTagsConfig.builder().build();
   @JsonProperty("gcp-project-id") private String gcpProjectId;
+  @JsonProperty("debeziumEnabled") private boolean debeziumEnabled;
   @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
 

@@ -10,6 +10,7 @@ package io.harness.cdng.gitops.service;
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ScopeLevel;
 import io.harness.cdng.gitops.entity.Cluster;
 
 import com.mongodb.client.result.DeleteResult;
@@ -46,27 +47,29 @@ public interface ClusterService {
   long bulkCreate(@NotNull List<Cluster> entities);
 
   /**
-   * @param accountId  the account id
-   * @param orgIdentifier the organization identifier
+   * @param accountId         the account id
+   * @param orgIdentifier     the organization identifier
    * @param projectIdentifier the project identifier
-   * @param envIdentifier identifier of the environment the gitops cluster is linked to
-   * @param clusterRef identifier of the actual gitops cluster that exists in harness gitops
+   * @param envIdentifier     identifier of the environment the gitops cluster is linked to
+   * @param clusterRef        identifier of the actual gitops cluster that exists in harness gitops
+   * @param scopeLevel
    * @return boolean to indicate if deletion was successful
    */
   boolean delete(@NotEmpty String accountId, @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier,
-      @NotEmpty String envIdentifier, @NotEmpty String clusterRef);
+      @NotEmpty String envIdentifier, @NotEmpty String clusterRef, ScopeLevel scopeLevel);
 
   /**
    * Deletes a cluster from all the environments its linked into
-   * @param accountId the account id
-   * @param orgIdentifier the organization identifier
+   *
+   * @param accountId         the account id
+   * @param orgIdentifier     the organization identifier
    * @param projectIdentifier the project identifier
-   * @param clusterRef identifier of the actual gitops cluster that exists in harness gitops
+   * @param clusterRef        identifier of the actual gitops cluster that exists in harness gitops
    * @return DeleteResult
    */
   @NotNull
-  DeleteResult deleteFromAllEnv(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
-      @NotEmpty String projectIdentifier, @NotEmpty String clusterRef);
+  DeleteResult deleteFromAllEnv(
+      @NotEmpty String accountId, String orgIdentifier, String projectIdentifier, @NotEmpty String clusterRef);
 
   /**
    * Deletes all clusters linked to a particular harness environment.

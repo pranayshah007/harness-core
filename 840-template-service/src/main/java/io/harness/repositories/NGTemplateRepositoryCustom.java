@@ -10,6 +10,7 @@ package io.harness.repositories;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.events.TemplateUpdateEventType;
@@ -22,18 +23,39 @@ import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(CDC)
 public interface NGTemplateRepositoryCustom {
-  TemplateEntity save(TemplateEntity templateToSave, String comments);
+  TemplateEntity saveForOldGitSync(TemplateEntity templateToSave, String comments);
+
+  TemplateEntity save(TemplateEntity templateToSave, String comments) throws InvalidRequestException;
+
+  Optional<TemplateEntity>
+  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForOldGitSync(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
+      boolean notDeleted);
 
   Optional<TemplateEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
       boolean notDeleted);
 
+  Optional<TemplateEntity>
+  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForOldGitSync(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted);
+
   Optional<TemplateEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted);
+
+  Optional<TemplateEntity>
+  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNotForOldGitSync(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted);
 
   Optional<TemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNot(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted);
+
+  TemplateEntity updateTemplateYamlForOldGitSync(TemplateEntity templateEntity, TemplateEntity oldTemplateEntity,
+      ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits);
+
+  TemplateEntity updateTemplateInDb(TemplateEntity templateEntity, TemplateEntity oldTemplateEntity,
+      ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits);
 
   TemplateEntity updateTemplateYaml(TemplateEntity templateEntity, TemplateEntity oldTemplateEntity,
       ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits);
@@ -50,4 +72,12 @@ public interface NGTemplateRepositoryCustom {
 
   TemplateEntity update(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Criteria criteria, Update update);
+
+  TemplateEntity updateIsStableTemplate(TemplateEntity templateEntity, boolean value);
+
+  TemplateEntity updateIsLastUpdatedTemplate(TemplateEntity templateEntity, boolean value);
+
+  boolean deleteAllTemplatesInAProject(String accountId, String orgId, String projectId);
+
+  boolean deleteAllOrgLevelTemplates(String accountId, String orgId);
 }

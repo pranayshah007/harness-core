@@ -8,6 +8,7 @@
 package io.harness.gitsync.common.scmerrorhandling.handlers.ado;
 
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
@@ -32,6 +33,12 @@ public class AdoListRepoScmApiErrorHandler implements ScmApiErrorHandler {
             ErrorMessageFormatter.formatMessage(
                 LIST_REPO_FAILED_MESSAGE + ScmErrorExplanations.INVALID_CONNECTOR_CREDS, errorMetadata),
             new ScmUnauthorizedException(errorMessage));
+      case 401:
+        throw NestedExceptionUtils.hintWithExplanationException(
+            ErrorMessageFormatter.formatMessage(ScmErrorHints.MISSING_PERMISSION_CREDS_HINTS, errorMetadata),
+            ErrorMessageFormatter.formatMessage(
+                ScmErrorExplanations.MISSING_PERMISSION_CREDS_EXPLANATION, errorMetadata),
+            new ScmBadRequestException(errorMessage));
       default:
         log.error(String.format("Error while listing Azure repos: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);

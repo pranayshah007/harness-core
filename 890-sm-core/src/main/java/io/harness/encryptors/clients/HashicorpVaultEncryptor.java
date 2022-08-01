@@ -142,8 +142,7 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
       String fullPath = getFullPath(vaultConfig.getBasePath(), existingRecord.getEncryptionKey());
       String vaultToken = getToken(vaultConfig);
       return VaultRestClientFactory.create(vaultConfig)
-          .deleteSecret(
-              String.valueOf(vaultToken), vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(), fullPath);
+          .deleteSecretPermanentely(String.valueOf(vaultToken), vaultConfig.getSecretEngineName(), fullPath);
     } catch (IOException e) {
       String message = "Deletion of Vault secret at " + existingRecord.getEncryptionKey() + " failed";
       throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);

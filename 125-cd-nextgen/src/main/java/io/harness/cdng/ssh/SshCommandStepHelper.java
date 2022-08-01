@@ -19,6 +19,7 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
@@ -26,7 +27,7 @@ import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
@@ -57,12 +58,17 @@ import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
+import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
+import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
+import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -85,6 +91,8 @@ public class SshCommandStepHelper extends CDStepHelper {
   @Inject private FileStoreService fileStoreService;
   @Inject private NGEncryptedDataService ngEncryptedDataService;
   @Inject private CDExpressionResolver cdExpressionResolver;
+  @Inject protected CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   public CommandTaskParameters buildCommandTaskParameters(
       @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters commandStepParameters) {
@@ -104,9 +112,16 @@ public class SshCommandStepHelper extends CDStepHelper {
 
   private SshCommandTaskParameters buildSshCommandTaskParameters(
       @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters commandStepParameters) {
-    InfrastructureOutcome infrastructure = getInfrastructureOutcome(ambiance);
+    OptionalSweepingOutput optionalInfraOutput = executionSweepingOutputService.resolveOptional(ambiance,
+        RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME));
+    if (!optionalInfraOutput.isFound()) {
+      throw new InvalidRequestException("No infrastructure output found.");
+    }
+    SshInfraDelegateConfigOutput sshInfraDelegateConfigOutput =
+        (SshInfraDelegateConfigOutput) optionalInfraOutput.getOutput();
     Optional<ArtifactOutcome> artifactOutcome = resolveArtifactsOutcome(ambiance);
     Optional<ConfigFilesOutcome> configFilesOutcomeOptional = getConfigFilesOutcome(ambiance);
+
     Boolean onDelegate = getBooleanParameterFieldValue(commandStepParameters.onDelegate);
     return SshCommandTaskParameters.builder()
         .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -114,7 +129,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
         .outputVariables(getOutputVars(commandStepParameters.getOutputVariables()))
         .environmentVariables(getEnvironmentVariables(commandStepParameters.getEnvironmentVariables()))
-        .sshInfraDelegateConfig(sshEntityHelper.getSshInfraDelegateConfig(infrastructure, ambiance))
+        .sshInfraDelegateConfig(sshInfraDelegateConfigOutput.getSshInfraDelegateConfig())
         .artifactDelegateConfig(
             artifactOutcome.map(outcome -> sshEntityHelper.getArtifactDelegateConfigConfig(outcome, ambiance))
                 .orElse(null))
@@ -122,23 +137,30 @@ public class SshCommandStepHelper extends CDStepHelper {
             configFilesOutcomeOptional.map(configFilesOutcome -> getFileDelegateConfig(ambiance, configFilesOutcome))
                 .orElse(null))
         .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
-        .host(commandStepParameters.getHost())
+        .host(getHost(commandStepParameters))
         .build();
   }
 
   private WinrmTaskParameters buildWinRmTaskParameters(
       @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters commandStepParameters) {
-    InfrastructureOutcome infrastructure = getInfrastructureOutcome(ambiance);
+    OptionalSweepingOutput optionalInfraOutput = executionSweepingOutputService.resolveOptional(ambiance,
+        RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.WINRM_INFRA_DELEGATE_CONFIG_OUTPUT_NAME));
+    if (!optionalInfraOutput.isFound()) {
+      throw new InvalidRequestException("No infrastructure output found.");
+    }
+    WinRmInfraDelegateConfigOutput winRmInfraDelegateConfigOutput =
+        (WinRmInfraDelegateConfigOutput) optionalInfraOutput.getOutput();
     Optional<ArtifactOutcome> artifactOutcome = resolveArtifactsOutcome(ambiance);
     Optional<ConfigFilesOutcome> configFilesOutcomeOptional = getConfigFilesOutcome(ambiance);
     Boolean onDelegate = getBooleanParameterFieldValue(commandStepParameters.onDelegate);
+    String accountId = AmbianceUtils.getAccountId(ambiance);
     return WinrmTaskParameters.builder()
-        .accountId(AmbianceUtils.getAccountId(ambiance))
+        .accountId(accountId)
         .executeOnDelegate(onDelegate)
         .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
         .outputVariables(getOutputVars(commandStepParameters.getOutputVariables()))
         .environmentVariables(getEnvironmentVariables(commandStepParameters.getEnvironmentVariables()))
-        .winRmInfraDelegateConfig(sshEntityHelper.getWinRmInfraDelegateConfig(infrastructure, ambiance))
+        .winRmInfraDelegateConfig(winRmInfraDelegateConfigOutput.getWinRmInfraDelegateConfig())
         .artifactDelegateConfig(
             artifactOutcome.map(outcome -> sshEntityHelper.getArtifactDelegateConfigConfig(outcome, ambiance))
                 .orElse(null))
@@ -146,7 +168,11 @@ public class SshCommandStepHelper extends CDStepHelper {
             configFilesOutcomeOptional.map(configFilesOutcome -> getFileDelegateConfig(ambiance, configFilesOutcome))
                 .orElse(null))
         .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
-        .host(commandStepParameters.getHost())
+        .host(getHost(commandStepParameters))
+        .useWinRMKerberosUniqueCacheFile(
+            cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
+        .disableWinRMCommandEncodingFFSet(
+            cdFeatureFlagHelper.isEnabled(accountId, FeatureName.DISABLE_WINRM_COMMAND_ENCODING))
         .build();
   }
 
@@ -370,5 +396,9 @@ public class SshCommandStepHelper extends CDStepHelper {
       }
     });
     return outputVars;
+  }
+
+  public String getHost(CommandStepParameters commandStepParameters) {
+    return ParameterFieldHelper.getParameterFieldValue(commandStepParameters.getHost());
   }
 }

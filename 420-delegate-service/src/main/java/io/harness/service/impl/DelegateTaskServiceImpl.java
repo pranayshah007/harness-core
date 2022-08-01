@@ -7,6 +7,7 @@
 
 package io.harness.service.impl;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.DelegateTaskResponse.ResponseCode;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_RESPONSE;
@@ -16,6 +17,7 @@ import static java.lang.System.currentTimeMillis;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.DelegateProgressData;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.task.TaskLogContext;
@@ -45,6 +47,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+import java.util.Optional;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -155,6 +158,25 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
     }
 
     delegateMetricsService.recordDelegateTaskResponseMetrics(delegateTask, response, DELEGATE_TASK_RESPONSE);
+  }
+
+  @Override
+  public void publishTaskProgressResponse(
+      String accountId, String driverId, String delegateTaskId, DelegateProgressData responseData) {
+    DelegateCallbackService delegateCallbackService = delegateCallbackRegistry.obtainDelegateCallbackService(driverId);
+    if (delegateCallbackService == null) {
+      return;
+    }
+    delegateCallbackService.publishTaskProgressResponse(
+        delegateTaskId, generateUuid(), kryoSerializer.asDeflatedBytes(responseData));
+  }
+
+  @Override
+  public Optional<DelegateTask> fetchDelegateTask(String accountId, String taskId) {
+    return Optional.ofNullable(persistence.createQuery(DelegateTask.class)
+                                   .filter(DelegateTaskKeys.accountId, accountId)
+                                   .filter(DelegateTaskKeys.uuid, taskId)
+                                   .get());
   }
 
   @VisibleForTesting

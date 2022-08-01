@@ -17,6 +17,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.impl.CIYamlSchemaServiceImpl;
 import io.harness.app.intfc.CIYamlSchemaService;
+import io.harness.aws.AwsClient;
+import io.harness.aws.AwsClientImpl;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
@@ -204,6 +206,7 @@ public class CIManagerServiceModule extends AbstractModule {
                 .setNameFormat("ci-telemetry-publisher-Thread-%d")
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
+    bind(AwsClient.class).to(AwsClientImpl.class);
 
     try {
       bind(TimeScaleDBService.class)
@@ -295,5 +298,6 @@ public class CIManagerServiceModule extends AbstractModule {
         return ciManagerConfiguration.getSegmentConfiguration();
       }
     });
+    install(new CICacheRegistrar());
   }
 }

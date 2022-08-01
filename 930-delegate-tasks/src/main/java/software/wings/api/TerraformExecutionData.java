@@ -18,6 +18,7 @@ import io.harness.delegate.task.terraform.TerraformCommand;
 import io.harness.provision.TfVarSource;
 import io.harness.security.encryption.EncryptedRecordData;
 
+import software.wings.api.terraform.TfVarGitSource;
 import software.wings.beans.NameValuePair;
 import software.wings.sm.StateExecutionData;
 
@@ -45,6 +46,8 @@ public class TerraformExecutionData extends StateExecutionData implements Delega
   private TerraformCommand commandExecuted;
   private List<NameValuePair> variables;
   private List<NameValuePair> backendConfigs;
+  private String backendConfigStoreType;
+  private TfVarGitSource remoteBackendConfig;
   private List<NameValuePair> environmentVariables;
 
   private String sourceRepoReference;

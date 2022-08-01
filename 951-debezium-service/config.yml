@@ -29,22 +29,24 @@ server:
 
 debeziumConfigs:
   - isEnabled: true
-    name: pipeline # unique for each debezium config
-    key.converter.schemas.enable: false
-    value.converter.schemas.enable: false
+    name: ${DEBEZIUM_NAME:-pipeline} # unique for each debezium config
+    key.converter.schemas.enable: ${KEY_CONVERTER_SCHEMAS_ENABLE:-false}
+    value.converter.schemas.enable: ${VALUE_CONVERTER_SCHEMAS_ENABLE:-false}
     offset.flush.interval.ms: ${OFFSET_FLUSH_INTERVAL_MS:-5000}
     mongodb.hosts: ${MONGO_DB_HOSTS:-localhost:27017}
-    mongodb.name: pmsMongo # unique for each debezium config
+    mongodb.name: ${MONGODB_NAME:-pmsMongo} # unique for each debezium config
     mongodb.user: ${MONGO_DB_USER:-}
     mongodb.password: ${MONGO_DB_PASSWORD:-}
     mongodb.ssl.enabled: ${MONGO_DB_SSL_ENABLED:-false}
-    connector.class: io.debezium.connector.mongodb.MongoDbConnector
-    database.include.list: pms-harness
+    connector.class: ${CONNECTOR_CLASS:-io.debezium.connector.mongodb.MongoDbConnector}
+    database.include.list: ${DATABASE_INCLUDE_LIST:-pms-harness}
     collection.include.list: ${COLLECTION_INCLUDE_LIST:-pms-harness.planExecutionsSummary}
-    connect.backoff.initial.delay.ms: 1000
-    connect.backoff.max.delay.ms: 10000
-    connect.max.attempts: 3
-    snapshot.fetch.size: 2000
+    connect.backoff.initial.delay.ms: ${CONNECT_BACKOFF_INITIAL_DELAY_MS:-1000}
+    connect.backoff.max.delay.ms: ${CONNECT_BACKOFF_MAX_DELAY_MS:-10000}
+    connect.max.attempts: ${CONNECT_MAX_ATTEMPTS:-3}
+    snapshot.fetch.size: ${SNAPSHOT_FETCH_SIZE:-2000}
+    sleepInterval: ${SLEEP_INTERVAL:-60}
+    producingCountPerBatch: ${PRODUCING_COUNT_PER_BATCH:-1000}
 
 eventsFramework:
   redis:

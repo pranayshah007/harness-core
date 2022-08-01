@@ -10,6 +10,7 @@ package io.harness.ff;
 import static io.harness.beans.FeatureName.CV_DEMO;
 import static io.harness.beans.FeatureName.GLOBAL_DISABLE_HEALTH_CHECK;
 import static io.harness.beans.FeatureName.SEARCH_REQUEST;
+import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.NANDAN;
 import static io.harness.rule.OwnerRule.PHOENIKX;
 import static io.harness.rule.OwnerRule.UTKARSH;
@@ -23,6 +24,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureFlag;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.configuration.DeployMode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
@@ -212,5 +214,37 @@ public class FeatureFlagServiceTest extends FeatureFlagTestBase {
     FeatureFlag updatedFeatureFlag = featureFlagService.updateFeatureFlagForAccount(featureName.name(), "abcde", false);
     assertThat(updatedFeatureFlag).isNotNull();
     assertThat(updatedFeatureFlag.getAccountIds()).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void testIntializeFeatureFlags_1() {
+    FeatureFlag enabledFeatureFlag = FeatureFlag.builder()
+                                         .name(CV_DEMO.name())
+                                         .enabled(true)
+                                         .accountIds(Sets.newHashSet("abcde"))
+                                         .obsolete(false)
+                                         .build();
+    persistence.save(enabledFeatureFlag);
+
+    FeatureFlag disabledFeatureFlag =
+        FeatureFlag.builder().name(SEARCH_REQUEST.name()).enabled(false).obsolete(false).build();
+    persistence.save(disabledFeatureFlag);
+
+    featureFlagService.initializeFeatureFlags(DeployMode.ONPREM, GLOBAL_DISABLE_HEALTH_CHECK.toString());
+    FeatureFlag cvDemoFeatureFlag = featureFlagService.getFeatureFlag(CV_DEMO).get();
+    FeatureFlag searchRequestFF = featureFlagService.getFeatureFlag(SEARCH_REQUEST).get();
+    FeatureFlag globaldisableFF = featureFlagService.getFeatureFlag(GLOBAL_DISABLE_HEALTH_CHECK).get();
+
+    assertThat(cvDemoFeatureFlag).isNotNull();
+    assertThat(cvDemoFeatureFlag.isEnabled()).isFalse();
+
+    assertThat(searchRequestFF).isNotNull();
+    assertThat(searchRequestFF.getAccountIds()).isNull();
+    assertThat(cvDemoFeatureFlag.isEnabled()).isFalse();
+
+    assertThat(globaldisableFF).isNotNull();
+    assertThat(globaldisableFF.isEnabled()).isTrue();
   }
 }

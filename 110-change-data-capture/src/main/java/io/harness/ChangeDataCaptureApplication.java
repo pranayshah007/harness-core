@@ -117,22 +117,24 @@ public class ChangeDataCaptureApplication extends Application<ChangeDataCaptureS
 
     modules.add(MorphiaModule.getInstance());
     modules.add(new ChangeDataCaptureModule(changeDataCaptureServiceConfig));
-    modules.add(new AbstractCfModule() {
-      @Override
-      public CfClientConfig cfClientConfig() {
-        return changeDataCaptureServiceConfig.getCfClientConfig();
-      }
+    if (changeDataCaptureServiceConfig.isDebeziumEnabled()) {
+      modules.add(new AbstractCfModule() {
+        @Override
+        public CfClientConfig cfClientConfig() {
+          return changeDataCaptureServiceConfig.getCfClientConfig();
+        }
 
-      @Override
-      public CfMigrationConfig cfMigrationConfig() {
-        return CfMigrationConfig.builder().build();
-      }
+        @Override
+        public CfMigrationConfig cfMigrationConfig() {
+          return CfMigrationConfig.builder().build();
+        }
 
-      @Override
-      public FeatureFlagConfig featureFlagConfig() {
-        return changeDataCaptureServiceConfig.getFeatureFlagConfig();
-      }
-    });
+        @Override
+        public FeatureFlagConfig featureFlagConfig() {
+          return changeDataCaptureServiceConfig.getFeatureFlagConfig();
+        }
+      });
+    }
 
     Injector injector = Guice.createInjector(modules);
     registerStores(changeDataCaptureServiceConfig, injector);

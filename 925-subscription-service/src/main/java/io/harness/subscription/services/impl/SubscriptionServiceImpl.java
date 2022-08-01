@@ -42,7 +42,6 @@ import com.google.inject.Singleton;
 import com.stripe.model.Event;
 import com.stripe.net.ApiResource;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -75,23 +74,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   public PriceCollectionDTO listPrices(String accountIdentifier, ModuleType module) {
     isSelfServiceEnable(accountIdentifier);
 
-    List<String> prices;
-
-    switch (module.toString()) {
-      case "CI":
-        prices = Arrays.asList(Prices.CI_PRICES);
-        break;
-      case "CD":
-        prices = Arrays.asList(Prices.CD_PRICES);
-        break;
-      case "CF":
-        prices = Arrays.asList(Prices.FF_PRICES);
-        break;
-      default:
-        throw new InvalidRequestException("Valid Module Type Required");
-    }
-
-    return stripeHelper.listPrices(prices);
+    return stripeHelper.getPrices(module);
   }
 
   @Override
@@ -151,21 +134,30 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     ArrayList<ItemParams> subscriptionItems = new ArrayList<>();
 
     val developerPriceId = stripeHelper.getPrice(
-        Prices.getLookupKey("FF", subscriptionDTO.getEdition(), "DEVELOPERS", subscriptionDTO.getPaymentFreq()));
-    subscriptionItems.add(new ItemParams(developerPriceId.getId(), (long) subscriptionDTO.getNumberOfDevelopers(),
-        Prices.getLookupKey("FF", subscriptionDTO.getEdition(), "DEVELOPERS", subscriptionDTO.getPaymentFreq())));
+        ModuleType.CF, "DEVELOPERS", subscriptionDTO.getEdition(), subscriptionDTO.getPaymentFreq());
 
-    val mauPriceId = stripeHelper.getPrice(
-        Prices.getLookupKey("FF", subscriptionDTO.getEdition(), "MAU", subscriptionDTO.getPaymentFreq()));
-    subscriptionItems.add(new ItemParams(mauPriceId.getId(), (long) subscriptionDTO.getNumberOfMau(),
-        Prices.getLookupKey("FF", subscriptionDTO.getEdition(), "MAU", subscriptionDTO.getPaymentFreq())));
+    subscriptionItems.add(ItemParams.builder()
+                              .priceId(developerPriceId.getId())
+                              .quantity((long) subscriptionDTO.getNumberOfDevelopers())
+                              .build());
+
+    val mauPriceId = stripeHelper.getPrice(ModuleType.CF, "MAU", subscriptionDTO.getEdition(),
+        subscriptionDTO.getPaymentFreq(), subscriptionDTO.getNumberOfMau());
+
+    subscriptionItems.add(ItemParams.builder().priceId(mauPriceId.getId()).quantity(1L).build());
 
     if (subscriptionDTO.isPremiumSupport()) {
-      val supportPriceId = stripeHelper.getPrice(Prices.PREMIUM_SUPPORT);
-      subscriptionItems.add(new ItemParams(supportPriceId.getId(), 1L, Prices.PREMIUM_SUPPORT));
-    }
+      val mauSupportPriceId = stripeHelper.getPrice(ModuleType.CF, "MAU_SUPPORT", subscriptionDTO.getEdition(),
+          subscriptionDTO.getPaymentFreq(), subscriptionDTO.getNumberOfMau());
 
-    // subscriptionItems.add(new ItemParams(priceId));
+      subscriptionItems.add(new ItemParams(mauSupportPriceId.getId(), 1L, Prices.PREMIUM_SUPPORT));
+
+      val developerSupportPriceId = stripeHelper.getPrice(
+          ModuleType.CF, "DEVELOPERS_SUPPORT", subscriptionDTO.getEdition(), subscriptionDTO.getPaymentFreq());
+
+      subscriptionItems.add(new ItemParams(
+          developerSupportPriceId.getId(), (long) subscriptionDTO.getNumberOfDevelopers(), Prices.PREMIUM_SUPPORT));
+    }
 
     // create Subscription
     SubscriptionParams param = SubscriptionParams.builder()
@@ -175,6 +167,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                                    .items(subscriptionItems)
                                    .paymentFrequency(subscriptionDTO.getPaymentFreq())
                                    .build();
+
     SubscriptionDetailDTO subscription = stripeHelper.createSubscription(param);
 
     // Save locally with basic information after succeed

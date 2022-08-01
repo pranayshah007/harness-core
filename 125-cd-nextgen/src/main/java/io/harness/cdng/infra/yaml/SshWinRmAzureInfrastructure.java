@@ -9,6 +9,7 @@ package io.harness.cdng.infra.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -78,7 +79,7 @@ public class SshWinRmAzureInfrastructure
   @Wither
   ParameterField<String> credentialsRef;
 
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({string})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_MAP_CLASSPATH)
   @Wither
   ParameterField<Map<String, String>> tags;

@@ -12,7 +12,7 @@ import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.Deplo
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.SLIDTO;
 import io.harness.cvng.core.beans.RiskProfile;
-import io.harness.cvng.core.beans.monitoredService.MetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec.AppDMetricDefinitions;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
@@ -76,7 +76,7 @@ public class AppDynamicsHealthSourceSpecTransformer
         .feature(cvConfigs.get(0).getProductName())
         .metricPacks(cvConfigs.stream()
                          .filter(cv -> CollectionUtils.isEmpty(cv.getMetricInfos()))
-                         .map(cv -> MetricPackDTO.toMetricPackDTO(cv.getMetricPack()))
+                         .map(cv -> TimeSeriesMetricPackDTO.toMetricPackDTO(cv.getMetricPack()))
                          .collect(Collectors.toSet()))
         .metricDefinitions(metricDefinitions)
         .build();

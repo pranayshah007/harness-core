@@ -34,7 +34,8 @@ public class SamlUserGroupSync {
 
   public void syncUserGroup(
       final SamlUserAuthorization samlUserAuthorization, final String accountId, final String ssoId) {
-    log.info("Syncing saml user groups for user: {}", samlUserAuthorization.getEmail());
+    log.info(
+        "SAML: Syncing saml user groups for user: {}, for accountId {}", samlUserAuthorization.getEmail(), accountId);
 
     List<UserGroup> userGroupsToSync = userGroupService.getUserGroupsBySsoId(accountId, ssoId);
     updateUserGroups(userGroupsToSync, samlUserAuthorization, accountId);

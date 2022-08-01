@@ -56,9 +56,9 @@ public class CustomManifestServiceImpl implements CustomManifestService {
 
   @Override
   public Collection<CustomSourceFile> fetchValues(@NotNull CustomManifestSource source, String workingDirectory,
-      String activityId, LogCallback logCallback) throws IOException {
+      String activityId, LogCallback logCallback, boolean closeLogStream) throws IOException {
     if (isNotEmpty(source.getScript())) {
-      executeScript(source.getScript(), workingDirectory, activityId, logCallback);
+      executeScript(source.getScript(), workingDirectory, activityId, logCallback, closeLogStream);
     }
     return readFilesContent(workingDirectory, source.getFilePaths());
   }
@@ -71,26 +71,29 @@ public class CustomManifestServiceImpl implements CustomManifestService {
   @Override
   @NotNull
   public String executeCustomSourceScript(String activityId, LogCallback logCallback,
-      @NotNull CustomManifestSource customManifestSource) throws IOException {
+      @NotNull CustomManifestSource customManifestSource, boolean closeLogStream) throws IOException {
     String defaultSourceWorkingDirectory = getWorkingDirectory();
-    executeScript(customManifestSource.getScript(), defaultSourceWorkingDirectory, activityId, logCallback);
+    executeScript(
+        customManifestSource.getScript(), defaultSourceWorkingDirectory, activityId, logCallback, closeLogStream);
     return defaultSourceWorkingDirectory;
   }
 
   private void downloadCustomSource(CustomManifestSource source, String outputDirectory, String workingDirectory,
       LogCallback logCallback) throws IOException {
     if (isNotEmpty(source.getScript())) {
-      executeScript(source.getScript(), workingDirectory, SHELL_SCRIPT_TASK_ID, logCallback);
+      executeScript(source.getScript(), workingDirectory, SHELL_SCRIPT_TASK_ID, logCallback, true);
     }
     copyFiles(workingDirectory, outputDirectory, source.getFilePaths());
   }
 
-  private void executeScript(String script, String workingDirectory, String executionId, LogCallback logCallback) {
+  private void executeScript(
+      String script, String workingDirectory, String executionId, LogCallback logCallback, boolean closeLogStream) {
     final ShellExecutorConfig shellExecutorConfig = ShellExecutorConfig.builder()
                                                         .environment(ImmutableMap.of())
                                                         .workingDirectory(workingDirectory)
                                                         .scriptType(ScriptType.BASH)
                                                         .executionId(executionId)
+                                                        .closeLogStream(closeLogStream)
                                                         .build();
     final ScriptProcessExecutor executor = createExecutor(shellExecutorConfig, logCallback);
     final ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(script, emptyList());

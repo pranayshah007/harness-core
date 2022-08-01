@@ -141,11 +141,11 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
       AzureWebAppServiceSpec azureWebAppServiceSpec =
           (AzureWebAppServiceSpec) serviceConfig.getServiceDefinition().getServiceSpec();
 
-      StoreConfigWrapper startupScript = azureWebAppServiceSpec.getStartupScript();
-      if (startupScript != null) {
-        String startupScriptPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForStartupScript(
+      StoreConfigWrapper startupCommand = azureWebAppServiceSpec.getStartupCommand();
+      if (startupCommand != null) {
+        String startupCommandPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForStartupCommand(
             serviceConfigNode, planCreationResponseMap, serviceConfig, kryoSerializer);
-        serviceSpecChildrenIds.add(startupScriptPlanNodeId);
+        serviceSpecChildrenIds.add(startupCommandPlanNodeId);
       }
 
       StoreConfigWrapper applicationSettings = azureWebAppServiceSpec.getApplicationSettings();
@@ -195,9 +195,9 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
       AzureWebAppServiceSpec azureWebAppServiceSpec =
           (AzureWebAppServiceSpec) config.getServiceDefinition().getServiceSpec();
 
-      StoreConfigWrapper startupScript = azureWebAppServiceSpec.getStartupScript();
-      if (startupScript != null) {
-        String configFilesPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForStartupScriptV2(
+      StoreConfigWrapper startupCommand = azureWebAppServiceSpec.getStartupCommand();
+      if (startupCommand != null) {
+        String configFilesPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForStartupCommandV2(
             serviceV2Node, planCreationResponseMap, config, kryoSerializer);
         serviceSpecChildrenIds.add(configFilesPlanNodeId);
       }
@@ -324,6 +324,6 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
   public Map<String, Set<String>> getSupportedTypes() {
     return Collections.singletonMap(YamlTypes.SERVICE_DEFINITION,
         ImmutableSet.of(ServiceSpecType.KUBERNETES, ServiceSpecType.SSH, ServiceSpecType.WINRM,
-            ServiceSpecType.NATIVE_HELM, ServiceSpecType.SERVERLESS_AWS_LAMBDA, ServiceSpecType.AZURE_WEBAPPS));
+            ServiceSpecType.NATIVE_HELM, ServiceSpecType.SERVERLESS_AWS_LAMBDA, ServiceSpecType.AZURE_WEBAPP));
   }
 }

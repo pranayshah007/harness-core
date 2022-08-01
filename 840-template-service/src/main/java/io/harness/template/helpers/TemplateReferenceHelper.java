@@ -21,14 +21,20 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.NGExpressionUtils;
+import io.harness.eraro.ErrorCode;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
+import io.harness.exception.InvalidIdentifierRefException;
+import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.pms.contracts.service.EntityReferenceErrorResponse;
 import io.harness.pms.contracts.service.EntityReferenceRequest;
 import io.harness.pms.contracts.service.EntityReferenceResponse;
+import io.harness.pms.contracts.service.EntityReferenceResponseWrapper;
 import io.harness.pms.contracts.service.EntityReferenceServiceGrpc.EntityReferenceServiceBlockingStub;
+import io.harness.pms.contracts.service.ErrorMetadata;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
@@ -54,10 +60,12 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Singleton
+@Slf4j
 public class TemplateReferenceHelper {
   private static final String FQN_SEPARATOR = ".";
   EntityReferenceServiceBlockingStub entityReferenceServiceBlockingStub;
@@ -82,30 +90,60 @@ public class TemplateReferenceHelper {
     if (skipTemplateReference(templateEntity)) {
       return;
     }
-    String pmsUnderstandableYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(templateEntity);
-    EntityReferenceRequest.Builder entityReferenceRequestBuilder =
-        EntityReferenceRequest.newBuilder()
-            .setYaml(pmsUnderstandableYaml)
-            .setAccountIdentifier(templateEntity.getAccountIdentifier());
-    if (isNotEmpty(templateEntity.getOrgIdentifier())) {
-      entityReferenceRequestBuilder.setOrgIdentifier(templateEntity.getOrgIdentifier());
+    try {
+      String pmsUnderstandableYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(templateEntity);
+      EntityReferenceRequest.Builder entityReferenceRequestBuilder =
+          EntityReferenceRequest.newBuilder()
+              .setYaml(pmsUnderstandableYaml)
+              .setAccountIdentifier(templateEntity.getAccountIdentifier());
+      if (isNotEmpty(templateEntity.getOrgIdentifier())) {
+        entityReferenceRequestBuilder.setOrgIdentifier(templateEntity.getOrgIdentifier());
+      }
+      if (isNotEmpty(templateEntity.getProjectIdentifier())) {
+        entityReferenceRequestBuilder.setProjectIdentifier(templateEntity.getProjectIdentifier());
+      }
+      ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal();
+      if (gitSyncBranchContext != null) {
+        entityReferenceRequestBuilder.setGitSyncBranchContext(gitSyncBranchContext);
+      }
+      EntityReferenceResponseWrapper referenceResponse =
+          entityReferenceServiceBlockingStub.getReferences(entityReferenceRequestBuilder.build());
+
+      checkAndThrowExceptionOnErrorResponse(templateEntity, referenceResponse);
+
+      EntityReferenceResponse response = referenceResponse.getReferenceResponse();
+      //    templateEntity.setModules(new HashSet<>(response.getModuleInfoList()));
+      List<EntityDetailProtoDTO> referredEntities =
+          correctFQNsOfReferredEntities(response.getReferredEntitiesList(), templateEntity.getTemplateEntityType());
+      List<EntityDetailProtoDTO> referredEntitiesInLinkedTemplates =
+          getNestedTemplateReferences(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
+              templateEntity.getProjectIdentifier(), pmsUnderstandableYaml, true);
+      referredEntities.addAll(referredEntitiesInLinkedTemplates);
+      templateSetupUsageHelper.publishSetupUsageEvent(templateEntity, referredEntities);
+    } catch (InvalidIdentifierRefException ex) {
+      log.error("Error occurred while calculating template references {}", ex.getMessage());
+      String scope = String.valueOf(templateEntity.getTemplateScope());
+      throw new InvalidIdentifierRefException(String.format(
+          "Unable to save to %s. Template can be saved to %s only when all the referenced entities are available in the scope.",
+          scope, scope));
     }
-    if (isNotEmpty(templateEntity.getProjectIdentifier())) {
-      entityReferenceRequestBuilder.setProjectIdentifier(templateEntity.getProjectIdentifier());
+  }
+
+  private void checkAndThrowExceptionOnErrorResponse(
+      TemplateEntity templateEntity, EntityReferenceResponseWrapper referenceResponse) {
+    if (referenceResponse.getResponseCase() == EntityReferenceResponseWrapper.ResponseCase.ERRORRESPONSE) {
+      EntityReferenceErrorResponse errorResponse = referenceResponse.getErrorResponse();
+      List<String> errorMessages = new ArrayList<>();
+      for (ErrorMetadata errorMetadata : errorResponse.getErrorMetadataList()) {
+        errorMessages.add(errorMetadata.getErrorMessage());
+        if (String.valueOf(ErrorCode.INVALID_IDENTIFIER_REF).equals(errorMetadata.getWingsExceptionErrorCode())) {
+          throw new InvalidIdentifierRefException(errorMetadata.getErrorMessage());
+        }
+      }
+      throw new NGTemplateException(
+          String.format("Exception in calculating references for template with identifier %s and version label %s: %s",
+              templateEntity.getIdentifier(), templateEntity.getVersionLabel(), String.join(", ", errorMessages)));
     }
-    ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal();
-    if (gitSyncBranchContext != null) {
-      entityReferenceRequestBuilder.setGitSyncBranchContext(gitSyncBranchContext);
-    }
-    EntityReferenceResponse response =
-        entityReferenceServiceBlockingStub.getReferences(entityReferenceRequestBuilder.build());
-    List<EntityDetailProtoDTO> referredEntities =
-        correctFQNsOfReferredEntities(response.getReferredEntitiesList(), templateEntity.getTemplateEntityType());
-    List<EntityDetailProtoDTO> referredEntitiesInLinkedTemplates =
-        getNestedTemplateReferences(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
-            templateEntity.getProjectIdentifier(), pmsUnderstandableYaml, true);
-    referredEntities.addAll(referredEntitiesInLinkedTemplates);
-    templateSetupUsageHelper.publishSetupUsageEvent(templateEntity, referredEntities);
   }
 
   @VisibleForTesting

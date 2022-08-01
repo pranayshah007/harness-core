@@ -7,6 +7,7 @@
 
 package io.harness.cdng.creator.plan.steps;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.EXECUTION;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.FAILURE_STRATEGIES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PARALLEL;
@@ -31,7 +32,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.pipeline.CdAbstractStepNode;
 import io.harness.cdng.pipeline.PipelineInfrastructure.PipelineInfrastructureKeys;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
@@ -39,7 +39,7 @@ import io.harness.plancreator.steps.AbstractStepPlanCreator;
 import io.harness.plancreator.steps.FailureStrategiesUtils;
 import io.harness.plancreator.steps.GenericPlanCreatorUtils;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
-import io.harness.plancreator.strategy.StageStrategyUtils;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.execution.failure.FailureType;
@@ -105,8 +105,8 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
     if (YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null) {
       isStepInsideRollback = true;
     }
-    stepElement.setIdentifier(StageStrategyUtils.getIdentifierWithExpression(ctx, stepElement.getIdentifier()));
-    stepElement.setName(StageStrategyUtils.getIdentifierWithExpression(ctx, stepElement.getName()));
+    stepElement.setIdentifier(StrategyUtils.getIdentifierWithExpression(ctx, stepElement.getIdentifier()));
+    stepElement.setName(StrategyUtils.getIdentifierWithExpression(ctx, stepElement.getName()));
     List<AdviserObtainment> adviserObtainmentFromMetaData = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
@@ -116,7 +116,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
     // We are swapping the uuid with strategy node if present.
     PlanNode stepPlanNode =
         PlanNode.builder()
-            .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stepElement.getUuid()))
+            .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stepElement.getUuid()))
             .name(getName(stepElement))
             .identifier(stepElement.getIdentifier())
             .stepType(stepElement.getStepSpecType().getStepType())
@@ -184,7 +184,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
       // If it is wrapped under parallel or strategy then we should not add next step as the next step adviser would be
       // on strategy node
       if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
-          || StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
+          || StrategyUtils.isWrappedUnderStrategy(currentField)) {
         return null;
       }
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
@@ -204,7 +204,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
       // If it is wrapped under parallel or strategy then we should not add next step as the next step adviser would be
       // on strategy node or parallel node
       if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
-          || StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
+          || StrategyUtils.isWrappedUnderStrategy(currentField)) {
         return null;
       }
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
@@ -320,7 +320,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
       // Check if step is in parallel section or inside strategy section then dont have nextNodeUUid set.
       if (siblingField != null && !GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
-          && !StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
+          && !StrategyUtils.isWrappedUnderStrategy(currentField)) {
         nextNodeUuid = siblingField.getNode().getUuid();
       }
 
@@ -390,7 +390,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
 
   protected String getName(T stepElement) {
     String nodeName;
-    if (EmptyPredicate.isEmpty(stepElement.getName())) {
+    if (isEmpty(stepElement.getName())) {
       nodeName = stepElement.getIdentifier();
     } else {
       nodeName = stepElement.getName();
@@ -452,17 +452,39 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
 
     List<YamlNode> steps = new ArrayList<>();
     String currentStageIdentifier = currentStage.getIdentifier();
-    for (YamlNode stageNode : stages.asArray()) {
-      YamlNode stage = stageNode.getField(STAGE).getNode();
-      if (stage == null) {
-        continue;
+
+    if (isEmpty(stages.asArray())) {
+      return Collections.emptyList();
+    }
+
+    if (stages.asArray().get(0).getField(PARALLEL) != null) {
+      YamlNode parallelStages = stages.asArray().get(0).getField(PARALLEL).getNode();
+      for (YamlNode stageNode : parallelStages.asArray()) {
+        YamlNode stage = stageNode.getField(STAGE).getNode();
+        if (stage == null) {
+          continue;
+        }
+
+        steps.addAll(findExecutionStepsFromStage(stage, filter));
+        steps.addAll(findProvisionerStepsFromStage(stage, filter));
+
+        if (currentStageIdentifier.equals(stage.getIdentifier())) {
+          break;
+        }
       }
+    } else {
+      for (YamlNode stageNode : stages.asArray()) {
+        YamlNode stage = stageNode.getField(STAGE).getNode();
+        if (stage == null) {
+          continue;
+        }
 
-      steps.addAll(findExecutionStepsFromStage(stage, filter));
-      steps.addAll(findProvisionerStepsFromStage(stage, filter));
+        steps.addAll(findExecutionStepsFromStage(stage, filter));
+        steps.addAll(findProvisionerStepsFromStage(stage, filter));
 
-      if (currentStageIdentifier.equals(stage.getIdentifier())) {
-        break;
+        if (currentStageIdentifier.equals(stage.getIdentifier())) {
+          break;
+        }
       }
     }
 
