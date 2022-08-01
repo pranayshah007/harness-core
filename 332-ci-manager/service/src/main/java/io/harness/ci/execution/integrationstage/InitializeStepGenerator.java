@@ -20,13 +20,16 @@ import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.steps.matrix.ExpandedExecutionWrapperInfo;
+import io.harness.steps.matrix.StrategyExpansionData;
 import io.harness.steps.matrix.StrategyHelper;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Singleton
 @OwnedBy(HarnessTeam.CI)
@@ -43,11 +46,13 @@ public class InitializeStepGenerator {
     IntegrationStageConfig integrationStageConfig = IntegrationStageUtils.getIntegrationStageConfig(stageElementConfig);
 
     List<ExecutionWrapperConfig> expandedExecutionElement = new ArrayList<>();
+    Map<String, StrategyExpansionData> strategyExpansionMap = new HashMap<>();
     boolean pipelineMatrixEnabled = ciFeatureFlagService.isEnabled(FeatureName.PIPELINE_MATRIX, accountId);
     if (pipelineMatrixEnabled) {
       for (ExecutionWrapperConfig config : executionElement.getSteps()) {
         ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo = strategyHelper.expandExecutionWrapperConfig(config);
         expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
+        strategyExpansionMap.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
       }
     }
 
@@ -62,6 +67,7 @@ public class InitializeStepGenerator {
         .executionSource(ciExecutionArgs.getExecutionSource())
         .ciCodebase(ciCodebase)
         .skipGitClone(!gitClone)
+        .strategyExpansionMap(strategyExpansionMap)
         .executionElementConfig(pipelineMatrixEnabled
                 ? ExecutionElementConfig.builder().steps(expandedExecutionElement).build()
                 : executionElement)

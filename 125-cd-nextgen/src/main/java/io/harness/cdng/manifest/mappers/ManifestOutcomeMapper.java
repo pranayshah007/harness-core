@@ -139,6 +139,7 @@ public class ManifestOutcomeMapper {
         .pluginPath(kustomizeManifest.getPluginPath())
         .patchesPaths(kustomizeManifest.getPatchesPaths())
         .manifestScope(kustomizeManifest.getManifestScope())
+        .overlayConfiguration(kustomizeManifest.getOverlayConfiguration())
         .build();
   }
 

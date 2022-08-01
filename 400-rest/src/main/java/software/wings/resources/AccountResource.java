@@ -44,7 +44,6 @@ import io.harness.rest.RestResponse;
 import io.harness.scheduler.PersistentScheduler;
 import io.harness.security.annotations.LearningEngineAuth;
 import io.harness.security.annotations.PublicApi;
-import io.harness.security.annotations.PublicApiWithWhitelist;
 import io.harness.seeddata.SampleDataProviderService;
 
 import software.wings.beans.Account;
@@ -567,7 +566,7 @@ public class AccountResource {
   }
 
   @GET
-  @PublicApiWithWhitelist
+  @PublicApi
   @Path("/authentication-info")
   public RestResponse<AuthenticationInfo> getAuthenticationInfo(@QueryParam("accountId") String accountId) {
     return new RestResponse<>(accountService.getAuthenticationInfo(accountId));

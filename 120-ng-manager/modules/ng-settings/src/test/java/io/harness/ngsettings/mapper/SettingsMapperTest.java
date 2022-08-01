@@ -185,7 +185,7 @@ public class SettingsMapperTest extends CategoryTest {
                                               .build();
     SettingDTO newSettingDTO = settingsMapper.writeNewDTO(setting, settingRequestDTO, settingConfiguration, true);
     assertSettingDTOPropertiesAndValue(identifier, name, orgIdentifier, projectIdentifier, category, newValue,
-        defaultValue, valueType, allowedValues, false, null, true, newSettingDTO);
+        defaultValue, valueType, allowedValues, false, SettingSource.PROJECT, true, newSettingDTO);
   }
 
   @Test

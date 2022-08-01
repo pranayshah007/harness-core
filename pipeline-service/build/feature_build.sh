@@ -40,6 +40,7 @@ chmod +x scripts/bazel/UpdateVersionInfoyaml.sh
 chmod +x pipeline-service/build/build_jar.sh
 chmod +x pipeline-service/build/build_dist.sh
 
+scripts/bazel/UpdateVersionInfoyaml.sh $BUILD pipeline-service/build.properties
 pipeline-service/build/build_jar.sh
 pipeline-service/build/build_dist.sh || true
 

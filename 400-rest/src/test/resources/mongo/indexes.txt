@@ -431,6 +431,7 @@ instanceStats {"name": "appId_1", "background": true} {"appId": 1}
 instanceStats {"name": "createdAt_1", "background": true} {"createdAt": 1}
 instanceStats {"name": "timestamp_1", "background": true} {"timestamp": 1}
 instanceStats {"name": "unique_account_timestamp", "unique": true} {"accountId": 1, "timestamp": 1}
+instanceStats {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 instanceSyncPerpetualTasksInfo {"name": "accountId_1", "background": true} {"accountId": 1}
 instanceSyncPerpetualTasksInfo {"name": "infrastructureMappingId_1", "background": true} {"infrastructureMappingId": 1}
 kmsTransitionEvent2 {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
@@ -512,6 +513,8 @@ migratedEntityMapping {"name": "identifier_1", "background": true} {"identifier"
 migratedEntityMapping {"name": "orgIdentifier_1", "background": true} {"orgIdentifier": 1}
 migratedEntityMapping {"name": "projectIdentifier_1", "background": true} {"projectIdentifier": 1}
 migratedEntityMapping {"name": "scope_1", "background": true} {"scope": 1}
+migrationAsyncTracker {"name": "accountId_1", "background": true} {"accountId": 1}
+migrationAsyncTracker {"name": "appId_1", "background": true} {"appId": 1}
 mlExperiments {"name": "appId_1", "background": true} {"appId": 1}
 mlExperiments {"name": "createdAt_1", "background": true} {"createdAt": 1}
 mlExperiments {"name": "unique_experiment", "unique": true} {"ml_analysis_type": 1, "experimentName": 1}
@@ -613,6 +616,7 @@ secretUsageLogs {"name": "validUntil_1", "background": true, "expireAfterSeconds
 segmentGroupEventJobContexts {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
 serverless-instance-stats {"name": "accountId_timestamp_unique_idx", "unique": true} {"accountId": 1, "timestamp": 1}
 serverless-instance-stats {"name": "createdAt_1", "background": true} {"createdAt": 1}
+serverless-instance-stats {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 serverlessInstance {"name": "accountId_1", "background": true} {"accountId": 1}
 serverlessInstance {"name": "appId_1", "background": true} {"appId": 1}
 serverlessInstance {"name": "createdAt_1", "background": true} {"createdAt": 1}
@@ -747,6 +751,7 @@ timeSeriesMLScores {"name": "accountId_1", "background": true} {"accountId": 1}
 timeSeriesMLScores {"name": "appId_1", "background": true} {"appId": 1}
 timeSeriesMLScores {"name": "createdAt_1", "background": true} {"createdAt": 1}
 timeSeriesMLScores {"name": "stateExecutionId_1", "background": true} {"stateExecutionId": 1}
+timeSeriesMLScores {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 timeSeriesMetricGroup {"name": "accountId_1", "background": true} {"accountId": 1}
 timeSeriesMetricGroup {"name": "appId_1", "background": true} {"appId": 1}
 timeSeriesMetricGroup {"name": "createdAt_1", "background": true} {"createdAt": 1}
@@ -769,6 +774,7 @@ timeSeriesRiskSummary {"name": "accountId_1", "background": true} {"accountId": 
 timeSeriesRiskSummary {"name": "appId_1", "background": true} {"appId": 1}
 timeSeriesRiskSummary {"name": "createdAt_1", "background": true} {"createdAt": 1}
 timeSeriesRiskSummary {"name": "minute_idx", "background": true} {"cvConfigId": 1, "analysisMinute": 1, "tag": 1}
+timeSeriesRiskSummary {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 timeoutInstances {"name": "createdAt_1", "background": true} {"createdAt": 1}
 timeoutInstances {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
 timeoutInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}

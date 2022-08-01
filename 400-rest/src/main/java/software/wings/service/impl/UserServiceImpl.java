@@ -543,6 +543,7 @@ public class UserServiceImpl implements UserService {
                           .withCompanyName(username)
                           .withDefaultExperience(DefaultExperience.NG)
                           .withCreatedFromNG(true)
+                          .withIsProductLed(true)
                           .withAppId(GLOBAL_APP_ID)
                           .build();
     account.setLicenseInfo(LicenseInfo.builder()

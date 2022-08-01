@@ -21,6 +21,7 @@ import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.stages.IntegrationStageConfigImpl;
+import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
@@ -31,12 +32,14 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
+import io.harness.steps.matrix.StrategyExpansionData;
 
 import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.powermock.reflect.Whitebox;
@@ -71,9 +74,12 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
         K8InitializeStepUtilsHelper.getIntegrationStageElementConfigWithStepGroup();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
-
+    InitializeStepInfo initializeStepInfo =
+        InitializeStepInfo.builder()
+            .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
+            .build();
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitionsStepGroupWithFF(
-        steps, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, 0);
+        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, 0);
 
     HashMap<String, ContainerResourceParams> map = populateMap(stepContainers);
 
@@ -104,9 +110,12 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
         K8InitializeStepUtilsHelper.getIntegrationStageElementConfigWithStepGroup1();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
-
+    InitializeStepInfo initializeStepInfo =
+        InitializeStepInfo.builder()
+            .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
+            .build();
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitionsStepGroupWithFF(
-        steps, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, 0);
+        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, 0);
 
     HashMap<String, ContainerResourceParams> map = populateMap(stepContainers);
 
@@ -129,9 +138,12 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
         K8InitializeStepUtilsHelper.getIntegrationStageElementConfigWithStepGroup1();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
-
+    InitializeStepInfo initializeStepInfo =
+        InitializeStepInfo.builder()
+            .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
+            .build();
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitionsStepGroupWithFF(
-        steps, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, 0);
+        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, 0);
 
     HashMap<String, ContainerResourceParams> map = populateMap(stepContainers);
 
@@ -153,6 +165,33 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     assertThat(map.get("step_grup3_run32").getResourceLimitMilliCpu()).isEqualTo(200);
     assertThat(map.get("step_grup3_run31").getResourceLimitMemoryMiB()).isEqualTo(125);
     assertThat(map.get("step_grup3_run31").getResourceLimitMilliCpu()).isEqualTo(200);
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testStepsWithStrategy() throws Exception {
+    List<ExecutionWrapperConfig> steps = K8InitializeStepUtilsHelper.getExecutionWrapperConfigListWithStrategy();
+    StageElementConfig integrationStageConfig =
+        K8InitializeStepUtilsHelper.getIntegrationStageElementConfigWithStepGroup1();
+    Map<String, StrategyExpansionData> strategyExpansionMap = new HashMap<>();
+    strategyExpansionMap.put("MAB-xgo2QTyxGP5ER1ZHdg", StrategyExpansionData.builder().maxConcurrency(2).build());
+    strategyExpansionMap.put("lBUdHaJlRMufGBG4u3uydA", StrategyExpansionData.builder().maxConcurrency(3).build());
+    strategyExpansionMap.put("18R7LnNLTu6dZpd4Nvjp_A", StrategyExpansionData.builder().maxConcurrency(2).build());
+    strategyExpansionMap.put("jaYM93ZLQkehPEcEKJOKmg", StrategyExpansionData.builder().maxConcurrency(1).build());
+    PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
+    CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
+    InitializeStepInfo initializeStepInfo =
+        InitializeStepInfo.builder()
+            .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
+            .strategyExpansionMap(strategyExpansionMap)
+            .build();
+    List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitionsStepGroupWithFF(
+        initializeStepInfo, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, 0);
+    assertThat(stepContainers.size()).isEqualTo(15);
+    Pair<Integer, Integer> wrapperRequest = k8InitializeStepUtils.getStageRequest(initializeStepInfo, "test");
+    assertThat(wrapperRequest.getLeft()).isEqualTo(1600);
+    assertThat(wrapperRequest.getRight()).isEqualTo(2500);
   }
 
   @Test

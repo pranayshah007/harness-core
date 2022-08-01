@@ -1,0 +1,124 @@
+{
+  "uuid": "18R7LnNLTu6dZpd4Nvjp_A",
+  "step": null,
+  "parallel": null,
+  "stepGroup": {
+    "__uuid": "cyvSK4CMT7a48JcYbPsdYQ",
+    "steps": [
+      {
+        "parallel": [
+          {
+            "__uuid": "lBUdHaJlRMufGBG4u3uydA",
+            "step": {
+              "type": "Run",
+              "spec": {
+                "connectorRef": "account.CItestDockerConnectorTXOk8jdmqC",
+                "image": "alpine",
+                "shell": "Sh",
+                "command": "echo run2",
+                "resources": {
+                  "limits": {
+                    "memory": "400Mi",
+                    "__uuid": "4gFqQDCaTve1jmlOvGj_1A"
+                  },
+                  "__uuid": "_4sx3DT9RhaSzszxBjmw_A"
+                },
+                "__uuid": "-eVNrWgQSh66zqJ4CO5xHQ"
+              },
+              "strategy": {
+                "parallelism": 3,
+                "__uuid": "tJPsQgRDTmiZcUt06aNZzg"
+              },
+              "__uuid": "iUij8cpnQyWbKHXXyJYCRA",
+              "identifier": "run2_0",
+              "name": "run2_0"
+            }
+          },
+          {
+            "__uuid": "lBUdHaJlRMufGBG4u3uydA",
+            "step": {
+              "type": "Run",
+              "spec": {
+                "connectorRef": "account.CItestDockerConnectorTXOk8jdmqC",
+                "image": "alpine",
+                "shell": "Sh",
+                "command": "echo run2",
+                "resources": {
+                  "limits": {
+                    "memory": "400Mi",
+                    "__uuid": "4gFqQDCaTve1jmlOvGj_1A"
+                  },
+                  "__uuid": "_4sx3DT9RhaSzszxBjmw_A"
+                },
+                "__uuid": "-eVNrWgQSh66zqJ4CO5xHQ"
+              },
+              "strategy": {
+                "parallelism": 3,
+                "__uuid": "tJPsQgRDTmiZcUt06aNZzg"
+              },
+              "__uuid": "iUij8cpnQyWbKHXXyJYCRA",
+              "identifier": "run2_1",
+              "name": "run2_1"
+            }
+          },
+          {
+            "__uuid": "lBUdHaJlRMufGBG4u3uydA",
+            "step": {
+              "type": "Run",
+              "spec": {
+                "connectorRef": "account.CItestDockerConnectorTXOk8jdmqC",
+                "image": "alpine",
+                "shell": "Sh",
+                "command": "echo run2",
+                "resources": {
+                  "limits": {
+                    "memory": "400Mi",
+                    "__uuid": "4gFqQDCaTve1jmlOvGj_1A"
+                  },
+                  "__uuid": "_4sx3DT9RhaSzszxBjmw_A"
+                },
+                "__uuid": "-eVNrWgQSh66zqJ4CO5xHQ"
+              },
+              "strategy": {
+                "parallelism": 3,
+                "__uuid": "tJPsQgRDTmiZcUt06aNZzg"
+              },
+              "__uuid": "iUij8cpnQyWbKHXXyJYCRA",
+              "identifier": "run2_2",
+              "name": "run2_2"
+            }
+          },
+          {
+            "__uuid": "jaYM93ZLQkehPEcEKJOKmg",
+            "step": {
+              "identifier": "run3",
+              "type": "Run",
+              "name": "run3",
+              "spec": {
+                "connectorRef": "account.CItestDockerConnectorTXOk8jdmqC",
+                "image": "alpine",
+                "shell": "Sh",
+                "command": "echo run1",
+                "__uuid": "DoNQA138QbW9TpEQn2m_xQ"
+              },
+              "__uuid": "E-6MwSuqT1K_XQ6CS4__DA"
+            }
+          }
+        ]
+      }
+    ],
+    "strategy": {
+      "__uuid": "d_l5pmiTSLigaHPAimz2Zw",
+      "matrix": {
+        "memory": [
+          "200Mi",
+          "300Mi",
+          "400Mi"
+        ],
+        "maxConcurrency": 2
+      }
+    },
+    "identifier": "sg_2",
+    "name": "sg_2"
+  }
+}

@@ -102,4 +102,18 @@ public class CIProvisionResource {
     return ResponseDTO.newResponse(
         provisionService.getAllUserRepos(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier));
   }
+
+  /*@PUT
+  @Path("get-code")
+  @ApiOperation(value = "Refresh given token", nickname = "getAllUserRepos")
+  public void refreshToken(
+      @Parameter(description = "Connector ID") @QueryParam("connectorRef") String connectorIdentifier,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
+          "clientId") String clientId,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam("clientSecret") @OrgIdentifier String clientSecret,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam("endPoint") @OrgIdentifier String endpoint,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          "refreshCode") @ProjectIdentifier String refreshCode) {
+    provisionService.refreshCode(clientId, clientSecret, endpoint, refreshCode);
+  }*/
 }

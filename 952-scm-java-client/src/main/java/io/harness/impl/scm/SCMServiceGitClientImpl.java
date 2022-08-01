@@ -38,6 +38,7 @@ import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.ListCommitsInPRResponse;
 import io.harness.product.ci.scm.proto.ListCommitsResponse;
 import io.harness.product.ci.scm.proto.ListWebhooksResponse;
+import io.harness.product.ci.scm.proto.RefreshTokenResponse;
 import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
 import io.harness.service.ScmClient;
@@ -217,6 +218,11 @@ public class SCMServiceGitClientImpl implements ScmClient {
         scmConnector, sourceBranchName, targetBranchName, prTitle, scmBlockingStub);
   }
 
+  @Override
+  public RefreshTokenResponse refreshToken(
+      ScmConnector scmConnector, String clientId, String clientSecret, String endpoint, String refreshToken) {
+    return scmServiceClient.refreshToken(scmConnector, clientId, clientSecret, endpoint, refreshToken, scmBlockingStub);
+  }
   @Override
   public GetLatestCommitOnFileResponse getLatestCommitOnFile(
       ScmConnector scmConnector, String branchName, String filePath) {

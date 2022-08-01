@@ -13,11 +13,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.ccm.audittrails.events.PerspectiveFolderCreateEvent;
+import io.harness.ccm.audittrails.events.PerspectiveFolderDeleteEvent;
+import io.harness.ccm.audittrails.events.PerspectiveFolderUpdateEvent;
 import io.harness.ccm.remote.resources.perspectives.PerspectiveFolderResource;
 import io.harness.ccm.views.dto.CreatePerspectiveFolderDTO;
 import io.harness.ccm.views.dto.MovePerspectiveDTO;
@@ -29,6 +33,7 @@ import io.harness.ccm.views.graphql.QLCEView;
 import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryReporter;
 
@@ -39,13 +44,20 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PerspectiveFolderResourceTest extends CategoryTest {
   private CEViewService ceViewService = mock(CEViewService.class);
   private CEViewFolderService ceViewFolderService = mock(CEViewFolderService.class);
+  private TransactionTemplate transactionTemplate = mock(TransactionTemplate.class);
+  private OutboxService outboxService = mock(OutboxService.class);
   private PerspectiveFolderResource perspectiveFolderResource;
 
   private final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -59,7 +71,12 @@ public class PerspectiveFolderResourceTest extends CategoryTest {
 
   private CEView perspective;
   private CEViewFolder perspectiveFolder;
+  private CEViewFolder perspectiveFolderDTO;
   private QLCEView qlceView;
+
+  @Captor private ArgumentCaptor<PerspectiveFolderCreateEvent> perspectiveFolderCreateEventArgumentCaptor;
+  @Captor private ArgumentCaptor<PerspectiveFolderUpdateEvent> perspectiveFolderUpdateEventArgumentCaptor;
+  @Captor private ArgumentCaptor<PerspectiveFolderDeleteEvent> perspectiveFolderDeleteEventArgumentCaptor;
 
   @Mock private TelemetryReporter telemetryReporter;
 
@@ -79,11 +96,18 @@ public class PerspectiveFolderResourceTest extends CategoryTest {
     when(ceViewService.getAllViews(any(), any(), anyBoolean(), any())).thenReturn(Collections.singletonList(qlceView));
     when(ceViewFolderService.save(any())).thenReturn(perspectiveFolder);
     when(ceViewFolderService.getFolders(any())).thenReturn(Collections.singletonList(perspectiveFolder));
+    when(ceViewFolderService.getFolders(any(), any())).thenReturn(Collections.singletonList(perspectiveFolder));
     when(ceViewFolderService.updateFolder(any(), any())).thenReturn(perspectiveFolder);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     when(ceViewFolderService.moveMultipleCEViews(any(), any(), any()))
         .thenReturn(Collections.singletonList(perspective));
     when(ceViewFolderService.delete(any(), any())).thenReturn(true);
-    perspectiveFolderResource = new PerspectiveFolderResource(ceViewFolderService, ceViewService, telemetryReporter);
+    perspectiveFolderResource = new PerspectiveFolderResource(
+        ceViewFolderService, ceViewService, telemetryReporter, transactionTemplate, outboxService);
+    perspectiveFolderDTO = perspectiveFolder.toDTO();
   }
 
   @Test
@@ -92,6 +116,10 @@ public class PerspectiveFolderResourceTest extends CategoryTest {
   public void testCreatePerspectiveFolder() {
     perspectiveFolderResource.create(
         ACCOUNT_ID, CreatePerspectiveFolderDTO.builder().ceViewFolder(perspectiveFolder).build());
+    verify(transactionTemplate, times(1)).execute(any());
+    verify(outboxService, times(1)).save(perspectiveFolderCreateEventArgumentCaptor.capture());
+    PerspectiveFolderCreateEvent perspectiveFolderCreateEvent = perspectiveFolderCreateEventArgumentCaptor.getValue();
+    assertThat(perspectiveFolderDTO).isEqualTo(perspectiveFolderCreateEvent.getPerspectiveFolderDTO());
     verify(ceViewFolderService).save(perspectiveFolder);
   }
 
@@ -118,6 +146,10 @@ public class PerspectiveFolderResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdate() {
     ResponseDTO<CEViewFolder> response = perspectiveFolderResource.updateFolder(ACCOUNT_ID, perspectiveFolder);
+    verify(transactionTemplate, times(1)).execute(any());
+    verify(outboxService, times(1)).save(perspectiveFolderUpdateEventArgumentCaptor.capture());
+    PerspectiveFolderUpdateEvent perspectiveFolderUpdateEvent = perspectiveFolderUpdateEventArgumentCaptor.getValue();
+    assertThat(perspectiveFolderDTO).isEqualTo(perspectiveFolderUpdateEvent.getPerspectiveFolderDTO());
     assertThat(response.getData()).isEqualTo(perspectiveFolder);
   }
 
@@ -138,6 +170,10 @@ public class PerspectiveFolderResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void deleteFolder() {
     ResponseDTO<Boolean> response = perspectiveFolderResource.delete(ACCOUNT_ID, FOLDER_ID);
+    verify(transactionTemplate, times(1)).execute(any());
+    verify(outboxService, times(1)).save(perspectiveFolderDeleteEventArgumentCaptor.capture());
+    PerspectiveFolderDeleteEvent perspectiveFolderDeleteEvent = perspectiveFolderDeleteEventArgumentCaptor.getValue();
+    assertThat(perspectiveFolderDTO).isEqualTo(perspectiveFolderDeleteEvent.getPerspectiveFolderDTO());
     assertThat(response.getData()).isEqualTo(true);
   }
 }

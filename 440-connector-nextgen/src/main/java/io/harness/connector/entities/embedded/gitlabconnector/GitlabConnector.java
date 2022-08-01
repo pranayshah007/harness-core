@@ -11,6 +11,7 @@ import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType;
+import io.harness.iterator.PersistentRegularIterable;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -27,7 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Persistent
 @Entity(value = "connectors", noClassnameStored = true)
 @TypeAlias("io.harness.connector.entities.embedded.gitlabconnector.GitlabConnector")
-public class GitlabConnector extends Connector {
+public class GitlabConnector extends Connector implements PersistentRegularIterable {
   GitConnectionType connectionType;
   String url;
   String validationRepo;
@@ -36,4 +37,12 @@ public class GitlabConnector extends Connector {
   boolean hasApiAccess;
   GitlabApiAccessType apiAccessType;
   GitlabApiAccess gitlabApiAccess;
+
+  @Override
+  public Long obtainNextIteration(String fieldName) {
+    return null;
+  }
+
+  @Override
+  public void updateNextIteration(String fieldName, long nextIteration) {}
 }

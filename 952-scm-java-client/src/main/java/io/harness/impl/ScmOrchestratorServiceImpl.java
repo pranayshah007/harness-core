@@ -39,6 +39,7 @@ import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.ListCommitsInPRResponse;
 import io.harness.product.ci.scm.proto.ListCommitsResponse;
 import io.harness.product.ci.scm.proto.ListWebhooksResponse;
+import io.harness.product.ci.scm.proto.RefreshTokenResponse;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
 import io.harness.service.ScmOrchestratorService;
 
@@ -212,6 +213,12 @@ public class ScmOrchestratorServiceImpl implements ScmOrchestratorService {
   public CreatePRResponse createPullRequestV2(
       ScmConnector scmConnector, String sourceBranchName, String targetBranchName, String prTitle) {
     return scmServiceGitClient.createPullRequestV2(scmConnector, sourceBranchName, targetBranchName, prTitle);
+  }
+
+  @Override
+  public RefreshTokenResponse refreshToken(
+      ScmConnector scmConnector, String clientId, String clientSecret, String endpoint, String refreshToken) {
+    return scmServiceGitClient.refreshToken(scmConnector, clientId, clientSecret, endpoint, refreshToken);
   }
 
   @Override

@@ -2244,4 +2244,5 @@
 980028:io.harness.exception.AzureAKSException
 980029:io.harness.exception.runtime.SshCommandExecutionException
 980030:io.harness.exception.InterruptedRuntimeException
+980031:io.harness.exception.InvalidIdentifierRefException
 9800001:io.harness.beans.RecasterMap

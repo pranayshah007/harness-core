@@ -117,6 +117,7 @@ import io.harness.ng.migration.NGCoreMigrationProvider;
 import io.harness.ng.migration.SourceCodeManagerMigrationProvider;
 import io.harness.ng.migration.UserMembershipMigrationProvider;
 import io.harness.ng.migration.UserMetadataMigrationProvider;
+import io.harness.ng.oauth.OAuthTokenRereshers;
 import io.harness.ng.overview.eventGenerator.DeploymentEventGenerator;
 import io.harness.ng.webhook.services.api.WebhookEventProcessingService;
 import io.harness.ngsettings.settings.SettingsCreationJob;
@@ -546,6 +547,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     injector.getInstance(InstanceStatsIteratorHandler.class).registerIterators();
     injector.getInstance(GitFullSyncEntityIterator.class)
         .registerIterators(ngIteratorsConfig.getGitFullSyncEntityIteratorConfig().getThreadPoolSize());
+    injector.getInstance(OAuthTokenRereshers.class)
+        .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
   }
 
   public void registerJobs(Injector injector) {

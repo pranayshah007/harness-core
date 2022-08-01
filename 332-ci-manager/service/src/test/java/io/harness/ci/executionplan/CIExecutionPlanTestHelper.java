@@ -294,6 +294,7 @@ public class CIExecutionPlanTestHelper {
         .executionElementConfig(getExecutionElementConfig())
         .ciCodebase(getCICodebase())
         .infrastructure(getInfrastructureWithVolume())
+        .strategyExpansionMap(new HashMap<>())
         .timeout(600000)
         .build();
   }
@@ -333,6 +334,7 @@ public class CIExecutionPlanTestHelper {
         .stageElementConfig((IntegrationStageConfig) stageElementConfig.getStageType())
         .executionElementConfig(getExecutionElementConfig())
         .infrastructure(getInfrastructureWithVolume())
+        .strategyExpansionMap(new HashMap<>())
         .timeout(600000)
         .build();
   }

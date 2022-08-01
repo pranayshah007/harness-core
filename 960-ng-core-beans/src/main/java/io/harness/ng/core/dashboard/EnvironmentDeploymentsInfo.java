@@ -17,5 +17,5 @@ public class EnvironmentDeploymentsInfo {
   private String envId;
   private String envName;
   private String envType;
-  private List<String> infrastructureIdentifiers;
+  private List<InfrastructureInfo> infrastructureDetails;
 }

@@ -56,7 +56,6 @@ public class GraphVertexConverter {
         .failureInfo(nodeExecution.getFailureInfo())
         .skipInfo(nodeExecution.getSkipInfo())
         .nodeRunInfo(nodeExecution.getNodeRunInfo())
-        .stepParameters(nodeExecution.getPmsStepParameters())
         .mode(nodeExecution.getMode())
         .executableResponses(CollectionUtils.emptyIfNull(nodeExecution.getExecutableResponses()))
         .interruptHistories(nodeExecution.getInterruptHistories())

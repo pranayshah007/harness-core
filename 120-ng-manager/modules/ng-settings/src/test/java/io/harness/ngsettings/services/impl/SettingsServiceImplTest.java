@@ -32,6 +32,8 @@ import io.harness.ngsettings.dto.SettingUpdateResponseDTO;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.ngsettings.entities.Setting;
 import io.harness.ngsettings.entities.SettingConfiguration;
+import io.harness.ngsettings.events.SettingRestoreEvent;
+import io.harness.ngsettings.events.SettingUpdateEvent;
 import io.harness.ngsettings.mapper.SettingsMapper;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ngsettings.spring.SettingConfigurationRepository;
@@ -53,6 +55,8 @@ import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 public class SettingsServiceImplTest extends CategoryTest {
@@ -160,6 +164,10 @@ public class SettingsServiceImplTest extends CategoryTest {
     when(settingsMapper.toSetting(accountIdentifier, settingDTO)).thenReturn(updatedSetting);
     when(settingsMapper.writeSettingResponseDTO(updatedSetting, settingConfiguration, true))
         .thenReturn(settingResponseDTO);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     List<SettingUpdateResponseDTO> batchResponse =
         settingsService.update(accountIdentifier, null, null, List.of(settingRequestDTO));
     verify(settingRepository, times(1))
@@ -168,6 +176,7 @@ public class SettingsServiceImplTest extends CategoryTest {
     verify(settingRepository, times(1)).upsert(Setting.builder().identifier(identifier).build());
     verify(settingConfigurationRepository, times(1))
         .findByIdentifierAndAllowedScopesIn(identifier, List.of(ScopeLevel.ACCOUNT));
+    verify(outboxService, times(1)).save(any(SettingRestoreEvent.class));
     assertThat(batchResponse).contains(settingBatchResponseDTO);
   }
 
@@ -207,6 +216,10 @@ public class SettingsServiceImplTest extends CategoryTest {
     when(settingsMapper.toSetting(accountIdentifier, settingDTO)).thenReturn(newSetting);
     when(settingsMapper.writeSettingResponseDTO(newSetting, settingConfiguration, true)).thenReturn(settingResponseDTO);
     when(settingsMapper.writeBatchResponseDTO(settingResponseDTO)).thenReturn(settingBatchResponseDTO);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     List<SettingUpdateResponseDTO> batchResponse =
         settingsService.update(accountIdentifier, null, null, List.of(settingRequestDTO));
     verify(settingRepository, times(1))
@@ -216,6 +229,7 @@ public class SettingsServiceImplTest extends CategoryTest {
         .findByIdentifierAndAllowedScopesIn(identifier, List.of(ScopeLevel.ACCOUNT));
     verify(settingsMapper, times(0)).writeNewDTO(any(), any(), any(), any(), any());
     verify(settingRepository, times(1)).upsert(newSetting);
+    verify(outboxService, times(1)).save(any(SettingUpdateEvent.class));
     assertThat(batchResponse).contains(settingBatchResponseDTO);
   }
 

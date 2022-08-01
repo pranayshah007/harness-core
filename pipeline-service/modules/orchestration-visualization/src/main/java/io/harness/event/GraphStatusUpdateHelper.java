@@ -18,10 +18,12 @@ import io.harness.beans.GraphVertex;
 import io.harness.beans.GraphVertex.GraphVertexBuilder;
 import io.harness.beans.OrchestrationGraph;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.execution.NodeExecution;
 import io.harness.generator.OrchestrationAdjacencyListGenerator;
+import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
@@ -44,6 +46,8 @@ public class GraphStatusUpdateHelper {
   @Inject private PmsOutcomeService pmsOutcomeService;
   @Inject private OrchestrationAdjacencyListGenerator orchestrationAdjacencyListGenerator;
   @Inject private DelegateInfoHelper delegateInfoHelper;
+
+  @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
 
   public OrchestrationGraph handleEvent(String planExecutionId, String nodeExecutionId,
       OrchestrationEventType eventType, OrchestrationGraph orchestrationGraph) {
@@ -93,6 +97,10 @@ public class GraphStatusUpdateHelper {
     graphVertexMap.computeIfPresent(nodeExecutionId, (key, prevValue) -> {
       GraphVertex newValue = convertFromNodeExecution(prevValue, nodeExecution);
       if (isOutcomeUpdateGraphStatus(newValue.getStatus())) {
+        if (EmptyPredicate.isEmpty(newValue.getStepParameters())) {
+          log.error(String.format("Step Parameters null for nodeExecutionId %s", nodeExecutionId));
+          newValue.setStepParameters(pmsGraphStepDetailsService.getStepInputs(planExecutionId, nodeExecutionId));
+        }
         newValue.setOutcomeDocuments(PmsOutcomeMapper.convertJsonToOrchestrationMap(
             pmsOutcomeService.findAllOutcomesMapByRuntimeId(planExecutionId, nodeExecutionId)));
         newValue.setGraphDelegateSelectionLogParams(
@@ -129,9 +137,6 @@ public class GraphStatusUpdateHelper {
             .skipType(nodeExecution.getSkipGraphType())
             .unitProgresses(nodeExecution.getUnitProgresses())
             .progressData(nodeExecution.getPmsProgressData());
-    if (nodeExecution.getResolvedInputs() != null) {
-      prevValueBuilder.stepParameters(nodeExecution.getPmsStepParameters());
-    }
     return prevValueBuilder.build();
   }
 

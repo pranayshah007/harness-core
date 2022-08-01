@@ -95,6 +95,39 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
                    .collect(Collectors.toSet()))
         .containsExactlyInAnyOrder("a2", "a3");
   }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testDeleteFromAllEnvForAccLevelCluster() {
+    clusterService.bulkCreate(asList(getClusterForEnv("env1", "account.a1"), getClusterForEnv("env1", "a2"),
+        getClusterForEnv("env1", "account.a3")));
+    clusterService.bulkCreate(asList(getClusterForEnv("env2", "account.a1"), getClusterForEnv("env2", "a2"),
+        getClusterForEnv("env2", "account.a3")));
+    clusterService.bulkCreate(asList(getClusterForEnv("env3", "account.a4")));
+
+    clusterService.deleteFromAllEnv(ACCOUNT_ID, "", "", "a1");
+
+    assertThat(clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env1"))
+                   .getContent()
+                   .stream()
+                   .map(Cluster::getClusterRef)
+                   .collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("a2", "account.a3");
+    assertThat(clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env2"))
+                   .getContent()
+                   .stream()
+                   .map(Cluster::getClusterRef)
+                   .collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("a2", "account.a3");
+
+    assertThat(clusterService.listAcrossEnv(0, 5, ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("env3"))
+                   .getContent()
+                   .stream()
+                   .map(Cluster::getClusterRef)
+                   .collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("account.a4");
+  }
   @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)

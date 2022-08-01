@@ -59,4 +59,8 @@ public interface NGTemplateService {
       String templateIdentifier, String versionLabel);
 
   TemplateEntity updateGitFilePath(TemplateEntity templateEntity, String newFilePath);
+
+  boolean deleteAllTemplatesInAProject(String accountId, String orgId, String projectId);
+
+  boolean deleteAllOrgLevelTemplates(String accountId, String orgId);
 }

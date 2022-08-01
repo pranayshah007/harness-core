@@ -47,6 +47,7 @@ public class ACLUtils {
                             .userGroupScopeLevel(USER_GROUP.equals(roleAssignment.getPrincipalType())
                                     ? roleAssignment.getPrincipalScopeLevel()
                                     : roleAssignment.getScopeLevel())
+                            .implicitlyCreatedForScopeAccess(false)
                             .build())
         .resourceSelector(resourceSelector.getSelector())
         .conditional(resourceSelector.isConditional())

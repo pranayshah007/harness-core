@@ -21,15 +21,20 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.NGExpressionUtils;
+import io.harness.eraro.ErrorCode;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.exception.InvalidIdentifierRefException;
+import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.pms.contracts.service.EntityReferenceErrorResponse;
 import io.harness.pms.contracts.service.EntityReferenceRequest;
 import io.harness.pms.contracts.service.EntityReferenceResponse;
+import io.harness.pms.contracts.service.EntityReferenceResponseWrapper;
 import io.harness.pms.contracts.service.EntityReferenceServiceGrpc.EntityReferenceServiceBlockingStub;
+import io.harness.pms.contracts.service.ErrorMetadata;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
@@ -101,8 +106,12 @@ public class TemplateReferenceHelper {
       if (gitSyncBranchContext != null) {
         entityReferenceRequestBuilder.setGitSyncBranchContext(gitSyncBranchContext);
       }
-      EntityReferenceResponse response =
+      EntityReferenceResponseWrapper referenceResponse =
           entityReferenceServiceBlockingStub.getReferences(entityReferenceRequestBuilder.build());
+
+      checkAndThrowExceptionOnErrorResponse(templateEntity, referenceResponse);
+
+      EntityReferenceResponse response = referenceResponse.getReferenceResponse();
       //    templateEntity.setModules(new HashSet<>(response.getModuleInfoList()));
       List<EntityDetailProtoDTO> referredEntities =
           correctFQNsOfReferredEntities(response.getReferredEntitiesList(), templateEntity.getTemplateEntityType());
@@ -117,6 +126,23 @@ public class TemplateReferenceHelper {
       throw new InvalidIdentifierRefException(String.format(
           "Unable to save to %s. Template can be saved to %s only when all the referenced entities are available in the scope.",
           scope, scope));
+    }
+  }
+
+  private void checkAndThrowExceptionOnErrorResponse(
+      TemplateEntity templateEntity, EntityReferenceResponseWrapper referenceResponse) {
+    if (referenceResponse.getResponseCase() == EntityReferenceResponseWrapper.ResponseCase.ERRORRESPONSE) {
+      EntityReferenceErrorResponse errorResponse = referenceResponse.getErrorResponse();
+      List<String> errorMessages = new ArrayList<>();
+      for (ErrorMetadata errorMetadata : errorResponse.getErrorMetadataList()) {
+        errorMessages.add(errorMetadata.getErrorMessage());
+        if (String.valueOf(ErrorCode.INVALID_IDENTIFIER_REF).equals(errorMetadata.getWingsExceptionErrorCode())) {
+          throw new InvalidIdentifierRefException(errorMetadata.getErrorMessage());
+        }
+      }
+      throw new NGTemplateException(
+          String.format("Exception in calculating references for template with identifier %s and version label %s: %s",
+              templateEntity.getIdentifier(), templateEntity.getVersionLabel(), String.join(", ", errorMessages)));
     }
   }
 

@@ -92,6 +92,9 @@ public class PipelineMigrationService extends NgMigrationService {
 
   @Override
   public DiscoveryNode discover(NGMigrationEntity entity) {
+    if (entity == null) {
+      return null;
+    }
     Pipeline pipeline = (Pipeline) entity;
     String entityId = pipeline.getUuid();
     CgEntityId pipelineEntityId = CgEntityId.builder().type(NGMigrationEntityType.PIPELINE).id(entityId).build();
