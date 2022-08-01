@@ -5027,7 +5027,7 @@ amazon_artifacts = [
     maven.artifact(
         group = "com.amazonaws",
         artifact = x,
-        version = "1.12.220",
+        version = "1.12.261",
         exclusions = [
             "commons-logging:commons-logging",
         ],
