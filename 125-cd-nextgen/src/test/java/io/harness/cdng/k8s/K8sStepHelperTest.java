@@ -569,7 +569,7 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(delegateConfig.getStoreDelegateConfig()).isNotNull();
     KustomizeManifestDelegateConfig kustomizeManifestDelegateConfig = (KustomizeManifestDelegateConfig) delegateConfig;
     assertThat(kustomizeManifestDelegateConfig.getPluginPath()).isEqualTo("/usr/bin/kustomize");
-    assertThat(kustomizeManifestDelegateConfig.getKustomizeDirPath()).isEqualTo("/path/to/kustomize");
+    assertThat(kustomizeManifestDelegateConfig.getKustomizeDirPath()).isEqualTo(".");
     assertThat(kustomizeManifestDelegateConfig.getStoreDelegateConfig())
         .isInstanceOf(LocalFileStoreDelegateConfig.class);
     LocalFileStoreDelegateConfig localFileStoreDelegateConfig =
