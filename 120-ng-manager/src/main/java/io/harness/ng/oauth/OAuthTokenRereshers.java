@@ -1,5 +1,6 @@
 package io.harness.ng.oauth;
 
+import static io.harness.connector.entities.embedded.gitlabconnector.GitlabConnector.GitlabConnectorKeys;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
@@ -159,7 +160,7 @@ public class OAuthTokenRereshers implements Handler<GitlabConnector> {
         GitlabConnector.class,
         MongoPersistenceIterator.<GitlabConnector, SpringFilterExpander>builder()
             .clazz(GitlabConnector.class)
-            .fieldName("x")
+            .fieldName(GitlabConnectorKeys.nextTokenIteration)
             .targetInterval(ofMinutes(configuration.getOauthRefreshFrequency()))
             .acceptableExecutionTime(ofMinutes(1))
             .acceptableNoAlertDelay(ofMinutes(1))
