@@ -51,6 +51,7 @@ import io.harness.secretmanagerclient.dto.VaultMetadataSpecDTO;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceImpl;
 
@@ -81,7 +82,7 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
 
   CustomEncryptorsRegistry customEncryptorsRegistry;
 
-  NGTemplateService ngTemplateService;
+  TemplateResourceClient templateResourceClient;
 
   private final String ACCOUNT_IDENTIFIER = "ACCOUNT_ID";
   private final String ORG_IDENTIFIER = "ACCOUNT_ID";
@@ -101,9 +102,10 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
     accountClient = mock(AccountClient.class);
     delegateService = mock(DelegateGrpcClientWrapper.class);
     customEncryptorsRegistry = mock(CustomEncryptorsRegistry.class);
-    ngTemplateService = mock(NGTemplateServiceImpl.class);
-    ngSecretManagerService = new NGSecretManagerServiceImpl(secretManagerClient, ngConnectorSecretManagerService,
-        kmsEncryptorsRegistry, vaultEncryptorsRegistry, customEncryptorsRegistry, ngVaultService, ngTemplateService);
+    templateResourceClient = mock(TemplateResourceClient.class);
+    ngSecretManagerService =
+        new NGSecretManagerServiceImpl(secretManagerClient, ngConnectorSecretManagerService, kmsEncryptorsRegistry,
+            vaultEncryptorsRegistry, customEncryptorsRegistry, ngVaultService, templateResourceClient);
   }
 
   @Test

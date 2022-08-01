@@ -33,7 +33,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("CustomSecretManagerConnector")
 public class CustomSecretManagerConnector extends Connector {
   private boolean onDelegate;
-
+  private boolean isDefault;
   private String connectorRef;
   private String host;
   private String workingDirectory;

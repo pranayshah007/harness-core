@@ -21,7 +21,6 @@ import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.connector.services.NGVaultService;
-import io.harness.delegate.beans.connector.customseceretmanager.CustomSecretManagerDTO;
 import io.harness.encryptors.CustomEncryptor;
 import io.harness.encryptors.CustomEncryptorsRegistry;
 import io.harness.encryptors.KmsEncryptor;
@@ -33,13 +32,16 @@ import io.harness.engine.expressions.ShellScriptYamlExpressionEvaluator;
 import io.harness.exception.WingsException;
 import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.api.NGSecretManagerService;
+import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.dto.*;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
 import io.harness.security.encryption.EncryptedDataParams;
 import io.harness.security.encryption.EncryptionConfig;
+import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.entity.TemplateEntity;
-import io.harness.template.services.NGTemplateService;
+import io.harness.template.remote.TemplateResourceClient;
 
 import software.wings.beans.VaultConfig;
 
@@ -78,7 +80,7 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
   private final RetryRegistry registry = RetryRegistry.of(config);
   private final Retry retry = registry.retry("cgManagerSecretService", config);
 
-  private final NGTemplateService templateService;
+  private final TemplateResourceClient templateResourceClient;
 
   @Override
   public SecretManagerConfigDTO createSecretManager(@NotNull SecretManagerConfigDTO secretManagerConfig) {
@@ -131,14 +133,14 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
             log.info("Secret manager type is custom");
             CustomSecretManagerConfigDTO customNGSecretManagerConfigDTO =
                 (CustomSecretManagerConfigDTO) secretManagerConfigDTO;
-            Optional<TemplateEntity> template =
-                templateService.get(customNGSecretManagerConfigDTO.getAccountIdentifier(),
+            TemplateResponseDTO template = NGRestUtils.getResponse(
+                templateResourceClient.getTemplate(customNGSecretManagerConfigDTO.getTemplateInfo().getTemplateRef(),
+                    customNGSecretManagerConfigDTO.getAccountIdentifier(),
                     customNGSecretManagerConfigDTO.getOrgIdentifier(),
                     customNGSecretManagerConfigDTO.getProjectIdentifier(),
-                    customNGSecretManagerConfigDTO.getTemplateInfo().getTemplateRef(),
-                    customNGSecretManagerConfigDTO.getTemplateInfo().getVersionLabel(), false);
+                    customNGSecretManagerConfigDTO.getTemplateInfo().getVersionLabel(), null, null, null));
 
-            String yaml = template.get().getYaml();
+            String yaml = template.getYaml();
             log.info("Yaml received from template service is " + yaml);
             // resolve the yaml
             ShellScriptYamlExpressionEvaluator shellScriptYamlExpressionEvaluator =

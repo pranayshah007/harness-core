@@ -15,6 +15,7 @@ import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.TypeAlias;
@@ -25,6 +26,8 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(PL)
 @TypeAlias("ShellScriptBaseSource")
 public class ShellScriptBaseSource {
+  @NotNull String type;
+
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> script;
 
   public String getType() {

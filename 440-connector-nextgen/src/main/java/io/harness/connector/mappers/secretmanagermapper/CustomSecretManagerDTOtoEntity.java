@@ -9,15 +9,15 @@ package io.harness.connector.mappers.secretmanagermapper;
 
 import io.harness.connector.entities.embedded.customsecretmanager.CustomSecretManagerConnector;
 import io.harness.connector.mappers.ConnectorDTOToEntityMapper;
-import io.harness.delegate.beans.connector.customseceretmanager.CustomSecretManagerDTO;
+import io.harness.delegate.beans.connector.customseceretmanager.CustomSecretManagerConnectorDTO;
 
 public class CustomSecretManagerDTOtoEntity
-    implements ConnectorDTOToEntityMapper<CustomSecretManagerDTO, CustomSecretManagerConnector> {
+    implements ConnectorDTOToEntityMapper<CustomSecretManagerConnectorDTO, CustomSecretManagerConnector> {
   @Override
-  public CustomSecretManagerConnector toConnectorEntity(CustomSecretManagerDTO connectorDTO) {
+  public CustomSecretManagerConnector toConnectorEntity(CustomSecretManagerConnectorDTO connectorDTO) {
     return CustomSecretManagerConnector.builder()
         .connectorRef(connectorDTO.getConnectorRef())
-        .templateRef(connectorDTO.getTemplateRef())
+        .templateRef(connectorDTO.getTemplateInfo())
         .host(connectorDTO.getHost())
         .onDelegate(connectorDTO.isOnDelegate())
         .workingDirectory(connectorDTO.getWorkingDirectory())

@@ -415,8 +415,7 @@
 5249:software.wings.security.GenericEntityFilter
 5250:software.wings.security.EnvFilter
 5251:software.wings.security.WorkflowFilter
-5253:io.harness.shell.ScriptType
-5254:software.wings.beans.ConnectionType
+5253:io.harness.shell.ScriptType:software.wings.beans.ConnectionType
 5255:software.wings.beans.WinRmConnectionAttributes
 5256:software.wings.beans.WinRmCommandParameter
 5259:software.wings.helpers.ext.helm.request.HelmInstallCommandRequest
@@ -1495,6 +1494,9 @@
 19550:io.harness.delegate.beans.executioncapability.GitInstallationCapability
 19551:io.harness.delegate.beans.connector.ConnectorValidationParameterResponse
 19552:io.harness.delegate.beans.connector.scm.github.GithubOauthDTO
+19553:io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerValidationParams
+19554:io.harness.delegate.beans.connector.customseceretmanager.CustomSecretManagerConnectorDTO
+19555:io.harness.delegate.beans.connector.TemplateInfo
 19630:io.harness.delegate.beans.connector.helm.OciHelmValidationParams
 19640:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams
 19641:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse
@@ -1654,6 +1656,7 @@
 40099:software.wings.beans.SlackConfig
 40100:software.wings.beans.ce.CEAzureConfig
 40113:com.amazonaws.services.cloudformation.model.StackStatus
+40114:software.wings.beans.CustomSecretNGManagerConfig
 50002:software.wings.api.RancherClusterElement
 50004:software.wings.delegatetasks.rancher.RancherResolveClustersTaskParameters
 50005:software.wings.delegatetasks.rancher.RancherResolveClustersResponse

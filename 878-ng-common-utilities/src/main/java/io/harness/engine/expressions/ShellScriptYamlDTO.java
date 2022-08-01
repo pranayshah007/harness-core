@@ -7,9 +7,14 @@
 
 package io.harness.engine.expressions;
 
+import io.harness.data.validator.EntityIdentifier;
+import io.harness.data.validator.NGEntityName;
 import io.harness.gitsync.beans.YamlDTO;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.TypeAlias;
@@ -18,5 +23,5 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @TypeAlias("ShellScriptYamlDTO")
 public class ShellScriptYamlDTO implements YamlDTO {
-  @JsonProperty("script") ShellScriptBaseDTO shellScriptBaseDTO;
+  @JsonProperty("template") ShellScriptBaseDTO shellScriptBaseDTO;
 }
