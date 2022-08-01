@@ -8,12 +8,17 @@
 package io.harness.cdng.creator.plan.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.ssh.CommandStepNode;
+import io.harness.cdng.ssh.CommandStepParameters;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.yaml.YamlUtils;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
@@ -33,5 +38,16 @@ public class CommandStepPlanCreator extends CDPMSStepPlanCreatorV2<CommandStepNo
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, CommandStepNode stepElement) {
     return super.createPlanForField(ctx, stepElement);
+  }
+
+  protected StepParameters getStepParameters(PlanCreationContext ctx, CommandStepNode stepElement) {
+    final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
+    boolean isStepInsideRollback = YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null;
+
+    CommandStepParameters commandStepParameters =
+        (CommandStepParameters) ((StepElementParameters) stepParameters).getSpec();
+    commandStepParameters.setRollback(isStepInsideRollback);
+
+    return stepParameters;
   }
 }

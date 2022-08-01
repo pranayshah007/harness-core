@@ -8,10 +8,12 @@
 package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.filestore.utils.FileStoreNodeUtils.mapFileNodes;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.PDC;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.SSH_WINRM_AZURE;
 import static io.harness.pms.yaml.YamlNode.UUID_FIELD_NAME;
@@ -22,14 +24,20 @@ import static java.util.stream.Collectors.joining;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.azure.AzureHelperService;
+import io.harness.cdng.configfile.ConfigFileOutcome;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -40,6 +48,8 @@ import io.harness.delegate.beans.connector.pdcconnector.HostDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO;
+import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.task.ssh.AzureSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AzureWinrmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
@@ -48,9 +58,17 @@ import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.config.ConfigFileParameters;
+import io.harness.delegate.task.ssh.config.FileDelegateConfig;
+import io.harness.delegate.task.ssh.config.SecretConfigFile;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.filestore.dto.node.FileStoreNodeDTO;
+import io.harness.filestore.service.FileStoreService;
 import io.harness.ng.beans.PageRequest;
+import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
@@ -70,6 +88,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -90,6 +109,9 @@ public class SshEntityHelper {
   @Inject private WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper;
   @Inject private NGHostService ngHostService;
   @Inject private AzureHelperService azureHelperService;
+  @Inject private FileStoreService fileStoreService;
+  @Inject private NGEncryptedDataService ngEncryptedDataService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   private static final int BATCH_SIZE = 100;
 
@@ -358,5 +380,92 @@ public class SshEntityHelper {
         throw new UnsupportedOperationException(
             format("Unsupported connector type : [%s]", connectorDTO.getConnectorType()));
     }
+  }
+
+  public FileDelegateConfig getFileDelegateConfig(
+      Map<String, ConfigFileOutcome> configFilesOutcome, Ambiance ambiance) {
+    List<StoreDelegateConfig> stores = new ArrayList<>(configFilesOutcome.size());
+    for (ConfigFileOutcome configFileOutcome : configFilesOutcome.values()) {
+      StoreConfig storeConfig = configFileOutcome.getStore();
+      if (HARNESS_STORE_TYPE.equals(storeConfig.getKind())) {
+        stores.add(buildHarnessStoreDelegateConfig(ambiance, (HarnessStore) storeConfig));
+      }
+    }
+
+    return FileDelegateConfig.builder().stores(stores).build();
+  }
+
+  private HarnessStoreDelegateConfig buildHarnessStoreDelegateConfig(Ambiance ambiance, HarnessStore harnessStore) {
+    harnessStore = (HarnessStore) cdExpressionResolver.updateExpressions(ambiance, harnessStore);
+    List<String> files = ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles());
+    List<String> secretFiles = ParameterFieldHelper.getParameterFieldValue(harnessStore.getSecretFiles());
+
+    List<ConfigFileParameters> configFileParameters = new ArrayList<>();
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+
+    if (isNotEmpty(files)) {
+      files.forEach(scopedFilePath -> {
+        FileReference fileReference = FileReference.of(scopedFilePath, ngAccess.getAccountIdentifier(),
+            ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+
+        configFileParameters.addAll(fetchConfigFileFromFileStore(fileReference));
+      });
+    }
+
+    if (isNotEmpty(secretFiles)) {
+      secretFiles.forEach(secretFileRef -> {
+        IdentifierRef fileRef = IdentifierRefHelper.getIdentifierRef(secretFileRef, ngAccess.getAccountIdentifier(),
+            ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+
+        configFileParameters.add(fetchSecretConfigFile(fileRef));
+      });
+    }
+
+    return HarnessStoreDelegateConfig.builder().configFiles(configFileParameters).build();
+  }
+
+  private List<ConfigFileParameters> fetchConfigFileFromFileStore(FileReference fileReference) {
+    Optional<FileStoreNodeDTO> configFile = fileStoreService.getWithChildrenByPath(fileReference.getAccountIdentifier(),
+        fileReference.getOrgIdentifier(), fileReference.getProjectIdentifier(), fileReference.getPath(), true);
+
+    if (!configFile.isPresent()) {
+      throw new InvalidRequestException(format("Config file not found in local file store, path [%s], scope: [%s]",
+          fileReference.getPath(), fileReference.getScope()));
+    }
+
+    return mapFileNodes(configFile.get(),
+        fileNode
+        -> ConfigFileParameters.builder()
+               .fileContent(fileNode.getContent())
+               .fileName(fileNode.getName())
+               .fileSize(fileNode.getSize())
+               .build());
+  }
+
+  private ConfigFileParameters fetchSecretConfigFile(IdentifierRef fileRef) {
+    SecretConfigFile secretConfigFile =
+        SecretConfigFile.builder()
+            .encryptedConfigFile(SecretRefHelper.createSecretRef(fileRef.getIdentifier()))
+            .build();
+
+    NGAccess ngAccess = BaseNGAccess.builder()
+                            .accountIdentifier(fileRef.getAccountIdentifier())
+                            .orgIdentifier(fileRef.getOrgIdentifier())
+                            .projectIdentifier(fileRef.getProjectIdentifier())
+                            .build();
+
+    List<EncryptedDataDetail> encryptedDataDetails =
+        ngEncryptedDataService.getEncryptionDetails(ngAccess, secretConfigFile);
+
+    if (isEmpty(encryptedDataDetails)) {
+      throw new InvalidRequestException(format("Secret file with identifier %s not found", fileRef.getIdentifier()));
+    }
+
+    return ConfigFileParameters.builder()
+        .fileName(secretConfigFile.getEncryptedConfigFile().getIdentifier())
+        .isEncrypted(true)
+        .secretConfigFile(secretConfigFile)
+        .encryptionDataDetails(encryptedDataDetails)
+        .build();
   }
 }

@@ -8,34 +8,26 @@
 package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
+import static io.harness.cdng.utilities.SshWinRmUtility.getHost;
 import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldValue;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.filestore.utils.FileStoreNodeUtils.mapFileNodes;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
-import io.harness.beans.FileReference;
-import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
-import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
-import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
-import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.ssh.rollback.copyartifact.CopyArtifactUnitRollbackDeploymentInfo;
+import io.harness.cdng.ssh.rollback.copyconfig.CopyConfigUnitRollbackDeploymentInfo;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
-import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.shell.TailFilePatternDto;
@@ -45,16 +37,9 @@ import io.harness.delegate.task.ssh.NgCleanupCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.NgInitCommandUnit;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
-import io.harness.delegate.task.ssh.config.ConfigFileParameters;
+import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
-import io.harness.delegate.task.ssh.config.SecretConfigFile;
-import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
-import io.harness.filestore.dto.node.FileStoreNodeDTO;
-import io.harness.filestore.service.FileStoreService;
-import io.harness.ng.core.BaseNGAccess;
-import io.harness.ng.core.NGAccess;
-import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -62,14 +47,12 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
 import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
-import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -82,17 +65,17 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @Singleton
 @OwnedBy(CDP)
 @Slf4j
 public class SshCommandStepHelper extends CDStepHelper {
   @Inject private SshEntityHelper sshEntityHelper;
-  @Inject private FileStoreService fileStoreService;
-  @Inject private NGEncryptedDataService ngEncryptedDataService;
-  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject protected CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private CommandStepRollbackHelper commandStepRollbackHelper;
 
   public CommandTaskParameters buildCommandTaskParameters(
       @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters commandStepParameters) {
@@ -119,9 +102,9 @@ public class SshCommandStepHelper extends CDStepHelper {
     }
     SshInfraDelegateConfigOutput sshInfraDelegateConfigOutput =
         (SshInfraDelegateConfigOutput) optionalInfraOutput.getOutput();
-    Optional<ArtifactOutcome> artifactOutcome = resolveArtifactsOutcome(ambiance);
-    Optional<ConfigFilesOutcome> configFilesOutcomeOptional = getConfigFilesOutcome(ambiance);
 
+    SshWinRmArtifactDelegateConfig artifactDelegateConfig = getArtifactDelegateConfig(ambiance, commandStepParameters);
+    FileDelegateConfig fileDelegateConfig = getFileDelegateConfig(ambiance, commandStepParameters);
     Boolean onDelegate = getBooleanParameterFieldValue(commandStepParameters.onDelegate);
     return SshCommandTaskParameters.builder()
         .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -130,12 +113,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .outputVariables(getOutputVars(commandStepParameters.getOutputVariables()))
         .environmentVariables(getEnvironmentVariables(commandStepParameters.getEnvironmentVariables()))
         .sshInfraDelegateConfig(sshInfraDelegateConfigOutput.getSshInfraDelegateConfig())
-        .artifactDelegateConfig(
-            artifactOutcome.map(outcome -> sshEntityHelper.getArtifactDelegateConfigConfig(outcome, ambiance))
-                .orElse(null))
-        .fileDelegateConfig(
-            configFilesOutcomeOptional.map(configFilesOutcome -> getFileDelegateConfig(ambiance, configFilesOutcome))
-                .orElse(null))
+        .artifactDelegateConfig(artifactDelegateConfig)
+        .fileDelegateConfig(fileDelegateConfig)
         .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
         .host(getHost(commandStepParameters))
         .build();
@@ -150,8 +129,9 @@ public class SshCommandStepHelper extends CDStepHelper {
     }
     WinRmInfraDelegateConfigOutput winRmInfraDelegateConfigOutput =
         (WinRmInfraDelegateConfigOutput) optionalInfraOutput.getOutput();
-    Optional<ArtifactOutcome> artifactOutcome = resolveArtifactsOutcome(ambiance);
-    Optional<ConfigFilesOutcome> configFilesOutcomeOptional = getConfigFilesOutcome(ambiance);
+
+    SshWinRmArtifactDelegateConfig artifactDelegateConfig = getArtifactDelegateConfig(ambiance, commandStepParameters);
+    FileDelegateConfig fileDelegateConfig = getFileDelegateConfig(ambiance, commandStepParameters);
     Boolean onDelegate = getBooleanParameterFieldValue(commandStepParameters.onDelegate);
     String accountId = AmbianceUtils.getAccountId(ambiance);
     return WinrmTaskParameters.builder()
@@ -161,12 +141,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .outputVariables(getOutputVars(commandStepParameters.getOutputVariables()))
         .environmentVariables(getEnvironmentVariables(commandStepParameters.getEnvironmentVariables()))
         .winRmInfraDelegateConfig(winRmInfraDelegateConfigOutput.getWinRmInfraDelegateConfig())
-        .artifactDelegateConfig(
-            artifactOutcome.map(outcome -> sshEntityHelper.getArtifactDelegateConfigConfig(outcome, ambiance))
-                .orElse(null))
-        .fileDelegateConfig(
-            configFilesOutcomeOptional.map(configFilesOutcome -> getFileDelegateConfig(ambiance, configFilesOutcome))
-                .orElse(null))
+        .artifactDelegateConfig(artifactDelegateConfig)
+        .fileDelegateConfig(fileDelegateConfig)
         .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
         .host(getHost(commandStepParameters))
         .useWinRMKerberosUniqueCacheFile(
@@ -176,90 +152,33 @@ public class SshCommandStepHelper extends CDStepHelper {
         .build();
   }
 
-  private FileDelegateConfig getFileDelegateConfig(Ambiance ambiance, ConfigFilesOutcome configFilesOutcome) {
-    List<StoreDelegateConfig> stores = new ArrayList<>(configFilesOutcome.size());
-    for (ConfigFileOutcome configFileOutcome : configFilesOutcome.values()) {
-      StoreConfig storeConfig = configFileOutcome.getStore();
-      if (HARNESS_STORE_TYPE.equals(storeConfig.getKind())) {
-        stores.add(buildHarnessStoreDelegateConfig(ambiance, (HarnessStore) storeConfig));
-      }
+  @Nullable
+  private SshWinRmArtifactDelegateConfig getArtifactDelegateConfig(
+      @NotNull Ambiance ambiance, @NotNull CommandStepParameters commandStepParameters) {
+    if (commandStepParameters.isRollback) {
+      return commandStepRollbackHelper.getCopyArtifactCommandUnitRollbackInfo(ambiance, commandStepParameters)
+          .map(CopyArtifactUnitRollbackDeploymentInfo::getArtifactDelegateConfig)
+          .orElse(null);
     }
 
-    return FileDelegateConfig.builder().stores(stores).build();
+    Optional<ArtifactOutcome> artifactOutcome = resolveArtifactsOutcome(ambiance);
+    return artifactOutcome.map(outcome -> sshEntityHelper.getArtifactDelegateConfigConfig(outcome, ambiance))
+        .orElse(null);
   }
 
-  private HarnessStoreDelegateConfig buildHarnessStoreDelegateConfig(Ambiance ambiance, HarnessStore harnessStore) {
-    harnessStore = (HarnessStore) cdExpressionResolver.updateExpressions(ambiance, harnessStore);
-    List<String> files = ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles());
-    List<String> secretFiles = ParameterFieldHelper.getParameterFieldValue(harnessStore.getSecretFiles());
-
-    List<ConfigFileParameters> configFileParameters = new ArrayList<>();
-    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-
-    if (isNotEmpty(files)) {
-      files.forEach(scopedFilePath -> {
-        FileReference fileReference = FileReference.of(scopedFilePath, ngAccess.getAccountIdentifier(),
-            ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
-
-        configFileParameters.addAll(fetchConfigFileFromFileStore(fileReference));
-      });
+  @Nullable
+  private FileDelegateConfig getFileDelegateConfig(
+      @NotNull Ambiance ambiance, @NotNull CommandStepParameters commandStepParameters) {
+    if (commandStepParameters.isRollback) {
+      return commandStepRollbackHelper.getCopyConfigCommandUnitRollbackInfo(ambiance, commandStepParameters)
+          .map(CopyConfigUnitRollbackDeploymentInfo::getFileDelegateConfig)
+          .orElse(null);
     }
 
-    if (isNotEmpty(secretFiles)) {
-      secretFiles.forEach(secretFileRef -> {
-        IdentifierRef fileRef = IdentifierRefHelper.getIdentifierRef(secretFileRef, ngAccess.getAccountIdentifier(),
-            ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
-
-        configFileParameters.add(fetchSecretConfigFile(fileRef));
-      });
-    }
-
-    return HarnessStoreDelegateConfig.builder().configFiles(configFileParameters).build();
-  }
-
-  private List<ConfigFileParameters> fetchConfigFileFromFileStore(FileReference fileReference) {
-    Optional<FileStoreNodeDTO> configFile = fileStoreService.getWithChildrenByPath(fileReference.getAccountIdentifier(),
-        fileReference.getOrgIdentifier(), fileReference.getProjectIdentifier(), fileReference.getPath(), true);
-
-    if (!configFile.isPresent()) {
-      throw new InvalidRequestException(format("Config file not found in local file store, path [%s], scope: [%s]",
-          fileReference.getPath(), fileReference.getScope()));
-    }
-
-    return mapFileNodes(configFile.get(),
-        fileNode
-        -> ConfigFileParameters.builder()
-               .fileContent(fileNode.getContent())
-               .fileName(fileNode.getName())
-               .fileSize(fileNode.getSize())
-               .build());
-  }
-
-  private ConfigFileParameters fetchSecretConfigFile(IdentifierRef fileRef) {
-    SecretConfigFile secretConfigFile =
-        SecretConfigFile.builder()
-            .encryptedConfigFile(SecretRefHelper.createSecretRef(fileRef.getIdentifier()))
-            .build();
-
-    NGAccess ngAccess = BaseNGAccess.builder()
-                            .accountIdentifier(fileRef.getAccountIdentifier())
-                            .orgIdentifier(fileRef.getOrgIdentifier())
-                            .projectIdentifier(fileRef.getProjectIdentifier())
-                            .build();
-
-    List<EncryptedDataDetail> encryptedDataDetails =
-        ngEncryptedDataService.getEncryptionDetails(ngAccess, secretConfigFile);
-
-    if (isEmpty(encryptedDataDetails)) {
-      throw new InvalidRequestException(format("Secret file with identifier %s not found", fileRef.getIdentifier()));
-    }
-
-    return ConfigFileParameters.builder()
-        .fileName(secretConfigFile.getEncryptedConfigFile().getIdentifier())
-        .isEncrypted(true)
-        .secretConfigFile(secretConfigFile)
-        .encryptionDataDetails(encryptedDataDetails)
-        .build();
+    Optional<ConfigFilesOutcome> configFilesOutcomeOptional = getConfigFilesOutcome(ambiance);
+    return configFilesOutcomeOptional
+        .map(configFilesOutcome -> sshEntityHelper.getFileDelegateConfig(configFilesOutcome, ambiance))
+        .orElse(null);
   }
 
   private List<NgCommandUnit> mapCommandUnits(List<CommandUnitWrapper> stepCommandUnits, boolean onDelegate) {
@@ -396,9 +315,5 @@ public class SshCommandStepHelper extends CDStepHelper {
       }
     });
     return outputVars;
-  }
-
-  public String getHost(CommandStepParameters commandStepParameters) {
-    return ParameterFieldHelper.getParameterFieldValue(commandStepParameters.getHost());
   }
 }

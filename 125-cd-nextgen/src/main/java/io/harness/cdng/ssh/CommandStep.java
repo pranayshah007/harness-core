@@ -26,6 +26,7 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -54,6 +55,7 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private SshCommandStepHelper sshCommandStepHelper;
+  @Inject private CommandStepRollbackHelper commandStepRollbackHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -101,13 +103,16 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
         : taskResponse.getUnitProgressData().getUnitProgresses();
     stepResponseBuilder.unitProgressList(unitProgresses);
 
-    stepResponseBuilder.status(StepUtils.getStepStatus(taskResponse.getStatus()));
+    Status stepStatus = StepUtils.getStepStatus(taskResponse.getStatus());
+    stepResponseBuilder.status(stepStatus);
 
     FailureInfo.Builder failureInfoBuilder = FailureInfo.newBuilder();
     if (taskResponse.getErrorMessage() != null) {
       failureInfoBuilder.setErrorMessage(taskResponse.getErrorMessage());
     }
     stepResponseBuilder.failureInfo(failureInfoBuilder.build());
+
+    saveRollbackDeploymentInfo(ambiance, stepParameters, stepStatus);
 
     return stepResponseBuilder.build();
   }
@@ -120,6 +125,13 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
       if (isEmpty(host)) {
         throw new InvalidArgumentsException("Host information is missing in Command Step.");
       }
+    }
+  }
+
+  private void saveRollbackDeploymentInfo(Ambiance ambiance, StepElementParameters stepParameters, Status stepStatus) {
+    CommandStepParameters commandStepParameters = (CommandStepParameters) stepParameters.getSpec();
+    if (stepStatus.equals(Status.SUCCEEDED) && !commandStepParameters.isRollback()) {
+      commandStepRollbackHelper.saveRollbackDeploymentInfo(ambiance, commandStepParameters);
     }
   }
 }

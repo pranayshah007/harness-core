@@ -21,6 +21,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
+import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -33,20 +34,32 @@ public class RollbackDataServiceImpl implements RollbackDataService {
   private RollbackDataRepository rollbackDataRepository;
 
   @Override
-  public RollbackData saveRollbackData(@Valid @NotNull RollbackData rollbackData) {
+  public RollbackData save(@Valid @NotNull RollbackData rollbackData) {
     return rollbackDataRepository.save(rollbackData);
   }
 
+  public Optional<RollbackData> getLatestRollbackData(
+      @NotNull final String rollbackDeploymentInfoKey, StageStatus stageStatus) {
+    if (isEmpty(rollbackDeploymentInfoKey)) {
+      throw new InvalidArgumentsException("Rollback key cannot be null or empty");
+    }
+
+    int limit = 1;
+    List<RollbackData> rollbackData = listLatestRollbackData(rollbackDeploymentInfoKey, stageStatus, limit);
+    return rollbackData.size() == limit ? Optional.ofNullable(rollbackData.get(0)) : Optional.empty();
+  }
+
   @Override
-  public List<RollbackData> listLatestRollbackData(String key, StageStatus stageStatus, int limit) {
+  public List<RollbackData> listLatestRollbackData(@NotNull final String key, StageStatus stageStatus, int limit) {
     if (isEmpty(key)) {
       throw new InvalidArgumentsException("Rollback key cannot be null or empty");
     }
+
     return rollbackDataRepository.listRollbackDataOrderedByCreatedAt(key, stageStatus, limit);
   }
 
   @Override
-  public void updateStatus(final String executionId, StageStatus stageStatus) {
+  public void updateStatus(@NotNull final String executionId, StageStatus stageStatus) {
     if (isEmpty(executionId)) {
       throw new InvalidArgumentsException("Execution Id cannot be null or empty");
     }

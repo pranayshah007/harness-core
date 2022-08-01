@@ -14,6 +14,9 @@ import io.harness.cdng.rollback.RollbackData;
 import io.harness.utils.StageStatus;
 
 import java.util.List;
+import java.util.Optional;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 @OwnedBy(CDP)
 public interface RollbackDataService {
@@ -23,7 +26,16 @@ public interface RollbackDataService {
    * @param rollbackData rollback deployment info
    * @return rollback data
    */
-  RollbackData saveRollbackData(RollbackData rollbackData);
+  RollbackData save(RollbackData rollbackData);
+
+  /**
+   * Get the latest rollback data based on stage status.
+   *
+   * @param rollbackDeploymentInfoKey rollback key
+   * @param stageStatus stage status
+   * @return rollback data
+   */
+  Optional<RollbackData> getLatestRollbackData(String rollbackDeploymentInfoKey, StageStatus stageStatus);
 
   /**
    * List rollback data.

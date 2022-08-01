@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.rollback.RollbackData;
+import io.harness.utils.StageStatus;
 
 import java.util.Optional;
 import org.springframework.data.repository.PagingAndSortingRepository;
@@ -20,7 +21,7 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 @OwnedBy(CDP)
 public interface RollbackDataRepository
     extends PagingAndSortingRepository<RollbackData, String>, RollbackDataRepositoryCustom {
-  Optional<RollbackData> findByKeyAndStageStatus(String rollbackKey, String status);
+  Optional<RollbackData> findByKeyAndStageStatus(String rollbackKey, StageStatus status);
 
   Optional<RollbackData> findByStageExecutionId(String executionId);
 }

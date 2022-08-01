@@ -85,6 +85,10 @@ import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.service.steps.ServiceStepParameters;
 import io.harness.cdng.ssh.CommandStepInfo;
 import io.harness.cdng.ssh.CommandStepRollbackDeploymentInfo;
+import io.harness.cdng.ssh.rollback.copyartifact.CopyArtifactUnitRollbackDeploymentInfo;
+import io.harness.cdng.ssh.rollback.copyartifact.CopyArtifactUnitRollbackDeploymentInfoKey;
+import io.harness.cdng.ssh.rollback.copyconfig.CopyConfigUnitRollbackDeploymentInfo;
+import io.harness.cdng.ssh.rollback.copyconfig.CopyConfigUnitRollbackDeploymentInfoKey;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
 import io.harness.serializer.KryoRegistrar;
@@ -189,5 +193,9 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(RollbackDeploymentInfo.class, 12606);
     kryo.register(CommandStepRollbackDeploymentInfo.class, 12607);
     kryo.register(ConfigFilesOutcome.class, 12608);
+    kryo.register(CopyArtifactUnitRollbackDeploymentInfo.class, 12609);
+    kryo.register(CopyArtifactUnitRollbackDeploymentInfoKey.class, 12610);
+    kryo.register(CopyConfigUnitRollbackDeploymentInfo.class, 12611);
+    kryo.register(CopyConfigUnitRollbackDeploymentInfoKey.class, 12612);
   }
 }

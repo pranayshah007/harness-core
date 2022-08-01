@@ -42,7 +42,7 @@ public class RollbackDataServiceImplTest extends CDNGTestBase {
   public void saveRollbackData() {
     RollbackData rollbackData = RollbackData.builder().build();
 
-    rollbackDataService.saveRollbackData(RollbackData.builder().build());
+    rollbackDataService.save(RollbackData.builder().build());
 
     verify(rollbackDataRepository).save(eq(rollbackData));
   }
