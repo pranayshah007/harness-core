@@ -231,9 +231,6 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_ECR)
   BUILD_AND_PUSH_ECR(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_ECR, IdentifierRef.class,
       EntityYamlRootNames.BUILD_AND_PUSH_ECR),
-  @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_ACR)
-  BUILD_AND_PUSH_ACR(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_ACR, IdentifierRef.class,
-      EntityYamlRootNames.BUILD_AND_PUSH_ACR),
   @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_DOCKER_REGISTRY)
   BUILD_AND_PUSH_DOCKER_REGISTRY(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_DOCKER_REGISTRY, IdentifierRef.class,
       EntityYamlRootNames.BUILD_AND_PUSH_DOCKER_REGISTRY),
@@ -275,7 +272,10 @@ public enum EntityType {
       EntityYamlRootNames.AZURE_WEBAPP_ROLLBACK_STEP),
   @JsonProperty(EntityTypeConstants.JENKINS_BUILD)
   JENKINS_BUILD(
-      ModuleType.CD, EntityTypeConstants.JENKINS_BUILD, IdentifierRef.class, EntityYamlRootNames.JENKINS_BUILD);
+      ModuleType.CD, EntityTypeConstants.JENKINS_BUILD, IdentifierRef.class, EntityYamlRootNames.JENKINS_BUILD),
+  @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_ACR)
+  BUILD_AND_PUSH_ACR(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_ACR, IdentifierRef.class,
+      EntityYamlRootNames.BUILD_AND_PUSH_ACR);
 
   private final ModuleType moduleType;
   String yamlName;

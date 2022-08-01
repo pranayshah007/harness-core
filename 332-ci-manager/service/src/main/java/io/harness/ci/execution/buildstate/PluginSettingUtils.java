@@ -299,24 +299,27 @@ public class PluginSettingUtils {
     }
 
     if (infraType == Type.K8) {
-      boolean optimize = resolveBooleanParameter(stepInfo.getOptimize(), true);
-      if (optimize) {
-        setOptionalEnvironmentVariable(map, PLUGIN_SNAPSHOT_MODE, REDO_SNAPSHOT_MODE);
-      }
-
-      String remoteCacheImage = resolveStringParameter(
-          "remoteCacheImage", "BuildAndPushACR", identifier, stepInfo.getRemoteCacheImage(), false);
-      if (remoteCacheImage != null && !remoteCacheImage.equals(UNRESOLVED_PARAMETER)) {
-        setOptionalEnvironmentVariable(map, PLUGIN_ENABLE_CACHE, "true");
-        setOptionalEnvironmentVariable(map, PLUGIN_CACHE_REPO, remoteCacheImage);
-      }
-
-      setOptionalEnvironmentVariable(map, PLUGIN_ARTIFACT_FILE, PLUGIN_ARTIFACT_FILE_VALUE);
+      getACRStepInfoVariablesForK8s(stepInfo, identifier, map);
     } else if (infraType == Type.VM) {
       setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
     }
-
     return map;
+  }
+
+  private static void getACRStepInfoVariablesForK8s(ACRStepInfo stepInfo, String identifier, Map<String, String> map) {
+    boolean optimize = resolveBooleanParameter(stepInfo.getOptimize(), true);
+    if (optimize) {
+      setOptionalEnvironmentVariable(map, PLUGIN_SNAPSHOT_MODE, REDO_SNAPSHOT_MODE);
+    }
+
+    String remoteCacheImage = resolveStringParameter(
+        "remoteCacheImage", "BuildAndPushACR", identifier, stepInfo.getRemoteCacheImage(), false);
+    if (remoteCacheImage != null && !remoteCacheImage.equals(UNRESOLVED_PARAMETER)) {
+      setOptionalEnvironmentVariable(map, PLUGIN_ENABLE_CACHE, "true");
+      setOptionalEnvironmentVariable(map, PLUGIN_CACHE_REPO, remoteCacheImage);
+    }
+
+    setOptionalEnvironmentVariable(map, PLUGIN_ARTIFACT_FILE, PLUGIN_ARTIFACT_FILE_VALUE);
   }
 
   private static Map<String, String> getECRStepInfoEnvVariables(
