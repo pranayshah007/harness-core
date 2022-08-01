@@ -13,6 +13,7 @@ import io.harness.delegate.beans.instancesync.info.AzureWebAppServerInstanceInfo
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.ServerlessAwsLambdaServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.EcsServerInstanceInfo;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;

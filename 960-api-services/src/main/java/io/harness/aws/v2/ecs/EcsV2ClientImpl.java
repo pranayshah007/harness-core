@@ -233,15 +233,14 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
            listTasksRequestBuilder.nextToken(nextToken);
        }
        //todo: other filters
-        ListTasksResponse response=null;
         try(EcsClient ecsClient = (EcsClient)getClient(awsConfig, region)) {
             super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
-            response = ecsClient.listTasks(listTasksRequestBuilder.build());
+            return ecsClient.listTasks(listTasksRequestBuilder.build());
         }
         catch(Exception exception) {
             super.handleException(exception);
         }
-        return response;
+        return ListTasksResponse.builder().build();
     }
 
     @Override
@@ -251,15 +250,14 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
                 .cluster(clusterName)
                 .tasks(taskArns)
                 .build();
-        DescribeTasksResponse response=null;
         try(EcsClient ecsClient = (EcsClient)getClient(awsConfig, region)) {
             super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
-            response = ecsClient.describeTasks(describeTasksRequest);
+            return ecsClient.describeTasks(describeTasksRequest);
         }
         catch(Exception exception) {
             super.handleException(exception);
         }
-        return response;
+        return DescribeTasksResponse.builder().build();
     }
 
     private EcsWaiter getEcsWaiter(software.amazon.awssdk.services.ecs.EcsClient ecsClient, int delayInSeconds, int maxAttempts) {

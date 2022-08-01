@@ -40,7 +40,6 @@ import static java.lang.String.format;
 public class EcsCommandTaskNGHelper {
   @Inject private EcsV2Client ecsV2Client;
   @Inject private AwsNgConfigMapper awsNgConfigMapper;
-  @Inject private EcsMapper ecsMapper;
 
   public RegisterTaskDefinitionResponse createTaskDefinition(RegisterTaskDefinitionRequest registerTaskDefinitionRequest, String region, AwsConnectorDTO awsConnectorDTO) {
     return ecsV2Client.createTask(awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO), registerTaskDefinitionRequest, region);
@@ -105,13 +104,14 @@ public class EcsCommandTaskNGHelper {
       ListTasksResponse listTasksResponse = ecsV2Client.listTaskArns(awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO),
               cluster,serviceName, region, null);
       nextToken = listTasksResponse.nextToken();
-      DescribeTasksResponse describeTasksResponse = ecsV2Client.getTasks(awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO),
-              cluster, listTasksResponse.taskArns(), region);
-      response.addAll( describeTasksResponse.tasks()
-              .stream()
-              .map(task -> ecsMapper.toEcsTask(task, serviceName))
-              .collect(Collectors.toList()));
-
+      if(listTasksResponse.hasTaskArns()) {
+        DescribeTasksResponse describeTasksResponse = ecsV2Client.getTasks(awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO),
+                cluster, listTasksResponse.taskArns(), region);
+        response.addAll( describeTasksResponse.tasks()
+                .stream()
+                .map(task -> EcsMapper.toEcsTask(task, serviceName))
+                .collect(Collectors.toList()));
+      }
     }
     while (nextToken != null);
     return response;

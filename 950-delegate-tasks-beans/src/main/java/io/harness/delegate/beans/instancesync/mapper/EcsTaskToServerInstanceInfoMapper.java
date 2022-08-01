@@ -4,7 +4,7 @@ package io.harness.delegate.beans.instancesync.mapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ecs.EcsTask;
-import io.harness.delegate.beans.instancesync.EcsServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.EcsServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import lombok.experimental.UtilityClass;
 

@@ -1,8 +1,7 @@
 package io.harness.delegate.beans.ecs;
 
-import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
-import lombok.extern.slf4j.Slf4j;
+import lombok.experimental.UtilityClass;
 import software.amazon.awssdk.services.ecs.model.Container;
 import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.Task;
@@ -13,8 +12,7 @@ import java.util.stream.Collectors;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 @OwnedBy(CDP)
-@Singleton
-@Slf4j
+@UtilityClass
 public class EcsMapper {
     public UpdateServiceRequest createServiceRequestToUpdateServiceRequest(CreateServiceRequest createServiceRequest) {
         return UpdateServiceRequest.builder()
@@ -51,7 +49,7 @@ public class EcsMapper {
                 .version(task.version())
                 .containers(task.containers()
                         .stream()
-                        .map(this::toEcsContainer)
+                        .map(EcsMapper::toEcsContainer)
                         .collect(Collectors.toList()))
                 .build();
     }
