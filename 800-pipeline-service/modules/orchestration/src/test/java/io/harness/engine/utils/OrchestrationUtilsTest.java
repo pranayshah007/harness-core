@@ -8,6 +8,7 @@
 package io.harness.engine.utils;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,16 +16,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.execution.NodeExecution;
+import io.harness.plan.IdentityPlanNode;
+import io.harness.plan.Node;
 import io.harness.plan.NodeType;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.rule.Owner;
 
+import java.util.Collections;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 public class OrchestrationUtilsTest extends CategoryTest {
   @Test
@@ -89,5 +97,44 @@ public class OrchestrationUtilsTest extends CategoryTest {
     NodeExecution nodeExecution = NodeExecution.builder().ambiance(ambiance).planNode(planNode).build();
     assertThat(OrchestrationUtils.isPipelineNode(nodeExecution)).isTrue();
     assertThat(OrchestrationUtils.isStageNode(nodeExecution)).isFalse();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldCalculateStatusRunningForQueuedPlanExecution() {
+    String planExecutionId = generateUuid();
+    try (MockedStatic<StatusUtils> mockStatic = Mockito.mockStatic(StatusUtils.class)) {
+      mockStatic.when(() -> StatusUtils.calculateStatus(Collections.EMPTY_LIST, planExecutionId))
+          .thenReturn(Status.QUEUED);
+      assertThat(OrchestrationUtils.calculateStatusForPlanExecution(Collections.EMPTY_LIST, planExecutionId))
+          .isEqualTo(Status.RUNNING);
+    }
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldGetOriginalNodeExecutionIdReturnNullWhenNodeTypeIsPlan() {
+    Node node = Mockito.mock(Node.class);
+    Mockito.when(node.getNodeType()).thenReturn(NodeType.PLAN);
+    assertThat(OrchestrationUtils.getOriginalNodeExecutionId(node)).isNull();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldGetOriginalNodeExecutionIdReturnNullWhenNodeTypeIsPlanNode() {
+    Node node = Mockito.mock(Node.class);
+    Mockito.when(node.getNodeType()).thenReturn(NodeType.PLAN_NODE);
+    assertThat(OrchestrationUtils.getOriginalNodeExecutionId(node)).isNull();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldGetOriginalNodeExecutionIdWhenNodeTypeIsIdentityPlanNode() {
+    IdentityPlanNode node = IdentityPlanNode.builder().originalNodeExecutionId("executionId").build();
+    assertThat(OrchestrationUtils.getOriginalNodeExecutionId(node)).isEqualTo("executionId");
   }
 }
