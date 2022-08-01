@@ -123,6 +123,9 @@ public class InstanceBillingDataTasklet implements Tasklet {
             claimRefToPVInstanceBillingData, pvcClaimCount);
       } catch (Exception ex) {
         log.error("Exception in billing step", ex);
+        log.info("Stacktrace execute {}", ex);
+
+        log.error("Stacktrace {}", ex.getStackTrace());
         throw ex;
       }
     } while (instanceDataLists.size() == batchSize);
@@ -164,6 +167,8 @@ public class InstanceBillingDataTasklet implements Tasklet {
             accountId, startTime, endTime, batchJobType, instanceDataLists, ImmutableMap.of(), ImmutableMap.of()));
       } catch (Exception ex) {
         log.error("Exception in billing step", ex);
+        log.info("Stacktrace execute {}", ex);
+        log.error("Stacktrace {}", ex.getStackTrace());
         throw ex;
       }
     } while (instanceDataLists.size() == batchSize);
