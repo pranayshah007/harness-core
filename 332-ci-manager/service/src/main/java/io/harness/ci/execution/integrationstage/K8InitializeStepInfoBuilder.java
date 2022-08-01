@@ -352,6 +352,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
       case DOCKER:
       case ECR:
       case GCR:
+      case ACR:
       case SAVE_CACHE_S3:
       case RESTORE_CACHE_S3:
       case RESTORE_CACHE_GCS:
@@ -382,6 +383,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
     switch (stepType) {
       case DOCKER:
       case ECR:
+      case ACR:
       case GCR:
         throw new CIStageExecutionException(format("%s step not allowed in windows kubernetes builds", stepType));
       default:
@@ -780,6 +782,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
             stepElement.getIdentifier(), accountId);
       case GCR:
       case ECR:
+      case ACR:
       case DOCKER:
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_GCS:
@@ -845,6 +848,7 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
             stepElement.getIdentifier(), accountId);
       case GCR:
       case ECR:
+      case ACR:
       case DOCKER:
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_GCS:
