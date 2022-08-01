@@ -1,9 +1,10 @@
-package io.harness.delegate.beans.instancesync;
+package io.harness.delegate.beans.instancesync.info;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ecs.EcsContainer;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
