@@ -2935,9 +2935,7 @@ public class K8sTaskHelperBase {
   private String getManifestDirectoryForHelmChart(
       String baseManifestDirectory, HelmChartManifestDelegateConfig helmChartManifest) {
     if (StoreDelegateConfigType.HARNESS.equals(helmChartManifest.getStoreDelegateConfig().getType())) {
-      LocalFileStoreDelegateConfig localFileStoreDelegateConfig =
-          (LocalFileStoreDelegateConfig) helmChartManifest.getStoreDelegateConfig();
-      return HelmTaskHelperBase.getChartDirectory(baseManifestDirectory, localFileStoreDelegateConfig.getFolder());
+      return baseManifestDirectory;
     }
     if (GIT != helmChartManifest.getStoreDelegateConfig().getType()) {
       return HelmTaskHelperBase.getChartDirectory(baseManifestDirectory, helmChartManifest.getChartName());

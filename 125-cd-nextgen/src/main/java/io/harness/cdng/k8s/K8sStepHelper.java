@@ -74,7 +74,9 @@ import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.git.model.FetchFilesResult;
+import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.logging.LogCallback;
 import io.harness.manifest.CustomSourceFile;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -478,8 +480,9 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
 
     if (ManifestStoreType.HARNESS.equals(k8sStepPassThroughData.getManifestOutcome().getStore().getKind())
         || isAnyLocalStore(openshiftParamManifests)) {
+      LogCallback logCallback = cdStepHelper.getLogCallback(K8sCommandUnitConstants.FetchFiles, ambiance, true);
       localStoreFileMapContents.putAll(fetchFilesFromLocalStore(
-          ambiance, k8sStepPassThroughData.getManifestOutcome(), openshiftParamManifests, manifestFiles));
+          ambiance, k8sStepPassThroughData.getManifestOutcome(), openshiftParamManifests, manifestFiles, logCallback));
     }
 
     K8sStepPassThroughData updatedK8sStepPassThroughData = k8sStepPassThroughData.toBuilder()
@@ -516,8 +519,9 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
 
     if (ManifestStoreType.HARNESS.equals(k8sStepPassThroughData.getManifestOutcome().getStore().getKind())
         || isAnyLocalStore(kustomizePatchesManifests)) {
-      localStoreFileMapContents.putAll(fetchFilesFromLocalStore(
-          ambiance, k8sStepPassThroughData.getManifestOutcome(), kustomizePatchesManifests, manifestFiles));
+      LogCallback logCallback = cdStepHelper.getLogCallback(K8sCommandUnitConstants.FetchFiles, ambiance, true);
+      localStoreFileMapContents.putAll(fetchFilesFromLocalStore(ambiance, k8sStepPassThroughData.getManifestOutcome(),
+          kustomizePatchesManifests, manifestFiles, logCallback));
     }
     K8sStepPassThroughData updatedK8sStepPassThroughData = k8sStepPassThroughData.toBuilder()
                                                                .localStoreFileMapContents(localStoreFileMapContents)
@@ -537,8 +541,9 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
 
     if (ManifestStoreType.HARNESS.equals(k8sStepPassThroughData.getManifestOutcome().getStore().getKind())
         || isAnyLocalStore(aggregatedValuesManifests)) {
-      localStoreFileMapContents.putAll(fetchFilesFromLocalStore(
-          ambiance, k8sStepPassThroughData.getManifestOutcome(), aggregatedValuesManifests, manifestFiles));
+      LogCallback logCallback = cdStepHelper.getLogCallback(K8sCommandUnitConstants.FetchFiles, ambiance, true);
+      localStoreFileMapContents.putAll(fetchFilesFromLocalStore(ambiance, k8sStepPassThroughData.getManifestOutcome(),
+          aggregatedValuesManifests, manifestFiles, logCallback));
     }
     K8sStepPassThroughData updatedK8sStepPassThroughData = k8sStepPassThroughData.toBuilder()
                                                                .localStoreFileMapContents(localStoreFileMapContents)
