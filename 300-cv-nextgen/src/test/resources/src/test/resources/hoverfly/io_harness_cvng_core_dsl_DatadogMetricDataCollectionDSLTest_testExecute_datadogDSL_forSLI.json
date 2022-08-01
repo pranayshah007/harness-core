@@ -1,0 +1,75 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/api/v1/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "app.datadoghq.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "from" : [ {
+            "matcher" : "exact",
+            "value" : "1658560360"
+          } ],
+          "query" : [ {
+            "matcher" : "exact",
+            "value" : "system.cpu.user{*}.rollup(avg, 60)"
+          } ],
+          "to" : [ {
+            "matcher" : "exact",
+            "value" : "1658563960"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAEA2xW227jRgz9lUJP7cIQhpfhDPMri4XhTVTXqGO7thxsEOTfe0ayNLPb+sFwoiPy8HbIj+427sb7rXvqzn93m+463C7bt+F6O5xP3RNtuttwPQx4/PWjG04v+JfFHE08eQhh0+3G8Xr4fh8L5ONz070O+PsZ1m7vt3F47Z8v9/4OGzB9OI3D9W137J4ML467/fY2jDD8DU7G3RU/Z9tBMkwDchxO+/GvGf7Pfbi+bw+nl+FH91T87vfX7ul0Px7x9vP5MsDlFzi5nOHmeLgVw19/steHDYWeg2W1APIiFr9tFoxq8QmM9zlmYo+KCLMHrphYIA9MZsrmxuwUPTcYWzHJKVOMlpKRWYUYPyCgE9mYPBmSmgJ5A5pyMPFxvB4zKzEnThWSKmVPJRoGoUCiTViTlZly8sgUs4gLk1G1kytlUFPKqniNSBvO3nDGQwkxZ3dyrWa8Yew5igZAooqsEAqVcXLTmLJKjjFwg6GSnMIY2aFoKklFOVpINXSihXIBoRQsKQWXJFwJIV2NJTNNDG+JOWvNM/FPrBF+dNWUEX6ljVBmSt6bs6mKCXLNDWRCPPKsnLKTuCciaUij7WYzIB04gjEGKViKUvuHYkM6J0H8OSAB6KNaVVRxJZQsqjIroorZmzzaQrp4I2HXBCtg1LQHpWLnQTsikWxCORhJ4yw1tMmjYDZQMAGmjgZefRiCNwwYyqFwBepNjvLCuhRNYlYKUfGdU200dNTKyDwbpRiyiTpXRpOrhXUWDhI1SEHXPGLMVzsYGvJMmHkJ6IG1rmibSjqlhH5GDiRljo0h5AOfeRADpicYW8oxNfVA+ldMxqfoRnRQplp9lgIpdhA95jBRDILi5VwzxFJJWzEBNlzKmmpdUelqR7JmUMGXZmnUg8sAL86iC5XoIvKNgarhI2szCJLHmDANapndpY4HT4Tm6PEICkMqpBm2qh2rrLNzGWg1Qtqa+YBwVULQGw3QTfJAaMpqCGO3EIqG0CPySqbuTe3zQnpq6ySeGUBXdHg1VFbTo2bIHjoDIoImgPI1mIV1MVTENTIzhAU6soIkNLQ9RYc1h9BmbRRLwkJ7ohShTRh8hSpZLT+StlLKmEFMZBIKkJGaSHTyA0PSFyEXD5EQvlvljTcWEPUmmGtnKCQGuckk/l1BmFP0a0AzacJCqsHNa7Z0JKEjE2qKcmC0tZYEvxdD2FU6CQiWXjSuEyLrWkT8WCzgzREKhYarzSZQOnweso6uNgw1hA3i1zCqm5F6LIuyqRxFwUJqMmltuiEMeIxmwwqVhve6G4mxICSivBAuRhaaVE6GJk7Ulxc4QdfLygkN8XU7IjqIEfyQY8CZpAHV9Ug9Nj5aGwC3aFiQOG+GHxfcVfNJ9eth9PHls7+ej8f75ffd237zm4U/cMbcTwdcMPN583K4XY679+1p91qunF8Pq084GM/bl92Ip/PFI7gD8Nl009X033f+3+crKO72xcV8B27H9+msGg+vA0616QyEK/xVzkF4/fN6fv3JL1R49ru/nu+X7ff3GYeb7z6/8/kvAAAA//8DAN+ajd5vCgAA",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Cache-Control" : [ "no-cache" ],
+          "Connection" : [ "keep-alive" ],
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors 'self'; report-uri https://logs.browser-intake-datadoghq.com/api/v2/logs?dd-api-key=pube4f163c23bbf91c16b8f57f56af9fc58&dd-evp-origin=content-security-policy&ddsource=csp-report&ddtags=site%3Adatadoghq.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Sat, 23 Jul 2022 08:57:36 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Pragma" : [ "no-cache" ],
+          "Strict-Transport-Security" : [ "max-age=15724800;" ],
+          "Vary" : [ "Accept-Encoding" ],
+          "X-Content-Type-Options" : [ "nosniff" ],
+          "X-Frame-Options" : [ "SAMEORIGIN" ],
+          "X-Ratelimit-Limit" : [ "3000" ],
+          "X-Ratelimit-Name" : [ "batch_query" ],
+          "X-Ratelimit-Period" : [ "3600" ],
+          "X-Ratelimit-Remaining" : [ "2884" ],
+          "X-Ratelimit-Reset" : [ "144" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-07-23T08:57:36Z"
+  }
+}

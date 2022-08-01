@@ -19,6 +19,4 @@ import lombok.Value;
 public class AzureWebAppInfrastructureDetails extends InfrastructureDetails {
   String subscriptionId;
   String resourceGroup;
-  String webApp;
-  String deploymentSlot;
 }

@@ -42,6 +42,12 @@ public class AdoCreateBranchScmApiErrorHandler implements ScmApiErrorHandler {
             ErrorMessageFormatter.formatMessage(
                 CREATE_BRANCH_FAILED_MESSAGE + CREATE_BRANCH_DOES_NOT_EXIST_ERROR_EXPLANATION, errorMetadata),
             new ScmBadRequestException(errorMessage));
+      case 401:
+        throw NestedExceptionUtils.hintWithExplanationException(
+            ErrorMessageFormatter.formatMessage(ScmErrorHints.MISSING_PERMISSION_CREDS_HINTS, errorMetadata),
+            ErrorMessageFormatter.formatMessage(
+                ScmErrorExplanations.MISSING_PERMISSION_CREDS_EXPLANATION, errorMetadata),
+            new ScmBadRequestException(errorMessage));
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(
             ErrorMessageFormatter.formatMessage(ScmErrorHints.REPO_NOT_FOUND, errorMetadata),

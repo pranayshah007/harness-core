@@ -1,0 +1,189 @@
+{
+  "data" : {
+    "pairs" : [ {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/v1/accounts/1805869/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "insights-api.newrelic.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "nrql" : [ {
+            "matcher" : "exact",
+            "value" : "SELECT rate(count(apm.service.transaction.duration), 1 minute) FROM Metric WHERE appId = 107019083 SINCE 1654494691000 UNTIL 1654494751000 TIMESERIES FACET transactionName,host"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAAOxV22rbQBD9lbBPLVi2fJEs6a2YJFBIKbHbQEvAq92RvMle1NUqiWv8752VHdtxSqHQJg+tMGbRXM7MmTOrFSkoA1eT7OuKaKoAD+QK8pmluqbMCaN776cfe0JzeOje1BXpkAW1Guo60DbgjVLLoBIVSKEh4FBJs1SgXTDOizhJ0jxJgyS+uynJdYc446gk2YpYqBu5Bd2cSRZ2wzX65FAKPRMKpsCM5ujTj6PRKB3FcdghoPnPbOMB2oSuK2AO+MQ0GhP214jYOlsBh1h/Hfd63fmzZBbjIoryNIqDbyqN/nO55RKruZPgehwK6vH3bHLqKDflLyhlVFO7DGIklY/SOF04nrN/i9jHZi+3IKsX7n34Sr0PvahIo2+1udfn1jTVy/cevlLvYdt7BbYwVlHNYOqox1w9Z6lDjBLuILRDFHVssbffUykn0rBbD49vRunWBfiZNepMSLgEyvehwD8LOqF42DCgANcUV9XjU8Z8Yt9/PwmjJE6xcbjDXZ0tq5YicgHOinZJd+9J9vh2w+e7srRQUn89tCH9EyV048AHmQr0KV69WFBBZQ0HvGKaQTgYBGGMv1kYZVE/C8MvZEfuc4fB1mGX40JIKZ6MBp9dgiMrDqe1Wno/FTgGzP8kjrSmT9oJuTdtgjamiVEVtXAl3AIdfB0NuwU3Fd93UNsC2g/86UOFmqqRFvSeu6aSMH8zd/vL9ANesfPOyXxhajd/i/nKRiBRJIrDJOYsDMbpKMK/PAmigkcB5zBkMR8PadJWZJBke/5bMQoLomU72uttmX5kR0X5Wx1ragdYFDVslCgFahPZxCOq3oHeiPhpysMFO7bto3Ddika3eFi7pc5D1kIhRSRztgEP7BMceLVSRTfqUHu511dGaKW6NX6RBIPuQQ9d3thWj0dZUf4cNK6Yps5YbMWv+hqfHwAAAP//AwCMHq9qkwkAAA==",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors *.newrelic.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 25 Jul 2022 21:33:49 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Proxied-By" : [ "Service Gateway" ],
+          "Strict-Transport-Security" : [ "max-age=31536000; includeSubDomains" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/v1/accounts/1805869/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "insights-api.newrelic.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "nrql" : [ {
+            "matcher" : "exact",
+            "value" : "SELECT average(`apm.service.transaction.duration`) FROM Metric WHERE appId = 107019083 SINCE 1654494691000 UNTIL 1654494751000 TIMESERIES FACET transactionName,host"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAAOxV22rbQBD9lbBPLUiObEuy5bdikkAhpcRuAy0Br3ZH8iZ7UVcrJ47Jv3dWcmwnKYVCSR5a4Qd553LOnJlZbUhBGbiaTL5viKYK8IVcQj63VNeUOWH08cfZ52OhOdz1ruuKBGRJrYa6DrUNeaPUOqxEBVJoCDlU0qwVaBeO8iIdj7N8nIXjdHVdkquAOOOoJJMNsVA3cgtKV2Bpibi6kfIBvXIohZ4LBTNgRnP06qdJHGdxmkYBAc1/ZRsN0CZ0XQFzwKem0Q5tD4jZOlsBHdqrIV89BH9X0GJUJEmeJWn4Q2XJfz0P9EQ+KwnumENBkc2Bopw6yk35G1kZ1dSuwxSF5XGWZkvHc/bviftY8EUL6ct+7fqHb1b/0A8XafSNNrf6zJqmeov6ozerP2rrr8AWxiqqGcwc9aibl0oFxCjhDkIDoqhjy739lko5lYbdeHg8ifpbF+Cn1qhTIeECKN+HAv8q6JTiS6eBAlxZXFuPTxnzib0C/XGUjNMMC4cV7u18XbUikXNwVrQLuzsnk8fTTtEPZWmhpP6qaEP6R0roxoEPMhXoE7yKkVBBZQ0HumKaQTQYhFGKv3mUTJL+JIq+kZ24Lx0GW4ddjnMhpXjSGnx2CZ5ZsTmt1dLbmcA2YP4ncaQ1fdFOyL2pC+pMU6MqauFSuCU6eB4NuwE3E/c7qC2B9qN/clfhhNUoC3ovXFNJWLxbuP3F+gmv20VwtFia2i3eY76yESgUiaOoKHgUhzTnw3AEwyxMKWf4N4/iGEaD4ajwjAyKbM/+KEYhIRxz36erLU3fsmek/A2PnNoGFkUN3SRKgbOJauIrTr0D3Q3x05SHK/bcto/ChSsa3eIh98fdCwh1OFe5nx08rVSvxi+PYNA74NfjjW1nDd1roVBUMnG2AVwyfH4CAAD//wMA1C8nY3AJAAA=",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors *.newrelic.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 25 Jul 2022 21:33:50 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Proxied-By" : [ "Service Gateway" ],
+          "Strict-Transport-Security" : [ "max-age=31536000; includeSubDomains" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/v1/accounts/1805869/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "insights-api.newrelic.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "nrql" : [ {
+            "matcher" : "exact",
+            "value" : "SELECT count(`apm.service.transaction.error.count`) FROM Metric WHERE appId = 107019083 SINCE 1654494691000 UNTIL 1654494751000 TIMESERIES FACET transactionName,host"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAAORUTW/bMAz9K4VOG5AEtuM4iW9D0PbUHZpsAzYUMCPTjhB9GLLcbAv230fJ+e4uu+wywwdZfCQfH0nvWQUcXcvyby8D5owD+YxtJx3L9/2nP9hw5UF7xk2nyRr9Ivwaa6FXQuESudElAeJskqbzNMuiAUNd/sk2TcgmdNsgd1gujuEoewBbgX2if5H0hdJ2eqvNTj9a0zX/T9UN2spYBZrj0oFPuH+LHDCjhLu6UOD45vy5AykX0vCtT8/ydJIcIFg+WKMehMRnhPLsiuVnAQugQ1++QgclOPD5gYeKffHxLJrMsjkVjq+o3epHE/RhT+is4OzynuXH217MD3VtsQYnjA4u8Z0SunPonUyD+l6XSIQqkC1e6EphkihJhlFG7yqa5JM4j6Kv7CTuW0ByAJxiPAkpxVVr6DkFuLFSc4LVwm4pqA0U/8qPBdMn7YQ8m3qn3rQwqgGLX4TbEMDz6PgW3VL8PKU6EAg7fv+9oeFqSRZCF65rJBbvCmdBt8C9Wh9BYTG4KzamdcV7ild3goRiWcLHfD6bDud8XA7n4+l6WAGuh3GcZFOepWlWTj0jQyLbx7/yUUQIajz8fgJN37IbUgT0nEIDq6rFfvSkoNkkNelIU+9Q90N8HfJyu25tZy/atarTIR9x79duwMDRVK395OQMGjVq0b4KjqMLdiO01tjR0aMVilRlubMd0pbR8xsAAP//AwBa79DLYAUAAA==",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors *.newrelic.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 25 Jul 2022 21:33:51 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Proxied-By" : [ "Service Gateway" ],
+          "Strict-Transport-Security" : [ "max-age=31536000; includeSubDomains" ]
+        }
+      }
+    }, {
+      "request" : {
+        "path" : [ {
+          "matcher" : "exact",
+          "value" : "/v1/accounts/1805869/query"
+        } ],
+        "method" : [ {
+          "matcher" : "exact",
+          "value" : "GET"
+        } ],
+        "destination" : [ {
+          "matcher" : "exact",
+          "value" : "insights-api.newrelic.com"
+        } ],
+        "scheme" : [ {
+          "matcher" : "exact",
+          "value" : "https"
+        } ],
+        "query" : {
+          "nrql" : [ {
+            "matcher" : "exact",
+            "value" : "SELECT apdex(`apm.service.transaction.apdex`) FROM Metric WHERE appId = 107019083 SINCE 1654494691000 UNTIL 1654494751000 TIMESERIES FACET transactionName,host"
+          } ]
+        },
+        "body" : [ {
+          "matcher" : "exact",
+          "value" : ""
+        } ]
+      },
+      "response" : {
+        "status" : 200,
+        "body" : "H4sIAAAAAAAAAOxWXWvbMBT9K0VPG8Sp7cSfbyO0hUHHaLIVNgpRrGtHrSV5stw2C/3vu5LTJG3HxthgeagxQuh+6PicqyuvSUkLMC3Jv66JpAJwQi5hMdNUtrQwXMnj99OPx1wyuB9etw0ZkCXVEtrWk9pjnRArr+EN1FyCx6Cp1UqANF6yKOM0zRZp5qXx7XVFrgbEKENrkq+JhrarN5vi6KPJjaUb20JpxOEPcV6oTlrbA4YvoOJyxgVMoVCSYWAQR+NxNo5j9ATJfmZLQrRx2TZQGGCTPl3wgDs6Z82hh/H/IV09DP6tBGVSRtEii2Lvm8iiVwX+SgEEeluDOWZQUoS5pwGjhjJV/UKIgkqqV16MUrBxFmdLwxbFqxy/l+ORoguHxRJ1MIyNDo+xkS1g0skbqe7kmVZdc1CM+YfHmO8Ya0CXSgsqC5gaauGsX3I7IEpwsxc6IIKaYrmz39G6ntSquLHbkzwNg2DjA+xUK3HKa7gAynaxwD5zOqE46dkRgJ0Eu4kFQAv3yZabIPWjNM7wy+EW28ls1Tj6yDkYzV0f2a6T/HG15/pdVWmoqO1gLiQ4Elx2BmyQakCe4J2CgEpat7BHLKYJ/TD0/BjfmR/lUZD7/heyZfelQ7hx2OY453XNn2iDzzbBMyuq46ya3k056oD5n8QRZ/okDa93pj6oN02UaKiGS26W6GBxdMUNmCn/vt1qA8D975zcN1h7LdKC3nPTNTXM38zNrt9/wFtgPjiaL1Vr5m8xX9VxJIqMwjTy/WTk+f448cpwVHgpDak3TsokCrM4ARZYRApJ1md/FCMQEK2ctFcbmFayZ6DsxYOYnIBl2UJfijXH4kQ23UmRBmRfxU9T7h++57ZdFB7FspNuP8ROG/zpwD2pwapa2Mqxa2LY4nXICxjuoRs++rZcIJ8kN7rDonKrM3uMx3ja8PkBAAD//wMAcvOpZHMKAAA=",
+        "encodedBody" : true,
+        "templated" : false,
+        "headers" : {
+          "Content-Encoding" : [ "gzip" ],
+          "Content-Security-Policy" : [ "frame-ancestors *.newrelic.com" ],
+          "Content-Type" : [ "application/json" ],
+          "Date" : [ "Mon, 25 Jul 2022 21:33:59 GMT" ],
+          "Hoverfly" : [ "Was-Here" ],
+          "Proxied-By" : [ "Service Gateway" ],
+          "Strict-Transport-Security" : [ "max-age=31536000; includeSubDomains" ]
+        }
+      }
+    } ],
+    "globalActions" : {
+      "delays" : [ ]
+    }
+  },
+  "meta" : {
+    "schemaVersion" : "v5",
+    "hoverflyVersion" : "v1.1.5",
+    "timeExported" : "2022-07-25T21:34:29Z"
+  }
+}

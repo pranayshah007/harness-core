@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+// Todo: Split and move to respective service
 public class PipelineUtils {
   public String getBuildDetailsUrl(NGAccess ngAccess, String pipelineId, String executionId, String ngBaseUrl) {
     String detailsUrl = new StringBuilder(ngBaseUrl)

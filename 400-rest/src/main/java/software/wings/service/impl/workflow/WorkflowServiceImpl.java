@@ -937,6 +937,7 @@ public class WorkflowServiceImpl implements WorkflowService {
       workflow.setUuid(generateUuid());
     }
 
+    workflowServiceTemplateHelper.validateWorkflowStepsProperties(workflow);
     validateWorkflowNameForDuplicates(workflow);
     validateOrchestrationWorkflow(workflow);
     workflowServiceHelper.validateWaitInterval(workflow);
@@ -1137,6 +1138,8 @@ public class WorkflowServiceImpl implements WorkflowService {
    */
   @Override
   public Workflow updateLinkedWorkflow(Workflow workflow, Workflow existingWorkflow, boolean fromYaml) {
+    workflowServiceTemplateHelper.validateWorkflowStepsProperties(workflow);
+
     CanaryOrchestrationWorkflow orchestrationWorkflow =
         (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
     notNullCheck(

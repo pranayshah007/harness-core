@@ -19,6 +19,6 @@ import lombok.Value;
 @OwnedBy(PL)
 public class GitRepositoryDTO {
   String name;
-  String org;
-  String projectName; // required for ADO
+  String org; // not required for fetching git connection url
+  String projectName; // not required for fetching git connection url
 }

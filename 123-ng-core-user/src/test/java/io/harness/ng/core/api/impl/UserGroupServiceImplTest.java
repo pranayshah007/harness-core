@@ -51,7 +51,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
 import io.harness.category.element.UnitTests;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.accesscontrol.scopes.ScopeNameDTO;
 import io.harness.ng.accesscontrol.scopes.ScopeNameMapper;
@@ -59,7 +58,6 @@ import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
-import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.entities.UserGroup.UserGroupKeys;
 import io.harness.ng.core.user.service.LastAdminCheckService;
@@ -116,50 +114,6 @@ public class UserGroupServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
-  public void testCreateValidate() throws IOException {
-    List<String> users = Lists.newArrayList("u1", "u2", "u3");
-    List<UserInfo> userInfos = new ArrayList<>();
-    userInfos.add(UserInfo.builder().uuid("u1").build());
-    userInfos.add(UserInfo.builder().uuid("u2").build());
-
-    String ACCOUNT_IDENTIFIER = "A1";
-    UserGroupDTO userGroupDTO = UserGroupDTO.builder()
-                                    .users(users)
-                                    .accountIdentifier(ACCOUNT_IDENTIFIER)
-                                    .orgIdentifier(ORG_IDENTIFIER)
-                                    .projectIdentifier(PROJECT_IDENTIFIER)
-                                    .build();
-
-    // Users with all valid users with failing membership
-    assertThatThrownBy(() -> userGroupService.create(userGroupDTO))
-        .isInstanceOf(InvalidArgumentsException.class)
-        .hasMessageContaining("The following users are not valid: [u1, u2, u3]");
-
-    doReturn(Arrays.asList("u1", "u2")).when(ngUserService).listUserIds(any());
-
-    // Users with all valid users with few memberships
-    assertThatThrownBy(() -> userGroupService.create(userGroupDTO))
-        .isInstanceOf(InvalidArgumentsException.class)
-        .hasMessageContaining("The following user is not valid: [u3]");
-
-    doReturn(Arrays.asList("u1", "u2", "u3")).when(ngUserService).listUserIds(any());
-
-    // Users with all valid users with all memberships
-    userGroupService.create(userGroupDTO);
-
-    UserGroup userGroup = UserGroup.builder().users(users).build();
-    doReturn(userGroup).when(transactionTemplate).execute(any());
-    assertThat(userGroupService.create(userGroupDTO)).isEqualTo(userGroup);
-
-    users.add("u1");
-    assertThatThrownBy(() -> userGroupService.create(userGroupDTO))
-        .isInstanceOf(InvalidArgumentsException.class)
-        .hasMessageContaining("Duplicate users");
-  }
-
-  @Test
-  @Owner(developers = ARVIND)
-  @Category(UnitTests.class)
   public void testRemoveMemberAll() throws IOException {
     String userIdentifier = "u1";
     int randomNum = ThreadLocalRandom.current().nextInt(5, 10);
@@ -195,26 +149,10 @@ public class UserGroupServiceImplTest extends CategoryTest {
                              .build()))
         .when(userGroupRepository)
         .find(any());
-
-    List<UserInfo> userInfos = new ArrayList<>();
-    userInfos.add(UserInfo.builder().uuid("u1").build());
-
     doReturn(Arrays.asList("u1", "u2")).when(ngUserService).listUserIds(any());
 
     userGroupService.addMember(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, userGroupIdentifier, "u1");
     assertThat(users.size()).isEqualTo(1);
-
-    userInfos.add(UserInfo.builder().uuid("u2").build());
-    userGroupService.addMember(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, userGroupIdentifier, "u2");
-    assertThat(users.size()).isEqualTo(2);
-
-    userInfos.add(UserInfo.builder().uuid("u2").build());
-    try {
-      userGroupService.addMember(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, userGroupIdentifier, "u2");
-      fail("Expected failure as user already present.");
-    } catch (InvalidRequestException exception) {
-      // all good here
-    }
   }
 
   @Test
@@ -292,7 +230,7 @@ public class UserGroupServiceImplTest extends CategoryTest {
                                            .users(Lists.newArrayList("abc", "def"))
                                            .build();
     when(userGroupRepository.save(userGroup)).thenReturn(userGroup);
-    assertThatThrownBy(() -> userGroupService.update(updatedUserGroupDTO))
+    assertThatThrownBy(() -> userGroupService.updateWithCheckThatSCIMFieldsAreNotModified(updatedUserGroupDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Update is not supported for externally managed group " + userGroupIdentifier);
   }
@@ -327,7 +265,7 @@ public class UserGroupServiceImplTest extends CategoryTest {
                                            .users(Lists.newArrayList("abc", "def", "ok", "kk"))
                                            .build();
     when(userGroupRepository.save(userGroup)).thenReturn(userGroup);
-    assertThatThrownBy(() -> userGroupService.update(updatedUserGroupDTO))
+    assertThatThrownBy(() -> userGroupService.updateWithCheckThatSCIMFieldsAreNotModified(updatedUserGroupDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Update is not supported for externally managed group " + userGroupIdentifier);
   }
@@ -344,6 +282,7 @@ public class UserGroupServiceImplTest extends CategoryTest {
                               .orgIdentifier(scope.getOrgIdentifier())
                               .projectIdentifier(scope.getProjectIdentifier())
                               .identifier(userGroupIdentifier)
+                              .name("name")
                               .externallyManaged(true)
                               .isSsoLinked(true)
                               .users(Lists.newArrayList("abc", "def", "ok"))
@@ -359,12 +298,51 @@ public class UserGroupServiceImplTest extends CategoryTest {
                                            .projectIdentifier(scope.getProjectIdentifier())
                                            .identifier(userGroupIdentifier)
                                            .externallyManaged(true)
+                                           .name("name")
                                            .isSsoLinked(true)
                                            .users(Lists.newArrayList("abc", "def", "ok"))
                                            .build();
     when(userGroupRepository.save(userGroup)).thenReturn(userGroup);
-    UserGroup updatedUserGroup = userGroupService.update(updatedUserGroupDTO);
+    UserGroup updatedUserGroup = userGroupService.updateWithCheckThatSCIMFieldsAreNotModified(updatedUserGroupDTO);
     assertThat(updatedUserGroup).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void testThatUserGroupsCanUpdatedInExternallyManagedGroup_4() {
+    // Case when users are added
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    String userGroupIdentifier = randomAlphabetic(10);
+    UserGroup userGroup = UserGroup.builder()
+                              .accountIdentifier(scope.getAccountIdentifier())
+                              .orgIdentifier(scope.getOrgIdentifier())
+                              .projectIdentifier(scope.getProjectIdentifier())
+                              .identifier(userGroupIdentifier)
+                              .externallyManaged(true)
+                              .isSsoLinked(true)
+                              .name("name")
+                              .users(Lists.newArrayList("abc", "def", "ok"))
+                              .build();
+    doReturn(userGroup).when(transactionTemplate).execute(any());
+    doReturn(Optional.of(userGroup))
+        .when(userGroupService)
+        .get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
+    when(ngUserService.listUserIds(scope)).thenReturn(Lists.newArrayList("abc", "def", "ok"));
+    UserGroupDTO updatedUserGroupDTO = UserGroupDTO.builder()
+                                           .accountIdentifier(scope.getAccountIdentifier())
+                                           .orgIdentifier(scope.getOrgIdentifier())
+                                           .projectIdentifier(scope.getProjectIdentifier())
+                                           .identifier(userGroupIdentifier)
+                                           .externallyManaged(true)
+                                           .isSsoLinked(true)
+                                           .name("updated-name")
+                                           .users(Lists.newArrayList("abc", "def", "ok"))
+                                           .build();
+    when(userGroupRepository.save(userGroup)).thenReturn(userGroup);
+    assertThatThrownBy(() -> userGroupService.updateWithCheckThatSCIMFieldsAreNotModified(updatedUserGroupDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("The name cannot be updated for externally managed group");
   }
 
   @Test

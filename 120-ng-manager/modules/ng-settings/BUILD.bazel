@@ -21,6 +21,8 @@ java_library(
         "//970-ng-commons:module",
         "//980-commons:module",
         "//999-annotations:module",
+        "//clients/audit:module",
+        "//platform-service/modules/audit-service/contracts:module",
     ],
 )
 
@@ -38,6 +40,8 @@ java_library(
         "//960-persistence:tests",
         "//980-commons:tests",
         "//999-annotations:module",
+        "//clients/audit:module",
+        "//platform-service/modules/audit-service/contracts:module",
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_mockito_mockito_core",
     ],

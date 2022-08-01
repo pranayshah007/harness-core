@@ -61,9 +61,9 @@ BAZEL_MODULES="\
   //295-cdng-contracts:module \
   //300-cv-nextgen:module \
   //310-ci-manager:module \
-  //320-ci-execution:module \
   //323-sto-utilities:module \
   //325-sto-beans:module \
+  //332-ci-manager/contracts:module \
   //332-ci-manager/service:module \
   //340-ce-nextgen:module \
   //350-event-server:module \
@@ -83,15 +83,15 @@ BAZEL_MODULES="\
   //450-ce-views:module \
   //460-capability:module \
   //490-ce-commons:module \
-  //800-pipeline-service:module \
-  //800-pipeline-service/modules/ng-triggers:module \
-  //800-pipeline-service/modules/orchestration-steps:module \
-  //800-pipeline-service/modules/orchestration-steps/contracts:module \
-  //800-pipeline-service/modules/orchestration-visualization:module \
-  //800-pipeline-service/modules/orchestration:module \
-  //800-pipeline-service/modules/orchestration/contracts:module \
-  //800-pipeline-service/modules/orchestration-beans:module \
-  //800-pipeline-service/modules/pms-contracts:module \
+  //pipeline-service/service:module \
+  //pipeline-service/modules/ng-triggers:module \
+  //pipeline-service/modules/orchestration-steps:module \
+  //pipeline-service/modules/orchestration-steps/contracts:module \
+  //pipeline-service/modules/orchestration-visualization:module \
+  //pipeline-service/modules/orchestration:module \
+  //pipeline-service/modules/orchestration/contracts:module \
+  //pipeline-service/modules/orchestration-beans:module \
+  //pipeline-service/modules/pms-contracts:module \
   //clients/pipeline-service/pms-client:module \
   //clients/pipeline-service/pms-sdk-core:module \
   //clients/pipeline-service/pms-sdk:module \
@@ -297,7 +297,6 @@ build_protocol_info(){
 }
 
 build_bazel_module 100-migrator
-build_bazel_module 320-ci-execution
 build_bazel_module 323-sto-utilities
 build_bazel_module 325-sto-beans
 build_bazel_module 380-cg-graphql
@@ -387,6 +386,6 @@ build_proto_module ciscm product/ci/scm/proto
 bazel ${bazelrc} run ${BAZEL_ARGUMENTS} //001-microservice-intfc-tool:module | grep "Codebase Hash:" > protocol.info
 
 if [ "${PLATFORM}" == "jenkins" ]; then
- build_protocol_info 800-pipeline-service pipeline-service
+ build_protocol_info pipeline-service pipeline-service
  build_protocol_info 310-ci-manager ci-manager
 fi

@@ -10,7 +10,6 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//800-pipeline-service/modules/pms-contracts:module",
         "//900-git-sync-sdk:module",
         "//920-delegate-service-beans:module",
         "//953-events-api:module",
@@ -23,6 +22,7 @@ java_library(
         "//979-recaster:module",
         "//980-commons:module",
         "//999-annotations:module",
+        "//pipeline-service/modules/pms-contracts:module",
         "@maven//:com_esotericsoftware_kryo",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:com_fasterxml_jackson_core_jackson_core",
@@ -59,7 +59,6 @@ java_library(
     deps = [
         "module",
         "//:lombok",
-        "//800-pipeline-service/modules/pms-contracts:module",
         "//900-git-sync-sdk:module",
         "//953-events-api:module",
         "//960-persistence:module",
@@ -68,6 +67,7 @@ java_library(
         "//980-commons:module",
         "//990-commons-test:module",
         "//999-annotations:module",
+        "//pipeline-service/modules/pms-contracts:module",
         "@maven//:com_google_code_findbugs_annotations",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_http_client_google_http_client",

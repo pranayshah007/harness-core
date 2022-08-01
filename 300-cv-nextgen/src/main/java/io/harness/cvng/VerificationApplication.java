@@ -163,6 +163,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
+import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.resource.VersionInfoResource;
 import io.harness.secrets.SecretNGManagerClientModule;
@@ -221,17 +222,18 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
 import javax.ws.rs.Path;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ResourceInfo;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.glassfish.jersey.server.model.Resource;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
 import org.mongodb.morphia.converters.TypeConverter;
-import org.reflections.Reflections;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
@@ -264,6 +266,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     log.info("bootstrapping ...");
     // Enable variable substitution with environment variables
     bootstrap.addCommand(new InspectCommand<>(this));
+    bootstrap.addCommand(new ScanClasspathMetadataCommand());
     bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
         bootstrap.getConfigurationSourceProvider(), new EnvironmentVariableSubstitutor(false)));
     bootstrap.addBundle(new SwaggerBundle<VerificationConfiguration>() {
@@ -1014,8 +1017,8 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   private void registerResources(Environment environment, Injector injector) {
     long startTimeMs = System.currentTimeMillis();
-    Reflections reflections = new Reflections(this.getClass().getPackage().getName());
-    reflections.getTypesAnnotatedWith(Path.class).forEach(resource -> {
+    Set<Class<?>> reflections = getResourceClasses();
+    reflections.forEach(resource -> {
       if (!resource.getPackage().getName().endsWith("resources")) {
         throw new IllegalStateException("Resource classes should be in resources package." + resource);
       }
@@ -1074,5 +1077,14 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
     injector.getInstance(EnforcementSdkRegisterService.class)
         .initialize(restrictionUsageRegisterConfiguration, customConfig);
+  }
+
+  private Set<Class<?>> getResourceClasses() {
+    return HarnessReflections.get()
+        .getTypesAnnotatedWith(Path.class)
+        .stream()
+        .filter(
+            klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), this.getClass().getPackage().getName()))
+        .collect(Collectors.toSet());
   }
 }

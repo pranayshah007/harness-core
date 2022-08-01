@@ -39,6 +39,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "- __uuid: \"step1\"\n"
       + "  step:\n"
       + "    type: \"Http\"\n"
+      + "    strategy:\n"
+      + "      parallelism: 4\n"
       + "    spec:\n"
       + "      url: \"https://www.google.com\"\n"
       + "      method: \"GET\"\n"
@@ -48,6 +50,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "- __uuid: \"step1\"\n"
       + "  step:\n"
       + "    type: \"Http\"\n"
+      + "    strategy:\n"
+      + "      parallelism: 4\n"
       + "    spec:\n"
       + "      url: \"https://www.google.com\"\n"
       + "      method: \"GET\"\n"
@@ -57,6 +61,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "- __uuid: \"step1\"\n"
       + "  step:\n"
       + "    type: \"Http\"\n"
+      + "    strategy:\n"
+      + "      parallelism: 4\n"
       + "    spec:\n"
       + "      url: \"https://www.google.com\"\n"
       + "      method: \"GET\"\n"
@@ -66,6 +72,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "- __uuid: \"step1\"\n"
       + "  step:\n"
       + "    type: \"Http\"\n"
+      + "    strategy:\n"
+      + "      parallelism: 4\n"
       + "    spec:\n"
       + "      url: \"https://www.google.com\"\n"
       + "      method: \"GET\"\n"
@@ -85,6 +93,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "        step:\n"
       + "          __uuid: \"step1\"\n"
       + "          type: \"Http\"\n"
+      + "          strategy:\n"
+      + "            parallelism: 4\n"
       + "          spec:\n"
       + "            url: \"https://www.google.com\"\n"
       + "            method: \"GET\"\n"
@@ -95,6 +105,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "        step:\n"
       + "          __uuid: \"step1\"\n"
       + "          type: \"Http\"\n"
+      + "          strategy:\n"
+      + "            parallelism: 4\n"
       + "          spec:\n"
       + "            url: \"https://www.google.com\"\n"
       + "            method: \"GET\"\n"
@@ -105,6 +117,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "        step:\n"
       + "          __uuid: \"step1\"\n"
       + "          type: \"Http\"\n"
+      + "          strategy:\n"
+      + "            parallelism: 4\n"
       + "          spec:\n"
       + "            url: \"https://www.google.com\"\n"
       + "            method: \"GET\"\n"
@@ -115,6 +129,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "        step:\n"
       + "          __uuid: \"step1\"\n"
       + "          type: \"Http\"\n"
+      + "          strategy:\n"
+      + "            parallelism: 4\n"
       + "          spec:\n"
       + "            url: \"https://www.google.com\"\n"
       + "            method: \"GET\"\n"
@@ -136,6 +152,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "    - __uuid: \"step4\"\n"
       + "      step:\n"
       + "        type: \"Http\"\n"
+      + "        strategy:\n"
+      + "          parallelism: 4\n"
       + "        spec:\n"
       + "          url: \"https://www.google.com\"\n"
       + "          method: \"GET\"\n"
@@ -145,6 +163,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "    - __uuid: \"step4\"\n"
       + "      step:\n"
       + "        type: \"Http\"\n"
+      + "        strategy:\n"
+      + "          parallelism: 4\n"
       + "        spec:\n"
       + "          url: \"https://www.google.com\"\n"
       + "          method: \"GET\"\n"
@@ -154,6 +174,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "    - __uuid: \"step4\"\n"
       + "      step:\n"
       + "        type: \"Http\"\n"
+      + "        strategy:\n"
+      + "          parallelism: 4\n"
       + "        spec:\n"
       + "          url: \"https://www.google.com\"\n"
       + "          method: \"GET\"\n"
@@ -163,6 +185,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "    - __uuid: \"step4\"\n"
       + "      step:\n"
       + "        type: \"Http\"\n"
+      + "        strategy:\n"
+      + "          parallelism: 4\n"
       + "        spec:\n"
       + "          url: \"https://www.google.com\"\n"
       + "          method: \"GET\"\n"
@@ -176,6 +200,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "    step:\n"
       + "      __uuid: \"test\"\n"
       + "      type: \"Http\"\n"
+      + "      strategy:\n"
+      + "        parallelism: 4\n"
       + "      spec:\n"
       + "        url: \"https://www.google.com\"\n"
       + "        method: \"GET\"\n"
@@ -186,6 +212,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "    step:\n"
       + "      __uuid: \"test\"\n"
       + "      type: \"Http\"\n"
+      + "      strategy:\n"
+      + "        parallelism: 4\n"
       + "      spec:\n"
       + "        url: \"https://www.google.com\"\n"
       + "        method: \"GET\"\n"
@@ -196,6 +224,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "    step:\n"
       + "      __uuid: \"test\"\n"
       + "      type: \"Http\"\n"
+      + "      strategy:\n"
+      + "        parallelism: 4\n"
       + "      spec:\n"
       + "        url: \"https://www.google.com\"\n"
       + "        method: \"GET\"\n"
@@ -206,6 +236,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       + "    step:\n"
       + "      __uuid: \"test\"\n"
       + "      type: \"Http\"\n"
+      + "      strategy:\n"
+      + "        parallelism: 4\n"
       + "      spec:\n"
       + "        url: \"https://www.google.com\"\n"
       + "        method: \"GET\"\n"
@@ -330,6 +362,38 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
       assertThat(jsonNode.get("identifier").asText()).isEqualTo("a11_" + current);
       assertThat(jsonNode.get("variables").get(0).get("value").asText()).isEqualTo(String.valueOf(current));
       assertThat(jsonNode.get("variables").get(1).get("value").asText()).isEqualTo(String.valueOf(10));
+      current++;
+    }
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testExpandStageJsonNodesForItems() throws IOException {
+    MockitoAnnotations.initMocks(this);
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("pipeline-with-strategy.yaml");
+    assertThat(testFile).isNotNull();
+    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
+    String pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
+
+    YamlField pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid).getNode().getField("pipeline");
+    assertThat(pipelineYamlField).isNotNull();
+    YamlField stagesYamlField = pipelineYamlField.getNode().getField("stages");
+    assertThat(stagesYamlField).isNotNull();
+    List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
+
+    YamlField approvalStageYamlField = stageYamlNodes.get(5).getField("stage");
+    List<JsonNode> jsonNodes =
+        strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
+    assertThat(jsonNodes.size()).isEqualTo(1);
+    int current = 0;
+    List<String> expectedValues = Lists.newArrayList("a", "b", "c");
+    for (JsonNode jsonNode : jsonNodes) {
+      assertThat(jsonNode.get("identifier").asText()).isEqualTo("a11_" + current);
+      assertThat(jsonNode.get("variables").get(0).get("value").asText()).isEqualTo(String.valueOf(current));
+      assertThat(jsonNode.get("variables").get(1).get("value").asText()).isEqualTo(String.valueOf(1));
+      assertThat(jsonNode.get("variables").get(2).get("value").asText()).isEqualTo(expectedValues.get(current));
       current++;
     }
   }

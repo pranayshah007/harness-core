@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.vm;
 
 import static io.harness.data.encoding.EncodingUtils.decodeBase64;
@@ -35,7 +42,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,19 +61,23 @@ public class VmExecuteStepUtils {
                                       .logKey(params.getLogKey())
                                       .workingDir(params.getWorkingDir())
                                       .volumeMounts(getVolumeMounts(params.getVolToMountPath()));
+
+    List<String> secrets = new ArrayList<>();
     if (params.getStepInfo().getType() == VmStepInfo.Type.RUN) {
       VmRunStep runStep = (VmRunStep) params.getStepInfo();
-      setRunConfig(runStep, configBuilder);
+      secrets = setRunConfig(runStep, configBuilder);
     } else if (params.getStepInfo().getType() == VmStepInfo.Type.PLUGIN) {
       VmPluginStep pluginStep = (VmPluginStep) params.getStepInfo();
-      setPluginConfig(pluginStep, configBuilder);
+      secrets = setPluginConfig(pluginStep, configBuilder);
     } else if (params.getStepInfo().getType() == VmStepInfo.Type.RUN_TEST) {
       VmRunTestStep runTestStep = (VmRunTestStep) params.getStepInfo();
-      setRunTestConfig(runTestStep, configBuilder);
+      secrets = setRunTestConfig(runTestStep, configBuilder);
     }
+
     if (isNotEmpty(params.getSecrets())) {
-      params.getSecrets().forEach(secret -> configBuilder.secret(secret));
+      secrets.addAll(params.getSecrets());
     }
+    configBuilder.secrets(secrets);
     return ExecuteStepRequest.builder()
         .stageRuntimeID(params.getStageRuntimeId())
         .poolId(params.getPoolId())
@@ -111,7 +121,7 @@ public class VmExecuteStepUtils {
         .stageRuntimeID(initializeTaskParams.getStageRuntimeId());
   }
 
-  private void setRunConfig(VmRunStep runStep, ConfigBuilder configBuilder) {
+  private List<String> setRunConfig(VmRunStep runStep, ConfigBuilder configBuilder) {
     List<String> secrets = new ArrayList<>();
     ImageAuth imageAuth = getImageAuth(runStep.getImage(), runStep.getImageConnector());
     if (imageAuth != null) {
@@ -120,7 +130,7 @@ public class VmExecuteStepUtils {
     }
     configBuilder.kind(RUN_STEP_KIND)
         .runConfig(ExecuteStepRequest.RunConfig.builder()
-                       .command(Collections.singletonList(runStep.getCommand()))
+                       .command(Arrays.asList(runStep.getCommand()))
                        .entrypoint(runStep.getEntrypoint())
                        .build())
         .image(runStep.getImage())
@@ -130,11 +140,11 @@ public class VmExecuteStepUtils {
         .privileged(runStep.isPrivileged())
         .outputVars(runStep.getOutputVariables())
         .testReport(convertTestReport(runStep.getUnitTestReport()))
-        .secrets(secrets)
         .timeout(runStep.getTimeoutSecs());
+    return secrets;
   }
 
-  private void setPluginConfig(VmPluginStep pluginStep, ExecuteStepRequest.Config.ConfigBuilder configBuilder) {
+  private List<String> setPluginConfig(VmPluginStep pluginStep, ExecuteStepRequest.Config.ConfigBuilder configBuilder) {
     Map<String, String> env = new HashMap<>();
     List<String> secrets = new ArrayList<>();
     if (isNotEmpty(pluginStep.getEnvVariables())) {
@@ -166,14 +176,15 @@ public class VmExecuteStepUtils {
         .image(pluginStep.getImage())
         .pull(pluginStep.getPullPolicy())
         .user(pluginStep.getRunAsUser())
-        .secrets(secrets)
         .envs(pluginStep.getEnvVariables())
         .privileged(pluginStep.isPrivileged())
         .testReport(convertTestReport(pluginStep.getUnitTestReport()))
         .timeout(pluginStep.getTimeoutSecs());
+    return secrets;
   }
 
-  private void setRunTestConfig(VmRunTestStep runTestStep, ExecuteStepRequest.Config.ConfigBuilder configBuilder) {
+  private List<String> setRunTestConfig(
+      VmRunTestStep runTestStep, ExecuteStepRequest.Config.ConfigBuilder configBuilder) {
     List<String> secrets = new ArrayList<>();
     ExecuteStepRequest.ImageAuth imageAuth = getImageAuth(runTestStep.getImage(), runTestStep.getConnector());
     if (imageAuth != null) {
@@ -202,8 +213,8 @@ public class VmExecuteStepUtils {
         .privileged(runTestStep.isPrivileged())
         .outputVars(runTestStep.getOutputVariables())
         .testReport(convertTestReport(runTestStep.getUnitTestReport()))
-        .secrets(secrets)
         .timeout(runTestStep.getTimeoutSecs());
+    return secrets;
   }
 
   private ExecuteStepRequest.TestReport convertTestReport(VmUnitTestReport unitTestReport) {

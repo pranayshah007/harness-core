@@ -145,7 +145,7 @@ public class VaultRestClientFactory {
       valueMap.put(pathAndKey.keyName, value);
       Response<Void> response =
           vaultRestClient.writeSecret(authToken, namespace, secretEngine, pathAndKey.path, valueMap).execute();
-      logErrorIfRequestFailed(response, "V1Impl- writeSecret", true);
+      logAndThrowErrorIfRequestFailed(response, "V1Impl- writeSecret");
       return response.isSuccessful();
     }
 
@@ -155,7 +155,16 @@ public class VaultRestClientFactory {
       VaultPathAndKey pathAndKey = parseFullPath(fullPath);
       Response<Void> response =
           vaultRestClient.deleteSecret(authToken, namespace, secretEngine, pathAndKey.path).execute();
-      logErrorIfRequestFailed(response, "V1Impl-deleteSecret", false);
+      logAndThrowErrorIfRequestFailed(response, "V1Impl-deleteSecret");
+      return response.isSuccessful();
+    }
+
+    @Override
+    public boolean deleteSecretPermanentely(String authToken, String secretEngine, String fullPath) throws IOException {
+      VaultPathAndKey pathAndKey = parseFullPath(fullPath);
+      Response<Void> response =
+          vaultRestClient.deleteSecretPermanentely(authToken, secretEngine, pathAndKey.path).execute();
+      logAndThrowErrorIfRequestFailed(response, "V1Impl-deleteSecretPermanentely");
       return response.isSuccessful();
     }
 
@@ -165,8 +174,13 @@ public class VaultRestClientFactory {
       VaultPathAndKey pathAndKey = parseFullPath(fullPath);
       Response<VaultReadResponse> result =
           vaultRestClient.readSecret(authToken, namespace, secretEngine, pathAndKey.path).execute();
-      logErrorIfRequestFailed(result, "V1Impl-readSecret", false);
+      logAndThrowErrorIfRequestFailed(result, "V1Impl-readSecret");
       VaultReadResponse response = result.body();
+      if (response == null || response.getData() == null) {
+        log.error(
+            "Response from vault for the secret with path {} is {} successful with the status code : {} and message : {}",
+            fullPath, result.isSuccessful() ? "" : "not", result.code(), result.message());
+      }
       return response == null || response.getData() == null ? null : response.getData().get(pathAndKey.keyName);
     }
 
@@ -194,7 +208,7 @@ public class VaultRestClientFactory {
       VaultSecretValue vaultSecretValue = new VaultSecretValue(dataMap);
       Response<Void> response =
           vaultRestClient.writeSecret(authToken, namespace, secretEngine, pathAndKey.path, vaultSecretValue).execute();
-      logErrorIfRequestFailed(response, "V2Impl-writeSecret", true);
+      logAndThrowErrorIfRequestFailed(response, "V2Impl-writeSecret");
       return response.isSuccessful();
     }
 
@@ -204,7 +218,16 @@ public class VaultRestClientFactory {
       VaultPathAndKey pathAndKey = parseFullPath(fullPath);
       Response<Void> response =
           vaultRestClient.deleteSecret(authToken, namespace, secretEngine, pathAndKey.path).execute();
-      logErrorIfRequestFailed(response, "V2Impl-deleteSecret", false);
+      logAndThrowErrorIfRequestFailed(response, "V2Impl-deleteSecret");
+      return response.isSuccessful();
+    }
+
+    @Override
+    public boolean deleteSecretPermanentely(String authToken, String secretEngine, String fullPath) throws IOException {
+      VaultPathAndKey pathAndKey = parseFullPath(fullPath);
+      Response<Void> response =
+          vaultRestClient.deleteSecretPermanentely(authToken, secretEngine, pathAndKey.path).execute();
+      logAndThrowErrorIfRequestFailed(response, "V2Impl-deleteSecretPermanentely");
       return response.isSuccessful();
     }
 
@@ -220,7 +243,7 @@ public class VaultRestClientFactory {
         return response == null || response.getData() == null ? null
                                                               : response.getData().getData().get(pathAndKey.keyName);
       }
-      logErrorIfRequestFailed(result, "V2Impl-readSecret", false);
+      logAndThrowErrorIfRequestFailed(result, "V2Impl-readSecret");
       return null;
     }
 
@@ -230,13 +253,13 @@ public class VaultRestClientFactory {
       VaultPathAndKey pathAndKey = parseFullPath(fullPath);
       Response<VaultMetadataReadResponse> result =
           vaultRestClient.readSecretMetadata(authToken, namespace, secretEngine, pathAndKey.path).execute();
-      logErrorIfRequestFailed(result, "V2Impl-readSecretMetadata", false);
+      logAndThrowErrorIfRequestFailed(result, "V2Impl-readSecretMetadata");
       VaultMetadataReadResponse response = result.body();
       return response == null ? null : response.getData();
     }
   }
 
-  private static void logErrorIfRequestFailed(Response response, String action, Boolean throwError) throws IOException {
+  private static void logAndThrowErrorIfRequestFailed(Response response, String action) throws IOException {
     if (response == null) {
       return;
     }
@@ -245,12 +268,11 @@ public class VaultRestClientFactory {
       if (response.errorBody() != null) {
         message = response.errorBody().string();
       } else {
-        message = response.message() + response.body();
+        message = (response.body() != null) ? response.body().toString() : "";
       }
+      message = String.format("%s  %s", response.message(), message);
       log.error("Could not {} secret in the vault due to the following error {}", action, message);
-      if (throwError) {
-        throw new HashiCorpVaultRuntimeException(message);
-      }
+      throw new HashiCorpVaultRuntimeException(message);
     }
   }
 

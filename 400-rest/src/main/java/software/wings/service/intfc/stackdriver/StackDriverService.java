@@ -42,5 +42,5 @@ public interface StackDriverService {
   Boolean validateQuery(
       String accountId, String appId, String connectorId, String query, String hostNameField, String logMessageField);
 
-  Object getLogSample(String accountId, String serverConfigId, String query, String guid);
+  Object getLogSample(String accountId, String appId, String serverConfigId, String query, String guid);
 }

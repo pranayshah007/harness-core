@@ -10,6 +10,7 @@ package io.harness.cvng.core.services.impl.monitoredService;
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
 import static io.harness.cvng.core.constant.MonitoredServiceConstants.REGULAR_EXPRESSION;
 import static io.harness.cvng.notification.beans.MonitoredServiceChangeEventType.getMonitoredServiceChangeEventTypeFromActivityType;
+import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getDurationInSeconds;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.CHANGE_EVENT_TYPE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.COOL_OFF_DURATION;
@@ -935,6 +936,20 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     return query.asList();
   }
 
+  @Override
+  public List<MonitoredService> listWithFilter(
+      @NonNull ProjectParams projectParams, List<String> identifiers, String filter) {
+    List<MonitoredService> monitoredServices = list(projectParams, identifiers);
+    if (filter != null) {
+      monitoredServices =
+          monitoredServices.stream()
+              .filter(monitoredService
+                  -> isEmpty(filter) || monitoredService.getName().toLowerCase().contains(filter.trim().toLowerCase()))
+              .collect(Collectors.toList());
+    }
+    return monitoredServices;
+  }
+
   private List<RiskData> getSortedDependentServiceRiskScoreList(
       ProjectParams projectParams, List<String> dependentServices) {
     List<RiskData> dependentServiceRiskScores = new ArrayList<>();
@@ -1758,13 +1773,15 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                                         .build();
     Map<String, String> templateDataMap = new HashMap<>();
     boolean isEveryHeatMapBelowThreshold = false;
+    long riskTimeBufferMins = 0;
 
     switch (condition.getType()) {
       case HEALTH_SCORE:
         MonitoredServiceHealthScoreCondition healthScoreCondition = (MonitoredServiceHealthScoreCondition) condition;
-        isEveryHeatMapBelowThreshold = heatMapService.isEveryHeatMapBelowThresholdForRiskTimeBuffer(
-            monitoredServiceParams, monitoredService.getIdentifier(), healthScoreCondition.getThreshold(),
-            healthScoreCondition.getPeriod());
+        riskTimeBufferMins = getDurationInSeconds(healthScoreCondition.getPeriod());
+        isEveryHeatMapBelowThreshold =
+            heatMapService.isEveryHeatMapBelowThresholdForRiskTimeBuffer(monitoredServiceParams,
+                monitoredService.getIdentifier(), healthScoreCondition.getThreshold(), riskTimeBufferMins);
         if (isEveryHeatMapBelowThreshold) {
           List<RiskData> allServiceRiskScoreList =
               heatMapService.getLatestRiskScoreForAllServicesList(monitoredServiceParams.getAccountIdentifier(),
@@ -1803,7 +1820,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
           templateDataMap.put(CHANGE_EVENT_TYPE,
               getMonitoredServiceChangeEventTypeFromActivityType(optionalActivity.get().getType()).getDisplayName());
           Instant activityStartTime = optionalActivity.get().getActivityStartTime();
-          long riskTimeBufferMins = Duration.between(activityStartTime, clock.instant()).toMinutes();
+          riskTimeBufferMins = Duration.between(activityStartTime, clock.instant()).toMinutes();
           isEveryHeatMapBelowThreshold =
               heatMapService.isEveryHeatMapBelowThresholdForRiskTimeBuffer(monitoredServiceParams,
                   monitoredService.getIdentifier(), changeImpactCondition.getThreshold(), riskTimeBufferMins);

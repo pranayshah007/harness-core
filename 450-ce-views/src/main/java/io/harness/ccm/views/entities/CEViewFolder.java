@@ -63,4 +63,20 @@ public final class CEViewFolder implements PersistentEntity, UuidAware, CreatedA
   @Schema(description = NGCommonEntityConstants.UPDATED_AT_MESSAGE) long lastUpdatedAt;
   @Schema(description = "created by") private EmbeddedUser createdBy;
   @Schema(description = "updated by") private EmbeddedUser lastUpdatedBy;
+
+  public CEViewFolder toDTO() {
+    return CEViewFolder.builder()
+        .uuid(getUuid())
+        .accountId(getAccountId())
+        .name(getName())
+        .pinned(isPinned())
+        .tags(getTags())
+        .description(getDescription())
+        .viewType(getViewType())
+        .createdAt(getCreatedAt())
+        .lastUpdatedAt(getLastUpdatedAt())
+        .createdBy(getCreatedBy())
+        .lastUpdatedBy(getLastUpdatedBy())
+        .build();
+  }
 }

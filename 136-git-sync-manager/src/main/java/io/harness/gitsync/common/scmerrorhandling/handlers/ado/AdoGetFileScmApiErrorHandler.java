@@ -37,6 +37,12 @@ public class AdoGetFileScmApiErrorHandler implements ScmApiErrorHandler {
                           .INVALID_CONNECTOR_CREDS,
                 errorMetadata),
             new ScmUnauthorizedException(errorMessage));
+      case 401:
+        throw NestedExceptionUtils.hintWithExplanationException(
+            ErrorMessageFormatter.formatMessage(ScmErrorHints.MISSING_PERMISSION_CREDS_HINTS, errorMetadata),
+            ErrorMessageFormatter.formatMessage(
+                ScmErrorExplanations.MISSING_PERMISSION_CREDS_EXPLANATION, errorMetadata),
+            new ScmBadRequestException(errorMessage));
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(
             ErrorMessageFormatter.formatMessage(FILE_NOT_FOUND, errorMetadata),

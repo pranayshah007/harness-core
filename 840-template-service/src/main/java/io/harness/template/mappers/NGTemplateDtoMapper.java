@@ -16,6 +16,9 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.jackson.JsonNodeUtils;
@@ -50,12 +53,21 @@ public class NGTemplateDtoMapper {
         .versionLabel(templateEntity.getVersionLabel())
         .tags(TagMapper.convertToMap(templateEntity.getTags()))
         .version(templateEntity.getVersion())
-        .gitDetails(EntityGitDetailsMapper.mapEntityGitDetails(templateEntity))
+        .gitDetails(getEntityGitDetails(templateEntity))
         .lastUpdatedAt(templateEntity.getLastUpdatedAt())
         .entityValidityDetails(templateEntity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
+        .storeType(templateEntity.getStoreType())
+        .connectorRef(templateEntity.getConnectorRef())
         .build();
+  }
+
+  public EntityGitDetails getEntityGitDetails(TemplateEntity templateEntity) {
+    return templateEntity.getStoreType() == null ? EntityGitDetailsMapper.mapEntityGitDetails(templateEntity)
+        : templateEntity.getStoreType() == StoreType.REMOTE
+        ? GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()
+        : EntityGitDetails.builder().build();
   }
 
   public TemplateSummaryResponseDTO prepareTemplateSummaryResponseDto(TemplateEntity templateEntity) {
@@ -74,7 +86,7 @@ public class NGTemplateDtoMapper {
         .versionLabel(templateEntity.getVersionLabel())
         .tags(TagMapper.convertToMap(templateEntity.getTags()))
         .version(templateEntity.getVersion())
-        .gitDetails(EntityGitDetailsMapper.mapEntityGitDetails(templateEntity))
+        .gitDetails(getEntityGitDetails(templateEntity))
         .lastUpdatedAt(templateEntity.getLastUpdatedAt())
         .entityValidityDetails(templateEntity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()

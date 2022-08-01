@@ -43,15 +43,15 @@ public class ServiceDependencyGraphResource {
   public RestResponse<ServiceDependencyGraphDTO> getServiceDependencyGraph(@BeanParam ProjectParams projectParams,
       @QueryParam("environmentIdentifier") String environmentIdentifier,
       @QueryParam("serviceIdentifier") String serviceIdentifier,
-      @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
+      @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier, @QueryParam("filter") String filter,
       @QueryParam("servicesAtRiskFilter") @ApiParam(
           defaultValue = "false") @NotNull final boolean servicesAtRiskFilter) {
     if (monitoredServiceIdentifier != null) {
       return new RestResponse<>(serviceDependencyGraphService.getDependencyGraph(
-          projectParams, Arrays.asList(monitoredServiceIdentifier), servicesAtRiskFilter));
+          projectParams, Arrays.asList(monitoredServiceIdentifier), servicesAtRiskFilter, filter));
     } else {
       return new RestResponse<>(serviceDependencyGraphService.getDependencyGraph(
-          projectParams, serviceIdentifier, environmentIdentifier, servicesAtRiskFilter));
+          projectParams, serviceIdentifier, environmentIdentifier, servicesAtRiskFilter, filter));
     }
   }
 }

@@ -11,10 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
+import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
 import java.util.Map;
@@ -29,8 +31,9 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentPassThroughData")
 public class AzureSlotDeploymentPassThroughData implements PassThroughData {
   AzureWebAppInfrastructureOutcome infrastructure;
-  Map<String, String> configs;
+  Map<String, AppSettingsFile> configs;
   Map<String, StoreConfig> unprocessedConfigs;
   AzureAppServicePreDeploymentData preDeploymentData;
   CommandUnitsProgress commandUnitsProgress;
+  ArtifactOutcome primaryArtifactOutcome;
 }

@@ -31,7 +31,7 @@ import io.kubernetes.client.openapi.models.V1PodConditionBuilder;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1ResourceRequirementsBuilder;
 import java.math.BigDecimal;
-import org.joda.time.DateTime;
+import java.time.OffsetDateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -40,7 +40,7 @@ public class K8sResourceUtilsTest extends CategoryTest {
   private static final String K8S_POD_RESOURCE = "pods";
   private final V1ResourceRequirements resourceRequirements = new V1ResourceRequirements();
   private V1Container k8sContainer;
-  private final DateTime TIMESTAMP = DateTime.now();
+  private final OffsetDateTime TIMESTAMP = OffsetDateTime.now();
 
   @Before
   public void init() {
@@ -122,11 +122,14 @@ public class K8sResourceUtilsTest extends CategoryTest {
     V1ObjectMeta v1ObjectMeta =
         new V1ObjectMetaBuilder().withCreationTimestamp(TIMESTAMP).withDeletionTimestamp(TIMESTAMP).build();
 
-    assertThat(v1ObjectMeta.getCreationTimestamp().getMillis()).isEqualTo(TIMESTAMP.getMillis());
-    assertThat(v1ObjectMeta.getDeletionTimestamp().getMillis()).isEqualTo(TIMESTAMP.getMillis());
+    assertThat(v1ObjectMeta.getCreationTimestamp().toInstant().toEpochMilli())
+        .isEqualTo(TIMESTAMP.toInstant().toEpochMilli());
+    assertThat(v1ObjectMeta.getDeletionTimestamp().toInstant().toEpochMilli())
+        .isEqualTo(TIMESTAMP.toInstant().toEpochMilli());
 
     V1PodCondition podScheduledCondition = new V1PodConditionBuilder().withLastTransitionTime(TIMESTAMP).build();
-    assertThat(podScheduledCondition.getLastTransitionTime().getMillis()).isEqualTo(TIMESTAMP.getMillis());
+    assertThat(podScheduledCondition.getLastTransitionTime().toInstant().toEpochMilli())
+        .isEqualTo(TIMESTAMP.toInstant().toEpochMilli());
   }
 
   @Test

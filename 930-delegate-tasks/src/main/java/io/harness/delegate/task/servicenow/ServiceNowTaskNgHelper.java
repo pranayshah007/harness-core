@@ -147,9 +147,12 @@ public class ServiceNowTaskNgHelper {
           serviceNowConnectorDTO.getServiceNowUrl(), ticketNg.getNumber(), serviceNowTaskNGParameters.getTicketType());
       ticketNg.setUrl(ticketUrlFromTicketId);
       return ServiceNowTaskNGResponse.builder().ticket(ticketNg).build();
-    } catch (Exception e) {
-      log.error("Failed to create ServiceNow ticket ");
-      throw new ServiceNowException(ExceptionUtils.getMessage(e), SERVICENOW_ERROR, USER, e);
+    } catch (ServiceNowException e) {
+      log.error("Failed to create ServiceNow ticket: {}", ExceptionUtils.getMessage(e), e);
+      throw e;
+    } catch (Exception ex) {
+      log.error("Failed to create ServiceNow ticket: {}", ExceptionUtils.getMessage(ex), ex);
+      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
     }
   }
 
@@ -186,9 +189,12 @@ public class ServiceNowTaskNgHelper {
       return ServiceNowTaskNGResponse.builder()
           .ticket(serviceNowTicketNGBuilder.url(ticketUrlFromSysId).build())
           .build();
-    } catch (Exception e) {
-      log.error("Failed to create ServiceNow ticket ");
-      throw new ServiceNowException(ExceptionUtils.getMessage(e), SERVICENOW_ERROR, USER, e);
+    } catch (ServiceNowException e) {
+      log.error("Failed to create ServiceNow ticket: {}", ExceptionUtils.getMessage(e), e);
+      throw e;
+    } catch (Exception ex) {
+      log.error("Failed to create ServiceNow ticket: {}", ExceptionUtils.getMessage(ex), ex);
+      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
     }
   }
 
@@ -224,7 +230,7 @@ public class ServiceNowTaskNgHelper {
       handleResponse(response, "Failed to update ServiceNow ticket");
       JsonNode responseObj = response.body().get("result");
       String ticketNumber = responseObj.get("record_number").asText();
-      String ticketSysId = responseObj.get("record_sys_id").asText();
+      String ticketSysId = parseTicketSysIdFromResponse(responseObj);
 
       ServiceNowTicketNGBuilder serviceNowTicketNGBuilder =
           fetchServiceNowTicketUsingSysId(ticketSysId, serviceNowTaskNGParameters);
@@ -235,10 +241,22 @@ public class ServiceNowTaskNgHelper {
       return ServiceNowTaskNGResponse.builder()
           .ticket(serviceNowTicketNGBuilder.url(ticketUrlFromSysId).build())
           .build();
-    } catch (Exception e) {
-      log.error("Failed to create ServiceNow ticket ");
-      throw new ServiceNowException(ExceptionUtils.getMessage(e), SERVICENOW_ERROR, USER, e);
+    } catch (ServiceNowException e) {
+      log.error("Failed to update ServiceNow ticket: {}", ExceptionUtils.getMessage(e), e);
+      throw e;
+    } catch (Exception ex) {
+      log.error("Failed to update ServiceNow ticket: {}", ExceptionUtils.getMessage(ex), ex);
+      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
     }
+  }
+
+  private String parseTicketSysIdFromResponse(JsonNode responseObj) {
+    JsonNode sysIdNode = responseObj.get("record_sys_id");
+    if (sysIdNode != null) {
+      return sysIdNode.asText();
+    }
+    String[] entries = responseObj.get("record_link").asText().split("[&=]");
+    return entries[1];
   }
 
   private String getIssueIdFromIssueNumber(ServiceNowTaskNGParameters parameters) {
@@ -317,6 +335,7 @@ public class ServiceNowTaskNgHelper {
             "Failed to fetch issueNumber " + ticketSysId + "response: " + response, SERVICENOW_ERROR, USER);
       }
     } catch (WingsException e) {
+      log.error("Error in fetching issue with sys_id: {}", ExceptionUtils.getMessage(e), e);
       throw e;
     } catch (Exception e) {
       String errorMsg = "Error in fetching issue with sys_id " + ticketSysId;
@@ -371,9 +390,12 @@ public class ServiceNowTaskNgHelper {
           serviceNowConnectorDTO.getServiceNowUrl(), ticketNg.getNumber(), serviceNowTaskNGParameters.getTicketType());
       ticketNg.setUrl(ticketUrlFromTicketId);
       return ServiceNowTaskNGResponse.builder().ticket(ticketNg).build();
-    } catch (Exception e) {
-      log.error("Failed to create ServiceNow ticket ");
-      throw new ServiceNowException(ExceptionUtils.getMessage(e), SERVICENOW_ERROR, USER, e);
+    } catch (ServiceNowException e) {
+      log.error("Failed to update ServiceNow ticket: {}", ExceptionUtils.getMessage(e), e);
+      throw e;
+    } catch (Exception ex) {
+      log.error("Failed to update ServiceNow ticket: {}", ExceptionUtils.getMessage(ex), ex);
+      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
     }
   }
 
@@ -415,9 +437,12 @@ public class ServiceNowTaskNgHelper {
                 + serviceNowTaskNGParameters.getTicketType() + " response: " + response,
             SERVICENOW_ERROR, USER);
       }
-    } catch (Exception e) {
-      log.error("Failed to get serviceNow fields ");
-      throw new ServiceNowException(ExceptionUtils.getMessage(e), SERVICENOW_ERROR, USER, e);
+    } catch (ServiceNowException e) {
+      log.error("Failed to get ServiceNow fields: {}", ExceptionUtils.getMessage(e), e);
+      throw e;
+    } catch (Exception ex) {
+      log.error("Failed to get ServiceNow fields: {}", ExceptionUtils.getMessage(ex), ex);
+      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
     }
   }
 
@@ -544,9 +569,12 @@ public class ServiceNowTaskNgHelper {
                 + serviceNowTaskNGParameters.getTicketType() + " response: " + response,
             SERVICENOW_ERROR, USER);
       }
-    } catch (Exception e) {
-      log.error("Failed to get serviceNow fields ");
-      throw new ServiceNowException(ExceptionUtils.getMessage(e), SERVICENOW_ERROR, USER, e);
+    } catch (ServiceNowException e) {
+      log.error("Failed to get ServiceNow fields: {}", ExceptionUtils.getMessage(e), e);
+      throw e;
+    } catch (Exception ex) {
+      log.error("Failed to get ServiceNow fields: {}", ExceptionUtils.getMessage(ex), ex);
+      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
     }
   }
 

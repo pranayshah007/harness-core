@@ -10,11 +10,14 @@ package software.wings.service.impl.analysis;
 import io.harness.annotation.HarnessEntity;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.FdIndex;
+import io.harness.mongo.index.FdTtlIndex;
 import io.harness.persistence.AccountAccess;
 
 import software.wings.beans.Base;
 import software.wings.sm.StateType;
 
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
@@ -45,6 +48,8 @@ public class TimeSeriesMLScores extends Base implements AccountAccess {
   @NotEmpty private int analysisMinute;
 
   @FdIndex private String accountId;
+
+  @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusMonths(6).toInstant());
 
   private Map<String, TimeSeriesMLTxnScores> scoresMap;
 

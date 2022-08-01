@@ -9,6 +9,7 @@ package io.harness.cvng.core.dsl;
 
 import static io.harness.CvNextGenTestBase.getResourceFilePath;
 import static io.harness.CvNextGenTestBase.getSourceResourceFile;
+import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,6 +55,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class DatadogMetricDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
+  private static final String BASE_URL = "https://app.datadoghq.com/api/";
+
   BuilderFactory builderFactory;
   @Inject private MetricPackService metricPackService;
   @Inject private DatadogMetricDataCollectionInfoMapper dataCollectionInfoMapper;
@@ -108,14 +111,7 @@ public class DatadogMetricDataCollectionDSLTest extends HoverflyCVNextGenTestBas
     DatadogMetricsDataCollectionInfo datadogMetricsDataCollectionInfo =
         dataCollectionInfoMapper.toDataCollectionInfo(datadogMetricCVConfig, TaskType.LIVE_MONITORING);
     datadogMetricsDataCollectionInfo.setCollectHostData(false);
-    DatadogConnectorDTO datadogConnectorDTO =
-        DatadogConnectorDTO.builder()
-            .build()
-            .builder()
-            .url("https://app.datadoghq.com/api/")
-            .apiKeyRef(SecretRefData.builder().decryptedValue("add api key".toCharArray()).build())
-            .applicationKeyRef(SecretRefData.builder().decryptedValue("add application key".toCharArray()).build())
-            .build();
+    DatadogConnectorDTO datadogConnectorDTO = getDatadogConnectorDTO();
     Map<String, Object> params = datadogMetricsDataCollectionInfo.getDslEnvVariables(datadogConnectorDTO);
 
     Map<String, String> headers = datadogMetricsDataCollectionInfo.collectionHeaders(datadogConnectorDTO);
@@ -124,13 +120,112 @@ public class DatadogMetricDataCollectionDSLTest extends HoverflyCVNextGenTestBas
                                               .endTime(instant)
                                               .commonHeaders(headers)
                                               .otherEnvVariables(params)
-                                              .baseUrl("https://app.datadoghq.com/api/")
+                                              .baseUrl(BASE_URL)
                                               .build();
     List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
         code, runtimeParameters, callDetails -> { System.out.println(callDetails); });
     assertThat(Sets.newHashSet(timeSeriesRecords))
         .isEqualTo(new Gson().fromJson(
             readJson("expected-datadog-dsl-output.json"), new TypeToken<Set<TimeSeriesRecord>>() {}.getType()));
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testExecute_datadogDSL_forSLI() throws IOException {
+    DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
+    dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
+    String code = readDSL("metric-collection.datacollection");
+    Instant instant = Instant.parse("2022-07-23T08:12:40.000Z");
+    List<MetricPack> metricPacks = metricPackService.getMetricPacks(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
+        DataSourceType.DATADOG_METRICS);
+
+    DatadogMetricCVConfig datadogMetricCVConfig =
+        builderFactory.datadogMetricCVConfigBuilder()
+            .metricInfoList(Arrays.asList(DatadogMetricCVConfig.MetricInfo.builder()
+                                              .query("system.cpu.user{*}.rollup(avg, 60)")
+                                              .metric("system.cpu.user")
+                                              .identifier("my-dashboard-1")
+                                              .metricName("my-dashboard-1")
+                                              .isManualQuery(true)
+                                              .build()))
+            .build();
+    datadogMetricCVConfig.setMetricPack(metricPacks.get(0));
+    DatadogMetricsDataCollectionInfo datadogMetricsDataCollectionInfo =
+        dataCollectionInfoMapper.toDataCollectionInfo(datadogMetricCVConfig, TaskType.SLI);
+    datadogMetricsDataCollectionInfo.setCollectHostData(false);
+    DatadogConnectorDTO datadogConnectorDTO = getDatadogConnectorDTO();
+    Map<String, Object> params = datadogMetricsDataCollectionInfo.getDslEnvVariables(datadogConnectorDTO);
+
+    Map<String, String> headers = datadogMetricsDataCollectionInfo.collectionHeaders(datadogConnectorDTO);
+    RuntimeParameters runtimeParameters = RuntimeParameters.builder()
+                                              .startTime(instant.minus(Duration.ofMinutes(60)))
+                                              .endTime(instant)
+                                              .commonHeaders(headers)
+                                              .otherEnvVariables(params)
+                                              .baseUrl(BASE_URL)
+                                              .build();
+    List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
+        code, runtimeParameters, callDetails -> { System.out.println(callDetails); });
+    assertThat(timeSeriesRecords.size()).isEqualTo(60);
+    assertThat(timeSeriesRecords.get(0).getMetricName()).isEqualTo("system.cpu.user");
+    assertThat(timeSeriesRecords.get(0).getHostname()).isNull();
+    assertThat(timeSeriesRecords.get(0).getMetricIdentifier()).isEqualTo("my-dashboard-1");
+    assertThat(timeSeriesRecords.get(0).getMetricValue()).isEqualTo(10.20684609003365);
+    assertThat(timeSeriesRecords.get(0).getTxnName()).isEqualTo("dashboardName");
+    assertThat(timeSeriesRecords.get(0).getTimestamp()).isEqualTo(1658560380000L);
+    assertThat(timeSeriesRecords.get(59).getTimestamp()).isEqualTo(1658563920000L);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testExecute_datadogDSL_forServiceHealth() throws IOException {
+    DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
+    dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
+    String code = readDSL("metric-collection.datacollection");
+    Instant instant = Instant.parse("2022-07-23T08:12:40.000Z");
+    List<MetricPack> metricPacks = metricPackService.getMetricPacks(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
+        DataSourceType.DATADOG_METRICS);
+
+    DatadogMetricCVConfig datadogMetricCVConfig =
+        builderFactory.datadogMetricCVConfigBuilder()
+            .metricInfoList(Arrays.asList(DatadogMetricCVConfig.MetricInfo.builder()
+                                              .query("system.cpu.user{*}.rollup(avg, 60)")
+                                              .metric("system.cpu.user")
+                                              .identifier("my-dashboard-1")
+                                              .metricName("my-dashboard-1")
+                                              .metricType(TimeSeriesMetricType.INFRA)
+                                              .isManualQuery(true)
+                                              .build()))
+            .build();
+    datadogMetricCVConfig.setMetricPack(metricPacks.get(0));
+    DatadogMetricsDataCollectionInfo datadogMetricsDataCollectionInfo =
+        dataCollectionInfoMapper.toDataCollectionInfo(datadogMetricCVConfig, TaskType.LIVE_MONITORING);
+    datadogMetricsDataCollectionInfo.setCollectHostData(false);
+    DatadogConnectorDTO datadogConnectorDTO = getDatadogConnectorDTO();
+    Map<String, Object> params = datadogMetricsDataCollectionInfo.getDslEnvVariables(datadogConnectorDTO);
+
+    Map<String, String> headers = datadogMetricsDataCollectionInfo.collectionHeaders(datadogConnectorDTO);
+    RuntimeParameters runtimeParameters = RuntimeParameters.builder()
+                                              .startTime(instant.minus(Duration.ofMinutes(60)))
+                                              .endTime(instant)
+                                              .commonHeaders(headers)
+                                              .otherEnvVariables(params)
+                                              .baseUrl(BASE_URL)
+                                              .build();
+    List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
+        code, runtimeParameters, callDetails -> { System.out.println(callDetails); });
+    assertThat(timeSeriesRecords.size()).isEqualTo(60);
+    assertThat(timeSeriesRecords.get(0).getMetricName()).isEqualTo("system.cpu.user");
+    assertThat(timeSeriesRecords.get(0).getHostname()).isNull();
+    assertThat(timeSeriesRecords.get(0).getMetricIdentifier()).isEqualTo("my-dashboard-1");
+    assertThat(timeSeriesRecords.get(0).getMetricValue()).isEqualTo(10.20684609003365);
+    assertThat(timeSeriesRecords.get(0).getTxnName()).isEqualTo("dashboardName");
+    assertThat(timeSeriesRecords.get(0).getTimestamp()).isEqualTo(1658560380000L);
+    assertThat(timeSeriesRecords.get(59).getTimestamp()).isEqualTo(1658563920000L);
   }
 
   private String readDSL(String name) throws IOException {
@@ -141,5 +236,13 @@ public class DatadogMetricDataCollectionDSLTest extends HoverflyCVNextGenTestBas
   private String readJson(String name) throws IOException {
     return FileUtils.readFileToString(
         new File(getResourceFilePath("hoverfly/datadog/" + name)), StandardCharsets.UTF_8);
+  }
+
+  private DatadogConnectorDTO getDatadogConnectorDTO() {
+    return DatadogConnectorDTO.builder()
+        .url(BASE_URL)
+        .apiKeyRef(SecretRefData.builder().decryptedValue("****".toCharArray()).build())
+        .applicationKeyRef(SecretRefData.builder().decryptedValue("****".toCharArray()).build())
+        .build();
   }
 }

@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.APPLICATION_SETTINGS;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.CONNECTION_STRINGS;
-import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_SCRIPT;
+import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_COMMAND;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.rule.OwnerRule.ABOSII;
@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -40,7 +41,7 @@ import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.azure.config.ApplicationSettingsOutcome;
 import io.harness.cdng.azure.config.ConnectionStringsOutcome;
-import io.harness.cdng.azure.config.StartupScriptOutcome;
+import io.harness.cdng.azure.config.StartupCommandOutcome;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
@@ -55,14 +56,17 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.azure.registry.AzureRegistryType;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
 import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
+import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppFetchPreDeploymentDataRequest;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
@@ -77,6 +81,7 @@ import io.harness.filestore.service.FileStoreService;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -127,6 +132,7 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
   @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private SecretManagerClientService secretManagerClientService;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Mock private NGEncryptedDataService ngEncryptedDataService;
 
   @InjectMocks private AzureWebAppStepHelper stepHelper;
 
@@ -181,16 +187,16 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testFetchWebAppConfig() {
-    final StartupScriptOutcome startupScriptOutcome =
-        StartupScriptOutcome.builder().store(createTestGitStore()).build();
+    final StartupCommandOutcome startupCommandOutcome =
+        StartupCommandOutcome.builder().store(createTestGitStore()).build();
     final ApplicationSettingsOutcome applicationSettingsOutcome =
         ApplicationSettingsOutcome.builder().store(createTestHarnessStore()).build();
     final ConnectionStringsOutcome connectionStringsOutcome =
         ConnectionStringsOutcome.builder().store(createTestGitStore()).build();
 
-    doReturn(OptionalOutcome.builder().outcome(startupScriptOutcome).found(true).build())
+    doReturn(OptionalOutcome.builder().outcome(startupCommandOutcome).found(true).build())
         .when(outcomeService)
-        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(STARTUP_SCRIPT));
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(STARTUP_COMMAND));
     doReturn(OptionalOutcome.builder().outcome(applicationSettingsOutcome).found(true).build())
         .when(outcomeService)
         .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(APPLICATION_SETTINGS));
@@ -200,8 +206,8 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
 
     final Map<String, StoreConfig> webAppConfigs = stepHelper.fetchWebAppConfig(ambiance);
 
-    assertThat(webAppConfigs).containsKeys(STARTUP_SCRIPT, APPLICATION_SETTINGS, CONNECTION_STRINGS);
-    assertThat(webAppConfigs.get(STARTUP_SCRIPT).getKind()).isEqualTo(ManifestStoreType.GIT);
+    assertThat(webAppConfigs).containsKeys(STARTUP_COMMAND, APPLICATION_SETTINGS, CONNECTION_STRINGS);
+    assertThat(webAppConfigs.get(STARTUP_COMMAND).getKind()).isEqualTo(ManifestStoreType.GIT);
     assertThat(webAppConfigs.get(APPLICATION_SETTINGS).getKind()).isEqualTo(HARNESS_STORE_TYPE);
     assertThat(webAppConfigs.get(CONNECTION_STRINGS).getKind()).isEqualTo(ManifestStoreType.GIT);
   }
@@ -212,7 +218,7 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
   public void testFetchWebAppConfigEmpty() {
     doReturn(OptionalOutcome.builder().found(false).build())
         .when(outcomeService)
-        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(STARTUP_SCRIPT));
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(STARTUP_COMMAND));
     doReturn(OptionalOutcome.builder().found(false).build())
         .when(outcomeService)
         .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(APPLICATION_SETTINGS));
@@ -337,13 +343,29 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
         .when(fileStoreService)
         .getWithChildrenByPath(ACCOUNT_ID, null, null, FILE_STORE_TEST_PATH, true);
 
-    Map<String, String> result = stepHelper.fetchWebAppConfigsFromHarnessStore(ambiance, harnessStoreConfigs);
+    Map<String, AppSettingsFile> result = stepHelper.fetchWebAppConfigsFromHarnessStore(ambiance, harnessStoreConfigs);
 
     verify(cdExpressionResolver, times(3)).updateExpressions(eq(ambiance), any());
     assertThat(result).containsKeys("project", "org", "account");
-    assertThat(result.get("project")).isEqualTo(PROJECT_ID);
-    assertThat(result.get("org")).isEqualTo(ORG_ID);
-    assertThat(result.get("account")).isEqualTo(ACCOUNT_ID);
+    assertThat(result.get("project").fetchFileContent()).isEqualTo(PROJECT_ID);
+    assertThat(result.get("org").fetchFileContent()).isEqualTo(ORG_ID);
+    assertThat(result.get("account").fetchFileContent()).isEqualTo(ACCOUNT_ID);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testFetchWebAppConfigsFromSecretFile() {
+    final Map<String, HarnessStore> harnessStoreConfigs = ImmutableMap.of("test", createTestHarnessStoreSecretFiles());
+    final List<EncryptedDataDetail> encryptedDataDetails = emptyList();
+
+    doReturn(encryptedDataDetails).when(ngEncryptedDataService).getEncryptionDetails(any(), any());
+
+    Map<String, AppSettingsFile> result = stepHelper.fetchWebAppConfigsFromHarnessStore(ambiance, harnessStoreConfigs);
+    verify(cdExpressionResolver, times(1)).updateExpressions(eq(ambiance), any());
+    assertThat(result.get("test").getEncryptedFile().getSecretFileReference().getIdentifier())
+        .isEqualTo(FILE_STORE_TEST_PATH);
+    assertThat(result.get("test").getEncryptedDataDetails()).isSameAs(encryptedDataDetails);
   }
 
   @Test
@@ -359,12 +381,12 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
                     .build()))
             .build();
 
-    Map<String, String> result = stepHelper.getConfigValuesFromGitFetchResponse(ambiance, gitFetchResponse);
+    Map<String, AppSettingsFile> result = stepHelper.getConfigValuesFromGitFetchResponse(ambiance, gitFetchResponse);
 
     verify(engineExpressionService).renderExpression(ambiance, expectedStringContent);
 
     assertThat(result).containsKeys("test");
-    assertThat(result).containsValues(expectedStringContent);
+    assertThat(result.get("test").fetchFileContent()).isEqualTo(expectedStringContent);
   }
 
   @Test
@@ -444,22 +466,18 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
             .build();
     final ConnectorInfoDTO connectorInfoDTO =
         ConnectorInfoDTO.builder().connectorType(ConnectorType.DOCKER).connectorConfig(dockerConnectorDTO).build();
-    final List<EncryptedDataDetail> encryptedDataDetails = singletonList(EncryptedDataDetail.builder().build());
 
-    doReturn(Optional.of(dockerArtifactOutcome)).when(cdStepHelper).resolveArtifactsOutcome(ambiance);
     doReturn(connectorInfoDTO).when(cdStepHelper).getConnector("docker", ambiance);
-    doReturn(encryptedDataDetails)
-        .when(secretManagerClientService)
-        .getEncryptionDetails(any(NGAccess.class), eq(dockerConnectorDTO));
 
-    AzureArtifactConfig azureArtifactConfig = stepHelper.getPrimaryArtifactConfig(ambiance);
+    AzureArtifactConfig azureArtifactConfig = stepHelper.getPrimaryArtifactConfig(ambiance, dockerArtifactOutcome);
     assertThat(azureArtifactConfig.getArtifactType()).isEqualTo(AzureArtifactType.CONTAINER);
     AzureContainerArtifactConfig containerArtifactConfig = (AzureContainerArtifactConfig) azureArtifactConfig;
     assertThat(containerArtifactConfig.getConnectorConfig()).isEqualTo(dockerConnectorDTO);
     assertThat(containerArtifactConfig.getImage()).isEqualTo("harness");
     assertThat(containerArtifactConfig.getTag()).isEqualTo("test");
     assertThat(containerArtifactConfig.getRegistryType()).isEqualTo(AzureRegistryType.DOCKER_HUB_PUBLIC);
-    assertThat(containerArtifactConfig.getEncryptedDataDetails()).isEqualTo(encryptedDataDetails);
+    assertThat(containerArtifactConfig.getEncryptedDataDetails()).isEmpty();
+    verify(secretManagerClientService, never()).getEncryptionDetails(any(), any());
   }
 
   @Test
@@ -472,21 +490,26 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
                                                                       .tag("test")
                                                                       .type(ARTIFACTORY_REGISTRY_NAME)
                                                                       .build();
-    final ArtifactoryConnectorDTO artifactoryConnectorDTO =
-        ArtifactoryConnectorDTO.builder().auth(ArtifactoryAuthenticationDTO.builder().build()).build();
+    final ArtifactoryUsernamePasswordAuthDTO usernamePasswordAuthDTO =
+        ArtifactoryUsernamePasswordAuthDTO.builder().build();
+    final ArtifactoryConnectorDTO artifactoryConnectorDTO = ArtifactoryConnectorDTO.builder()
+                                                                .auth(ArtifactoryAuthenticationDTO.builder()
+                                                                          .authType(ArtifactoryAuthType.USER_PASSWORD)
+                                                                          .credentials(usernamePasswordAuthDTO)
+                                                                          .build())
+                                                                .build();
     final ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
                                                   .connectorType(ConnectorType.ARTIFACTORY)
                                                   .connectorConfig(artifactoryConnectorDTO)
                                                   .build();
     final List<EncryptedDataDetail> encryptedDataDetails = singletonList(EncryptedDataDetail.builder().build());
 
-    doReturn(Optional.of(artifactoryArtifactOutcome)).when(cdStepHelper).resolveArtifactsOutcome(ambiance);
     doReturn(connectorInfoDTO).when(cdStepHelper).getConnector("artifactory", ambiance);
     doReturn(encryptedDataDetails)
         .when(secretManagerClientService)
-        .getEncryptionDetails(any(NGAccess.class), eq(artifactoryConnectorDTO));
+        .getEncryptionDetails(any(NGAccess.class), eq(usernamePasswordAuthDTO));
 
-    AzureArtifactConfig azureArtifactConfig = stepHelper.getPrimaryArtifactConfig(ambiance);
+    AzureArtifactConfig azureArtifactConfig = stepHelper.getPrimaryArtifactConfig(ambiance, artifactoryArtifactOutcome);
     assertThat(azureArtifactConfig.getArtifactType()).isEqualTo(AzureArtifactType.CONTAINER);
     AzureContainerArtifactConfig containerArtifactConfig = (AzureContainerArtifactConfig) azureArtifactConfig;
     assertThat(containerArtifactConfig.getConnectorConfig()).isEqualTo(artifactoryConnectorDTO);
@@ -512,6 +535,12 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
     return HarnessStore.builder()
         .files(ParameterField.createValueField(
             singletonList(scope.equals("project") ? FILE_STORE_TEST_PATH : scope + ":" + FILE_STORE_TEST_PATH)))
+        .build();
+  }
+
+  private HarnessStore createTestHarnessStoreSecretFiles() {
+    return HarnessStore.builder()
+        .secretFiles(ParameterField.createValueField(singletonList(FILE_STORE_TEST_PATH)))
         .build();
   }
 

@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 git fetch origin $1:$1
 git checkout $1
 echo $2
@@ -20,7 +25,7 @@ CE_NEXTGEN_T=0
 bazel build ${BAZEL_ARGS} -- //340-ce-nextgen:module_deploy.jar || CE_NEXTGEN_T=$?
 echo "BUILD PIPELINE_SERVICE"
 PIPELINE_SERVICE_T=0
-bazel build ${BAZEL_ARGS} -- //800-pipeline-service:module_deploy.jar || PIPELINE_SERVICE_T=$?
+bazel build ${BAZEL_ARGS} -- //pipeline-service/service:module_deploy.jar || PIPELINE_SERVICE_T=$?
 echo "BUILD TEMPLATE_SERVICE"
 TEMPLATE_SERVICE_T=0
 bazel build ${BAZEL_ARGS} -- //840-template-service:module_deploy.jar || TEMPLATE_SERVICE_T=$?
@@ -40,7 +45,7 @@ touch target/120_target.json
 touch target/290_target.json
 touch target/310_target.json
 touch target/340_target.json
-touch target/800_target.json
+touch target/pipeline_target.json
 touch target/840_target.json
 touch target/platform_target.json
 touch target/access_target.json
@@ -76,7 +81,7 @@ fi
 if [ $PIPELINE_SERVICE_T -eq 0 ]
 then
     echo "====Generating Pipeline-Service Target-Branch Api Spec===="
-    java -jar bazel-bin/800-pipeline-service/module_deploy.jar generate-openapi-spec target/800_target.json || PIPELINE_SERVICE_T=$?
+    java -jar bazel-bin/pipeline-service/module_deploy.jar generate-openapi-spec target/pipeline_target.json || PIPELINE_SERVICE_T=$?
 fi
 
 if [ $TEMPLATE_SERVICE_T -eq 0 ]
@@ -152,7 +157,7 @@ if [ $PIPELINE_SERVICE_T -eq 0 ]
 then
     echo "BUILD PIPELINE_SERVICE"
     PIPELINE_SERVICE_S=0
-    bazel build ${BAZEL_ARGS} -- //800-pipeline-service:module_deploy.jar || PIPELINE_SERVICE_S=$?
+    bazel build ${BAZEL_ARGS} -- //pipeline-service/service:module_deploy.jar || PIPELINE_SERVICE_S=$?
 else
     PIPELINE_SERVICE_S=1
 fi
@@ -199,7 +204,7 @@ touch target/120_source.json
 touch target/290_source.json
 touch target/310_source.json
 touch target/340_source.json
-touch target/800_source.json
+touch target/pipeline_source.json
 touch target/840_source.json
 touch target/platform_source.json
 touch target/access_source.json
@@ -235,7 +240,7 @@ fi
 if [ $PIPELINE_SERVICE_S -eq 0 ]
 then
     echo "====Generating Pipeline-Service Source-Branch Api Spec===="
-    java -jar bazel-bin/800-pipeline-service/module_deploy.jar generate-openapi-spec target/800_source.json || PIPELINE_SERVICE_S=$?
+    java -jar bazel-bin/pipeline-service/module_deploy.jar generate-openapi-spec target/pipeline_source.json || PIPELINE_SERVICE_S=$?
 fi
 
 if [ $TEMPLATE_SERVICE_S -eq 0 ]
@@ -266,6 +271,7 @@ exit_code=0
 issues=""
 comp=""
 other=""
+success=""
 echo "=============API BACKWARD COMPATIBILITY CHECKS================"
 rc=0
 echo 120-NG-MANAGER
@@ -281,6 +287,8 @@ then
         else
             other+="120-NG-MANAGER "
         fi
+    else
+        success+="120-NG-MANAGER "
     fi
 else
     comp+="120-NG-MANAGER "
@@ -300,6 +308,8 @@ then
         else
             other+="290-DASHBOARD-SERVICE "
         fi
+    else
+        success+="290-DASHBOARD-SERVICE "    
     fi
 else
     comp+="290-DASHBOARD-SERVICE "
@@ -319,6 +329,8 @@ then
         else
             other+="310-CI-MANAGER "
         fi
+    else
+        success+="310-CI-MANAGER "
     fi
 else
     comp+="310-CI-MANAGER "
@@ -338,28 +350,32 @@ then
         else
             other+="340-CE-NEXTGEN "
         fi
+    else
+        success+="340-CE-NEXTGEN "
     fi
 else
     comp+="340-CE-NEXTGEN "
 fi
 
 rc=0
-echo 800-PIPELINE-SERVICE
+echo PIPELINE-SERVICE
 if [[ $PIPELINE_SERVICE_S  -eq 0 ]] && [[ $PIPELINE_SERVICE_T  -eq 0 ]]
 then
-    java -jar $3 target/800_target.json target/800_source.json --fail-on-incompatible || rc=$?
+    java -jar $3 target/pipeline_target.json target/pipeline_source.json --fail-on-incompatible || rc=$?
     if [ $rc -ne 0 ]
     then
         if [ $rc -eq 1 ]
         then
             exit_code=1
-            issues+="800-PIPELINE-SERVICE "
+            issues+="PIPELINE-SERVICE "
         else
-            other+="800-PIPELINE-SERVICE "
+            other+="PIPELINE-SERVICE "
         fi
+    else
+        success+="PIPELINE-SERVICE "
     fi
 else
-    comp+="800-PIPELINE-SERVICE "
+    comp+="PIPELINE-SERVICE "
 fi
 
 rc=0
@@ -376,6 +392,8 @@ then
         else
             other+="840-TEMPLATE-SERVICE "
         fi
+    else
+        success+="840-TEMPLATE-SERVICE "    
     fi
 else
     comp+="840-TEMPLATE-SERVICE "
@@ -395,6 +413,8 @@ then
         else
             other+="PLATFORM-SERVICE "
         fi
+    else
+        success+="PLATFORM-SERVICE " 
     fi
 else
     comp+="PLATFORM-SERVICE "
@@ -414,6 +434,8 @@ then
         else
             other+="ACCESS-CONTROL "
         fi
+    else
+        success+="ACCESS-CONTROL "
     fi
 else
     comp+="ACCESS-CONTROL "
@@ -433,14 +455,15 @@ then
         else
             other+="315-STO-MANAGER "
         fi
+    else
+        success+="315-STO-MANAGER "    
     fi
 else
     comp+="315-STO-MANAGER "
 fi
 
+echo "API Backward Compatible Services : "$success >> success.txt
+echo "API Backward Incompatibility issues in services : "$issues >> issues.txt
+echo "Compilation Failures : "$comp $other >> otherissues.txt
 
-echo "API Backward Incompatibility issues in services : "$issues
-echo "Compilation Failure : "$comp
-echo "OpenApiDiff Failure : "$other
 exit $exit_code
-

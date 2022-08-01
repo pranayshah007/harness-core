@@ -44,9 +44,9 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeSpecBuilder;
 import io.kubernetes.client.openapi.models.V1StorageClass;
 import io.kubernetes.client.openapi.models.V1StorageClassBuilder;
 import io.kubernetes.client.util.ClientBuilder;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.Map;
-import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -64,8 +64,8 @@ public class PVWatcherTest extends CategoryTest {
   private PVEvent pvEvent;
   private ClusterDetails clusterDetails;
 
-  final DateTime TIMESTAMP = DateTime.now();
-  final DateTime DELETION_TIMESTAMP = TIMESTAMP.plusMinutes(5);
+  final OffsetDateTime TIMESTAMP = OffsetDateTime.now();
+  final OffsetDateTime DELETION_TIMESTAMP = TIMESTAMP.plusMinutes(5);
 
   private static final String SC_NAME = "storage_class_name";
   private static final String SC_URL = "^/apis/storage.k8s.io/v1/storageclasses/";
@@ -114,7 +114,7 @@ public class PVWatcherTest extends CategoryTest {
                   .setCloudProviderId(clusterDetails.getCloudProviderId())
                   .setClusterId(clusterDetails.getClusterId())
                   .setKubeSystemUid(clusterDetails.getKubeSystemUid())
-                  .setTimestamp(HTimestamps.fromMillis(TIMESTAMP.getMillis()))
+                  .setTimestamp(HTimestamps.fromMillis(TIMESTAMP.toInstant().toEpochMilli()))
                   .setPvName(samplePV.getMetadata().getName())
                   .setPvUid(samplePV.getMetadata().getUid())
                   .build();
@@ -123,7 +123,7 @@ public class PVWatcherTest extends CategoryTest {
                  .setClaimNamespace(samplePV.getSpec().getClaimRef().getNamespace())
                  .setClaimName(samplePV.getSpec().getClaimRef().getName())
                  .setPvType(PV_TYPE_GCE_PERSISTENT_DISK)
-                 .setCreationTimestamp(HTimestamps.fromMillis(TIMESTAMP.getMillis()))
+                 .setCreationTimestamp(HTimestamps.fromMillis(TIMESTAMP.toInstant().toEpochMilli()))
                  .setCapacity(K8sResourceUtils.getStorageCapacity(samplePV.getSpec()))
                  .setPvUid(samplePV.getMetadata().getUid())
                  .setPvName(samplePV.getMetadata().getName())
@@ -198,7 +198,7 @@ public class PVWatcherTest extends CategoryTest {
     assertThat(captor.getAllValues().get(0))
         .isEqualTo(PVEvent.newBuilder(pvEvent)
                        .setEventType(PVEvent.EventType.EVENT_TYPE_STOP)
-                       .setTimestamp(HTimestamps.fromMillis(DELETION_TIMESTAMP.getMillis()))
+                       .setTimestamp(HTimestamps.fromMillis(DELETION_TIMESTAMP.toInstant().toEpochMilli()))
                        .build());
   }
 

@@ -33,7 +33,7 @@ public class DelegateUpgraderServiceImpl implements DelegateUpgraderService {
 
   @Override
   public UpgradeCheckResult getDelegateImageTag(String accountId, String currentDelegateImageTag) {
-    String newDelegateImageTag = delegateVersionService.getDelegateImageTag(accountId, DelegateType.KUBERNETES);
+    String newDelegateImageTag = delegateVersionService.getImmutableDelegateImageTag(accountId);
     final boolean shouldUpgrade = !currentDelegateImageTag.equals(newDelegateImageTag);
     return new UpgradeCheckResult(shouldUpgrade ? newDelegateImageTag : currentDelegateImageTag, shouldUpgrade);
   }

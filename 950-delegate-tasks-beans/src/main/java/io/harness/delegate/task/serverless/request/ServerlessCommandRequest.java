@@ -30,8 +30,10 @@ import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
+import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
+import io.harness.delegate.task.serverless.ServerlessS3ArtifactConfig;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -90,6 +92,16 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
       capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
           ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getConnectorDTO().getConnectorConfig(),
           maskingEvaluator));
+    } else if (serverlessArtifactConfig instanceof ServerlessS3ArtifactConfig) {
+      AwsConnectorDTO connectorConfigDTO = (AwsConnectorDTO) ((ServerlessS3ArtifactConfig) serverlessArtifactConfig)
+                                               .getConnectorDTO()
+                                               .getConnectorConfig();
+      capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
+    } else if (serverlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
+      AwsConnectorDTO connectorConfigDTO = (AwsConnectorDTO) ((ServerlessEcrArtifactConfig) serverlessArtifactConfig)
+                                               .getConnectorDTO()
+                                               .getConnectorConfig();
+      capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
     }
 
     if (sidecarServerlessArtifactConfigs != null) {
@@ -100,6 +112,20 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
                   .getConnectorDTO()
                   .getConnectorConfig(),
               maskingEvaluator));
+        } else if (sidecarServerlessArtifactConfig instanceof ServerlessS3ArtifactConfig) {
+          AwsConnectorDTO connectorConfigDTO =
+              (AwsConnectorDTO) ((ServerlessS3ArtifactConfig) sidecarServerlessArtifactConfig)
+                  .getConnectorDTO()
+                  .getConnectorConfig();
+          capabilities.addAll(
+              AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
+        } else if (sidecarServerlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
+          AwsConnectorDTO connectorConfigDTO =
+              (AwsConnectorDTO) ((ServerlessEcrArtifactConfig) sidecarServerlessArtifactConfig)
+                  .getConnectorDTO()
+                  .getConnectorConfig();
+          capabilities.addAll(
+              AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
         }
       }
     }

@@ -25,17 +25,18 @@ import io.harness.delegate.task.azure.AzureTestUtils;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceResourceUtilities;
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDockerDeploymentContext;
+import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServicePackageDeploymentContext;
 import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppFetchPreDeploymentDataRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppFetchPreDeploymentDataResponse;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppRequestResponse;
+import io.harness.delegate.task.azure.artifact.AzureRegistrySettingsAdapter;
 import io.harness.delegate.task.azure.common.AzureAppServiceService;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.rule.Owner;
 
 import software.wings.delegatetasks.azure.AzureSecretHelper;
 
-import java.util.Collections;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -52,6 +53,7 @@ public class AzureWebAppFetchPreDeploymentDataRequestHandlerTest extends Categor
   @Mock protected AzureSecretHelper azureSecretHelper;
   @Mock private AzureAppServiceResourceUtilities azureResourceUtilities;
   @Mock private AzureAppServiceService azureAppServiceService;
+  @Mock private AzureRegistrySettingsAdapter azureRegistrySettingsAdapter;
 
   @InjectMocks private AzureWebAppFetchPreDeploymentDataRequestHandler requestHandler;
 
@@ -62,8 +64,6 @@ public class AzureWebAppFetchPreDeploymentDataRequestHandlerTest extends Categor
     final AzureWebAppFetchPreDeploymentDataRequest request =
         AzureWebAppFetchPreDeploymentDataRequest.builder()
             .accountId("accountId")
-            .applicationSettings(Collections.emptyList())
-            .connectionStrings(Collections.emptyList())
             .artifact(AzureTestUtils.createTestContainerArtifactConfig())
             .infraDelegateConfig(AzureTestUtils.createTestWebAppInfraDelegateConfig())
             .build();
@@ -80,6 +80,32 @@ public class AzureWebAppFetchPreDeploymentDataRequestHandlerTest extends Categor
     verify(azureSecretHelper, times(1))
         .encryptAzureAppServicePreDeploymentData(any(AzureAppServicePreDeploymentData.class), eq("accountId"));
 
+    assertThat(response).isInstanceOf(AzureWebAppFetchPreDeploymentDataResponse.class);
+    AzureWebAppFetchPreDeploymentDataResponse preDeploymentDataResponse =
+        (AzureWebAppFetchPreDeploymentDataResponse) response;
+    assertThat(preDeploymentDataResponse.getPreDeploymentData()).isSameAs(preDeploymentData);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testExecutePackage() {
+    final AzureWebAppFetchPreDeploymentDataRequest request =
+        AzureWebAppFetchPreDeploymentDataRequest.builder()
+            .accountId("accountId")
+            .artifact(AzureTestUtils.createTestPackageArtifactConfig())
+            .infraDelegateConfig(AzureTestUtils.createTestWebAppInfraDelegateConfig())
+            .build();
+
+    final AzureAppServicePreDeploymentData preDeploymentData =
+        AzureTestUtils.buildTestPreDeploymentData(AppServiceDeploymentProgress.DEPLOY_TO_SLOT);
+    final AzureConfig azureConfig = AzureTestUtils.createTestAzureConfig();
+
+    doReturn(preDeploymentData)
+        .when(azureAppServiceService)
+        .getPackageDeploymentPreDeploymentData(any(AzureAppServicePackageDeploymentContext.class));
+
+    AzureWebAppRequestResponse response = requestHandler.execute(request, azureConfig, logCallbackProvider);
     assertThat(response).isInstanceOf(AzureWebAppFetchPreDeploymentDataResponse.class);
     AzureWebAppFetchPreDeploymentDataResponse preDeploymentDataResponse =
         (AzureWebAppFetchPreDeploymentDataResponse) response;

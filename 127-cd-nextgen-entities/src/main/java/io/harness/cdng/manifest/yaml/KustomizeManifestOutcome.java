@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestType;
+import io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.pms.yaml.ParameterField;
 
@@ -33,6 +34,7 @@ public class KustomizeManifestOutcome implements ManifestOutcome {
   String identifier;
   String type = ManifestType.Kustomize;
   StoreConfig store;
+  ParameterField<OverlayConfiguration> overlayConfiguration;
   ParameterField<String> pluginPath;
   ParameterField<Boolean> skipResourceVersioning;
   ParameterField<List<String>> patchesPaths;

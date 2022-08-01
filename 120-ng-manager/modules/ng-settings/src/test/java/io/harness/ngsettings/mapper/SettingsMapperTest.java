@@ -45,7 +45,6 @@ public class SettingsMapperTest extends CategoryTest {
   public void setUp() {
     MockitoAnnotations.openMocks(this);
   }
-
   @Test
   @Owner(developers = NISHANT)
   @Category(UnitTests.class)
@@ -60,6 +59,7 @@ public class SettingsMapperTest extends CategoryTest {
     String defaultValue = randomAlphabetic(10);
     SettingValueType valueType = SettingValueType.STRING;
     Set<String> allowedValues = new HashSet<>(Arrays.asList("a", "b"));
+    String groupIdentifier = randomAlphabetic(10);
     Setting setting = Setting.builder()
                           .identifier(identifier)
                           .accountIdentifier(accountIdentifier)
@@ -69,6 +69,7 @@ public class SettingsMapperTest extends CategoryTest {
                           .value(value)
                           .valueType(SettingValueType.NUMBER)
                           .allowOverrides(true)
+                          .groupIdentifier(groupIdentifier)
                           .build();
     SettingConfiguration settingConfiguration = SettingConfiguration.builder()
                                                     .identifier(randomAlphabetic(10))
@@ -77,10 +78,11 @@ public class SettingsMapperTest extends CategoryTest {
                                                     .allowedValues(allowedValues)
                                                     .defaultValue(defaultValue)
                                                     .valueType(valueType)
+                                                    .groupIdentifier(groupIdentifier)
                                                     .build();
-    SettingDTO settingDTO = settingsMapper.writeSettingDTO(setting, settingConfiguration);
+    SettingDTO settingDTO = settingsMapper.writeSettingDTO(setting, settingConfiguration, true);
     assertSettingDTOPropertiesAndValue(identifier, name, orgIdentifier, projectIdentifier, category, value,
-        defaultValue, valueType, allowedValues, true, SettingSource.PROJECT, settingDTO);
+        defaultValue, valueType, allowedValues, true, SettingSource.PROJECT, true, settingDTO);
   }
 
   @Test
@@ -93,17 +95,20 @@ public class SettingsMapperTest extends CategoryTest {
     SettingValueType valueType = SettingValueType.STRING;
     Set<String> allowedValues = new HashSet<>(Arrays.asList("a", "b"));
     String defaultValue = randomAlphabetic(10);
+    String groupIdentifier = randomAlphabetic(10);
     SettingConfiguration settingConfiguration = SettingConfiguration.builder()
                                                     .name(name)
                                                     .identifier(identifier)
                                                     .category(category)
                                                     .allowedValues(allowedValues)
+                                                    .allowOverrides(true)
                                                     .defaultValue(defaultValue)
                                                     .valueType(valueType)
+                                                    .groupIdentifier(groupIdentifier)
                                                     .build();
-    SettingDTO settingDTO = settingsMapper.writeSettingDTO(settingConfiguration);
+    SettingDTO settingDTO = settingsMapper.writeSettingDTO(settingConfiguration, true);
     assertSettingDTOPropertiesAndValue(identifier, name, null, null, category, defaultValue, defaultValue, valueType,
-        allowedValues, true, SettingSource.DEFAULT, settingDTO);
+        allowedValues, true, SettingSource.DEFAULT, true, settingDTO);
   }
 
   @Test
@@ -115,8 +120,8 @@ public class SettingsMapperTest extends CategoryTest {
     Setting setting = Setting.builder().identifier(identifier).lastModifiedAt(timestamp).build();
     SettingConfiguration settingConfiguration = SettingConfiguration.builder().identifier(identifier).build();
     SettingDTO settingDTO = SettingDTO.builder().identifier(identifier).build();
-    when(settingsMapper.writeSettingDTO(setting, settingConfiguration)).thenReturn(settingDTO);
-    SettingResponseDTO settingResponseDTO = settingsMapper.writeSettingResponseDTO(setting, settingConfiguration);
+    when(settingsMapper.writeSettingDTO(setting, settingConfiguration, true)).thenReturn(settingDTO);
+    SettingResponseDTO settingResponseDTO = settingsMapper.writeSettingResponseDTO(setting, settingConfiguration, true);
     assertThat(settingResponseDTO)
         .hasFieldOrPropertyWithValue("setting", settingDTO)
         .hasFieldOrPropertyWithValue("lastModifiedAt", timestamp);
@@ -129,8 +134,8 @@ public class SettingsMapperTest extends CategoryTest {
     String identifier = randomAlphabetic(10);
     SettingConfiguration settingConfiguration = SettingConfiguration.builder().identifier(identifier).build();
     SettingDTO settingDTO = SettingDTO.builder().identifier(identifier).build();
-    when(settingsMapper.writeSettingDTO(settingConfiguration)).thenReturn(settingDTO);
-    SettingResponseDTO settingResponseDTO = settingsMapper.writeSettingResponseDTO(settingConfiguration);
+    when(settingsMapper.writeSettingDTO(settingConfiguration, true)).thenReturn(settingDTO);
+    SettingResponseDTO settingResponseDTO = settingsMapper.writeSettingResponseDTO(settingConfiguration, true);
     assertThat(settingResponseDTO)
         .hasFieldOrPropertyWithValue("setting", settingDTO)
         .hasFieldOrPropertyWithValue("lastModifiedAt", null);
@@ -151,6 +156,7 @@ public class SettingsMapperTest extends CategoryTest {
     String defaultValue = randomAlphabetic(10);
     SettingValueType valueType = SettingValueType.STRING;
     Set<String> allowedValues = new HashSet<>(Arrays.asList("a", "b"));
+    String groupIdentifier = randomAlphabetic(10);
     Setting setting = Setting.builder()
                           .identifier(identifier)
                           .accountIdentifier(accountIdentifier)
@@ -160,6 +166,7 @@ public class SettingsMapperTest extends CategoryTest {
                           .value(value)
                           .valueType(SettingValueType.NUMBER)
                           .allowOverrides(true)
+                          .groupIdentifier(groupIdentifier)
                           .build();
     SettingConfiguration settingConfiguration = SettingConfiguration.builder()
                                                     .identifier(randomAlphabetic(10))
@@ -168,6 +175,7 @@ public class SettingsMapperTest extends CategoryTest {
                                                     .allowedValues(allowedValues)
                                                     .defaultValue(defaultValue)
                                                     .valueType(valueType)
+                                                    .groupIdentifier(groupIdentifier)
                                                     .build();
     SettingRequestDTO settingRequestDTO = SettingRequestDTO.builder()
                                               .identifier(identifier)
@@ -175,9 +183,9 @@ public class SettingsMapperTest extends CategoryTest {
                                               .value(newValue)
                                               .updateType(SettingUpdateType.UPDATE)
                                               .build();
-    SettingDTO newSettingDTO = settingsMapper.writeNewDTO(setting, settingRequestDTO, settingConfiguration);
+    SettingDTO newSettingDTO = settingsMapper.writeNewDTO(setting, settingRequestDTO, settingConfiguration, true);
     assertSettingDTOPropertiesAndValue(identifier, name, orgIdentifier, projectIdentifier, category, newValue,
-        defaultValue, valueType, allowedValues, false, null, newSettingDTO);
+        defaultValue, valueType, allowedValues, false, SettingSource.PROJECT, true, newSettingDTO);
   }
 
   @Test
@@ -193,6 +201,7 @@ public class SettingsMapperTest extends CategoryTest {
     String defaultValue = randomAlphabetic(10);
     SettingValueType valueType = SettingValueType.STRING;
     Set<String> allowedValues = new HashSet<>(Arrays.asList("a", "b"));
+    String groupIdentifier = randomAlphabetic(10);
     SettingConfiguration settingConfiguration = SettingConfiguration.builder()
                                                     .identifier(identifier)
                                                     .name(name)
@@ -200,6 +209,7 @@ public class SettingsMapperTest extends CategoryTest {
                                                     .allowedValues(allowedValues)
                                                     .defaultValue(defaultValue)
                                                     .valueType(valueType)
+                                                    .groupIdentifier(groupIdentifier)
                                                     .build();
     SettingRequestDTO settingRequestDTO = SettingRequestDTO.builder()
                                               .identifier(identifier)
@@ -208,14 +218,15 @@ public class SettingsMapperTest extends CategoryTest {
                                               .updateType(SettingUpdateType.UPDATE)
                                               .build();
     SettingDTO newSettingDTO =
-        settingsMapper.writeNewDTO(orgIdentifier, projectIdentifier, settingRequestDTO, settingConfiguration);
+        settingsMapper.writeNewDTO(orgIdentifier, projectIdentifier, settingRequestDTO, settingConfiguration, true);
     assertSettingDTOPropertiesAndValue(identifier, name, orgIdentifier, projectIdentifier, category, newValue,
-        defaultValue, valueType, allowedValues, false, null, newSettingDTO);
+        defaultValue, valueType, allowedValues, false, null, true, newSettingDTO);
   }
 
   private void assertSettingDTOPropertiesAndValue(String identifier, String name, String orgIdentifier,
       String projectIdentifier, SettingCategory category, String value, String defaultValue, SettingValueType valueType,
-      Set<String> allowedValues, boolean allowOverrides, SettingSource settingSource, SettingDTO settingDTO) {
+      Set<String> allowedValues, boolean allowOverrides, SettingSource settingSource, Boolean isSettingEditable,
+      SettingDTO settingDTO) {
     assertThat(settingDTO)
         .hasFieldOrPropertyWithValue("identifier", identifier)
         .hasFieldOrPropertyWithValue("name", name)
@@ -227,7 +238,8 @@ public class SettingsMapperTest extends CategoryTest {
         .hasFieldOrPropertyWithValue("valueType", valueType)
         .hasFieldOrPropertyWithValue("allowedValues", allowedValues)
         .hasFieldOrPropertyWithValue("allowOverrides", allowOverrides)
-        .hasFieldOrPropertyWithValue("settingSource", settingSource);
+        .hasFieldOrPropertyWithValue("settingSource", settingSource)
+        .hasFieldOrPropertyWithValue("isSettingEditable", isSettingEditable);
   }
 
   @Test

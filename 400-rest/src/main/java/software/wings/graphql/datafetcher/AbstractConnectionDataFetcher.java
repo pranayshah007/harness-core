@@ -42,7 +42,7 @@ public abstract class AbstractConnectionDataFetcher<T, P> extends AbstractObject
       return fetchConnection(parameters);
     } catch (WingsException ex) {
       if (ErrorCode.ACCESS_DENIED == ex.getCode()) {
-        log.warn("User doesn't have access to resource or no entities exist in that app");
+        log.warn("User doesn't have access to resource or no entities exist in that app", ex);
         return null;
       }
       throw ex;

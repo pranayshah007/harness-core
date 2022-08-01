@@ -61,6 +61,7 @@ import com.microsoft.azure.management.compute.VirtualMachineScaleSetVMs;
 import com.microsoft.azure.management.compute.VirtualMachineScaleSets;
 import com.microsoft.azure.management.compute.VirtualMachines;
 import com.microsoft.azure.management.network.LoadBalancer;
+import com.microsoft.azure.management.network.PublicIPAddress;
 import com.microsoft.azure.management.resources.ResourceGroup;
 import com.microsoft.azure.management.resources.ResourceGroups;
 import com.microsoft.azure.management.resources.Subscription;
@@ -477,7 +478,11 @@ public class AzureComputeClientImplTest extends CategoryTest {
 
   private VirtualMachine aVirtualMachineWithName(String name) {
     final VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
+    final PublicIPAddress publicIPAddress = Mockito.mock(PublicIPAddress.class);
+    Mockito.when(publicIPAddress.ipAddress()).thenReturn(name);
+
     Mockito.when(virtualMachine.name()).thenReturn(name);
+    Mockito.when(virtualMachine.getPrimaryPublicIPAddress()).thenReturn(publicIPAddress);
     Mockito.when(virtualMachine.powerState()).thenReturn(PowerState.RUNNING);
     Mockito.when(virtualMachine.osProfile())
         .thenReturn(new OSProfile().withLinuxConfiguration(new LinuxConfiguration()));

@@ -118,7 +118,7 @@ public abstract class BaseHandler<ApiType extends KubernetesObject> implements R
       V1ObjectMeta objectMeta = getMetadata(resource);
       Instant creationTimestamp = Optional.ofNullable(objectMeta)
                                       .map(V1ObjectMeta::getCreationTimestamp)
-                                      .map(dt -> Instant.ofEpochMilli(dt.getMillis()))
+                                      .map(dt -> Instant.ofEpochMilli(dt.toInstant().toEpochMilli()))
                                       .orElse(Instant.EPOCH);
       Timestamp occurredAt = HTimestamps.fromInstant(creationTimestamp);
       publishWatchEvent(K8sWatchEvent.newBuilder()

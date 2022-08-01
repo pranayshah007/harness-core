@@ -64,7 +64,7 @@ FILE_EXTENSIONS=$(awk 'NR>1 {print $1}' "$SUPPORTED_EXTENSIONS_FILE" | paste -s 
 query_source_files '//120-ng-manager/container:ng_manager'             > 120.txt
 query_source_files '//260-delegate:module_deploy.jar'                  > 260.txt
 query_source_files '//360-cg-manager/container:manager'                > 360.txt
-query_source_files '//800-pipeline-service/container:pipeline_service' > 800.txt
+query_source_files '//pipeline-service/container:pipeline_service' > 800.txt
 query_source_files '//platform-service/build/container:platform_service'     > 820.txt
 query_source_files '//960-watcher:module_deploy.jar'                   > 960.txt
 

@@ -145,7 +145,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(ngFile));
     when(fileFailsafeService.updateAndPublish(any(), any())).thenReturn(fileDto);
 
-    FileDTO result = fileStoreService.update(fileDto, getStreamWithDummyContent(), "identifier1");
+    FileDTO result = fileStoreService.update(fileDto, getStreamWithDummyContent());
 
     assertThat(result).isNotNull();
     assertThat(result.getName()).isEqualTo("updatedName");
@@ -165,7 +165,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     when(fileFailsafeService.updateAndPublish(any(), any())).thenReturn(newFolder);
     when(fileStructureService.listFolderChildrenByPath(any())).thenReturn(getNgFiles());
 
-    FileDTO result = fileStoreService.update(newFolder, null, "identifier1");
+    FileDTO result = fileStoreService.update(newFolder, null);
 
     assertThat(result).isNotNull();
     assertThat(result.getName()).isEqualTo(newFolder.getName());
@@ -180,7 +180,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
              any(), any(), any(), any()))
         .thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> fileStoreService.update(createFileDto(), null, "identifier1"))
+    assertThatThrownBy(() -> fileStoreService.update(createFileDto(), null))
         .isInstanceOf(InvalidArgumentsException.class)
         .hasMessage(
             "Not found file/folder with identifier [identifier1], accountIdentifier [null], orgIdentifier [null] and projectIdentifier [null]");
@@ -674,7 +674,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
         .thenReturn(getNgFiles());
 
     FolderNodeDTO populatedFolderNodeDTO =
-        fileStoreService.listFolderNodes(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folderNodeDTO);
+        fileStoreService.listFolderNodes(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folderNodeDTO, null);
 
     assertThat(populatedFolderNodeDTO).isNotNull();
     assertThat(populatedFolderNodeDTO.getName()).isEqualTo(FOLDER_NAME);
@@ -702,7 +702,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
         .thenReturn(getNgFiles());
 
     FolderNodeDTO populatedFolderNodeDTO =
-        fileStoreService.listFolderNodes(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folderNodeDTO);
+        fileStoreService.listFolderNodes(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folderNodeDTO, null);
 
     assertThat(populatedFolderNodeDTO).isNotNull();
     assertThat(populatedFolderNodeDTO.getName()).isEqualTo(ROOT_FOLDER_NAME);
@@ -1081,6 +1081,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
         .identifier("identifier1")
         .name("updatedName")
         .description("updatedDescription")
+        .fileUsage(FileUsage.MANIFEST_FILE)
         .build();
   }
 

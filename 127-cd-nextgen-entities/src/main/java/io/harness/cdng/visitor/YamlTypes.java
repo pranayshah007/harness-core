@@ -123,7 +123,7 @@ public interface YamlTypes {
   String INPUTS = "inputs";
   String REF = "ref";
   String JENKINS_BUILD = StepSpecTypeConstants.JENKINS_BUILD;
-  String STARTUP_SCRIPT = "startupScript";
+  String STARTUP_COMMAND = "startupCommand";
   String APPLICATION_SETTINGS = "applicationSettings";
   String CONNECTION_STRINGS = "connectionStrings";
 }

@@ -22,6 +22,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.connector.ConnectorInfoDTO;
@@ -34,6 +35,7 @@ import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
+import io.harness.delegate.task.serverless.ServerlessS3ArtifactConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -139,6 +141,18 @@ public class ServerlessEntityHelper {
           .primaryArtifact(ecrArtifactOutcome.isPrimaryArtifact())
           .tag(ecrArtifactOutcome.getTag())
           .type(ecrArtifactOutcome.getType())
+          .build();
+    } else if (artifactOutcome instanceof S3ArtifactOutcome) {
+      S3ArtifactOutcome s3ArtifactOutcome = (S3ArtifactOutcome) artifactOutcome;
+      connectorDTO = getConnectorInfoDTO(s3ArtifactOutcome.getConnectorRef(), ngAccess);
+      return ServerlessS3ArtifactConfig.builder()
+          .bucketName(s3ArtifactOutcome.getBucketName())
+          .filePath(s3ArtifactOutcome.getFilePath())
+          .identifier(s3ArtifactOutcome.getIdentifier())
+          .connectorDTO(connectorDTO)
+          .encryptedDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
+          .primaryArtifact(s3ArtifactOutcome.isPrimaryArtifact())
+          .type(s3ArtifactOutcome.getType())
           .build();
     } else {
       throw new UnsupportedOperationException(
