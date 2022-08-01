@@ -13,7 +13,7 @@ import static io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper.
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
-import io.harness.delegate.beans.connector.customseceretmanager.CustomSecretManagerDTO;
+import io.harness.delegate.beans.connector.customseceretmanager.CustomSecretManagerConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.expression.ExpressionEvaluator;
@@ -27,13 +27,13 @@ import lombok.Value;
 @Value
 @Builder
 public class CustomSecretManagerValidationParams implements ConnectorValidationParams, ExecutionCapabilityDemander {
-  CustomSecretManagerDTO customSecretManagerDTO;
+  CustomSecretManagerConnectorDTO customSecretManagerConnectorDTO;
   String connectorName;
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> executionCapabilities = new ArrayList<>();
-    if (customSecretManagerDTO != null) {
-      populateDelegateSelectorCapability(executionCapabilities, customSecretManagerDTO.getDelegateSelectors());
+    if (customSecretManagerConnectorDTO != null) {
+      populateDelegateSelectorCapability(executionCapabilities, customSecretManagerConnectorDTO.getDelegateSelectors());
     }
     return executionCapabilities;
   }

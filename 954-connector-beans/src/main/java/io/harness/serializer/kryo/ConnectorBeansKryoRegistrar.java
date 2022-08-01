@@ -13,6 +13,7 @@ import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.TemplateInfo;
 import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsAuthType;
 import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsConnectorDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthCredentialsDTO;
@@ -72,6 +73,7 @@ import io.harness.delegate.beans.connector.cek8s.CEKubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthConnectorDTO;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthKeyAndValue;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthMethod;
+import io.harness.delegate.beans.connector.customseceretmanager.CustomSecretManagerConnectorDTO;
 import io.harness.delegate.beans.connector.datadog.DatadogConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthType;
@@ -281,6 +283,7 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(NexusAuthCredentialsDTO.class, 19502);
     kryo.register(NexusConstants.class, 19503);
     kryo.register(VaultConnectorDTO.class, 19506);
+    kryo.register(CustomSecretManagerConnectorDTO.class, 19554);
     kryo.register(GithubUsernameTokenDTO.class, 19511);
     kryo.register(GitlabUsernameTokenDTO.class, 19512);
     kryo.register(GitlabAuthenticationDTO.class, 19520);
@@ -406,5 +409,7 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(OciHelmConnectorDTO.class, 29134);
     kryo.register(OciHelmUsernamePasswordDTO.class, 29135);
     kryo.register(AzureRepoConnectionTypeDTO.class, 19854);
+
+    kryo.register(TemplateInfo.class, 19555);
   }
 }

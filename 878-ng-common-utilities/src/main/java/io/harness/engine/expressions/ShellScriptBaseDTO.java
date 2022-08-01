@@ -9,10 +9,14 @@ package io.harness.engine.expressions;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
+import io.harness.data.validator.EntityIdentifier;
+import io.harness.data.validator.NGEntityName;
 import io.harness.ng.core.template.TemplateEntityConstants;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,11 +28,17 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 @TypeAlias("ShellScriptBaseDTO")
 public class ShellScriptBaseDTO {
-  // TYPE
-  @JsonProperty("type") String type = "script";
+  @ApiModelProperty(required = true) @NotNull @EntityIdentifier String orgIdentifier;
 
-  @NotNull
-  @JsonProperty("spec")
-  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  ShellScriptSpec shellScriptSpec;
+  @ApiModelProperty(required = true) @NotNull @EntityIdentifier String projectIdentifier;
+
+  @ApiModelProperty(required = true) @NotNull @EntityIdentifier String identifier;
+
+  @ApiModelProperty(required = true) @NotNull @NGEntityName String name;
+
+  @ApiModelProperty(required = true) @NotNull String versionLabel;
+
+  @JsonProperty("type") String type;
+
+  @NotNull @JsonProperty("spec") ShellScriptSpec shellScriptSpec;
 }

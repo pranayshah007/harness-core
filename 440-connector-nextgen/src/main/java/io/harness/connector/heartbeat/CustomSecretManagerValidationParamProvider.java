@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
-import io.harness.delegate.beans.connector.customseceretmanager.CustomSecretManagerDTO;
+import io.harness.delegate.beans.connector.customseceretmanager.CustomSecretManagerConnectorDTO;
 import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerValidationParams;
 
 import com.google.inject.Singleton;
@@ -25,7 +25,7 @@ public class CustomSecretManagerValidationParamProvider
   public ConnectorValidationParams getConnectorValidationParams(ConnectorInfoDTO connectorInfoDTO, String connectorName,
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return CustomSecretManagerValidationParams.builder()
-        .customSecretManagerDTO((CustomSecretManagerDTO) connectorInfoDTO.getConnectorConfig())
+        .customSecretManagerConnectorDTO((CustomSecretManagerConnectorDTO) connectorInfoDTO.getConnectorConfig())
         .connectorName(connectorName)
         .build();
   }

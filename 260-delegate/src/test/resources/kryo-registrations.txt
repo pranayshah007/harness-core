@@ -1497,6 +1497,9 @@
 19550:io.harness.delegate.beans.executioncapability.GitInstallationCapability
 19551:io.harness.delegate.beans.connector.ConnectorValidationParameterResponse
 19552:io.harness.delegate.beans.connector.scm.github.GithubOauthDTO
+19553:io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerValidationParams
+19554:io.harness.delegate.beans.connector.customseceretmanager.CustomSecretManagerConnectorDTO
+19555:io.harness.delegate.beans.connector.TemplateInfo
 19553:io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO
 19630:io.harness.delegate.beans.connector.helm.OciHelmValidationParams
 19640:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams
@@ -1660,6 +1663,7 @@
 40099:software.wings.beans.SlackConfig
 40100:software.wings.beans.ce.CEAzureConfig
 40113:com.amazonaws.services.cloudformation.model.StackStatus
+40114:software.wings.beans.CustomSecretNGManagerConfig
 50002:software.wings.api.RancherClusterElement
 50004:software.wings.delegatetasks.rancher.RancherResolveClustersTaskParameters
 50005:software.wings.delegatetasks.rancher.RancherResolveClustersResponse

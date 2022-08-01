@@ -31,9 +31,6 @@ public class ShellScriptSourceWrapper {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   String uuid;
-  @NotNull String type = "Inline";
 
-  @NotNull
-  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  ShellScriptBaseSource spec;
+  @NotNull ShellScriptBaseSource spec;
 }

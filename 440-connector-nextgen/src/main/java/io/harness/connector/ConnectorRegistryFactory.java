@@ -102,7 +102,7 @@ import io.harness.connector.mappers.secretmanagermapper.AwsSecretManagerEntityTo
 import io.harness.connector.mappers.secretmanagermapper.AzureKeyVaultDTOToEntity;
 import io.harness.connector.mappers.secretmanagermapper.AzureKeyVaultEntityToDTO;
 import io.harness.connector.mappers.secretmanagermapper.CustomSecretManagerDTOtoEntity;
-import io.harness.connector.mappers.secretmanagermapper.CustommSecretManagerEntitytoDTO;
+import io.harness.connector.mappers.secretmanagermapper.CustomSecretManagerEntitytoDTO;
 import io.harness.connector.mappers.secretmanagermapper.GcpKmsDTOToEntity;
 import io.harness.connector.mappers.secretmanagermapper.GcpKmsEntityToDTO;
 import io.harness.connector.mappers.secretmanagermapper.LocalDTOToEntity;
@@ -313,7 +313,7 @@ public class ConnectorRegistryFactory {
     registrar.put(ConnectorType.CUSTOM_SECRET_MANAGER,
         new ConnectorRegistrar(ConnectorCategory.SECRET_MANAGER, SecretManagerConnectorValidator.class,
             CustomSecretManagerValidationParamProvider.class, CustomSecretManagerDTOtoEntity.class,
-            CustommSecretManagerEntitytoDTO.class, NotSupportedValidationHandler.class));
+            CustomSecretManagerEntitytoDTO.class, NotSupportedValidationHandler.class));
   }
 
   public static Class<? extends ConnectionValidator> getConnectorValidator(ConnectorType connectorType) {
