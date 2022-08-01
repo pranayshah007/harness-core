@@ -331,7 +331,7 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
     assertThat(response.getGitCommandStatus()).isEqualTo(GitCommandExecutionResponse.GitCommandStatus.SUCCESS);
   }
   @Test
-  @Owner(developers = ABHINAV2)
+  @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testApiAccessValidationGivenExceptionInScmRequestBitbucket() {
     GitConfigDTO gitConfig = GitConfigDTO.builder().gitConnectionType(GitConnectionType.ACCOUNT).build();
@@ -347,7 +347,7 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = ABHINAV2)
+  @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testApiAccessValidationGivenErrorInRepoResponseBitbucket() {
     GitConfigDTO gitConfig = GitConfigDTO.builder().gitConnectionType(GitConnectionType.ACCOUNT).build();
