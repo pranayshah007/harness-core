@@ -7,8 +7,18 @@
 
 package io.harness.connector;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.data.encoding.EncodingUtils.encodeBase64;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.ci.pod.SecretParams.Type.FILE;
+import static io.harness.delegate.beans.ci.pod.SecretParams.Type.TEXT;
+import static io.harness.delegate.beans.connector.azureconnector.AzureCredentialType.MANUAL_CREDENTIALS;
+import static io.harness.delegate.beans.connector.azureconnector.AzureSecretType.KEY_CERT;
+import static io.harness.delegate.beans.connector.azureconnector.AzureSecretType.SECRET_KEY;
+
+import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
@@ -35,21 +45,12 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
 import io.harness.secrets.SecretDecryptor;
 import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
-import lombok.extern.slf4j.Slf4j;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.HashMap;
 import java.util.Map;
-
-import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.data.encoding.EncodingUtils.encodeBase64;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.beans.ci.pod.SecretParams.Type.FILE;
-import static io.harness.delegate.beans.ci.pod.SecretParams.Type.TEXT;
-import static io.harness.delegate.beans.connector.azureconnector.AzureCredentialType.MANUAL_CREDENTIALS;
-import static io.harness.delegate.beans.connector.azureconnector.AzureSecretType.KEY_CERT;
-import static io.harness.delegate.beans.connector.azureconnector.AzureSecretType.SECRET_KEY;
-import static java.lang.String.format;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Helper class to create spec for image registry and GIT secrets. Generated spec can be used for creation of secrets on
@@ -210,28 +211,28 @@ public class ConnectorEnvVariablesHelper {
       String clientIdEnvName = connectorDetails.getEnvToSecretsMap().get(EnvVariableEnum.AZURE_APP_ID);
       String tenantIdEnvName = connectorDetails.getEnvToSecretsMap().get(EnvVariableEnum.AZURE_TENANT_ID);
       secretData.put(clientIdEnvName,
-              getVariableSecret(clientIdEnvName + connectorDetails.getIdentifier(), encodeBase64(config.getClientId())));
+          getVariableSecret(clientIdEnvName + connectorDetails.getIdentifier(), encodeBase64(config.getClientId())));
       secretData.put(tenantIdEnvName,
-              getVariableSecret(tenantIdEnvName + connectorDetails.getIdentifier(), encodeBase64(config.getTenantId())));
+          getVariableSecret(tenantIdEnvName + connectorDetails.getIdentifier(), encodeBase64(config.getTenantId())));
 
-      if(config.getAuthDTO().getAzureSecretType() == SECRET_KEY) {
+      if (config.getAuthDTO().getAzureSecretType() == SECRET_KEY) {
         String clientSecretEnvName = connectorDetails.getEnvToSecretsMap().get(EnvVariableEnum.AZURE_APP_SECRET);
         AzureClientSecretKeyDTO decryptedConfig = (AzureClientSecretKeyDTO) secretDecryptor.decrypt(
-                config.getAuthDTO().getCredentials(), connectorDetails.getEncryptedDataDetails());
+            config.getAuthDTO().getCredentials(), connectorDetails.getEncryptedDataDetails());
         String clientSecret = String.valueOf(decryptedConfig.getSecretKey().getDecryptedValue());
         secretData.put(clientSecretEnvName,
-                getVariableSecret(clientSecretEnvName + connectorDetails.getIdentifier(), encodeBase64(clientSecret)));
-      } else if (config.getAuthDTO().getAzureSecretType() == KEY_CERT){
+            getVariableSecret(clientSecretEnvName + connectorDetails.getIdentifier(), encodeBase64(clientSecret)));
+      } else if (config.getAuthDTO().getAzureSecretType() == KEY_CERT) {
         String certPathEnvName = connectorDetails.getEnvToSecretsMap().get(EnvVariableEnum.AZURE_CERT_PATH);
         AzureClientKeyCertDTO decryptedConfig = (AzureClientKeyCertDTO) secretDecryptor.decrypt(
-                config.getAuthDTO().getCredentials(), connectorDetails.getEncryptedDataDetails());
+            config.getAuthDTO().getCredentials(), connectorDetails.getEncryptedDataDetails());
         String clientSecret = String.valueOf(decryptedConfig.getClientCertRef().getDecryptedValue());
         secretData.put(certPathEnvName,
-                getVariableSecret(certPathEnvName + connectorDetails.getIdentifier(), encodeBase64(clientSecret)));
+            getVariableSecret(certPathEnvName + connectorDetails.getIdentifier(), encodeBase64(clientSecret)));
       } else {
         throw new InvalidArgumentsException(
-                format("Unsupported type for azure manual credentials %s", config.getAuthDTO().getAzureSecretType()),
-                WingsException.USER);
+            format("Unsupported type for azure manual credentials %s", config.getAuthDTO().getAzureSecretType()),
+            WingsException.USER);
       }
     }
     return secretData;

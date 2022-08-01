@@ -106,12 +106,11 @@ public class CIK8JavaClientHandler {
       String regName = StringUtils.substringBefore(imageDetails.getImageDetails().getName(), "/");
       AzureAcrTokenTaskResponse acrLoginToken = azureAsyncTaskHelper.getAcrLoginToken(regName,
           connectorDetails.getEncryptedDataDetails(), (AzureConnectorDTO) connectorDetails.getConnectorConfig());
-      credentialData =
-          imageSecretBuilder.getJSONEncodedAzureCredentials(ImageCredentials.builder()
-                                                                .registryUrl(regName)
-                                                                .userName(USER_NAME)
-                                                                .password(acrLoginToken.getToken())
-                                                                .build());
+      credentialData = imageSecretBuilder.getJSONEncodedAzureCredentials(ImageCredentials.builder()
+                                                                             .registryUrl(regName)
+                                                                             .userName(USER_NAME)
+                                                                             .password(acrLoginToken.getToken())
+                                                                             .build());
     } else {
       credentialData = imageSecretBuilder.getJSONEncodedImageCredentials(imageDetails);
     }
