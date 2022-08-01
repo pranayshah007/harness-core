@@ -592,10 +592,7 @@ public class K8sHelmCommonStepHelper {
               .storeDelegateConfig(localFileStoreDelegateConfig)
               .pluginPath(getParameterFieldValue(kustomizeManifestOutcome.getPluginPath()))
               .kustomizeDirPath(".")
-              .kustomizeYamlFolderPath(ParameterField.isNotNull(kustomizeManifestOutcome.getOverlayConfiguration())
-                          && ParameterField.isNotNull(
-                              getParameterFieldValue(kustomizeManifestOutcome.getOverlayConfiguration())
-                                  .getKustomizeYamlFolderPath())
+              .kustomizeYamlFolderPath(kustomizeYamlFolderPathNotNullCheck(kustomizeManifestOutcome)
                       ? getParameterFieldValue(
                           getParameterFieldValue(kustomizeManifestOutcome.getOverlayConfiguration())
                               .getKustomizeYamlFolderPath())
@@ -734,6 +731,14 @@ public class K8sHelmCommonStepHelper {
     boolean retVal = false;
     for (ManifestOutcome manifestOutcome : manifestOutcomes) {
       retVal = retVal || ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind());
+    }
+    return retVal;
+  }
+
+  public boolean shouldCloseLogStreamForLocalStore(List<? extends ManifestOutcome> manifestOutcomes) {
+    boolean retVal = false;
+    for (ManifestOutcome manifestOutcome : manifestOutcomes) {
+      retVal = retVal && ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind());
     }
     return retVal;
   }

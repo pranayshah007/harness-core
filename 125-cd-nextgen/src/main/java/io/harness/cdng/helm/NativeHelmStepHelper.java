@@ -215,7 +215,9 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
       LogCallback logCallback = cdStepHelper.getLogCallback(K8sCommandUnitConstants.FetchFiles, ambiance, true);
       localStoreFileMapContents.putAll(fetchFilesFromLocalStore(
           ambiance, helmChartManifestOutcome, aggregatedValuesManifests, manifestFiles, logCallback));
-      logCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
+      if (shouldCloseLogStreamForLocalStore(manifestOutcomes)) {
+        logCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
+      }
     }
 
     K8sStepPassThroughData k8sStepPassThroughData = K8sStepPassThroughData.builder()
