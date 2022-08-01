@@ -587,12 +587,20 @@ public class K8sHelmCommonStepHelper {
         StoreConfig storeConfig = kustomizeManifestOutcome.getStore();
         if (ManifestStoreType.HARNESS.equals(storeConfig.getKind())) {
           LocalFileStoreDelegateConfig localFileStoreDelegateConfig =
-              (LocalFileStoreDelegateConfig) getStoreDelegateConfig(kustomizeManifestOutcome.getStore(), ambiance,
-                  manifestOutcome, manifestOutcome.getType() + " manifest");
+              (LocalFileStoreDelegateConfig) getStoreDelegateConfig(
+                  storeConfig, ambiance, kustomizeManifestOutcome, manifestOutcome.getType() + " manifest");
           return KustomizeManifestDelegateConfig.builder()
               .storeDelegateConfig(localFileStoreDelegateConfig)
               .pluginPath(getParameterFieldValue(kustomizeManifestOutcome.getPluginPath()))
-              .kustomizeDirPath(localFileStoreDelegateConfig.getFilePaths().get(0))
+              .kustomizeDirPath(".")
+              .kustomizeYamlFolderPath(ParameterField.isNotNull(kustomizeManifestOutcome.getOverlayConfiguration())
+                          && ParameterField.isNotNull(
+                              getParameterFieldValue(kustomizeManifestOutcome.getOverlayConfiguration())
+                                  .getKustomizeYamlFolderPath())
+                      ? getParameterFieldValue(
+                          getParameterFieldValue(kustomizeManifestOutcome.getOverlayConfiguration())
+                              .getKustomizeYamlFolderPath())
+                      : null)
               .build();
         } else if (!ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
           throw new UnsupportedOperationException(
@@ -886,6 +894,29 @@ public class K8sHelmCommonStepHelper {
     throw new UnsupportedOperationException(format("Unsupported Store Config type: [%s]", storeConfig.getKind()));
   }
 
+  //  public LocalFileStoreDelegateConfig getLocalFileStoreDelegateConfigForKustomize(Ambiance ambiance, ManifestOutcome
+  //  kustomizeManifest, HarnessStore storeConfig) {
+  //    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+  //    FileReference fileReference = FileReference.of(getParameterFieldValue(storeConfig.getFiles()).get(0),
+  //    ngAccess.getAccountIdentifier(),
+  //            ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+  //    Optional<FileStoreNodeDTO> optionalFileStoreNodeDTO =
+  //            fileStoreService.getWithChildrenByPath(fileReference.getAccountIdentifier(),
+  //            fileReference.getOrgIdentifier(),
+  //                    fileReference.getProjectIdentifier(), fileReference.getPath(), false);
+  //    if (optionalFileStoreNodeDTO.isPresent()) {
+  //      FileStoreNodeDTO manifestFileDirectory = optionalFileStoreNodeDTO.get();
+  //      return LocalFileStoreDelegateConfig.builder()
+  //              .folder(manifestFileDirectory.getName())
+  //              .filePaths(Arrays.asList(manifestFileDirectory.getPath().substring(1)))
+  //              .manifestType(kustomizeManifest.getType())
+  //              .manifestIdentifier(kustomizeManifest.getIdentifier())
+  //              .build();
+  //    } else {
+  //      throw new UnsupportedOperationException(format("Unsupported Store Config type: [%s]", storeConfig.getKind()));
+  //    }
+  //  }
+
   public List<String> getPathsBasedOnManifest(GitStoreConfig gitstoreConfig, String manifestType) {
     List<String> paths = new ArrayList<>();
     switch (manifestType) {
@@ -1067,10 +1098,9 @@ public class K8sHelmCommonStepHelper {
 
   public Map<String, LocalStoreFetchFilesResult> fetchFilesFromLocalStore(Ambiance ambiance,
       ManifestOutcome manifestOutcome, List<? extends ManifestOutcome> manifestOutcomeList,
-      List<ManifestFiles> manifestFiles) {
+      List<ManifestFiles> manifestFiles, LogCallback logCallback) {
     Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents = new HashMap<>();
     StoreConfig storeConfig = manifestOutcome.getStore();
-    LogCallback logCallback = cdStepHelper.getLogCallback(K8sCommandUnitConstants.FetchFiles, ambiance, true);
     logCallback.saveExecutionLog(color(format("%nStarting Harness Fetch Files"), LogColor.White, LogWeight.Bold));
     if (ManifestStoreType.HARNESS.equals(storeConfig.getKind())) {
       HarnessStore localStoreConfig = (HarnessStore) storeConfig;
@@ -1096,8 +1126,9 @@ public class K8sHelmCommonStepHelper {
         fileContents = getFileContentsFromManifest(ngAccess, new ArrayList<>(),
             kustomizeManifestOutcome.getPatchesPaths().getValue(), manifestOutcome.getType(),
             manifestOutcome.getIdentifier(), logCallback);
-        manifestFiles.addAll(validateAndReturnManifestFileFromHarnessStore(
-            kustomizeManifestOutcome.getManifestScope().getValue(), ngAccess, manifestOutcome.getIdentifier()));
+        String baseFolderPath = getParameterFieldValue(localStoreConfig.getFiles()).get(0);
+        manifestFiles.addAll(
+            validateAndReturnManifestFileFromHarnessStore(baseFolderPath, ngAccess, manifestOutcome.getIdentifier()));
       } else {
         throw new UnsupportedOperationException(format("Unsupported Manifest type: [%s]", manifestOutcome.getType()));
       }
@@ -1221,12 +1252,13 @@ public class K8sHelmCommonStepHelper {
                                .fileContent(file.getContent())
                                .build());
     } else if (NGFileType.FOLDER.equals(fileStoreNodeDTO.getType())) {
+      Integer folderPathLength = fileStoreNodeDTO.getPath().length();
       manifestFileList.addAll(mapFileNodes(fileStoreNodeDTO,
           fileNode
           -> ManifestFiles.builder()
                  .fileContent(fileNode.getContent())
                  .fileName(fileNode.getName())
-                 .filePath(fileNode.getPath())
+                 .filePath(fileNode.getPath().substring(folderPathLength))
                  .build()));
     } else {
       throw new UnsupportedOperationException(

@@ -86,6 +86,7 @@ import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
+import io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -556,7 +557,6 @@ public class K8sStepHelperTest extends CategoryTest {
         KustomizeManifestOutcome.builder()
             .store(HarnessStore.builder().files(ParameterField.createValueField(files)).build())
             .pluginPath(ParameterField.createValueField("/usr/bin/kustomize"))
-            .manifestScope(ParameterField.createValueField("/path"))
             .build();
 
     doReturn(Optional.of(getFolderStoreNode("/path/to/kustomize", "kustomize")))
@@ -3811,12 +3811,17 @@ public class K8sStepHelperTest extends CategoryTest {
         K8sDirectInfrastructureOutcome.builder().namespace("default").build();
     HarnessStore harnessStore =
         HarnessStore.builder().files(ParameterField.createValueField(asList("/path/to/kustomize"))).build();
-    KustomizeManifestOutcome kustomizeManifestOutcome = KustomizeManifestOutcome.builder()
-                                                            .identifier("Kustomize")
-                                                            .store(harnessStore)
-                                                            .patchesPaths(ParameterField.createValueField(null))
-                                                            .manifestScope(ParameterField.createValueField("/path"))
-                                                            .build();
+    OverlayConfiguration overlayConfiguration =
+        OverlayConfiguration.builder()
+            .kustomizeYamlFolderPath(ParameterField.createValueField("/path/to/kustomize/kustomization"))
+            .build();
+    KustomizeManifestOutcome kustomizeManifestOutcome =
+        KustomizeManifestOutcome.builder()
+            .identifier("Kustomize")
+            .store(harnessStore)
+            .patchesPaths(ParameterField.createValueField(null))
+            .overlayConfiguration(ParameterField.createValueField(overlayConfiguration))
+            .build();
     Map<String, ManifestOutcome> manifestOutcomeMap = ImmutableMap.of("Kustomize", kustomizeManifestOutcome);
     RefObject manifests = RefObject.newBuilder()
                               .setName(OutcomeExpressionConstants.MANIFESTS)
