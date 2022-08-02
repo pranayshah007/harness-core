@@ -190,12 +190,12 @@ cd ../..
 mkdir -p dist/ci-manager
 cd dist/ci-manager
 
-cp ${HOME}/.bazel-dirs/bin/310-ci-manager/module_deploy.jar ci-manager-capsule.jar
-cp ../../310-ci-manager/ci-manager-config.yml .
+cp ${HOME}/.bazel-dirs/bin/ci-manager/module_deploy.jar ci-manager-capsule.jar
+cp ../../ci-manager/config/ci-manager-config.yml .
 cp ../../keystore.jks .
-cp ../../310-ci-manager/key.pem .
-cp ../../310-ci-manager/cert.pem .
-cp ../../310-ci-manager/src/main/resources/redisson-jcache.yaml .
+cp ../../ci-manager/config/key.pem .
+cp ../../ci-manager/config/cert.pem .
+cp ../../ci-manager/src/main/resources/redisson-jcache.yaml .
 
 cp ../../dockerization/ci-manager/Dockerfile-ci-manager-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/ci-manager/Dockerfile-ci-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr

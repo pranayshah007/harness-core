@@ -1,0 +1,64 @@
+load("@rules_java//java:defs.bzl", "java_binary")
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+shared_dependencies = [
+    "//323-sto-utilities:module",
+    "//ci-manager/contracts:module",
+    "//440-connector-nextgen:module",
+    "//878-ng-common-utilities:module",
+    "//890-sm-core:module",
+    "//930-delegate-tasks:module",
+    "//930-ng-core-clients:module",
+    "//933-ci-commons:module",
+    "//942-enforcement-sdk:module",
+    "//950-log-client:module",
+    "//950-opa-client:module",
+    "//955-delegate-beans:module",
+    "//960-ng-license-usage-beans:module",
+    "//960-persistence:module",
+    "//999-annotations:module",
+    "//clients/pipeline-service/pms-sdk:module",
+    "//product/ci/engine/proto:ciengine_java_proto",
+    "@maven//:de_skuzzle_semantic_version",
+]
+
+java_library(
+    name = "module",
+    srcs = glob(["src/main/java/**/*.java"]),
+    resources = [
+        "//ci-manager/service/src/main/resources:resource",
+    ],
+    visibility = ["//visibility:public"],
+    deps = shared_dependencies + [
+        "//:lombok",
+    ],
+)
+
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/**/*.java"]),
+    resources = [
+        "//ci-manager/service/src/test/resources:resource",
+    ],
+    visibility = ["//visibility:public"],
+    deps = shared_dependencies + [
+        "module",
+        "//:lombok",
+        "//960-persistence:supporter-test",
+        "//970-ng-commons:module",
+        "//990-commons-test:module",
+        "@maven//:io_dropwizard_dropwizard_testing",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_mockito_mockito_inline",
+        "@maven//:org_powermock_powermock_module_junit4",
+        "@maven//:org_powermock_powermock_reflect",
+    ],
+)
+
+run_tests()
+
+run_analysis()

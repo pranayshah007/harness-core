@@ -6,9 +6,9 @@
                     debug_port="6016"
                     blaze-command="run"
                     keep-in-sync="true">
-        <blaze-target>//310-ci-manager:module</blaze-target>
+        <blaze-target>//ci-manager:module</blaze-target>
         <blaze-user-exe-flag>server</blaze-user-exe-flag>
-        <blaze-user-exe-flag>$PROJECT_DIR$/../310-ci-manager/ci-manager-config.yml</blaze-user-exe-flag>
+        <blaze-user-exe-flag>$PROJECT_DIR$/../ci-manager/ci-manager-config.yml</blaze-user-exe-flag>
     </blaze-settings>
     <method v="2">
         <option name="Blaze.BeforeRunTask" enabled="true"/>

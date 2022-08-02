@@ -60,11 +60,11 @@ BAZEL_MODULES="\
   //290-dashboard-service:module \
   //295-cdng-contracts:module \
   //300-cv-nextgen:module \
-  //310-ci-manager:module \
+  //ci-manager:module \
   //323-sto-utilities:module \
   //325-sto-beans:module \
-  //332-ci-manager/contracts:module \
-  //332-ci-manager/service:module \
+  //ci-manager/contracts:module \
+  //ci-manager/service:module \
   //340-ce-nextgen:module \
   //350-event-server:module \
   //360-cg-manager:module \
@@ -387,5 +387,5 @@ bazel ${bazelrc} run ${BAZEL_ARGUMENTS} //001-microservice-intfc-tool:module | g
 
 if [ "${PLATFORM}" == "jenkins" ]; then
  build_protocol_info pipeline-service pipeline-service
- build_protocol_info 310-ci-manager ci-manager
+ build_protocol_info ci-manager ci-manager
 fi

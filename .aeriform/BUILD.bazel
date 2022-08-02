@@ -80,9 +80,9 @@ aeriform("//300-cv-nextgen:module")
 
 aeriform("//300-cv-nextgen:tests")
 
-aeriform("//310-ci-manager:module")
+aeriform("//ci-manager/config:module")
 
-aeriform("//310-ci-manager:tests")
+aeriform("//ci-manager/config:tests")
 
 aeriform("//315-sto-manager:module")
 
@@ -96,13 +96,13 @@ aeriform("//325-sto-beans:module")
 
 aeriform("//325-sto-beans:tests")
 
-aeriform("//332-ci-manager/service:module")
+aeriform("//ci-manager/service:module")
 
-aeriform("//332-ci-manager/service:tests")
+aeriform("//ci-manager/service:tests")
 
-aeriform("//332-ci-manager/contracts:module")
+aeriform("//ci-manager/contracts:module")
 
-aeriform("//332-ci-manager/contracts:tests")
+aeriform("//ci-manager/contracts:tests")
 
 aeriform("//340-ce-nextgen:module")
 

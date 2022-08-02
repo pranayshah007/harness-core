@@ -7,7 +7,7 @@ derive_targets_from_directories: false
 
 targets:
   120-ng-manager:module
-  310-ci-manager:module
+  ci-manager:module
   platform-service/service:module
   pipeline-service/service:module
   935-analyser-service:module
