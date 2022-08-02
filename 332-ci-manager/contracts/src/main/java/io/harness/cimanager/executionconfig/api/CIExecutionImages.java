@@ -27,6 +27,7 @@ public class CIExecutionImages {
   @NotBlank String gitCloneTag;
   @NotBlank String buildAndPushDockerRegistryTag;
   @NotBlank String buildAndPushECRTag;
+  @NotBlank String buildAndPushACRTag;
   @NotBlank String buildAndPushGCRTag;
   @NotBlank String gcsUploadTag;
   @NotBlank String s3UploadTag;

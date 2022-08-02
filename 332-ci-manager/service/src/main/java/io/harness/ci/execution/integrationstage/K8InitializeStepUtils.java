@@ -12,6 +12,7 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerPara
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameterWithDefaultValue;
+import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_HOSTED;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CPU;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_CPU_POV;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_MEM_POV;
@@ -36,7 +37,6 @@ import io.harness.beans.quantity.unit.DecimalQuantityUnit;
 import io.harness.beans.quantity.unit.StorageQuantityUnit;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageConfig;
-import io.harness.beans.stages.IntegrationStageConfigImpl;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
@@ -102,7 +102,7 @@ public class K8InitializeStepUtils {
 
   public List<ContainerDefinitionInfo> createStepContainerDefinitions(List<ExecutionWrapperConfig> steps,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
-      OSType os) {
+      OSType os, Infrastructure infrastructure) {
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     if (steps == null) {
       return containerDefinitionInfos;
@@ -128,7 +128,7 @@ public class K8InitializeStepUtils {
             Math.max(0, stageCpuRequest - getContainerCpuLimit(containerResource, "stepType", "stepId", accountId));
         ContainerDefinitionInfo containerDefinitionInfo =
             createStepContainerDefinition(stepElementConfig, integrationStage, ciExecutionArgs, portFinder, stepIndex,
-                accountId, os, extraMemoryPerStep, extraCPUPerStep);
+                accountId, os, extraMemoryPerStep, extraCPUPerStep, infrastructure);
         if (containerDefinitionInfo != null) {
           containerDefinitionInfos.add(containerDefinitionInfo);
         }
@@ -150,7 +150,7 @@ public class K8InitializeStepUtils {
                 IntegrationStageUtils.getStepElementConfig(executionWrapperInParallel);
             ContainerDefinitionInfo containerDefinitionInfo =
                 createStepContainerDefinition(stepElementConfig, integrationStage, ciExecutionArgs, portFinder,
-                    stepIndex, accountId, os, extraMemoryPerStep, extraCPUPerStep);
+                    stepIndex, accountId, os, extraMemoryPerStep, extraCPUPerStep, infrastructure);
             if (containerDefinitionInfo != null) {
               containerDefinitionInfos.add(containerDefinitionInfo);
             }
@@ -163,7 +163,7 @@ public class K8InitializeStepUtils {
 
   public List<ContainerDefinitionInfo> createStepContainerDefinitionsStepGroupWithFF(
       InitializeStepInfo initializeStepInfo, StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs,
-      PortFinder portFinder, String accountId, OSType os, int stepIndex) {
+      PortFinder portFinder, String accountId, OSType os, int stepIndex, Infrastructure infrastructure) {
     List<ExecutionWrapperConfig> steps = initializeStepInfo.getExecutionElementConfig().getSteps();
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     if (steps == null) {
@@ -177,8 +177,9 @@ public class K8InitializeStepUtils {
     for (ExecutionWrapperConfig executionWrapper : steps) {
       if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
         stepIndex++;
-        ContainerDefinitionInfo containerDefinitionInfo = handleSingleStep(executionWrapper, integrationStage,
-            ciExecutionArgs, portFinder, accountId, os, stageMemoryRequest, stageCpuRequest, stepIndex, null);
+        ContainerDefinitionInfo containerDefinitionInfo =
+            handleSingleStep(executionWrapper, integrationStage, ciExecutionArgs, portFinder, accountId, os,
+                stageMemoryRequest, stageCpuRequest, stepIndex, null, infrastructure);
         if (containerDefinitionInfo != null) {
           containerDefinitionInfos.add(containerDefinitionInfo);
         }
@@ -186,7 +187,7 @@ public class K8InitializeStepUtils {
         Integer extraMemory = calculateExtraMemory(executionWrapper, accountId, stageMemoryRequest);
         Integer extraCPU = calculateExtraCPU(executionWrapper, accountId, stageCpuRequest);
         List<ContainerDefinitionInfo> parallelDefinitionInfos = handleParallelStep(executionWrapper, integrationStage,
-            ciExecutionArgs, portFinder, accountId, os, extraMemory, extraCPU, stepIndex, null);
+            ciExecutionArgs, portFinder, accountId, os, extraMemory, extraCPU, stepIndex, null, infrastructure);
         if (parallelDefinitionInfos != null) {
           stepIndex += parallelDefinitionInfos.size();
           if (parallelDefinitionInfos.size() > 0) {
@@ -195,7 +196,7 @@ public class K8InitializeStepUtils {
         }
       } else if (executionWrapper.getStepGroup() != null && !executionWrapper.getStepGroup().isNull()) {
         List<ContainerDefinitionInfo> stepGroupDefinitionInfos = handleStepGroup(executionWrapper, integrationStage,
-            ciExecutionArgs, portFinder, accountId, os, stageMemoryRequest, stageCpuRequest, stepIndex);
+            ciExecutionArgs, portFinder, accountId, os, stageMemoryRequest, stageCpuRequest, stepIndex, infrastructure);
         if (stepGroupDefinitionInfos != null) {
           stepIndex += stepGroupDefinitionInfos.size();
           if (stepGroupDefinitionInfos.size() > 0) {
@@ -212,7 +213,7 @@ public class K8InitializeStepUtils {
   private ContainerDefinitionInfo handleSingleStep(ExecutionWrapperConfig executionWrapper,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
       OSType os, int maxAllocatableMemoryRequest, int maxAllocatableCpuRequest, int stepIndex,
-      String stepGroupIdOfParent) {
+      String stepGroupIdOfParent, Infrastructure infrastructure) {
     StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
     if (Strings.isNotBlank(stepGroupIdOfParent)) {
       stepElementConfig.setIdentifier(stepGroupIdOfParent + "_" + stepElementConfig.getIdentifier());
@@ -227,12 +228,13 @@ public class K8InitializeStepUtils {
     }
 
     return createStepContainerDefinition(stepElementConfig, integrationStage, ciExecutionArgs, portFinder, stepIndex,
-        accountId, os, extraMemoryPerStep, extraCPUPerStep);
+        accountId, os, extraMemoryPerStep, extraCPUPerStep, infrastructure);
   }
 
   private List<ContainerDefinitionInfo> handleStepGroup(ExecutionWrapperConfig executionWrapper,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
-      OSType os, int maxAllocatableMemoryRequest, int maxAllocatableCpuRequest, int stepIndex) {
+      OSType os, int maxAllocatableMemoryRequest, int maxAllocatableCpuRequest, int stepIndex,
+      Infrastructure infrastructure) {
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     StepGroupElementConfig stepGroupElementConfig = IntegrationStageUtils.getStepGroupElementConfig(executionWrapper);
     if (isEmpty(stepGroupElementConfig.getSteps())) {
@@ -244,7 +246,7 @@ public class K8InitializeStepUtils {
         stepIndex++;
         ContainerDefinitionInfo containerDefinitionInfo = handleSingleStep(step, integrationStage, ciExecutionArgs,
             portFinder, accountId, os, maxAllocatableMemoryRequest, maxAllocatableCpuRequest, stepIndex,
-            stepGroupElementConfig.getIdentifier());
+            stepGroupElementConfig.getIdentifier(), infrastructure);
         if (containerDefinitionInfo != null) {
           containerDefinitionInfos.add(containerDefinitionInfo);
         }
@@ -253,7 +255,7 @@ public class K8InitializeStepUtils {
         int extraCpu = calculateExtraCPU(step, accountId, maxAllocatableCpuRequest);
         List<ContainerDefinitionInfo> parallelStepDefinitionInfos =
             handleParallelStep(step, integrationStage, ciExecutionArgs, portFinder, accountId, os, extraMemory,
-                extraCpu, stepIndex, stepGroupElementConfig.getIdentifier());
+                extraCpu, stepIndex, stepGroupElementConfig.getIdentifier(), infrastructure);
         if (parallelStepDefinitionInfos != null) {
           stepIndex += parallelStepDefinitionInfos.size();
           if (parallelStepDefinitionInfos.size() > 0) {
@@ -267,7 +269,8 @@ public class K8InitializeStepUtils {
 
   private List<ContainerDefinitionInfo> handleParallelStep(ExecutionWrapperConfig executionWrapper,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
-      OSType os, int extraMemory, int extraCPU, int stepIndex, String stepGroupIdOfParent) {
+      OSType os, int extraMemory, int extraCPU, int stepIndex, String stepGroupIdOfParent,
+      Infrastructure infrastructure) {
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     ParallelStepElementConfig parallelStepElementConfig =
         IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
@@ -287,7 +290,7 @@ public class K8InitializeStepUtils {
             handleSingleStep(executionWrapperInParallel, integrationStage, ciExecutionArgs, portFinder, accountId, os,
                 extraMemoryPerStep + getExecutionWrapperMemoryRequest(executionWrapperInParallel, accountId),
                 extraCPUPerStep + getExecutionWrapperCpuRequest(executionWrapperInParallel, accountId), stepIndex,
-                stepGroupIdOfParent);
+                stepGroupIdOfParent, infrastructure);
         if (containerDefinitionInfo != null) {
           containerDefinitionInfos.add(containerDefinitionInfo);
         }
@@ -296,7 +299,8 @@ public class K8InitializeStepUtils {
         List<ContainerDefinitionInfo> stepGroupDefinitionInfos =
             handleStepGroup(executionWrapperInParallel, integrationStage, ciExecutionArgs, portFinder, accountId, os,
                 extraMemoryPerStep + getExecutionWrapperMemoryRequest(executionWrapperInParallel, accountId),
-                extraCPUPerStep + getExecutionWrapperCpuRequest(executionWrapperInParallel, accountId), stepIndex);
+                extraCPUPerStep + getExecutionWrapperCpuRequest(executionWrapperInParallel, accountId), stepIndex,
+                infrastructure);
         if (stepGroupDefinitionInfos != null) {
           stepIndex += stepGroupDefinitionInfos.size();
           if (stepGroupDefinitionInfos.size() > 0) {
@@ -311,7 +315,7 @@ public class K8InitializeStepUtils {
 
   private ContainerDefinitionInfo createStepContainerDefinition(StepElementConfig stepElement,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
-      String accountId, OSType os, Integer extraMemoryPerStep, Integer extraCPUPerStep) {
+      String accountId, OSType os, Integer extraMemoryPerStep, Integer extraCPUPerStep, Infrastructure infrastructure) {
     if (!(stepElement.getStepSpecType() instanceof CIStepInfo)) {
       return null;
     }
@@ -327,6 +331,7 @@ public class K8InitializeStepUtils {
             extraCPUPerStep);
       case DOCKER:
       case ECR:
+      case ACR:
       case GCR:
       case SAVE_CACHE_S3:
       case RESTORE_CACHE_S3:
@@ -338,7 +343,7 @@ public class K8InitializeStepUtils {
       case UPLOAD_GCS:
         return createPluginCompatibleStepContainerDefinition((PluginCompatibleStep) ciStepInfo, integrationStage,
             ciExecutionArgs, portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(),
-            stepElement.getType(), timeout, accountId, os, extraMemoryPerStep, extraCPUPerStep);
+            stepElement.getType(), timeout, accountId, os, extraMemoryPerStep, extraCPUPerStep, infrastructure);
       case PLUGIN:
         return createPluginStepContainerDefinition((PluginStepInfo) ciStepInfo, integrationStage, ciExecutionArgs,
             portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(), accountId, os,
@@ -359,6 +364,7 @@ public class K8InitializeStepUtils {
     switch (stepType) {
       case DOCKER:
       case ECR:
+      case ACR:
       case GCR:
         throw new CIStageExecutionException(format("%s step not allowed in windows kubernetes builds", stepType));
       default:
@@ -369,7 +375,7 @@ public class K8InitializeStepUtils {
   private ContainerDefinitionInfo createPluginCompatibleStepContainerDefinition(PluginCompatibleStep stepInfo,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
       String identifier, String stepName, String stepType, long timeout, String accountId, OSType os,
-      Integer extraMemoryPerStep, Integer extraCPUPerStep) {
+      Integer extraMemoryPerStep, Integer extraCPUPerStep, Infrastructure infrastructure) {
     Integer port = portFinder.getNextPort();
 
     String containerName = format("%s%d", STEP_PREFIX, stepIndex);
@@ -378,7 +384,7 @@ public class K8InitializeStepUtils {
     envVarMap.putAll(BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs));
     envVarMap.putAll(
         PluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, identifier, timeout, StageInfraDetails.Type.K8));
-    setEnvVariablesForHostedBuids(integrationStage, stepInfo, envVarMap);
+    setEnvVariablesForHostedBuilds(infrastructure, stepInfo, envVarMap);
 
     Integer runAsUser = resolveIntegerParameter(stepInfo.getRunAsUser(), null);
 
@@ -410,13 +416,12 @@ public class K8InitializeStepUtils {
         .build();
   }
 
-  private void setEnvVariablesForHostedBuids(
-      StageElementConfig integrationStage, PluginCompatibleStep stepInfo, Map<String, String> envVarMap) {
-    IntegrationStageConfigImpl stage = (IntegrationStageConfigImpl) integrationStage.getStageType();
-    if (stage != null && stage.getInfrastructure() != null
-        && stage.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
+  private void setEnvVariablesForHostedBuilds(
+      Infrastructure infrastructure, PluginCompatibleStep stepInfo, Map<String, String> envVarMap) {
+    if (infrastructure.getType() == KUBERNETES_HOSTED) {
       switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
         case ECR:
+        case ACR:
         case GCR:
         case DOCKER:
           envVarMap.put("container", "docker");
@@ -889,6 +894,7 @@ public class K8InitializeStepUtils {
             stepElement.getIdentifier(), accountId);
       case GCR:
       case ECR:
+      case ACR:
       case DOCKER:
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_GCS:
@@ -932,6 +938,7 @@ public class K8InitializeStepUtils {
         return ((RunTestsStepInfo) ciStepInfo).getResources();
       case GCR:
       case ECR:
+      case ACR:
       case DOCKER:
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_GCS:
@@ -1105,6 +1112,7 @@ public class K8InitializeStepUtils {
         return ((RunStepInfo) ciStepInfo).getResources();
       case DOCKER:
       case ECR:
+      case ACR:
       case GCR:
       case SAVE_CACHE_S3:
       case RESTORE_CACHE_S3:
