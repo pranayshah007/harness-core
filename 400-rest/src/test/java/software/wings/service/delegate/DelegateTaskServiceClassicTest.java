@@ -1107,6 +1107,20 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     assertThat(selectorCapabilityList.get(0).getSelectorOrigin()).isEqualTo("step");
   }
 
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testDelegateReset() {
+    DelegateTask delegateTask = getDelegateTask();
+    delegateTask.setStatus(STARTED);
+    delegateTask.setDelegateId("del");
+    persistence.save(delegateTask);
+    assertThat(delegateTask.getStatus()).isEqualTo(STARTED);
+    delegateTaskServiceClassic.resetDelegateTaskStatus(delegateTask);
+    assertThat(delegateTask.getStatus()).isEqualTo(QUEUED);
+    assertThat(delegateTask.getDelegateId()).isEqualTo("");
+  }
+
   private CapabilityRequirement buildCapabilityRequirement() {
     return CapabilityRequirement.builder()
         .accountId(generateUuid())
