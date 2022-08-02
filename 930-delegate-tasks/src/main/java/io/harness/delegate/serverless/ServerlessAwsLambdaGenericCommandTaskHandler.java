@@ -202,9 +202,9 @@ public class ServerlessAwsLambdaGenericCommandTaskHandler extends ServerlessComm
                                            LogCallback deployLogCallback, ServerlessDelegateTaskParams serverlessDelegateTaskParams) throws Exception {
     ShellScriptTaskParametersNG taskParameters = serverlessGenericRequest.getShellScriptTaskParametersNG();
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
-    serverlessGenericRequest.getShellScriptTaskParametersNG().getEnvironmentVariables().put("serverlessPath", serverlessDelegateTaskParams.getWorkingDirectory());
+    serverlessGenericRequest.getShellScriptTaskParametersNG().getEnvironmentVariables().put("harness.delegate.serverlessDirectoryPath", serverlessDelegateTaskParams.getWorkingDirectory());
     if (taskParameters.isExecuteOnDelegate()) {
-      ShellExecutorConfig shellExecutorConfig = getShellExecutorConfig(taskParameters);
+      ShellExecutorConfig shellExecutorConfig = getShellExecutorConfig(taskParameters, serverlessDelegateTaskParams.getWorkingDirectory());
       ScriptProcessExecutor executor = ServerlessShellExecutorFactoryNG.getExecutor(shellExecutorConfig, deployLogCallback, commandUnitsProgress);
       // TODO: check later
       // if (taskParameters.isLocalOverrideFeatureFlag()) {
@@ -220,7 +220,7 @@ public class ServerlessAwsLambdaGenericCommandTaskHandler extends ServerlessComm
               .build();
     } else {
       try {
-        SshSessionConfig sshSessionConfig = getSshSessionConfig(taskParameters);
+        SshSessionConfig sshSessionConfig = getSshSessionConfig(taskParameters, serverlessDelegateTaskParams.getWorkingDirectory());
         ScriptSshExecutor executor =
                 ServerlessSshExecutorFactoryNG.getExecutor(sshSessionConfig, deployLogCallback, commandUnitsProgress);
         ExecuteCommandResponse executeCommandResponse =
@@ -260,19 +260,19 @@ public class ServerlessAwsLambdaGenericCommandTaskHandler extends ServerlessComm
     }
   }
 
-  private SshSessionConfig getSshSessionConfig(ShellScriptTaskParametersNG taskParameters) {
+  private SshSessionConfig getSshSessionConfig(ShellScriptTaskParametersNG taskParameters, String workingDirectory) {
     SshSessionConfig sshSessionConfig = sshSessionConfigMapper.getSSHSessionConfig(
             taskParameters.getSshKeySpecDTO(), taskParameters.getEncryptionDetails());
 
     sshSessionConfig.setAccountId(taskParameters.getAccountId());
     sshSessionConfig.setExecutionId(taskParameters.getExecutionId());
     sshSessionConfig.setHost(taskParameters.getHost());
-    sshSessionConfig.setWorkingDirectory(taskParameters.getWorkingDirectory());
+    sshSessionConfig.setWorkingDirectory(workingDirectory);
     sshSessionConfig.setCommandUnitName(ServerlessCommandUnitConstants.serverlessShellScript.toString());
     return sshSessionConfig;
   }
 
-  private ShellExecutorConfig getShellExecutorConfig(ShellScriptTaskParametersNG taskParameters) {
+  private ShellExecutorConfig getShellExecutorConfig(ShellScriptTaskParametersNG taskParameters, String workingDirectory) {
     String kubeConfigFileContent = taskParameters.getScript().contains(K8sConstants.HARNESS_KUBE_CONFIG_PATH)
             && taskParameters.getK8sInfraDelegateConfig() != null
             ? containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(taskParameters.getK8sInfraDelegateConfig())
@@ -282,7 +282,7 @@ public class ServerlessAwsLambdaGenericCommandTaskHandler extends ServerlessComm
             .accountId(taskParameters.getAccountId())
             .executionId(taskParameters.getExecutionId())
             .commandUnitName(ServerlessCommandUnitConstants.serverlessShellScript.toString())
-            .workingDirectory(taskParameters.getWorkingDirectory())
+            .workingDirectory(workingDirectory)
             .environment(taskParameters.getEnvironmentVariables())
             .kubeConfigContent(kubeConfigFileContent)
             .scriptType(taskParameters.getScriptType())
