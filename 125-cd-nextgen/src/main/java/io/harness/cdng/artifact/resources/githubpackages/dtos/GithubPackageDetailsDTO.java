@@ -18,7 +18,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GithubPackageDetailsDTO {
-  String packageType;
   String packageName;
+  String packageType;
   String org;
+  String version;
 }

@@ -7,4 +7,13 @@
 
 package io.harness.cdng.artifact.resources.githubpackages.service;
 
-public class GithubPackagesResourceServiceImpl {}
+import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.resources.githubpackages.dtos.GithubPackagesResponseDTO;
+
+public class GithubPackagesResourceServiceImpl implements GithubPackagesResourceService {
+  @Override
+  public GithubPackagesResponseDTO getPackageDetails(
+      IdentifierRef connectorRef, String accountId, String orgIdentifier, String projectIdentifier) {
+    return null;
+  }
+}

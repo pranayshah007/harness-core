@@ -11,12 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.githubpackages.dtos.GithubPackagesResponseDTO;
 import io.harness.cdng.artifact.resources.githubpackages.service.GithubPackagesResourceService;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -52,6 +54,12 @@ public class GithubPackagesArtifactResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    return null;
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(gitConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    GithubPackagesResponseDTO response =
+        githubPackagesResourceService.getPackageDetails(connectorRef, accountId, orgIdentifier, projectIdentifier);
+
+    return ResponseDTO.newResponse(response);
   }
 }
