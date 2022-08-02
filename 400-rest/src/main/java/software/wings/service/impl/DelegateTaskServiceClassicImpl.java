@@ -109,8 +109,10 @@ import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.mongo.DelayLogContext;
 import io.harness.network.SafeHttpCall;
+import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
+import io.harness.reflection.ReflectionUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionConfig;
@@ -277,6 +279,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   private Supplier<Long> taskCountCache = Suppliers.memoizeWithExpiration(this::fetchTaskCount, 1, TimeUnit.MINUTES);
   @Inject @Getter private Subject<DelegateTaskStatusObserver> delegateTaskStatusObserverSubject;
+  @Inject @Getter private Subject<DelegateTaskObserver> delegateTaskObserverSubject = new Subject<>();
+  @Inject private RemoteObserverInformer remoteObserverInformer;
 
   private LoadingCache<String, String> logStreamingAccountTokenCache =
       CacheBuilder.newBuilder()
@@ -1064,8 +1068,13 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       }
       task.getData().setParameters(delegateTask.getData().getParameters());
       delegateSelectionLogsService.logTaskAssigned(delegateId, task);
-      delegateTaskStatusObserverSubject.fireInform(DelegateTaskStatusObserver::onTaskAssigned,
-          delegateTask.getAccountId(), taskId, delegateId, task.getData().getTimeout());
+
+      delegateTaskObserverSubject.fireInform(
+          DelegateTaskObserver::onTaskAssigned, delegateTask.getAccountId(), taskId, delegateId);
+      remoteObserverInformer.sendEvent(
+          ReflectionUtils.getMethod(DelegateTaskObserver.class, "onTaskAssigned", String.class, String.class, String.class),
+          DelegateTaskServiceClassicImpl.class, delegateTask.getAccountId(), taskId);
+
       delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE);
 
       return resolvePreAssignmentExpressions(task, SecretManagerMode.APPLY);
