@@ -130,7 +130,7 @@ public class CIExecutionConstants {
 
   public static final String CLIENT_SECRET = "CLIENT_SECRET";
   public static final String TENANT_ID = "TENANT_ID";
-  public static final String CERT_PATH = "CERT_PATH";
+  public static final String CLIENT_CERT = "CLIENT_CERTIFICATE";
   public static final String CLIENT_ID = "CLIENT_ID";
   public static final String PLUGIN_ASSUME_ROLE = "PLUGIN_ASSUME_ROLE";
   public static final String PLUGIN_EXTERNAL_ID = "PLUGIN_EXTERNAL_ID";
