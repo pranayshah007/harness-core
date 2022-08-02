@@ -160,7 +160,7 @@ public class OAuthTokenRereshers implements Handler<GitlabConnector> {
         GitlabConnector.class,
         MongoPersistenceIterator.<GitlabConnector, SpringFilterExpander>builder()
             .clazz(GitlabConnector.class)
-            .fieldName(GitlabConnectorKeys.nextTokenIteration)
+            .fieldName(GitlabConnectorKeys.nextTokenRenewIteration)
             .targetInterval(ofMinutes(configuration.getOauthRefreshFrequency()))
             .acceptableExecutionTime(ofMinutes(1))
             .acceptableNoAlertDelay(ofMinutes(1))
