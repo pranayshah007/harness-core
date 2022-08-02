@@ -1970,8 +1970,13 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         DelegateTaskPackage delegateTaskPackage = executeRestCall(
             delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId));
         if (delegateTaskPackage == null || delegateTaskPackage.getData() == null) {
-          log.warn("Delegate task data not available for task: {} - accountId: {}", delegateTaskId,
-              delegateTaskEvent.getAccountId());
+          if (delegateTaskPackage == null) {
+            log.warn("Delegate task package is null for task: {} - accountId: {}", delegateTaskId,
+                delegateTaskEvent.getAccountId());
+          } else {
+            log.warn("Delegate task data not available for task: {} - accountId: {}", delegateTaskId,
+                delegateTaskEvent.getAccountId());
+          }
           return;
         } else {
           log.info("received task package {} for delegateInstance {}", delegateTaskPackage, delegateInstanceId);
