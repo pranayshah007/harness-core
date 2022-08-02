@@ -24,8 +24,11 @@ import static io.harness.persistence.HQuery.excludeValidate;
 import io.harness.cvng.activity.beans.ActivityVerificationSummary;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary;
 import io.harness.cvng.analysis.beans.Risk;
+import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.analysis.services.api.VerificationJobInstanceAnalysisService;
+import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.DataCollectionInfo;
+import io.harness.cvng.beans.DataCollectionTaskDTO;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.VerificationJobType;
@@ -99,6 +102,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
   @Inject private MonitoringSourcePerpetualTaskService monitoringSourcePerpetualTaskService;
   @Inject private MetricService metricService;
   @Inject private MetricContextBuilder metricContextBuilder;
+  @Inject private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
 
   @Override
   public String create(VerificationJobInstance verificationJobInstance) {
@@ -526,6 +530,26 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
           cvConfig.getUuid(), verificationJobInstance.getUuid(), cvConfig.getVerificationTaskTags());
       DataCollectionInfoMapper dataCollectionInfoMapper =
           dataSourceTypeDataCollectionInfoMapperMap.get(cvConfig.getType());
+
+      if (deploymentTimeSeriesAnalysisService.isAnalysisFailFastForLatestTimeRange(verificationTaskId)) {
+        log.info(
+            "DeploymentTimeSeriesAnalysis from LE is FailFast, so not creating DataCollectionTask for verificationTaskId: {}",
+            verificationTaskId);
+        List<DataCollectionTask> allDataCollectionTasks = dataCollectionTaskService.getAllNonFinalDataCollectionTasks(
+            verificationJobInstance.getAccountId(), verificationTaskId);
+        allDataCollectionTasks.forEach(dataCollectionTask -> {
+          DataCollectionTaskDTO.DataCollectionTaskResult dataCollectionTaskResult =
+              DataCollectionTaskDTO.DataCollectionTaskResult.builder()
+                  .dataCollectionTaskId(dataCollectionTask.getUuid())
+                  .status(DataCollectionExecutionStatus.ABORTED)
+                  .exception(
+                      "DeploymentTimeSeriesAnalysis from LE is FailFast, so terminating DataCollectionTask with ID: "
+                      + dataCollectionTask.getUuid())
+                  .build();
+          dataCollectionTaskService.updateTaskStatus(dataCollectionTaskResult);
+        });
+        return;
+      }
 
       if (preDeploymentTimeRange.isPresent()) {
         DataCollectionInfo preDeploymentDataCollectionInfo =

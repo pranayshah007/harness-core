@@ -26,4 +26,5 @@ public interface HostValidationService {
       SSHVaultConfig sshVaultConfig);
 
   List<HostReachabilityInfo> validateReachability(List<String> hostNames, SettingAttribute connectionSetting);
+  List<HostReachabilityInfo> validateReachability(List<String> hostNames, int port);
 }
