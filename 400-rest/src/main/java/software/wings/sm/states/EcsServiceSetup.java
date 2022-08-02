@@ -436,9 +436,9 @@ public class EcsServiceSetup extends State {
     ImageDetails imageDetails =
         artifactCollectionUtils.fetchContainerImageDetails(artifact, context.getWorkflowExecutionId());
     ContainerServiceElement containerServiceElement =
-        ecsStateHelper.buildContainerServiceElement(context, setupExecutionData, executionStatus, imageDetails,
-            getMaxInstances(), getFixedInstances(), getDesiredInstanceCount(), getResizeStrategy(),
-            ecsStateHelper.renderTimeout(serviceSteadyStateTimeout, context, DEFAULT_AMI_ASG_TIMEOUT_MIN), log);
+        ecsStateHelper.buildContainerServiceElement(context, setupExecutionData, imageDetails, getMaxInstances(),
+            getFixedInstances(), getDesiredInstanceCount(), getResizeStrategy(),
+            ecsStateHelper.renderTimeout(serviceSteadyStateTimeout, context, DEFAULT_AMI_ASG_TIMEOUT_MIN));
     ecsStateHelper.populateFromDelegateResponse(setupExecutionData, executionData, containerServiceElement);
     sweepingOutputService.save(
         context.prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.WORKFLOW)

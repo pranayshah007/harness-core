@@ -2350,10 +2350,14 @@ public class K8sTaskHelperBase {
       case KUSTOMIZE:
         KustomizeManifestDelegateConfig kustomizeManifest = (KustomizeManifestDelegateConfig) manifestDelegateConfig;
 
-        String kustomizePath = Paths.get(manifestFilesDirectory, kustomizeManifest.getKustomizeDirPath()).toString();
+        String kustomizeYamlFolderPath = kustomizeManifest.getKustomizeYamlFolderPath() != null
+            ? kustomizeManifest.getKustomizeYamlFolderPath()
+            : kustomizeManifest.getKustomizeDirPath();
+
+        String kustomizePath = Paths.get(manifestFilesDirectory, kustomizeYamlFolderPath).toString();
         savingPatchesToDirectory(kustomizePath, manifestOverrideFiles, executionLogCallback);
         return kustomizeTaskHelper.build(manifestFilesDirectory, k8sDelegateTaskParams.getKustomizeBinaryPath(),
-            kustomizeManifest.getPluginPath(), kustomizeManifest.getKustomizeDirPath(), executionLogCallback);
+            kustomizeManifest.getPluginPath(), kustomizeYamlFolderPath, executionLogCallback);
 
       case OPENSHIFT_TEMPLATE:
         OpenshiftManifestDelegateConfig openshiftManifestConfig =
@@ -2441,6 +2445,15 @@ public class K8sTaskHelperBase {
         return downloadZippedManifestFilesFormCustomSource(
             storeDelegateConfig, manifestFilesDirectory, executionLogCallback);
       case GIT:
+        if (manifestDelegateConfig instanceof KustomizeManifestDelegateConfig) {
+          KustomizeManifestDelegateConfig kustomizeManifestDelegateConfig =
+              (KustomizeManifestDelegateConfig) manifestDelegateConfig;
+          if (kustomizeManifestDelegateConfig.getKustomizeYamlFolderPath() != null) {
+            executionLogCallback.saveExecutionLog(color(
+                "\nUsing Optimized File Fetch For Kustomize, will fetch the subset of files needed for Deployment. ",
+                LogColor.White, LogWeight.Bold));
+          }
+        }
         return downloadManifestFilesFromGit(
             storeDelegateConfig, manifestFilesDirectory, executionLogCallback, accountId);
 
@@ -2922,9 +2935,7 @@ public class K8sTaskHelperBase {
   private String getManifestDirectoryForHelmChart(
       String baseManifestDirectory, HelmChartManifestDelegateConfig helmChartManifest) {
     if (StoreDelegateConfigType.HARNESS.equals(helmChartManifest.getStoreDelegateConfig().getType())) {
-      LocalFileStoreDelegateConfig localFileStoreDelegateConfig =
-          (LocalFileStoreDelegateConfig) helmChartManifest.getStoreDelegateConfig();
-      return HelmTaskHelperBase.getChartDirectory(baseManifestDirectory, localFileStoreDelegateConfig.getFolder());
+      return baseManifestDirectory;
     }
     if (GIT != helmChartManifest.getStoreDelegateConfig().getType()) {
       return HelmTaskHelperBase.getChartDirectory(baseManifestDirectory, helmChartManifest.getChartName());

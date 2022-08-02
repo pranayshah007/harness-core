@@ -9,7 +9,7 @@ package io.harness.cvng.core.utils.monitoredService;
 
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.RiskProfile;
-import io.harness.cvng.core.beans.monitoredService.MetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.DynatraceHealthSourceSpec;
 import io.harness.cvng.core.entities.DynatraceCVConfig;
 
@@ -74,7 +74,7 @@ public class DynatraceHealthSourceSpecTransformer
         .serviceName(cvConfigs.get(0).getDynatraceServiceName())
         .metricPacks(cvConfigs.stream()
                          .filter(cv -> CollectionUtils.isEmpty(cv.getMetricInfos()))
-                         .map(cv -> MetricPackDTO.toMetricPackDTO(cv.getMetricPack()))
+                         .map(cv -> TimeSeriesMetricPackDTO.toMetricPackDTO(cv.getMetricPack()))
                          .collect(Collectors.toSet()))
         .metricDefinitions(metricDefinitions)
         .build();

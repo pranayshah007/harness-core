@@ -316,7 +316,17 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
         continue;
       }
 
-      containerVolumeMounts.forEach(c::addVolumeMountsItem);
+      if (c.getImage().contains("kaniko")) {
+        for (V1VolumeMount containerVolumeMount : containerVolumeMounts) {
+          // For kaniko containers, only mount volumes to the kaniko allowed path.
+          // Any other path can interfere with the image creation process.
+          if (containerVolumeMount.getMountPath().startsWith("/kaniko")) {
+            c.addVolumeMountsItem(containerVolumeMount);
+          }
+        }
+      } else {
+        containerVolumeMounts.forEach(c::addVolumeMountsItem);
+      }
     }
   }
 

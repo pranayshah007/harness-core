@@ -45,6 +45,8 @@ import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
 import io.harness.cdng.k8s.resources.azure.service.AzureResourceServiceImpl;
 import io.harness.cdng.k8s.resources.gcp.service.GcpResourceService;
 import io.harness.cdng.k8s.resources.gcp.service.impl.GcpResourceServiceImpl;
+import io.harness.cdng.rollback.service.RollbackDataService;
+import io.harness.cdng.rollback.service.RollbackDataServiceImpl;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceService;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceServiceImpl;
 import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
@@ -55,6 +57,7 @@ import io.harness.filter.impl.FilterServiceImpl;
 import io.harness.filter.mapper.FilterPropertiesMapper;
 import io.harness.filter.service.FilterService;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
+import io.harness.migration.NGMigrationSdkModule;
 import io.harness.ng.core.NGCoreModule;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
@@ -92,6 +95,7 @@ public class NGModule extends AbstractModule {
   protected void configure() {
     install(NGCoreModule.getInstance());
     install(WalkTreeModule.getInstance());
+    install(NGMigrationSdkModule.getInstance());
 
     bind(ArtifactSourceService.class).to(ArtifactSourceServiceImpl.class);
     bind(DockerResourceService.class).to(DockerResourceServiceImpl.class);
@@ -126,6 +130,7 @@ public class NGModule extends AbstractModule {
                 .setNameFormat("Cd-ng-telemetry-publisher-Thread-%d")
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
+    bind(RollbackDataService.class).to(RollbackDataServiceImpl.class);
 
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);

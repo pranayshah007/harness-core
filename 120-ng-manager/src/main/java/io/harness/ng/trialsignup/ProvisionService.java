@@ -380,6 +380,10 @@ public class ProvisionService {
     return convertToUserRepo(scmClient.getAllUserRepos(null));
   }
 
+  public void refreshCode(String clientId, String clientSecret, String endpoint, String refreshCode) {
+    scmClient.refreshToken(null, clientId, clientSecret, endpoint, refreshCode);
+  }
+
   private List<UserRepoResponse> convertToUserRepo(GetUserReposResponse allUserRepos) {
     ArrayList userRepoResponses = new ArrayList();
     for (Repository userRepo : allUserRepos.getReposList()) {

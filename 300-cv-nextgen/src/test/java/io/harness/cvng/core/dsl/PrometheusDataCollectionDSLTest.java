@@ -10,6 +10,7 @@ package io.harness.cvng.core.dsl;
 import static io.harness.CvNextGenTestBase.getResourceFilePath;
 import static io.harness.CvNextGenTestBase.getSourceResourceFile;
 import static io.harness.rule.OwnerRule.ABHIJITH;
+import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,6 +22,7 @@ import io.harness.cvng.HoverflyCVNextGenTestBase;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.PrometheusDataCollectionInfo;
 import io.harness.cvng.beans.TimeSeriesMetricType;
+import io.harness.cvng.core.beans.PrometheusMetricDefinition;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
@@ -238,6 +240,141 @@ public class PrometheusDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
                                code, runtimeParameters, callDetails -> { System.out.println(callDetails); }))
         .hasMessage(
             "Host list returned from Prometheus is of size 2, which is greater than allowed 1, please check the query");
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testExecute_prometheusDSL_SLI() throws IOException {
+    DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
+    dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
+    String code = readDSL("metric-collection.datacollection");
+    Instant endInstant = Instant.parse("2022-07-25T19:53:28.000Z");
+    Instant startInstant = endInstant.minus(Duration.ofMinutes(5));
+    List<MetricPack> metricPacks = metricPackService.getMetricPacks(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
+        DataSourceType.PROMETHEUS);
+
+    PrometheusCVConfig prometheusCVConfig =
+        builderFactory.prometheusCVConfigBuilder()
+            .metricInfoList(Collections.singletonList(
+                PrometheusCVConfig.MetricInfo.builder()
+                    .metricName("container_file_descriptors")
+                    .identifier("container_file_descriptors")
+                    .prometheusMetricName("container_file_descriptors")
+                    .envFilter(Collections.singletonList(PrometheusMetricDefinition.PrometheusFilter.builder()
+                                                             .labelName("job")
+                                                             .labelValue("kubernetes-cadvisor")
+                                                             .build()))
+                    .serviceFilter(Collections.singletonList(PrometheusMetricDefinition.PrometheusFilter.builder()
+                                                                 .labelName("namespace")
+                                                                 .labelValue("cv-demo")
+                                                                 .build()))
+                    .isManualQuery(false)
+                    .build()))
+            .build();
+    prometheusCVConfig.setMetricPack(metricPacks.get(0));
+    PrometheusDataCollectionInfo prometheusDataCollectionInfo =
+        dataCollectionInfoMapper.toDataCollectionInfo(prometheusCVConfig, TaskType.SLI);
+    prometheusDataCollectionInfo.setCollectHostData(false);
+    prometheusDataCollectionInfo.setGroupName("g1");
+    PrometheusConnectorDTO prometheusConnectorDTO =
+        PrometheusConnectorDTO.builder()
+            .url("http://35.226.185.156:8080/")
+            .username("test")
+            .passwordRef(SecretRefData.builder().decryptedValue("password".toCharArray()).build())
+            .build();
+    Map<String, Object> params = prometheusDataCollectionInfo.getDslEnvVariables(prometheusConnectorDTO);
+
+    RuntimeParameters runtimeParameters =
+        RuntimeParameters.builder()
+            .startTime(startInstant)
+            .endTime(endInstant)
+            .commonHeaders(prometheusDataCollectionInfo.collectionHeaders(prometheusConnectorDTO))
+            .otherEnvVariables(params)
+            .baseUrl("http://35.226.185.156:8080/")
+            .build();
+    List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
+        code, runtimeParameters, callDetails -> { System.out.println(callDetails); });
+    assertThat(timeSeriesRecords).hasSize(90);
+    assertThat(timeSeriesRecords.get(0).getTimestamp()).isEqualTo(1658778508000L);
+    assertThat(timeSeriesRecords.get(0).getTxnName()).isEqualTo("g1");
+    assertThat(timeSeriesRecords.get(0).getMetricValue()).isEqualTo(3.0);
+    assertThat(timeSeriesRecords.get(0).getTimestamp()).isGreaterThanOrEqualTo(startInstant.toEpochMilli());
+    assertThat(timeSeriesRecords.get(89).getTimestamp()).isLessThanOrEqualTo(endInstant.toEpochMilli());
+    assertThat(timeSeriesRecords.get(89).getTimestamp()).isEqualTo(1658778808000L);
+    assertThat(timeSeriesRecords.get(89).getMetricValue()).isEqualTo(0.0);
+    assertThat(timeSeriesRecords.get(89).getTxnName()).isEqualTo("g1");
+    assertThat(timeSeriesRecords.get(0).getMetricName()).isEqualTo("container_file_descriptors");
+    assertThat(timeSeriesRecords.get(0).getMetricIdentifier()).isEqualTo("container_file_descriptors");
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testExecute_prometheusDSL_forLiveMonitoring() throws IOException {
+    DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
+    dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
+    String code = readDSL("metric-collection.datacollection");
+    Instant endInstant = Instant.parse("2022-07-25T19:53:28.000Z");
+    Instant startInstant = endInstant.minus(Duration.ofMinutes(5));
+    List<MetricPack> metricPacks = metricPackService.getMetricPacks(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
+        DataSourceType.PROMETHEUS);
+
+    PrometheusCVConfig prometheusCVConfig =
+        builderFactory.prometheusCVConfigBuilder()
+            .metricInfoList(Collections.singletonList(
+                PrometheusCVConfig.MetricInfo.builder()
+                    .metricName("container_file_descriptors")
+                    .identifier("container_file_descriptors")
+                    .prometheusMetricName("container_file_descriptors")
+                    .envFilter(Collections.singletonList(PrometheusMetricDefinition.PrometheusFilter.builder()
+                                                             .labelName("job")
+                                                             .labelValue("kubernetes-cadvisor")
+                                                             .build()))
+                    .serviceFilter(Collections.singletonList(PrometheusMetricDefinition.PrometheusFilter.builder()
+                                                                 .labelName("namespace")
+                                                                 .labelValue("cv-demo")
+                                                                 .build()))
+                    .isManualQuery(false)
+                    .metricType(TimeSeriesMetricType.INFRA)
+                    .build()))
+            .build();
+    prometheusCVConfig.setMetricPack(metricPacks.get(0));
+    PrometheusDataCollectionInfo prometheusDataCollectionInfo =
+        dataCollectionInfoMapper.toDataCollectionInfo(prometheusCVConfig, TaskType.LIVE_MONITORING);
+    prometheusDataCollectionInfo.setCollectHostData(false);
+    prometheusDataCollectionInfo.setGroupName("g1");
+    PrometheusConnectorDTO prometheusConnectorDTO =
+        PrometheusConnectorDTO.builder()
+            .url("http://35.226.185.156:8080/")
+            .username("test")
+            .passwordRef(SecretRefData.builder().decryptedValue("password".toCharArray()).build())
+            .build();
+    Map<String, Object> params = prometheusDataCollectionInfo.getDslEnvVariables(prometheusConnectorDTO);
+
+    RuntimeParameters runtimeParameters =
+        RuntimeParameters.builder()
+            .startTime(startInstant)
+            .endTime(endInstant)
+            .commonHeaders(prometheusDataCollectionInfo.collectionHeaders(prometheusConnectorDTO))
+            .otherEnvVariables(params)
+            .baseUrl("http://35.226.185.156:8080/")
+            .build();
+    List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
+        code, runtimeParameters, callDetails -> { System.out.println(callDetails); });
+    assertThat(timeSeriesRecords).hasSize(90);
+    assertThat(timeSeriesRecords.get(0).getTimestamp()).isEqualTo(1658778508000L);
+    assertThat(timeSeriesRecords.get(0).getTxnName()).isEqualTo("g1");
+    assertThat(timeSeriesRecords.get(0).getMetricValue()).isEqualTo(3.0);
+    assertThat(timeSeriesRecords.get(0).getTimestamp()).isGreaterThanOrEqualTo(startInstant.toEpochMilli());
+    assertThat(timeSeriesRecords.get(89).getTimestamp()).isLessThanOrEqualTo(endInstant.toEpochMilli());
+    assertThat(timeSeriesRecords.get(89).getTimestamp()).isEqualTo(1658778808000L);
+    assertThat(timeSeriesRecords.get(89).getMetricValue()).isEqualTo(0.0);
+    assertThat(timeSeriesRecords.get(89).getTxnName()).isEqualTo("g1");
+    assertThat(timeSeriesRecords.get(0).getMetricName()).isEqualTo("container_file_descriptors");
+    assertThat(timeSeriesRecords.get(0).getMetricIdentifier()).isEqualTo("container_file_descriptors");
   }
 
   private String readDSL(String name) throws IOException {

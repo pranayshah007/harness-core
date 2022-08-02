@@ -89,6 +89,15 @@ public class ImageSecretBuilder {
     return null;
   }
 
+  public String getJSONEncodedAzureCredentials(ImageCredentials imageCredentials) {
+    return new JSONObject()
+        .put(imageCredentials.getRegistryUrl(),
+            new JSONObject()
+                .put(USERNAME, imageCredentials.getUserName())
+                .put(PASSWORD, imageCredentials.getPassword()))
+        .toString();
+  }
+
   public ImageCredentials getImageCredentials(ImageDetailsWithConnector imageDetailsWithConnector) {
     ConnectorDetails connectorDetails = imageDetailsWithConnector.getImageConnectorDetails();
     if (connectorDetails == null) {

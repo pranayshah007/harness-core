@@ -7,6 +7,8 @@
 
 package io.harness.changehandlers;
 
+import static io.harness.changehandlers.AbstractChangeDataHandler.escapeSql;
+
 import io.harness.ChangeHandler;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -236,6 +238,12 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
                 columnValueMapping.put("infrastructureIdentifier", infrastructureIdentifier);
               }
 
+              if (infraExecutionSummaryObject.get("infrastructureName") != null
+                  && infraExecutionSummaryObject.get("infrastructureName").toString().length() != 0) {
+                String infrastructureName = infraExecutionSummaryObject.get("infrastructureName").toString();
+                columnValueMapping.put("infrastructureName", infrastructureName);
+              }
+
               if (infraExecutionSummaryObject.get("type") != null
                   && infraExecutionSummaryObject.get("type").toString().length() != 0) {
                 String envType = infraExecutionSummaryObject.get("type").toString();
@@ -304,7 +312,7 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
 
     if (!columnValueMappingForInsert.isEmpty()) {
       for (Map.Entry<String, String> entry : columnValueMappingForInsert.entrySet()) {
-        insertSQLBuilder.append(String.format("'%s',", entry.getValue()));
+        insertSQLBuilder.append(String.format("'%s',", escapeSql(entry.getValue())));
       }
     }
 
@@ -362,7 +370,8 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
 
     if (!columnValueMappingForSet.isEmpty()) {
       for (Map.Entry<String, String> entry : columnValueMappingForSet.entrySet()) {
-        updateQueryBuilder.append(String.format("%s=%s,", entry.getKey(), String.format("'%s'", entry.getValue())));
+        updateQueryBuilder.append(
+            String.format("%s=%s,", entry.getKey(), String.format("'%s'", escapeSql(entry.getValue()))));
       }
     }
 

@@ -12,12 +12,13 @@ import static io.harness.cvng.core.services.CVNextGenConstants.INFRASTRUCTURE_PA
 import static io.harness.cvng.core.services.CVNextGenConstants.PERFORMANCE_PACK_IDENTIFIER;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum CVMonitoringCategory {
-  PERFORMANCE(PERFORMANCE_PACK_IDENTIFIER),
-  ERRORS(ERRORS_PACK_IDENTIFIER),
-  INFRASTRUCTURE(INFRASTRUCTURE_PACK_IDENTIFIER);
+  @JsonProperty(PERFORMANCE_PACK_IDENTIFIER) PERFORMANCE(PERFORMANCE_PACK_IDENTIFIER),
+  @JsonProperty(ERRORS_PACK_IDENTIFIER) ERRORS(ERRORS_PACK_IDENTIFIER),
+  @JsonProperty(INFRASTRUCTURE_PACK_IDENTIFIER) INFRASTRUCTURE(INFRASTRUCTURE_PACK_IDENTIFIER);
 
   private String displayName;
 

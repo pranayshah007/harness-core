@@ -33,17 +33,24 @@ import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentDat
 import io.harness.delegate.task.azure.appservice.AzureAppServiceResourceUtilities;
 import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDockerDeploymentContext;
+import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServicePackageDeploymentContext;
 import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.delegate.task.azure.appservice.webapp.ng.exception.AzureWebAppSlotDeploymentExceptionData;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSlotDeploymentRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppRequestResponse;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSlotDeploymentResponse;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData;
+import io.harness.delegate.task.azure.artifact.ArtifactDownloadContext;
+import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadResponse;
+import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadService;
 import io.harness.delegate.task.azure.artifact.AzureRegistrySettingsAdapter;
 import io.harness.delegate.task.azure.common.AzureAppServiceService;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.rule.Owner;
 
+import software.wings.utils.ArtifactType;
+
+import java.io.File;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Rule;
@@ -57,11 +64,15 @@ import org.mockito.junit.MockitoRule;
 @OwnedBy(CDP)
 public class AzureWebAppSlotDeploymentRequestHandlerTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
+  @Mock private File artifactFile;
+
   @Mock private AzureAppServiceDeploymentService azureAppServiceDeploymentService;
   @Mock private AzureAppServiceService azureAppServiceService;
   @Mock private AzureAppServiceResourceUtilities azureAppServiceResourceUtilities;
   @Mock private AzureLogCallbackProvider logCallbackProvider;
   @Mock private AzureRegistrySettingsAdapter azureRegistrySettingsAdapter;
+  @Mock private AzureArtifactDownloadService artifactDownloadService;
 
   @InjectMocks AzureWebAppSlotDeploymentRequestHandler requestHandler;
 
@@ -141,5 +152,40 @@ public class AzureWebAppSlotDeploymentRequestHandlerTest extends CategoryTest {
           assertThat(dataException.getDeploymentProgressMarker()).isEqualTo("test");
           return true;
         });
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testExecutePackageArtifact() {
+    final AzureAppServicePreDeploymentData preDeploymentData =
+        AzureAppServicePreDeploymentData.builder().deploymentProgressMarker("test").build();
+    final AzureWebAppSlotDeploymentRequest request =
+        AzureWebAppSlotDeploymentRequest.builder()
+            .accountId("accountId")
+            .infrastructure(AzureTestUtils.createTestWebAppInfraDelegateConfig())
+            .artifact(AzureTestUtils.createTestPackageArtifactConfig())
+            .preDeploymentData(preDeploymentData)
+            .timeoutIntervalInMin(10)
+            .build();
+
+    final List<AzureAppDeploymentData> deploymentDataList = singletonList(AzureAppDeploymentData.builder().build());
+    doReturn(deploymentDataList)
+        .when(azureAppServiceService)
+        .fetchDeploymentData(any(AzureWebClientContext.class), eq(DEPLOYMENT_SLOT));
+
+    doReturn(AzureArtifactDownloadResponse.builder().artifactFile(artifactFile).artifactType(ArtifactType.JAR).build())
+        .when(artifactDownloadService)
+        .download(any(ArtifactDownloadContext.class));
+
+    AzureWebAppRequestResponse requestResponse =
+        requestHandler.execute(request, AzureTestUtils.createTestAzureConfig(), logCallbackProvider);
+    assertThat(requestResponse).isInstanceOf(AzureWebAppSlotDeploymentResponse.class);
+    AzureWebAppSlotDeploymentResponse slotRequestResponse = (AzureWebAppSlotDeploymentResponse) requestResponse;
+    assertThat(slotRequestResponse.getAzureAppDeploymentData()).isSameAs(deploymentDataList);
+
+    verify(azureAppServiceDeploymentService)
+        .deployPackage(any(AzureAppServicePackageDeploymentContext.class), eq(preDeploymentData));
+    verify(artifactDownloadService).download(any(ArtifactDownloadContext.class));
   }
 }

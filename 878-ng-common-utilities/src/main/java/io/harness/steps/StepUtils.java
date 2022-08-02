@@ -48,23 +48,17 @@ import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.DelegateTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
-import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
-import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
-import io.harness.tasks.ResponseData;
 import io.harness.tasks.Task;
 import io.harness.yaml.core.StepSpecType;
 
@@ -81,7 +75,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -97,33 +90,6 @@ public class StepUtils {
   private StepUtils() {}
 
   public static final String DEFAULT_STEP_TIMEOUT = "10m";
-
-  public static StepResponse createStepResponseFromChildResponse(Map<String, ResponseData> responseDataMap) {
-    StepResponseBuilder responseBuilder = StepResponse.builder().status(Status.SUCCEEDED);
-    FailureInfo.Builder failureInfoBuilder = FailureInfo.newBuilder();
-    List<Status> childStatuses = new LinkedList<>();
-    String nodeExecutionId = "";
-    boolean hasFailureInfo = false;
-    for (ResponseData responseData : responseDataMap.values()) {
-      StepResponseNotifyData responseNotifyData = (StepResponseNotifyData) responseData;
-      Status executionStatus = responseNotifyData.getStatus();
-      childStatuses.add(executionStatus);
-      nodeExecutionId = responseNotifyData.getNodeUuid();
-      if (StatusUtils.brokeStatuses().contains(executionStatus)) {
-        if (responseNotifyData.getFailureInfo() != null) {
-          failureInfoBuilder.addAllFailureData(responseNotifyData.getFailureInfo().getFailureDataList());
-          failureInfoBuilder.addAllFailureTypes(responseNotifyData.getFailureInfo().getFailureTypesList());
-          failureInfoBuilder.setErrorMessage(responseNotifyData.getFailureInfo().getErrorMessage());
-          hasFailureInfo = true;
-        }
-      }
-    }
-    if (hasFailureInfo) {
-      responseBuilder.failureInfo(failureInfoBuilder.build());
-    }
-    responseBuilder.status(StatusUtils.calculateStatusForNode(childStatuses, nodeExecutionId));
-    return responseBuilder.build();
-  }
 
   public static Task prepareDelegateTaskInput(
       String accountId, TaskData taskData, Map<String, String> setupAbstractions) {

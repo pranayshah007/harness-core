@@ -383,6 +383,7 @@ public class DelegateServiceTest extends WingsBaseTest {
 
     when(broadcasterFactory.lookup(anyString(), anyBoolean())).thenReturn(broadcaster);
     when(versionInfoManager.getVersionInfo()).thenReturn(VersionInfo.builder().version(VERSION).build());
+    when(delegateVersionService.getWatcherJarVersions(ACCOUNT_ID)).thenReturn(VERSION);
 
     when(delegateNgTokenService.getDelegateTokenValue(ACCOUNT_ID, TOKEN_NAME)).thenReturn("ACCOUNT_KEY");
     when(delegateTokenService.getTokenValue(ACCOUNT_ID, TOKEN_NAME)).thenReturn("ACCOUNT_KEY");
@@ -3781,7 +3782,7 @@ public class DelegateServiceTest extends WingsBaseTest {
   public void shouldGenerateNgHelmValuesYamlFile() throws IOException {
     when(accountService.get(ACCOUNT_ID))
         .thenReturn(anAccount().withAccountKey("ACCOUNT_KEY").withUuid(ACCOUNT_ID).build());
-    when(delegateVersionService.getDelegateImageTagForNgHelmDelegates(ACCOUNT_ID)).thenReturn(DELEGATE_IMAGE_TAG);
+    when(delegateVersionService.getImmutableDelegateImageTag(ACCOUNT_ID)).thenReturn(DELEGATE_IMAGE_TAG);
     when(delegateVersionService.getUpgraderImageTag(ACCOUNT_ID, HELM_DELEGATE)).thenReturn(UPGRADER_IMAGE_TAG);
     DelegateSetupDetails setupDetails =
         DelegateSetupDetails.builder()

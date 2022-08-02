@@ -315,10 +315,10 @@ public class HelmTaskHelper {
           useRepoFlags, EMPTY);
       if (helmChartConfigParams.isUseRepoFlags() && helmChartConfigParams.isDeleteRepoCacheDir()) {
         try {
-          FileUtils.forceDelete(new File(cacheDir));
+          deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
         } catch (IOException ie) {
-          log.error("Deletion of charts folder failed due to : {}",
-              ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
+          log.error(
+              "Deletion of folder failed due to : {}", ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
         }
       }
       cleanup(resourceDirectory);
@@ -437,10 +437,10 @@ public class HelmTaskHelper {
     } finally {
       if (helmChartConfigParams.isUseRepoFlags() && helmChartConfigParams.isDeleteRepoCacheDir()) {
         try {
-          FileUtils.forceDelete(new File(cacheDir));
+          deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
         } catch (IOException ie) {
-          log.error("Deletion of charts folder failed due to : {}",
-              ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
+          log.error(
+              "Deletion of folder failed due to : {}", ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
         }
       }
     }
@@ -479,10 +479,10 @@ public class HelmTaskHelper {
     } finally {
       if (helmChartConfigParams.isUseRepoFlags() && helmChartConfigParams.isDeleteRepoCacheDir()) {
         try {
-          FileUtils.forceDelete(new File(cacheDir));
+          deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
         } catch (IOException ie) {
-          log.error("Deletion of charts folder failed due to : {}",
-              ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
+          log.error(
+              "Deletion of folder failed due to : {}", ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
         }
       }
     }

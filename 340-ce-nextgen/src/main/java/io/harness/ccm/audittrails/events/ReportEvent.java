@@ -27,6 +27,7 @@ import lombok.NoArgsConstructor;
 public abstract class ReportEvent implements Event {
   private CEReportSchedule reportDTO;
   private String accountIdentifier;
+  public static final String RELATED_PERSPECTIVE_ID = "RelatedPerspectiveId";
 
   public ReportEvent(String accountIdentifier, CEReportSchedule reportDTO) {
     this.accountIdentifier = accountIdentifier;
@@ -44,6 +45,9 @@ public abstract class ReportEvent implements Event {
   public Resource getResource() {
     Map<String, String> labels = new HashMap<>();
     labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, reportDTO.getName());
+    if (reportDTO.getViewsId().length > 0) {
+      labels.put(RELATED_PERSPECTIVE_ID, reportDTO.getViewsId()[0]);
+    }
     return Resource.builder().identifier(reportDTO.getUuid()).type(PERSPECTIVE_REPORT).labels(labels).build();
   }
 }

@@ -53,6 +53,7 @@ public class VmStepSerializer {
       case GCR:
       case DOCKER:
       case ECR:
+      case ACR:
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_GCS:
       case UPLOAD_S3:

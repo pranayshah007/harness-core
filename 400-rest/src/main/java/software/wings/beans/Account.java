@@ -128,6 +128,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Getter @Setter private boolean accountActivelyUsed;
 
+  @Getter @Setter boolean isProductLed;
+
   /**
    * If this flag is set, all encryption/decryption activities will go through LOCAL security manager.
    * No VAULT/KMS secret manager can be configured. This helps for accounts whose delegate can't access
@@ -592,6 +594,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private AccountPreferences accountPreferences;
     private DefaultExperience defaultExperience;
     private boolean createdFromNG;
+    private boolean isProductLed;
     private boolean accountActivelyUsed;
     private ServiceAccountConfig serviceAccountConfig;
 
@@ -623,6 +626,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
     public Builder withCreatedFromNG(boolean createdFromNG) {
       this.createdFromNG = createdFromNG;
+      return this;
+    }
+
+    public Builder withIsProductLed(boolean isProductLed) {
+      this.isProductLed = isProductLed;
       return this;
     }
 
@@ -788,6 +796,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
           .withBackgroundJobsDisabled(backgroundJobsDisabled)
           .withDefaultExperience(defaultExperience)
           .withCreatedFromNG(createdFromNG)
+          .withIsProductLed(isProductLed)
           .withAccountActivelyUsed(accountActivelyUsed)
           .withAccountPreferences(accountPreferences)
           .withServiceAccountConfig(serviceAccountConfig);
@@ -823,6 +832,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       account.setBackgroundJobsDisabled(backgroundJobsDisabled);
       account.setDefaultExperience(defaultExperience);
       account.setCreatedFromNG(createdFromNG);
+      account.setProductLed(isProductLed);
       account.setAccountActivelyUsed(accountActivelyUsed);
       account.setAccountPreferences(accountPreferences);
       account.setNextGenEnabled(nextGenEnabled);

@@ -54,6 +54,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -198,9 +199,11 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startTime,
-      @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endTime) throws Exception {
+      @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endTime,
+      @Parameter(description = "Specifies the sorting criteria of the list") @QueryParam("sort") List<String> sort)
+      throws Exception {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getServiceDetailsList(
-        accountIdentifier, orgIdentifier, projectIdentifier, startTime, endTime));
+        accountIdentifier, orgIdentifier, projectIdentifier, startTime, endTime, sort));
   }
 
   @GET

@@ -7,6 +7,8 @@
 
 package io.harness.changehandlers;
 
+import static io.harness.changehandlers.AbstractChangeDataHandler.escapeSql;
+
 import io.harness.ChangeHandler;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -429,7 +431,7 @@ public class PlanExecutionSummaryCdServiceAndInfraChangeDataHandler implements C
 
     if (!columnValueMappingForInsert.isEmpty()) {
       for (Map.Entry<String, String> entry : columnValueMappingForInsert.entrySet()) {
-        insertSQLBuilder.append(String.format("'%s',", entry.getValue()));
+        insertSQLBuilder.append(String.format("'%s',", escapeSql(entry.getValue())));
       }
     }
 
@@ -487,7 +489,8 @@ public class PlanExecutionSummaryCdServiceAndInfraChangeDataHandler implements C
 
     if (!columnValueMappingForSet.isEmpty()) {
       for (Map.Entry<String, String> entry : columnValueMappingForSet.entrySet()) {
-        updateQueryBuilder.append(String.format("%s=%s,", entry.getKey(), String.format("'%s'", entry.getValue())));
+        updateQueryBuilder.append(
+            String.format("%s=%s,", entry.getKey(), String.format("'%s'", escapeSql(entry.getValue()))));
       }
     }
 

@@ -7,6 +7,7 @@
 
 package io.harness.ng.validator.service;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.NgSetupFields.OWNER;
@@ -156,7 +157,7 @@ public class NGHostValidationServiceImpl implements NGHostValidationService {
   public List<HostValidationDTO> validateHosts(@NotNull List<String> hosts, @Nullable String accountIdentifier,
       @Nullable String orgIdentifier, @Nullable String projectIdentifier, @NotNull String secretIdentifierWithScope,
       @Nullable Set<String> delegateSelectors) {
-    if (hosts.isEmpty()) {
+    if (isEmpty(hosts)) {
       return Collections.emptyList();
     }
     if (isBlank(secretIdentifierWithScope)) {

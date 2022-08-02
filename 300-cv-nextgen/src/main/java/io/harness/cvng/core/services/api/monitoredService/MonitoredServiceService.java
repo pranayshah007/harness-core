@@ -66,6 +66,8 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
 
   List<MonitoredService> list(@NonNull ProjectParams projectParams, List<String> identifiers);
 
+  List<MonitoredService> listWithFilter(@NonNull ProjectParams projectParams, List<String> identifiers, String filter);
+
   PageResponse<MonitoredServiceListItemDTO> list(ProjectParams projectParams, String environmentIdentifiers,
       Integer offset, Integer pageSize, String filter, boolean servicesAtRiskFilter);
 

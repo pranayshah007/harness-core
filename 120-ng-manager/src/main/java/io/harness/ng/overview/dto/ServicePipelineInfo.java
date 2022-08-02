@@ -27,5 +27,7 @@ public class ServicePipelineInfo {
   String identifier;
   String name;
   String status;
+  String deployedById;
+  String deployedByName;
   long lastExecutedAt;
 }

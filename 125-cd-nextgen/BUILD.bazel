@@ -29,6 +29,7 @@ java_library(
         "//950-delegate-tasks-beans:module",
         "//954-connector-beans:module",
         "//955-delegate-beans:module",
+        "//958-migration-sdk:module",
         "//960-ng-license-usage-beans:module",
         "//970-ng-commons:module",
         "//970-telemetry-beans:module",

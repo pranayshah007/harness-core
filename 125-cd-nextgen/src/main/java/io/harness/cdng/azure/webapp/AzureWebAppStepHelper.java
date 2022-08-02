@@ -10,7 +10,7 @@ package io.harness.cdng.azure.webapp;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.APPLICATION_SETTINGS;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.CONNECTION_STRINGS;
-import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_SCRIPT;
+import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_COMMAND;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.docker.DockerAuthType.ANONYMOUS;
@@ -22,6 +22,7 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAM
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_REGISTRY_NAME;
 
 import static java.lang.String.format;
+import static java.util.Collections.singletonList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.utility.AzureResourceUtility;
@@ -32,6 +33,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
@@ -39,7 +41,7 @@ import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.azure.config.ApplicationSettingsOutcome;
 import io.harness.cdng.azure.config.ConnectionStringsOutcome;
-import io.harness.cdng.azure.config.StartupScriptOutcome;
+import io.harness.cdng.azure.config.StartupCommandOutcome;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
@@ -54,13 +56,17 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.settings.AppSettingsFile;
 import io.harness.delegate.task.azure.appservice.settings.EncryptedAppSettingsFile;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
+import io.harness.delegate.task.azure.artifact.ArtifactoryAzureArtifactRequestDetails;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig.AzureContainerArtifactConfigBuilder;
+import io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig;
+import io.harness.delegate.task.azure.artifact.AzurePackageArtifactConfig.AzurePackageArtifactConfigBuilder;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
@@ -129,16 +135,16 @@ public class AzureWebAppStepHelper {
 
   public Map<String, StoreConfig> fetchWebAppConfig(Ambiance ambiance) {
     Map<String, StoreConfig> settingsConfig = new HashMap<>();
-    OptionalOutcome startupScriptOutcome =
-        outcomeService.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(STARTUP_SCRIPT));
+    OptionalOutcome startupCommandOutcome =
+        outcomeService.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(STARTUP_COMMAND));
     OptionalOutcome applicationSettingsOutcome =
         outcomeService.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(APPLICATION_SETTINGS));
     OptionalOutcome connectionStringsOutcome =
         outcomeService.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(CONNECTION_STRINGS));
 
-    if (startupScriptOutcome.isFound()) {
-      StartupScriptOutcome startupScript = (StartupScriptOutcome) startupScriptOutcome.getOutcome();
-      settingsConfig.put(STARTUP_SCRIPT, startupScript.getStore());
+    if (startupCommandOutcome.isFound()) {
+      StartupCommandOutcome startupCommand = (StartupCommandOutcome) startupCommandOutcome.getOutcome();
+      settingsConfig.put(STARTUP_COMMAND, startupCommand.getStore());
     }
 
     if (applicationSettingsOutcome.isFound()) {
@@ -231,9 +237,12 @@ public class AzureWebAppStepHelper {
         .build();
   }
 
-  public AzureArtifactConfig getPrimaryArtifactConfig(Ambiance ambiance) {
-    ArtifactOutcome artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance).orElseThrow(
-        () -> new InvalidArgumentsException(Pair.of("artifacts", "Artifact is required for Azure WebApp")));
+  public ArtifactOutcome getPrimaryArtifactOutcome(Ambiance ambiance) {
+    return cdStepHelper.resolveArtifactsOutcome(ambiance).orElseThrow(
+        () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for Azure WebApp")));
+  }
+
+  public AzureArtifactConfig getPrimaryArtifactConfig(Ambiance ambiance, ArtifactOutcome artifactOutcome) {
     switch (artifactOutcome.getArtifactType()) {
       case DOCKER_REGISTRY_NAME:
       case ECR_NAME:
@@ -241,8 +250,11 @@ public class AzureWebAppStepHelper {
       case ACR_NAME:
       case NEXUS3_REGISTRY_NAME:
       case ARTIFACTORY_REGISTRY_NAME:
-        return getAzureContainerArtifactConfig(ambiance, artifactOutcome);
-
+        if (isPackageArtifactType(artifactOutcome)) {
+          return getAzurePackageArtifactConfig(ambiance, artifactOutcome);
+        } else {
+          return getAzureContainerArtifactConfig(ambiance, artifactOutcome);
+        }
       default:
         throw new InvalidArgumentsException(Pair.of("artifacts",
             format("Artifact type %s is not yet supported in Azure WebApp", artifactOutcome.getArtifactType())));
@@ -274,6 +286,15 @@ public class AzureWebAppStepHelper {
     return Sets.difference(aConfigs.entrySet(), bConfigs.entrySet())
         .stream()
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  public boolean isPackageArtifactType(ArtifactOutcome artifactOutcome) {
+    switch (artifactOutcome.getArtifactType()) {
+      case ARTIFACTORY_REGISTRY_NAME:
+        return !(artifactOutcome instanceof ArtifactoryArtifactOutcome);
+      default:
+        return false;
+    }
   }
 
   private AzureArtifactConfig getAzureContainerArtifactConfig(Ambiance ambiance, ArtifactOutcome artifactOutcome) {
@@ -344,6 +365,40 @@ public class AzureWebAppStepHelper {
     }
 
     return artifactConfigBuilder.connectorConfig(connectorInfo.getConnectorConfig())
+        .encryptedDataDetails(encryptedDataDetails)
+        .build();
+  }
+
+  private AzurePackageArtifactConfig getAzurePackageArtifactConfig(Ambiance ambiance, ArtifactOutcome artifactOutcome) {
+    final AzurePackageArtifactConfigBuilder artifactConfigBuilder = AzurePackageArtifactConfig.builder();
+    ConnectorInfoDTO connectorInfoDTO;
+    switch (artifactOutcome.getArtifactType()) {
+      case ARTIFACTORY_REGISTRY_NAME:
+        ArtifactoryGenericArtifactOutcome artifactoryArtifactOutcome =
+            (ArtifactoryGenericArtifactOutcome) artifactOutcome;
+        artifactConfigBuilder.sourceType(ArtifactSourceType.ARTIFACTORY_REGISTRY);
+        artifactConfigBuilder.artifactDetails(
+            ArtifactoryAzureArtifactRequestDetails.builder()
+                .repository(artifactoryArtifactOutcome.getRepositoryName())
+                .repositoryFormat(artifactoryArtifactOutcome.getRepositoryFormat())
+                .artifactPaths(new ArrayList<>(singletonList(artifactoryArtifactOutcome.getArtifactPath())))
+                .build());
+        connectorInfoDTO = cdStepHelper.getConnector(artifactoryArtifactOutcome.getConnectorRef(), ambiance);
+        break;
+      default:
+        throw new InvalidArgumentsException(
+            Pair.of("artifacts", format("Unsupported artifact type %s", artifactOutcome.getArtifactType())));
+    }
+
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+    if (connectorInfoDTO.getConnectorConfig().getDecryptableEntities() != null) {
+      for (DecryptableEntity decryptableEntity : connectorInfoDTO.getConnectorConfig().getDecryptableEntities()) {
+        encryptedDataDetails.addAll(secretManagerClientService.getEncryptionDetails(ngAccess, decryptableEntity));
+      }
+    }
+
+    return artifactConfigBuilder.connectorConfig(connectorInfoDTO.getConnectorConfig())
         .encryptedDataDetails(encryptedDataDetails)
         .build();
   }

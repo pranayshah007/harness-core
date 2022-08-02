@@ -84,15 +84,6 @@ public class ParameterFieldHelperTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testGetParameterFieldHandleValueNull() {
-    assertThat(ParameterFieldHelper.getParameterFieldHandleValueNull(null)).isNull();
-    assertThat(ParameterFieldHelper.getParameterFieldHandleValueNull(nullField).getValue()).isEqualTo("");
-    assertThat(ParameterFieldHelper.getParameterFieldHandleValueNull(stringField)).isEqualTo(stringField);
-  }
-
-  @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testGetParameterFieldListValue() {

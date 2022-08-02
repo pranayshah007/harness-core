@@ -71,28 +71,46 @@ public class ChangeTrackingTask implements Runnable {
 
   private void openChangeStream(Consumer<ChangeStreamDocument<DBObject>> changeStreamDocumentConsumer) {
     ChangeStreamIterable<DBObject> changeStreamIterable;
+    ChangeStreamIterable<DBObject> changeStreamIterableResumeToken;
     if (Objects.isNull(clientSession)) {
       changeStreamIterable = pipeline == null ? collection.watch() : collection.watch(pipeline);
+      changeStreamIterableResumeToken = pipeline == null ? collection.watch() : collection.watch(pipeline);
     } else {
       changeStreamIterable =
           pipeline == null ? collection.watch(clientSession) : collection.watch(clientSession, pipeline);
+      changeStreamIterableResumeToken =
+          pipeline == null ? collection.watch(clientSession) : collection.watch(clientSession, pipeline);
     }
+
     changeStreamIterable =
         changeStreamIterable.fullDocument(FullDocument.UPDATE_LOOKUP).maxAwaitTime(1, TimeUnit.MINUTES);
+    changeStreamIterableResumeToken =
+        changeStreamIterableResumeToken.fullDocument(FullDocument.UPDATE_LOOKUP).maxAwaitTime(1, TimeUnit.MINUTES);
+
     MongoCursor<ChangeStreamDocument<DBObject>> mongoCursor = null;
     try {
       if (resumeToken == null) {
-        log.info("Opening changeStream without resumeToken");
+        log.info("ChangeStream: Opening changeStream without resumeToken for ");
         mongoCursor = changeStreamIterable.iterator();
       } else {
-        log.info("Opening changeStream with resumeToken");
-        mongoCursor = changeStreamIterable.resumeAfter(resumeToken).iterator();
+        log.info("ChangeStream: Opening changeStream with resumeToken");
+        boolean isResumeTokenValid = true;
+        try {
+          mongoCursor = changeStreamIterableResumeToken.resumeAfter(resumeToken).iterator();
+        } catch (Exception ex) {
+          isResumeTokenValid = false;
+          log.error("ChangeStream: Resume Token Invalid :{}", ex);
+        }
+        if (!isResumeTokenValid) {
+          log.error("ChangeStream: Resume Token Invalid, Creating Change Stream Without Resume Token");
+          mongoCursor = changeStreamIterable.iterator();
+        }
       }
-      log.info("Connection details for mongo cursor {}", mongoCursor.getServerCursor());
+      log.info("ChangeStream: Connection details for mongo cursor {}", mongoCursor.getServerCursor());
       mongoCursor.forEachRemaining(changeStreamDocumentConsumer);
     } finally {
       if (mongoCursor != null) {
-        log.info("Closing mongo cursor");
+        log.info("ChangeStream: Closing mongo cursor");
         mongoCursor.close();
       }
     }
@@ -101,15 +119,15 @@ public class ChangeTrackingTask implements Runnable {
   @Override
   public void run() {
     try {
-      log.info("changeStream opened on {}", collection.getNamespace());
+      log.info("ChangeStream: changeStream opened on {}", collection.getNamespace());
       openChangeStream(this::handleChange);
     } catch (MongoInterruptedException e) {
       Thread.currentThread().interrupt();
-      log.warn("Changestream on {} interrupted", collection.getNamespace(), e);
+      log.warn("ChangeStream: Changestream on {} interrupted", collection.getNamespace(), e);
     } catch (RuntimeException e) {
-      log.error("Unexpectedly {} changeStream shutting down", collection.getNamespace(), e);
+      log.error("ChangeStream: Unexpectedly {} changeStream shutting down", collection.getNamespace(), e);
     } finally {
-      log.warn("{} changeStream shutting down.", collection.getNamespace());
+      log.warn("ChangeStream: {} changeStream shutting down.", collection.getNamespace());
       latch.countDown();
     }
   }

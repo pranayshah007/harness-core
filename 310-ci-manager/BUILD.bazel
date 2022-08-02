@@ -9,8 +9,10 @@ shared_dependencies = [
     "@maven//:io_netty_netty_all",
 ] + [
     "//325-sto-beans:module",
+    "//332-ci-manager/contracts:module",
     "//332-ci-manager/service:module",
     "//870-cg-orchestration:module",
+    "//930-ng-license-manager:module",
     "//940-primary-version-manager:module",
     "//942-enforcement-sdk:module",
     "//950-opa-client:module",

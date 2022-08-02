@@ -9,6 +9,7 @@ package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessModule._930_DELEGATE_TASKS;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.SRE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.validation.Validator.equalCheck;
@@ -36,6 +37,7 @@ import software.wings.utils.ArtifactType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -145,5 +147,21 @@ public class DockerBuildServiceImpl implements DockerBuildService {
     encryptionService.decrypt(dockerConfig, encryptionDetails, false);
     return dockerRegistryService.getArtifactMetaInfo(DockerConfigToInternalMapper.toDockerInternalConfig(dockerConfig),
         artifactStreamAttributes.getImageName(), buildNo);
+  }
+
+  @Override
+  public BuildDetails getBuild(String appId, ArtifactStreamAttributes artifactStreamAttributes, DockerConfig config,
+      List<EncryptedDataDetail> encryptionDetails, String buildNo) {
+    BuildDetailsInternal build = dockerRegistryService.verifyBuildNumber(
+        DockerConfigToInternalMapper.toDockerInternalConfig(config), artifactStreamAttributes.getImageName(), buildNo);
+    if (build == null) {
+      return null;
+    }
+    List<BuildDetails> buildDetails = wrapNewBuildsWithLabels(
+        Collections.singletonList(ArtifactConfigMapper.toBuildDetails(build)), artifactStreamAttributes, config);
+    if (isNotEmpty(buildDetails)) {
+      return buildDetails.get(0);
+    }
+    return null;
   }
 }

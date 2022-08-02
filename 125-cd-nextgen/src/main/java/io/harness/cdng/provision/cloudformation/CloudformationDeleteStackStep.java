@@ -16,7 +16,6 @@ import static java.lang.String.format;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.cloudformation.beans.CloudFormationInheritOutput;
@@ -28,10 +27,7 @@ import io.harness.delegate.task.cloudformation.CloudformationTaskNGParameters;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGParameters.CloudformationTaskNGParametersBuilder;
 import io.harness.delegate.task.cloudformation.CloudformationTaskNGResponse;
 import io.harness.delegate.task.cloudformation.CloudformationTaskType;
-import io.harness.eraro.ErrorCode;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
@@ -80,11 +76,6 @@ public class CloudformationDeleteStackStep extends TaskExecutableWithRollbackAnd
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CLOUDFORMATION_NG)) {
-      throw new AccessDeniedException(
-          "Cloudformation NG is not enabled for this account. Please contact harness customer care.",
-          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
-    }
     List<EntityDetail> entityDetailList = new ArrayList<>();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);

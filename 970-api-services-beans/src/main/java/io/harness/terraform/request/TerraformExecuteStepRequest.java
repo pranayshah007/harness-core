@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.logging.LogCallback;
 import io.harness.logging.PlanJsonLogOutputStream;
+import io.harness.logging.PlanLogOutputStream;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 
@@ -43,6 +44,8 @@ public class TerraformExecuteStepRequest {
   boolean useOptimizedTfPlan;
   @Nonnull LogCallback logCallback;
   @Nonnull PlanJsonLogOutputStream planJsonLogOutputStream;
+  @Nonnull PlanLogOutputStream planLogOutputStream;
+  boolean analyseTfPlanSummary;
   long timeoutInMillis;
   boolean isTfPlanDestroy;
   String accountId;

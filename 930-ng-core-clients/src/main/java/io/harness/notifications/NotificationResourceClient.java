@@ -10,7 +10,7 @@ package io.harness.notifications;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.notification.channeldetails.NotificationChannel;
+import io.harness.notification.dtos.NotificationChannelDTO;
 import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.rest.RestResponse;
 
@@ -21,10 +21,10 @@ import retrofit2.http.Query;
 
 @OwnedBy(HarnessTeam.CE)
 public interface NotificationResourceClient {
-  String BASE_API = "ccm/notification";
+  String BASE_API = "notification";
 
   @POST(BASE_API)
   Call<RestResponse<NotificationResult>> sendNotification(
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @Body NotificationChannel notificationChannel);
+      @Body NotificationChannelDTO notificationChannelDTO);
 }

@@ -11,7 +11,7 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
-import io.harness.cvng.core.beans.monitoredService.MetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricPack;
@@ -51,7 +51,7 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
   @NotNull String feature;
   @NotEmpty String applicationName;
   @NotEmpty String tierName;
-  @Valid Set<MetricPackDTO> metricPacks;
+  @Valid Set<TimeSeriesMetricPackDTO> metricPacks;
   @Valid @UniqueIdentifierCheck List<AppDMetricDefinitions> metricDefinitions;
   public List<AppDMetricDefinitions> getMetricDefinitions() {
     if (metricDefinitions == null) {
@@ -154,7 +154,7 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
                                    .category(mdList.get(0).getRiskProfile().getCategory())
                                    .build();
                            appDynamicsCVConfig.populateFromMetricDefinitions(
-                               metricDefinitions, metricDefinitions.get(0).getRiskProfile().getCategory());
+                               metricDefinitions, metricDefinitions.get(0).getRiskProfile().getCategory(), metricPacks);
                            return appDynamicsCVConfig;
                          })
                          .collect(Collectors.toList()));

@@ -9,6 +9,7 @@ package io.harness.ci.registrars;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ci.states.ACRStep;
 import io.harness.ci.states.CISpecStep;
 import io.harness.ci.states.CleanupStep;
 import io.harness.ci.states.DockerStep;
@@ -48,6 +49,7 @@ public class ExecutionRegistrar {
     engineSteps.put(SecurityStep.STEP_TYPE, SecurityStep.class);
     engineSteps.put(ECRStep.STEP_TYPE, ECRStep.class);
     engineSteps.put(GCRStep.STEP_TYPE, GCRStep.class);
+    engineSteps.put(ACRStep.STEP_TYPE, ACRStep.class);
     engineSteps.put(DockerStep.STEP_TYPE, DockerStep.class);
     engineSteps.put(UploadToS3Step.STEP_TYPE, UploadToS3Step.class);
     engineSteps.put(SaveCacheS3Step.STEP_TYPE, SaveCacheS3Step.class);

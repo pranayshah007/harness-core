@@ -181,6 +181,8 @@ import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppTraff
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppTaskRequest;
 import io.harness.delegate.task.azure.arm.AzureARMTaskParameters;
+import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadService;
+import io.harness.delegate.task.azure.artifact.AzureArtifactDownloadServiceImpl;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceProvider;
 import io.harness.delegate.task.cek8s.CEKubernetesTestConnectionDelegateTask;
 import io.harness.delegate.task.cek8s.CEKubernetesValidationHandler;
@@ -1189,6 +1191,7 @@ public class DelegateModule extends AbstractModule {
     bind(AzureKubernetesClient.class).to(AzureKubernetesClientImpl.class);
     bind(ArtifactoryNgService.class).to(ArtifactoryNgServiceImpl.class);
     bind(AWSCloudformationClient.class).to(AWSCloudformationClientImpl.class);
+    bind(AzureArtifactDownloadService.class).to(AzureArtifactDownloadServiceImpl.class);
 
     // NG Delegate
     MapBinder<String, K8sRequestHandler> k8sTaskTypeToRequestHandler =

@@ -17,7 +17,7 @@ directories:
   460-capability
   470-alert
   490-ce-commons
-  800-pipeline-service
+  pipeline-service
   platform-service
   865-cg-events
   867-polling-contracts
@@ -105,7 +105,7 @@ derive_targets_from_directories: false
 
 targets:
   120-ng-manager:module
-  800-pipeline-service:module
+  pipeline-service/service:module
 
 
 import_run_configurations:

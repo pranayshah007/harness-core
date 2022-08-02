@@ -16,13 +16,13 @@ import io.harness.delegate.task.azure.appservice.AzureAppServiceResourceUtilitie
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskResponse;
 import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
+import io.harness.delegate.task.azure.common.AutoCloseableWorkingDirectory;
 import io.harness.delegate.task.azure.common.AzureAppServiceService;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProviderFactory;
 
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.delegatetasks.azure.appservice.AbstractAzureAppServiceTaskHandler;
 import software.wings.delegatetasks.azure.common.ArtifactDownloaderServiceLogWrapper;
-import software.wings.delegatetasks.azure.common.AutoCloseableWorkingDirectory;
 import software.wings.delegatetasks.azure.common.context.ArtifactDownloaderContext;
 
 import com.google.inject.Inject;
