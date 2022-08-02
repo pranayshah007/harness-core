@@ -15,6 +15,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJEC
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.ng.core.template.TemplateEntityConstants.MONITORED_SERVICE;
 import static io.harness.ng.core.template.TemplateEntityConstants.PIPELINE;
+import static io.harness.ng.core.template.TemplateEntityConstants.SCRIPT;
 import static io.harness.ng.core.template.TemplateEntityConstants.SECRET_MANAGER;
 import static io.harness.ng.core.template.TemplateEntityConstants.STAGE;
 import static io.harness.ng.core.template.TemplateEntityConstants.STEP;
@@ -293,6 +294,7 @@ public class TemplateServiceModule extends AbstractModule {
         MONITORED_SERVICE, injector.getInstance(TemplateYamlConversionHandler.class));
     templateYamlConversionHandlerRegistry.register(
         SECRET_MANAGER, injector.getInstance(TemplateYamlConversionHandler.class));
+    templateYamlConversionHandlerRegistry.register(SCRIPT, injector.getInstance(TemplateYamlConversionHandler.class));
     return templateYamlConversionHandlerRegistry;
   }
 

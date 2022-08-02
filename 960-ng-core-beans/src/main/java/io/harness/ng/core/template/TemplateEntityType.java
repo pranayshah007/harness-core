@@ -14,6 +14,8 @@ import static io.harness.ng.core.template.TemplateEntityConstants.MONITORED_SERV
 import static io.harness.ng.core.template.TemplateEntityConstants.MONITORED_SERVICE_ROOT_FIELD;
 import static io.harness.ng.core.template.TemplateEntityConstants.PIPELINE;
 import static io.harness.ng.core.template.TemplateEntityConstants.PIPELINE_ROOT_FIELD;
+import static io.harness.ng.core.template.TemplateEntityConstants.SCRIPT;
+import static io.harness.ng.core.template.TemplateEntityConstants.SCRIPT_ROOT_FIELD;
 import static io.harness.ng.core.template.TemplateEntityConstants.SECRET_MANAGER;
 import static io.harness.ng.core.template.TemplateEntityConstants.SECRET_MANAGER_ROOT_FIELD;
 import static io.harness.ng.core.template.TemplateEntityConstants.STAGE;
@@ -44,7 +46,9 @@ public enum TemplateEntityType {
       MONITORED_SERVICE, MONITORED_SERVICE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.CV),
 
   @JsonProperty(SECRET_MANAGER)
-  SECRET_MANAGER_TEMPLATE(SECRET_MANAGER, SECRET_MANAGER_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PL);
+  SECRET_MANAGER_TEMPLATE(SECRET_MANAGER, SECRET_MANAGER_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PL),
+
+  @JsonProperty(SCRIPT) SCRIPT_TEMPLATE(SCRIPT, SCRIPT_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PL);
 
   private final String yamlType;
   private String rootYamlName;
