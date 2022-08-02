@@ -19,7 +19,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.remote.client.RestClientUtils;
-import io.harness.repositories.CITelemetryStatusRepository;
 import io.harness.repositories.ModuleLicenseRepository;
 import io.harness.telemetry.TelemetryOption;
 import io.harness.telemetry.TelemetryReporter;

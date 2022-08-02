@@ -44,7 +44,7 @@ java_library(
     ] + ["//:resource"] + [
         "//260-delegate:module_deploy",
         "//280-batch-processing:module_deploy.jar",
-        "//ci-manager/config:module_deploy.jar",
+        "//ci-manager:module_deploy.jar",
         "//350-event-server:module_deploy.jar",
         "//360-cg-manager:module_deploy.jar",
     ],

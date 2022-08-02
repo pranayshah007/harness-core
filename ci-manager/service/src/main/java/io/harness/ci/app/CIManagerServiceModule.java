@@ -38,8 +38,6 @@ import io.harness.cistatus.service.gitlab.GitlabService;
 import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.ConnectorResourceClientModule;
-import io.harness.core.ci.services.BuildNumberService;
-import io.harness.core.ci.services.BuildNumberServiceImpl;
 import io.harness.core.ci.services.CIOverviewDashboardService;
 import io.harness.core.ci.services.CIOverviewDashboardServiceImpl;
 import io.harness.enforcement.client.EnforcementClientModule;
@@ -189,7 +187,6 @@ public class CIManagerServiceModule extends AbstractModule {
     install(PrimaryVersionManagerModule.getInstance());
     bind(CIManagerConfiguration.class).toInstance(ciManagerConfiguration);
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
-    bind(BuildNumberService.class).to(BuildNumberServiceImpl.class);
     bind(CIYamlSchemaService.class).to(CIYamlSchemaServiceImpl.class).in(Singleton.class);
     bind(CIFeatureFlagService.class).to(CIFeatureFlagServiceImpl.class).in(Singleton.class);
     bind(CIOverviewDashboardService.class).to(CIOverviewDashboardServiceImpl.class);
