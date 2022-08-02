@@ -923,7 +923,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
       ExpressionReflectionUtils.applyExpression(delegateTask.getData().getParameters()[0], (secretMode, value) -> {
         if (value == null) {
-          resetDelegateTaskStatus(delegateTask);
+          resetDelegateTaskStatusToQueued(delegateTask);
           log.error("Unable to assign task {} due to error on ManagerPreExecutionExpressionEvaluator , value is null",
               delegateTask.getUuid());
           return null;
@@ -939,7 +939,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       });
 
       if (secretManagerFunctor == null && ngSecretManagerFunctor == null) {
-        resetDelegateTaskStatus(delegateTask);
+        resetDelegateTaskStatusToQueued(delegateTask);
         log.error(
             "Unable to assign task {} due to Error on ManagerPreExecutionExpressionEvaluator", delegateTask.getUuid());
         return null;
@@ -1363,12 +1363,14 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             .collect(Collectors.joining("\n")));
   }
 
-  public void resetDelegateTaskStatus(DelegateTask delegateTask) {
+  public DelegateTask resetDelegateTaskStatusToQueued(DelegateTask delegateTask) {
     Query<DelegateTask> query = persistence.createQuery(DelegateTask.class)
                                     .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
                                     .filter(DelegateTaskKeys.uuid, delegateTask.getUuid());
-    UpdateOperations updateOperations =
-        persistence.createUpdateOperations(DelegateTask.class).set(DelegateTaskKeys.status, QUEUED);
-    persistence.findAndModify(query, updateOperations, HPersistence.returnNewOptions);
+    UpdateOperations updateOperations = persistence.createUpdateOperations(DelegateTask.class)
+                                            .set(DelegateTaskKeys.status, QUEUED)
+                                            .unset(DelegateTaskKeys.delegateId);
+    DelegateTask task = persistence.findAndModify(query, updateOperations, HPersistence.returnNewOptions);
+    return task;
   }
 }

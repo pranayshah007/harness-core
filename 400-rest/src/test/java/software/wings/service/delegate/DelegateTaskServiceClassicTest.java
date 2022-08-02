@@ -1110,15 +1110,28 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
   @Test
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
-  public void testDelegateReset() {
-    DelegateTask delegateTask = getDelegateTask();
-    delegateTask.setStatus(STARTED);
-    delegateTask.setDelegateId("del");
+  public void testResetDelegateTaskStatus() {
+    DelegateTask delegateTask =
+        DelegateTask.builder()
+            .uuid(generateUuid())
+            .status(STARTED)
+            .accountId(ACCOUNT_ID)
+            .waitId(generateUuid())
+            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
+            .version(VERSION)
+            .delegateId("del123")
+            .data(TaskData.builder()
+                      .async(false)
+                      .taskType(TaskType.HTTP.name())
+                      .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.example.com").build()})
+                      .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                      .build())
+            .tags(new ArrayList<>())
+            .build();
     persistence.save(delegateTask);
-    assertThat(delegateTask.getStatus()).isEqualTo(STARTED);
-    delegateTaskServiceClassic.resetDelegateTaskStatus(delegateTask);
-    assertThat(delegateTask.getStatus()).isEqualTo(QUEUED);
-    assertThat(delegateTask.getDelegateId()).isEqualTo("");
+    DelegateTask updatedTask = delegateTaskServiceClassic.resetDelegateTaskStatusToQueued(delegateTask);
+    assertThat(updatedTask.getStatus()).isEqualTo(QUEUED);
+    assertThat(updatedTask.getDelegateId() == null);
   }
 
   private CapabilityRequirement buildCapabilityRequirement() {
