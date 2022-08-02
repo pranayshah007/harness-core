@@ -8,6 +8,7 @@
 package io.harness.ngsettings.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -80,16 +81,20 @@ public class SettingUtils {
   }
 
   public static SettingSource getSettingSource(Setting setting) {
-    if (isNotEmpty(setting.getAccountIdentifier())) {
-      if (isNotEmpty(setting.getOrgIdentifier())) {
-        if (isNotEmpty(setting.getProjectIdentifier())) {
-          return SettingSource.PROJECT;
-        }
-        return SettingSource.ORG;
-      }
-      return SettingSource.ACCOUNT;
+    if (isEmpty(setting.getAccountIdentifier())) {
+      return SettingSource.DEFAULT;
     }
-    return SettingSource.DEFAULT;
+    return getSettingSourceFromOrgAndProject(setting.getOrgIdentifier(), setting.getProjectIdentifier());
+  }
+
+  public static SettingSource getSettingSourceFromOrgAndProject(String orgIdentifier, String projectIdentifier) {
+    if (isNotEmpty(orgIdentifier)) {
+      if (isNotEmpty(projectIdentifier)) {
+        return SettingSource.PROJECT;
+      }
+      return SettingSource.ORG;
+    }
+    return SettingSource.ACCOUNT;
   }
 
   public ScopeLevel getHighestScopeForSetting(Set<ScopeLevel> allowedScopes) {

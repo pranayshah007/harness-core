@@ -166,7 +166,12 @@ public class PipelineServiceHelper {
 
   public static String resolveEnvIdForPipelineStage(Map<String, Object> pipelineStageElementProperties,
       Map<String, String> workflowVariables, List<Variable> pipelineVariables) {
-    String envId = (String) pipelineStageElementProperties.get(EnvStateKeys.envId);
+    String envId = pipelineVariables.stream()
+                       .filter(var -> EntityType.ENVIRONMENT.equals(var.obtainEntityType()))
+                       .findFirst()
+                       .map(it -> workflowVariables.get(it.getName()))
+                       .orElse((String) pipelineStageElementProperties.get(EnvStateKeys.envId));
+
     if (!ManagerExpressionEvaluator.matchesVariablePattern(envId)) {
       return envId;
     }

@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Objects;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -38,6 +39,8 @@ public class TimeSeriesThresholdCriteria {
     this.type = type;
     this.action = action;
     this.occurrenceCount = occurrenceCount;
+    this.value = value;
+    this.thresholdType = thresholdType;
     setCriteria(criteria);
   }
 
@@ -52,6 +55,9 @@ public class TimeSeriesThresholdCriteria {
   }
 
   public final void setCriteria(String criteria) {
+    if (Objects.isNull(criteria)) {
+      return;
+    }
     final String trimmed = criteria.trim();
     if (trimmed.charAt(0) != '>' && trimmed.charAt(0) != '<') {
       throw new IllegalArgumentException("criteria has to start with '> ' or '< '");

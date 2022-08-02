@@ -771,6 +771,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
       // send accountId + delegateId as header for delegate gateway to log websocket connection with account.
       requestBuilder.header("accountId", this.delegateConfiguration.getAccountId());
+      final String agent = "delegate/" + this.versionInfoManager.getVersionInfo().getVersion();
+      requestBuilder.header("User-Agent", agent);
       requestBuilder.header("delegateId", DelegateAgentCommonVariables.getDelegateId());
 
       return requestBuilder;
@@ -1676,9 +1678,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     String receivedId = delegateHeartbeatResponse.getDelegateId();
     if (delegateId.equals(receivedId)) {
       final long now = clock.millis();
-      if ((now - lastHeartbeatSentAt.get()) > TimeUnit.MINUTES.toMillis(3)) {
+      final long diff = now - lastHeartbeatSentAt.longValue();
+      if (diff > TimeUnit.MINUTES.toMillis(3)) {
         log.warn(
-            "Delegate {} received heartbeat response {} after sending. {} since last recorded heartbeat response. Harness sent response at {} before",
+            "Delegate {} received heartbeat response {} after sending. {} since last recorded heartbeat response. Harness sent response {} back",
             receivedId, getDurationString(lastHeartbeatSentAt.get(), now),
             getDurationString(lastHeartbeatReceivedAt.get(), now),
             getDurationString(delegateHeartbeatResponse.getResponseSentAt(), now));

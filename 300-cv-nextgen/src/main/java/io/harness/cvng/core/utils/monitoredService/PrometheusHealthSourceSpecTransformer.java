@@ -13,6 +13,7 @@ import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.LiveM
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.SLIDTO;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
 import io.harness.cvng.core.beans.RiskProfile;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.PrometheusHealthSourceSpec;
 import io.harness.cvng.core.entities.AnalysisInfo.DeploymentVerification;
 import io.harness.cvng.core.entities.AnalysisInfo.LiveMonitoring;
@@ -21,7 +22,9 @@ import io.harness.cvng.core.entities.PrometheusCVConfig;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class PrometheusHealthSourceSpecTransformer
     implements CVConfigToHealthSourceTransformer<PrometheusCVConfig, PrometheusHealthSourceSpec> {
@@ -32,7 +35,7 @@ public class PrometheusHealthSourceSpecTransformer
         cvConfigs.stream().map(PrometheusCVConfig::getConnectorIdentifier).distinct().count() == 1,
         "ConnectorRef should be same for all the configs in the list.");
     List<PrometheusMetricDefinition> metricDefinitions = new ArrayList<>();
-
+    Set<TimeSeriesMetricPackDTO> metricPacks = new HashSet<>();
     cvConfigs.forEach(prometheusCVConfig -> {
       prometheusCVConfig.getMetricInfoList().forEach(metricInfo -> {
         RiskProfile riskProfile = RiskProfile.builder()
@@ -67,9 +70,18 @@ public class PrometheusHealthSourceSpecTransformer
       });
     });
 
+    cvConfigs.forEach(prometheusCVConfig -> {
+      prometheusCVConfig.getMetricPack().getMetrics().forEach(metric -> {
+        List<TimeSeriesMetricPackDTO.MetricThreshold> metricThresholds = prometheusCVConfig.getMetricThresholdDTOs();
+        metricPacks.add(
+            TimeSeriesMetricPackDTO.builder().identifier("Custom").metricThresholds(metricThresholds).build());
+      });
+    });
+
     return PrometheusHealthSourceSpec.builder()
         .connectorRef(cvConfigs.get(0).getConnectorIdentifier())
         .metricDefinitions(metricDefinitions)
+        .metricPacks(metricPacks)
         .build();
   }
 

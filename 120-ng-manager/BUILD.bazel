@@ -30,7 +30,7 @@ shared_dependencies = [
     "//126-instance:module",
     "//136-git-sync-manager:module",
     "//295-cdng-contracts:module",
-    "//800-pipeline-service/modules/pms-contracts:module",
+    "//pipeline-service/modules/pms-contracts:module",
     "//920-ng-signup:module",
     "//925-enforcement-service:module",
     "//925-subscription-service:module",
@@ -690,6 +690,7 @@ java_library(
         "@maven//:org_powermock_powermock_module_junit4",
         "@maven//:org_powermock_powermock_core",
         "@maven//:org_powermock_powermock_api_mockito2",
+        "@maven//:pl_pragmatists_JUnitParams",
     ],
 )
 

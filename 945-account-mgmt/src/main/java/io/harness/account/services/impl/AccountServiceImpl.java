@@ -30,8 +30,12 @@ public class AccountServiceImpl implements AccountService {
   public AccountDTO createAccount(SignupDTO dto) {
     String username = dto.getEmail().split("@")[0];
 
-    AccountDTO accountDTO =
-        AccountDTO.builder().name(username).companyName(username).defaultExperience(DefaultExperience.NG).build();
+    AccountDTO accountDTO = AccountDTO.builder()
+                                .name(username)
+                                .companyName(username)
+                                .defaultExperience(DefaultExperience.NG)
+                                .isProductLed(true)
+                                .build();
 
     return RestClientUtils.getResponse(accountClient.create(accountDTO));
   }

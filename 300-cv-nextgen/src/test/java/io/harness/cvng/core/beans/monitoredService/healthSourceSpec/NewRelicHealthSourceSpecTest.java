@@ -18,7 +18,7 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.monitoredService.HealthSource.CVConfigUpdateResult;
-import io.harness.cvng.core.beans.monitoredService.MetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NewRelicHealthSourceSpec;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricPack;
@@ -55,7 +55,7 @@ public class NewRelicHealthSourceSpecTest extends CvNextGenTestBase {
   String identifier;
   String name;
   String monitoredServiceIdentifier;
-  List<MetricPackDTO> metricPackDTOS;
+  List<TimeSeriesMetricPackDTO> metricPackDTOS;
   BuilderFactory builderFactory;
 
   @Before
@@ -73,8 +73,8 @@ public class NewRelicHealthSourceSpecTest extends CvNextGenTestBase {
     monitoredServiceIdentifier = generateUuid();
     identifier = "identifier";
     name = "some-name";
-    metricPackDTOS =
-        Arrays.asList(MetricPackDTO.builder().identifier(CVNextGenConstants.PERFORMANCE_PACK_IDENTIFIER).build());
+    metricPackDTOS = Arrays.asList(
+        TimeSeriesMetricPackDTO.builder().identifier(CVNextGenConstants.PERFORMANCE_PACK_IDENTIFIER).build());
     newRelicHealthSourceSpec = NewRelicHealthSourceSpec.builder()
                                    .applicationId(applicationId)
                                    .applicationName(applicationName)

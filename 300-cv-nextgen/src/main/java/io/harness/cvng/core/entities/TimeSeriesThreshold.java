@@ -10,6 +10,7 @@ package io.harness.cvng.core.entities;
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.StoreIn;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.TimeSeriesThresholdActionType;
 import io.harness.cvng.beans.TimeSeriesThresholdCriteria;
@@ -73,6 +74,7 @@ public final class TimeSeriesThreshold
   @Default private String metricGroupName = "*";
   @NotNull private TimeSeriesThresholdActionType action;
   @NotNull private TimeSeriesThresholdCriteria criteria;
+  private ThresholdConfigType thresholdConfigType;
 
   public TimeSeriesThresholdDTO toDTO() {
     return TimeSeriesThresholdDTO.builder()

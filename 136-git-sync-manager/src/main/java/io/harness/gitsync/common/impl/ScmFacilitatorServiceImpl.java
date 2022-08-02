@@ -22,7 +22,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.common.beans.ScmApis;
+import io.harness.gitsync.common.dtos.ApiResponseDTO;
 import io.harness.gitsync.common.dtos.CreateGitFileRequestDTO;
+import io.harness.gitsync.common.dtos.GetLatestCommitOnFileRequestDTO;
 import io.harness.gitsync.common.dtos.GitBranchDetailsDTO;
 import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
 import io.harness.gitsync.common.dtos.GitRepositoryResponseDTO;
@@ -46,6 +48,7 @@ import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
 import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.product.ci.scm.proto.FileContent;
+import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
@@ -167,21 +170,26 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
             scmGetFileByBranchRequestDTO.getRepoName(), branchName, scmGetFileByBranchRequestDTO.getFilePath(), null),
         scmConnector);
 
+    GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
+        getLatestCommitOnFile(scope, scmConnector, branchName, fileContent.getPath());
+
+    ApiResponseDTO response = getGetFileAPIResponse(scmConnector, fileContent, getLatestCommitOnFileResponse);
+
     if (ScmApiErrorHandlingHelper.isFailureResponse(fileContent.getStatus(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.GET_FILE, scmConnector.getConnectorType(),
-          scmConnector.getUrl(), fileContent.getStatus(), fileContent.getError(),
+          scmConnector.getUrl(), response.getStatusCode(), response.getError(),
           ErrorMetadata.builder()
               .connectorRef(scmGetFileByBranchRequestDTO.getConnectorRef())
               .repoName(scmGetFileByBranchRequestDTO.getRepoName())
               .filepath(scmGetFileByBranchRequestDTO.getFilePath())
-              .branchName(scmGetFileByBranchRequestDTO.getBranchName())
+              .branchName(branchName)
               .build());
     }
 
     return ScmGetFileResponseDTO.builder()
         .fileContent(fileContent.getContent())
         .blobId(fileContent.getBlobId())
-        .commitId(fileContent.getCommitId())
+        .commitId(getLatestCommitOnFileResponse.getCommitId())
         .branchName(branchName)
         .build();
   }
@@ -423,5 +431,29 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   private boolean isNamespaceNotEmpty(GetUserReposResponse response) {
     return isNotEmpty(response.getReposList()) && isNotEmpty(response.getRepos(0).getNamespace());
+  }
+
+  private ApiResponseDTO getGetFileAPIResponse(
+      ScmConnector scmConnector, FileContent fileContent, GetLatestCommitOnFileResponse getLatestCommitOnFileResponse) {
+    if (ScmApiErrorHandlingHelper.isFailureResponse(fileContent.getStatus(), scmConnector.getConnectorType())) {
+      return ApiResponseDTO.builder().statusCode(fileContent.getStatus()).error(fileContent.getError()).build();
+    }
+    if (isNotEmpty(getLatestCommitOnFileResponse.getError())) {
+      return ApiResponseDTO.builder().statusCode(400).error(getLatestCommitOnFileResponse.getError()).build();
+    }
+    return ApiResponseDTO.builder().statusCode(200).build();
+  }
+
+  @VisibleForTesting
+  GetLatestCommitOnFileResponse getLatestCommitOnFile(
+      Scope scope, ScmConnector scmConnector, String branchName, String filePath) {
+    return scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
+        -> scmClientFacilitatorService.getLatestCommitOnFile(GetLatestCommitOnFileRequestDTO.builder()
+                                                                 .branchName(branchName)
+                                                                 .filePath(filePath)
+                                                                 .scmConnector(scmConnector)
+                                                                 .scope(scope)
+                                                                 .build()),
+        scmConnector);
   }
 }

@@ -24,8 +24,20 @@ public class NoOpHarnessCacheManager implements HarnessCacheManager {
   }
 
   @Override
+  public <K, V> Cache<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType,
+      Factory<ExpiryPolicy> expiryPolicy, boolean enterpriseRedis) {
+    return new NoOpCache<>();
+  }
+
+  @Override
   public <K, V> Cache<K, V> getCache(
       String cacheName, Class<K> keyType, Class<V> valueType, Factory<ExpiryPolicy> expiryPolicy, String keyPrefix) {
+    return new NoOpCache<>();
+  }
+
+  @Override
+  public <K, V> Cache<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType,
+      Factory<ExpiryPolicy> expiryPolicy, String keyPrefix, boolean enterpriseRedis) {
     return new NoOpCache<>();
   }
 }

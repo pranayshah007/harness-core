@@ -12,12 +12,47 @@ import (
 	"time"
 
 	"github.com/drone/go-scm/scm"
+	"github.com/drone/go-scm/scm/transport/oauth2"
 	"github.com/harness/harness-core/commons/go/lib/utils"
 	"github.com/harness/harness-core/product/ci/scm/converter"
 	"github.com/harness/harness-core/product/ci/scm/gitclient"
 	pb "github.com/harness/harness-core/product/ci/scm/proto"
 	"go.uber.org/zap"
 )
+
+func RefreshToken(ctx context.Context, request *pb.RefreshTokenRequest, log *zap.SugaredLogger) (out *pb.RefreshTokenResponse, err error) {
+	log.Infow("RefreshToken starting:", request.Endpoint, "ClientID:" , request.ClientID)
+
+	before := &scm.Token{
+		Refresh: request.RefreshToken,
+	}
+
+	r := oauth2.Refresher{
+		ClientID:     request.ClientID,
+		ClientSecret: request.ClientSecret,
+		Endpoint:     request.Endpoint,
+		Source:       oauth2.StaticTokenSource(before),
+	}
+
+	after, err := r.Token(ctx)
+
+	if err != nil {
+		log.Errorw("RefreshToken failure:", request.Endpoint, "Error:", err)
+		return nil, err
+	}
+
+	if after == nil {
+		log.Errorw("RefreshToken failure result:", request.Endpoint)
+		return nil, err
+	}
+
+	out = &pb.RefreshTokenResponse{
+		 AccessToken: after.Token,
+		 RefreshToken: after.Refresh,
+	}
+
+	return out ,err
+}
 
 func CreatePR(ctx context.Context, request *pb.CreatePRRequest, log *zap.SugaredLogger) (out *pb.CreatePRResponse, err error) {
 	start := time.Now()

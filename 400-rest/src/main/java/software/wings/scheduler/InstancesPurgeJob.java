@@ -41,7 +41,7 @@ public class InstancesPurgeJob implements Job {
   private static final String INSTANCES_PURGE_CRON_GROUP = "INSTANCES_PURGE_CRON_GROUP";
 
   private static final int MONTHS_TO_RETAIN_INSTANCES_EXCLUDING_CURRENT_MONTH = 2;
-  private static final int MONTHS_TO_RETAIN_INSTANCE_STATS_EXCLUDING_CURRENT_MONTH = 5;
+  private static final int MONTHS_TO_RETAIN_INSTANCE_STATS_EXCLUDING_CURRENT_MONTH = 6;
 
   @Inject private BackgroundExecutorService executorService;
   @Inject private InstanceService instanceService;

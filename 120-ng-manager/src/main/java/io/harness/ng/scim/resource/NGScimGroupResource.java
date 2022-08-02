@@ -48,7 +48,7 @@ public class NGScimGroupResource extends ScimResource {
           .entity(scimGroupService.createGroup(groupQuery, accountIdentifier))
           .build();
     } catch (Exception ex) {
-      log.info("Failed to create the group", ex);
+      log.error("NGSCIM: Failed to create the group, for accountId {}, Exception is", accountIdentifier, ex);
       return getExceptionResponse(ex, Response.Status.NOT_FOUND.getStatusCode(), Response.Status.CONFLICT);
     }
   }
@@ -63,7 +63,8 @@ public class NGScimGroupResource extends ScimResource {
           .entity(scimGroupService.getGroup(groupIdentifier, accountIdentifier))
           .build();
     } catch (Exception ex) {
-      log.info("Failed to fetch the groups with id: {}", groupIdentifier, ex);
+      log.error("NGSCIM: Failed to fetch the groups with id: {}, for accountId {}, Exception is", groupIdentifier,
+          accountIdentifier, ex);
       return getExceptionResponse(ex, Response.Status.NOT_FOUND.getStatusCode(), Response.Status.NOT_FOUND);
     }
   }
@@ -91,8 +92,8 @@ public class NGScimGroupResource extends ScimResource {
           scimGroupService.searchGroup(filter, accountIdentifier, count, startIndex);
       return Response.status(Response.Status.OK).entity(groupResources).build();
     } catch (Exception ex) {
-      log.error("SCIM: Search group call failed. AccountId: {}, filter: {}, count: {}, startIndex{}", accountIdentifier,
-          filter, count, startIndex, ex);
+      log.error("NGSCIM: Search group call failed. AccountId: {}, filter: {}, count: {}, startIndex{}",
+          accountIdentifier, filter, count, startIndex, ex);
       return getExceptionResponse(ex, Response.Status.NOT_FOUND.getStatusCode(), Response.Status.NOT_FOUND);
     }
   }
@@ -113,7 +114,7 @@ public class NGScimGroupResource extends ScimResource {
     try {
       return scimGroupService.updateGroup(groupIdentifier, accountIdentifier, groupQuery);
     } catch (Exception ex) {
-      log.info("Failed to update the group with id: {}, accountId {} ", groupIdentifier, accountIdentifier, ex);
+      log.info("NGSCIM: Failed to update the group with id: {}, accountId {} ", groupIdentifier, accountIdentifier, ex);
       return getExceptionResponse(ex, Response.Status.NOT_FOUND.getStatusCode(), Response.Status.PRECONDITION_FAILED);
     }
   }

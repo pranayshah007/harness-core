@@ -15,8 +15,9 @@ import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.azure.webapp.ApplicationSettingsParameters;
 import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
-import io.harness.cdng.azure.webapp.StartupScriptParameters;
+import io.harness.cdng.azure.webapp.StartupCommandParameters;
 import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
+import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.CreatePRStepParams;
@@ -70,6 +71,7 @@ import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepInf
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepInfo;
 import io.harness.cdng.provision.terraform.TerraformApplyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
+import io.harness.cdng.rollback.RollbackDeploymentInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepParameters;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackDataOutcome;
@@ -82,6 +84,7 @@ import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.service.steps.ServiceStepParameters;
 import io.harness.cdng.ssh.CommandStepInfo;
+import io.harness.cdng.ssh.CommandStepRollbackDeploymentInfo;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
 import io.harness.serializer.KryoRegistrar;
@@ -175,7 +178,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(CloudformationRollbackStepInfo.class, 12584);
     kryo.register(ConfigFileStepParameters.class, 12585);
     kryo.register(CommandStepInfo.class, 12600);
-    kryo.register(StartupScriptParameters.class, 12601);
+    kryo.register(StartupCommandParameters.class, 12601);
     kryo.register(ApplicationSettingsParameters.class, 12602);
     kryo.register(ConnectionStringsParameters.class, 12603);
     kryo.register(JenkinsBuildStepInfo.class, 12700);
@@ -183,5 +186,8 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(MergePRStepInfo.class, 12605);
 
     kryo.register(CustomFetchResponsePassThroughData.class, 12705);
+    kryo.register(RollbackDeploymentInfo.class, 12606);
+    kryo.register(CommandStepRollbackDeploymentInfo.class, 12607);
+    kryo.register(ConfigFilesOutcome.class, 12608);
   }
 }

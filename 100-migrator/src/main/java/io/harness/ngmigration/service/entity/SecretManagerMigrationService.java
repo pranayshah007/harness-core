@@ -7,6 +7,9 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
@@ -14,6 +17,7 @@ import io.harness.beans.SecretManagerConfig;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.YamlDTO;
@@ -24,12 +28,15 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.summary.BaseSummary;
+import io.harness.ngmigration.beans.summary.SecretManagerSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.connector.SecretFactory;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.security.encryption.EncryptionType;
 
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
@@ -63,7 +70,21 @@ public class SecretManagerMigrationService extends NgMigrationService {
   }
 
   @Override
+  public BaseSummary getSummary(List<CgEntityNode> entities) {
+    if (EmptyPredicate.isEmpty(entities)) {
+      return null;
+    }
+    Map<String, Long> typeSummary = entities.stream()
+                                        .map(entity -> ((SecretManagerConfig) entity.getEntity()).getEncryptionType())
+                                        .collect(groupingBy(EncryptionType::name, counting()));
+    return new SecretManagerSummary(entities.size(), typeSummary);
+  }
+
+  @Override
   public DiscoveryNode discover(NGMigrationEntity entity) {
+    if (entity == null) {
+      return null;
+    }
     SecretManagerConfig managerConfig = (SecretManagerConfig) entity;
     String entityId = managerConfig.getUuid();
     CgEntityId managerEntityId = CgEntityId.builder().type(NGMigrationEntityType.SECRET_MANAGER).id(entityId).build();

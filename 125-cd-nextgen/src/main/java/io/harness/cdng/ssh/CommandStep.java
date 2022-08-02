@@ -10,15 +10,27 @@ package io.harness.cdng.ssh;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
+import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.mapper.PdcToServiceInstanceInfoMapper;
 import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.CommandTaskResponse;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
@@ -27,6 +39,8 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
@@ -38,9 +52,12 @@ import io.harness.supplier.ThrowingSupplier;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @OwnedBy(CDP)
 public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskResponse> {
   public static final StepType STEP_TYPE =
@@ -48,7 +65,10 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
 
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
+  @Inject private CDStepHelper cdStepHelper;
   @Inject private SshCommandStepHelper sshCommandStepHelper;
+  @Inject private InstanceInfoService instanceInfoService;
+  @Inject private OutcomeService outcomeService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -64,6 +84,7 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     CommandStepParameters executeCommandStepParameters = (CommandStepParameters) stepParameters.getSpec();
+    validateStepParameters(executeCommandStepParameters);
 
     CommandTaskParameters taskParameters =
         sshCommandStepHelper.buildCommandTaskParameters(ambiance, executeCommandStepParameters);
@@ -79,6 +100,7 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
     List<String> commandExecutionUnits =
         taskParameters.getCommandUnits().stream().map(cu -> cu.getName()).collect(Collectors.toList());
     String taskName = TaskType.COMMAND_TASK_NG.getDisplayName();
+
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandExecutionUnits, taskName,
         TaskSelectorYaml.toTaskSelector(
             emptyIfNull(getParameterFieldValue(executeCommandStepParameters.getDelegateSelectors()))),
@@ -103,6 +125,43 @@ public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskRe
     }
     stepResponseBuilder.failureInfo(failureInfoBuilder.build());
 
-    return stepResponseBuilder.build();
+    CommandStepParameters executeCommandStepParameters = (CommandStepParameters) stepParameters.getSpec();
+    String host = ParameterFieldHelper.getParameterFieldValue(executeCommandStepParameters.getHost());
+    ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+
+    String serviceType = serviceOutcome.getType();
+    if (!(serviceType.equals(ServiceSpecType.SSH) || serviceType.equals(ServiceSpecType.WINRM))) {
+      throw new InvalidArgumentsException("Invalid service outcome found " + serviceOutcome);
+    }
+
+    CommandStepOutcome commandStepOutcome = CommandStepOutcome.builder().host(host).build();
+    InfrastructureOutcome infrastructure = cdStepHelper.getInfrastructureOutcome(ambiance);
+
+    ServerInstanceInfo serverInstanceInfo =
+        PdcToServiceInstanceInfoMapper.toServerInstanceInfo(serviceType, host, infrastructure.getInfrastructureKey());
+
+    if (CommandExecutionStatus.SUCCESS.equals(taskResponse.getStatus())) {
+      instanceInfoService.saveServerInstancesIntoSweepingOutput(
+          ambiance, Collections.singletonList(serverInstanceInfo));
+    }
+
+    return stepResponseBuilder
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(OutcomeExpressionConstants.OUTPUT)
+                         .outcome(commandStepOutcome)
+                         .build())
+        .build();
+  }
+
+  private void validateStepParameters(CommandStepParameters executeCommandStepParameters) {
+    boolean onDelegate =
+        ParameterFieldHelper.getBooleanParameterFieldValue(executeCommandStepParameters.getOnDelegate());
+    if (!onDelegate) {
+      String host = ParameterFieldHelper.getParameterFieldValue(executeCommandStepParameters.getHost());
+      if (isEmpty(host)) {
+        throw new InvalidArgumentsException("Host information is missing in Command Step.");
+      }
+    }
   }
 }

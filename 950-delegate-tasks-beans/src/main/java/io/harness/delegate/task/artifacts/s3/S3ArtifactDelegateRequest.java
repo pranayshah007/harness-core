@@ -80,6 +80,6 @@ public class S3ArtifactDelegateRequest implements ArtifactSourceDelegateRequest 
 
   @Override
   public ArtifactSourceType getSourceType() {
-    return null;
+    return ArtifactSourceType.AMAZONS3;
   }
 }

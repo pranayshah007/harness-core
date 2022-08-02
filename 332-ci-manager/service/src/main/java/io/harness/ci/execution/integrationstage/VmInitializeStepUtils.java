@@ -217,6 +217,7 @@ public class VmInitializeStepUtils {
               ((RunTestsStepInfo) ciStepInfo).getConnectorRef(), ciStepInfo.getIdentifier());
         case DOCKER:
         case ECR:
+        case ACR:
         case GCR:
         case SAVE_CACHE_S3:
         case RESTORE_CACHE_S3:

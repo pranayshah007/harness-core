@@ -48,6 +48,9 @@ public class AppMigrationService extends NgMigrationService {
 
   @Override
   public DiscoveryNode discover(NGMigrationEntity entity) {
+    if (entity == null) {
+      return null;
+    }
     Application application = (Application) entity;
     String appId = application.getUuid();
     List<Pipeline> pipelines = hPersistence.createQuery(Pipeline.class)

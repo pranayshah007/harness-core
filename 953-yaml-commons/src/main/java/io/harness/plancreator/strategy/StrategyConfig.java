@@ -40,6 +40,7 @@ public class StrategyConfig {
   String uuid;
   @JsonProperty("matrix") MatrixConfigInterface matrixConfig;
   @JsonProperty("repeat") HarnessForConfig repeat;
+
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
   @YamlSchemaTypes(value = {expression})
   @JsonProperty("parallelism")

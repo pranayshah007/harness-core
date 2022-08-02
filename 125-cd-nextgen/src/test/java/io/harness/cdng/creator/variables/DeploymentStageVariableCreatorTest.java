@@ -65,7 +65,6 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "default";
   private final String PROJ_IDENTIFIER = "svcenvrefactor";
-  private final String SERVICE_IDENTIFIER = "variableTestSvc";
   private final String ENV_IDENTIFIER = "environmentVariableTest";
 
   @Test

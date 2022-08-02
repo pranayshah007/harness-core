@@ -9,6 +9,7 @@ package software.wings.delegatetasks.azure;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.model.AzureOSType;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -23,6 +24,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 
 import com.google.inject.Inject;
+import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
@@ -121,6 +123,15 @@ public class AzureTask extends AbstractDelegateRunnableTask {
         return azureAsyncTaskHelper.listTags(azureTaskParams.getEncryptionDetails(),
             azureTaskParams.getAzureConnector(),
             azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.SUBSCRIPTION_ID));
+      case LIST_HOSTS:
+        validateAzureResourceExist(azureTaskParams, "Could not retrieve hosts because of invalid parameter(s)",
+            AzureAdditionalParams.SUBSCRIPTION_ID);
+        return azureAsyncTaskHelper.listHosts(azureTaskParams.getEncryptionDetails(),
+            azureTaskParams.getAzureConnector(),
+            azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.SUBSCRIPTION_ID),
+            azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.RESOURCE_GROUP),
+            AzureOSType.fromString(azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.OS_TYPE)),
+            (Map<String, String>) azureTaskParams.getParams().get("tags"));
       default:
         throw new InvalidRequestException("Task type not identified");
     }

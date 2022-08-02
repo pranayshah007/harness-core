@@ -47,6 +47,16 @@ if [[ "${ENABLE_APPDYNAMICS}" == "true" ]] && [[ "${DISABLE_NEW_RELIC}" == "true
     echo "Using Appdynamics java agent"
 fi
 
+if [[ "${ENABLE_OPENTELEMETRY}" == "true" ]] ; then
+    echo "OpenTelemetry is enabled"
+    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/opentelemetry-javaagent.jar -Dotel.service.name=${OTEL_SERVICE_NAME:-manager}"
+
+    if [ -n "$OTEL_EXPORTER_OTLP_ENDPOINT" ]; then
+        JAVA_OPTS=$JAVA_OPTS" -Dotel.exporter.otlp.endpoint=$OTEL_EXPORTER_OTLP_ENDPOINT "
+    fi
+    echo "Using OpenTelemetry Java Agent"
+fi
+
 if [[ "${ENABLE_OVEROPS}" == "true" ]] ; then
     echo "OverOps is enabled"
     JAVA_OPTS=$JAVA_OPTS" -Xshare:off -XX:-UseTypeSpeculation -XX:ReservedCodeCacheSize=512m -agentpath:/opt/harness/harness/lib/libETAgent.so"

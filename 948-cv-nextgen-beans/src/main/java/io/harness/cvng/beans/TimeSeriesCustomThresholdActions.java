@@ -13,7 +13,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum TimeSeriesCustomThresholdActions {
   FAIL_IMMEDIATELY("fail-immediately"),
   FAIL_AFTER_OCCURRENCES("fail-after-multiple-occurrences"),
-  FAIL_AFTER_CONSECUTIVE_OCCURRENCES("fail-after-consecutive-occurrences");
+  FAIL_AFTER_CONSECUTIVE_OCCURRENCES("fail-after-consecutive-occurrences"),
+  IGNORE("ignore");
 
   private String displayName;
 

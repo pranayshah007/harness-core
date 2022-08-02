@@ -9,7 +9,7 @@ targets:
   120-ng-manager:module
   310-ci-manager:module
   platform-service/service:module
-  800-pipeline-service:module
+  pipeline-service/service:module
   935-analyser-service:module
 
 import_run_configurations:

@@ -60,6 +60,7 @@ import io.harness.git.GitClientV2;
 import io.harness.git.model.GitBaseRequest;
 import io.harness.logging.LogCallback;
 import io.harness.logging.PlanJsonLogOutputStream;
+import io.harness.logging.PlanLogOutputStream;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.EncryptDecryptHelper;
@@ -105,6 +106,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   @InjectMocks @Inject TerraformBaseHelperImpl terraformBaseHelper;
   @Mock private LogCallback logCallback;
   @Mock private PlanJsonLogOutputStream planJsonLogOutputStream;
+  @Mock private PlanLogOutputStream planLogOutputStream;
   @Mock private TerraformClientImpl terraformClient;
   private TerraformBaseHelperImpl spyTerraformBaseHelper;
   @Mock EncryptionConfig encryptionConfig;
@@ -676,6 +678,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
         .isSkipRefreshBeforeApplyingPlan(true)
         .isSaveTerraformJson(false)
         .logCallback(logCallback)
-        .planJsonLogOutputStream(planJsonLogOutputStream);
+        .planJsonLogOutputStream(planJsonLogOutputStream)
+        .planLogOutputStream(planLogOutputStream);
   }
 }

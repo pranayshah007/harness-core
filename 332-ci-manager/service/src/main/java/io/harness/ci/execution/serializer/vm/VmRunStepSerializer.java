@@ -82,8 +82,8 @@ public class VmRunStepSerializer {
     if (runStepInfo.getReports().getValue() != null) {
       if (runStepInfo.getReports().getValue().getType() == UnitTestReportType.JUNIT) {
         JUnitTestReport junitTestReport = (JUnitTestReport) runStepInfo.getReports().getValue().getSpec();
-        List<String> resolvedReport = junitTestReport.resolve(identifier, "run");
-
+        List<String> resolvedReport =
+            RunTimeInputHandler.resolveListParameter("paths", "run", identifier, junitTestReport.getPaths(), false);
         runStepBuilder.unitTestReport(VmJunitTestReport.builder().paths(resolvedReport).build());
       }
     }
