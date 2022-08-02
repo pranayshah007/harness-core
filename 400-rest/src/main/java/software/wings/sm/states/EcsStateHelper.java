@@ -13,6 +13,7 @@ import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.ECS_BG_DOWNSIZE;
 import static io.harness.beans.FeatureName.ECS_REGISTER_TASK_DEFINITION_TAGS;
 import static io.harness.beans.FeatureName.ENABLE_ADDING_SERVICE_VARS_TO_ECS_SPEC;
+import static io.harness.beans.FeatureName.FIXED_INSTANCE_ZERO_ALLOW;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -504,9 +505,9 @@ public class EcsStateHelper {
   }
 
   public ContainerServiceElement buildContainerServiceElement(ExecutionContext context,
-      ContainerSetupCommandUnitExecutionData setupExecutionData, ExecutionStatus status, ImageDetails imageDetails,
-      String maxInstanceStr, String fixedInstanceStr, String desiredInstanceCountStr, ResizeStrategy resizeStrategy,
-      int serviceSteadyStateTimeout, Logger logger) {
+      ContainerSetupCommandUnitExecutionData setupExecutionData, ImageDetails imageDetails, String maxInstanceStr,
+      String fixedInstanceStr, String desiredInstanceCountStr, ResizeStrategy resizeStrategy,
+      int serviceSteadyStateTimeout) {
     CommandStateExecutionData executionData = (CommandStateExecutionData) context.getStateExecutionData();
     EcsSetupParams setupParams = (EcsSetupParams) executionData.getContainerSetupParams();
     Integer maxVal = null;
@@ -519,10 +520,22 @@ public class EcsStateHelper {
     }
 
     int evaluatedMaxInstances = maxVal != null ? maxVal : DEFAULT_MAX;
+    if (evaluatedMaxInstances < 0) {
+      throw new InvalidArgumentsException("Max Instances value cannot be negative");
+    }
     int maxInstances = evaluatedMaxInstances == 0 ? DEFAULT_MAX : evaluatedMaxInstances;
     int evaluatedFixedInstances =
         isNotBlank(fixedInstanceStr) ? Integer.parseInt(context.renderExpression(fixedInstanceStr)) : maxInstances;
-    int fixedInstances = evaluatedFixedInstances == 0 ? maxInstances : evaluatedFixedInstances;
+    if (evaluatedFixedInstances < 0) {
+      throw new InvalidArgumentsException("Fixed Instances value cannot be negative");
+    }
+    int fixedInstances = 0;
+    if (featureFlagService.isEnabled(FIXED_INSTANCE_ZERO_ALLOW, context.getAccountId())) {
+      fixedInstances = evaluatedFixedInstances;
+    } else {
+      fixedInstances = evaluatedFixedInstances == 0 ? maxInstances : evaluatedFixedInstances;
+    }
+
     resizeStrategy = resizeStrategy == null ? RESIZE_NEW_FIRST : resizeStrategy;
     serviceSteadyStateTimeout =
         serviceSteadyStateTimeout > 0 ? serviceSteadyStateTimeout : DEFAULT_STEADY_STATE_TIMEOUT;

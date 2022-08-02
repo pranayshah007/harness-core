@@ -52,6 +52,7 @@ import io.harness.serializer.JsonUtils;
 import software.wings.service.impl.security.NGEncryptorService;
 
 import com.google.inject.Inject;
+import io.dropwizard.jersey.validation.JerseyViolationException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -69,7 +70,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import javax.validation.ConstraintViolation;
-import javax.validation.ConstraintViolationException;
 import javax.validation.Valid;
 import javax.validation.Validator;
 import javax.validation.constraints.NotNull;
@@ -430,7 +430,7 @@ public class NGSecretResourceV2 {
   private void validateRequestPayload(SecretRequestWrapper dto) {
     Set<ConstraintViolation<SecretRequestWrapper>> violations = validator.validate(dto);
     if (!violations.isEmpty()) {
-      throw new ConstraintViolationException(violations);
+      throw new JerseyViolationException(violations, null);
     }
   }
 

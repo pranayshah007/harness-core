@@ -548,10 +548,12 @@
               ]
             },
             "deploymentSlot": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "webApp": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             }
           }
         }
@@ -585,7 +587,8 @@
               ]
             },
             "targetSlot": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             }
           }
         }
@@ -629,7 +632,8 @@
                 {
                   "type": "number"
                 }
-              ]
+              ],
+              "minLength": 1
             }
           }
         }
@@ -3916,7 +3920,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -3929,11 +3933,11 @@
         {
           "type": "object",
           "properties": {
-            "manifestScope": {
-              "type": "string"
-            },
             "metadata": {
               "type": "string"
+            },
+            "overlayConfiguration": {
+              "$ref": "#/definitions/OverlayConfiguration"
             },
             "patchesPaths": {
               "oneOf": [
@@ -4435,7 +4439,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4836,6 +4840,18 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "OverlayConfiguration": {
+      "type": "object",
+      "required": [
+        "kustomizeYamlFolderPath"
+      ],
+      "properties": {
+        "kustomizeYamlFolderPath": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ParallelStepElementConfig": {
       "type": "object",
       "required": [
@@ -5033,7 +5049,7 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        { }
+        {}
       ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "oneOf": [
@@ -5873,7 +5889,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6408,7 +6424,7 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {}
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6418,7 +6434,7 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        { }
+        {}
       ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "oneOf": [

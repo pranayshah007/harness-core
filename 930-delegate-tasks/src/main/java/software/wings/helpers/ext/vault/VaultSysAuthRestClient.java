@@ -58,8 +58,8 @@ public interface VaultSysAuthRestClient {
       @Path(value = "secret-engine-name") String secretEngineName, @Header("X-Vault-Token") String header);
 
   @POST(K8s_LOGIN_URL)
-  Call<VaultK8sLoginResponse> k8sAuthLogin(
-      @Path(value = "kubernetes-auth-path") String k8sAuthEndpoint, @Body VaultK8sAuthLoginRequest request);
+  Call<VaultK8sLoginResponse> k8sAuthLogin(@Path(value = "kubernetes-auth-path") String k8sAuthEndpoint,
+      @Header("X-Vault-Namespace") String namespace, @Body VaultK8sAuthLoginRequest request);
 
   @POST(SIGN_PUBLIC_SSH_KEY_URL)
   Call<SignedSSHVaultResponse> fetchSignedPublicKey(@Path(value = "secret-engine-name") String secretEngineName,

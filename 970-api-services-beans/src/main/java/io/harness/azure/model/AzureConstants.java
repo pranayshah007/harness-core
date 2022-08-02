@@ -287,6 +287,7 @@ public interface AzureConstants {
   String START_DEPLOYMENT_SLOT = "Start Slot";
   String SLOT_TRAFFIC_PERCENTAGE = "Update Slot Traffic Percentage";
   String SLOT_SWAP = "Swap Slots";
+  String FETCH_ARTIFACT_FILE = "Download artifact file";
   long SLOT_STARTING_STATUS_CHECK_INTERVAL = TimeUnit.SECONDS.toSeconds(15);
   long SLOT_STOPPING_STATUS_CHECK_INTERVAL = TimeUnit.SECONDS.toSeconds(15);
   long ARM_DEPLOYMENT_STATUS_CHECK_INTERVAL = TimeUnit.SECONDS.toSeconds(15);

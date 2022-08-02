@@ -63,6 +63,7 @@ BAZEL_MODULES="\
   //310-ci-manager:module \
   //323-sto-utilities:module \
   //325-sto-beans:module \
+  //332-ci-manager/contracts:module \
   //332-ci-manager/service:module \
   //340-ce-nextgen:module \
   //350-event-server:module \

@@ -14,7 +14,7 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMap
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveListParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
-import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_CERT;
+import static io.harness.ci.commonconstants.CIExecutionConstants.CERT_PATH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_SECRET;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ACCESS_KEY;
@@ -166,7 +166,7 @@ public class PluginSettingUtils {
         map.put(EnvVariableEnum.AZURE_APP_SECRET, CLIENT_SECRET);
         map.put(EnvVariableEnum.AZURE_APP_ID, CLIENT_ID);
         map.put(EnvVariableEnum.AZURE_TENANT_ID, TENANT_ID);
-        map.put(EnvVariableEnum.AZURE_CERT_PATH, CLIENT_CERT);
+        map.put(EnvVariableEnum.AZURE_CERT_PATH, CERT_PATH);
         return map;
       case GCR:
       case RESTORE_CACHE_GCS:

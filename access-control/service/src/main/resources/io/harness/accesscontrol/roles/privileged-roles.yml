@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: supportRolesConfiguration
-version: 8
+version: 9
 roles:
   - identifier: _super_account_viewer
     name: Super Account Viewer
@@ -41,3 +41,7 @@ roles:
       - gitops_cluster_view
       - gitops_gpgkey_view
       - gitops_cert_view
+      - sto_issue_view
+      - sto_scan_view
+      - sto_testtarget_view
+      - sto_exemption_view

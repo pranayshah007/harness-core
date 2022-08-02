@@ -942,6 +942,42 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
         .isEqualTo("node2");
   }
 
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testIsAnalysisFailFastForLatestTimeRange() {
+    VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
+    CVConfig cvConfig = verificationJobInstance.getCvConfigMap().values().iterator().next();
+    String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
+    String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
+        accountId, cvConfig.getUuid(), verificationJobInstanceId, cvConfig.getType());
+
+    boolean isAnalysisFailFast =
+        deploymentTimeSeriesAnalysisService.isAnalysisFailFastForLatestTimeRange(verificationTaskId);
+    assertThat(isAnalysisFailFast).isFalse();
+
+    DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysisOne =
+        DeploymentTimeSeriesAnalysis.builder()
+            .accountId(accountId)
+            .verificationTaskId(verificationTaskId)
+            .startTime(Instant.now())
+            .endTime(Instant.now().plus(1, ChronoUnit.MINUTES))
+            .build();
+    DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysisTwo =
+        DeploymentTimeSeriesAnalysis.builder()
+            .accountId(accountId)
+            .verificationTaskId(verificationTaskId)
+            .startTime(Instant.now().plus(1, ChronoUnit.MINUTES))
+            .endTime(Instant.now().plus(2, ChronoUnit.MINUTES))
+            .build();
+    deploymentTimeSeriesAnalysisTwo.setFailFast(true);
+    deploymentTimeSeriesAnalysisService.save(deploymentTimeSeriesAnalysisOne);
+    deploymentTimeSeriesAnalysisService.save(deploymentTimeSeriesAnalysisTwo);
+
+    isAnalysisFailFast = deploymentTimeSeriesAnalysisService.isAnalysisFailFastForLatestTimeRange(verificationTaskId);
+    assertThat(isAnalysisFailFast).isTrue();
+  }
+
   private VerificationJobInstance createVerificationJobInstance() {
     VerificationJobInstance jobInstance = builderFactory.verificationJobInstanceBuilder().build();
     jobInstance.setAccountId(accountId);

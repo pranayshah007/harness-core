@@ -12,4 +12,5 @@ message DebeziumChangeEvent {
   string key = 1;
   string value = 2;
   string optype = 3;
+  int64 timestamp = 4;
 }

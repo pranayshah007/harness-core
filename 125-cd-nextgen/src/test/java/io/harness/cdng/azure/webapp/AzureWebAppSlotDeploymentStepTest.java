@@ -34,6 +34,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.azure.webapp.beans.AzureSlotDeploymentPassThroughData;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppSlotDeploymentDataOutput;
@@ -104,6 +105,7 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
 
   @Mock private AzureArtifactConfig azureArtifactConfig;
   @Mock private AzureWebAppInfraDelegateConfig infraDelegateConfig;
+  @Mock private ArtifactOutcome primaryArtifactOutcome;
   private final AzureWebAppInfrastructureOutcome infrastructure = AzureWebAppInfrastructureOutcome.builder().build();
   private final Ambiance ambiance =
       Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, "accountId").build();
@@ -113,7 +115,10 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
 
   @Before
   public void setupTest() {
-    doReturn(azureArtifactConfig).when(azureWebAppStepHelper).getPrimaryArtifactConfig(ambiance);
+    doReturn(primaryArtifactOutcome).when(azureWebAppStepHelper).getPrimaryArtifactOutcome(ambiance);
+    doReturn(azureArtifactConfig)
+        .when(azureWebAppStepHelper)
+        .getPrimaryArtifactConfig(ambiance, primaryArtifactOutcome);
     doReturn(infrastructure).when(cdStepHelper).getInfrastructureOutcome(ambiance);
     doReturn(infraDelegateConfig)
         .when(azureWebAppStepHelper)
@@ -345,6 +350,7 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
                                                                    .configs(emptyMap())
                                                                    .unprocessedConfigs(emptyMap())
                                                                    .infrastructure(infrastructure)
+                                                                   .primaryArtifactOutcome(primaryArtifactOutcome)
                                                                    .build();
     final AzureAppServicePreDeploymentData preDeploymentData = AzureAppServicePreDeploymentData.builder().build();
     final AzureWebAppTaskResponse azureWebAppTaskResponse =

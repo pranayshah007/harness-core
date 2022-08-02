@@ -13,6 +13,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.PDC;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.SSH_WINRM_AZURE;
+import static io.harness.pms.yaml.YamlNode.UUID_FIELD_NAME;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -23,18 +25,23 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
+import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.services.NGHostService;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO;
+import io.harness.delegate.task.ssh.AzureSshInfraDelegateConfig;
+import io.harness.delegate.task.ssh.AzureWinrmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
@@ -65,6 +72,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -81,19 +89,21 @@ public class SshEntityHelper {
   @Inject private SshKeySpecDTOHelper sshKeySpecDTOHelper;
   @Inject private WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper;
   @Inject private NGHostService ngHostService;
+  @Inject private AzureHelperService azureHelperService;
 
   private static final int BATCH_SIZE = 100;
 
   public SshInfraDelegateConfig getSshInfraDelegateConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    ConnectorInfoDTO connectorDTO = null;
+    SSHKeySpecDTO sshKeySpecDto = null;
     switch (infrastructure.getKind()) {
       case PDC:
-        ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructure, ngAccess);
         PdcInfrastructureOutcome pdcDirectInfrastructure = (PdcInfrastructureOutcome) infrastructure;
+        connectorDTO = getConnectorInfoDTO(infrastructure, ngAccess);
         PhysicalDataCenterConnectorDTO pdcConnectorDTO =
             (connectorDTO != null) ? (PhysicalDataCenterConnectorDTO) connectorDTO.getConnectorConfig() : null;
-
-        SSHKeySpecDTO sshKeySpecDto = getSshKeySpecDto(pdcDirectInfrastructure, ambiance);
+        sshKeySpecDto = getSshKeySpecDto(pdcDirectInfrastructure.getCredentialsRef(), ambiance);
         List<String> hosts = extractHostNames(pdcDirectInfrastructure, pdcConnectorDTO, ngAccess);
         return PdcSshInfraDelegateConfig.builder()
             .hosts(hosts)
@@ -102,6 +112,23 @@ public class SshEntityHelper {
             .encryptionDataDetails(sshKeySpecDTOHelper.getSSHKeyEncryptionDetails(sshKeySpecDto, ngAccess))
             .build();
 
+      case SSH_WINRM_AZURE:
+        SshWinRmAzureInfrastructureOutcome azureInfrastructureOutcome =
+            (SshWinRmAzureInfrastructureOutcome) infrastructure;
+        connectorDTO = getConnectorInfoDTO(infrastructure, ngAccess);
+        AzureConnectorDTO azureConnectorDTO = (AzureConnectorDTO) connectorDTO.getConnectorConfig();
+        List<EncryptedDataDetail> encryptionDetails =
+            azureHelperService.getEncryptionDetails(azureConnectorDTO, ngAccess);
+        sshKeySpecDto = getSshKeySpecDto(azureInfrastructureOutcome.getCredentialsRef(), ambiance);
+        return AzureSshInfraDelegateConfig.sshAzureBuilder()
+            .azureConnectorDTO(azureConnectorDTO)
+            .connectorEncryptionDataDetails(encryptionDetails)
+            .sshKeySpecDto(sshKeySpecDto)
+            .encryptionDataDetails(sshKeySpecDTOHelper.getSSHKeyEncryptionDetails(sshKeySpecDto, ngAccess))
+            .subscriptionId(azureInfrastructureOutcome.getSubscriptionId())
+            .resourceGroup(azureInfrastructureOutcome.getResourceGroup())
+            .tags(filterInfraTags(azureInfrastructureOutcome.getTags()))
+            .build();
       default:
         throw new UnsupportedOperationException(
             format("Unsupported Infrastructure type: [%s]", infrastructure.getKind()));
@@ -110,13 +137,15 @@ public class SshEntityHelper {
 
   public WinRmInfraDelegateConfig getWinRmInfraDelegateConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    ConnectorInfoDTO connectorDTO = null;
+    WinRmCredentialsSpecDTO winRmCredentials = null;
     switch (infrastructure.getKind()) {
       case PDC:
-        ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructure, ngAccess);
         PdcInfrastructureOutcome pdcDirectInfrastructure = (PdcInfrastructureOutcome) infrastructure;
+        connectorDTO = getConnectorInfoDTO(infrastructure, ngAccess);
         PhysicalDataCenterConnectorDTO pdcConnectorDTO =
             (connectorDTO != null) ? (PhysicalDataCenterConnectorDTO) connectorDTO.getConnectorConfig() : null;
-        WinRmCredentialsSpecDTO winRmCredentials = getWinRmCredentials(pdcDirectInfrastructure, ambiance);
+        winRmCredentials = getWinRmCredentials(pdcDirectInfrastructure.getCredentialsRef(), ambiance);
         List<String> hosts = extractHostNames(pdcDirectInfrastructure, pdcConnectorDTO, ngAccess);
         return PdcWinRmInfraDelegateConfig.builder()
             .hosts(hosts)
@@ -124,11 +153,38 @@ public class SshEntityHelper {
             .winRmCredentials(winRmCredentials)
             .encryptionDataDetails(winRmCredentialsSpecDTOHelper.getWinRmEncryptionDetails(winRmCredentials, ngAccess))
             .build();
-
+      case SSH_WINRM_AZURE:
+        SshWinRmAzureInfrastructureOutcome azureInfrastructureOutcome =
+            (SshWinRmAzureInfrastructureOutcome) infrastructure;
+        connectorDTO = getConnectorInfoDTO(infrastructure, ngAccess);
+        AzureConnectorDTO azureConnectorDTO = (AzureConnectorDTO) connectorDTO.getConnectorConfig();
+        List<EncryptedDataDetail> encryptionDetails =
+            azureHelperService.getEncryptionDetails(azureConnectorDTO, ngAccess);
+        winRmCredentials = getWinRmCredentials(azureInfrastructureOutcome.getCredentialsRef(), ambiance);
+        return AzureWinrmInfraDelegateConfig.winrmAzureBuilder()
+            .azureConnectorDTO(azureConnectorDTO)
+            .connectorEncryptionDataDetails(encryptionDetails)
+            .winRmCredentials(winRmCredentials)
+            .encryptionDataDetails(winRmCredentialsSpecDTOHelper.getWinRmEncryptionDetails(winRmCredentials, ngAccess))
+            .subscriptionId(azureInfrastructureOutcome.getSubscriptionId())
+            .resourceGroup(azureInfrastructureOutcome.getResourceGroup())
+            .tags(filterInfraTags(azureInfrastructureOutcome.getTags()))
+            .build();
       default:
         throw new UnsupportedOperationException(
             format("Unsupported Infrastructure type: [%s]", infrastructure.getKind()));
     }
+  }
+
+  private Map<String, String> filterInfraTags(Map<String, String> infraTags) {
+    if (isEmpty(infraTags)) {
+      return infraTags;
+    }
+
+    return infraTags.entrySet()
+        .stream()
+        .filter(entry -> !UUID_FIELD_NAME.equals(entry.getKey()))
+        .collect(Collectors.toMap(map -> map.getKey(), map -> map.getValue()));
   }
 
   private List<String> extractHostNames(PdcInfrastructureOutcome pdcDirectInfrastructure,
@@ -202,8 +258,8 @@ public class SshEntityHelper {
     return hosts.stream().map(host -> host.getHostName()).collect(Collectors.toList());
   }
 
-  private SSHKeySpecDTO getSshKeySpecDto(PdcInfrastructureOutcome pdcDirectInfrastructure, Ambiance ambiance) {
-    String sshKeyRef = pdcDirectInfrastructure.getCredentialsRef();
+  private SSHKeySpecDTO getSshKeySpecDto(String credentialsRef, Ambiance ambiance) {
+    String sshKeyRef = credentialsRef;
     if (isEmpty(sshKeyRef)) {
       throw new InvalidRequestException("Missing SSH key for configured host(s)");
     }
@@ -222,9 +278,8 @@ public class SshEntityHelper {
     return (SSHKeySpecDTO) secret.getSpec();
   }
 
-  private WinRmCredentialsSpecDTO getWinRmCredentials(
-      PdcInfrastructureOutcome pdcDirectInfrastructure, Ambiance ambiance) {
-    String winRmCredentialsRef = pdcDirectInfrastructure.getCredentialsRef();
+  private WinRmCredentialsSpecDTO getWinRmCredentials(String credentialsRef, Ambiance ambiance) {
+    String winRmCredentialsRef = credentialsRef;
     if (isEmpty(winRmCredentialsRef)) {
       throw new InvalidRequestException("Missing WinRm credentials for configured host(s)");
     }

@@ -237,9 +237,10 @@ public class BudgetResource {
       String budgetId, @RequestBody(required = true, description = "The Budget object") @NotNull @Valid Budget budget) {
     Budget oldBudget = budgetService.get(budgetId, accountId);
     budgetService.update(budgetId, budget);
+    Budget newBudget = budgetService.get(budgetId, accountId);
     return ResponseDTO.newResponse(
         Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-          outboxService.save(new BudgetUpdateEvent(accountId, budget.toDTO(), oldBudget.toDTO()));
+          outboxService.save(new BudgetUpdateEvent(accountId, newBudget.toDTO(), oldBudget.toDTO()));
           return "Successfully updated the budget";
         })));
   }

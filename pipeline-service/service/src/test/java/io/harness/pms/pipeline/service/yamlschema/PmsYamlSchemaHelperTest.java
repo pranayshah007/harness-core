@@ -93,10 +93,23 @@ public class PmsYamlSchemaHelperTest {
     yamlSchemaWithDetailsList.add(YamlSchemaWithDetails.builder()
                                       .schemaClassName("StageClass")
                                       .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                                              .namespace("namespace1")
+                                                              .yamlGroup(YamlGroup.builder().group("STAGE").build())
+                                                              .build())
+                                      .build());
+    pmsYamlSchemaHelper.processStageSchema(
+        yamlSchemaWithDetailsList, (ObjectNode) schema.get(SchemaConstants.DEFINITIONS_NODE));
+    // stageNode would not be added because the namespace is not present in definitions.
+    assertEquals(getOneOfNodeInStages(schema).size(), 0);
+
+    yamlSchemaWithDetailsList.add(YamlSchemaWithDetails.builder()
+                                      .schemaClassName("StageClass1")
+                                      .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                                               .namespace("cd")
                                                               .yamlGroup(YamlGroup.builder().group("STAGE").build())
                                                               .build())
                                       .build());
+
     pmsYamlSchemaHelper.processStageSchema(
         yamlSchemaWithDetailsList, (ObjectNode) schema.get(SchemaConstants.DEFINITIONS_NODE));
     // /cd/StageClass would be added in oneOf node.

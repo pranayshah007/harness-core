@@ -1516,6 +1516,12 @@
             "stageIdentifier": {
               "type": "string"
             },
+            "strategyExpansionMap": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/StrategyExpansionData"
+              }
+            },
             "variables": {
               "type": "array",
               "items": {
@@ -4471,6 +4477,16 @@
           ]
         }
       ]
+    },
+    "StrategyExpansionData": {
+      "type": "object",
+      "properties": {
+        "maxConcurrency": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "StringNGVariable": {
       "allOf": [

@@ -154,7 +154,7 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
                                    .category(mdList.get(0).getRiskProfile().getCategory())
                                    .build();
                            appDynamicsCVConfig.populateFromMetricDefinitions(
-                               metricDefinitions, metricDefinitions.get(0).getRiskProfile().getCategory());
+                               metricDefinitions, metricDefinitions.get(0).getRiskProfile().getCategory(), metricPacks);
                            return appDynamicsCVConfig;
                          })
                          .collect(Collectors.toList()));

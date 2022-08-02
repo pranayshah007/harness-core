@@ -9,6 +9,8 @@ package io.harness.resourcegroup.resourceclient.environment;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.resourcegroup.beans.ValidatorType.BY_ATTRIBUTE;
+import static io.harness.resourcegroup.beans.ValidatorType.BY_ATTRIBUTE_INCLUDING_CHILD_SCOPES;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_IDENTIFIER;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES;
@@ -106,10 +108,10 @@ public class EnvironmentResourceImpl implements Resource {
   @Override
   public Map<ScopeLevel, EnumSet<ValidatorType>> getSelectorKind() {
     return ImmutableMap.of(ScopeLevel.ACCOUNT,
-        EnumSet.of(BY_RESOURCE_IDENTIFIER, BY_RESOURCE_TYPE, BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES),
+        EnumSet.of(BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES, BY_ATTRIBUTE_INCLUDING_CHILD_SCOPES),
         ScopeLevel.ORGANIZATION,
-        EnumSet.of(BY_RESOURCE_IDENTIFIER, BY_RESOURCE_TYPE, BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES),
-        ScopeLevel.PROJECT, EnumSet.of(BY_RESOURCE_IDENTIFIER, BY_RESOURCE_TYPE));
+        EnumSet.of(BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES, BY_ATTRIBUTE_INCLUDING_CHILD_SCOPES), ScopeLevel.PROJECT,
+        EnumSet.of(BY_RESOURCE_IDENTIFIER, BY_RESOURCE_TYPE, BY_ATTRIBUTE));
   }
 
   @Override

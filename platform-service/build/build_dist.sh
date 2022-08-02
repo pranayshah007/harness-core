@@ -34,6 +34,7 @@ cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.s
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp ../../platform-service/build/container/Dockerfile-platform-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../platform-service/build/container/Dockerfile-platform-service-cie-jdk ./Dockerfile-cie-jdk
+cp ../../platform-service/build/container/Dockerfile-platform-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp -r ../../platform-service/build/container/scripts/ .
 
 java -jar platform-service-capsule.jar scan-classpath-metadata

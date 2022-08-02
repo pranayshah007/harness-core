@@ -9,9 +9,14 @@ package io.harness.pms.template;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.FilterCreatorException;
+import io.harness.exception.bean.FilterCreatorErrorResponse;
+import io.harness.pms.contracts.service.EntityReferenceErrorResponse;
 import io.harness.pms.contracts.service.EntityReferenceRequest;
 import io.harness.pms.contracts.service.EntityReferenceResponse;
+import io.harness.pms.contracts.service.EntityReferenceResponseWrapper;
 import io.harness.pms.contracts.service.EntityReferenceServiceGrpc.EntityReferenceServiceImplBase;
+import io.harness.pms.contracts.service.ErrorMetadata;
 
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
@@ -21,9 +26,26 @@ public class EntityReferenceGrpcService extends EntityReferenceServiceImplBase {
   @Inject EntityReferenceService entityReferenceService;
 
   @Override
-  public void getReferences(EntityReferenceRequest request, StreamObserver<EntityReferenceResponse> responseObserver) {
-    EntityReferenceResponse entityReferenceResponse = entityReferenceService.getReferences(request);
-    responseObserver.onNext(entityReferenceResponse);
+  public void getReferences(
+      EntityReferenceRequest request, StreamObserver<EntityReferenceResponseWrapper> responseObserver) {
+    EntityReferenceResponseWrapper entityReferenceResponseWrapper;
+    try {
+      EntityReferenceResponse entityReferenceResponse = entityReferenceService.getReferences(request);
+      entityReferenceResponseWrapper =
+          EntityReferenceResponseWrapper.newBuilder().setReferenceResponse(entityReferenceResponse).build();
+    } catch (FilterCreatorException ex) {
+      FilterCreatorErrorResponse errorResponse = (FilterCreatorErrorResponse) ex.getMetadata();
+      EntityReferenceErrorResponse.Builder errorResponseBuilder = EntityReferenceErrorResponse.newBuilder();
+      errorResponse.getErrorMetadataList().forEach(errorMetadata
+          -> errorResponseBuilder.addErrorMetadata(
+              ErrorMetadata.newBuilder()
+                  .setErrorMessage(errorMetadata.getErrorMessage())
+                  .setWingsExceptionErrorCode(String.valueOf(errorMetadata.getErrorCode()))
+                  .build()));
+      entityReferenceResponseWrapper =
+          EntityReferenceResponseWrapper.newBuilder().setErrorResponse(errorResponseBuilder.build()).build();
+    }
+    responseObserver.onNext(entityReferenceResponseWrapper);
     responseObserver.onCompleted();
   }
 }

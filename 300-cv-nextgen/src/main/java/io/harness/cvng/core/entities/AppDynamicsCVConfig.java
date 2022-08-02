@@ -8,12 +8,15 @@
 package io.harness.cvng.core.entities;
 
 import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec.AppDMetricDefinitions;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig.MetricInfo;
 import io.harness.cvng.core.services.CVNextGenConstants;
@@ -132,8 +135,8 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
     }
   }
 
-  public void populateFromMetricDefinitions(
-      List<AppDMetricDefinitions> metricDefinitions, CVMonitoringCategory category) {
+  public void populateFromMetricDefinitions(List<AppDMetricDefinitions> metricDefinitions,
+      CVMonitoringCategory category, Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks) {
     MetricPack metricPack = MetricPack.builder()
                                 .category(category)
                                 .accountId(getAccountId())
@@ -164,7 +167,7 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
       this.metricInfos.add(metricInfo);
       Set<TimeSeriesThreshold> thresholds = getThresholdsToCreateOnSaveForCustomProviders(
           metricInfo.getMetricName(), metricInfo.getMetricType(), md.getRiskProfile().getThresholdTypes());
-
+      thresholds.addAll(getMetricThresholds(timeSeriesMetricPacks, metricInfo.getMetricType(), md.getMetricName()));
       metricPack.addToMetrics(MetricPack.MetricDefinition.builder()
                                   .thresholds(new ArrayList<>(thresholds))
                                   .type(metricInfo.getMetricType())
@@ -175,6 +178,34 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
     });
     this.setMetricPack(metricPack);
     populateCompleteMetricPaths();
+  }
+
+  private List<TimeSeriesThreshold> getMetricThresholds(
+      Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks, TimeSeriesMetricType metricType, String metricName) {
+    List<TimeSeriesThreshold> timeSeriesThresholds = new ArrayList<>();
+    if (isEmpty(timeSeriesMetricPacks)) {
+      return timeSeriesThresholds;
+    }
+    timeSeriesMetricPacks.forEach(timeSeriesMetricPackDTO -> {
+      if (!isEmpty(timeSeriesMetricPackDTO.getMetricThresholds())) {
+        timeSeriesMetricPackDTO.getMetricThresholds()
+            .stream()
+            .filter(metricPack -> metricPack.getMetricName().equalsIgnoreCase(metricName))
+            .forEach(metricPack
+                -> metricPack.getTimeSeriesThresholdCriteria().forEach(criteria
+                    -> timeSeriesThresholds.add(TimeSeriesThreshold.builder()
+                                                    .accountId(getAccountId())
+                                                    .projectIdentifier(getProjectIdentifier())
+                                                    .dataSourceType(getType())
+                                                    .metricType(metricType)
+                                                    .metricName(metricName)
+                                                    .action(metricPack.getType().getTimeSeriesThresholdActionType())
+                                                    .criteria(criteria)
+                                                    .thresholdConfigType(ThresholdConfigType.CUSTOMER)
+                                                    .build())));
+      }
+    });
+    return timeSeriesThresholds;
   }
 
   @Data

@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -101,8 +102,7 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     when(internalContainerParamsProvider.getLiteEngineContainerParams(
              any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(getLiteEngineContainer());
-    when(k8InitializeStepUtils.getStageCpuRequest(any(), any())).thenReturn(1024);
-    when(k8InitializeStepUtils.getStageMemoryRequest(any(), any())).thenReturn(1024);
+    when(k8InitializeStepUtils.getStageRequest(any(), any())).thenReturn(Pair.of(1024, 1024));
     when(k8InitializeServiceUtils.createServiceContainerDefinitions(any(), any(), any())).thenReturn(new ArrayList<>());
     doNothing().when(k8InitializeTaskUtils).consumeSweepingOutput(any(), any(), any());
     doNothing().when(k8InitializeTaskUtils).consumeSweepingOutput(any(), any(), any());
@@ -143,8 +143,7 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     when(internalContainerParamsProvider.getLiteEngineContainerParams(
              any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(getLiteEngineContainer());
-    when(k8InitializeStepUtils.getStageCpuRequest(any(), any())).thenReturn(1024);
-    when(k8InitializeStepUtils.getStageMemoryRequest(any(), any())).thenReturn(1024);
+    when(k8InitializeStepUtils.getStageRequest(any(), any())).thenReturn(Pair.of(1024, 1024));
     when(k8InitializeServiceUtils.createServiceContainerDefinitions(any(), any(), any())).thenReturn(new ArrayList<>());
     when(k8InitializeStepUtils.createStepContainerDefinitions(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(Arrays.asList(K8InitializeTaskUtilsHelper.getRunStepContainer(0)));

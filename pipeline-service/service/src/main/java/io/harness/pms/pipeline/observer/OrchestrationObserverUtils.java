@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.collections.CollectionUtils;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
@@ -28,7 +29,7 @@ public class OrchestrationObserverUtils {
     for (GraphLayoutNodeDTO graphLayoutNode : layoutNodeMap.values()) {
       if (StatusUtils.isFinalStatus(graphLayoutNode.getStatus().getEngineStatus())) {
         if (graphLayoutNode.getSkipInfo() == null || !graphLayoutNode.getSkipInfo().getEvaluatedCondition()) {
-          executedModules.add(graphLayoutNode.getModule());
+          CollectionUtils.addIgnoreNull(executedModules, graphLayoutNode.getModule());
         }
       }
     }

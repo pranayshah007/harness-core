@@ -178,7 +178,7 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
           .onConflict(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ID, Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS)
           .doNothing()
           .execute();
-      log.info("Successfully inserted data for id {}", id);
+      log.debug("Successfully inserted data for id {}", id);
     } catch (DataAccessException ex) {
       log.error("Caught Exception while inserting data", ex);
       if (DBUtils.isConnectionError(ex)) {
@@ -192,7 +192,7 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
   public boolean handleDeleteEvent(String id) {
     try {
       dsl.delete(Tables.PIPELINE_EXECUTION_SUMMARY_CD).where(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ID.eq(id)).execute();
-      log.info("Successfully deleted data for id {}", id);
+      log.debug("Successfully deleted data for id {}", id);
     } catch (DataAccessException ex) {
       log.error("Caught Exception while deleting data", ex);
       if (DBUtils.isConnectionError(ex)) {
@@ -215,7 +215,7 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
           .doUpdate()
           .set(record)
           .execute();
-      log.info("Successfully updated data for id {}", id);
+      log.debug("Successfully updated data for id {}", id);
     } catch (DataAccessException ex) {
       log.error("Caught Exception while updating data", ex);
       if (DBUtils.isConnectionError(ex)) {

@@ -56,6 +56,7 @@ public class DebeziumConfig {
    * connection attempts or when no primary is available.
    */
   @JsonProperty("connect.backoff.max.delay.ms") private String connectBackoffMaxDelayMillis;
+  @JsonProperty("sleepInterval") private long sleepInterval;
 
   /**
    * Positive integer value that specifies the maximum number of failed connection attempts to a replica set primary
@@ -68,6 +69,7 @@ public class DebeziumConfig {
    * for the MongoDB connector.
    */
   @JsonProperty("connector.class") String connectorClass;
+  @JsonProperty("producingCountPerBatch") long producingCountPerBatch;
   /**
    * The comma-separated list of hostname and port pairs (in the form 'host' or 'host:port') of the MongoDB servers in
    * the replica set. The list can contain a single hostname and port pair. If mongodb.members.auto.discover is set to

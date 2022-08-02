@@ -253,10 +253,10 @@ public class K8InitializeTaskParamsBuilder {
         harnessInternalImageConnector, volumeToMountPath, k8InitializeTaskUtils.getWorkDir(),
         k8InitializeTaskUtils.getCtrSecurityContext(infrastructure), ngAccess.getAccountIdentifier(), os);
 
-    Integer stageCpuRequest =
-        k8InitializeStepUtils.getStageCpuRequest(initializeStepInfo.getExecutionElementConfig().getSteps(), accountId);
-    Integer stageMemoryRequest = k8InitializeStepUtils.getStageMemoryRequest(
-        initializeStepInfo.getExecutionElementConfig().getSteps(), accountId);
+    Pair<Integer, Integer> wrapperRequests = k8InitializeStepUtils.getStageRequest(initializeStepInfo, accountId);
+    Integer stageCpuRequest = wrapperRequests.getLeft();
+    Integer stageMemoryRequest = wrapperRequests.getRight();
+
     CIK8ContainerParams liteEngineContainerParams = internalContainerParamsProvider.getLiteEngineContainerParams(
         harnessInternalImageConnector, new HashMap<>(), k8PodDetails, stageCpuRequest, stageMemoryRequest, logEnvVars,
         tiEnvVars, stoEnvVars, volumeToMountPath, k8InitializeTaskUtils.getWorkDir(),
@@ -410,14 +410,13 @@ public class K8InitializeTaskParamsBuilder {
     // the feature flag
     if (featureFlagService.isEnabled(FeatureName.CI_STEP_GROUP_ENABLED, AmbianceUtils.getAccountId(ambiance))) {
       log.info("Feature Flag CI_STEP_GROUP_ENABLED is enabled for this account");
-      stepCtrDefinitionInfos = k8InitializeStepUtils.createStepContainerDefinitionsStepGroupWithFF(
-          initializeStepInfo.getExecutionElementConfig().getSteps(), stageElementConfig, ciExecutionArgs, portFinder,
-          AmbianceUtils.getAccountId(ambiance), os, 0, initializeStepInfo.getInfrastructure());
+      stepCtrDefinitionInfos = k8InitializeStepUtils.createStepContainerDefinitionsStepGroupWithFF(initializeStepInfo,
+          stageElementConfig, ciExecutionArgs, portFinder, AmbianceUtils.getAccountId(ambiance), os, 0);
     } else {
       log.info("Feature Flag CI_STEP_GROUP_ENABLED is not enabled for this account");
       stepCtrDefinitionInfos = k8InitializeStepUtils.createStepContainerDefinitions(
           initializeStepInfo.getExecutionElementConfig().getSteps(), stageElementConfig, ciExecutionArgs, portFinder,
-          AmbianceUtils.getAccountId(ambiance), os, initializeStepInfo.getInfrastructure());
+          AmbianceUtils.getAccountId(ambiance), os);
     }
 
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();

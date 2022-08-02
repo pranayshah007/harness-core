@@ -39,6 +39,7 @@ public final class PerpetualTaskType {
   public static final String NATIVE_HELM_INSTANCE_SYNC = "NATIVE_HELM_INSTANCE_SYNC";
   public static final String SERVERLESS_AWS_LAMBDA_INSTANCE_SYNC = "SERVERLESS_AWS_LAMBDA_INSTANCE_SYNC";
   public static final String AZURE_WEB_APP_NG_INSTANCE_SYNC = "AZURE_WEB_APP_NG_INSTANCE_SYNC";
+  public static final String PDC_INSTANCE_SYNC_NG = "PDC_INSTANCE_SYNC_NG";
 
   private PerpetualTaskType() {}
 }

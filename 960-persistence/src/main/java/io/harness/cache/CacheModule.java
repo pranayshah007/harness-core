@@ -34,6 +34,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -121,20 +122,18 @@ import org.redisson.config.Config;
 public class CacheModule extends AbstractModule implements ServersModule {
   private static final String CACHING_PROVIDER_CLASSPATH = "javax.cache.spi.CachingProvider";
   private CacheManager cacheManager;
+  private Optional<CacheManager> enterpriseRedisCacheManagerOptional;
   private CacheConfig cacheConfig;
 
   public CacheModule(@NonNull CacheConfig cacheConfig) {
     this.cacheConfig = cacheConfig;
   }
 
-  @Provides
-  @Named("Redis")
-  @Singleton
-  CacheManager getRedissonCacheManager() throws IOException {
+  private CacheManager getCacheManagerFromYAML(String filePath) throws IOException {
     System.setProperty(CACHING_PROVIDER_CLASSPATH, "org.redisson.jcache.JCachingProvider");
     CachingProvider provider = getCachingProvider();
     URI uri = provider.getDefaultURI();
-    File file = new File("redisson-jcache.yaml");
+    File file = new File(filePath);
     if (file.exists()) {
       uri = file.toURI();
       Config config = Config.fromYAML(uri.toURL());
@@ -143,6 +142,24 @@ public class CacheModule extends AbstractModule implements ServersModule {
       log.info("Found the redisson config in the working directory {}", uri);
     }
     return provider.getCacheManager(uri, provider.getDefaultClassLoader(), new Properties());
+  }
+
+  @Provides
+  @Named("Redis")
+  @Singleton
+  CacheManager getRedissonCacheManager() throws IOException {
+    return getCacheManagerFromYAML("redisson-jcache.yaml");
+  }
+
+  @Provides
+  @Named("EnterpriseRedis")
+  @Singleton
+  public Optional<CacheManager> getEnterpriseRedissonCacheManagerOptional() throws IOException {
+    if (cacheConfig.isEnterpriseCacheEnabled()) {
+      return Optional.of(getCacheManagerFromYAML("enterprise-redisson-jcache.yaml"));
+    }
+
+    return Optional.empty();
   }
 
   @Provides
@@ -158,6 +175,7 @@ public class CacheModule extends AbstractModule implements ServersModule {
   @Provides
   @Singleton
   public HarnessCacheManager getHarnessCacheManager(@Named("Redis") Provider<CacheManager> redisProvider,
+      @Named("EnterpriseRedis") Provider<Optional<CacheManager>> enterpriseRedisProvider,
       @Named("Caffeine") Provider<CacheManager> caffeineProvider) {
     CacheBackend cacheBackend = cacheConfig.getCacheBackend();
     switch (cacheBackend) {
@@ -166,6 +184,7 @@ public class CacheModule extends AbstractModule implements ServersModule {
         return new NoOpHarnessCacheManager();
       case REDIS:
         this.cacheManager = redisProvider.get();
+        this.enterpriseRedisCacheManagerOptional = enterpriseRedisProvider.get();
         break;
       case CAFFEINE:
         this.cacheManager = caffeineProvider.get();
@@ -173,7 +192,7 @@ public class CacheModule extends AbstractModule implements ServersModule {
       default:
         throw new UnsupportedOperationException();
     }
-    return new HarnessCacheManagerImpl(cacheManager, cacheConfig);
+    return new HarnessCacheManagerImpl(cacheManager, enterpriseRedisCacheManagerOptional, cacheConfig);
   }
 
   public static <T, R> Supplier<R> bind(Function<T, R> fn, T val) {
