@@ -267,28 +267,27 @@ public class CDStepHelper {
     } else if (scmConnector instanceof BitbucketConnectorDTO
         && ((BitbucketConnectorDTO) scmConnector).getApiAccess() == null
         && isBitbucketUsernameTokenAuth((BitbucketConnectorDTO) scmConnector)) {
-      BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) scmConnector;
-      SecretRefData tokenRef =
-          ((BitbucketUsernamePasswordDTO) ((BitbucketHttpCredentialsDTO) bitbucketConnectorDTO.getAuthentication()
-                                               .getCredentials())
-                  .getHttpCredentialsSpec())
-              .getPasswordRef();
-      String usernameRef =
-          ((BitbucketUsernamePasswordDTO) ((BitbucketHttpCredentialsDTO) bitbucketConnectorDTO.getAuthentication()
-                                               .getCredentials())
-                  .getHttpCredentialsSpec())
-              .getUsername();
-
-      BitbucketApiAccessDTO apiAccessDTO =
-          BitbucketApiAccessDTO.builder()
-              .type(USERNAME_AND_TOKEN)
-              .spec(BitbucketUsernameTokenApiAccessDTO.builder()
-                        .tokenRef(tokenRef)
-                        .usernameRef(SecretRefData.builder().decryptedValue(usernameRef.toCharArray()).build())
-                        .build())
-              .build();
-      bitbucketConnectorDTO.setApiAccess(apiAccessDTO);
+      addApiAuthIfRequiredBitbucket(scmConnector);
     }
+  }
+
+  public void addApiAuthIfRequiredBitbucket(ScmConnector scmConnector) {
+    BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) scmConnector;
+    BitbucketUsernamePasswordDTO credentials =
+        (BitbucketUsernamePasswordDTO) ((BitbucketHttpCredentialsDTO) bitbucketConnectorDTO.getAuthentication()
+                                            .getCredentials())
+            .getHttpCredentialsSpec();
+    SecretRefData tokenRef = credentials.getPasswordRef();
+    String usernameRef = credentials.getUsername();
+    BitbucketApiAccessDTO apiAccessDTO =
+        BitbucketApiAccessDTO.builder()
+            .type(USERNAME_AND_TOKEN)
+            .spec(BitbucketUsernameTokenApiAccessDTO.builder()
+                      .tokenRef(tokenRef)
+                      .usernameRef(SecretRefData.builder().decryptedValue(usernameRef.toCharArray()).build())
+                      .build())
+            .build();
+    bitbucketConnectorDTO.setApiAccess(apiAccessDTO);
   }
 
   public String getGitRepoUrl(ScmConnector scmConnector, String repoName) {
