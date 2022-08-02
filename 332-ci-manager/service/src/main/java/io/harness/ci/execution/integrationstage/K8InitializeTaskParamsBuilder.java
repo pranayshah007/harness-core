@@ -411,12 +411,13 @@ public class K8InitializeTaskParamsBuilder {
     if (featureFlagService.isEnabled(FeatureName.CI_STEP_GROUP_ENABLED, AmbianceUtils.getAccountId(ambiance))) {
       log.info("Feature Flag CI_STEP_GROUP_ENABLED is enabled for this account");
       stepCtrDefinitionInfos = k8InitializeStepUtils.createStepContainerDefinitionsStepGroupWithFF(initializeStepInfo,
-          stageElementConfig, ciExecutionArgs, portFinder, AmbianceUtils.getAccountId(ambiance), os, 0);
+          stageElementConfig, ciExecutionArgs, portFinder, AmbianceUtils.getAccountId(ambiance), os, 0,
+          initializeStepInfo.getInfrastructure());
     } else {
       log.info("Feature Flag CI_STEP_GROUP_ENABLED is not enabled for this account");
       stepCtrDefinitionInfos = k8InitializeStepUtils.createStepContainerDefinitions(
           initializeStepInfo.getExecutionElementConfig().getSteps(), stageElementConfig, ciExecutionArgs, portFinder,
-          AmbianceUtils.getAccountId(ambiance), os);
+          AmbianceUtils.getAccountId(ambiance), os, initializeStepInfo.getInfrastructure());
     }
 
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
