@@ -1,7 +1,6 @@
 package io.harness.artifacts.gar.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.network.Http.getOkHttpClientBuilder;
 
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -20,7 +19,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import retrofit2.Response;
@@ -32,12 +30,9 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Slf4j
 public class GARApiServiceImpl implements GarApiService {
   private static final int CONNECT_TIMEOUT = 5; // TODO:: read from config
-  private GarRestClient getGarRestClient() {
+  private GarRestClient getGarRestClient(GarInternalConfig garinternalConfig) {
     String url = getUrl();
-    OkHttpClient okHttpClient = getOkHttpClientBuilder()
-                                    .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
-                                    .proxy(Http.checkAndGetNonProxyIfApplicable(url))
-                                    .build();
+    OkHttpClient okHttpClient = Http.getOkHttpClient(url, garinternalConfig.isCertValidationRequired());
     Retrofit retrofit = new Retrofit.Builder()
                             .client(okHttpClient)
                             .baseUrl(url)
@@ -58,12 +53,12 @@ public class GARApiServiceImpl implements GarApiService {
     String pkg = garinternalConfig.getPkg();
     try {
       Response<GarPackageVersionResponse> response =
-          getGarRestClient()
+          getGarRestClient(garinternalConfig)
               .listImageTags(garinternalConfig.getBearerToken(), project, region, repositories, pkg)
               .execute();
       return processBuildResponse(project, region, repositories, pkg, response.body());
     } catch (IOException ie) {
-      return null;
+      return emptyList(); // todo @vivek
     }
   }
   private List<BuildDetailsInternal> processBuildResponse(

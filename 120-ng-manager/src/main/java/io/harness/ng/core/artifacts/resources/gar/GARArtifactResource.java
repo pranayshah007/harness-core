@@ -54,7 +54,6 @@ public class GARArtifactResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    System.out.println("hello");
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(GCPConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     GARResponseDTO buildDetails = gARResourceService.getBuildDetails(

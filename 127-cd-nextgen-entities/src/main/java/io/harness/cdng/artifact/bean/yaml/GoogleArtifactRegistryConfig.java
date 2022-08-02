@@ -20,6 +20,7 @@ import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.VariableExpression;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.Arrays;
@@ -42,7 +43,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(GOOGLE_ARTIFACT_REGISTRY_NAME)
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("googleArtifactRegistryConfig")
-@OneOfField(fields = {"tag", "tagRegex"})
+@OneOfField(fields = {"version", "versionRegex"})
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig")
 public class GoogleArtifactRegistryConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   /**
@@ -50,13 +51,18 @@ public class GoogleArtifactRegistryConfig implements ArtifactConfig, Visitable, 
    */
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
-
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> project;
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> region;
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Wither
   ParameterField<String> repositoryName;
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> project;
+
+  @JsonProperty("package")
+  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Wither
+  ParameterField<String> pkg;
 
   /**
    * Identifier for artifact.
@@ -67,11 +73,11 @@ public class GoogleArtifactRegistryConfig implements ArtifactConfig, Visitable, 
    */
   @VariableExpression(skipVariableExpression = true) boolean isPrimaryArtifact;
   /**
-   * Tag refers to exact tag number.
+   * Version refers to exact Version number.
    */
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> version;
   /**
-   * Tag regex is used to get latest build from builds matching regex.
+   * Version regex is used to get latest build from builds matching regex.
    */
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> versionRegex;
 
@@ -111,6 +117,9 @@ public class GoogleArtifactRegistryConfig implements ArtifactConfig, Visitable, 
     }
     if (!ParameterField.isNull(googleArtifactRegistryConfig.getProject())) {
       resultantConfig = resultantConfig.withProject(googleArtifactRegistryConfig.getProject());
+    }
+    if (!ParameterField.isNull(googleArtifactRegistryConfig.getPkg())) {
+      resultantConfig = resultantConfig.withPkg(googleArtifactRegistryConfig.getPkg());
     }
     return resultantConfig;
   }

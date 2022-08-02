@@ -10,9 +10,10 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CDC)
 public class GarInternalConfig {
-  String BearerToken;
+  String bearerToken;
   String project;
   String repositoryName;
   String region;
   String pkg;
+  boolean isCertValidationRequired;
 }

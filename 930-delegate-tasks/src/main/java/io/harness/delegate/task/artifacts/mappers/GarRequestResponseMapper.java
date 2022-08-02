@@ -12,7 +12,7 @@ import lombok.experimental.UtilityClass;
 public class GarRequestResponseMapper {
   public GarInternalConfig toGarInternalConfig(GarDelegateRequest request, String bearerToken) {
     return GarInternalConfig.builder()
-        .BearerToken(bearerToken)
+        .bearerToken(bearerToken)
         .project(request.getProject())
         .repositoryName(request.getRepositoryName())
         .region(request.getRegion())
