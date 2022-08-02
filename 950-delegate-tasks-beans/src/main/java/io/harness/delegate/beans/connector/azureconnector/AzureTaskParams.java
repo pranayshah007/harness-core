@@ -31,6 +31,7 @@ public class AzureTaskParams extends ConnectorTaskParams implements TaskParamete
   AzureTaskType azureTaskType;
   List<EncryptedDataDetail> encryptionDetails;
   Map<AzureAdditionalParams, String> additionalParams;
+  Map<String, Object> params;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

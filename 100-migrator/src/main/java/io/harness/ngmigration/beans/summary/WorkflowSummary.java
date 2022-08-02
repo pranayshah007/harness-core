@@ -22,10 +22,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class WorkflowSummary extends BaseSummary {
   Map<String, Long> typeSummary;
+  Map<String, Long> stepTypeSummary;
 
   @Builder
-  public WorkflowSummary(int count, Map<String, Long> typeSummary) {
+  public WorkflowSummary(int count, Map<String, Long> typeSummary, Map<String, Long> stepTypeSummary) {
     super(count);
     this.typeSummary = typeSummary;
+    this.stepTypeSummary = stepTypeSummary;
   }
 }

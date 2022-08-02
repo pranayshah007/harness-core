@@ -19,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
+import io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.visitor.helpers.manifest.KustomizeManifestVisitorHelper;
@@ -69,6 +70,12 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
   ParameterField<StoreConfigWrapper> store;
 
   @Wither
+  @JsonProperty("overlayConfiguration")
+  @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration")
+  @SkipAutoEvaluation
+  ParameterField<OverlayConfiguration> overlayConfiguration;
+
+  @Wither
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes({runtime})
   @SkipAutoEvaluation
@@ -76,7 +83,6 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
 
   @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> skipResourceVersioning;
   @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) @SkipAutoEvaluation ParameterField<String> pluginPath;
-  @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) @SkipAutoEvaluation ParameterField<String> manifestScope;
 
   @Override
   public String getKind() {
@@ -108,8 +114,8 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
       resultantManifest = resultantManifest.withPluginPath(kustomizeManifest.getPluginPath());
     }
 
-    if (kustomizeManifest.getManifestScope() != null) {
-      resultantManifest = resultantManifest.withManifestScope(kustomizeManifest.getManifestScope());
+    if (kustomizeManifest.getOverlayConfiguration() != null) {
+      resultantManifest = resultantManifest.withOverlayConfiguration(kustomizeManifest.getOverlayConfiguration());
     }
 
     return resultantManifest;
@@ -119,7 +125,7 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
   public ManifestAttributeStepParameters getManifestAttributeStepParameters() {
     return new KustomizeManifestStepParameters(identifier,
         StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), skipResourceVersioning, pluginPath,
-        patchesPaths, manifestScope);
+        patchesPaths);
   }
 
   @Value
@@ -129,6 +135,5 @@ public class KustomizeManifest implements ManifestAttributes, Visitable {
     ParameterField<Boolean> skipResourceVersioning;
     ParameterField<String> pluginPath;
     ParameterField<List<String>> patchesPaths;
-    ParameterField<String> manifestScope;
   }
 }

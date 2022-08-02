@@ -16,9 +16,11 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
+import lombok.Getter;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @JsonTypeName(ErrorMetadataConstants.FILTER_CREATOR_ERROR)
+@Getter
 @Builder
 public class FilterCreatorErrorResponse implements ErrorMetadataDTO {
   List<ErrorMetadata> errorMetadataList;

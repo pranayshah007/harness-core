@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 32
+version: 33
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -106,6 +106,13 @@ roles:
         - gitops_cert_view
         - gitops_cert_edit
         - gitops_cert_delete
+        - sto_issue_view
+        - sto_scan_view
+        - sto_testtarget_view
+        - sto_testtarget_edit
+        - sto_exemption_view
+        - sto_exemption_create
+        - sto_exemption_approve
         - core_file_view
         - core_file_edit
         - core_file_delete
@@ -164,6 +171,10 @@ roles:
         - gitops_cluster_view
         - gitops_gpgkey_view
         - gitops_cert_view
+        - sto_issue_view
+        - sto_scan_view
+        - sto_testtarget_view
+        - sto_exemption_view
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
@@ -284,6 +295,13 @@ roles:
         - gitops_cert_view
         - gitops_cert_edit
         - gitops_cert_delete
+        - sto_issue_view
+        - sto_scan_view
+        - sto_testtarget_view
+        - sto_testtarget_edit
+        - sto_exemption_view
+        - sto_exemption_create
+        - sto_exemption_approve
         - core_file_view
         - core_file_edit
         - core_file_delete
@@ -344,6 +362,10 @@ roles:
         - gitops_cluster_view
         - gitops_gpgkey_view
         - gitops_cert_view
+        - sto_issue_view
+        - sto_scan_view
+        - sto_testtarget_view
+        - sto_exemption_view
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
@@ -649,6 +671,8 @@ roles:
       managed: true
       allowedScopeLevels:
         - account
+        - organization
+        - project
     - identifier: _sto_secops_role
       name: Security Testing SecOps Role
       description: Can work with security issues and manage security exemptions
@@ -663,6 +687,8 @@ roles:
       managed: true
       allowedScopeLevels:
         - account
+        - organization
+        - project
     - identifier: _account_basic
       name: Account Basic
       description: Account Basic

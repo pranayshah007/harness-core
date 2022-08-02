@@ -100,6 +100,10 @@ aeriform("//332-ci-manager/service:module")
 
 aeriform("//332-ci-manager/service:tests")
 
+aeriform("//332-ci-manager/contracts:module")
+
+aeriform("//332-ci-manager/contracts:tests")
+
 aeriform("//340-ce-nextgen:module")
 
 aeriform("//340-ce-nextgen:tests")
@@ -177,10 +181,6 @@ aeriform("//480-pricing-service:module")
 aeriform("//490-ce-commons:module")
 
 aeriform("//490-ce-commons:tests")
-
-aeriform("//800-pipeline-service:module")
-
-aeriform("//800-pipeline-service:tests")
 
 aeriform("//815-cg-triggers:module")
 

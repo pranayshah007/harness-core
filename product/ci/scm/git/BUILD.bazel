@@ -11,6 +11,8 @@ go_library(
         "//product/ci/scm/gitclient",
         "//product/ci/scm/proto",
         "@com_github_drone_go_scm//scm",
+        "@com_github_drone_go_scm//scm/transport",
+        "@com_github_drone_go_scm//scm/transport/oauth2",
         "@org_uber_go_zap//:zap",
     ],
 )

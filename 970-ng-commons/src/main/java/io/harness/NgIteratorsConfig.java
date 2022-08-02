@@ -21,4 +21,5 @@ public class NgIteratorsConfig {
   NgIteratorConfig ngVaultSecretManagerRenewalIteratorConfig;
   NgIteratorConfig webhookEventProcessingServiceIteratorConfig;
   NgIteratorConfig gitFullSyncEntityIteratorConfig;
+  NgIteratorConfig oauthTokenRefreshIteratorConfig;
 }

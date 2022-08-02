@@ -40,6 +40,7 @@ import org.mockito.Spy;
 
 public class SettingsMapperTest extends CategoryTest {
   @Spy private SettingsMapper settingsMapper;
+  private String defaultValue = randomAlphabetic(10);
 
   @Before
   public void setUp() {
@@ -80,7 +81,7 @@ public class SettingsMapperTest extends CategoryTest {
                                                     .valueType(valueType)
                                                     .groupIdentifier(groupIdentifier)
                                                     .build();
-    SettingDTO settingDTO = settingsMapper.writeSettingDTO(setting, settingConfiguration, true);
+    SettingDTO settingDTO = settingsMapper.writeSettingDTO(setting, settingConfiguration, true, defaultValue);
     assertSettingDTOPropertiesAndValue(identifier, name, orgIdentifier, projectIdentifier, category, value,
         defaultValue, valueType, allowedValues, true, SettingSource.PROJECT, true, settingDTO);
   }
@@ -120,8 +121,9 @@ public class SettingsMapperTest extends CategoryTest {
     Setting setting = Setting.builder().identifier(identifier).lastModifiedAt(timestamp).build();
     SettingConfiguration settingConfiguration = SettingConfiguration.builder().identifier(identifier).build();
     SettingDTO settingDTO = SettingDTO.builder().identifier(identifier).build();
-    when(settingsMapper.writeSettingDTO(setting, settingConfiguration, true)).thenReturn(settingDTO);
-    SettingResponseDTO settingResponseDTO = settingsMapper.writeSettingResponseDTO(setting, settingConfiguration, true);
+    when(settingsMapper.writeSettingDTO(setting, settingConfiguration, true, defaultValue)).thenReturn(settingDTO);
+    SettingResponseDTO settingResponseDTO =
+        settingsMapper.writeSettingResponseDTO(setting, settingConfiguration, true, defaultValue);
     assertThat(settingResponseDTO)
         .hasFieldOrPropertyWithValue("setting", settingDTO)
         .hasFieldOrPropertyWithValue("lastModifiedAt", timestamp);
@@ -185,7 +187,7 @@ public class SettingsMapperTest extends CategoryTest {
                                               .build();
     SettingDTO newSettingDTO = settingsMapper.writeNewDTO(setting, settingRequestDTO, settingConfiguration, true);
     assertSettingDTOPropertiesAndValue(identifier, name, orgIdentifier, projectIdentifier, category, newValue,
-        defaultValue, valueType, allowedValues, false, null, true, newSettingDTO);
+        defaultValue, valueType, allowedValues, false, SettingSource.PROJECT, true, newSettingDTO);
   }
 
   @Test
@@ -220,7 +222,7 @@ public class SettingsMapperTest extends CategoryTest {
     SettingDTO newSettingDTO =
         settingsMapper.writeNewDTO(orgIdentifier, projectIdentifier, settingRequestDTO, settingConfiguration, true);
     assertSettingDTOPropertiesAndValue(identifier, name, orgIdentifier, projectIdentifier, category, newValue,
-        defaultValue, valueType, allowedValues, false, null, true, newSettingDTO);
+        defaultValue, valueType, allowedValues, false, SettingSource.PROJECT, true, newSettingDTO);
   }
 
   private void assertSettingDTOPropertiesAndValue(String identifier, String name, String orgIdentifier,

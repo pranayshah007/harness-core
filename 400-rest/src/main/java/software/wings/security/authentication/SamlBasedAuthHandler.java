@@ -116,29 +116,34 @@ public class SamlBasedAuthHandler implements AuthHandler {
   public AuthenticationResponse authenticate(String... credentials) {
     try {
       if (credentials == null || !ImmutableList.of(2, 3, 4).contains(credentials.length)) {
-        log.error(
-            "Wrong number of arguments to saml authentication - " + (credentials == null ? 0 : credentials.length));
+        log.error("SAML: Wrong number of arguments to saml authentication - "
+            + (credentials == null ? 0 : credentials.length));
         throw new WingsException("Invalid arguments while authenticating using SAML");
       }
       String idpUrl = credentials[0];
       String samlResponseString = credentials[1];
       String accountId = credentials.length >= 3 ? credentials[2] : null;
+      log.info("SAML: Credentials got from SAML provider is {}, for accountId {}", credentials, accountId);
       String relayState = credentials.length >= 4 ? credentials[3] : "";
       Map<String, String> relayStateData = getRelayStateData(relayState);
-
+      log.info("SAML: IdpURL is {}\n samlResponseString is {}\n accountId is {}\n relayStateData is {}", idpUrl,
+          samlResponseString, accountId, relayStateData);
       User user = null;
       try {
         user = decodeResponseAndReturnUserByEmailId(idpUrl, samlResponseString, accountId);
+        if (user != null) {
+          log.info("SAML: The user was found with email Id {} for account {}", user.getEmail(), accountId);
+        }
       } catch (Exception e) {
-        log.info("The user was not found with email Id for account {}", accountId);
+        log.info("SAML: The user was not found with email Id for account {}", accountId);
       }
 
       if (featureFlagService.isEnabled(FeatureName.EXTERNAL_USERID_BASED_LOGIN, accountId)) {
         User userByUserId = decodeResponseAndReturnUserByUserId(idpUrl, samlResponseString, accountId);
         if (user != null && userByUserId != null && !user.getEmail().equals(userByUserId.getEmail())) {
           log.info(
-              "SAMLFeature: fetched user with externalUserId for accountId {} and difference in userEmail in user object {}",
-              accountId, userByUserId.getEmail());
+              "SAMLFeature: fetched user with externalUserId for accountId {} and difference in userEmail in user object {}, new userID is {}, old user object {}, old user id {}",
+              accountId, userByUserId.getEmail(), userByUserId.getUuid(), user.getEmail(), user.getUuid());
           userByUserId.setEmail(user.getEmail());
           userByUserId.setAccounts(Stream.concat(user.getAccounts().stream(), userByUserId.getAccounts().stream())
                                        .distinct()
@@ -168,11 +173,12 @@ public class SamlBasedAuthHandler implements AuthHandler {
       if (user == null) {
         throw new InvalidRequestException("User does not exist");
       }
+      log.info("SAML: User {} is trying to login in accountId {} ", user.getEmail(), accountId);
 
       accountId = StringUtils.isEmpty(accountId) ? user.getDefaultAccountId() : accountId;
       String uuid = user.getUuid();
       try (AutoLogContext ignore = new UserLogContext(accountId, uuid, OVERRIDE_ERROR)) {
-        log.info("Authenticating via SAML in account {}", accountId);
+        log.info("SAML: Authenticating via SAML in account {}", accountId);
         Account account = authenticationUtils.getAccount(accountId);
         if (account == null) {
           account = authenticationUtils.getDefaultAccount(user);
@@ -180,17 +186,18 @@ public class SamlBasedAuthHandler implements AuthHandler {
         if (!domainWhitelistCheckerService.isDomainWhitelisted(user, account)) {
           domainWhitelistCheckerService.throwDomainWhitelistFilterException();
         }
-        log.info("Authenticating via SAML for user in account {}", account.getUuid());
+        log.info("SAML: Authenticating via SAML for user in account {}", account.getUuid());
         SamlSettings samlSettings = ssoSettingService.getSamlSettingsByAccountId(account.getUuid());
 
         // Occurs when SAML settings are being tested before being enabled
         if (!relayStateData.getOrDefault(SAML_TRIGGER_TYPE, "").equals("login")
             && account.getAuthenticationMechanism() != io.harness.ng.core.account.AuthenticationMechanism.SAML) {
-          log.info("SAML test login successful for user: [{}]", user.getEmail());
+          log.info("SAML test login successful for user: [{}], for account {}", user.getEmail(), accountId);
           throw new WingsException(ErrorCode.SAML_TEST_SUCCESS_MECHANISM_NOT_ENABLED);
         }
         if (Objects.nonNull(samlSettings) && samlSettings.isAuthorizationEnabled()) {
           List<String> userGroups = getUserGroupsForIdpUrl(idpUrl, samlResponseString, accountId);
+          log.info("SAML: UserGroups synced for the user are {}, for account {}", userGroups.toString(), accountId);
           SamlUserAuthorization samlUserAuthorization =
               SamlUserAuthorization.builder().email(user.getEmail()).userGroups(userGroups).build();
 
@@ -201,7 +208,7 @@ public class SamlBasedAuthHandler implements AuthHandler {
                 samlUserAuthorization, account.getUuid(), samlSettings.getUuid());
           } catch (Exception e) {
             log.error(
-                "Exception in publishing event for SAML Assertion for {} with account {} userGroups {} and SSO {} ",
+                "SAML: Exception in publishing event for SAML Assertion for {} with account {} userGroups {} and SSO {} ",
                 user.getEmail(), account.getUuid(), userGroups, samlSettings.getDisplayName());
           }
         }
@@ -212,7 +219,7 @@ public class SamlBasedAuthHandler implements AuthHandler {
     } catch (UnsupportedEncodingException e) {
       throw new WingsException("Saml Authentication Failed while parsing RelayState", e);
     } catch (SamlException e) {
-      throw new InvalidRequestException("Couldnt authenticate with User Id for saml", e);
+      throw new InvalidRequestException("SAML: Couldnt authenticate with User Id for saml", e);
     }
   }
 
@@ -233,19 +240,20 @@ public class SamlBasedAuthHandler implements AuthHandler {
   private User decodeResponseAndReturnUserByUserId(String idpUrl, String samlResponseString, String accountId)
       throws URISyntaxException {
     String userIdFromSamlResponse = getUserIdForIdpUrl(idpUrl, samlResponseString, accountId);
-    log.info("SAMLFeature: fetched userId {} from saml response for accountId {}", userIdFromSamlResponse, accountId);
+    log.info("SAML: fetched userId {} from saml response for accountId {}", userIdFromSamlResponse, accountId);
     if (isNotEmpty(userIdFromSamlResponse)) {
       userIdFromSamlResponse = userIdFromSamlResponse.toLowerCase();
     }
     User userFromUserId = userService.getUserByUserId(accountId, userIdFromSamlResponse);
-    log.info("SAMLFeature: fetched user with externalUserId {} for accountId {} and user object {}",
-        userIdFromSamlResponse, accountId, userFromUserId);
+    log.info("SAML: fetched user with externalUserId {} for accountId {} and user object {}", userIdFromSamlResponse,
+        accountId, userFromUserId);
     return userFromUserId;
   }
 
   private User decodeResponseAndReturnUserByEmailId(String idpUrl, String samlResponseString, String accountId)
       throws URISyntaxException {
     String host = samlClientService.getHost(idpUrl);
+    log.info("SAML: host is {}, for accountId {}", host, accountId);
     HostType hostType = samlClientService.getHostType(idpUrl);
     switch (hostType) {
       case GOOGLE: {
@@ -262,8 +270,8 @@ public class SamlBasedAuthHandler implements AuthHandler {
                 return getUser(samlResponseString, samlSettings);
               }
             } catch (SamlException e) {
-              log.warn("Could not validate SAML Response idpUrl:[{}], samlSettings url:[{}]", idpUrl,
-                  samlSettings.getUrl(), e);
+              log.warn("SAML: Could not validate SAML Response idpUrl:[{}], samlSettings url:[{}], for accountId {}",
+                  idpUrl, samlSettings.getUrl(), accountId, e);
             }
           }
 
@@ -284,8 +292,8 @@ public class SamlBasedAuthHandler implements AuthHandler {
               try {
                 return getUser(samlResponseString, samlSettings);
               } catch (SamlException e) {
-                log.warn("Could not validate SAML Response idpUrl:[{}], samlSettings url:[{}]", idpUrl,
-                    samlSettings.getUrl(), e);
+                log.warn("SAML: Could not validate SAML Response idpUrl:[{}], samlSettings url:[{}], for accountId {}",
+                    idpUrl, samlSettings.getUrl(), accountId, e);
               }
             }
           }
@@ -307,7 +315,7 @@ public class SamlBasedAuthHandler implements AuthHandler {
       }
     }
 
-    log.info("No IDP metadata could be found for URL [{}] for account {}", idpUrl, accountId);
+    log.info("SAML: No IDP metadata could be found for URL [{}], for account {}", idpUrl, accountId);
     throw new WingsException("Saml Authentication Failed");
   }
 
@@ -327,7 +335,7 @@ public class SamlBasedAuthHandler implements AuthHandler {
         try {
           return getUser(samlResponseString, samlSettings);
         } catch (SamlException e) {
-          log.warn("Could not validate SAML Response idpUrl:[{}], samlSettings url:[{}] for account {}", idpUrl,
+          log.warn("SAML: Could not validate SAML Response idpUrl:[{}], samlSettings url:[{}] for account {}", idpUrl,
               samlSettings.getUrl(), accountId, e);
         }
       }
@@ -357,14 +365,14 @@ public class SamlBasedAuthHandler implements AuthHandler {
             case GOOGLE:
             case OTHER:
             default:
-              return getUserGroups(attributeStatements, groupMembershipAttr);
+              return getUserGroups(attributeStatements, groupMembershipAttr, accountId);
           }
         } catch (Exception e) {
           log.error("SAML: Could not fetch userGroups for Account: {}", accountId, e);
         }
       }
     }
-    log.info("Authorization failed for Saml with idp URL [{}]", idpUrl);
+    log.info("SAML: Authorization failed for Saml with idp URL [{}], for accountID {}", idpUrl, accountId);
     throw new WingsException("Saml Authorization Failed");
   }
 
@@ -391,18 +399,19 @@ public class SamlBasedAuthHandler implements AuthHandler {
             case GOOGLE:
             case OTHER:
             default:
-              return getUserId(attributeStatements, userIdAttr);
+              return getUserId(attributeStatements, userIdAttr, accountId);
           }
         } catch (Exception e) {
           log.error("SAML: Could not fetch the userId for Account {}", accountId, e);
         }
       }
     }
-    log.info("Authorization failed for Saml with idp URL [{}]", idpUrl);
+    log.info("SAML: Authorization failed for Saml with idp URL [{}], for account {}", idpUrl, accountId);
     throw new WingsException("Saml Authorization Failed");
   }
 
-  private List<String> getUserGroups(List<AttributeStatement> attributeStatements, final String groupMembershipAttr) {
+  private List<String> getUserGroups(
+      List<AttributeStatement> attributeStatements, final String groupMembershipAttr, String accountId) {
     List<String> userGroups = new ArrayList<>();
     for (AttributeStatement attributeStatement : attributeStatements) {
       for (Attribute attribute : attributeStatement.getAttributes()) {
@@ -416,11 +425,11 @@ public class SamlBasedAuthHandler implements AuthHandler {
         }
       }
     }
-
+    log.info("SAML: groupMembershipAttr {} and fetched {}, for account {}", groupMembershipAttr, userGroups, accountId);
     return userGroups;
   }
 
-  private String getUserId(List<AttributeStatement> attributeStatements, final String userIdAttr) {
+  private String getUserId(List<AttributeStatement> attributeStatements, final String userIdAttr, String accountId) {
     List<String> userIds = new ArrayList<>();
     for (AttributeStatement attributeStatement : attributeStatements) {
       for (Attribute attribute : attributeStatement.getAttributes()) {
@@ -434,13 +443,14 @@ public class SamlBasedAuthHandler implements AuthHandler {
         }
       }
     }
-    log.info("SAMLFeature: userIdAttr {} and fetched {}", userIdAttr, userIds);
+    log.info("SAMLFeature: userIdAttr {} and fetched {}, for account {}", userIdAttr, userIds, accountId);
     return isNotEmpty(userIds) ? userIds.get(0).toLowerCase() : "";
   }
 
   @VisibleForTesting
   List<String> getUserGroupsForAzure(List<AttributeStatement> attributeStatements, SamlSettings samlSettings,
       final String groupMembershipAttr, final String issuerURIString, final String accountId) {
+    log.info("SAML: IssuerURI from Azure is {}, for accountId {}", issuerURIString, accountId);
     List<String> userGroups = new ArrayList<>();
 
     boolean hasAzureSAMLGroupsLink = false;
@@ -452,11 +462,13 @@ public class SamlBasedAuthHandler implements AuthHandler {
           for (XMLObject xmlObject : attribute.getAttributeValues()) {
             final String userGroup = getAttributeValue(xmlObject);
             if (userGroup != null) {
+              log.info("SAML: userGroup fetched from Azure is {}, for accountId {}", userGroup, accountId);
               userGroups.add(userGroup);
             }
           }
         } else {
           if (featureFlagService.isEnabled(FeatureName.AZURE_SAML_150_GROUPS_SUPPORT, accountId)) {
+            log.info("SAML: attribute from Azure is {}, for accountId {}", attribute, accountId);
             if (attribute.getName().endsWith("groups.link")
                 && attribute.getName().contains(
                     azureMicrosoftString)) { // occurs for Azure SAML case when no of groups > 150
@@ -476,17 +488,18 @@ public class SamlBasedAuthHandler implements AuthHandler {
     if (hasAzureSAMLGroupsLink && isNotEmpty(azureUserId)) {
       URI issuerUri = URI.create(issuerURIString);
       final String tenantId = isNotEmpty(issuerUri.getPath()) ? issuerUri.getPath().replace("/", "") : "";
+      log.info("SAML: Tenant Id received from Azure is {}, for accountId {}", tenantId, accountId);
       List<EncryptedDataDetail> encryptionDetails =
           secretManager.getEncryptionDetails((EncryptableSetting) samlSettings, null, null);
       encryptionService.decrypt(samlSettings, encryptionDetails, false);
 
       if (isNotEmpty(samlSettings.getClientId()) && isNotEmpty(samlSettings.getClientSecret())) {
         final String accessToken = this.getAccessTokenForAzure(
-            tenantId, samlSettings.getClientId(), String.valueOf(samlSettings.getClientSecret()));
+            tenantId, samlSettings.getClientId(), String.valueOf(samlSettings.getClientSecret()), accountId);
 
         if (isNotEmpty(accessToken)) {
           try {
-            userGroups.addAll(this.getUsersGroupResource(accessToken, tenantId, azureUserId));
+            userGroups.addAll(this.getUsersGroupResource(accessToken, tenantId, azureUserId, accountId));
           } catch (IOException | JSONException exc) {
             log.error("SAML: Getting azure user groups failed in case of more than 150 groups for Account: {}",
                 accountId, exc);
@@ -494,13 +507,14 @@ public class SamlBasedAuthHandler implements AuthHandler {
         }
       }
     }
-
+    log.info("SAML: User groups fetched for Azure SAML are {}, for accountId {}", userGroups, accountId);
     return userGroups;
   }
 
   @VisibleForTesting
   String getUserIdForAzure(List<AttributeStatement> attributeStatements, SamlSettings samlSettings,
       final String userIdAttr, final String issuerURIString, final String accountId) {
+    log.info("SAML: IssuerURI from Azure is {}, for accountId {}", issuerURIString, accountId);
     List<String> userIds = new ArrayList<>();
 
     boolean hasAzureSAMLGroupsLink = false;
@@ -512,11 +526,13 @@ public class SamlBasedAuthHandler implements AuthHandler {
           for (XMLObject xmlObject : attribute.getAttributeValues()) {
             final String userId = getAttributeValue(xmlObject);
             if (userId != null) {
+              log.info("SAML: user fetched from Azure is {}, for accountId {}", userId, accountId);
               userIds.add(userId);
             }
           }
         } else {
           if (featureFlagService.isEnabled(FeatureName.AZURE_SAML_150_GROUPS_SUPPORT, accountId)) {
+            log.info("SAML: attribute from Azure is {}, for accountId {}", attribute, accountId);
             if (attribute.getName().endsWith("groups.link")
                 && attribute.getName().contains(
                     azureMicrosoftString)) { // occurs for Azure SAML case when no of groups > 150
@@ -536,17 +552,19 @@ public class SamlBasedAuthHandler implements AuthHandler {
     if (hasAzureSAMLGroupsLink && isNotEmpty(azureUserId)) {
       URI issuerUri = URI.create(issuerURIString);
       final String tenantId = isNotEmpty(issuerUri.getPath()) ? issuerUri.getPath().replace("/", "") : "";
+      log.info("SAML: Tenant Id of Azure AD is {}, for accountId {}", tenantId, accountId);
       List<EncryptedDataDetail> encryptionDetails =
           secretManager.getEncryptionDetails((EncryptableSetting) samlSettings, null, null);
       encryptionService.decrypt(samlSettings, encryptionDetails, false);
 
       if (isNotEmpty(samlSettings.getClientId()) && isNotEmpty(samlSettings.getClientSecret())) {
+        log.info("SAML: Client Id for Azure AD is {}, for accountId {}", samlSettings.getClientId(), accountId);
         final String accessToken = this.getAccessTokenForAzure(
-            tenantId, samlSettings.getClientId(), String.valueOf(samlSettings.getClientSecret()));
+            tenantId, samlSettings.getClientId(), String.valueOf(samlSettings.getClientSecret()), accountId);
 
         if (isNotEmpty(accessToken)) {
           try {
-            userIds.addAll(this.getUsersGroupResource(accessToken, tenantId, azureUserId));
+            userIds.addAll(this.getUsersGroupResource(accessToken, tenantId, azureUserId, accountId));
           } catch (IOException | JSONException exc) {
             log.error("SAML: Getting azure user groups failed in case of more than 150 groups for Account: {}",
                 accountId, exc);
@@ -554,7 +572,7 @@ public class SamlBasedAuthHandler implements AuthHandler {
         }
       }
     }
-    log.info("SAMLFeature: userIdAttr {} and fetched {}", userIdAttr, userIds);
+    log.info("SAMLFeature: userIdAttr {} and fetched {}, for accountId {}", userIdAttr, userIds, accountId);
     return isNotEmpty(userIds) ? userIds.get(0).toLowerCase() : "";
   }
 
@@ -589,13 +607,15 @@ public class SamlBasedAuthHandler implements AuthHandler {
       validateUser(user, samlSettings.getAccountId());
       return user;
     } catch (WingsException e) {
-      log.warn("SamlResponse contains nameId=[{}] which does not exist in db, url=[{}], accountId=[{}]", nameId,
+      log.warn("SAML: SamlResponse contains nameId=[{}] which does not exist in db, url=[{}], accountId=[{}]", nameId,
           samlSettings.getUrl(), samlSettings.getAccountId());
       throw new WingsException(ErrorCode.USER_DOES_NOT_EXIST, e);
     }
   }
 
-  private String getAccessTokenForAzure(final String tenantId, final String clientId, final String clientSecretKey) {
+  private String getAccessTokenForAzure(
+      final String tenantId, final String clientId, final String clientSecretKey, String accountId) {
+    log.info("SAML: clientId for Azure Ad is {}, for accountId {}", clientId, accountId);
     RequestBody authenticationPayload = new MultipartBody.Builder()
                                             .setType(MultipartBody.FORM)
                                             .addFormDataPart(GRANT_TYPE, CLIENT_CREDENTIALS)
@@ -616,13 +636,13 @@ public class SamlBasedAuthHandler implements AuthHandler {
       JSONObject jsonObject = new JSONObject(response.body().string());
       return jsonObject.getString(ACCESS_TOKEN);
     } catch (Exception ex) {
-      log.error("Getting azure access token failed", ex);
+      log.error("SAML: Getting azure access token failed, for accountId {}", accountId, ex);
       return null;
     }
   }
 
-  private List<String> getUsersGroupResource(final String accessToken, final String tenantId, final String userId)
-      throws IOException {
+  private List<String> getUsersGroupResource(
+      final String accessToken, final String tenantId, final String userId, String accountId) throws IOException {
     final String membersGroupString = "{\"securityEnabledOnly\": false}";
     MediaType applicationJsonType = MediaType.parse("application/json; charset=utf-8");
     RequestBody body = RequestBody.create(applicationJsonType, membersGroupString);
@@ -641,13 +661,14 @@ public class SamlBasedAuthHandler implements AuthHandler {
     for (int i = 0; i < groupIdValues.length(); i++) {
       userGroups.add(groupIdValues.getString(i));
     }
+    log.info("SAML: User groups fetched are {}, for accountId {}", userGroups, accountId);
     return userGroups;
   }
 
   // TODO : revisit this method when we are doing SAML authorization
   protected void validateUser(User user, String accountId) {
     if (user.getAccounts().parallelStream().noneMatch(account -> account.getUuid().equals(accountId))) {
-      log.warn("User : [{}] not part of accountId : [{}]", user.getEmail(), accountId);
+      log.warn("SAML: User : [{}] not part of accountId : [{}]", user.getEmail(), accountId);
       throw new WingsException(ErrorCode.ACCESS_DENIED);
     }
   }

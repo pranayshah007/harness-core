@@ -45,6 +45,8 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.serializer.kryo.NGKryoRegistrar;
 import io.harness.serializer.morphia.NGMorphiaRegistrar;
+import io.harness.serializer.spring.RollbackDeploymentInfoReadConverter;
+import io.harness.serializer.spring.RollbackDeploymentInfoWriteConverter;
 import io.harness.yaml.schema.beans.SchemaNamespaceConstants;
 import io.harness.yaml.schema.beans.YamlGroup;
 import io.harness.yaml.schema.beans.YamlSchemaMetadata;
@@ -56,6 +58,7 @@ import io.serializer.kryo.PollingKryoRegistrar;
 import java.util.Arrays;
 import java.util.Collections;
 import lombok.experimental.UtilityClass;
+import org.springframework.core.convert.converter.Converter;
 
 @OwnedBy(HarnessTeam.CDP)
 @UtilityClass
@@ -452,4 +455,7 @@ public class CDNGRegistrars {
                                            .build())
                    .build())
           .build();
+
+  public final ImmutableList<Class<? extends Converter<?, ?>>> springConverters =
+      ImmutableList.of(RollbackDeploymentInfoReadConverter.class, RollbackDeploymentInfoWriteConverter.class);
 }

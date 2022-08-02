@@ -13,11 +13,27 @@ import com.google.inject.Inject;
 
 public class WorkflowHandlerFactory {
   @Inject RollingWorkflowHandlerImpl rollingWorkflowHandler;
+  @Inject BuildWorkflowHandlerImpl buildWorkflowYamlHandler;
+  @Inject MultiServiceWorkflowHandlerImpl multiServiceWorkflowHandler;
+  @Inject CanaryWorkflowHandlerImpl canaryWorkflowHandler;
+  @Inject BlueGreenWorkflowHandlerImpl blueGreenWorkflowHandler;
+  @Inject BasicWorkflowHandlerImpl basicWorkflowHandler;
 
   public WorkflowHandler getWorkflowHandler(Workflow workflow) {
     switch (workflow.getOrchestration().getOrchestrationWorkflowType()) {
       case ROLLING:
         return rollingWorkflowHandler;
+      case BUILD:
+        return buildWorkflowYamlHandler;
+      case BASIC:
+        return basicWorkflowHandler;
+      case CANARY:
+        return canaryWorkflowHandler;
+      case MULTI_SERVICE:
+        return multiServiceWorkflowHandler;
+      case BLUE_GREEN:
+        return blueGreenWorkflowHandler;
+      case CUSTOM:
       default:
         throw new UnsupportedOperationException();
     }

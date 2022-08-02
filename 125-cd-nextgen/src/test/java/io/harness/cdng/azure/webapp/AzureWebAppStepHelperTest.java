@@ -467,10 +467,9 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
     final ConnectorInfoDTO connectorInfoDTO =
         ConnectorInfoDTO.builder().connectorType(ConnectorType.DOCKER).connectorConfig(dockerConnectorDTO).build();
 
-    doReturn(Optional.of(dockerArtifactOutcome)).when(cdStepHelper).resolveArtifactsOutcome(ambiance);
     doReturn(connectorInfoDTO).when(cdStepHelper).getConnector("docker", ambiance);
 
-    AzureArtifactConfig azureArtifactConfig = stepHelper.getPrimaryArtifactConfig(ambiance);
+    AzureArtifactConfig azureArtifactConfig = stepHelper.getPrimaryArtifactConfig(ambiance, dockerArtifactOutcome);
     assertThat(azureArtifactConfig.getArtifactType()).isEqualTo(AzureArtifactType.CONTAINER);
     AzureContainerArtifactConfig containerArtifactConfig = (AzureContainerArtifactConfig) azureArtifactConfig;
     assertThat(containerArtifactConfig.getConnectorConfig()).isEqualTo(dockerConnectorDTO);
@@ -505,13 +504,12 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
                                                   .build();
     final List<EncryptedDataDetail> encryptedDataDetails = singletonList(EncryptedDataDetail.builder().build());
 
-    doReturn(Optional.of(artifactoryArtifactOutcome)).when(cdStepHelper).resolveArtifactsOutcome(ambiance);
     doReturn(connectorInfoDTO).when(cdStepHelper).getConnector("artifactory", ambiance);
     doReturn(encryptedDataDetails)
         .when(secretManagerClientService)
         .getEncryptionDetails(any(NGAccess.class), eq(usernamePasswordAuthDTO));
 
-    AzureArtifactConfig azureArtifactConfig = stepHelper.getPrimaryArtifactConfig(ambiance);
+    AzureArtifactConfig azureArtifactConfig = stepHelper.getPrimaryArtifactConfig(ambiance, artifactoryArtifactOutcome);
     assertThat(azureArtifactConfig.getArtifactType()).isEqualTo(AzureArtifactType.CONTAINER);
     AzureContainerArtifactConfig containerArtifactConfig = (AzureContainerArtifactConfig) azureArtifactConfig;
     assertThat(containerArtifactConfig.getConnectorConfig()).isEqualTo(artifactoryConnectorDTO);

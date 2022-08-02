@@ -34,6 +34,8 @@ public class DeploymentSummaryDTO {
   String deployedById;
   String deployedByName;
   String infrastructureMappingId;
+  String infrastructureIdentifier;
+  String infrastructureName;
   String instanceSyncKey;
   @Setter @Nullable InfrastructureMappingDTO infrastructureMapping;
   // status of server instances when deployment happened

@@ -106,6 +106,8 @@ ngIteratorsConfig:
     threadPoolSize: ${WEBHOOK_EVENT_PROCESSING_SERVICE_THREAD_SIZE:-20}
   gitFullSyncEntityIteratorConfig:
     threadPoolSize: ${GIT_FULLSYNC_ENTITY_ITERATOR_THREAD_POOL_SIZE:-5}
+  oauthTokenRefreshIteratorConfig:
+    threadPoolSize: ${NG_TOKEN_REFRESH_THREAD_POOL_SIZE:-1}
 
 #[secondary-db] : Uncomment the following if you want to connect to another database
 #secondary - mongo:
@@ -431,6 +433,13 @@ hostname: ${HOSTNAME:-localhost}
 signupTargetEnv: "CI PR Target"
 delegateStatusEndpoint: "35.225.97.192"
 
+oauthRefreshFrequency: 30
+
+gitlabConfig:
+  clientId: "1234"
+  clientSecret: "1234"
+  callbackUrl: "https://gitlab.com/oauth/token"
+
 basePathPrefix: ${BASE_PATH_PREFIX:-""}
 
 enforcementClientConfiguration:
@@ -459,4 +468,6 @@ pmsPlanCreatorServicePoolConfig:
   timeUnit: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 debeziumConsumerConfigs:
-  - topicName: ${TOPIC_NAME:-DEBEZIUM_pmsMongo.pms-harness.planExecutionsSummary}
+  - debeziumTopicName: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_pmsMongo.pms-harness.planExecutionsSummary}
+    debeziumNumberOfThreads: ${DEBEZIUM_CONSUMER_THREADS:-2}
+    debeziumBatchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}

@@ -149,7 +149,7 @@ public class NGVaultTaskHelper {
           restClient
               .k8sAuthLogin(isNotEmpty(vaultConfig.getK8sAuthEndpoint()) ? vaultConfig.getK8sAuthEndpoint()
                                                                          : K8s_AUTH_DEFAULT_ENDPOINT,
-                  loginRequest)
+                  vaultConfig.getNamespace(), loginRequest)
               .execute();
 
       VaultK8sLoginResult result = null;

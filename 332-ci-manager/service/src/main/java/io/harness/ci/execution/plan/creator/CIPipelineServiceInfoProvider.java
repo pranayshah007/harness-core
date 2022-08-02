@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.ci.creator.variables.ArtifactoryUploadStepVariableCreator;
+import io.harness.ci.creator.variables.BuildAndPushACRStepVariableCreator;
 import io.harness.ci.creator.variables.BuildAndPushECRStepVariableCreator;
 import io.harness.ci.creator.variables.BuildAndPushGCRStepVariableCreator;
 import io.harness.ci.creator.variables.CIStageVariableCreator;
@@ -33,6 +34,7 @@ import io.harness.ci.plan.creator.step.CIPMSStepFilterJsonCreator;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreator;
 import io.harness.ci.plan.creator.step.CIStepFilterJsonCreatorV2;
 import io.harness.ci.plancreator.ArtifactoryUploadStepPlanCreator;
+import io.harness.ci.plancreator.BuildAndPushACRStepPlanCreator;
 import io.harness.ci.plancreator.BuildAndPushECRStepPlanCreator;
 import io.harness.ci.plancreator.BuildAndPushGCRStepPlanCreator;
 import io.harness.ci.plancreator.DockerStepPlanCreator;
@@ -47,6 +49,7 @@ import io.harness.ci.plancreator.SaveCacheGCSStepPlanCreator;
 import io.harness.ci.plancreator.SaveCacheS3StepPlanCreator;
 import io.harness.ci.plancreator.SecurityStepPlanCreator;
 import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.filters.ExecutionPMSFilterJsonCreator;
 import io.harness.plancreator.execution.ExecutionPmsPlanCreator;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.steps.NGStageStepsPlanCreator;
@@ -88,6 +91,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new DockerStepPlanCreator());
     planCreators.add(new ArtifactoryUploadStepPlanCreator());
     planCreators.add(new BuildAndPushECRStepPlanCreator());
+    planCreators.add(new BuildAndPushACRStepPlanCreator());
     planCreators.add(new BuildAndPushGCRStepPlanCreator());
     planCreators.add(new SaveCacheS3StepPlanCreator());
     planCreators.add(new SecurityStepPlanCreator());
@@ -105,6 +109,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     filterJsonCreators.add(new CIStageFilterJsonCreator());
     filterJsonCreators.add(new CIPMSStepFilterJsonCreator());
     filterJsonCreators.add(new CIStepFilterJsonCreatorV2());
+    filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
     injectorUtils.injectMembers(filterJsonCreators);
 
     return filterJsonCreators;
@@ -128,6 +133,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     variableCreators.add(new DockerStepVariableCreator());
     variableCreators.add(new ArtifactoryUploadStepVariableCreator());
     variableCreators.add(new BuildAndPushECRStepVariableCreator());
+    variableCreators.add(new BuildAndPushACRStepVariableCreator());
     variableCreators.add(new BuildAndPushGCRStepVariableCreator());
     variableCreators.add(new SaveCacheS3StepVariableCreator());
     variableCreators.add(new SecurityStepVariableCreator());
@@ -195,6 +201,13 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
             .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Artifacts").addFolderPaths("Build").build())
             .build();
 
+    StepInfo acrPushBuilds =
+        StepInfo.newBuilder()
+            .setName("Build and Push to ACR")
+            .setType(StepSpecTypeConstants.BUILD_AND_PUSH_ACR)
+            .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Artifacts").addFolderPaths("Build").build())
+            .build();
+
     StepInfo uploadArtifactsToJfrogBuild =
         StepInfo.newBuilder()
             .setName("Upload Artifacts to JFrog Artifactory")
@@ -235,6 +248,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     stepInfos.add(ecrPushBuilds);
     stepInfos.add(uploadToS3);
     stepInfos.add(gcrPushBuilds);
+    stepInfos.add(acrPushBuilds);
     stepInfos.add(restoreCacheFromGCS);
     stepInfos.add(runTestsStepInfo);
     stepInfos.add(pluginStepInfo);

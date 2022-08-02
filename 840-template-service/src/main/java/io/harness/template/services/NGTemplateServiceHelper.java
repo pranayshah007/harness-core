@@ -15,17 +15,22 @@ import static io.harness.encryption.Scope.ORG;
 import static io.harness.encryption.Scope.PROJECT;
 import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
 
+import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ScmException;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
+import io.harness.git.model.ChangeType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
@@ -37,6 +42,7 @@ import io.harness.springdata.SpringDataMongoUtils;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
+import io.harness.template.events.TemplateUpdateEventType;
 import io.harness.template.gitsync.TemplateGitSyncBranchContextGuard;
 
 import com.google.common.collect.Lists;
@@ -323,5 +329,63 @@ public class NGTemplateServiceHelper {
 
   public boolean isOldGitSync(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
+  }
+
+  public TemplateEntity makeTemplateUpdateCall(TemplateEntity templateToUpdate, TemplateEntity oldTemplateEntity,
+      ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
+    return makeUpdateCall(
+        templateToUpdate, oldTemplateEntity, changeType, comments, templateUpdateEventType, skipAudits, false);
+  }
+
+  public TemplateEntity makeTemplateUpdateInDB(TemplateEntity templateToUpdate, TemplateEntity oldTemplateEntity,
+      ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
+    return makeUpdateCall(
+        templateToUpdate, oldTemplateEntity, changeType, comments, templateUpdateEventType, skipAudits, true);
+  }
+
+  private TemplateEntity makeUpdateCall(TemplateEntity templateToUpdate, TemplateEntity oldTemplateEntity,
+      ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits,
+      boolean makeOnlyDbUpdate) {
+    try {
+      TemplateEntity updatedTemplate;
+      if (isOldGitSync(templateToUpdate)) {
+        updatedTemplate = templateRepository.updateTemplateYamlForOldGitSync(
+            templateToUpdate, oldTemplateEntity, changeType, comments, templateUpdateEventType, skipAudits);
+      } else {
+        if (makeOnlyDbUpdate) {
+          updatedTemplate = templateRepository.updateTemplateInDb(
+              templateToUpdate, oldTemplateEntity, changeType, comments, templateUpdateEventType, skipAudits);
+        } else {
+          updatedTemplate = templateRepository.updateTemplateYaml(
+              templateToUpdate, oldTemplateEntity, changeType, comments, templateUpdateEventType, skipAudits);
+        }
+      }
+      if (updatedTemplate == null) {
+        throw new InvalidRequestException(format(
+            "Unexpected exception occurred while updating template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s] could not be updated.",
+            templateToUpdate.getIdentifier(), templateToUpdate.getVersionLabel(),
+            templateToUpdate.getProjectIdentifier(), templateToUpdate.getOrgIdentifier()));
+      }
+      return updatedTemplate;
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error(
+          String.format(
+              "Unexpected exception occurred while updating template [%s] and versionLabel [%s], under Project[%s], Organization [%s]",
+              templateToUpdate.getIdentifier(), templateToUpdate.getVersionLabel(),
+              templateToUpdate.getProjectIdentifier(), templateToUpdate.getOrgIdentifier()),
+          e);
+      throw e;
+    } catch (Exception e) {
+      log.error(
+          String.format(
+              "Unexpected exception occurred while updating template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s]",
+              templateToUpdate.getIdentifier(), templateToUpdate.getVersionLabel(),
+              templateToUpdate.getProjectIdentifier(), templateToUpdate.getOrgIdentifier()),
+          e);
+      throw new InvalidRequestException(String.format(
+          "Unexpected exception occurred while updating template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s] : %s",
+          templateToUpdate.getIdentifier(), templateToUpdate.getVersionLabel(), templateToUpdate.getProjectIdentifier(),
+          templateToUpdate.getOrgIdentifier(), e.getMessage()));
+    }
   }
 }

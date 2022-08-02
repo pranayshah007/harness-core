@@ -31,6 +31,7 @@ import com.stripe.param.PriceSearchParams;
 import com.stripe.param.SubscriptionCreateParams;
 import com.stripe.param.SubscriptionRetrieveParams;
 import com.stripe.param.SubscriptionUpdateParams;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -85,6 +86,19 @@ public class StripeHandlerImpl {
       return Customer.create(customerCreateParams);
     } catch (StripeException e) {
       throw new InvalidRequestException("Unable to create customer information", e);
+    }
+  }
+
+  PaymentMethod linkPaymentMethodToCustomer(String customerId, String paymentMethodId) {
+    try {
+      PaymentMethod paymentMethod = PaymentMethod.retrieve(paymentMethodId);
+
+      Map<String, Object> params = new HashMap<>();
+      params.put("customer", customerId);
+
+      return paymentMethod.attach(params);
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to link customer to payment method", e);
     }
   }
 

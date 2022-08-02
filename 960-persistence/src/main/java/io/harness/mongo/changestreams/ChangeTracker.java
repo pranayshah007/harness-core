@@ -93,7 +93,7 @@ public class ChangeTracker {
       clientSession = mongoClient.startSession(ClientSessionOptions.builder().build());
     }
     final String databaseName = uri.getDatabase();
-    log.info("Database is {}", databaseName);
+    log.info("ChangeStream: Database is {}", databaseName);
     mongoDatabase =
         mongoClient.getDatabase(databaseName).withReadConcern(ReadConcern.MAJORITY).withReadPreference(readPreference);
   }

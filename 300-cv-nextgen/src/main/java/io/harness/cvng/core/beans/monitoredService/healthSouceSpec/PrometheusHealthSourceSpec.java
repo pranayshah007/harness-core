@@ -11,6 +11,7 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource.CVConfigUpdateResult;
+import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.services.api.MetricPackService;
@@ -44,6 +45,7 @@ import org.apache.commons.lang3.StringUtils;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PrometheusHealthSourceSpec extends MetricHealthSourceSpec {
   @UniqueIdentifierCheck @Valid List<PrometheusMetricDefinition> metricDefinitions;
+  @Valid Set<TimeSeriesMetricPackDTO> metricPacks;
 
   public List<PrometheusMetricDefinition> getMetricDefinitions() {
     if (metricDefinitions == null) {
@@ -139,7 +141,7 @@ public class PrometheusHealthSourceSpec extends MetricHealthSourceSpec {
                                         .monitoredServiceIdentifier(monitoredServiceIdentifier)
                                         .build();
 
-      cvConfig.populateFromMetricDefinitions(definitionList, category);
+      cvConfig.populateFromMetricDefinitions(definitionList, category, metricPacks);
       cvConfigs.add(cvConfig);
     });
 

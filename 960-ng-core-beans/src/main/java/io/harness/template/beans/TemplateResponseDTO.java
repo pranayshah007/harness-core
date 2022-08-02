@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityName;
 import io.harness.encryption.Scope;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.ng.core.template.TemplateEntityType;
@@ -59,4 +60,6 @@ public class TemplateResponseDTO {
   EntityGitDetails gitDetails;
   EntityValidityDetails entityValidityDetails;
   long lastUpdatedAt;
+  StoreType storeType;
+  String connectorRef;
 }

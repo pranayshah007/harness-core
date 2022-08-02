@@ -650,6 +650,7 @@ public class IntegrationStageUtils {
         case DOCKER:
         case ECR:
         case GCR:
+        case ACR:
         case SAVE_CACHE_S3:
         case RESTORE_CACHE_S3:
         case RESTORE_CACHE_GCS:

@@ -631,6 +631,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
         .filter(this::isVmRunning)
         .filter(virtualMachine -> filterOsType(virtualMachine, osType))
         .filter(virtualMachine -> filterTags(virtualMachine, tags))
+        .filter(virtualMachine -> virtualMachine.getPrimaryPublicIPAddress() != null)
         .map(this::toVirtualMachineData)
         .collect(Collectors.toList());
   }
@@ -660,6 +661,6 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
   }
 
   private VirtualMachineData toVirtualMachineData(VirtualMachine virtualMachine) {
-    return VirtualMachineData.builder().hostName(virtualMachine.name()).build();
+    return VirtualMachineData.builder().hostName(virtualMachine.getPrimaryPublicIPAddress().ipAddress()).build();
   }
 }

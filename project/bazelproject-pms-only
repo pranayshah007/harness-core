@@ -2,7 +2,7 @@ workspace_type: java
 java_language_level: 8
 
 directories:
-  800-pipeline-service
+  pipeline-service
   867-polling-contracts
   874-orchestration-delay
   878-ng-common-utilities
@@ -71,7 +71,7 @@ directories:
 derive_targets_from_directories: false
 
 targets:
-  800-pipeline-service:module
+  pipeline-service/service:module
   874-orchestration-delay:module
   878-ng-common-utilities:module
   884-pms-commons:module

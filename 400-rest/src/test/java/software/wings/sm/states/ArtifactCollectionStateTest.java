@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE;
+import static io.harness.beans.FeatureName.SAVE_ARTIFACT_TO_DB;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.GEORGE;
@@ -71,6 +72,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.Artifact.Status;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.CustomArtifactStream;
 import software.wings.beans.artifact.JenkinsArtifactStream;
@@ -766,5 +768,65 @@ public class ArtifactCollectionStateTest extends CategoryTest {
         .thenReturn(DelegateTask.builder());
     ExecutionResponse executionResponse = artifactCollectionState.execute(executionContext);
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void testHandleAsyncResponseDelegateTaskFailure() {
+    when(featureFlagService.isEnabled(eq(ARTIFACT_COLLECTION_CONFIGURABLE), anyString())).thenReturn(true);
+    when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(jenkinsArtifactStream);
+    artifactCollectionState.setBuildNo("1.0");
+    BuildDetails buildDetails = aBuildDetails().build();
+    BuildSourceExecutionResponse buildSourceExecutionResponse =
+        BuildSourceExecutionResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+            .buildSourceResponse(BuildSourceResponse.builder().buildDetails(asList(buildDetails)).build())
+            .build();
+    Artifact artifact =
+        anArtifact()
+            .withMetadata(new ArtifactMetadata(Collections.singletonMap(ArtifactMetadataKeys.buildNo, "1.0")))
+            .build();
+    when(artifactService.getArtifactByBuildNumber(jenkinsArtifactStream, "1.0", false)).thenReturn(artifact);
+    when(artifactCollectionUtils.getArtifact(jenkinsArtifactStream, buildDetails)).thenReturn(artifact);
+    when(artifactService.create(artifact, jenkinsArtifactStream, false)).thenReturn(artifact);
+
+    ExecutionResponse executionResponse = artifactCollectionState.handleAsyncResponse(
+        executionContext, Collections.singletonMap("response", buildSourceExecutionResponse));
+    verify(workflowExecutionService).refreshBuildExecutionSummary(any(), any());
+    assertThat(executionResponse.getExecutionStatus()).isEqualTo(SUCCESS);
+    assertThat(executionResponse.getStateExecutionData()).isNotNull();
+    assertThat(((ArtifactCollectionExecutionData) executionResponse.getStateExecutionData()).getBuildNo()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void testHandleAsyncResponseDelegateTaskFailureWithFeatureFlag() {
+    when(featureFlagService.isEnabled(eq(ARTIFACT_COLLECTION_CONFIGURABLE), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(eq(SAVE_ARTIFACT_TO_DB), anyString())).thenReturn(true);
+    when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(jenkinsArtifactStream);
+    artifactCollectionState.setBuildNo("1.0");
+    BuildDetails buildDetails = aBuildDetails().build();
+    BuildSourceExecutionResponse buildSourceExecutionResponse =
+        BuildSourceExecutionResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+            .buildSourceResponse(BuildSourceResponse.builder().buildDetails(asList(buildDetails)).build())
+            .build();
+    Artifact artifact =
+        anArtifact()
+            .withMetadata(new ArtifactMetadata(Collections.singletonMap(ArtifactMetadataKeys.buildNo, "1.0")))
+            .build();
+    when(artifactService.getArtifactByBuildNumber(jenkinsArtifactStream, "1.0", false)).thenReturn(null);
+    when(artifactService.create(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, Artifact.class));
+    when(artifactCollectionUtils.getArtifact(any(), any())).thenReturn(artifact);
+    when(artifactService.create(artifact, jenkinsArtifactStream, false)).thenReturn(artifact);
+
+    ExecutionResponse executionResponse = artifactCollectionState.handleAsyncResponse(
+        executionContext, Collections.singletonMap("response", buildSourceExecutionResponse));
+    verify(workflowExecutionService).refreshBuildExecutionSummary(any(), any());
+    assertThat(executionResponse.getExecutionStatus()).isEqualTo(SUCCESS);
+    assertThat(executionResponse.getStateExecutionData()).isNotNull();
+    assertThat(((ArtifactCollectionExecutionData) executionResponse.getStateExecutionData()).getBuildNo()).isNotNull();
   }
 }

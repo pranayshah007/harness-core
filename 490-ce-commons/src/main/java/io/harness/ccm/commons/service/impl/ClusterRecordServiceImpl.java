@@ -15,6 +15,7 @@ import io.harness.ccm.commons.entities.ClusterRecord;
 import io.harness.ccm.commons.service.intf.ClusterRecordService;
 
 import com.google.inject.Inject;
+import java.util.List;
 
 @OwnedBy(CE)
 public class ClusterRecordServiceImpl implements ClusterRecordService {
@@ -43,6 +44,11 @@ public class ClusterRecordServiceImpl implements ClusterRecordService {
   @Override
   public ClusterRecord getByCEK8sIdentifier(String accountId, String ceK8sConnectorIdentifier) {
     return clusterRecordDao.getByCEK8sIdentifier(accountId, ceK8sConnectorIdentifier);
+  }
+
+  @Override
+  public List<ClusterRecord> getByCEK8sIdentifierList(String accountId, List<String> ceK8sConnectorIdentifier) {
+    return clusterRecordDao.getByCEK8sIdentifierList(accountId, ceK8sConnectorIdentifier);
   }
 
   @Override

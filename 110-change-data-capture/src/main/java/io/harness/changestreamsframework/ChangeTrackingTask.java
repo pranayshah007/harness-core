@@ -9,6 +9,7 @@ package io.harness.changestreamsframework;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.persistence.PersistentEntity;
 
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
@@ -34,13 +35,15 @@ class ChangeTrackingTask implements Runnable {
   private ChangeStreamSubscriber changeStreamSubscriber;
   private MongoCollection<DBObject> collection;
   private ClientSession clientSession;
+  private Class<? extends PersistentEntity> subscribedClass;
   private BsonDocument resumeToken;
 
   ChangeTrackingTask(ChangeStreamSubscriber changeStreamSubscriber, MongoCollection<DBObject> collection,
-      ClientSession clientSession, String tokenParam) {
+      ClientSession clientSession, String tokenParam, Class<? extends PersistentEntity> subscribedClass) {
     this.changeStreamSubscriber = changeStreamSubscriber;
     this.collection = collection;
     this.clientSession = clientSession;
+    this.subscribedClass = subscribedClass;
     if (tokenParam != null) {
       this.resumeToken =
           Document.parse(tokenParam).toBsonDocument(BsonDocument.class, MongoClient.getDefaultCodecRegistry());
