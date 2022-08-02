@@ -9,18 +9,22 @@ package io.harness.ng.core.artifacts.resources.githubpackages;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.resources.githubpackages.dtos.GithubPackagesResponseDTO;
+import io.harness.cdng.artifact.resources.githubpackages.service.GithubPackagesResourceService;
+import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
+import io.harness.ng.core.dto.ResponseDTO;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,4 +41,17 @@ import lombok.extern.slf4j.Slf4j;
     })
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
-public class GithubPackagesArtifactResource {}
+public class GithubPackagesArtifactResource {
+  private final GithubPackagesResourceService githubPackagesResourceService;
+
+  @GET
+  @Path("packages")
+  @ApiOperation(value = "Gets Package details for GithubPackages", nickname = "getPackagesFromGithub")
+  public ResponseDTO<GithubPackagesResponseDTO> getPackages(@QueryParam("connectorRef") String gitConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    return null;
+  }
+}
