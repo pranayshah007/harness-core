@@ -21,6 +21,7 @@ import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.stages.IntegrationStageConfigImpl;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
@@ -58,7 +59,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     List<ContainerDefinitionInfo> expected = K8InitializeStepUtilsHelper.getStepContainers();
     List<ContainerDefinitionInfo> stepContainers =
         k8InitializeStepUtils.createStepContainerDefinitions(steps, integrationStageConfig, ciExecutionArgs, portFinder,
-            "test", OSType.Linux, initializeStepInfo.getInfrastructure());
+            "test", OSType.Linux, K8sDirectInfraYaml.builder().build());
 
     assertThat(stepContainers).isEqualTo(expected);
   }
@@ -75,7 +76,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
 
     List<ContainerDefinitionInfo> stepContainers =
         k8InitializeStepUtils.createStepContainerDefinitionsStepGroupWithFF(steps, integrationStageConfig,
-            ciExecutionArgs, portFinder, "test", OSType.Linux, 0, initializeStepInfo.getInfrastructure());
+            ciExecutionArgs, portFinder, "test", OSType.Linux, 0, K8sDirectInfraYaml.builder().build());
 
     HashMap<String, ContainerResourceParams> map = populateMap(stepContainers);
 
@@ -109,7 +110,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
 
     List<ContainerDefinitionInfo> stepContainers =
         k8InitializeStepUtils.createStepContainerDefinitionsStepGroupWithFF(steps, integrationStageConfig,
-            ciExecutionArgs, portFinder, "test", OSType.Linux, 0, initializeStepInfo.getInfrastructure());
+            ciExecutionArgs, portFinder, "test", OSType.Linux, 0, K8sDirectInfraYaml.builder().build());
 
     HashMap<String, ContainerResourceParams> map = populateMap(stepContainers);
 
@@ -135,7 +136,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
 
     List<ContainerDefinitionInfo> stepContainers =
         k8InitializeStepUtils.createStepContainerDefinitionsStepGroupWithFF(steps, integrationStageConfig,
-            ciExecutionArgs, portFinder, "test", OSType.Linux, 0, initializeStepInfo.getInfrastructure());
+            ciExecutionArgs, portFinder, "test", OSType.Linux, 0, K8sDirectInfraYaml.builder().build());
 
     HashMap<String, ContainerResourceParams> map = populateMap(stepContainers);
 
@@ -171,7 +172,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     List<ContainerDefinitionInfo> expected = K8InitializeStepUtilsHelper.getWinStepContainers();
     List<ContainerDefinitionInfo> stepContainers =
         k8InitializeStepUtils.createStepContainerDefinitions(steps, integrationStageConfig, ciExecutionArgs, portFinder,
-            "test", OSType.Windows, initializeStepInfo.getInfrastructure());
+            "test", OSType.Windows, K8sDirectInfraYaml.builder().build());
 
     assertThat(stepContainers).isEqualTo(expected);
   }
