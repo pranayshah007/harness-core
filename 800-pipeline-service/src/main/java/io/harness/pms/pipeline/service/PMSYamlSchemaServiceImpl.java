@@ -126,7 +126,9 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
   @Override
   public void validateYamlSchema(String accountId, String orgId, String projectId, String yaml) {
-    validateYamlSchemaInternal(accountId, orgId, projectId, yaml);
+    if (pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.PIPELINE_MONITORING, accountId)) {
+      validateYamlSchemaInternal(accountId, orgId, projectId, yaml);
+    }
   }
 
   private void validateYamlSchemaInternal(String accountIdentifier, String orgId, String projectId, String yaml) {

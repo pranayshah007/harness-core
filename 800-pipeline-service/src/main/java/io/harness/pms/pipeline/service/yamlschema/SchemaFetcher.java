@@ -63,7 +63,7 @@ public class SchemaFetcher {
 
       schemaCache.put(schemaCacheKey, SchemaCacheUtils.getPartialSchemaWrapperValue(partialSchemaDTOS));
 
-      log.info("[PMS] Successfully fetched schema for {}", moduleType.name());
+      log.info("[PMS] Successfully fetched schema for {} for account: {}", moduleType.name(), accountId);
       logWarnIfExceedsThreshold(moduleType, startTs);
 
       return partialSchemaDTOS;
@@ -78,15 +78,16 @@ public class SchemaFetcher {
       SchemaCacheKey schemaCacheKey =
           SchemaCacheKey.builder().accountIdentifier(accountId).moduleType(moduleType).build();
       if (schemaDetailsCache.containsKey(schemaCacheKey)) {
-        log.info("[PMS_SCHEMA] Fetching schema information for {} from cache", moduleType.name());
+        log.info(
+            "[PMS_SCHEMA] Fetching schema information for {} from cache for account: {}", moduleType.name(), accountId);
         return SchemaCacheUtils.toYamlSchemaDetailsWrapper(schemaDetailsCache.get(schemaCacheKey));
       }
 
       long start = System.currentTimeMillis();
       SchemaGetter schemaGetter = schemaGetterFactory.obtainGetter(accountId, moduleType);
       YamlSchemaDetailsWrapper yamlSchemaDetailsWrapper = schemaGetter.getSchemaDetails();
-      log.info("[PMS_SCHEMA] Fetching schema information for {} from remote with time took {}ms", moduleType.name(),
-          System.currentTimeMillis() - start);
+      log.info("[PMS_SCHEMA] Fetching schema information for {} from remote for account: {} with time took {}ms",
+          moduleType.name(), accountId, System.currentTimeMillis() - start);
       schemaDetailsCache.put(schemaCacheKey, SchemaCacheUtils.toYamlSchemaDetailCacheValue(yamlSchemaDetailsWrapper));
       return yamlSchemaDetailsWrapper;
     } catch (Exception e) {

@@ -96,12 +96,14 @@ public class PmsYamlSchemaHelper {
   }
 
   public static void flatten(ObjectNode objectNode) {
+    log.info("Flattening the ParallelStepElementConfig node. objectNode is: {}", objectNode.toString());
     JsonNode sections = objectNode.get(PROPERTIES_NODE).get("sections");
     if (sections.isObject()) {
       objectNode.removeAll();
       objectNode.setAll((ObjectNode) sections);
       objectNode.put(SchemaConstants.SCHEMA_NODE, SchemaConstants.JSON_SCHEMA_7);
     }
+    log.info("Flattened the ParallelStepElementConfig node. Updated node is: {}", objectNode.toString());
   }
 
   public static void flattenParallelElementConfig(ObjectNode definitions) {
