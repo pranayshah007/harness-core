@@ -148,7 +148,7 @@ function copy_change_data_capture_jars(){
 	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 	cp -r ../../dockerization/change-data-capture/scripts/ .
-	
+
 	copy_common_files
 
 	cd ../..
@@ -160,19 +160,7 @@ function copy_ng_dashboard_jars(){
 
 	cp ${BAZEL_BIN}/290-dashboard-service/module_deploy.jar ng-dashboard-service.jar
 	cp ../../290-dashboard-service/config.yml .
-
-	if [ -e ../../dockerization/ng-dashboard-service/Dockerfile-ng-dashboard-k8-openjdk ]
-	then
-	  cp ../../dockerization/ng-dashboard-service/Dockerfile-ng-dashboard-k8-openjdk Dockerfile
-	fi
-	  echo "Docker file for ng dashboard not found"
-
-	if [ -e ../../dockerization/ng-dashboard-service/Dockerfile-ng-dashboard-k8-gcr-openjdk ]
-	then
-	  cp ../../dockerization/ng-dashboard-service/Dockerfile-ng-dashboard-cie-jdk Dockerfile-cie-jdk
-	  cp ../../dockerization/ng-dashboard-service/Dockerfile-ng-dashboard-k8-gcr-openjdk Dockerfile-gcr
-	fi
-	  echo "Docker file for ng dashboard for gcr not found"
+	cp ../../dockerization/ng-dashboard-service/Dockerfile-ng-dashboard-cie-jdk Dockerfile-cie-jdk
 	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 	cp -r ../../dockerization/ng-dashboard-service/scripts/ .
