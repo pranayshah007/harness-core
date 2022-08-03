@@ -11,7 +11,7 @@ import io.harness.cvng.beans.change.ChangeEventDTO;
 
 import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1Pod;
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -46,8 +46,7 @@ public class ChangeIntelPodHandler extends BaseChangeHandler<V1Pod> {
   @Override
   void processAndSendAddEvent(V1Pod newResource) {
     String yaml = k8sHandlerUtils.yamlDump(newResource);
-    if (newResource.getMetadata().getCreationTimestamp().isAfter(
-            Instant.now().minus(2, ChronoUnit.HOURS).toEpochMilli())) {
+    if (newResource.getMetadata().getCreationTimestamp().isAfter(OffsetDateTime.now().minus(2, ChronoUnit.HOURS))) {
       // we want to process and send events only when containers are ready and pod is ready to serve traffic
       // Pod statuses can be found here:
       // https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/V1PodStatus.md

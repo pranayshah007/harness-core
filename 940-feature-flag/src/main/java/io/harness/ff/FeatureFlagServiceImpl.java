@@ -223,21 +223,24 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
   }
 
   private boolean cfFeatureFlagEvaluation(@NonNull FeatureName featureName, String accountId) {
+    String name;
     if (Scope.GLOBAL.equals(featureName.getScope()) || isEmpty(accountId)) {
       /**
        * If accountID is null or empty, use a static accountID
        */
       accountId = FeatureFlagConstants.STATIC_ACCOUNT_ID;
-    }
-    String name;
-    log.info("Fetching account name for account id " + accountId);
-    if (optionalAccountClient.isPresent()) {
-      AccountDTO accountDTO = RestClientUtils.getResponse(optionalAccountClient.get().getAccountDTO(accountId));
-      name = accountDTO.getName();
-      log.info("Account name is " + name);
-    } else {
-      log.info("Account client is absent, using account ID as name");
       name = accountId;
+      log.info("Using same default account id and name - " + accountId);
+    } else {
+      log.info("Fetching account name for account id " + accountId);
+      if (optionalAccountClient.isPresent()) {
+        AccountDTO accountDTO = RestClientUtils.getResponse(optionalAccountClient.get().getAccountDTO(accountId));
+        name = accountDTO.getName();
+        log.info("Account name is " + name);
+      } else {
+        log.info("Account client is absent, using account ID as name");
+        name = accountId;
+      }
     }
     Target target = Target.builder().identifier(accountId).name(name).build();
     return cfClient.get().boolVariation(featureName.name(), target, false);
@@ -376,9 +379,15 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
           ? emptyList()
           : Splitter.on(',').omitEmptyStrings().trimResults().splitToList(featureNames);
       for (String name : definedNames) {
+        boolean isEnabled = enabled.contains(name);
+        UpdateOperations<FeatureFlag> updateQuery =
+            persistence.createUpdateOperations(FeatureFlag.class).set(FeatureFlagKeys.enabled, isEnabled);
+        if (!isEnabled) {
+          updateQuery.unset(FeatureFlagKeys.accountIds);
+        }
         persistence.update(
             persistence.createQuery(FeatureFlag.class, excludeAuthority).filter(FeatureFlagKeys.name, name),
-            persistence.createUpdateOperations(FeatureFlag.class).set(FeatureFlagKeys.enabled, enabled.contains(name)));
+            updateQuery);
       }
     }
     /**

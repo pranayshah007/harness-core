@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.YamlNode;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -32,5 +33,10 @@ public class ExcludeConfig {
   public ExcludeConfig(Map<String, String> axisValue) {
     axisValue.remove(YamlNode.UUID_FIELD_NAME);
     this.exclude = axisValue;
+  }
+
+  @JsonValue
+  public Map<String, String> toJson() {
+    return exclude;
   }
 }

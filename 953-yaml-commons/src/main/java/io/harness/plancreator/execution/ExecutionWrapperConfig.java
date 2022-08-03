@@ -16,12 +16,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Getter;
-import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-@Value
+@Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @TypeAlias("executionWrapperConfig")

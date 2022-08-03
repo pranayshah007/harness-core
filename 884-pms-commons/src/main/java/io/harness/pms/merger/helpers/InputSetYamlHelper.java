@@ -10,10 +10,13 @@ package io.harness.pms.merger.helpers;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.common.EntityYamlRootNames;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
+import io.harness.exception.UnexpectedException;
 import io.harness.pms.merger.YamlConfig;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -155,6 +158,20 @@ public class InputSetYamlHelper {
     }
     list.forEach(element -> res.add(element.asText()));
     return res;
+  }
+
+  public String setReferencesFromOverlayInputSetYaml(String yaml, List<String> newReferences) {
+    JsonNode newReferencesNode;
+    JsonNode rootLevelNode;
+    try {
+      newReferencesNode = YamlUtils.readTree(newReferences.toString()).getNode().getCurrJsonNode();
+      rootLevelNode = YamlUtils.readTree(yaml).getNode().getCurrJsonNode();
+    } catch (IOException e) {
+      throw new UnexpectedException("Unexpected Error while setting new references into Overlay Input Set");
+    }
+    ObjectNode innerJsonNode = (ObjectNode) rootLevelNode.get(EntityYamlRootNames.OVERLAY_INPUT_SET);
+    innerJsonNode.set(YAMLFieldNameConstants.INPUT_SET_REFERENCES, newReferencesNode);
+    return YamlUtils.write(rootLevelNode).replace("---\n", "");
   }
 
   public void confirmPipelineIdentifierInInputSet(String inputSetYaml, String pipelineIdentifier) {

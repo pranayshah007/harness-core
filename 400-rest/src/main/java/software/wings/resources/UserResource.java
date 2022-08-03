@@ -102,7 +102,6 @@ import com.typesafe.config.Optional;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Hidden;
-import io.swagger.v3.oas.annotations.Parameter;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -532,18 +531,17 @@ public class UserResource {
    * @return the rest response
    */
   @GET
-  @Path("accounts/{userId}")
+  @Path("accounts")
   @Scope(value = ResourceType.USER, scope = LOGGED_IN)
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = LOGGED_IN)
-  public RestResponse<List<Account>> getUserAccounts(@NotEmpty @PathParam("userId") String userId,
-      @Parameter(description = "Page number of navigation. The default value is 0") @QueryParam(
-          NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int pageIndex,
-      @Parameter(description = "Number of entries per page. The default value is 20") @QueryParam(
-          NGResourceFilterConstants.SIZE_KEY) @DefaultValue("20") int pageSize,
+  public RestResponse<io.harness.ng.beans.PageResponse<Account>> getUserAccounts(
+      @QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int pageIndex,
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("20") int pageSize,
       @Optional @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
-    return new RestResponse<>(userService.getUserAccountsAndSupportAccounts(userId, pageIndex, pageSize, searchTerm));
+    return new RestResponse<>(userService.getUserAccountsAndSupportAccounts(
+        UserThreadLocal.get().getUuid(), pageIndex, pageSize, searchTerm));
   }
   /**
    * Look up the user object using email and login the user. Intended for internal use only.

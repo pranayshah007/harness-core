@@ -218,7 +218,7 @@ public class EcsSetupRollbackTest extends WingsBaseTest {
     ContainerServiceElement containerServiceElement = ContainerServiceElement.builder().build();
     doReturn(containerServiceElement)
         .when(mockEcsStateHelper)
-        .buildContainerServiceElement(any(), any(), any(), any(), any(), any(), any(), any(), anyInt(), any());
+        .buildContainerServiceElement(any(), any(), any(), any(), any(), any(), any(), anyInt());
     doReturn(SweepingOutputInstance.builder()).when(mockContext).prepareSweepingOutputBuilder(any());
     doReturn("foo").when(mockEcsStateHelper).getSweepingOutputName(any(), anyBoolean(), any());
 
@@ -261,7 +261,7 @@ public class EcsSetupRollbackTest extends WingsBaseTest {
     ContainerServiceElement containerServiceElement = ContainerServiceElement.builder().build();
     doReturn(containerServiceElement)
         .when(mockEcsStateHelper)
-        .buildContainerServiceElement(any(), any(), any(), any(), any(), any(), any(), any(), anyInt(), any());
+        .buildContainerServiceElement(any(), any(), any(), any(), any(), any(), any(), anyInt());
     doReturn(SweepingOutputInstance.builder()).when(mockContext).prepareSweepingOutputBuilder(any());
     doReturn("foo").when(mockEcsStateHelper).getSweepingOutputName(any(), anyBoolean(), any());
 

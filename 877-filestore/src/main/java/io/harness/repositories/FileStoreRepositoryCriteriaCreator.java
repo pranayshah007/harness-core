@@ -19,6 +19,7 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.sort
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
+import io.harness.filestore.dto.filter.FileStoreNodesFilterQueryPropertiesDTO;
 import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.filestore.NGFileType;
@@ -46,6 +47,22 @@ public class FileStoreRepositoryCriteriaCreator {
     criteria.and(NGFiles.orgIdentifier).is(scope.getOrgIdentifier());
     criteria.and(NGFiles.projectIdentifier).is(scope.getProjectIdentifier());
     return criteria;
+  }
+
+  public static Criteria createCriteriaByScopeAndParentIdentifierAndNodesFilter(
+      Scope scope, final String parentIdentifier, FileStoreNodesFilterQueryPropertiesDTO filterParams) {
+    Criteria criteriaByScopeAndParentIdentifier = createCriteriaByScopeAndParentIdentifier(scope, parentIdentifier);
+
+    if (filterParams != null && filterParams.getFileUsage() != null) {
+      Criteria fileUsageCriteria = new Criteria();
+      fileUsageCriteria.orOperator(
+          Criteria.where(NGFiles.type).is(NGFileType.FILE).and(NGFiles.fileUsage).is(filterParams.getFileUsage()),
+          Criteria.where(NGFiles.type).is(NGFileType.FOLDER));
+
+      criteriaByScopeAndParentIdentifier.andOperator(fileUsageCriteria);
+    }
+
+    return criteriaByScopeAndParentIdentifier;
   }
 
   public static Criteria createFilesFilterCriteria(

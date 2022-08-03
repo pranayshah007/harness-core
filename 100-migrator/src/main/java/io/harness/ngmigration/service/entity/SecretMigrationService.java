@@ -83,6 +83,9 @@ public class SecretMigrationService extends NgMigrationService {
   @Override
   public DiscoveryNode discover(NGMigrationEntity entity) {
     EncryptedData encryptedData = (EncryptedData) entity;
+    if (encryptedData == null) {
+      return null;
+    }
     String entityId = encryptedData.getUuid();
     CgEntityId connectorEntityId = CgEntityId.builder().type(NGMigrationEntityType.SECRET).id(entityId).build();
     CgEntityNode connectorNode = CgEntityNode.builder()

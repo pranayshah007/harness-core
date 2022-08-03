@@ -10,7 +10,7 @@ package io.harness.ng.opa;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.contracts.governance.GovernanceMetadata;
+import io.harness.governance.GovernanceMetadata;
 
 @OwnedBy(PL)
 public interface OpaService {

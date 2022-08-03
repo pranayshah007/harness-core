@@ -31,7 +31,7 @@ public class AzureWebAppSlotSwapRequestHandler extends AzureWebAppRequestHandler
     Integer timeoutIntervalInMin = taskRequest.getTimeoutIntervalInMin();
     String webAppName = infrastructure.getAppName();
     String sourceSlot = infrastructure.getDeploymentSlot();
-    String targetSlot = taskRequest.getInfrastructure().getTargetSlot();
+    String targetSlot = taskRequest.getTargetSlot();
     azureAppServiceResourceUtilities.validateSlotSwapParameters(webAppName, sourceSlot, targetSlot);
 
     AzureWebClientContext webClientContext = buildAzureWebClientContext(infrastructure, azureConfig);

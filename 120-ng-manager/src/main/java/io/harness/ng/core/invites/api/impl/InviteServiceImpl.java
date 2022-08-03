@@ -179,7 +179,7 @@ public class InviteServiceImpl implements InviteService {
   }
 
   @Override
-  public InviteOperationResponse create(Invite invite, boolean isScimInvite) {
+  public InviteOperationResponse create(Invite invite, boolean isScimInvite, boolean isLdap) {
     if (invite == null) {
       return FAIL;
     }
@@ -205,8 +205,9 @@ public class InviteServiceImpl implements InviteService {
       wrapperForTransactions(this::resendInvite, existingInviteOptional.get());
       return InviteOperationResponse.USER_ALREADY_INVITED;
     }
+    boolean[] scimLdapArray = {isScimInvite, isLdap};
     try {
-      return wrapperForTransactions(this::newInvite, invite, isScimInvite);
+      return wrapperForTransactions(this::newInvite, invite, scimLdapArray);
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(getExceptionMessage(invite), USER_SRE, ex);
     }
@@ -219,7 +220,7 @@ public class InviteServiceImpl implements InviteService {
     List<Invite> invites = toInviteList(createInviteDTO, accountIdentifier, orgIdentifier, projectIdentifier);
     for (Invite invite : invites) {
       try {
-        InviteOperationResponse response = create(invite, false);
+        InviteOperationResponse response = create(invite, false, false);
         inviteOperationResponses.add(response);
       } catch (DuplicateFieldException ex) {
         log.error("error: ", ex);
@@ -343,6 +344,13 @@ public class InviteServiceImpl implements InviteService {
     } catch (URISyntaxException | UnsupportedEncodingException e) {
       log.error("URL format incorrect. Cannot create invite link. InviteId: " + invite.getId(), e);
       throw new UnexpectedException("Could not create invite link. Unexpectedly failed due to malformed URL.");
+    }
+  }
+
+  private void checkUserLimit(String accountId, String emailId) {
+    boolean limitHasBeenReached = RestClientUtils.getResponse(userClient.checkUserLimit(accountId, emailId));
+    if (limitHasBeenReached) {
+      throw new InvalidRequestException("The user count limit has been reached in this account");
     }
   }
 
@@ -506,7 +514,8 @@ public class InviteServiceImpl implements InviteService {
         invite.getAccountIdentifier(), invite.getOrgIdentifier(), invite.getProjectIdentifier(), invite.getEmail());
   }
 
-  private InviteOperationResponse newInvite(Invite invite, boolean isScimInvite) {
+  private InviteOperationResponse newInvite(Invite invite, boolean[] scimLdapArray) {
+    checkUserLimit(invite.getAccountIdentifier(), invite.getEmail());
     Invite savedInvite = inviteRepository.save(invite);
     outboxService.save(new UserInviteCreateEvent(
         invite.getAccountIdentifier(), invite.getOrgIdentifier(), invite.getProjectIdentifier(), writeDTO(invite)));
@@ -519,9 +528,10 @@ public class InviteServiceImpl implements InviteService {
     }
     String accountId = invite.getAccountIdentifier();
     String email = invite.getEmail().trim();
-    if (isScimInvite) {
+    if (scimLdapArray[0]) {
       createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true);
-    } else if (RestClientUtils.getResponse(accountClient.checkAutoInviteAcceptanceEnabledForAccount(accountId))) {
+    } else if (scimLdapArray[1]
+        || RestClientUtils.getResponse(accountClient.checkAutoInviteAcceptanceEnabledForAccount(accountId))) {
       createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false);
     }
     return InviteOperationResponse.USER_INVITED_SUCCESSFULLY;

@@ -8,6 +8,7 @@
 package io.harness.batch.processing.tasklet.util;
 
 import static io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils.getInstanceCategory;
+import static io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils.getInstanceCategoryECSFargate;
 import static io.harness.rule.OwnerRule.HITESH;
 import static io.harness.rule.OwnerRule.UTSAV;
 
@@ -71,6 +72,7 @@ public class InstanceMetaDataUtilsTest extends BatchProcessingTestBase {
   @Category(UnitTests.class)
   public void shouldIdentifyGCPSpotInstances() {
     assertTrue(isGCPSpotInstance(ImmutableMap.of("cloud.google.com/gke-preemptible", "true")));
+    assertTrue(isGCPSpotInstance(ImmutableMap.of("cloud.google.com/gke-spot", "true")));
     assertTrue(isGCPSpotInstance(ImmutableMap.of("preemptible", "true", "preemptible-node", "true")));
     assertTrue(isGCPSpotInstance(ImmutableMap.of("preemptible-node", "true", "preemptible", "true")));
     assertTrue(isGCPSpotInstance(ImmutableMap.of("preemptible", "true")));
@@ -87,6 +89,21 @@ public class InstanceMetaDataUtilsTest extends BatchProcessingTestBase {
     assertFalse(isGCPSpotInstance(ImmutableMap.of("preemptible", "false")));
     assertFalse(isGCPSpotInstance(ImmutableMap.of("preemptible-node", "false")));
     assertFalse(isGCPSpotInstance(ImmutableMap.of()));
+  }
+
+  @Test
+  @Owner(developers = HITESH)
+  @Category(UnitTests.class)
+  public void shouldIdentifyFargateOnDemandInstances() {
+    assertTrue(InstanceCategory.ON_DEMAND == getInstanceCategoryECSFargate("FARGATE"));
+    assertTrue(InstanceCategory.ON_DEMAND == getInstanceCategoryECSFargate(null));
+  }
+
+  @Test
+  @Owner(developers = HITESH)
+  @Category(UnitTests.class)
+  public void shouldIdentifyFargateSpotInstances() {
+    assertTrue(InstanceCategory.SPOT == getInstanceCategoryECSFargate("FARGATE_SPOT"));
   }
 
   private static boolean isGCPSpotInstance(final Map<String, String> labels) {

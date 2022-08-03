@@ -1,0 +1,7 @@
+exports_files(
+    [
+        "keystore.jks",
+        "config.yml",
+    ],
+    visibility = ["//pipeline-service/build:__subpackages__"],
+)

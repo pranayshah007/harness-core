@@ -9,7 +9,6 @@ package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.beans.FeatureName.DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST;
-import static io.harness.beans.FeatureName.JDK11_WATCHER;
 import static io.harness.beans.FeatureName.REDUCE_DELEGATE_MEMORY_SIZE;
 import static io.harness.beans.FeatureName.USE_IMMUTABLE_DELEGATE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
@@ -1384,6 +1383,7 @@ public class DelegateServiceImpl implements DelegateService {
       }
       final String watcherStorageUrl = watcherMetadataUrl.substring(0, watcherMetadataUrl.lastIndexOf('/'));
       final String watcherCheckLocation = watcherMetadataUrl.substring(watcherMetadataUrl.lastIndexOf('/') + 1);
+
       final String hexkey = format("%040x",
           new BigInteger(1, templateParameters.getAccountId().substring(0, 6).getBytes(StandardCharsets.UTF_8)))
                                 .replaceFirst("^0+(?!$)", "");
@@ -1393,7 +1393,7 @@ public class DelegateServiceImpl implements DelegateService {
       final String base64Secret = Base64.getEncoder().encodeToString(accountSecret.getBytes());
       // Ng helm delegates always use immutable image irrespective of FF
       final String delegateDockerImage = (isNgDelegate && HELM_DELEGATE.equals(templateParameters.getDelegateType()))
-          ? delegateVersionService.getDelegateImageTagForNgHelmDelegates(templateParameters.getAccountId())
+          ? delegateVersionService.getImmutableDelegateImageTag(templateParameters.getAccountId())
           : delegateVersionService.getDelegateImageTag(
               templateParameters.getAccountId(), templateParameters.getDelegateType());
       ImmutableMap.Builder<String, String> params =
@@ -1421,6 +1421,16 @@ public class DelegateServiceImpl implements DelegateService {
               .put("dynamicHandlingOfRequestEnabled",
                   String.valueOf(featureFlagService.isEnabled(
                       DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST, templateParameters.getAccountId())));
+
+      final boolean isOnPrem = DeployMode.isOnPrem(mainConfiguration.getDeployMode().name());
+      params.put("isOnPrem", String.valueOf(isOnPrem));
+      if (!isOnPrem) {
+        final String watcherVersion =
+            substringBefore(delegateVersionService.getWatcherJarVersions(templateParameters.getAccountId()), "-")
+                .trim()
+                .split("\\.")[2];
+        params.put("watcherJarVersion", watcherVersion);
+      }
 
       if (mainConfiguration.getDeployMode() == DeployMode.KUBERNETES_ONPREM) {
         params.put("managerTarget", mainConfiguration.getGrpcOnpremDelegateClientConfig().getTarget());
@@ -1713,8 +1723,21 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   private boolean isJdk11Watcher(final String accountId) {
-    return DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())
-        || featureFlagService.isEnabledReloadCache(JDK11_WATCHER, accountId);
+    if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+      return true;
+    }
+    final String watcherVersion =
+        substringBefore(delegateVersionService.getWatcherJarVersions(accountId), "-").trim().split("\\.")[2];
+    try {
+      final int jdk11_base_watcher_version = 75276;
+      if (Integer.parseInt(watcherVersion) < jdk11_base_watcher_version) {
+        return false;
+      }
+      return true;
+    } catch (Exception e) {
+      log.error("Unable to get watcher version, will start watcher with jdk8 ", e);
+      return false;
+    }
   }
 
   /**
@@ -4283,13 +4306,16 @@ public class DelegateServiceImpl implements DelegateService {
         persistence.createQuery(Delegate.class).filter(DelegateKeys.accountId, accountId).asList();
     return delegateList.stream()
         .filter(delegate -> checkForDelegateHavingAllTags(delegate, tags))
-        .map(delegate -> DelegateDTO.convertToDTO(delegate, null))
+        .map(delegate
+            -> DelegateDTO.convertToDTO(delegate, delegateSetupService.listDelegateImplicitSelectors(delegate)))
         .collect(Collectors.toList());
   }
 
   private boolean checkForDelegateHavingAllTags(Delegate delegate, DelegateTags tags) {
-    List<String> delegateTags = delegate.getTags();
-    delegateTags.addAll(delegateSetupService.listDelegateImplicitSelectors(delegate));
+    List<String> delegateTags = delegateSetupService.listDelegateImplicitSelectors(delegate);
+    if (isNotEmpty(delegate.getTags())) {
+      delegateTags.addAll(delegate.getTags());
+    }
     return delegateTags.containsAll(tags.getTags());
   }
 

@@ -20,7 +20,6 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -170,7 +169,7 @@ public class TerraformStepHelper {
     GitStoreConfig gitStoreConfig = (GitStoreConfig) store;
     cdStepHelper.validateGitStoreConfig(gitStoreConfig);
     String connectorId = gitStoreConfig.getConnectorRef().getValue();
-    ConnectorInfoDTO connectorDTO = k8sStepHelper.getConnector(connectorId, ambiance);
+    ConnectorInfoDTO connectorDTO = cdStepHelper.getConnector(connectorId, ambiance);
     String validationMessage = "";
     if (identifier.equals(TerraformStepHelper.TF_CONFIG_FILES)) {
       validationMessage = "Config Files";
@@ -178,7 +177,7 @@ public class TerraformStepHelper {
       validationMessage = format("Var Files with identifier: %s", identifier);
     }
     // TODO: fix manifest part, remove k8s dependency
-    k8sStepHelper.validateManifest(store.getKind(), connectorDTO, validationMessage);
+    cdStepHelper.validateManifest(store.getKind(), connectorDTO, validationMessage);
     GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO((ScmConnector) connectorDTO.getConnectorConfig());
     NGAccess basicNGAccessObject = AmbianceUtils.getNgAccess(ambiance);
     SSHKeySpecDTO sshKeySpecDTO =
@@ -224,7 +223,7 @@ public class TerraformStepHelper {
     ArtifactoryStoreConfig artifactoryStoreConfig = (ArtifactoryStoreConfig) store;
     validateArtifactoryStoreConfig(artifactoryStoreConfig);
     String connectorId = ParameterFieldHelper.getParameterFieldValue(artifactoryStoreConfig.getConnectorRef());
-    ConnectorInfoDTO connectorDTO = k8sStepHelper.getConnector(connectorId, ambiance);
+    ConnectorInfoDTO connectorDTO = cdStepHelper.getConnector(connectorId, ambiance);
     String validationMessage = "";
     if (identifier.equals(TerraformStepHelper.TF_CONFIG_FILES)) {
       if (ParameterFieldHelper.getParameterFieldValue(artifactoryStoreConfig.getArtifactPaths()).size() > 1) {
@@ -234,7 +233,7 @@ public class TerraformStepHelper {
     } else {
       validationMessage = format("Var Files with identifier: %s", identifier);
     }
-    k8sStepHelper.validateManifest(store.getKind(), connectorDTO, validationMessage);
+    cdStepHelper.validateManifest(store.getKind(), connectorDTO, validationMessage);
     NGAccess basicNGAccessObject = AmbianceUtils.getNgAccess(ambiance);
     List<EncryptedDataDetail> encryptedDataDetails = secretManagerClientService.getEncryptionDetails(
         basicNGAccessObject, ((ArtifactoryConnectorDTO) connectorDTO.getConnectorConfig()).getAuth().getCredentials());
@@ -296,7 +295,7 @@ public class TerraformStepHelper {
         builder.configFiles(getStoreConfigAtCommitId(
             configuration.getConfigFiles().getStore().getSpec(), commitIdMap.get(TF_CONFIG_FILES)));
         builder.useConnectorCredentials(isExportCredentialForSourceModule(
-            ambiance, configuration.getConfigFiles(), ExecutionNodeType.TERRAFORM_PLAN.getYamlType()));
+            configuration.getConfigFiles(), ExecutionNodeType.TERRAFORM_PLAN.getYamlType()));
 
         break;
       case ARTIFACTORY:
@@ -525,7 +524,7 @@ public class TerraformStepHelper {
                 .toGitStoreConfigDTO());
 
         builder.useConnectorCredentials(isExportCredentialForSourceModule(
-            ambiance, configuration.getSpec().getConfigFiles(), ExecutionNodeType.TERRAFORM_APPLY.getYamlType()));
+            configuration.getSpec().getConfigFiles(), ExecutionNodeType.TERRAFORM_APPLY.getYamlType()));
 
         break;
       case ARTIFACTORY:
@@ -628,11 +627,9 @@ public class TerraformStepHelper {
     }
   }
 
-  public boolean isExportCredentialForSourceModule(
-      Ambiance ambiance, TerraformConfigFilesWrapper configFiles, String type) {
+  public boolean isExportCredentialForSourceModule(TerraformConfigFilesWrapper configFiles, String type) {
     String description = String.format("%s step", type);
-    return cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.TF_MODULE_SOURCE_INHERIT_SSH)
-        && configFiles.getModuleSource() != null
+    return configFiles.getModuleSource() != null
         && !ParameterField.isNull(configFiles.getModuleSource().getUseConnectorCredentials())
         && CDStepHelper.getParameterFieldBooleanValue(
             configFiles.getModuleSource().getUseConnectorCredentials(), USE_CONNECTOR_CREDENTIALS, description);

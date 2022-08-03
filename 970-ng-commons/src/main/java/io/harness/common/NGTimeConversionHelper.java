@@ -27,6 +27,7 @@ public class NGTimeConversionHelper {
   public long convertTimeStringToMilliseconds(String timeInString) {
     double result = 0;
     double currentValue = 0;
+    timeInString = timeInString.replaceAll("\\s", "");
     StringBuilder currentUnit = new StringBuilder();
     for (Character ch : timeInString.toCharArray()) {
       if (Character.isDigit(ch)) {

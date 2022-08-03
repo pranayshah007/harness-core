@@ -126,6 +126,8 @@ public class HintException extends WingsException {
       + "Refer %s for more information on delegate Installation";
   public static final String HINT_SCM_INVALID_REQUEST =
       "Check if delegate is able to communicate with harness.io and outbound network is enabled for delegate";
+  public static final String HINT_FILE_CREATION_ERROR =
+      "Check if delegate instance has enough free space or enough write permissions";
 
   public HintException(String message) {
     super(message, null, HINT, INFO, null, null);

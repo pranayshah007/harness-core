@@ -30,7 +30,7 @@ import org.junit.experimental.categories.Category;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MetricPackDTOTest extends CvNextGenTestBase {
-  MetricPackDTO metricPackDTO;
+  TimeSeriesMetricPackDTO metricPackDTO;
   @Inject MetricPackService metricPackService;
   String orgIdentifier;
   String projectIdentifier;
@@ -41,7 +41,7 @@ public class MetricPackDTOTest extends CvNextGenTestBase {
     orgIdentifier = "org";
     projectIdentifier = "project";
     accountId = generateUuid();
-    metricPackDTO = MetricPackDTO.builder().identifier(CVNextGenConstants.ERRORS_PACK_IDENTIFIER).build();
+    metricPackDTO = TimeSeriesMetricPackDTO.builder().identifier(CVNextGenConstants.ERRORS_PACK_IDENTIFIER).build();
     metricPackService.createDefaultMetricPackAndThresholds(accountId, orgIdentifier, projectIdentifier);
   }
 
@@ -65,7 +65,7 @@ public class MetricPackDTOTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testToMetricPackDTO() {
     MetricPack metricPack = createMetricPack();
-    MetricPackDTO metricPackDTO = MetricPackDTO.toMetricPackDTO(metricPack);
+    TimeSeriesMetricPackDTO metricPackDTO = TimeSeriesMetricPackDTO.toMetricPackDTO(metricPack);
     assertThat(metricPackDTO.getIdentifier()).isEqualTo(metricPack.getIdentifier());
   }
 

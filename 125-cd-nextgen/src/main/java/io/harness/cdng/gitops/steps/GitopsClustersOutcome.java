@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.gitops.mappers.ClusterEntityMapper;
+import io.harness.cdng.gitops.mappers.ScopeAndRef;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
@@ -30,23 +32,27 @@ public class GitopsClustersOutcome implements Outcome, ExecutionSweepingOutput {
   @NotNull List<ClusterData> clustersData;
 
   public GitopsClustersOutcome appendCluster(@NotNull Metadata env, @NotNull Metadata cluster) {
+    ScopeAndRef scopedAndRefForCluster = ClusterEntityMapper.getScopeFromClusterRef(cluster.getIdentifier());
     clustersData.add(ClusterData.builder()
                          .envId(env.getIdentifier())
                          .envName(env.getName())
                          .clusterName(cluster.getName())
-                         .clusterId(cluster.getIdentifier())
+                         .clusterId(scopedAndRefForCluster.getRef())
+                         .scope(scopedAndRefForCluster.getScope().toString())
                          .build());
     return this;
   }
 
   public GitopsClustersOutcome appendCluster(
       @NotNull Metadata envGroup, @NotNull Metadata env, @NotNull Metadata cluster) {
+    ScopeAndRef scopedAndRefForCluster = ClusterEntityMapper.getScopeFromClusterRef(cluster.getIdentifier());
     clustersData.add(ClusterData.builder()
                          .envGroupId(envGroup.getIdentifier())
                          .envGroupName(envGroup.getName())
                          .envId(env.getIdentifier())
                          .envName(env.getName())
-                         .clusterId(cluster.getIdentifier())
+                         .clusterId(scopedAndRefForCluster.getRef())
+                         .scope(scopedAndRefForCluster.getScope().toString())
                          .clusterName(cluster.getName())
                          .build());
     return this;
@@ -54,12 +60,14 @@ public class GitopsClustersOutcome implements Outcome, ExecutionSweepingOutput {
 
   public GitopsClustersOutcome appendCluster(
       @NotNull Metadata envGroup, @NotNull Metadata env, @NotNull Metadata cluster, Map<String, Object> variables) {
+    ScopeAndRef scopedAndRefForCluster = ClusterEntityMapper.getScopeFromClusterRef(cluster.getIdentifier());
     clustersData.add(ClusterData.builder()
                          .envGroupId(envGroup.getIdentifier())
                          .envGroupName(envGroup.getName())
                          .envId(env.getIdentifier())
                          .envName(env.getName())
-                         .clusterId(cluster.getIdentifier())
+                         .clusterId(scopedAndRefForCluster.getRef())
+                         .scope(scopedAndRefForCluster.getScope().toString())
                          .clusterName(cluster.getName())
                          .variables(variables)
                          .build());
@@ -77,6 +85,7 @@ public class GitopsClustersOutcome implements Outcome, ExecutionSweepingOutput {
     String envName;
     String clusterId;
     String clusterName;
+    String scope;
     Map<String, Object> variables;
   }
 }

@@ -32,6 +32,7 @@ import io.harness.k8s.model.HelmVersion;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.Data;
 
 @Data
@@ -42,6 +43,7 @@ public class HelmValuesFetchRequest implements TaskParameters, ExecutionCapabili
   private long timeout;
   private HelmChartManifestDelegateConfig helmChartManifestDelegateConfig;
   private boolean closeLogStream;
+  @Default private boolean openNewLogStream = true;
   private List<HelmFetchFileConfig> helmFetchFileConfigList;
 
   @Override

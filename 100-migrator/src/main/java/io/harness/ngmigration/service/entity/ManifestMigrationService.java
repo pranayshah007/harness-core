@@ -10,6 +10,9 @@ package io.harness.ngmigration.service.entity;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
+
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.GitStore.GitStoreBuilder;
@@ -23,6 +26,8 @@ import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.summary.AppManifestSummary;
+import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
@@ -69,7 +74,28 @@ public class ManifestMigrationService extends NgMigrationService {
   }
 
   @Override
+  public BaseSummary getSummary(List<CgEntityNode> entities) {
+    if (isEmpty(entities)) {
+      return null;
+    }
+    Map<String, Long> kindSummary = entities.stream()
+                                        .map(entity -> (ApplicationManifest) entity.getEntity())
+                                        .collect(groupingBy(entity -> entity.getKind().name(), counting()));
+    Map<String, Long> storeSummary = entities.stream()
+                                         .map(entity -> (ApplicationManifest) entity.getEntity())
+                                         .collect(groupingBy(entity -> entity.getStoreType().name(), counting()));
+    return AppManifestSummary.builder()
+        .count(entities.size())
+        .kindSummary(kindSummary)
+        .storeSummary(storeSummary)
+        .build();
+  }
+
+  @Override
   public DiscoveryNode discover(NGMigrationEntity entity) {
+    if (entity == null) {
+      return null;
+    }
     ApplicationManifest appManifest = (ApplicationManifest) entity;
     CgEntityId cgEntityId = CgEntityId.builder().id(appManifest.getUuid()).type(NGMigrationEntityType.MANIFEST).build();
     CgEntityNode cgEntityNode = CgEntityNode.builder()
@@ -177,21 +203,25 @@ public class ManifestMigrationService extends NgMigrationService {
       GitFileConfig gitFileConfig, ManifestProvidedEntitySpec manifestInput, String connectorRef) {
     GitStoreBuilder gitStoreBuilder =
         GitStore.builder()
-            .branch(ParameterField.createValueField(gitFileConfig.getBranch()))
             .commitId(ParameterField.createValueField(gitFileConfig.getCommitId()))
             .connectorRef(ParameterField.createValueField(connectorRef))
             .gitFetchType(gitFileConfig.isUseBranch() ? FetchType.BRANCH : FetchType.COMMIT)
             .repoName(ParameterField.createValueField(gitFileConfig.getRepoName()));
     if (manifestInput != null) {
+      if (StringUtils.isNotBlank(manifestInput.getBranch())) {
+        gitStoreBuilder.branch(ParameterField.createValueField(manifestInput.getBranch()));
+      }
       if (StringUtils.isNotBlank(manifestInput.getFolderPath())) {
-        gitStoreBuilder.folderPath(ParameterField.createValueField(manifestInput.getFolderPath()));
+        gitStoreBuilder.paths(
+            ParameterField.createValueField(Collections.singletonList(manifestInput.getFolderPath())));
       } else if (EmptyPredicate.isNotEmpty(manifestInput.getPaths())) {
         gitStoreBuilder.paths(ParameterField.createValueField(manifestInput.getPaths()));
       } else {
         gitStoreBuilder.paths(ParameterField.createValueField(Collections.singletonList(gitFileConfig.getFilePath())));
       }
     } else {
-      gitStoreBuilder.paths(ParameterField.createValueField(Collections.singletonList(gitFileConfig.getFilePath())));
+      gitStoreBuilder.branch(ParameterField.createValueField(gitFileConfig.getBranch()))
+          .paths(ParameterField.createValueField(Collections.singletonList(gitFileConfig.getFilePath())));
     }
     return gitStoreBuilder.build();
   }

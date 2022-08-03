@@ -33,10 +33,13 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
+import io.harness.exception.InvalidIdentifierRefException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -47,6 +50,7 @@ import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.handler.DummyYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandlerRegistry;
 import io.harness.template.services.NGTemplateServiceHelper;
@@ -303,7 +307,50 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
 
     assertThatThrownBy(
         () -> templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, null, pipelineYaml, false))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(InvalidIdentifierRefException.class)
         .hasMessage("ProjectIdentifier cannot be empty for PROJECT scope");
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void shouldThrowInvalidIdentifierRefExceptionForOutOfScopeReferences() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_ID)
+                                        .versionLabel("v1")
+                                        .templateScope(Scope.ORG)
+                                        .yaml(TemplateReferenceTestHelper.INVALID_IDENTIFIER_REF_YAML)
+                                        .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
+                                        .build();
+
+    templateYamlConversionHandlerRegistry.register(STAGE, new DummyYamlConversionHandler());
+
+    assertThatThrownBy(() -> templateReferenceHelper.populateTemplateReferences(templateEntity))
+        .isInstanceOf(InvalidIdentifierRefException.class)
+        .hasMessage(
+            "Unable to save to ORG. Template can be saved to ORG only when all the referenced entities are available in the scope.");
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void shouldThrowExceptionOnErrorWhileCalculatingReferences() {
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .identifier("template1")
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_ID)
+                                        .versionLabel("v1")
+                                        .templateScope(Scope.ORG)
+                                        .yaml(TemplateReferenceTestHelper.INVALID_YAML)
+                                        .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
+                                        .build();
+
+    templateYamlConversionHandlerRegistry.register(STAGE, new DummyYamlConversionHandler());
+
+    assertThatThrownBy(() -> templateReferenceHelper.populateTemplateReferences(templateEntity))
+        .isInstanceOf(NGTemplateException.class)
+        .hasMessage(
+            "Exception in calculating references for template with identifier template1 and version label v1: Some error1, Some error2");
   }
 }

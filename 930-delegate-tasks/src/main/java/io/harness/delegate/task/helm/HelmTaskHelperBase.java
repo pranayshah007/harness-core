@@ -112,7 +112,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -127,6 +126,7 @@ public class HelmTaskHelperBase {
   public static final String VERSION_KEY = "version:";
   public static final String NAME_KEY = "name:";
   public static final String REGISTRY_URL = "${REGISTRY_URL}";
+  private static final String CHMOD = "chmod go-r ";
 
   @Inject private K8sGlobalConfigService k8sGlobalConfigService;
   @Inject private NgChartmuseumClientFactory ngChartmuseumClientFactory;
@@ -544,10 +544,10 @@ public class HelmTaskHelperBase {
     } finally {
       if (manifest.isUseRepoFlags() && manifest.isDeleteRepoCacheDir()) {
         try {
-          FileUtils.forceDelete(new File(cacheDir));
+          deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
         } catch (IOException ie) {
-          log.error("Deletion of charts folder failed due to : {}",
-              ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
+          log.error(
+              "Deletion of folder failed due to : {}", ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
         }
       }
     }
@@ -576,10 +576,10 @@ public class HelmTaskHelperBase {
     } finally {
       if (manifest.isUseRepoFlags() && manifest.isDeleteRepoCacheDir()) {
         try {
-          FileUtils.forceDelete(new File(cacheDir));
+          deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
         } catch (IOException ie) {
-          log.error("Deletion of charts folder failed due to : {}",
-              ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
+          log.error(
+              "Deletion of folder failed due to : {}", ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
         }
       }
     }
@@ -651,10 +651,10 @@ public class HelmTaskHelperBase {
 
       if (manifest.isUseRepoFlags() && manifest.isDeleteRepoCacheDir()) {
         try {
-          FileUtils.forceDelete(new File(cacheDir));
+          deleteDirectoryAndItsContentIfExists(Paths.get(cacheDir).getParent().toString());
         } catch (IOException ie) {
-          log.error("Deletion of charts folder failed due to : {}",
-              ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
+          log.error(
+              "Deletion of folder failed due to : {}", ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
         }
       }
     }
@@ -1233,6 +1233,17 @@ public class HelmTaskHelperBase {
       default:
         throw new InvalidRequestException(
             format("Store type: %s not supported for helm values fetch task NG", helmStoreDelegateConfig.getType()));
+    }
+  }
+
+  public void revokeReadPermission(String filePath) {
+    String cmd = CHMOD + filePath;
+
+    ProcessExecutor processExecutor = new ProcessExecutor().command("/bin/sh", "-c", cmd);
+    try {
+      processExecutor.execute();
+    } catch (Exception e) {
+      log.error("Unable to revoke the readable permissions for KubeConfig file ", e);
     }
   }
 }

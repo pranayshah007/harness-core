@@ -10,6 +10,7 @@ package io.harness.cdng.azure.webapp;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.AzureWebAppSlotDeploymentStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -26,11 +27,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -50,9 +53,18 @@ public class AzureWebAppSlotDeploymentStepInfo
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
+  @NotNull @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> webApp;
+  @NotNull
+  @NotEmpty
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  ParameterField<String> deploymentSlot;
+
   @Builder(builderMethodName = "infoBuilder")
-  public AzureWebAppSlotDeploymentStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+  public AzureWebAppSlotDeploymentStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<String> webApp, ParameterField<String> deploymentSlot) {
     super(delegateSelectors);
+    this.webApp = webApp;
+    this.deploymentSlot = deploymentSlot;
   }
 
   @Override
@@ -67,7 +79,11 @@ public class AzureWebAppSlotDeploymentStepInfo
 
   @Override
   public SpecParameters getSpecParameters() {
-    return AzureWebAppSlotDeploymentStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
+    return AzureWebAppSlotDeploymentStepParameters.infoBuilder()
+        .webApp(this.getWebApp())
+        .deploymentSlot(this.getDeploymentSlot())
+        .delegateSelectors(this.getDelegateSelectors())
+        .build();
   }
 
   @Override

@@ -72,7 +72,7 @@ public class GitopsClustersStepTest extends CategoryTest {
   /*
   envgroup -> envGroupId
   environments -> env1, env2, env3
-  env1 -> clusters: c1, c2
+  env1 -> clusters: c1, c2, account.x1, org.x2
   env2 -> clusters: c3, c4, c5 (c5 does not exist on gitops)
   env3 -> no gitops clusters
    */
@@ -92,7 +92,9 @@ public class GitopsClustersStepTest extends CategoryTest {
   private void mockClusterService() {
     doReturn(
         new PageImpl(asList(io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c1").envRef("env1").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c2").envRef("env1").build())))
+            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c2").envRef("env1").build(),
+            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("account.x1").envRef("env1").build(),
+            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("organization.x2").envRef("env1").build())))
         .when(clusterService)
         .listAcrossEnv(0, EXPECTED_PAGE_SIZE, "accountId", "orgId", "projId", ImmutableSet.of("env1"));
 
@@ -101,7 +103,9 @@ public class GitopsClustersStepTest extends CategoryTest {
             io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c2").envRef("env1").build(),
             io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c3").envRef("env2").build(),
             io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c4").envRef("env2").build(),
-            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c5").envRef("env2").build())))
+            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("c5").envRef("env2").build(),
+            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("account.x1").envRef("env1").build(),
+            io.harness.cdng.gitops.entity.Cluster.builder().clusterRef("organization.x2").envRef("env1").build())))
         .when(clusterService)
         .listAcrossEnv(0, EXPECTED_PAGE_SIZE, "accountId", "orgId", "projId", ImmutableSet.of("env1", "env2", "env3"));
 
@@ -184,6 +188,36 @@ public class GitopsClustersStepTest extends CategoryTest {
     doReturn(Response.success(PageResponse.builder().content(asList(new Cluster("c4", "c4-name"))).build()))
         .when(rmock4)
         .execute();
+
+    Call<ResponseDTO<List<Cluster>>> rmock5 = mock(Call.class);
+    doReturn(rmock5)
+        .when(gitopsResourceClient)
+        .listClusters(ClusterQuery.builder()
+                          .accountId("accountId")
+                          .orgIdentifier("")
+                          .projectIdentifier("")
+                          .pageIndex(0)
+                          .pageSize(1)
+                          .filter(ImmutableMap.of("identifier", ImmutableMap.of("$in", ImmutableSet.of("x1"))))
+                          .build());
+    doReturn(Response.success(PageResponse.builder().content(asList(new Cluster("x1", "x1-name"))).build()))
+        .when(rmock5)
+        .execute();
+
+    Call<ResponseDTO<List<Cluster>>> rmock6 = mock(Call.class);
+    doReturn(rmock6)
+        .when(gitopsResourceClient)
+        .listClusters(ClusterQuery.builder()
+                          .accountId("accountId")
+                          .orgIdentifier("orgId")
+                          .projectIdentifier("")
+                          .pageIndex(0)
+                          .pageSize(1)
+                          .filter(ImmutableMap.of("identifier", ImmutableMap.of("$in", ImmutableSet.of("x2"))))
+                          .build());
+    doReturn(Response.success(PageResponse.builder().content(asList(new Cluster("x2", "x2-name"))).build()))
+        .when(rmock6)
+        .execute();
   }
 
   @Test
@@ -212,22 +246,27 @@ public class GitopsClustersStepTest extends CategoryTest {
     final Object[] set1 = new Object[] {
         ClusterStepParameters.builder().envGroupRef("envGroupId").deployToAllEnvs(true).build(),
         new GitopsClustersOutcome(new ArrayList<>())
+
             .appendCluster(new Metadata("envGroupId", null), new Metadata("env2", null), new Metadata("c3", "c3-name"))
             .appendCluster(new Metadata("envGroupId", null), new Metadata("env2", null), new Metadata("c4", "c4-name"))
+            .appendCluster(
+                new Metadata("envGroupId", null), new Metadata("env1", null), new Metadata("account.x1", "x1-name"))
+            .appendCluster(new Metadata("envGroupId", null), new Metadata("env1", null),
+                new Metadata("organization.x2", "x2-name"))
             .appendCluster(new Metadata("envGroupId", null), new Metadata("env1", null), new Metadata("c1", "c1-name"))
             .appendCluster(new Metadata("envGroupId", null), new Metadata("env1", null), new Metadata("c2", "c2-name")),
 
     };
-    final Object[] set2 = new Object[] {
-        ClusterStepParameters.builder()
-            .envClusterRefs(asList(EnvClusterRefs.builder().envRef("env1").deployToAll(true).build()))
-            .deployToAllEnvs(false)
-            .build(),
-        new GitopsClustersOutcome(new ArrayList<>())
-            .appendCluster(new Metadata("env1", null), new Metadata("c1", "c1-name"))
-            .appendCluster(new Metadata("env1", null), new Metadata("c2", "c2-name")),
-
-    };
+    final Object[] set2 =
+        new Object[] {ClusterStepParameters.builder()
+                          .envClusterRefs(asList(EnvClusterRefs.builder().envRef("env1").deployToAll(true).build()))
+                          .deployToAllEnvs(false)
+                          .build(),
+            new GitopsClustersOutcome(new ArrayList<>())
+                .appendCluster(new Metadata("env1", null), new Metadata("account.x1", "x1-name"))
+                .appendCluster(new Metadata("env1", null), new Metadata("organization.x2", "x2-name"))
+                .appendCluster(new Metadata("env1", null), new Metadata("c1", "c1-name"))
+                .appendCluster(new Metadata("env1", null), new Metadata("c2", "c2-name"))};
 
     final Object[] set3 = new Object[] {
         ClusterStepParameters.builder()

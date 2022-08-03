@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.validator.Condition;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.dto.EmbeddedUserDetailsDTO;
@@ -39,8 +38,6 @@ import org.hibernate.validator.constraints.NotBlank;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(name = "File", description = "This is details of the file entity defined in Harness.")
-@Condition(property = "type", propertyValue = "FILE", requiredProperties = {"fileUsage"},
-    message = "FileUsage is required for file.")
 @NoArgsConstructor
 public class FileDTO {
   @ApiModelProperty(required = true)

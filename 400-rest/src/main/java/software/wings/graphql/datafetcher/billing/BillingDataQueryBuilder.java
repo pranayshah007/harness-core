@@ -8,8 +8,6 @@
 package software.wings.graphql.datafetcher.billing;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
-import static io.harness.beans.FeatureName.CE_BILLING_DATA_HOURLY_PRE_AGGREGATION;
-import static io.harness.beans.FeatureName.CE_BILLING_DATA_PRE_AGGREGATION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -162,8 +160,7 @@ public class BillingDataQueryBuilder {
     groupBy = getGroupByOrderedByDrillDown(groupBy);
 
     if (!isGroupByHour(groupByTime) && !shouldUseHourlyData(filters, accountId)) {
-      if (featureFlagService.isEnabled(CE_BILLING_DATA_PRE_AGGREGATION, accountId)
-          && isValidGroupByForPreAggregation(groupBy) && areFiltersValidForPreAggregation(filters)
+      if (isValidGroupByForPreAggregation(groupBy) && areFiltersValidForPreAggregation(filters)
           && areAggregationsValidForPreAggregation(aggregateFunction)) {
         selectQuery.addCustomFromTable(BILLING_DATA_PRE_AGGREGATED_TABLE);
         aggregateFunction = getSupportedAggregations(aggregateFunction);
@@ -171,8 +168,7 @@ public class BillingDataQueryBuilder {
         selectQuery.addCustomFromTable(schema.getBillingDataTable());
       }
     } else {
-      if (featureFlagService.isEnabled(CE_BILLING_DATA_HOURLY_PRE_AGGREGATION, accountId)
-          && isValidGroupByForPreAggregation(groupBy) && areFiltersValidForPreAggregation(filters)
+      if (isValidGroupByForPreAggregation(groupBy) && areFiltersValidForPreAggregation(filters)
           && areAggregationsValidForPreAggregation(aggregateFunction)) {
         selectQuery.addCustomFromTable(BILLING_DATA_HOURLY_PRE_AGGREGATED_TABLE);
         aggregateFunction = getSupportedAggregations(aggregateFunction);
@@ -226,16 +222,14 @@ public class BillingDataQueryBuilder {
     List<BillingDataMetaDataFields> fieldNames = new ArrayList<>();
 
     if (!shouldUseHourlyData(filters, accountId)) {
-      if (featureFlagService.isEnabled(CE_BILLING_DATA_PRE_AGGREGATION, accountId)
-          && areFiltersValidForPreAggregation(filters)) {
+      if (areFiltersValidForPreAggregation(filters)) {
         selectQuery.addCustomFromTable(BILLING_DATA_PRE_AGGREGATED_TABLE);
         aggregateFunction = getSupportedAggregations(aggregateFunction);
       } else {
         selectQuery.addCustomFromTable(schema.getBillingDataTable());
       }
     } else {
-      if (featureFlagService.isEnabled(CE_BILLING_DATA_HOURLY_PRE_AGGREGATION, accountId)
-          && areFiltersValidForPreAggregation(filters)) {
+      if (areFiltersValidForPreAggregation(filters)) {
         selectQuery.addCustomFromTable(BILLING_DATA_HOURLY_PRE_AGGREGATED_TABLE);
         aggregateFunction = getSupportedAggregations(aggregateFunction);
       } else {
@@ -279,15 +273,13 @@ public class BillingDataQueryBuilder {
     List<BillingDataMetaDataFields> groupByFields = new ArrayList<>();
 
     if (!shouldUseHourlyData(filters, accountId)) {
-      if (featureFlagService.isEnabled(CE_BILLING_DATA_PRE_AGGREGATION, accountId)
-          && isValidGroupByForPreAggregation(groupBy) && areFiltersValidForPreAggregation(filters)) {
+      if (isValidGroupByForPreAggregation(groupBy) && areFiltersValidForPreAggregation(filters)) {
         selectQuery.addCustomFromTable(BILLING_DATA_PRE_AGGREGATED_TABLE);
       } else {
         selectQuery.addCustomFromTable(schema.getBillingDataTable());
       }
     } else {
-      if (featureFlagService.isEnabled(CE_BILLING_DATA_HOURLY_PRE_AGGREGATION, accountId)
-          && isValidGroupByForPreAggregation(groupBy) && areFiltersValidForPreAggregation(filters)) {
+      if (isValidGroupByForPreAggregation(groupBy) && areFiltersValidForPreAggregation(filters)) {
         selectQuery.addCustomFromTable(BILLING_DATA_HOURLY_PRE_AGGREGATED_TABLE);
       } else {
         selectQuery.addCustomFromTable(BILLING_DATA_HOURLY_TABLE);
@@ -388,8 +380,7 @@ public class BillingDataQueryBuilder {
     }
 
     if (!isGroupByHour(groupByTime) && !shouldUseHourlyData(filters, accountId)) {
-      if (featureFlagService.isEnabled(CE_BILLING_DATA_PRE_AGGREGATION, accountId)
-          && isValidGroupByForPreAggregation(groupBy) && areFiltersValidForPreAggregation(filters)
+      if (isValidGroupByForPreAggregation(groupBy) && areFiltersValidForPreAggregation(filters)
           && areAggregationsValidForPreAggregation(aggregateFunction)) {
         selectQuery.addCustomFromTable(BILLING_DATA_PRE_AGGREGATED_TABLE);
         aggregateFunction = getSupportedAggregations(aggregateFunction);
@@ -397,8 +388,7 @@ public class BillingDataQueryBuilder {
         selectQuery.addCustomFromTable(schema.getBillingDataTable());
       }
     } else {
-      if (featureFlagService.isEnabled(CE_BILLING_DATA_HOURLY_PRE_AGGREGATION, accountId)
-          && isValidGroupByForPreAggregation(groupBy) && areFiltersValidForPreAggregation(filters)
+      if (isValidGroupByForPreAggregation(groupBy) && areFiltersValidForPreAggregation(filters)
           && areAggregationsValidForPreAggregation(aggregateFunction)) {
         selectQuery.addCustomFromTable(BILLING_DATA_HOURLY_PRE_AGGREGATED_TABLE);
         aggregateFunction = getSupportedAggregations(aggregateFunction);
@@ -443,15 +433,13 @@ public class BillingDataQueryBuilder {
 
     List<BillingDataMetaDataFields> fieldNames = new ArrayList<>();
     if (!shouldUseHourlyData(filters, accountId)) {
-      if (featureFlagService.isEnabled(CE_BILLING_DATA_PRE_AGGREGATION, accountId)
-          && isValidGroupByForPreAggregation(groupBy) && areFiltersValidForPreAggregation(filters)) {
+      if (isValidGroupByForPreAggregation(groupBy) && areFiltersValidForPreAggregation(filters)) {
         selectQuery.addCustomFromTable(BILLING_DATA_PRE_AGGREGATED_TABLE);
       } else {
         selectQuery.addCustomFromTable(schema.getBillingDataTable());
       }
     } else {
-      if (featureFlagService.isEnabled(CE_BILLING_DATA_HOURLY_PRE_AGGREGATION, accountId)
-          && isValidGroupByForPreAggregation(groupBy) && areFiltersValidForPreAggregation(filters)) {
+      if (isValidGroupByForPreAggregation(groupBy) && areFiltersValidForPreAggregation(filters)) {
         selectQuery.addCustomFromTable(BILLING_DATA_HOURLY_PRE_AGGREGATED_TABLE);
       } else {
         selectQuery.addCustomFromTable(BILLING_DATA_HOURLY_TABLE);

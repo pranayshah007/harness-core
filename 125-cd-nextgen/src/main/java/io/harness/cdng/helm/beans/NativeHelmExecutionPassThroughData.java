@@ -13,8 +13,10 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -27,4 +29,6 @@ import org.springframework.data.annotation.TypeAlias;
 public class NativeHelmExecutionPassThroughData implements PassThroughData {
   InfrastructureOutcome infrastructure;
   UnitProgressData lastActiveUnitProgressData;
+  String zippedManifestId;
+  List<ManifestFiles> manifestFiles;
 }

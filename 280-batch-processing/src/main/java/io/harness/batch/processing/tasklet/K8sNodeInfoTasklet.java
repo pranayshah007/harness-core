@@ -84,7 +84,7 @@ public class K8sNodeInfoTasklet implements Tasklet {
               .filter(x -> x.getMetaData().containsKey(InstanceMetaDataConstants.INSTANCE_CATEGORY))
               .collect(Collectors.toList()));
 
-      if (featureFlagService.isEnabled(FeatureName.NODE_RECOMMENDATION_1, jobConstants.getAccountId())) {
+      if (featureFlagService.isEnabled(FeatureName.NODE_RECOMMENDATION_AGGREGATE, jobConstants.getAccountId())) {
         instanceInfoTimescaleDAO.insertIntoNodeInfo(instanceInfoList);
       }
     } while (publishedMessageList.size() == batchSize);

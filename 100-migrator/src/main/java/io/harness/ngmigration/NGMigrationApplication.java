@@ -51,6 +51,7 @@ import io.harness.exception.ConstraintViolationExceptionMapper;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.ff.FeatureFlagService;
+import io.harness.filter.FiltersModule;
 import io.harness.govern.ProviderModule;
 import io.harness.grpc.GrpcServiceConfigurationModule;
 import io.harness.grpc.server.GrpcServerConfig;
@@ -511,6 +512,7 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
                     }))
                     .build());
 
+    modules.add(FiltersModule.getInstance());
     modules.add(new ValidationModule(validatorFactory));
     modules.add(new DelegateServiceModule());
     modules.add(new CapabilityModule());

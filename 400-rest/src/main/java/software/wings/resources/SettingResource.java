@@ -114,6 +114,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class SettingResource {
   private static final String LIMIT = "" + Integer.MAX_VALUE;
   private static final String CUSTOM_MAX_LIMIT = "1200";
+  private static final String LARGE_PAGE_SIZE_LIMIT = "3000";
 
   @Inject private SettingsService settingsService;
   @Inject private BuildSourceService buildSourceService;
@@ -174,11 +175,21 @@ public class SettingResource {
           Boolean.TRUE.equals(forUsageInNewApp));
     } else {
       if (featureFlagService.isEnabled(FeatureName.CUSTOM_MAX_PAGE_SIZE, accountId)) {
+        String baseLimit = CUSTOM_MAX_LIMIT;
+        /**
+         * We want to properly implement Paginated API call for Settings API but because of scoping logic, it
+         * is complex to solve.
+         */
+        if (featureFlagService.isEnabled(FeatureName.EXTRA_LARGE_PAGE_SIZE, accountId)) {
+          baseLimit = LARGE_PAGE_SIZE_LIMIT;
+        }
+
         String limit = PageRequest.UNLIMITED.equals(pageRequest.getLimit())
-            ? CUSTOM_MAX_LIMIT
-            : Integer.toString(Parser.asInt(pageRequest.getLimit(), Integer.parseInt(CUSTOM_MAX_LIMIT)));
+            ? baseLimit
+            : Integer.toString(Parser.asInt(pageRequest.getLimit(), Integer.parseInt(baseLimit)));
         pageRequest.setLimit(limit);
       }
+
       result = settingsService.list(pageRequest, currentAppId, currentEnvId, Boolean.TRUE.equals(forUsageInNewApp));
     }
     result.forEach(

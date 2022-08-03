@@ -75,7 +75,8 @@ public class AzureAppServiceService {
     return getAzureAppServicePreDeploymentDataAndLog(packageDeploymentContext.getAzureWebClientContext(),
         packageDeploymentContext.getSlotName(), packageDeploymentContext.getTargetSlotName(),
         packageDeploymentContext.getAppSettingsToAdd(), packageDeploymentContext.getConnSettingsToAdd(), false,
-        packageDeploymentContext.getLogCallbackProvider(), false, packageDeploymentContext.isBasicDeployment());
+        packageDeploymentContext.getLogCallbackProvider(), packageDeploymentContext.isSkipTargetSlotValidation(),
+        packageDeploymentContext.isBasicDeployment());
   }
 
   @VisibleForTesting

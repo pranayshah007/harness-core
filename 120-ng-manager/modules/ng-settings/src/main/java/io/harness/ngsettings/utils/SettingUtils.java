@@ -8,9 +8,12 @@
 package io.harness.ngsettings.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
+import io.harness.beans.ScopeLevel;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngsettings.SettingSource;
 import io.harness.ngsettings.SettingValueType;
@@ -78,15 +81,42 @@ public class SettingUtils {
   }
 
   public static SettingSource getSettingSource(Setting setting) {
-    if (isNotEmpty(setting.getAccountIdentifier())) {
-      if (isNotEmpty(setting.getOrgIdentifier())) {
-        if (isNotEmpty(setting.getProjectIdentifier())) {
-          return SettingSource.PROJECT;
-        }
-        return SettingSource.ORG;
-      }
-      return SettingSource.ACCOUNT;
+    if (isEmpty(setting.getAccountIdentifier())) {
+      return SettingSource.DEFAULT;
     }
-    return SettingSource.DEFAULT;
+    return getSettingSourceFromOrgAndProject(setting.getOrgIdentifier(), setting.getProjectIdentifier());
+  }
+
+  public static SettingSource getSettingSourceFromOrgAndProject(String orgIdentifier, String projectIdentifier) {
+    if (isNotEmpty(orgIdentifier)) {
+      if (isNotEmpty(projectIdentifier)) {
+        return SettingSource.PROJECT;
+      }
+      return SettingSource.ORG;
+    }
+    return SettingSource.ACCOUNT;
+  }
+
+  public ScopeLevel getHighestScopeForSetting(Set<ScopeLevel> allowedScopes) {
+    if (allowedScopes.contains(ScopeLevel.ACCOUNT)) {
+      return ScopeLevel.ACCOUNT;
+    } else if (allowedScopes.contains(ScopeLevel.ORGANIZATION)) {
+      return ScopeLevel.ORGANIZATION;
+    } else {
+      return ScopeLevel.PROJECT;
+    }
+  }
+
+  public Scope getParentScope(Scope currentScope) {
+    if (isNotEmpty(currentScope.getProjectIdentifier())) {
+      return Scope.builder()
+          .accountIdentifier(currentScope.getAccountIdentifier())
+          .orgIdentifier(currentScope.getOrgIdentifier())
+          .build();
+    } else if (isNotEmpty(currentScope.getOrgIdentifier())) {
+      return Scope.builder().accountIdentifier(currentScope.getAccountIdentifier()).build();
+    } else {
+      return null;
+    }
   }
 }

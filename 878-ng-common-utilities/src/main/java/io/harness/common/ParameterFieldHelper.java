@@ -58,18 +58,6 @@ public class ParameterFieldHelper {
     return isNull(fieldValue.getValue()) ? "" : fieldValue.getValue();
   }
 
-  public ParameterField<String> getParameterFieldHandleValueNull(ParameterField<String> fieldValue) {
-    if (isNull(fieldValue)) {
-      return null;
-    }
-
-    if (isNull(fieldValue.getValue())) {
-      fieldValue.setValue("");
-    }
-
-    return fieldValue;
-  }
-
   public Optional<String> getParameterFieldFinalValue(ParameterField<String> fieldValue) {
     if (fieldValue == null) {
       return Optional.empty();

@@ -23,6 +23,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -34,6 +35,7 @@ import io.harness.delegate.task.azure.appservice.AzureAppServiceResourceUtilitie
 import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDockerDeploymentContext;
 import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress;
+import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.exception.AzureWebAppRollbackExceptionData;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppRollbackRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppNGRollbackResponse;
@@ -150,6 +152,33 @@ public class AzureWebAppRollbackRequestHandlerTest {
 
     assertThat(requestResponse).isNotNull();
     verify(azureAppServiceDeploymentService)
+        .rerouteProductionSlotTraffic(any(), eq(DEPLOYMENT_SLOT), eq(TRAFFIC_WEIGHT), any());
+    verify(azureAppServiceResourceUtilities).swapSlots(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testNoRollbackSwapSlotsAndTrafficShiftWhenSlotIsProduction() {
+    AzureAppServicePreDeploymentData preDeploymentData =
+        AzureTestUtils.buildTestPreDeploymentData(AppServiceDeploymentProgress.SWAP_SLOT);
+    preDeploymentData.setSlotName("production");
+
+    AzureWebAppInfraDelegateConfig azureWebAppInfraDelegateConfig =
+        AzureTestUtils.createTestWebAppInfraDelegateConfig();
+    azureWebAppInfraDelegateConfig.setDeploymentSlot("production");
+    final AzureWebAppRollbackRequest request = AzureWebAppRollbackRequest.builder()
+                                                   .accountId("accountId")
+                                                   .preDeploymentData(preDeploymentData)
+                                                   .infrastructure(azureWebAppInfraDelegateConfig)
+                                                   .timeoutIntervalInMin(10)
+                                                   .build();
+
+    AzureWebAppRequestResponse requestResponse =
+        requestHandler.execute(request, AzureTestUtils.createTestAzureConfig(), logCallbackProvider);
+
+    assertThat(requestResponse).isNotNull();
+    verify(azureAppServiceDeploymentService, times(0))
         .rerouteProductionSlotTraffic(any(), eq(DEPLOYMENT_SLOT), eq(TRAFFIC_WEIGHT), any());
     verify(azureAppServiceResourceUtilities).swapSlots(any(), any(), any(), any(), any());
   }

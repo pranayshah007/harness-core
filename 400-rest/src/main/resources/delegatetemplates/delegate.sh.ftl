@@ -5,6 +5,10 @@ if [ -z "$1" ]; then
   exit 0
 fi
 
+if [ -e config-delegate.yml ]; then
+  rm config-delegate.yml
+fi
+
 ULIM=$(ulimit -n)
 echo "ulimit -n is set to $ULIM"
 if [[ "$ULIM" == "unlimited" || $ULIM -lt 10000 ]]; then
@@ -234,6 +238,14 @@ fi
 
 if [ ! -z "$KUBECTL_PATH" ] && ! `grep kubectlPath config-delegate.yml > /dev/null` ; then
   echo "kubectlPath: $KUBECTL_PATH" >> config-delegate.yml
+fi
+
+if [ ! -z "$HELM3_PATH" ] && ! `grep helm3Path config-delegate.yml > /dev/null` ; then
+  echo "helm3Path: $HELM3_PATH" >> config-delegate.yml
+fi
+
+if [ ! -z "$HELM_PATH" ] && ! `grep helmPath config-delegate.yml > /dev/null` ; then
+  echo "helmPath: $HELM_PATH" >> config-delegate.yml
 fi
 
 if [ ! -z "$CF_CLI6_PATH" ] && ! `grep cfCli6Path config-delegate.yml > /dev/null` ; then

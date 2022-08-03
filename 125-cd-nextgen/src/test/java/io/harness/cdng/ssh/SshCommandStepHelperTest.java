@@ -55,16 +55,21 @@ import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
 import io.harness.pms.data.OrchestrationRefType;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
 import io.harness.ssh.FileSourceType;
+import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellType;
+import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
+import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -89,6 +94,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
   @Mock private EncryptedDataDetail encryptedDataDetail;
   @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Spy @InjectMocks private SshCommandStepHelper helper;
 
@@ -156,6 +162,19 @@ public class SshCommandStepHelperTest extends CategoryTest {
       ArtifactoryArtifactDelegateConfig.builder().build();
   private final ParameterField workingDirParam = ParameterField.createValueField(workingDir);
 
+  private OptionalSweepingOutput pdcSshOptionalSweepingOutput =
+      OptionalSweepingOutput.builder()
+          .found(true)
+          .output(SshInfraDelegateConfigOutput.builder().sshInfraDelegateConfig(pdcSshInfraDelegateConfig).build())
+          .build();
+
+  private OptionalSweepingOutput pdcWinRmOptionalSweepingOutput =
+      OptionalSweepingOutput.builder()
+          .found(true)
+          .output(
+              WinRmInfraDelegateConfigOutput.builder().winRmInfraDelegateConfig(pdcWinRmInfraDelegateConfig).build())
+          .build();
+
   @Before
   public void prepare() {
     MockitoAnnotations.initMocks(this);
@@ -200,6 +219,11 @@ public class SshCommandStepHelperTest extends CategoryTest {
     doReturn(sshServiceOutcome)
         .when(outcomeService)
         .resolve(eq(ambiance), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE)));
+    doReturn(pdcSshOptionalSweepingOutput)
+        .when(executionSweepingOutputService)
+        .resolveOptional(eq(ambiance),
+            eq(RefObjectUtils.getSweepingOutputRefObject(
+                OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME)));
     doReturn(pdcSshInfraDelegateConfig).when(sshEntityHelper).getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
     doReturn(workingDir).when(helper).getWorkingDirectory(eq(workingDirParam), any(ScriptType.class), anyBoolean());
     doReturn(taskEnv).when(helper).getEnvironmentVariables(env);
@@ -227,6 +251,11 @@ public class SshCommandStepHelperTest extends CategoryTest {
     doReturn(sshServiceOutcome)
         .when(outcomeService)
         .resolve(eq(ambiance), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE)));
+    doReturn(pdcSshOptionalSweepingOutput)
+        .when(executionSweepingOutputService)
+        .resolveOptional(eq(ambiance),
+            eq(RefObjectUtils.getSweepingOutputRefObject(
+                OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME)));
     doReturn(pdcSshInfraDelegateConfig).when(sshEntityHelper).getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
     doReturn(taskEnv).when(helper).getEnvironmentVariables(env);
     CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
@@ -252,6 +281,11 @@ public class SshCommandStepHelperTest extends CategoryTest {
     doReturn(winRmServiceOutcome)
         .when(outcomeService)
         .resolve(eq(ambiance), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE)));
+    doReturn(pdcWinRmOptionalSweepingOutput)
+        .when(executionSweepingOutputService)
+        .resolveOptional(eq(ambiance),
+            eq(RefObjectUtils.getSweepingOutputRefObject(
+                OutputExpressionConstants.WINRM_INFRA_DELEGATE_CONFIG_OUTPUT_NAME)));
     doReturn(pdcWinRmInfraDelegateConfig)
         .when(sshEntityHelper)
         .getWinRmInfraDelegateConfig(pdcInfrastructure, ambiance);
@@ -281,6 +315,11 @@ public class SshCommandStepHelperTest extends CategoryTest {
     doReturn(winRmServiceOutcome)
         .when(outcomeService)
         .resolve(eq(ambiance), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE)));
+    doReturn(pdcWinRmOptionalSweepingOutput)
+        .when(executionSweepingOutputService)
+        .resolveOptional(eq(ambiance),
+            eq(RefObjectUtils.getSweepingOutputRefObject(
+                OutputExpressionConstants.WINRM_INFRA_DELEGATE_CONFIG_OUTPUT_NAME)));
     doReturn(pdcWinRmInfraDelegateConfig)
         .when(sshEntityHelper)
         .getWinRmInfraDelegateConfig(pdcInfrastructure, ambiance);

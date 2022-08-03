@@ -91,7 +91,7 @@ public class CEYamlResource {
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam("connectorIdentifier") String connectorIdentifier) throws IOException {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
-      String serverName = request.getServerName();
+      String serverName = getServerName(request);
       String harnessHost = request.getScheme() + "://" + serverName;
       File yamlFile =
           ceYamlService.downloadCostOptimisationYaml(accountId, connectorIdentifier, harnessHost, serverName);
@@ -117,7 +117,7 @@ public class CEYamlResource {
         throw new InvalidRequestException("Feature BILLING not supported for CEK8sCluster Connector Setup");
       }
 
-      final String serverName = request.getServerName();
+      final String serverName = getServerName(request);
       final String harnessHost = request.getScheme() + "://" + serverName;
 
       try {
@@ -143,6 +143,15 @@ public class CEYamlResource {
     }
   }
 
+  private String getServerName(HttpServletRequest request) {
+    log.info("Request for yaml download is {}", request);
+    String serverName = request.getServerName();
+    if (null != serverName) {
+      return serverName.split(",")[0];
+    }
+    return serverName;
+  }
+
   @POST
   @Path(CLOUD_COST_K8S_CLUSTER_SETUP_V2)
   @Timed
@@ -157,7 +166,7 @@ public class CEYamlResource {
     includeVisibility = firstNonNull(includeVisibility, Boolean.FALSE);
     includeOptimization = firstNonNull(includeOptimization, Boolean.FALSE);
 
-    final String serverName = request.getServerName();
+    final String serverName = getServerName(request);
     final String harnessHost = request.getScheme() + "://" + serverName;
 
     try {

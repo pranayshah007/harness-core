@@ -17,6 +17,7 @@ import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.steps.InfrastructureStep;
+import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStep;
 import io.harness.cdng.pipeline.executions.beans.CDPipelineModuleInfo;
 import io.harness.cdng.pipeline.executions.beans.CDPipelineModuleInfo.CDPipelineModuleInfoBuilder;
 import io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo;
@@ -113,7 +114,9 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
   }
 
   private boolean isInfrastructureNodeAndCompleted(StepType stepType, Status status) {
-    return Objects.equals(stepType, InfrastructureStep.STEP_TYPE) && StatusUtils.isFinalStatus(status);
+    return (Objects.equals(stepType, InfrastructureStep.STEP_TYPE)
+               || Objects.equals(stepType, InfrastructureTaskExecutableStep.STEP_TYPE))
+        && StatusUtils.isFinalStatus(status);
   }
 
   private boolean isGitopsNodeAndCompleted(StepType stepType, Status status) {
@@ -139,7 +142,8 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
         cdPipelineModuleInfoBuilder.envIdentifier(infrastructureOutcome.getEnvironment().getIdentifier())
             .environmentType(infrastructureOutcome.getEnvironment().getType())
             .infrastructureType(infrastructureOutcome.getKind())
-            .infrastructureIdentifier(infrastructureOutcome.getInfraIdentifier());
+            .infrastructureIdentifier(infrastructureOutcome.getInfraIdentifier())
+            .infrastructureName(infrastructureOutcome.getInfraName());
       }
     } else if (isGitopsNodeAndCompleted(stepType, event.getStatus())) {
       OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
@@ -176,17 +180,22 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
                                                       .identifier(outcome.getIdentifier())
                                                       .displayName(outcome.getName())
                                                       .deploymentType(outcome.getServiceDefinitionType())
+                                                      .gitOpsEnabled(outcome.isGitOpsEnabled())
                                                       .artifacts(mapArtifactsOutcomeToSummary(artifactsOutcome))
                                                       .build()));
     } else if (isInfrastructureNodeAndCompleted(stepType, event.getStatus())) {
-      Optional<InfrastructureOutcome> environmentOutcome = getInfrastructureOutcome(event);
-      environmentOutcome.ifPresent(outcome
-          -> cdStageModuleInfoBuilder.infraExecutionSummary(InfraExecutionSummary.builder()
-                                                                .identifier(outcome.getEnvironment().getIdentifier())
-                                                                .name(outcome.getEnvironment().getName())
-                                                                .type(outcome.getEnvironment().getType().name())
-                                                                .infrastructureIdentifier(outcome.getInfraIdentifier())
-                                                                .build()));
+      Optional<InfrastructureOutcome> infrastructureOutcome = getInfrastructureOutcome(event);
+      infrastructureOutcome.ifPresent(outcome -> {
+        if (outcome.getEnvironment() != null) {
+          cdStageModuleInfoBuilder.infraExecutionSummary(InfraExecutionSummary.builder()
+                                                             .identifier(outcome.getEnvironment().getIdentifier())
+                                                             .name(outcome.getEnvironment().getName())
+                                                             .type(outcome.getEnvironment().getType().name())
+                                                             .infrastructureIdentifier(outcome.getInfraIdentifier())
+                                                             .infrastructureName(outcome.getInfraName())
+                                                             .build());
+        }
+      });
     } else if (isGitopsNodeAndCompleted(stepType, event.getStatus())) {
       OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
           event.getAmbiance(), RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));

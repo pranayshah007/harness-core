@@ -21,6 +21,7 @@ import software.wings.beans.Account;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.Instance.InstanceBuilder;
 import software.wings.beans.infrastructure.instance.stats.InstanceStatsSnapshot;
+import software.wings.beans.infrastructure.instance.stats.ServerlessInstanceStats;
 
 import com.google.inject.Inject;
 import java.time.Instant;
@@ -53,31 +54,39 @@ public class InstancesPurgeJobTest extends WingsBaseTest {
     generateAccount();
     generateInstances();
     generateInstanceStats();
+    generateServerlessInstanceStats();
 
     List<Instance> allInstances = persistence.createQuery(Instance.class).asList();
     List<InstanceStatsSnapshot> allInstanceStats = persistence.createQuery(InstanceStatsSnapshot.class).asList();
+    List<ServerlessInstanceStats> allServerlessInstanceStats =
+        persistence.createQuery(ServerlessInstanceStats.class).asList();
 
     List<Instance> instancesThatShouldBeRetained =
         allInstances.stream()
             .filter(instance
-                -> !instance.isDeleted()
-                    || instance.getDeletedAt() >= job.getStartingInstantOfRetentionOfInstances().toEpochMilli())
+                -> !instance.isDeleted() || instance.getDeletedAt() >= job.getRetentionStartTime(2).toEpochMilli())
             .collect(toList());
 
     List<InstanceStatsSnapshot> instanceStatsThatShouldBeRetained =
         allInstanceStats.stream()
-            .filter(stat
-                -> stat.getTimestamp().toEpochMilli()
-                    >= job.getStartingInstantOfRetentionOfInstanceStats().toEpochMilli())
+            .filter(stat -> stat.getTimestamp().toEpochMilli() >= job.getRetentionStartTime(6).toEpochMilli())
+            .collect(toList());
+
+    List<ServerlessInstanceStats> serverlessInstanceStatsThatShouldBeRetained =
+        allServerlessInstanceStats.stream()
+            .filter(stat -> stat.getTimestamp().toEpochMilli() >= job.getRetentionStartTime(6).toEpochMilli())
             .collect(toList());
 
     job.purge();
 
     List<Instance> retainedInstances = persistence.createQuery(Instance.class).asList();
     List<InstanceStatsSnapshot> retainedInstanceStats = persistence.createQuery(InstanceStatsSnapshot.class).asList();
+    List<ServerlessInstanceStats> retainedServerlessInstanceStats =
+        persistence.createQuery(ServerlessInstanceStats.class).asList();
 
     assertThat(retainedInstances).isEqualTo(instancesThatShouldBeRetained);
     assertThat(retainedInstanceStats).isEqualTo(instanceStatsThatShouldBeRetained);
+    assertThat(retainedServerlessInstanceStats).isEqualTo(serverlessInstanceStatsThatShouldBeRetained);
   }
 
   private void generateInstances() {
@@ -130,9 +139,31 @@ public class InstancesPurgeJobTest extends WingsBaseTest {
     persistence.save(instanceStats);
   }
 
+  private void generateServerlessInstanceStats() {
+    Instant startInstant = LocalDate.now(ZoneOffset.UTC)
+                               .minusMonths(MONTHS_INSTANCE_STATS_DATA_TO_GENERATE_EXCLUDING_CURRENT_MONTH)
+                               .with(TemporalAdjusters.firstDayOfMonth())
+                               .atStartOfDay()
+                               .toInstant(ZoneOffset.UTC);
+    Instant endInstant = Instant.now();
+
+    List<ServerlessInstanceStats> serverlessInstanceStats =
+        Stream.generate(() -> createServerlessInstanceStatInTimeRange(startInstant, endInstant))
+            .limit(MAX_INSTANCE_STATS)
+            .collect(toList());
+
+    persistence.save(serverlessInstanceStats);
+  }
+
   private InstanceStatsSnapshot createInstanceStatInTimeRange(Instant startInstant, Instant endInstant) {
     return new InstanceStatsSnapshot(Instant.ofEpochMilli(ThreadLocalRandom.current().nextLong(
                                          startInstant.toEpochMilli(), endInstant.toEpochMilli())),
+        "DummyAccountId", Collections.emptyList());
+  }
+
+  private ServerlessInstanceStats createServerlessInstanceStatInTimeRange(Instant startInstant, Instant endInstant) {
+    return new ServerlessInstanceStats(Instant.ofEpochMilli(ThreadLocalRandom.current().nextLong(
+                                           startInstant.toEpochMilli(), endInstant.toEpochMilli())),
         "DummyAccountId", Collections.emptyList());
   }
 }

@@ -16,6 +16,7 @@ import io.harness.entities.EnvironmentCDCEntity;
 import io.harness.entities.OrganizationEntity;
 import io.harness.entities.PipelineCDCEntity;
 import io.harness.entities.PipelineExecutionSummaryEntityCDCEntity;
+import io.harness.entities.PipelineExecutionSummaryEntityCDCEntityWithDebeziumEnabled;
 import io.harness.entities.ProjectEntity;
 import io.harness.entities.ServiceCDCEntity;
 import io.harness.persistence.HPersistence;
@@ -78,7 +79,11 @@ public class ChangeDataCaptureModule extends AbstractModule {
     Multibinder<CDCEntity<?>> cdcEntityMultibinder =
         Multibinder.newSetBinder(binder(), new TypeLiteral<CDCEntity<?>>() {});
     cdcEntityMultibinder.addBinding().to(CECloudAccountCDCEntity.class);
-    cdcEntityMultibinder.addBinding().to(PipelineExecutionSummaryEntityCDCEntity.class);
+    if (config.isDebeziumEnabled()) {
+      cdcEntityMultibinder.addBinding().to(PipelineExecutionSummaryEntityCDCEntityWithDebeziumEnabled.class);
+    } else {
+      cdcEntityMultibinder.addBinding().to(PipelineExecutionSummaryEntityCDCEntity.class);
+    }
     cdcEntityMultibinder.addBinding().to(ProjectEntity.class);
     cdcEntityMultibinder.addBinding().to(OrganizationEntity.class);
     cdcEntityMultibinder.addBinding().to(AccountEntity.class);

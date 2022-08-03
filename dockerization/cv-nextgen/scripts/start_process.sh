@@ -42,6 +42,16 @@ if [[ "${ENABLE_MONITORING}" == "true" ]] ; then
     echo "Using inspectIT Java Agent"
 fi
 
+if [[ "${ENABLE_OPENTELEMETRY}" == "true" ]] ; then
+    echo "OpenTelemetry is enabled"
+    JAVA_OPTS=$JAVA_OPTS" -javaagent:/opt/harness/opentelemetry-javaagent.jar -Dotel.service.name=${OTEL_SERVICE_NAME:-cv-nextgen}"
+
+    if [ -n "$OTEL_EXPORTER_OTLP_ENDPOINT" ]; then
+        JAVA_OPTS=$JAVA_OPTS" -Dotel.exporter.otlp.endpoint=$OTEL_EXPORTER_OTLP_ENDPOINT "
+    fi
+    echo "Using OpenTelemetry Java Agent"
+fi
+
 if [[ "${DEPLOY_MODE}" == "KUBERNETES" ]] || [[ "${DEPLOY_MODE}" == "KUBERNETES_ONPREM" ]]; then
     java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/cv-nextgen-config.yml
 else

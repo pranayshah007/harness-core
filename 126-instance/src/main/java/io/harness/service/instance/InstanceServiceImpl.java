@@ -212,9 +212,9 @@ public class InstanceServiceImpl implements InstanceService {
 
   @Override
   public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     return instanceRepository.getActiveServiceInstanceInfo(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, timestampInMs);
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
   }
 
   /*

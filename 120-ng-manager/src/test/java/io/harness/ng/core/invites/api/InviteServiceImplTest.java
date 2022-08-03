@@ -15,18 +15,21 @@ import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREAD
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_INVITED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_INVITED_SUCCESSFULLY;
 import static io.harness.rule.OwnerRule.ANKUSH;
+import static io.harness.rule.OwnerRule.PRATEEK;
+import static io.harness.rule.OwnerRule.UJJAWAL;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mock;
 
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -71,6 +74,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.transaction.support.TransactionTemplate;
+import retrofit2.Call;
 import retrofit2.Response;
 
 @OwnedBy(PL)
@@ -116,6 +120,10 @@ public class InviteServiceImplTest extends CategoryTest {
     when(accountOrgProjectHelper.getProjectName(any(), any(), any())).thenReturn("Project");
     when(accountOrgProjectHelper.getOrgName(any(), any())).thenReturn("Organization");
     when(accountOrgProjectHelper.getAccountName(any())).thenReturn("Account");
+
+    Call<RestResponse<Boolean>> userCall = mock(Call.class);
+    when(userClient.checkUserLimit(any(), anyString())).thenReturn(userCall);
+    when(userCall.execute()).thenReturn(Response.success(new RestResponse<>(false)));
   }
 
   private Invite getDummyInvite() {
@@ -146,7 +154,7 @@ public class InviteServiceImplTest extends CategoryTest {
   @Owner(developers = ANKUSH)
   @Category(UnitTests.class)
   public void testCreate_NullInvite() {
-    InviteOperationResponse inviteOperationResponse = inviteService.create(null, false);
+    InviteOperationResponse inviteOperationResponse = inviteService.create(null, false, false);
     assertThat(inviteOperationResponse).isEqualTo(InviteOperationResponse.FAIL);
   }
 
@@ -158,8 +166,20 @@ public class InviteServiceImplTest extends CategoryTest {
     when(ngUserService.getUserByEmail(any(), anyBoolean()))
         .thenReturn(Optional.of(UserMetadataDTO.builder().uuid(userId).build()));
 
-    InviteOperationResponse inviteOperationResponse = inviteService.create(getDummyInvite(), false);
+    InviteOperationResponse inviteOperationResponse = inviteService.create(getDummyInvite(), false, false);
     assertThat(inviteOperationResponse).isEqualTo(USER_ALREADY_ADDED);
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testCreateUserLimit() {
+    when(ngUserService.isUserAtScope(any(), any())).thenReturn(true);
+    when(ngUserService.getUserByEmail(any(), anyBoolean()))
+        .thenReturn(Optional.of(UserMetadataDTO.builder().uuid(userId).build()));
+
+    InviteOperationResponse invite = inviteService.create(getDummyInvite(), false, false);
+    assertThat(invite).isEqualTo(USER_ALREADY_ADDED);
   }
 
   @Test
@@ -175,7 +195,7 @@ public class InviteServiceImplTest extends CategoryTest {
 
     when(accountClient.checkAutoInviteAcceptanceEnabledForAccount(any()).execute())
         .thenReturn(Response.success(new RestResponse(false)));
-    InviteOperationResponse inviteOperationResponse = inviteService.create(getDummyInvite(), false);
+    InviteOperationResponse inviteOperationResponse = inviteService.create(getDummyInvite(), false, false);
 
     assertThat(inviteOperationResponse).isEqualTo(USER_INVITED_SUCCESSFULLY);
     verify(notificationClient, times(1)).sendNotificationAsync(any());
@@ -193,7 +213,7 @@ public class InviteServiceImplTest extends CategoryTest {
 
     when(accountClient.checkAutoInviteAcceptanceEnabledForAccount(any()).execute())
         .thenReturn(Response.success(new RestResponse(false)));
-    InviteOperationResponse inviteOperationResponse = inviteService.create(getDummyInvite(), false);
+    InviteOperationResponse inviteOperationResponse = inviteService.create(getDummyInvite(), false, false);
 
     assertThat(inviteOperationResponse).isEqualTo(USER_INVITED_SUCCESSFULLY);
     verify(notificationClient, times(1)).sendNotificationAsync(any());
@@ -213,7 +233,7 @@ public class InviteServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(getDummyInvite()));
 
     //    when user exists
-    InviteOperationResponse inviteOperationResponse = inviteService.create(getDummyInvite(), false);
+    InviteOperationResponse inviteOperationResponse = inviteService.create(getDummyInvite(), false, false);
 
     assertThat(inviteOperationResponse).isEqualTo(USER_ALREADY_INVITED);
     verify(inviteRepository, atLeast(2)).updateInvite(idArgumentCaptor.capture(), any());
@@ -222,7 +242,7 @@ public class InviteServiceImplTest extends CategoryTest {
     verify(notificationClient, times(1)).sendNotificationAsync(any());
 
     //    when user doesn't exists
-    inviteOperationResponse = inviteService.create(getDummyInvite(), false);
+    inviteOperationResponse = inviteService.create(getDummyInvite(), false, false);
 
     assertThat(inviteOperationResponse).isEqualTo(USER_ALREADY_INVITED);
     verify(inviteRepository, atLeast(2)).updateInvite(idArgumentCaptor.capture(), any());
@@ -252,7 +272,33 @@ public class InviteServiceImplTest extends CategoryTest {
              any(), any(), any(), any()))
         .thenReturn(Optional.of(invite));
 
-    InviteOperationResponse inviteOperationResponse = inviteService.create(invite, false);
+    InviteOperationResponse inviteOperationResponse = inviteService.create(invite, false, false);
+
+    assertThat(inviteOperationResponse).isEqualTo(ACCOUNT_INVITE_ACCEPTED);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testCreate_NewUser_InviteAccepted_LdapGroup() {
+    Invite invite = Invite.builder()
+                        .accountIdentifier(accountIdentifier)
+                        .orgIdentifier(orgIdentifier)
+                        .projectIdentifier(projectIdentifier)
+                        .approved(Boolean.FALSE)
+                        .email(emailId)
+                        .name(randomAlphabetic(7))
+                        .id(inviteId)
+                        .roleBindings(getDummyInvite().getRoleBindings())
+                        .inviteType(ADMIN_INITIATED_INVITE)
+                        .approved(Boolean.TRUE)
+                        .build();
+    when(ngUserService.getUserByEmail(eq(emailId), anyBoolean())).thenReturn(Optional.empty());
+    when(inviteRepository.findFirstByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndEmailAndDeletedFalse(
+             any(), any(), any(), any()))
+        .thenReturn(Optional.of(invite));
+
+    InviteOperationResponse inviteOperationResponse = inviteService.create(invite, false, true);
 
     assertThat(inviteOperationResponse).isEqualTo(ACCOUNT_INVITE_ACCEPTED);
   }

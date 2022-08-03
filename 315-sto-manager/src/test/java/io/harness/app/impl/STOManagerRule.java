@@ -34,6 +34,7 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkModule;
 import io.harness.pms.sdk.core.SdkDeployMode;
+import io.harness.queue.QueueController;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
@@ -53,6 +54,7 @@ import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
@@ -130,6 +132,22 @@ public class STOManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleM
     }
     CacheModule cacheModule = new CacheModule(cacheConfigBuilder.build());
     modules.add(cacheModule);
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(QueueController.class).toInstance(new QueueController() {
+          @Override
+          public boolean isPrimary() {
+            return true;
+          }
+
+          @Override
+          public boolean isNotPrimary() {
+            return false;
+          }
+        });
+      }
+    });
 
     STOManagerConfiguration configuration =
         STOManagerConfiguration.builder()

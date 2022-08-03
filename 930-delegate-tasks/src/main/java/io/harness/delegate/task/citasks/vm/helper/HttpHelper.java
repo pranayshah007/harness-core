@@ -8,9 +8,6 @@
 package io.harness.delegate.task.citasks.vm.helper;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.RUNNER_CONNECT_TIMEOUT_SECS;
-import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.RUNNER_URL;
-import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.RUNNER_URL_ENV;
 
 import static java.lang.String.format;
 
@@ -41,6 +38,9 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @OwnedBy(HarnessTeam.CI)
 public class HttpHelper {
   public static final MediaType APPLICATION_JSON = MediaType.parse("application/json; charset=utf-8");
+  private static final String RUNNER_URL = "http://127.0.0.1:3000/";
+  private static final String RUNNER_URL_ENV = "RUNNER_URL";
+  private static final int RUNNER_CONNECT_TIMEOUT_SECS = 1;
   private final int MAX_ATTEMPTS = 3;
 
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);

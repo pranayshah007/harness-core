@@ -364,6 +364,9 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
                   String.valueOf(containerInstantData.getTotalResource().getMemoryMb()));
               metaData.put(InstanceMetaDataConstants.PARENT_RESOURCE_ID, containerInstanceId);
               metaData.put(InstanceMetaDataConstants.ACTUAL_PARENT_RESOURCE_ID, containerInstanceId);
+            } else {
+              metaData.put(InstanceMetaDataConstants.INSTANCE_CATEGORY,
+                  InstanceMetaDataUtils.getInstanceCategoryECSFargate(task.getCapacityProviderName()).name());
             }
             metaData.put(InstanceMetaDataConstants.TASK_ID, taskId);
             metaData.put(InstanceMetaDataConstants.REGION, region);
@@ -416,7 +419,9 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
       labels.putAll(ceCluster.getLabels());
     }
     // Add Task Level Tags
-    labels.putAll(task.getTags().stream().collect(Collectors.toMap(Tag::getKey, Tag::getValue)));
+    for (Tag tag : task.getTags()) {
+      labels.put(encode(tag.getKey()), tag.getValue());
+    }
 
     Map<String, String> serviceLabels = Collections.emptyMap();
     if (serviceExistsForTask(task, deploymentIdServiceMap)) {
@@ -424,7 +429,10 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
       // Fetch Service Tags and add to the Task Labels
       List<Tag> serviceTagList = serviceArnTagsMap.get(serviceArn);
       if (isNotEmpty(serviceTagList)) {
-        serviceLabels = serviceTagList.stream().collect(Collectors.toMap(Tag::getKey, Tag::getValue));
+        serviceLabels = new HashMap<>();
+        for (Tag tag : serviceTagList) {
+          serviceLabels.put(encode(tag.getKey()), tag.getValue());
+        }
         labels.putAll(serviceLabels);
       }
     }
@@ -433,6 +441,10 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
       ecsService.setLabels(serviceLabels);
     }
     return true;
+  }
+
+  private String encode(String decoded) {
+    return decoded.replace('.', '~');
   }
 
   private boolean updateInstanceStopTimeForTask(InstanceData instanceData, Task task) {
@@ -580,7 +592,9 @@ public class AwsECSClusterDataSyncTasklet implements Tasklet {
             if (isNotEmpty(ceCluster.getLabels())) {
               labels.putAll(ceCluster.getLabels());
             }
-            labels.putAll(containerInstance.getTags().stream().collect(Collectors.toMap(Tag::getKey, Tag::getValue)));
+            for (Tag tag : containerInstance.getTags()) {
+              labels.put(encode(tag.getKey()), tag.getValue());
+            }
             if (null != totalResource) {
               Instant startInstant = containerInstance.getRegisteredAt().toInstant();
               InstanceData instanceData =

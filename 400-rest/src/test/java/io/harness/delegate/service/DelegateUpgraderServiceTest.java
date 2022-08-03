@@ -49,8 +49,7 @@ public class DelegateUpgraderServiceTest {
   @Owner(developers = ARPIT)
   @Category(UnitTests.class)
   public void shouldUpgradeDelegateImageTag() {
-    when(delegateVersionService.getDelegateImageTag(TEST_ACCOUNT_ID1, DelegateType.KUBERNETES))
-        .thenReturn(LATEST_DELEGATE_IMAGE_TAG);
+    when(delegateVersionService.getImmutableDelegateImageTag(TEST_ACCOUNT_ID1)).thenReturn(LATEST_DELEGATE_IMAGE_TAG);
     UpgradeCheckResult upgradeCheckResult1 = underTest.getDelegateImageTag(TEST_ACCOUNT_ID1, DELEGATE_IMAGE_TAG_1);
 
     assertThat(upgradeCheckResult1.isShouldUpgrade()).isTrue();
@@ -61,8 +60,7 @@ public class DelegateUpgraderServiceTest {
   @Owner(developers = ARPIT)
   @Category(UnitTests.class)
   public void shouldNotUpgradeDelegateImageTag() {
-    when(delegateVersionService.getDelegateImageTag(TEST_ACCOUNT_ID1, DelegateType.KUBERNETES))
-        .thenReturn(DELEGATE_IMAGE_TAG_1);
+    when(delegateVersionService.getImmutableDelegateImageTag(TEST_ACCOUNT_ID1)).thenReturn(DELEGATE_IMAGE_TAG_1);
     UpgradeCheckResult upgradeCheckResult1 = underTest.getDelegateImageTag(TEST_ACCOUNT_ID1, DELEGATE_IMAGE_TAG_1);
 
     assertThat(upgradeCheckResult1.isShouldUpgrade()).isFalse();

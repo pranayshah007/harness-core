@@ -36,13 +36,13 @@ import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProg
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppRollbackParameters;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlotSetupResponse;
+import io.harness.delegate.task.azure.common.AutoCloseableWorkingDirectory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.delegatetasks.azure.appservice.webapp.AbstractAzureWebAppTaskHandler;
-import software.wings.delegatetasks.azure.common.AutoCloseableWorkingDirectory;
 
 import com.google.inject.Singleton;
 import java.io.File;

@@ -20,6 +20,8 @@ import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cache.CacheConfig;
+import io.harness.cache.CacheModule;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.impl.DefaultConnectorServiceImpl;
 import io.harness.connector.services.ConnectorService;
@@ -74,6 +76,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @OwnedBy(PL)
 public class SecretManagementModuleTest extends CategoryTest {
   private SecretManagementModule secretManagementModule;
+  private CacheModule cacheModule;
   private SecretManagementClientModule secretManagementClientModule;
   @Mock private SecretRepository secretRepository;
   @Mock private ConnectorRepository connectorRepository;
@@ -98,6 +101,7 @@ public class SecretManagementModuleTest extends CategoryTest {
     secretManagementModule = new SecretManagementModule();
     secretManagementClientModule =
         new SecretManagementClientModule(secretManagerClientConfig, serviceSecret, "NextGenManager");
+    cacheModule = new CacheModule(CacheConfig.builder().build());
 
     List<Module> modules = new ArrayList<>();
     modules.add(new ProviderModule() {
@@ -260,6 +264,7 @@ public class SecretManagementModuleTest extends CategoryTest {
         return mock(OpaServiceClient.class);
       }
     });
+    modules.add(cacheModule);
 
     Injector injector = Guice.createInjector(modules);
 

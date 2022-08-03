@@ -429,7 +429,7 @@ public class AwsCodeDeployInstanceHandlerTest extends WingsBaseTest {
   public void testSyncInstances_ProcessPerpetualTaskResponse() {
     doReturn(true)
         .when(mockFeatureFlagService)
-        .isEnabled(awsCodeDeployInstanceHandler.getFeatureFlagToEnablePerpetualTaskForInstanceSync(), ACCOUNT_ID);
+        .isEnabled(awsCodeDeployInstanceHandler.getFeatureFlagToEnablePerpetualTaskForInstanceSync().get(), ACCOUNT_ID);
     doReturn(getInstances()).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
     AwsCodeDeployListDeploymentInstancesResponse perpetualTaskResponse =
         AwsCodeDeployListDeploymentInstancesResponse.builder()

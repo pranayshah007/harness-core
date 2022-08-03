@@ -6,16 +6,15 @@
 package main
 
 import (
-	"bytes"
+	"context"
 	"fmt"
-	"io"
+	arg "github.com/alexflint/go-arg"
+	"github.com/harness/harness-core/product/ci/split_tests/ti"
+	"github.com/harness/harness-core/product/ci/ti-service/types"
+	"go.uber.org/zap"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
-
-	"github.com/alexflint/go-arg"
-	"github.com/bmatcuk/doublestar"
 
 	junit "github.com/harness/harness-core/product/ci/split_tests/junit"
 )
@@ -24,19 +23,29 @@ const (
 	applicationName = "split-tests"
 	numSplitsEnv    = "HARNESS_NODE_TOTAL" // Environment variable for total number of splits
 	currentIndexEnv = "HARNESS_NODE_INDEX" // Environment variable for the current index
+
+	splitByFileTimeStr      = "file_timing"
+	splitByClassTimeStr     = "class_timing"
+	splitByTestcaseTimeStr  = "testcase_timing"
+	splitByTestSuiteTimeStr = "testsuite_timing"
+	splitByFileSizeStr      = "file_size"
 )
 
 // CLI Arguments
 var args struct {
-	IncludeFilePattern string `arg:"--glob" help:"Glob pattern to find the test files"`
-	ExcludeFilePattern string `arg:"--exclude-glob" help:"Glob pattern to exclude test files"`
-	SplitIndex         int    `arg:"--split-index" help:"Index of the current split (or set HARNESS_NODE_INDEX)"`
-	SplitTotal         int    `arg:"--split-total" help:"Total number of splits (or set HARNESS_NODE_TOTAL)"`
-	SplitByLineCount   bool   `arg:"--split-by-linecount" help:"Use line count to estimate test times"`
-	UseJunitXml        bool   `arg:"--use-junit" help:"Use junit XML for test times"`
-	JunitXmlPath       string `arg:"--junit-path" help:"Path to Junit XML file to read test times"`
-	Verbose            bool   `arg:"--verbose" help:"Enable verbose logging mode"`
+	IncludeFilePattern []string `arg:"--glob" help:"Glob pattern to find the test files"`
+	ExcludeFilePattern []string `arg:"--exclude-glob" help:"Glob pattern to exclude test files"`
+	SplitIndex         int      `arg:"--split-index" help:"Index of the current split (or set HARNESS_NODE_INDEX)"`
+	SplitTotal         int      `arg:"--split-total" help:"Total number of splits (or set HARNESS_NODE_TOTAL)"`
+	SplitBy            string   `arg:"--split-by" help:"Split by"`
+	FilePath           string   `arg:"--file-path" help:"Full path including filename"`
+	UseJunitXml        bool     `arg:"--use-junit" help:"Use junit XML for test times"`
+	JunitXmlPath       string   `arg:"--junit-path" help:"Path to Junit XML file to read test times"`
+	Verbose            bool     `arg:"--verbose" help:"Enable verbose logging mode"`
+	DefaultTime        int      `arg:"--default-time" help:"Default time in ms if any timing data is missing"`
 }
+
+var log *zap.SugaredLogger
 
 /*
 	Parses the command line args, sets default values and overrides if
@@ -44,10 +53,9 @@ var args struct {
 */
 func parseArgs() {
 	// Set defaults here
-	args.SplitByLineCount = true
-	args.Verbose = false
 	args.SplitIndex = -1
 	args.SplitTotal = -1
+	args.DefaultTime = 1
 	arg.MustParse(&args)
 
 	var err error
@@ -66,228 +74,101 @@ func parseArgs() {
 	}
 
 	if args.SplitTotal == 0 || args.SplitIndex < 0 || args.SplitIndex > args.SplitTotal {
-		fatalMsg("-split-index and -split-total (and environment variables) are missing or invalid\n")
+		fmt.Fprintf(os.Stderr, "--split-index and --split-total (and environment variables) are missing or invalid")
+		os.Exit(1)
 	}
-}
 
-/*
-	Map for <FileName, TimeDuration> for loading timing information.
-	The time is a metric that's used to calculate weight of the split/bucket
-	It doesn't necessarily have time units. For example, we could split the
-	files based on filesize or lines of code in which case the time field
-	indicates lines.
-*/
-type fileTimesListItem struct {
-	name string
-	time float64
-}
-type fileTimesList []fileTimesListItem
-
-func (l fileTimesList) Len() int { return len(l) }
-
-// Sorts by time descending, then by name ascending.
-// Comparator in Golang is Less()
-// Sort by name is required for deterministic order across machines
-func (l fileTimesList) Less(i, j int) bool {
-	return l[i].time > l[j].time ||
-		(l[i].time == l[j].time && l[i].name < l[j].name)
-}
-
-func (l fileTimesList) Swap(i, j int) {
-	temp := l[i]
-	l[i] = l[j]
-	l[j] = temp
-}
-
-// FIXME: Use Remote logger.
-func printMsg(msg string, args ...interface{}) {
-	if len(args) == 0 {
-		fmt.Fprint(os.Stderr, msg)
-	} else {
-		fmt.Fprintf(os.Stderr, msg, args...)
+	if args.SplitBy == "" {
+		args.SplitBy = splitByFileSizeStr
 	}
-}
 
-func fatalMsg(msg string, args ...interface{}) {
-	printMsg(msg, args...)
-	os.Exit(1)
-}
-
-/*
-Calculate file times based on number of lines of code in the file.
-This can be a simple proxy for splitting files when timing data is not
-available.
-
-Args:
-	currentFileSet: {fileName : true}
-	fileTimes: {fileName : time}
-Returns:
-	Nothing. Updates fileTimes map in place.
-*/
-func estimateFileTimesByLineCount(currentFileSet map[string]bool, fileTimes map[string]float64) {
-	for fileName := range currentFileSet {
-		file, err := os.Open(fileName)
-		if err != nil {
-			printMsg("failed to count lines in file %s: %v\n", fileName, err)
-			continue
-		}
-		defer file.Close()
-		lineCount, err := countLines(file)
-		if err != nil {
-			printMsg("failed to count lines in file %s: %v\n", fileName, err)
-			continue
-		}
-		fileTimes[fileName] = float64(lineCount)
-	}
-}
-
-/*
-Counts the number of lines in a file or stdin
-Args:
-	io.Reader: File or Stdin
-Returns:
-	lineCount(int), error
-*/
-// Credit to http://stackoverflow.com/a/24563853/6678
-func countLines(r io.Reader) (int, error) {
-	buf := make([]byte, 32*1024)
-	count := 0
-	lineSep := []byte{'\n'}
-
-	for {
-		c, err := r.Read(buf)
-		count += bytes.Count(buf[:c], lineSep)
-
-		switch {
-		case err == io.EOF:
-			return count, nil
-
-		case err != nil:
-			return count, err
+	switch args.SplitBy {
+	case splitByTestcaseTimeStr, splitByTestSuiteTimeStr, splitByClassTimeStr:
+		if args.FilePath == "" {
+			fmt.Fprintf(os.Stderr, "--file-path cannot be empty if --split-by is set to class_timing | suite_timing | testcase_timing")
+			os.Exit(1)
 		}
 	}
 }
 
-/*
-Split files based on the provided timing data. The output is a list of
-buckets/splits for files as well as the duration of each bucket.
-
-Args:
-	fileTimesMap: Map containing the time data: <fileName, Duration>
-	splitTotal: Desired number of splits
-Returns:
-	List of buckets with filenames. Eg: [ ["file1", "file2"], ["file3"], ["file4", "file5"]]
-	List of bucket durations. Eg: [10.4, 9.3, 10.5]
-*/
-func splitFiles(fileTimesMap map[string]float64, splitTotal int) ([][]string, []float64) {
-	buckets := make([][]string, splitTotal)
-	bucketTimes := make([]float64, splitTotal)
-
-	// Build a sorted list of files
-	fileTimesList := make(fileTimesList, len(fileTimesMap))
-	for file, time := range fileTimesMap {
-		fileTimesList = append(fileTimesList, fileTimesListItem{file, time})
+func initLogger() {
+	config := zap.NewProductionConfig()
+	config.OutputPaths = []string{"stderr"}
+	if args.Verbose {
+		config.Level.SetLevel(zap.DebugLevel)
 	}
-	sort.Sort(fileTimesList)
-
-	for _, file := range fileTimesList {
-		// find bucket with min weight
-		minBucket := 0
-		for bucket := 1; bucket < splitTotal; bucket++ {
-			if bucketTimes[bucket] < bucketTimes[minBucket] {
-				minBucket = bucket
-			}
-		}
-		// add file to bucket
-		buckets[minBucket] = append(buckets[minBucket], file.name)
-		bucketTimes[minBucket] += file.time
+	zapLogger, err := config.Build()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "logger initialization failed with error:", err)
+		os.Exit(1)
 	}
-
-	return buckets, bucketTimes
-}
-
-/*
-Removes non-existant files and adds new files to the file-times map.
-
-Args:
-	fileTimesMap: {fileName : time}
-	currentFileSet: {fileName : true}
-
-Returns:
-	Nothing. Updates fileTimesMap in place.
-*/
-func processFiles(fileTimesMap map[string]float64, currentFileSet map[string]bool) {
-	// First Remove the entries that no longer exist in the filesystem.
-	for file := range fileTimesMap {
-		if !currentFileSet[file] {
-			delete(fileTimesMap, file)
-		}
-	}
-
-	// For files that don't have time data, use the average value.
-	averageFileTime := 0.0
-	if len(fileTimesMap) > 0 { // To avoid divide-by-zero error
-		for _, time := range fileTimesMap {
-			averageFileTime += time
-		}
-		averageFileTime /= float64(len(fileTimesMap))
-	} else {
-		averageFileTime = 1.0
-	}
-
-	// Populate the file time for missing files.
-	for file := range currentFileSet {
-		if _, isSet := fileTimesMap[file]; isSet {
-			continue
-		}
-		if args.UseJunitXml {
-			printMsg("missing file time for %s\n", file)
-		}
-		fileTimesMap[file] = averageFileTime
-	}
+	log = zapLogger.Sugar()
 }
 
 func main() {
 	parseArgs()
+	initLogger()
 
-	// We are not using filepath.Glob,
-	// because it doesn't support '**' (to match all files in all nested directories)
-	currentFiles, err := doublestar.Glob(args.IncludeFilePattern)
-	if err != nil {
-		printMsg("failed to enumerate current file set: %v", err)
-		os.Exit(1)
-	}
-	currentFileSet := make(map[string]bool)
-	for _, file := range currentFiles {
-		currentFileSet[file] = true
-	}
-
-	// Exclude the specified files
-	if args.ExcludeFilePattern != "" {
-		excludedFiles, err := doublestar.Glob(args.ExcludeFilePattern)
-		if err != nil {
-			printMsg("failed to enumerate excluded file set: %v", err)
-			os.Exit(1)
-		}
-		for _, file := range excludedFiles {
-			delete(currentFileSet, file)
-		}
-	}
+	// Get current file set from the glob pattern
+	currentFileSet := getTestData(args.IncludeFilePattern, args.ExcludeFilePattern)
 
 	// Construct a map of file times {fileName: Duration}
-	fileTimesMap := make(map[string]float64)
-	// TODO: Add support for SplitByTiming
-	if args.SplitByLineCount {
-		estimateFileTimesByLineCount(currentFileSet, fileTimesMap)
-	} else if args.UseJunitXml {
-		junit.GetFileTimesFromJUnitXML(args.JunitXmlPath, fileTimesMap)
+	fileTimesMap, readTestData := getFileTimes(currentFileSet)
+	if readTestData {
+		currentFileSet = readTestDataFromFile(args.FilePath)
 	}
-
 	processFiles(fileTimesMap, currentFileSet)
+	log.Debug(fmt.Sprintf("Test time map: %s", convertMapToJson(fileTimesMap)))
+
 	buckets, bucketTimes := splitFiles(fileTimesMap, args.SplitTotal)
 	if args.UseJunitXml {
-		printMsg("expected test time: %0.1fs\n", bucketTimes[args.SplitIndex])
+		log.Debug(fmt.Sprintf("Expected test time: %0.1fs\n", bucketTimes[args.SplitIndex]))
 	}
 
 	fmt.Println(strings.Join(buckets[args.SplitIndex], " "))
+}
+
+func getFileTimes(currentFileSet map[string]bool) (map[string]float64, bool) {
+	fileTimesMap := make(map[string]float64)
+	readTestData := true
+
+	if args.UseJunitXml {
+		junit.GetFileTimesFromJUnitXML(args.JunitXmlPath, fileTimesMap)
+	} else if args.SplitBy != "" {
+		var err error
+		req := types.GetTestTimesReq{}
+		var res types.GetTestTimesResp
+		switch args.SplitBy {
+		case splitByFileTimeStr:
+			req.IncludeFilename = true
+			res, err = ti.GetTestTimes(context.Background(), log, req)
+			fileTimesMap = convertMap(res.FileTimeMap)
+			if args.FilePath == "" {
+				readTestData = false
+			}
+		case splitByClassTimeStr:
+			req.IncludeClassname = true
+			res, err = ti.GetTestTimes(context.Background(), log, req)
+			fileTimesMap = convertMap(res.ClassTimeMap)
+		case splitByTestcaseTimeStr:
+			req.IncludeTestCase = true
+			res, err = ti.GetTestTimes(context.Background(), log, req)
+			fileTimesMap = convertMap(res.TestTimeMap)
+		case splitByTestSuiteTimeStr:
+			req.IncludeTestSuite = true
+			res, err = ti.GetTestTimes(context.Background(), log, req)
+			fileTimesMap = convertMap(res.SuiteTimeMap)
+		case splitByFileSizeStr:
+			estimateFileTimesByLineCount(currentFileSet, fileTimesMap)
+			return fileTimesMap, false
+		}
+
+		if err != nil || len(fileTimesMap) == 0 {
+			log.Warnw("error getting timing data with given arguments, falling back to splitting by file size")
+			fileTimesMap := make(map[string]float64)
+			estimateFileTimesByLineCount(currentFileSet, fileTimesMap)
+			return fileTimesMap, false
+		}
+	}
+	return fileTimesMap, readTestData
 }

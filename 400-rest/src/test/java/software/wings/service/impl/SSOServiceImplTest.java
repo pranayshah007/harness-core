@@ -170,7 +170,7 @@ public class SSOServiceImplTest extends WingsBaseTest {
 
     // Upload SAML config and enable
     ssoService.uploadSamlConfiguration(accountId, new ByteArrayInputStream("test data".getBytes()), "test", "", false,
-        "", "", SAMLProviderType.ONELOGIN.name(), anyString(), any());
+        "", "", SAMLProviderType.ONELOGIN.name(), anyString(), any(), false);
     ssoService.setAuthenticationMechanism(accountId, SAML);
     account = accountService.get(account.getUuid());
     assertThat(account.getAuthenticationMechanism()).isEqualTo(SAML);
@@ -206,7 +206,7 @@ public class SSOServiceImplTest extends WingsBaseTest {
 
     // Upload SAML config and enable
     ssoService.uploadSamlConfiguration(accountId, new ByteArrayInputStream("test data".getBytes()), "test", "", false,
-        "", "", SAMLProviderType.ONELOGIN.name(), anyString(), any());
+        "", "", SAMLProviderType.ONELOGIN.name(), anyString(), any(), false);
     ssoService.setAuthenticationMechanism(accountId, SAML);
     account = accountService.get(account.getUuid());
     assertThat(account.getAuthenticationMechanism()).isEqualTo(SAML);

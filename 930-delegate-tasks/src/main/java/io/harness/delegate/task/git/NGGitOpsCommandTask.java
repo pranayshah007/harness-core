@@ -32,6 +32,7 @@ import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -279,7 +280,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
   public String getPRLink(int prNumber, ScmConnector scmConnector, ConnectorType connectorType) {
     switch (connectorType) {
-      // TODO: GITLAB, BITBUCKET
+      // TODO: BITBUCKET
       case GITHUB:
         GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) scmConnector;
         return "https://github.com"
@@ -289,6 +290,9 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       case AZURE_REPO:
         AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) scmConnector;
         return azureRepoConnectorDTO.getUrl() + "/pullrequest/" + prNumber;
+      case GITLAB:
+        GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) scmConnector;
+        return gitlabConnectorDTO.getUrl() + "/merge_requests/" + prNumber;
       default:
         return "";
     }

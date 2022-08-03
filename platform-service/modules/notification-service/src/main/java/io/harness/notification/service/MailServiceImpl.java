@@ -20,7 +20,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.MailTaskParams;
 import io.harness.delegate.beans.NotificationProcessingResponse;
-import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
@@ -64,6 +63,7 @@ import org.apache.commons.validator.routines.EmailValidator;
 @Slf4j
 @OwnedBy(PL)
 public class MailServiceImpl implements ChannelService {
+  public static final String DEFAULT_SUBJECT_BODY = "Test Notification from Harness";
   private final Configuration cfg = new Configuration(VERSION_2_3_23);
   private final NotificationSettingsService notificationSettingsService;
   private final NotificationTemplateService notificationTemplateService;
@@ -126,8 +126,8 @@ public class MailServiceImpl implements ChannelService {
               + notificationSettingDTO.getNotificationId(),
           DEFAULT_ERROR_CODE, USER);
     }
-    NotificationProcessingResponse response = send(Collections.singletonList(email), emailSettingDTO.getSubject(),
-        emailSettingDTO.getBody(), email, notificationSettingDTO.getAccountId());
+    NotificationProcessingResponse response = send(Collections.singletonList(email), DEFAULT_SUBJECT_BODY,
+        DEFAULT_SUBJECT_BODY, email, notificationSettingDTO.getAccountId());
     if (response.getResult().isEmpty() || NotificationProcessingResponse.isNotificationRequestFailed(response)) {
       throw new NotificationException("Failed to send email. Check SMTP configuration", DEFAULT_ERROR_CODE, USER);
     }
@@ -153,9 +153,9 @@ public class MailServiceImpl implements ChannelService {
                                   .build())
               .executionTimeout(Duration.ofMinutes(1L))
               .build();
-      NotificationTaskResponse notificationTaskResponse =
-          (NotificationTaskResponse) delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
-      notificationProcessingResponse = notificationTaskResponse.getProcessingResponse();
+      String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
+      log.info("Async delegate task created with taskID {}", taskId);
+      notificationProcessingResponse = NotificationProcessingResponse.allSent(emailIds.size());
     } else {
       notificationProcessingResponse = mailSender.send(emailIds, subject, body, notificationId, smtpConfigDefault);
     }

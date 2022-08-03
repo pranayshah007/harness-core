@@ -20,10 +20,14 @@ import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.docker.DockerRegistryRestClient;
+import io.harness.artifacts.docker.HarborRestClient;
 import io.harness.artifacts.docker.beans.DockerInternalConfig;
 import io.harness.artifacts.docker.client.DockerRestClientFactory;
+import io.harness.artifacts.docker.client.DockerRestClientFactoryImpl;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.context.MdcGlobalContextData;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
@@ -330,6 +334,9 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
             "Password field value cannot be empty if username field is not empty",
             new InvalidArtifactServerException("Password is a required field along with Username", USER));
       }
+      if (DockerRegistryProviderType.HARBOR.equals(dockerConfig.getProviderType())) {
+        return validateHarborConnector(dockerConfig);
+      }
       DockerRegistryRestClient registryRestClient = null;
       String basicAuthHeader;
       String authHeaderValue;
@@ -339,7 +346,8 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
         registryRestClient = dockerRestClientFactory.getDockerRegistryRestClient(dockerConfig);
         basicAuthHeader = Credentials.basic(dockerConfig.getUsername(), dockerConfig.getPassword());
         response = registryRestClient.getApiVersion(basicAuthHeader).execute();
-        if (DockerRegistryUtils.fallbackToTokenAuth(response.code(), dockerConfig)) { // unauthorized
+        if (DockerRegistryUtils.fallbackToTokenAuth(response.code(),
+                dockerConfig)) { // unauthorized
           authHeaderValue = response.headers().get(AUTHENTICATE_HEADER);
           dockerRegistryToken = fetchToken(dockerConfig, registryRestClient, basicAuthHeader, authHeaderValue);
           if (dockerRegistryToken != null) {
@@ -354,6 +362,28 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
         log.warn("Failed to fetch apiversion with credentials" + e);
         return handleValidateCredentialsEndingWithSlash(registryRestClient, dockerConfig);
       }
+    }
+    return true;
+  }
+
+  private boolean validateHarborConnector(DockerInternalConfig dockerConfig) {
+    HarborRestClient harborRestClient = DockerRestClientFactoryImpl.getHarborRestClient(dockerConfig);
+    String basicAuthHeader = Credentials.basic(dockerConfig.getUsername(), dockerConfig.getPassword());
+    try {
+      Response<List<Object>> response = harborRestClient.getProjects(basicAuthHeader).execute();
+      boolean isSuccess = isSuccessful(response);
+      if (!isSuccess) {
+        return false;
+      }
+      if (EmptyPredicate.isEmpty(response.body())) {
+        throw NestedExceptionUtils.hintWithExplanationException("No Harbor projects found.",
+            "Check if the provided credentials are correct & has access to projects",
+            new InvalidArtifactServerException("No Harbor projects associated with given user", USER));
+      }
+    } catch (IOException e) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Unable to fetch Harbor projects to validate the connector", "Check if the provided credentials are correct",
+          new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER));
     }
     return true;
   }

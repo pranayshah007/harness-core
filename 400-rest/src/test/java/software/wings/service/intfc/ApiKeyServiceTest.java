@@ -278,8 +278,8 @@ public class ApiKeyServiceTest extends WingsBaseTest {
     } catch (InvalidRequestException ex) {
       exceptionThrown = true;
     }
-    assertThat(apiKeyEntryFromGet).isNull();
-    assertThat(exceptionThrown).isTrue();
+    assertThat(apiKeyEntryFromGet).isNotNull();
+    assertThat(exceptionThrown).isFalse();
   }
 
   @Test

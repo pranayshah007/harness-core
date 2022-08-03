@@ -625,8 +625,10 @@ public enum ErrorCode {
 
   SCM_UNAUTHORIZED_ERROR_V2,
   TOO_MANY_REQUESTS,
+  INVALID_IDENTIFIER_REF,
 
-  SPOTINST_NULL_ERROR;
+  SPOTINST_NULL_ERROR,
+  SCM_UNEXPECTED_ERROR;
 
   private Status status = BAD_REQUEST;
   private String description;

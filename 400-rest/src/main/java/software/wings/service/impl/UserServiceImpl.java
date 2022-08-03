@@ -427,10 +427,21 @@ public class UserServiceImpl implements UserService {
     return savedUser;
   }
 
-  public List<Account> getUserAccountsAndSupportAccounts(
+  public io.harness.ng.beans.PageResponse<Account> getUserAccountsAndSupportAccounts(
       String userId, int pageIndex, int pageSize, String searchTerm) {
     User user = get(userId);
+    Account defaultAccount = null;
     List<Account> userAccounts = user.getAccounts();
+    for (Account account : userAccounts) {
+      if (user.getDefaultAccountId().equals(account.getUuid())) {
+        defaultAccount = account;
+        break;
+      }
+    }
+    if (defaultAccount != null) {
+      userAccounts.remove(defaultAccount);
+      userAccounts.add(0, defaultAccount);
+    }
     userAccounts.addAll(user.getSupportAccounts());
     if (isNotEmpty(searchTerm)) {
       PageRequest<Account> accountPageRequest = aPageRequest()
@@ -444,10 +455,21 @@ public class UserServiceImpl implements UserService {
           accountService.getAccounts(accountPageRequest).stream().map(UuidAware::getUuid).collect(toList());
       if (accountIds.size() > 0) {
         userAccounts = userAccounts.stream().filter(p -> accountIds.contains(p.getUuid())).collect(Collectors.toList());
+      } else {
+        userAccounts.clear();
       }
     }
-    return userAccounts.subList(
+    List<Account> finalAccounts = userAccounts.subList(
         Math.min(userAccounts.size(), pageIndex), Math.min(userAccounts.size(), pageIndex + pageSize));
+
+    return io.harness.ng.beans.PageResponse.<Account>builder()
+        .content(finalAccounts)
+        .pageItemCount(finalAccounts.size())
+        .pageSize(pageSize)
+        .pageIndex(pageIndex)
+        .totalItems(userAccounts.size())
+        .totalPages((userAccounts.size() + pageSize - 1) / pageSize)
+        .build();
   }
 
   @Override
@@ -521,6 +543,7 @@ public class UserServiceImpl implements UserService {
                           .withCompanyName(username)
                           .withDefaultExperience(DefaultExperience.NG)
                           .withCreatedFromNG(true)
+                          .withIsProductLed(true)
                           .withAppId(GLOBAL_APP_ID)
                           .build();
     account.setLicenseInfo(LicenseInfo.builder()
@@ -1314,6 +1337,17 @@ public class UserServiceImpl implements UserService {
     }
   }
 
+  @Override
+  public boolean checkIfUserLimitHasReached(String accountId, String email) {
+    try {
+      limitCheck(accountId, email);
+      return false;
+    } catch (WingsException e) {
+      log.error("Exception while checking user limit for account {}", accountId, e);
+      return true;
+    }
+  }
+
   private void limitCheck(String accountId, String email) {
     try {
       Account account = accountService.get(accountId);
@@ -1326,6 +1360,7 @@ public class UserServiceImpl implements UserService {
       List<User> existingUsersAndInvites = query.asList();
       userServiceLimitChecker.limitCheck(accountId, existingUsersAndInvites, new HashSet<>(Arrays.asList(email)));
     } catch (WingsException e) {
+      log.error("The user limit has been reached for account {} and email {}", accountId, email);
       throw e;
     } catch (Exception e) {
       // catching this because we don't want to stop user invites due to failure in limit check

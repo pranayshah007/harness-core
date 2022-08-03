@@ -8,11 +8,14 @@
 package io.harness.ngsettings.utils;
 
 import static io.harness.rule.OwnerRule.NISHANT;
+import static io.harness.rule.OwnerRule.TEJAS;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
+import io.harness.beans.Scope;
+import io.harness.beans.ScopeLevel;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngsettings.SettingSource;
@@ -26,6 +29,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -206,5 +210,63 @@ public class SettingUtilsTest extends CategoryTest {
                           .build();
     SettingSource source = SettingUtils.getSettingSource(setting);
     assertThat(source).isEqualTo(SettingSource.PROJECT);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testGetHighestScopeForSettingAtAllScopes() {
+    Set<ScopeLevel> allowedScopes =
+        new HashSet<>(Arrays.asList(ScopeLevel.ACCOUNT, ScopeLevel.ORGANIZATION, ScopeLevel.PROJECT));
+    ScopeLevel scopeLevel = SettingUtils.getHighestScopeForSetting(allowedScopes);
+    assertThat(scopeLevel).isEqualTo(ScopeLevel.ACCOUNT);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testGetHighestScopeForSettingAtOrgAndProjectScopes() {
+    Set<ScopeLevel> allowedScopes = new HashSet<>(Arrays.asList(ScopeLevel.ORGANIZATION, ScopeLevel.PROJECT));
+    ScopeLevel scopeLevel = SettingUtils.getHighestScopeForSetting(allowedScopes);
+    assertThat(scopeLevel).isEqualTo(ScopeLevel.ORGANIZATION);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testGetHighestScopeForSettingAtAProjectScopes() {
+    Set<ScopeLevel> allowedScopes = new HashSet<>(Arrays.asList(ScopeLevel.PROJECT));
+    ScopeLevel scopeLevel = SettingUtils.getHighestScopeForSetting(allowedScopes);
+    assertThat(scopeLevel).isEqualTo(ScopeLevel.PROJECT);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testGetParentScopeForAccountScope() {
+    Scope scope = Scope.of(randomAlphabetic(10), null, null);
+    Scope parentScope = SettingUtils.getParentScope(scope);
+    assertThat(parentScope).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testGetParentScopeForOrgScope() {
+    String accId = randomAlphabetic(10);
+    Scope scope = Scope.of(accId, randomAlphabetic(10), null);
+    Scope parentScope = SettingUtils.getParentScope(scope);
+    assertThat(parentScope).isEqualTo(Scope.builder().accountIdentifier(accId).build());
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testGetParentScopeForAProjectScope() {
+    String accId = randomAlphabetic(10);
+    String orgId = randomAlphabetic(10);
+    Scope scope = Scope.of(accId, orgId, randomAlphabetic(10));
+    Scope parentScope = SettingUtils.getParentScope(scope);
+    assertThat(parentScope).isEqualTo(Scope.builder().accountIdentifier(accId).orgIdentifier(orgId).build());
   }
 }
