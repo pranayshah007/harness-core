@@ -135,9 +135,8 @@ ciExecutionServiceConfig:
       image: plugins/kaniko-gcr:1.6.1
       entrypoint:
         - /kaniko/kaniko-gcr
-    # I am working on creating a new tag for acr and will update it once that is created.
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.6.3-linux-amd64
+      image: plugins/kaniko-acr:1.6.4-linux-amd64
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
@@ -165,13 +164,13 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.4.0
+      image: plugins/cache:1.4.2
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.4.0
+      image: plugins/cache:1.4.2
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
@@ -187,8 +186,8 @@ ciExecutionServiceConfig:
       s3Upload: plugins/s3:1.1.0
       security: plugin/sto_plugin:dev
       artifactoryUpload: plugins/artifactory:1.1.1
-      cacheGCS: plugins/cache:1.4.0
-      cacheS3: plugins/cache:1.4.0
+      cacheGCS: plugins/cache:1.4.2
+      cacheS3: plugins/cache:1.4.2
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
