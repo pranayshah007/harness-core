@@ -405,7 +405,9 @@ public enum FeatureName {
       "Enables parsing of the Terraform plan/apply/destroy summary [add/change/destroy] and exposing them as expressions",
       HarnessTeam.CDP),
   TERRAFORM_REMOTE_BACKEND_CONFIG("Enables storing Terraform backend configuration in a remote repo", HarnessTeam.CDP),
-  NG_OPTIMIZE_FETCH_FILES_KUSTOMIZE("Used to Optimize kustomize Manifest files fetch in NG", HarnessTeam.CDP);
+  NG_OPTIMIZE_FETCH_FILES_KUSTOMIZE("Used to Optimize kustomize Manifest files fetch in NG", HarnessTeam.CDP),
+  USE_PAGINATED_ENCRYPT_FOR_VARIABLE_OVERRIDES(
+      "Enables PaginatedComponent & Formik for VariableOverrides in CG-UI", HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {
