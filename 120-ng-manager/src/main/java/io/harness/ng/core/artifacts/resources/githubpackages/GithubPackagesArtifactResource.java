@@ -20,11 +20,14 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.utils.IdentifierRefHelper;
 
+import software.wings.helpers.ext.jenkins.BuildDetails;
+
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import lombok.AccessLevel;
@@ -59,6 +62,24 @@ public class GithubPackagesArtifactResource {
 
     GithubPackagesResponseDTO response =
         githubPackagesResourceService.getPackageDetails(connectorRef, accountId, orgIdentifier, projectIdentifier);
+
+    return ResponseDTO.newResponse(response);
+  }
+
+  @GET
+  @Path("package/{packageName}/versions")
+  @ApiOperation(value = "Gets Versions from Packages", nickname = "getVersionsFromPackages")
+  public ResponseDTO<List<BuildDetails>> getVersionsOfPackage(@QueryParam("connectorRef") String gitConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam("packageName") String packageName, @QueryParam("versionRegex") String versionRegex,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(gitConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    List<BuildDetails> response = githubPackagesResourceService.getVersionsOfPackage(
+        connectorRef, packageName, versionRegex, accountId, orgIdentifier, projectIdentifier);
 
     return ResponseDTO.newResponse(response);
   }

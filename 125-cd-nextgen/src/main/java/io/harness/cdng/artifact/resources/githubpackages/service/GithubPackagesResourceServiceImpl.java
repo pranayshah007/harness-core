@@ -10,10 +10,20 @@ package io.harness.cdng.artifact.resources.githubpackages.service;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.githubpackages.dtos.GithubPackagesResponseDTO;
 
+import software.wings.helpers.ext.jenkins.BuildDetails;
+
+import java.util.List;
+
 public class GithubPackagesResourceServiceImpl implements GithubPackagesResourceService {
   @Override
   public GithubPackagesResponseDTO getPackageDetails(
       IdentifierRef connectorRef, String accountId, String orgIdentifier, String projectIdentifier) {
+    return null;
+  }
+
+  @Override
+  public List<BuildDetails> getVersionsOfPackage(IdentifierRef connectorRef, String packageName, String versionRegex,
+      String accountId, String orgIdentifier, String projectIdentifier) {
     return null;
   }
 }

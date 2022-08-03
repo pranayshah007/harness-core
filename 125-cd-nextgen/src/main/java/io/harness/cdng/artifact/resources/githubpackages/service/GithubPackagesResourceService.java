@@ -10,7 +10,14 @@ package io.harness.cdng.artifact.resources.githubpackages.service;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.githubpackages.dtos.GithubPackagesResponseDTO;
 
+import software.wings.helpers.ext.jenkins.BuildDetails;
+
+import java.util.List;
+
 public interface GithubPackagesResourceService {
   GithubPackagesResponseDTO getPackageDetails(
       IdentifierRef connectorRef, String accountId, String orgIdentifier, String projectIdentifier);
+
+  List<BuildDetails> getVersionsOfPackage(IdentifierRef connectorRef, String packageName, String versionRegex,
+      String accountId, String orgIdentifier, String projectIdentifier);
 }
