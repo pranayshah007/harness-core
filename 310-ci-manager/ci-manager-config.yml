@@ -135,9 +135,8 @@ ciExecutionServiceConfig:
       image: plugins/kaniko-gcr:1.6.1
       entrypoint:
         - /kaniko/kaniko-gcr
-    # I am working on creating a new tag for acr and will update it once that is created.
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.6.3-linux-amd64
+      image: plugins/kaniko-acr:1.6.4-linux-amd64
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
