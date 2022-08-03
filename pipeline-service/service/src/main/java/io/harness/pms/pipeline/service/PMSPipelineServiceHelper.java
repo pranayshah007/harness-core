@@ -457,13 +457,4 @@ public class PMSPipelineServiceHelper {
     Long totalInstancesOfYAML = pmsPipelineRepository.countFileInstances(accountIdentifier, repoURL, filePath);
     return totalInstancesOfYAML > 0;
   }
-
-  public static void filePathCheck() {
-    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
-    String filePath = gitEntityInfo.getFilePath();
-    String key = GitAwareEntityHelper.HARNESS_FOLDER_EXTENSION_WITH_SEPARATOR;
-    if (!filePath.startsWith(key)) {
-      throw new InvalidRequestException("The Requested YAML path should begin with \".harness/\"");
-    }
-  }
 }

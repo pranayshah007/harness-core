@@ -10,6 +10,7 @@ package io.harness.cvng.core.entities;
 import static io.harness.cvng.analysis.CVAnalysisConstants.TIMESERIES_SERVICE_GUARD_DATA_LENGTH;
 import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -187,7 +188,10 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
                       .build())
               .build());
     }
-    return metricThresholds;
+    if (isNotEmpty(metricThresholds)) {
+      return metricThresholds;
+    }
+    return null;
   }
 
   private String getKey(TimeSeriesThreshold timeSeriesThreshold) {

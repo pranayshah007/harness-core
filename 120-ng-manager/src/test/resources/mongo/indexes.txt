@@ -694,6 +694,9 @@ resourceLookup {"name": "tagsNameResourceLookupIndex", "background": true} {"acc
 roles {"name": "appId_1", "background": true} {"appId": 1}
 roles {"name": "createdAt_1", "background": true} {"createdAt": 1}
 roles {"name": "roleType_accountId_1", "background": true} {"roleType": 1, "accountId": 1}
+rollbackData {"name": "key", "background": true} {"key": 1}
+rollbackData {"name": "key_stageStatus_createdAt", "background": true} {"key": 1, "stageStatus": 1, "createdAt": -1}
+rollbackData {"name": "stageExecutionId", "background": true} {"stageExecutionId": 1}
 schema {"name": "createdAt_1", "background": true} {"createdAt": 1}
 searchDistributedLocks {"name": "heartbeat_1", "background": true, "expireAfterSeconds": 70} {"heartbeat": 1}
 searchDistributedLocks {"name": "uuid_1", "background": true} {"uuid": 1}

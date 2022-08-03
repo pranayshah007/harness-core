@@ -135,8 +135,8 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
     }
   }
 
-  public void populateFromMetricDefinitions(List<AppDMetricDefinitions> metricDefinitions,
-      CVMonitoringCategory category, Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks) {
+  public void populateFromMetricDefinitions(
+      List<AppDMetricDefinitions> metricDefinitions, CVMonitoringCategory category) {
     MetricPack metricPack = MetricPack.builder()
                                 .category(category)
                                 .accountId(getAccountId())
@@ -167,7 +167,6 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
       this.metricInfos.add(metricInfo);
       Set<TimeSeriesThreshold> thresholds = getThresholdsToCreateOnSaveForCustomProviders(
           metricInfo.getMetricName(), metricInfo.getMetricType(), md.getRiskProfile().getThresholdTypes());
-      thresholds.addAll(getMetricThresholds(timeSeriesMetricPacks, metricInfo.getMetricType(), md.getMetricName()));
       metricPack.addToMetrics(MetricPack.MetricDefinition.builder()
                                   .thresholds(new ArrayList<>(thresholds))
                                   .type(metricInfo.getMetricType())
@@ -180,32 +179,36 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
     populateCompleteMetricPaths();
   }
 
-  private List<TimeSeriesThreshold> getMetricThresholds(
-      Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks, TimeSeriesMetricType metricType, String metricName) {
-    List<TimeSeriesThreshold> timeSeriesThresholds = new ArrayList<>();
+  public void addMetricThresholds(Set<TimeSeriesMetricPackDTO> timeSeriesMetricPacks) {
     if (isEmpty(timeSeriesMetricPacks)) {
-      return timeSeriesThresholds;
+      return;
     }
-    timeSeriesMetricPacks.forEach(timeSeriesMetricPackDTO -> {
-      if (!isEmpty(timeSeriesMetricPackDTO.getMetricThresholds())) {
-        timeSeriesMetricPackDTO.getMetricThresholds()
-            .stream()
-            .filter(metricPack -> metricPack.getMetricName().equalsIgnoreCase(metricName))
-            .forEach(metricPack
-                -> metricPack.getTimeSeriesThresholdCriteria().forEach(criteria
-                    -> timeSeriesThresholds.add(TimeSeriesThreshold.builder()
-                                                    .accountId(getAccountId())
-                                                    .projectIdentifier(getProjectIdentifier())
-                                                    .dataSourceType(getType())
-                                                    .metricType(metricType)
-                                                    .metricName(metricName)
-                                                    .action(metricPack.getType().getTimeSeriesThresholdActionType())
-                                                    .criteria(criteria)
-                                                    .thresholdConfigType(ThresholdConfigType.CUSTOMER)
-                                                    .build())));
-      }
+    getMetricPack().getMetrics().forEach(metric -> {
+      timeSeriesMetricPacks.forEach(timeSeriesMetricPackDTO -> {
+        if (!isEmpty(timeSeriesMetricPackDTO.getMetricThresholds())) {
+          timeSeriesMetricPackDTO.getMetricThresholds()
+              .stream()
+              .filter(metricPackDTO -> metric.getIdentifier().equals(metricPackDTO.getMetricName()))
+              .forEach(metricPackDTO -> metricPackDTO.getTimeSeriesThresholdCriteria().forEach(criteria -> {
+                List<TimeSeriesThreshold> timeSeriesThresholds =
+                    metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
+                TimeSeriesThreshold timeSeriesThreshold =
+                    TimeSeriesThreshold.builder()
+                        .accountId(getAccountId())
+                        .projectIdentifier(getProjectIdentifier())
+                        .dataSourceType(getType())
+                        .metricType(metric.getType())
+                        .metricName(metricPackDTO.getMetricName())
+                        .action(metricPackDTO.getType().getTimeSeriesThresholdActionType())
+                        .criteria(criteria)
+                        .thresholdConfigType(ThresholdConfigType.CUSTOMER)
+                        .build();
+                timeSeriesThresholds.add(timeSeriesThreshold);
+                metric.setThresholds(timeSeriesThresholds);
+              }));
+        }
+      });
     });
-    return timeSeriesThresholds;
   }
 
   @Data

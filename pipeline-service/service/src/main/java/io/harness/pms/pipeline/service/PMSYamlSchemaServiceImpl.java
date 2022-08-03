@@ -321,6 +321,15 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       List<ModuleType> enabledModules = obtainEnabledModules(accountId);
       enabledModules.add(ModuleType.PMS);
       yamlSchemaWithDetailsList = fetchSchemaWithDetailsFromModules(accountId, enabledModules);
+      nameSpaces =
+          yamlSchemaWithDetailsList.stream()
+              .filter(o -> o.getYamlSchemaMetadata().getYamlGroup().getGroup().equals(StepCategory.STAGE.name()))
+              .map(o -> o.getYamlSchemaMetadata().getNamespace())
+              .collect(Collectors.toSet());
+      yamlSchemaWithDetailsList =
+          yamlSchemaWithDetailsList.stream()
+              .filter(o -> o.getYamlSchemaMetadata().getYamlGroup().getGroup().equals(StepCategory.STEP.name()))
+              .collect(Collectors.toList());
       yamlSchemaWithDetailsList =
           filterYamlSchemaDetailsByModule(yamlSchemaWithDetailsList, entityType.getEntityProduct());
       // Hack to handle proper schema generation for stage

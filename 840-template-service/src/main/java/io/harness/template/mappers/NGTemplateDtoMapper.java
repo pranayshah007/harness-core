@@ -23,8 +23,14 @@ import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.ng.core.template.TemplateListType;
+import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.template.TemplateFilterPropertiesDTO;
+import io.harness.template.beans.FilterParamsDTO;
+import io.harness.template.beans.PageParamsDTO;
+import io.harness.template.beans.TemplateFilterProperties;
 import io.harness.template.beans.TemplateResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.beans.yaml.NGTemplateInfoConfig;
@@ -32,6 +38,7 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.utils.YamlPipelineUtils;
 
 import java.io.IOException;
+import java.util.List;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(CDC)
@@ -95,6 +102,29 @@ public class NGTemplateDtoMapper {
         .build();
   }
 
+  public TemplateMetadataSummaryResponseDTO prepareTemplateMetaDataSummaryResponseDto(TemplateEntity templateEntity) {
+    return TemplateMetadataSummaryResponseDTO.builder()
+        .accountIdentifier(templateEntity.getAccountId())
+        .orgIdentifier(templateEntity.getOrgIdentifier())
+        .projectIdentifier(templateEntity.getProjectIdentifier())
+        .identifier(templateEntity.getIdentifier())
+        .description(templateEntity.getDescription())
+        .name(templateEntity.getName())
+        .isStableTemplate(templateEntity.isStableTemplate())
+        .childType(templateEntity.getChildType())
+        .templateEntityType(templateEntity.getTemplateEntityType())
+        .templateScope(templateEntity.getTemplateScope())
+        .versionLabel(templateEntity.getVersionLabel())
+        .tags(TagMapper.convertToMap(templateEntity.getTags()))
+        .version(templateEntity.getVersion())
+        .gitDetails(getEntityGitDetails(templateEntity))
+        .lastUpdatedAt(templateEntity.getLastUpdatedAt())
+        .createdAt(templateEntity.getCreatedAt())
+        .storeType(templateEntity.getStoreType())
+        .connectorRef(templateEntity.getConnectorRef())
+        .build();
+  }
+
   public TemplateEntity toTemplateEntityResponse(
       String accountId, String orgId, String projectId, NGTemplateConfig templateConfig, String yaml) {
     validateTemplateYaml(templateConfig, orgId, projectId);
@@ -125,6 +155,37 @@ public class NGTemplateDtoMapper {
                 ? JsonNodeUtils.getString(templateConfig.getTemplateInfoConfig().getSpec(), "type")
                 : null)
         .build();
+  }
+
+  public FilterParamsDTO prepareFilterParamsDTO(String searchTerm, String filterIdentifier,
+      TemplateListType templateListType, TemplateFilterProperties templateFilterProperties,
+      boolean includeAllTemplatesAccessibleAtScope, boolean getDistinctFromBranches) {
+    return FilterParamsDTO.builder()
+        .searchTerm(searchTerm)
+        .filterIdentifier(filterIdentifier)
+        .templateListType(templateListType)
+        .templateFilterProperties(templateFilterProperties)
+        .includeAllTemplatesAccessibleAtScope(includeAllTemplatesAccessibleAtScope)
+        .getDistinctFromBranches(getDistinctFromBranches)
+        .build();
+  }
+
+  public PageParamsDTO preparePageParamsDTO(int page, int size, List<String> sort) {
+    return PageParamsDTO.builder().page(page).size(size).sort(sort).build();
+  }
+
+  public TemplateFilterProperties toTemplateFilterProperties(TemplateFilterPropertiesDTO filterProperties) {
+    if (filterProperties == null) {
+      return TemplateFilterProperties.builder().build();
+    } else {
+      return TemplateFilterProperties.builder()
+          .templateNames(filterProperties.getTemplateNames())
+          .templateIdentifiers(filterProperties.getTemplateIdentifiers())
+          .templateEntityTypes(filterProperties.getTemplateEntityTypes())
+          .childTypes(filterProperties.getChildTypes())
+          .description(filterProperties.getDescription())
+          .build();
+    }
   }
 
   public TemplateEntity toTemplateEntity(String accountId, NGTemplateConfig templateConfig) {
