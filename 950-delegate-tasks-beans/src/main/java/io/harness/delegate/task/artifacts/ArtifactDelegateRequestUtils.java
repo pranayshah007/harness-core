@@ -20,12 +20,14 @@ import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
@@ -213,5 +215,19 @@ public class ArtifactDelegateRequestUtils {
 
   private String trim(String str) {
     return str == null ? null : str.trim();
+  }
+
+  public static GithubPackagesArtifactDelegateRequest getGithubPackagesDelegateRequest(String packageName,
+      String version, String versionRegex, String connectorRef, GithubConnectorDTO githubConnector,
+      List<EncryptedDataDetail> encryptionDetails, ArtifactSourceType artifactSourceType) {
+    return GithubPackagesArtifactDelegateRequest.builder()
+        .packageName(packageName)
+        .githubConnectorDTO(githubConnector)
+        .version(version)
+        .versionRegex(versionRegex)
+        .connectorRef(connectorRef)
+        .encryptedDataDetails(encryptionDetails)
+        .sourceType(artifactSourceType)
+        .build();
   }
 }

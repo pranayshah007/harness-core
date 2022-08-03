@@ -9,6 +9,8 @@ package io.harness.delegate.task.artifacts.githubpackages;
 
 import static io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -22,7 +24,14 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;
 import java.util.List;
+import lombok.*;
 
+@Value
+@Data
+@Builder
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+@OwnedBy(HarnessTeam.CDC)
 public class GithubPackagesArtifactDelegateRequest implements ArtifactSourceDelegateRequest {
   /** Package Name in repos need to be referenced. */
   String packageName;
@@ -40,6 +49,8 @@ public class GithubPackagesArtifactDelegateRequest implements ArtifactSourceDele
   List<EncryptedDataDetail> encryptedDataDetails;
   /** Artifact Source type.*/
   ArtifactSourceType sourceType;
+  /** Connector Refernce. */
+  String connectorRef;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
