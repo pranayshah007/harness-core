@@ -69,8 +69,7 @@ public class GithubPackagesArtifactResource {
   @GET
   @Path("package/{packageName}/versions")
   @ApiOperation(value = "Gets Versions from Packages", nickname = "getVersionsFromPackages")
-  public ResponseDTO<GithubPackagesResponseDTO> getVersionsOfPackage(
-      @QueryParam("connectorRef") String gitConnectorIdentifier,
+  public ResponseDTO<List<BuildDetails>> getVersionsOfPackage(@QueryParam("connectorRef") String gitConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
@@ -79,7 +78,7 @@ public class GithubPackagesArtifactResource {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(gitConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
-    GithubPackagesResponseDTO response = githubPackagesResourceService.getVersionsOfPackage(
+    List<BuildDetails> response = githubPackagesResourceService.getVersionsOfPackage(
         connectorRef, packageName, versionRegex, accountId, orgIdentifier, projectIdentifier);
 
     return ResponseDTO.newResponse(response);
