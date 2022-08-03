@@ -172,6 +172,8 @@ fi
 if ! `grep pollForTasks config-delegate.yml > /dev/null`; then
   if [ "$DEPLOY_MODE" == "ONPREM" ]; then
       echo "pollForTasks: true" >> config-delegate.yml
+  elif [[ ! -z "$POLL_FOR_TASKS" ]]; then
+      echo "pollForTasks: $POLL_FOR_TASKS" >> config-delegate.yml
   else
       echo "pollForTasks: false" >> config-delegate.yml
   fi
