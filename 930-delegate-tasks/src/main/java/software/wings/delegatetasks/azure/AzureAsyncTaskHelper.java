@@ -625,7 +625,8 @@ public class AzureAsyncTaskHelper {
         azureConnector.getAzureEnvironmentType(), secretDecryptionService);
 
     String azureAccessToken;
-    if (azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT) {
+    if (azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT
+        || azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET) {
       azureAccessToken =
           azureAuthorizationClient.getUserAccessToken(azureConfig, AzureUtils.AUTH_SCOPE).getAccessToken();
     } else {

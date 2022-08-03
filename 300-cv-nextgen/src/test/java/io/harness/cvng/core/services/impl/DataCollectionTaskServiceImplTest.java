@@ -994,6 +994,26 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
     }
   }
 
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGetAllNonFinalDataCollectionTasks() {
+    int numOfTasks = 5;
+    for (int i = 0; i < numOfTasks; i++) {
+      createAndSave(RUNNING);
+    }
+    for (int i = 0; i < numOfTasks; i++) {
+      createAndSave(SUCCESS);
+    }
+
+    List<DataCollectionTask> dataCollectionTaskList =
+        dataCollectionTaskService.getAllNonFinalDataCollectionTasks(accountId, verificationTaskId);
+    assertThat(dataCollectionTaskList.size()).isEqualTo(numOfTasks);
+    for (DataCollectionTask dataCollectionTask : dataCollectionTaskList) {
+      assertThat(dataCollectionTask.getStatus()).isIn(DataCollectionExecutionStatus.getNonFinalStatuses());
+    }
+  }
+
   private AppDynamicsCVConfig getCVConfig() {
     AppDynamicsCVConfig cvConfig = builderFactory.appDynamicsCVConfigBuilder().build();
     cvConfig.setUuid(cvConfigId);

@@ -199,4 +199,13 @@ public class GitAwareEntityHelper {
         .getRepoUrl(scope, gitEntityInfo.getRepoName(), gitEntityInfo.getConnectorRef(), Collections.emptyMap())
         .getRepoUrl();
   }
+
+  public void checkRootFolder() {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    String filePath = gitEntityInfo.getFilePath();
+    String key = GitAwareEntityHelper.HARNESS_FOLDER_EXTENSION_WITH_SEPARATOR;
+    if (!filePath.startsWith(key)) {
+      throw new InvalidRequestException("The Requested YAML path should begin with \".harness/\"");
+    }
+  }
 }

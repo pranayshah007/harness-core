@@ -19,5 +19,5 @@ public interface GitlabRestClient {
   @POST("v4/projects/{id}/statuses/{sha}/")
   Call<StatusCreationResponse> createStatus(@Header("Authorization") String authorization, @Path("id") String id,
       @Path("sha") String sha, @Query("state") String state, @Query("context") String context,
-      @Query("description") String description);
+      @Query("description") String description, @Query("target_url") String target_url);
 }

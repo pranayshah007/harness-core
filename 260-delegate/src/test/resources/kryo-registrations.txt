@@ -1737,6 +1737,7 @@
 55413:io.harness.delegate.task.ssh.AzureInfraDelegateConfig
 55414:io.harness.delegate.task.ssh.AzureSshInfraDelegateConfig
 55415:io.harness.delegate.task.ssh.AzureWinrmInfraDelegateConfig
+55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo
 56403:io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO

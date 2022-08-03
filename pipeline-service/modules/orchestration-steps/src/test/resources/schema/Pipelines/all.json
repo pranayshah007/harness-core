@@ -216,7 +216,8 @@
       "type": "object",
       "required": [
         "disallowPipelineExecutor",
-        "minimumCount"
+        "minimumCount",
+        "userGroups"
       ],
       "properties": {
         "disallowPipelineExecutor": {
@@ -255,8 +256,7 @@
               "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
-          ],
-          "minLength": 1
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"

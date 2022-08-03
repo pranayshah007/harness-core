@@ -15,7 +15,6 @@ import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
@@ -24,9 +23,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.TemplateServiceTestBase;
 import io.harness.accesscontrol.clients.AccessControlClient;
-import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
 import io.harness.enforcement.client.services.EnforcementClientService;
@@ -89,7 +86,6 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock private ProjectClient projectClient;
   @Mock private OrganizationClient organizationClient;
   @Mock private TemplateReferenceHelper templateReferenceHelper;
-  @Mock AccountClient accountClient;
 
   @InjectMocks NGTemplateServiceImpl templateService;
 
@@ -129,7 +125,6 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     on(templateService).set("projectClient", projectClient);
     on(templateService).set("organizationClient", organizationClient);
     on(templateService).set("templateReferenceHelper", templateReferenceHelper);
-    on(templateService).set("accountClient", accountClient);
 
     doNothing().when(enforcementClientService).checkAvailability(any(), any());
     entity = TemplateEntity.builder()
@@ -158,8 +153,6 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
         .thenReturn(Response.success(ResponseDTO.newResponse(Optional.of(OrganizationResponse.builder().build()))));
 
     Call<RestResponse<Boolean>> ffCall = mock(Call.class);
-    when(accountClient.isFeatureFlagEnabled(eq(FeatureName.HARD_DELETE_ENTITIES.name()), anyString()))
-        .thenReturn(ffCall);
     when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(false)));
   }
 
@@ -723,6 +716,29 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThatThrownBy(() -> templateService.create(templateEntity, false, ""))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Project projId specified without the org Identifier");
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void shouldThrowExceptionOnTemplateTypeAndChildTypeChange() {
+    TemplateEntity shellStepTemplate =
+        entity.withTemplateEntityType(TemplateEntityType.STEP_TEMPLATE).withChildType("ShellScript");
+
+    templateService.create(shellStepTemplate, false, "");
+
+    TemplateEntity stageTemplate =
+        entity.withVersionLabel("v2").withTemplateEntityType(TemplateEntityType.STAGE_TEMPLATE);
+    assertThatThrownBy(() -> templateService.create(stageTemplate, false, ""))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Error while saving template [template1] of versionLabel [v2]: Template should have same template entity type Step as other template versions");
+
+    TemplateEntity httpStepTemplate = shellStepTemplate.withVersionLabel("v3").withChildType("Http");
+    assertThatThrownBy(() -> templateService.create(httpStepTemplate, false, ""))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Error while saving template [template1] of versionLabel [v3]: Template should have same child type ShellScript as other template versions");
   }
 
   @Test

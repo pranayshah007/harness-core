@@ -19,6 +19,7 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.InputSetReferenceProtoDTO;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.ExplanationException;
+import io.harness.exception.GitYamlException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmException;
@@ -32,6 +33,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.gitsync.helpers.GitContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
@@ -49,6 +51,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.inputset.PMSInputSetRepository;
+import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.inject.Inject;
@@ -75,6 +78,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Inject private PMSPipelineService pmsPipelineService;
   @Inject private GitSyncSdkService gitSyncSdkService;
   @Inject private GitAwareEntityHelper gitAwareEntityHelper;
+  @Inject private PMSPipelineRepository pmsPipelineRepository;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Input set [%s] under Project[%s], Organization [%s] for Pipeline [%s] already exists";
@@ -400,13 +404,18 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   }
 
   @Override
-  public InputSetEntity importInputSetFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequestDTO) {
-    String importedInputSetYAML = gitAwareEntityHelper.fetchYAMLFromRemote(accountId, orgIdentifier, projectIdentifier);
+  public InputSetEntity importInputSetFromRemote(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, String inputSetIdentifier,
+      InputSetImportRequestDTO inputSetImportRequestDTO, boolean isForceImport) {
+    gitAwareEntityHelper.checkRootFolder();
+    String repoUrl = getRepoUrlAndCheckForFileUniqueness(
+        accountIdentifier, orgIdentifier, projectIdentifier, inputSetIdentifier, isForceImport);
+    String importedInputSetYAML =
+        gitAwareEntityHelper.fetchYAMLFromRemote(accountIdentifier, orgIdentifier, projectIdentifier);
     checkAndThrowMismatchInImportedInputSetMetadata(orgIdentifier, projectIdentifier, pipelineIdentifier,
         inputSetIdentifier, inputSetImportRequestDTO, importedInputSetYAML);
-    InputSetEntity inputSetEntity = PMSInputSetElementMapper.toInputSetEntity(accountId, importedInputSetYAML);
-
+    InputSetEntity inputSetEntity = PMSInputSetElementMapper.toInputSetEntity(accountIdentifier, importedInputSetYAML);
+    inputSetEntity.setRepoURL(repoUrl);
     try {
       return inputSetRepository.saveForImportedYAML(inputSetEntity);
     } catch (DuplicateKeyException ex) {
@@ -531,5 +540,22 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     InvalidYamlException invalidYamlException = new InvalidYamlException(errorMessage, errorWrapperDTO);
     invalidYamlException.setYaml(pipelineYaml);
     return invalidYamlException;
+  }
+
+  String getRepoUrlAndCheckForFileUniqueness(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String inputSetIdentifier, boolean isForceImport) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    String repoURL = gitAwareEntityHelper.getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier);
+
+    if (Boolean.TRUE.equals(isForceImport)) {
+      log.info("Importing YAML forcefully with InputSet Id: {}, RepoURl: {}, FilePath: {}", inputSetIdentifier, repoURL,
+          gitEntityInfo.getFilePath());
+    } else if (inputSetRepository.checkIfInputSetWithGivenFilePathExists(
+                   accountIdentifier, repoURL, gitEntityInfo.getFilePath())) {
+      String error = "The Requested YAML with InputSet Id: " + inputSetIdentifier + ", RepoURl: " + repoURL
+          + ", FilePath: " + gitEntityInfo.getFilePath() + " already exists.";
+      throw new GitYamlException(error);
+    }
+    return repoURL;
   }
 }

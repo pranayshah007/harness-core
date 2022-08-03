@@ -7,4 +7,16 @@
 
 package io.harness.cvng.core.beans.monitoredService.metricThresholdSpec;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.SuperBuilder;
+
+@Data
+@SuperBuilder
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class IgnoreMetricThresholdSpec extends MetricThresholdSpec {}

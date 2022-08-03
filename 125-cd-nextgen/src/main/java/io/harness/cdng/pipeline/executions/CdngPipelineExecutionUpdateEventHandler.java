@@ -18,7 +18,9 @@ import static io.harness.pms.contracts.execution.Status.EXPIRED;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.rollback.service.RollbackDataServiceImpl;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
@@ -33,6 +35,7 @@ import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.utils.StageStatus;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -40,6 +43,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -55,9 +59,14 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepHelper stepHelper;
   @Inject private AccountService accountService;
+  @Inject private RollbackDataServiceImpl rollbackDataService;
 
   @Override
   public void handleEvent(OrchestrationEvent event) {
+    if (isDeploymentStageStep(event.getAmbiance())) {
+      processDeploymentStageEvent(event);
+    }
+
     try {
       if (isExpiredOrAborted(event.getStatus()) && (isK8sOrTerraformRollback(event.getAmbiance()))) {
         String accountName = accountService.getAccount(AmbianceUtils.getAccountId(event.getAmbiance())).getName();
@@ -76,6 +85,26 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
     } catch (Exception ex) {
       log.error("Unable to close log streams", ex);
     }
+  }
+
+  private void processDeploymentStageEvent(@NotNull OrchestrationEvent event) {
+    Status status = event.getStatus();
+    Ambiance ambiance = event.getAmbiance();
+    if (StatusUtils.isFinalStatus(status)) {
+      String stageExecutionId = ambiance.getStageExecutionId();
+      StageStatus stageStatus = status.equals(Status.SUCCEEDED) ? StageStatus.SUCCEEDED : StageStatus.FAILED;
+      try {
+        rollbackDataService.updateStatus(stageExecutionId, stageStatus);
+      } catch (Exception ex) {
+        log.error("Unable to process deployment stage event", ex);
+      }
+    }
+  }
+
+  private boolean isDeploymentStageStep(Ambiance ambiance) {
+    Level currentLevel = AmbianceUtils.obtainCurrentLevel(ambiance);
+    return currentLevel != null
+        && currentLevel.getStepType().getType().equals(ExecutionNodeType.DEPLOYMENT_STAGE_STEP.getName());
   }
 
   private boolean isK8sOrTerraformRollback(Ambiance ambiance) {

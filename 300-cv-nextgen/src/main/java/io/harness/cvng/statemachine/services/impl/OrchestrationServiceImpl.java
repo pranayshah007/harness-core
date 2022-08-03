@@ -14,6 +14,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.SRM_STATEMACHI
 import static io.harness.eventsframework.EventsFrameworkConstants.SRM_STATEMACHINE_LOCK_TIMEOUT;
 import static io.harness.eventsframework.EventsFrameworkConstants.SRM_STATEMACHINE_LOCK_WAIT_TIMEOUT;
 
+import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.core.jobs.StateMachineEventPublisherService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
@@ -58,11 +59,17 @@ public class OrchestrationServiceImpl implements OrchestrationService {
   @Inject private PersistentLocker persistentLocker;
   @Inject private MetricService metricService;
   @Inject private MetricContextBuilder metricContextBuilder;
+  @Inject private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
 
   @Override
   public void queueAnalysis(String verificationTaskId, Instant startTime, Instant endTime) {
     log.info("Queuing analysis for verificationTaskId: {}, startTime: {}, endTime: {}", verificationTaskId, startTime,
         endTime);
+    if (deploymentTimeSeriesAnalysisService.isAnalysisFailFastForLatestTimeRange(verificationTaskId)) {
+      log.info("DeploymentTimeSeriesAnalysis from LE is FailFast, so not queuing analysis for verificationTaskId: {}",
+          verificationTaskId);
+      return;
+    }
 
     AnalysisInput inputForAnalysis =
         AnalysisInput.builder().verificationTaskId(verificationTaskId).startTime(startTime).endTime(endTime).build();
@@ -101,10 +108,14 @@ public class OrchestrationServiceImpl implements OrchestrationService {
   @Override
   public void orchestrate(AnalysisOrchestrator orchestrator) {
     Preconditions.checkNotNull(orchestrator, "orchestrator cannot be null when trying to orchestrate");
+
     String lockString = SRM_STATEMACHINE_LOCK + orchestrator.getVerificationTaskId();
     try (AcquiredLock acquiredLock =
              persistentLocker.waitToAcquireLock(lockString, Duration.ofSeconds(SRM_STATEMACHINE_LOCK_TIMEOUT),
                  Duration.ofSeconds(SRM_STATEMACHINE_LOCK_WAIT_TIMEOUT))) {
+      if (isAnalysisOrchestratorTerminatedOrIsFailFast(orchestrator)) {
+        return;
+      }
       orchestrateAtRunningState(orchestrator);
     } catch (Exception e) {
       // TODO: these errors needs to go to execution log so that we can connect it with the right context and show them
@@ -113,6 +124,39 @@ public class OrchestrationServiceImpl implements OrchestrationService {
       log.error("Failed to orchestrate: {}", orchestrator.getVerificationTaskId(), e);
       throw e;
     }
+  }
+
+  private boolean isAnalysisOrchestratorTerminatedOrIsFailFast(AnalysisOrchestrator orchestrator) {
+    if (orchestrator.getStatus().equals(AnalysisOrchestratorStatus.TERMINATED)) {
+      log.info(
+          "DeploymentTimeSeriesAnalysis from LE is FailFast, so not orchestrating analysis for verificationTaskId: {}",
+          orchestrator.getVerificationTaskId());
+      return true;
+    }
+    if (deploymentTimeSeriesAnalysisService.isAnalysisFailFastForLatestTimeRange(
+            orchestrator.getVerificationTaskId())) {
+      terminateExistingAnalysisOrchestratorAndStateMachines(orchestrator);
+      return true;
+    }
+    return false;
+  }
+
+  private void terminateExistingAnalysisOrchestratorAndStateMachines(AnalysisOrchestrator orchestrator) {
+    Query<AnalysisOrchestrator> orchestratorQuery =
+        hPersistence.createQuery(AnalysisOrchestrator.class)
+            .filter(AnalysisOrchestratorKeys.verificationTaskId, orchestrator.getVerificationTaskId());
+
+    List<AnalysisStateMachine> analysisStateMachines = orchestrator.getAnalysisStateMachineQueue();
+    analysisStateMachines.forEach(analysisStateMachine -> analysisStateMachine.setStatus(AnalysisStatus.TERMINATED));
+    stateMachineService.save(analysisStateMachines);
+
+    UpdateOperations<AnalysisOrchestrator> updateOperations =
+        hPersistence.createUpdateOperations(AnalysisOrchestrator.class)
+            .setOnInsert(AnalysisOrchestratorKeys.verificationTaskId, orchestrator.getVerificationTaskId())
+            .set(AnalysisOrchestratorKeys.status, AnalysisOrchestratorStatus.TERMINATED)
+            .addToSet(AnalysisOrchestratorKeys.analysisStateMachineQueue, analysisStateMachines);
+
+    hPersistence.upsert(orchestratorQuery, updateOperations);
   }
 
   @Override

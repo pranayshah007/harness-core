@@ -2312,9 +2312,6 @@
         {
           "type": "object",
           "properties": {
-            "manifestScope": {
-              "type": "string"
-            },
             "metadata": {
               "type": "string"
             },

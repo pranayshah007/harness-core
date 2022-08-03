@@ -247,6 +247,14 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .field(WorkflowExecutionKeys.cdPageCandidate)
                  .descSortField(WorkflowExecutionKeys.createdAt)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_1_deployedServices_1_createdAt_-1_appId_1_status_1")
+                 .field(WorkflowExecutionKeys.accountId)
+                 .field(WorkflowExecutionKeys.deployedServices)
+                 .descSortField(WorkflowExecutionKeys.createdAt)
+                 .rangeField(WorkflowExecutionKeys.appId)
+                 .rangeField(WorkflowExecutionKeys.status)
+                 .build())
         .build();
   }
 

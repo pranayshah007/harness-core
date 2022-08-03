@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Copyright 2021 Harness Inc. All rights reserved.
-# Use of this source code is governed by the PolyForm Shield 1.0.0 license
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
 # that can be found in the licenses directory at the root of this repository, also available at
-# https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 CONFIG_FILE=/opt/harness/config.yml
 REDISSON_CACHE_FILE=/opt/harness/redisson-jcache.yaml
@@ -131,6 +131,22 @@ fi
 
 if [[ "" != "$CI_MANAGER_SERVICE_SECRET" ]]; then
   yq write -i $CONFIG_FILE yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.secret $CI_MANAGER_SERVICE_SECRET
+fi
+
+if [[ "" != "$STO_MANAGER_BASE_URL" ]]; then
+  yq write -i $CONFIG_FILE yamlSchemaClientConfig.yamlSchemaHttpClientMap.sto.serviceHttpClientConfig.baseUrl $STO_MANAGER_BASE_URL
+fi
+
+if [[ "" != "$STO_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS" ]]; then
+  yq write -i $CONFIG_FILE yamlSchemaClientConfig.yamlSchemaHttpClientMap.sto.serviceHttpClientConfig.connectTimeOutSeconds $STO_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS
+fi
+
+if [[ "" != "$STO_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS" ]]; then
+  yq write -i $CONFIG_FILE yamlSchemaClientConfig.yamlSchemaHttpClientMap.sto.serviceHttpClientConfig.readTimeOutSeconds $STO_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS
+fi
+
+if [[ "" != "$STO_MANAGER_SERVICE_SECRET" ]]; then
+  yq write -i $CONFIG_FILE yamlSchemaClientConfig.yamlSchemaHttpClientMap.sto.secret $STO_MANAGER_SERVICE_SECRET
 fi
 
 if [[ "" != "$NG_MANAGER_BASE_URL" ]]; then
@@ -358,6 +374,14 @@ replace_key_value triggerConfig.customBaseUrl "$CUSTOM_TRIGGER_BASEURL"
 
 replace_key_value opaServerConfig.baseUrl "$OPA_SERVER_BASEURL"
 replace_key_value opaServerConfig.secret "$OPA_SERVER_SECRET"
+replace_key_value policyManagerSecret "$OPA_SERVER_SECRET"
+replace_key_value opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"
+if [[ "" != "$OPA_CONNECT_TIMEOUT" ]]; then
+  replace_key_value opaClientConfig.connectTimeOutSeconds "$OPA_CONNECT_TIMEOUT"
+fi
+if [[ "" != "$OPA_READ_TIMEOUT" ]]; then
+  replace_key_value opaClientConfig.readTimeOutSeconds "$OPA_READ_TIMEOUT"
+fi
 
 replace_key_value delegatePollingConfig.syncDelay "$POLLING_SYNC_DELAY"
 replace_key_value delegatePollingConfig.asyncDelay "$POLLING_ASYNC_DELAY"
@@ -411,6 +435,7 @@ replace_key_value pipelineEventConsumersConfig.planNotify.threads "$PLAN_NOTIFY_
 replace_key_value pipelineEventConsumersConfig.pmsNotify.threads "$PMS_NOTIFY_EVENT_CONSUMER_THREAD_COUNT"
 replace_key_value pipelineEventConsumersConfig.webhookEvent.threads "$PMS_WEBHOOK_EVENT_CONSUMER_THREAD_COUNT"
 replace_key_value pipelineEventConsumersConfig.initiateNode.threads "$INITIATE_NODE_EVENT_CONSUMER_THREAD_COUNT"
+
 
 replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"
 replace_key_value segmentConfiguration.url "$SEGMENT_URL"

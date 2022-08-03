@@ -115,12 +115,12 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
              deploymentEvent.getInfrastructureOutcome()))
         .thenReturn(PERPETUAL_TASK);
     when(instanceSyncPerpetualTaskInfoService.save(any())).thenReturn(instanceSyncPerpetualTaskInfoDTO);
-    when(
-        instanceSyncHandlerFactoryService.getInstanceSyncHandler(deploymentSummaryDTO.getDeploymentInfoDTO().getType()))
+    when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+             deploymentSummaryDTO.getDeploymentInfoDTO().getType(), infrastructureOutcome.getKind()))
         .thenReturn(abstractInstanceSyncHandler);
     instanceSyncService.processInstanceSyncForNewDeployment(deploymentEvent);
     verify(instanceSyncHandlerFactoryService, times(3))
-        .getInstanceSyncHandler(deploymentSummaryDTO.getDeploymentInfoDTO().getType());
+        .getInstanceSyncHandler(deploymentSummaryDTO.getDeploymentInfoDTO().getType(), infrastructureOutcome.getKind());
   }
 
   @Test
@@ -152,12 +152,13 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
              InstanceSyncConstants.INSTANCE_SYNC_PREFIX + instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId(),
              InstanceSyncConstants.INSTANCE_SYNC_LOCK_TIMEOUT, InstanceSyncConstants.INSTANCE_SYNC_WAIT_TIMEOUT))
         .thenReturn(acquiredLock);
-    when(
-        instanceSyncHandlerFactoryService.getInstanceSyncHandler(instanceSyncPerpetualTaskResponse.getDeploymentType()))
+    when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+             instanceSyncPerpetualTaskResponse.getDeploymentType(), InfrastructureKind.KUBERNETES_DIRECT))
         .thenReturn(abstractInstanceSyncHandler);
     instanceSyncService.processInstanceSyncByPerpetualTask(
         ACCOUNT_IDENTIFIER, PERPETUAL_TASK, instanceSyncPerpetualTaskResponse);
     verify(instanceSyncHandlerFactoryService, times(1))
-        .getInstanceSyncHandler(instanceSyncPerpetualTaskResponse.getDeploymentType());
+        .getInstanceSyncHandler(
+            instanceSyncPerpetualTaskResponse.getDeploymentType(), InfrastructureKind.KUBERNETES_DIRECT);
   }
 }

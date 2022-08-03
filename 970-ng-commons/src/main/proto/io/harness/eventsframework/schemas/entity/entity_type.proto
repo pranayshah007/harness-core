@@ -101,4 +101,5 @@ enum EntityTypeProtoEnum {
   JENKINS_BUILD = 88;
   TEMPLATE_STAGE = 89;
   EMAIL_STEP = 90;
+  BUILD_AND_PUSH_ACR = 91;
 }

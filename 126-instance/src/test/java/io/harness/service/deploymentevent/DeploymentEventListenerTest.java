@@ -134,7 +134,8 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
     final ArgumentCaptor<InfrastructureMappingDTO> captor = ArgumentCaptor.forClass(InfrastructureMappingDTO.class);
     when(infrastructureMappingService.createNewOrReturnExistingInfrastructureMapping(any()))
         .thenReturn(Optional.of(infrastructureMappingDTO));
-    when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(serviceStepOutcome.getType()))
+    when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+             serviceStepOutcome.getType(), infrastructureOutcome.getKind()))
         .thenReturn(abstractInstanceSyncHandler);
     DeploymentInfoDTO deploymentInfoDTO =
         K8sDeploymentInfoDTO.builder().releaseName(RELEASE_NAME).namespaces(namespaces).build();

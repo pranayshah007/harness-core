@@ -16,18 +16,20 @@ import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREAD
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_INVITED_SUCCESSFULLY;
 import static io.harness.rule.OwnerRule.ANKUSH;
 import static io.harness.rule.OwnerRule.PRATEEK;
+import static io.harness.rule.OwnerRule.UJJAWAL;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mock;
 
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -72,6 +74,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.transaction.support.TransactionTemplate;
+import retrofit2.Call;
 import retrofit2.Response;
 
 @OwnedBy(PL)
@@ -117,6 +120,10 @@ public class InviteServiceImplTest extends CategoryTest {
     when(accountOrgProjectHelper.getProjectName(any(), any(), any())).thenReturn("Project");
     when(accountOrgProjectHelper.getOrgName(any(), any())).thenReturn("Organization");
     when(accountOrgProjectHelper.getAccountName(any())).thenReturn("Account");
+
+    Call<RestResponse<Boolean>> userCall = mock(Call.class);
+    when(userClient.checkUserLimit(any(), anyString())).thenReturn(userCall);
+    when(userCall.execute()).thenReturn(Response.success(new RestResponse<>(false)));
   }
 
   private Invite getDummyInvite() {
@@ -161,6 +168,18 @@ public class InviteServiceImplTest extends CategoryTest {
 
     InviteOperationResponse inviteOperationResponse = inviteService.create(getDummyInvite(), false, false);
     assertThat(inviteOperationResponse).isEqualTo(USER_ALREADY_ADDED);
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testCreateUserLimit() {
+    when(ngUserService.isUserAtScope(any(), any())).thenReturn(true);
+    when(ngUserService.getUserByEmail(any(), anyBoolean()))
+        .thenReturn(Optional.of(UserMetadataDTO.builder().uuid(userId).build()));
+
+    InviteOperationResponse invite = inviteService.create(getDummyInvite(), false, false);
+    assertThat(invite).isEqualTo(USER_ALREADY_ADDED);
   }
 
   @Test

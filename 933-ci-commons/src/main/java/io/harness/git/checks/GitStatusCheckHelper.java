@@ -65,6 +65,7 @@ public class GitStatusCheckHelper {
   private static final String AZURE_REPO_API_URL = "https://dev.azure.com/";
   private static final String AZURE_REPO_GENRE = "HarnessCI";
   private static final String PATH_SEPARATOR = "/";
+  private static final String GITLAB_GENRE = "Harness CI";
 
   private static final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private static final int MAX_ATTEMPTS = 3;
@@ -174,7 +175,7 @@ public class GitStatusCheckHelper {
   private boolean sendBuildStatusToGitLab(GitStatusCheckParams gitStatusCheckParams) {
     Map<String, Object> bodyObjectMap = new HashMap<>();
     bodyObjectMap.put(GitlabServiceImpl.DESC, gitStatusCheckParams.getDesc());
-    bodyObjectMap.put(GitlabServiceImpl.CONTEXT, gitStatusCheckParams.getIdentifier());
+    bodyObjectMap.put(GitlabServiceImpl.CONTEXT, GITLAB_GENRE + ": " + gitStatusCheckParams.getIdentifier());
     bodyObjectMap.put(GitlabServiceImpl.STATE, gitStatusCheckParams.getState());
     bodyObjectMap.put(GitlabServiceImpl.TARGET_URL, gitStatusCheckParams.getDetailsUrl());
 

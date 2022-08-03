@@ -38,5 +38,4 @@ public class KustomizeManifestOutcome implements ManifestOutcome {
   ParameterField<String> pluginPath;
   ParameterField<Boolean> skipResourceVersioning;
   ParameterField<List<String>> patchesPaths;
-  ParameterField<String> manifestScope;
 }

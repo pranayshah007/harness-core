@@ -239,7 +239,7 @@ if [ ! -e watcher.jar ]; then
   echo "Downloading Watcher $REMOTE_WATCHER_VERSION ..."
   curl $MANAGER_PROXY_CURL -#k $REMOTE_WATCHER_URL -o watcher.jar
 else
-  WATCHER_CURRENT_VERSION=$(jar_app_version watcher.jar)
+  WATCHER_CURRENT_VERSION=$(echo $(jar_app_version watcher.jar) | cut -d "." -f3)
   if [[ $REMOTE_WATCHER_VERSION != $WATCHER_CURRENT_VERSION ]]; then
     echo "The current version $WATCHER_CURRENT_VERSION is not the same as the expected remote version $REMOTE_WATCHER_VERSION"
     echo "Downloading Watcher $REMOTE_WATCHER_VERSION ..."

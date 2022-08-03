@@ -255,6 +255,7 @@ io.harness.cdng.ssh.StepCommandUnit
 io.harness.cdng.ssh.ScriptCommandUnitSpec
 io.harness.cdng.ssh.CopyCommandUnitSpec
 io.harness.cdng.ssh.CommandUnitSourceType
+io.harness.cdng.ssh.CommandStepOutcome
 io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig
 io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig
 io.harness.yaml.core.failurestrategy.manualintervention.ManualFailureSpecConfig

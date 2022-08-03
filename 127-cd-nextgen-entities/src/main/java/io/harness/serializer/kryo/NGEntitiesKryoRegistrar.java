@@ -31,6 +31,7 @@ import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.ConfigFileAttributes;
+import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
@@ -206,5 +207,6 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(CustomRemoteStoreConfig.class, 12589);
     kryo.register(OverlayConfiguration.class, 12591);
     kryo.register(JenkinsArtifactConfig.class, 130012);
+    kryo.register(ConfigFileOutcome.class, 130013);
   }
 }

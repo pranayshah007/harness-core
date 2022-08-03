@@ -92,7 +92,7 @@ public class SshCommandStepHelper extends CDStepHelper {
   @Inject private NGEncryptedDataService ngEncryptedDataService;
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject protected CDFeatureFlagHelper cdFeatureFlagHelper;
-  @Inject ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   public CommandTaskParameters buildCommandTaskParameters(
       @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters commandStepParameters) {
@@ -121,6 +121,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         (SshInfraDelegateConfigOutput) optionalInfraOutput.getOutput();
     Optional<ArtifactOutcome> artifactOutcome = resolveArtifactsOutcome(ambiance);
     Optional<ConfigFilesOutcome> configFilesOutcomeOptional = getConfigFilesOutcome(ambiance);
+
     Boolean onDelegate = getBooleanParameterFieldValue(commandStepParameters.onDelegate);
     return SshCommandTaskParameters.builder()
         .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -136,7 +137,7 @@ public class SshCommandStepHelper extends CDStepHelper {
             configFilesOutcomeOptional.map(configFilesOutcome -> getFileDelegateConfig(ambiance, configFilesOutcome))
                 .orElse(null))
         .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
-        .host(ParameterFieldHelper.getParameterFieldValue(commandStepParameters.getHost()))
+        .host(getHost(commandStepParameters))
         .build();
   }
 
@@ -167,7 +168,7 @@ public class SshCommandStepHelper extends CDStepHelper {
             configFilesOutcomeOptional.map(configFilesOutcome -> getFileDelegateConfig(ambiance, configFilesOutcome))
                 .orElse(null))
         .commandUnits(mapCommandUnits(commandStepParameters.getCommandUnits(), onDelegate))
-        .host(ParameterFieldHelper.getParameterFieldValue(commandStepParameters.getHost()))
+        .host(getHost(commandStepParameters))
         .useWinRMKerberosUniqueCacheFile(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
         .disableWinRMCommandEncodingFFSet(
@@ -395,5 +396,9 @@ public class SshCommandStepHelper extends CDStepHelper {
       }
     });
     return outputVars;
+  }
+
+  public String getHost(CommandStepParameters commandStepParameters) {
+    return ParameterFieldHelper.getParameterFieldValue(commandStepParameters.getHost());
   }
 }

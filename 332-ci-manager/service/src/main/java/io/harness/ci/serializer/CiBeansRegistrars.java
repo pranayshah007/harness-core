@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.nodes.ArtifactoryUploadNode;
+import io.harness.beans.steps.nodes.BuildAndPushACRNode;
 import io.harness.beans.steps.nodes.BuildAndPushDockerNode;
 import io.harness.beans.steps.nodes.BuildAndPushECRNode;
 import io.harness.beans.steps.nodes.BuildAndPushGCRNode;
@@ -197,6 +198,17 @@ public class CiBeansRegistrars {
                                            .build())
                    .availableAtAccountLevel(false)
                    .clazz(BuildAndPushGCRNode.class)
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.BUILD_AND_PUSH_ACR)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .modulesSupported(Collections.singletonList(ModuleType.CI))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .availableAtAccountLevel(false)
+                   .clazz(BuildAndPushACRNode.class)
                    .build())
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.PLUGIN)

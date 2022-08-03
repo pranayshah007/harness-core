@@ -774,7 +774,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         color(format("%nSuccessfully fetched following files: "), LogColor.White, LogWeight.Bold));
     downloadFilesFromLocalChartRepo(ManifestFileList, workingDir, commandRequestNG.getLogCallback());
 
-    commandRequestNG.setWorkingDir(getChartDirectory(workingDir, localFileStoreDelegateConfig.getFolder()));
+    commandRequestNG.setWorkingDir(workingDir);
     commandRequestNG.getLogCallback().saveExecutionLog("Helm Chart Repo checked-out locally");
   }
 

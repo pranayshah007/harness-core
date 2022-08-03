@@ -259,6 +259,17 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
         .asList();
   }
 
+  @Override
+  public List<DataCollectionTask> getAllNonFinalDataCollectionTasks(String accountId, String verificationTaskId) {
+    return hPersistence.createQuery(DataCollectionTask.class)
+        .filter(DataCollectionTaskKeys.accountId, accountId)
+        .filter(DataCollectionTaskKeys.verificationTaskId, verificationTaskId)
+        .field(DataCollectionTaskKeys.status)
+        .in(DataCollectionExecutionStatus.getNonFinalStatuses())
+        .order(Sort.descending(DataCollectionTaskKeys.startTime))
+        .asList();
+  }
+
   private void markDependentTasksFailed(DataCollectionTask task) {
     if (task instanceof DeploymentDataCollectionTask) {
       verificationJobInstanceService.logProgress(

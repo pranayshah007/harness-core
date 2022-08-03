@@ -30,6 +30,7 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
@@ -89,6 +90,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final GitSyncSdkService gitSyncSdkService;
   @Inject private final CommonStepInfo commonStepInfo;
   @Inject private final PipelineCloneHelper pipelineCloneHelper;
+  @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
 
   public static String CREATING_PIPELINE = "creating new pipeline";
   public static String UPDATING_PIPELINE = "updating existing pipeline";
@@ -458,7 +460,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public PipelineEntity importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, Boolean isForceImport) {
-    PMSPipelineServiceHelper.filePathCheck();
+    gitAwareEntityHelper.checkRootFolder();
     String repoUrl = pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, isForceImport);
     String importedPipelineYAML =

@@ -14,6 +14,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.plancreator.stages.parallel.ParallelStageElementConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
@@ -239,9 +240,16 @@ public class PmsYamlSchemaHelper {
 
   public void processStageSchema(List<YamlSchemaWithDetails> allSchemaDetails, ObjectNode pipelineDefinitions) {
     try {
+      // Filtering by the yamlGroup=stage
+      // And the stage namespace must be present in pipeline definitions or the namespace should be empty(for pipeline
+      // service). If namespace is not present then we skip that stage schema detail so that it does not affect other
+      // stages. Only that stage will not work for schema.
       List<YamlSchemaWithDetails> stageSchemaWithDetails =
           allSchemaDetails.stream()
               .filter(o -> o.getYamlSchemaMetadata().getYamlGroup().getGroup().equals(StepCategory.STAGE.name()))
+              .filter(o
+                  -> EmptyPredicate.isEmpty(o.getYamlSchemaMetadata().getNamespace())
+                      || pipelineDefinitions.get(o.getYamlSchemaMetadata().getNamespace()) != null)
               .collect(Collectors.toList());
 
       YamlSchemaUtils.addOneOfInStageElementWrapperConfig(pipelineDefinitions, stageSchemaWithDetails);
