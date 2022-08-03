@@ -47,7 +47,7 @@ public class DefaultUserGroupCreationService implements Runnable {
                                            ProjectService projectService, UserMembershipRepository userMembershipRepository) {
         this.userGroupService = userGroupService;
         this.accountClient = accountClient;
-        this.organizationService =  organizationService;
+        this.organizationService = organizationService;
         this.projectService = projectService;
         this.userMembershipRepository = userMembershipRepository;
     }
@@ -67,8 +67,7 @@ public class DefaultUserGroupCreationService implements Runnable {
                     .map(AccountDTO::getIdentifier)
                     .collect(Collectors.toList());
             createUserGroupForAccounts(accountIdsToBeInserted);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             log.error(DEBUG_MESSAGE + " Fetching all accounts failed : ", ex);
         }
 
@@ -79,13 +78,14 @@ public class DefaultUserGroupCreationService implements Runnable {
         for (String accountId : accountIds) {
             try {
                 Scope scope = Scope.of(accountId, null, null);
-                userGroupService.setUpDefaultUserGroup(scope);
+                if (Boolean.FALSE.equals(userGroupService.exists(scope, getDefaultUserGroupId(scope)))) {
+                    userGroupService.setUpDefaultUserGroup(scope);
+                }
                 addUsersAtScopeToDefaultUserGroup(scope);
                 createUserGroupForOrganizations(accountId);
             } catch (DuplicateFieldException ex) {
-                log.error(DEBUG_MESSAGE + "User Group Creation failed for Account:" + accountId + "as User Group already exists" , ex);
-            }
-            catch (Exception ex) {
+                log.error(DEBUG_MESSAGE + "User Group Creation failed for Account:" + accountId + "as User Group already exists", ex);
+            } catch (Exception ex) {
                 log.error(DEBUG_MESSAGE + "User Group Creation failed for Account: " + accountId, ex);
             }
         }
@@ -104,13 +104,14 @@ public class DefaultUserGroupCreationService implements Runnable {
             for (Organization organization : organizations) {
                 try {
                     Scope scope = Scope.of(accountId, organization.getId(), null);
-                    userGroupService.setUpDefaultUserGroup(scope);
+                    if (Boolean.FALSE.equals(userGroupService.exists(scope, getDefaultUserGroupId(scope)))) {
+                        userGroupService.setUpDefaultUserGroup(scope);
+                    }
                     addUsersAtScopeToDefaultUserGroup(scope);
                     createUserGroupForProjects(accountId, organization.getId());
                 } catch (DuplicateFieldException ex) {
-                    log.error(DEBUG_MESSAGE + "User Group Creation failed for Organization:" + organization.getId() + "as User Group already exists" , ex);
-                }
-                catch (Exception ex) {
+                    log.error(DEBUG_MESSAGE + "User Group Creation failed for Organization:" + organization.getId() + "as User Group already exists", ex);
+                } catch (Exception ex) {
                     log.error(DEBUG_MESSAGE + "User Group Creation failed for Organization: " + organization.getId(), ex);
                 }
             }
@@ -131,12 +132,13 @@ public class DefaultUserGroupCreationService implements Runnable {
             for (Project project : projects) {
                 try {
                     Scope scope = Scope.of(accountId, organizationId, project.getId());
-                    userGroupService.setUpDefaultUserGroup(scope);
+                    if (Boolean.FALSE.equals(userGroupService.exists(scope, getDefaultUserGroupId(scope)))) {
+                        userGroupService.setUpDefaultUserGroup(scope);
+                    }
                     addUsersAtScopeToDefaultUserGroup(scope);
                 } catch (DuplicateFieldException ex) {
-                    log.error(DEBUG_MESSAGE + "User Group Creation failed for Project:" + project.getId() + "as User Group already exists" , ex);
-                }
-                catch (Exception ex) {
+                    log.error(DEBUG_MESSAGE + "User Group Creation failed for Project:" + project.getId() + "as User Group already exists", ex);
+                } catch (Exception ex) {
                     log.error(DEBUG_MESSAGE + "User Group Creation failed for Project: " + project.getId(), ex);
                 }
             }
@@ -150,8 +152,7 @@ public class DefaultUserGroupCreationService implements Runnable {
         do {
             Pageable pageable = PageRequest.of(pageIndex, pageSize);
             Criteria criteria = Criteria.where("scope.accountIdentifier").is(scope.getAccountIdentifier());
-            if (isNotEmpty(scope.getOrgIdentifier()))
-            {
+            if (isNotEmpty(scope.getOrgIdentifier())) {
                 criteria = criteria.and("scope.orgIdentifier").is(scope.getOrgIdentifier());
             }
             if (isNotEmpty(scope.getProjectIdentifier())) {
@@ -167,31 +168,28 @@ public class DefaultUserGroupCreationService implements Runnable {
             } catch (Exception ex) {
                 log.error("Unable to fetch User Group at scope:" + scope.toString(), ex);
             }
-            try
-            {
-                if(userGroupOptional.isPresent()) {
+            try {
+                if (userGroupOptional.isPresent()) {
                     UserGroup userGroup = userGroupOptional.get();
                     List<String> users = ImmutableList.copyOf(userGroup.getUsers());
                     users.addAll(userIds);
                     userGroup.setUsers(users);
                     userGroupService.update(toDTO(userGroup));
                 }
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 log.error("Failed to update User Group at scope: " + scope.toString(), ex);
             }
             pageIndex++;
         }
-        while(true);
+        while (true);
     }
 
     private String getDefaultUserGroupId(Scope scope) {
         if (isNotEmpty(scope.getProjectIdentifier())) {
             return DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER;
-        }
-        else if (isNotEmpty(scope.getOrgIdentifier())) {
+        } else if (isNotEmpty(scope.getOrgIdentifier())) {
             return DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER;
         }
-        return  DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER;
+        return DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER;
     }
 }

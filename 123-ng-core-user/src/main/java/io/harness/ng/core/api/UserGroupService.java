@@ -96,4 +96,6 @@ public interface UserGroupService {
 
   void sanitize(Scope scope, String identifier);
   void setUpDefaultUserGroup(Scope scope);
+
+  boolean exists(Scope scope, String userGroupIdentifier);
 }

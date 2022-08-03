@@ -228,6 +228,15 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   @Override
+  public boolean exists(Scope scope, String userGroupIdentifier) {
+     Optional<UserGroup> optionalUserGroup =  get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
+     if (optionalUserGroup.isPresent()) {
+       return  true;
+     }
+     return false;
+  }
+
+  @Override
   public UserGroup update(UserGroupDTO userGroupDTO) {
     UserGroup savedUserGroup = getOrThrow(userGroupDTO.getAccountIdentifier(), userGroupDTO.getOrgIdentifier(),
         userGroupDTO.getProjectIdentifier(), userGroupDTO.getIdentifier());
